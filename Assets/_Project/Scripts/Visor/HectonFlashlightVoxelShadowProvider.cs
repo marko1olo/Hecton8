@@ -212,7 +212,7 @@ namespace Hecton8.Visor
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

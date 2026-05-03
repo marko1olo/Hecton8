@@ -732,38 +732,7 @@ namespace Hecton8.World
                 return bridgeTerrain;
             }
 
-            return FindTerrainAtFallback(x, z);
-        }
-
-        private static Terrain FindTerrainAtFallback(float x, float z)
-        {
-            Terrain active = Terrain.activeTerrain;
-            if (active != null && IsPointInTerrain(active, x, z))
-                return active;
-
-            Terrain[] terrains = Terrain.activeTerrains;
-            if (terrains == null)
-                return null;
-
-            for (int i = 0; i < terrains.Length; i++)
-            {
-                Terrain terrain = terrains[i];
-                if (terrain != null && IsPointInTerrain(terrain, x, z))
-                    return terrain;
-            }
-
             return null;
-        }
-
-        private static bool IsPointInTerrain(Terrain terrain, float x, float z)
-        {
-            if (terrain == null || terrain.terrainData == null)
-                return false;
-
-            Vector3 pos = terrain.transform.position;
-            Vector3 size = terrain.terrainData.size;
-            return x >= pos.x && x <= pos.x + size.x &&
-                   z >= pos.z && z <= pos.z + size.z;
         }
 
         private void ResolveReferences()

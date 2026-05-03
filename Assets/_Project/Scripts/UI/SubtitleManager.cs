@@ -153,7 +153,7 @@ namespace Hecton8.UI
         private readonly char[] _subtitleRenderBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle TMP render buffer - owner: SubtitleManager
         private readonly char[] _lastRenderedSubtitleBuffer = new char[MaxSubtitleRenderCharacters]; // COLD ALLOC: char[2048] - subtitle change cache - owner: SubtitleManager
 
-        public static SubtitleManager Instance { get; private set; }
+        private static SubtitleManager s_activeInstance;
 
         [Header("Settings")]
         [SerializeField, Range(1.5f, 8f)] private float defaultDuration = 3.25f;
@@ -200,7 +200,7 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            Instance = null;
+            s_activeInstance = null;
         }
 
         /// <summary>
@@ -211,7 +211,7 @@ namespace Hecton8.UI
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
         {
-            if (Instance != null)
+            if (s_activeInstance != null)
                 return;
 
             SuitHUDV4CanvasOverlay overlay = SuitHUDV4CanvasOverlay.ActiveRuntimeInstance;
@@ -232,21 +232,21 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
+            if (s_activeInstance != null && s_activeInstance != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            Instance = this;
+            s_activeInstance = this;
             EnsureBuilt();
         }
 
         private void OnEnable()
         {
-            if (Instance == null)
-                Instance = this;
-            if (Instance != this)
+            if (s_activeInstance == null)
+                s_activeInstance = this;
+            if (s_activeInstance != this)
                 return;
 
             TryRegisterToGlobalRegistry();
@@ -263,21 +263,21 @@ namespace Hecton8.UI
             UnregisterFromTickManager();
             TryUnregisterFromGlobalRegistry();
 
-            if (Instance == this)
-                Instance = null;
+            if (s_activeInstance == this)
+                s_activeInstance = null;
         }
 
         private void OnDestroy()
         {
             TryUnregisterFromGlobalRegistry();
 
-            if (Instance == this)
-                Instance = null;
+            if (s_activeInstance == this)
+                s_activeInstance = null;
         }
 
         private void TryRegisterToGlobalRegistry()
         {
-            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+            if (_serviceRegistered || !Application.isPlaying || s_activeInstance != this)
                 return;
 
             GlobalRegistry.RegisterSubtitleRuntime(this);
@@ -840,7 +840,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

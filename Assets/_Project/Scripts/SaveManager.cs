@@ -39,6 +39,8 @@ namespace Hecton8.SaveSystem
         private const float IndexedDefragCheckIntervalSeconds = 5f;
         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
         private const int MaxRegisteredSaveables = 256;
+        private const string NativeMemoryOwner = nameof(SaveManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 
         internal static SaveManager ActiveRuntimeInstance { get; private set; }
 
@@ -304,11 +306,8 @@ namespace Hecton8.SaveSystem
 
             _serviceRegistered = false;
 
-            if (_savePayloadBuffer.IsCreated)
-                _savePayloadBuffer.Dispose();
-
-            if (_compressedSaveBuffer.IsCreated)
-                _compressedSaveBuffer.Dispose();
+            DisposeNativeArray(ref _savePayloadBuffer);
+            DisposeNativeArray(ref _compressedSaveBuffer);
 
             DisposeIntegrityResources();
         }
@@ -324,7 +323,7 @@ namespace Hecton8.SaveSystem
             }
 
             GlobalRegistry.RegisterSaveService(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.SaveRuntime, this);
 
             if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
                 TryRegisterDispatcherLanes();
@@ -358,6 +357,8 @@ namespace Hecton8.SaveSystem
                 // COLD ALLOC: NativeArray<byte>[67378176] - worst-case LZ4 block-compressed save payload buffer for 64MB raw save budget - owner: SaveManager
                 _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             }
+
+            RegisterNativeMemorySentinel();
         }
 
         public void Tick(float deltaTime)
@@ -387,6 +388,7 @@ namespace Hecton8.SaveSystem
             {
                 // COLD ALLOC: NativeArray<ulong>[1] - background save integrity hash output - owner: SaveManager
                 _integrityScanResult = new NativeArray<ulong>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_integrityScanResult, NativeMemoryOwner, nameof(_integrityScanResult), NativeMemoryLifetime);
             }
 
             IntegrityScanJob job = new IntegrityScanJob
@@ -498,10 +500,11 @@ namespace Hecton8.SaveSystem
                 return;
 
             if (_integrityPayloadMirror.IsCreated)
-                _integrityPayloadMirror.Dispose();
+                DisposeNativeArray(ref _integrityPayloadMirror);
 
             // COLD ALLOC: NativeArray<byte>[requiredLength] - resident decompressed save payload mirror for integrity scans - owner: SaveManager
             _integrityPayloadMirror = new NativeArray<byte>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(_integrityPayloadMirror, NativeMemoryOwner, nameof(_integrityPayloadMirror), NativeMemoryLifetime);
         }
 
         private void EvaluateIntegrityScanResult()
@@ -515,8 +518,9 @@ namespace Hecton8.SaveSystem
 
             string slotName = string.IsNullOrEmpty(_integritySlotName) ? "active" : _integritySlotName;
             string reason = $"Active save integrity drift detected for '{slotName}'. Expected XXH3-64 {_expectedIntegrityPayloadHash64:X16}, got {computedHash64:X16}.";
-            MemoryCorruptionException exception = new MemoryCorruptionException(reason);
-            Debug.LogError($"[SaveManager] {exception.Message}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError($"[SaveManager] {reason}");
+#endif
             SaveEvents.RaiseEmergencyBackupRestoreRequested(slotName);
             SaveEvents.RaiseSaveFailed(slotName, reason);
             ScheduleEmergencyBackup(slotName);
@@ -565,11 +569,15 @@ namespace Hecton8.SaveSystem
 
                 if (!string.IsNullOrEmpty(error))
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError($"[SaveManager] Indexed save defrag failed for '{absolutePath}': {error}");
+#endif
                 }
                 else if (verboseLogging && reclaimedBytes > 0L)
                 {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.Log($"[SaveManager] Indexed save defrag reclaimed {reclaimedBytes} bytes for '{absolutePath}'.");
+#endif
                 }
             }
             catch (OperationCanceledException)
@@ -589,8 +597,15 @@ namespace Hecton8.SaveSystem
                 return;
 
             _indexedSectorDirectoryScratch.Clear();
-            if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(absolutePath, _indexedSectorDirectoryScratch, out _, out _))
+            if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(
+                    absolutePath,
+                    _indexedSectorDirectoryScratch,
+                    out _,
+                    out string directoryError))
+            {
+                ReportIndexedDirectoryReadFailure(absolutePath, directoryError);
                 return;
+            }
 
             _activeIndexedSavePath = absolutePath;
             _nextIndexedDefragCheckTime = Time.unscaledTime + IndexedDefragCheckIntervalSeconds;
@@ -598,30 +613,32 @@ namespace Hecton8.SaveSystem
 
         private void DisposeIntegrityResources()
         {
-            if (_integrityPayloadMirror.IsCreated)
-            {
-                if (_integrityScanScheduled)
-                    _integrityPayloadMirror.Dispose(_integrityScanHandle);
-                else
-                    _integrityPayloadMirror.Dispose();
-
-                _integrityPayloadMirror = default;
-            }
-
-            if (_integrityScanResult.IsCreated)
-            {
-                if (_integrityScanScheduled)
-                    _integrityScanResult.Dispose(_integrityScanHandle);
-                else
-                    _integrityScanResult.Dispose();
-
-                _integrityScanResult = default;
-            }
+            DisposeNativeArray(ref _integrityPayloadMirror, _integrityScanHandle, _integrityScanScheduled);
+            DisposeNativeArray(ref _integrityScanResult, _integrityScanHandle, _integrityScanScheduled);
 
             _integrityScanScheduled = false;
             _integrityPayloadLength = 0;
             _expectedIntegrityPayloadHash64 = 0UL;
             ClearPendingIntegrityPayloadStage();
+        }
+
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_savePayloadBuffer, NativeMemoryOwner, nameof(_savePayloadBuffer), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency = default, bool deferDisposal = false) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            if (deferDisposal)
+                array.Dispose(dependency);
+            else
+                array.Dispose();
+            array = default;
         }
 
         public void Register(ISaveable saveable)
@@ -1041,7 +1058,9 @@ namespace Hecton8.SaveSystem
                 PersistentWorldRegistry persistentWorldRegistryForLoad = GlobalRegistry.PersistentWorldRegistry;
                 persistentWorldRegistryForLoad?.PreloadTombstonesFromLoadedRecords(loadedWorldDeltas);
                 ModSaveStateStore.LoadFromSaveData(data);
-                ModSaveStateStore.TryLoadMmfPayloads(GetPersistentAbsolutePath(loadedCandidate.SavePath), out _);
+                if (!ModSaveStateStore.TryLoadMmfPayloads(GetPersistentAbsolutePath(loadedCandidate.SavePath), out string modPayloadLoadError))
+                    ReportModPayloadLoadFailure(slotName, modPayloadLoadError);
+
                 QuestManager.StageLoadedPackedState(loadedQuestHeader, loadedQuestStateWords);
                 
                 _registryDirty = true;
@@ -1077,7 +1096,11 @@ namespace Hecton8.SaveSystem
                 {
                     string loadedAbsolutePath = GetPersistentAbsolutePath(loadedCandidate.SavePath);
                     _indexedSectorDirectoryScratch.Clear();
-                    if (SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(loadedAbsolutePath, _indexedSectorDirectoryScratch, out _, out _))
+                    if (SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(
+                            loadedAbsolutePath,
+                            _indexedSectorDirectoryScratch,
+                            out _,
+                            out string loadedDirectoryError))
                     {
                         persistentWorldRegistryForLoad.RestoreFromIndexedSave(loadedAbsolutePath);
 
@@ -1086,6 +1109,7 @@ namespace Hecton8.SaveSystem
                     }
                     else
                     {
+                        ReportIndexedDirectoryReadFailure(loadedAbsolutePath, loadedDirectoryError);
                         UpdateActiveIndexedSavePath(string.Empty);
                         persistentWorldRegistryForLoad.DisableIndexedSavePaging();
                         persistentWorldRegistryForLoad.RestoreFromLoadedRecords(loadedWorldDeltas);
@@ -1442,9 +1466,37 @@ namespace Hecton8.SaveSystem
             if (!FileExists(tempPath))
                 throw new FileNotFoundException("Verified temp save was not created by the binary writer.", absoluteTempPath);
 
-            ModSaveStateStore.TryCommitMmfPayloads(absoluteTempPath, out _);
+            if (!ModSaveStateStore.TryCommitMmfPayloads(absoluteTempPath, out string modPayloadCommitError))
+                ReportModPayloadCommitFailure(slotName, modPayloadCommitError);
 
             CommitTempSaveToPrimary(slotName, tempPath, finalPath);
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void ReportModPayloadLoadFailure(string slotName, string error)
+        {
+            if (string.IsNullOrEmpty(error))
+                return;
+
+            Debug.LogWarning($"[SaveManager] Mod payload load failed for '{slotName}': {error}");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void ReportModPayloadCommitFailure(string slotName, string error)
+        {
+            if (string.IsNullOrEmpty(error))
+                return;
+
+            Debug.LogWarning($"[SaveManager] Mod payload commit failed for '{slotName}': {error}");
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void ReportIndexedDirectoryReadFailure(string absolutePath, string error)
+        {
+            if (string.IsNullOrEmpty(error))
+                return;
+
+            Debug.LogWarning($"[SaveManager] Indexed save directory read failed for '{absolutePath}': {error}");
         }
 
         private static bool TryExtractSlotName(string fileName, out string slotName)
@@ -2029,6 +2081,7 @@ namespace Hecton8.SaveSystem
 
             // COLD ALLOC: NativeArray<byte>[67108864] - fallback raw save read buffer when SaveManager instance is unavailable - owner: SaveManager
             buffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, "fallbackReadBuffer", NativeMemoryLifetime);
             ownsBuffer = true;
         }
 
@@ -2057,6 +2110,8 @@ namespace Hecton8.SaveSystem
             rawBuffer = new NativeArray<byte>(SaveBinaryStorage.RawPayloadCapacityBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             // COLD ALLOC: NativeArray<byte>[67378176] - fallback compressed save write buffer when SaveManager instance is unavailable - owner: SaveManager
             compressedBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(rawBuffer, NativeMemoryOwner, "fallbackRawWriteBuffer", NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(compressedBuffer, NativeMemoryOwner, "fallbackCompressedWriteBuffer", NativeMemoryLifetime);
             ownsRawBuffer = true;
             ownsCompressedBuffer = true;
         }
@@ -2064,7 +2119,10 @@ namespace Hecton8.SaveSystem
         private static void ReleaseBuffer(NativeArray<byte> buffer, bool ownsBuffer)
         {
             if (ownsBuffer && buffer.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(buffer);
                 buffer.Dispose();
+            }
         }
 
         private static SaveSlotMaintenanceRecord GetOrCreateMaintenanceRecord(string slotName)

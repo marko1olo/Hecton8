@@ -590,7 +590,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

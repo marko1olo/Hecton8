@@ -297,6 +297,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemFlowFieldCurrentNative);
                 // COLD ALLOC: NativeArray<float2>[_ecosystemThreatGridCellCount] - abyssal flow-field front buffer for read-only navigation sampling - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemFlowFieldCurrentNative = new NativeArray<float2>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.EcosystemFlowFieldCurrentNative, NativeMemoryOwner, nameof(_nativeMemory.EcosystemFlowFieldCurrentNative), NativeMemoryLifetime);
                 _flowFieldInitialized = false;
             }
 
@@ -305,12 +306,14 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemFlowFieldNextNative);
                 // COLD ALLOC: NativeArray<float2>[_ecosystemThreatGridCellCount] - abyssal flow-field back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemFlowFieldNextNative = new NativeArray<float2>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.EcosystemFlowFieldNextNative, NativeMemoryOwner, nameof(_nativeMemory.EcosystemFlowFieldNextNative), NativeMemoryLifetime);
             }
 
             if (!_nativeMemory.SwarmWakeImpulseNative.IsCreated)
             {
                 // COLD ALLOC: NativeArray<SwarmWakeImpulse>[1] - single-slot boid wake impulse injected into abyssal flow-field solves - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.SwarmWakeImpulseNative = new NativeArray<SwarmWakeImpulse>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.SwarmWakeImpulseNative, NativeMemoryOwner, nameof(_nativeMemory.SwarmWakeImpulseNative), NativeMemoryLifetime);
                 _swarmWakeImpulseCount = 0;
                 _swarmWakeImpulseExpireTime = float.NegativeInfinity;
             }
@@ -326,6 +329,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.AbyssalThermalGridNative);
                 // COLD ALLOC: NativeArray<float>[_abyssalThermalGridCellCount] - abyssal thermal-grid front buffer for stable sampling - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.AbyssalThermalGridNative = new NativeArray<float>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.AbyssalThermalGridNative, NativeMemoryOwner, nameof(_nativeMemory.AbyssalThermalGridNative), NativeMemoryLifetime);
                 _abyssalThermalGridInitialized = false;
                 _abyssalThermalGridRingOffsetX = 0;
                 _abyssalThermalGridRingOffsetY = 0;
@@ -337,6 +341,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.AbyssalThermalGridNextNative);
                 // COLD ALLOC: NativeArray<float>[_abyssalThermalGridCellCount] - abyssal thermal-grid back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.AbyssalThermalGridNextNative = new NativeArray<float>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.AbyssalThermalGridNextNative, NativeMemoryOwner, nameof(_nativeMemory.AbyssalThermalGridNextNative), NativeMemoryLifetime);
             }
 
             if (!_nativeMemory.AbyssalFlowVolumeCurrentNative.IsCreated || _nativeMemory.AbyssalFlowVolumeCurrentNative.Length != _abyssalThermalGridCellCount)
@@ -344,6 +349,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.AbyssalFlowVolumeCurrentNative);
                 // COLD ALLOC: NativeArray<float3>[_abyssalThermalGridCellCount] - abyssal 3D flow-volume front buffer for deep-current sampling - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.AbyssalFlowVolumeCurrentNative = new NativeArray<float3>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.AbyssalFlowVolumeCurrentNative, NativeMemoryOwner, nameof(_nativeMemory.AbyssalFlowVolumeCurrentNative), NativeMemoryLifetime);
                 _abyssalFlowVolumeInitialized = false;
             }
 
@@ -352,6 +358,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.AbyssalFlowVolumeNextNative);
                 // COLD ALLOC: NativeArray<float3>[_abyssalThermalGridCellCount] - abyssal 3D flow-volume back buffer for Burst writes - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.AbyssalFlowVolumeNextNative = new NativeArray<float3>(_abyssalThermalGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_nativeMemory.AbyssalFlowVolumeNextNative, NativeMemoryOwner, nameof(_nativeMemory.AbyssalFlowVolumeNextNative), NativeMemoryLifetime);
             }
         }
 

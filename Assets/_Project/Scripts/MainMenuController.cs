@@ -893,7 +893,7 @@ namespace Hecton.UI.MainMenu
 
         private void BindMenuInput()
         {
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
             if (ReferenceEquals(_inputManager, inputManager))
             {
                 if (_inputManager != null && _inputManager.CanSwitchActionMaps)
@@ -954,7 +954,7 @@ namespace Hecton.UI.MainMenu
                 inputSystemModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
             }
 
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
             if (inputManager != null)
                 inputManager.TryConfigureUiInputModule(inputSystemModule);
         }
@@ -1393,7 +1393,7 @@ namespace Hecton.UI.MainMenu
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

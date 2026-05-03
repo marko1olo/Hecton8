@@ -19,6 +19,7 @@
 //   - tag == "string" instead of CompareTag
 //   - Animator.Set* with string literal
 //   - Unauthorized DontDestroyOnLoad calls outside bootstrap/crash telemetry owners
+//   - Allocator.Persistent usage without NativeMemorySentinel registration in the file
 //
 // OWNERSHIP: Editor tooling only. No runtime code.
 // ============================================================================
@@ -189,6 +190,13 @@ namespace Hecton8.EditorTools
                 Severity = "ERROR",
                 Fix = "Move lifecycle ownership to GameBootstrapper/GlobalRegistry, or document an explicit exception"
             },
+            new ViolationPattern
+            {
+                Name = "Persistent Native allocation without sentinel registration",
+                Regex = @"Allocator\.Persistent",
+                Severity = "ERROR",
+                Fix = "Register the NativeCollection with NativeMemorySentinel and unregister before Dispose"
+            },
         };
 
         // ══════════════════════════════════════════════════════════
@@ -302,6 +310,12 @@ namespace Hecton8.EditorTools
                         }
 
                         string entry = $"  [{_patterns[p].Severity}] {relativePath}:{lineIdx + 1} — {_patterns[p].Name}";
+                        if (_patterns[p].Name.StartsWith("Persistent Native allocation without sentinel"))
+                        {
+                            if (FileDeclaresNativeMemorySentinelRegistration(lines))
+                                continue;
+                        }
+
                         results.Add(entry);
                         totalViolations++;
                         if (_patterns[p].Severity == "ERROR") errorCount++;
@@ -411,6 +425,20 @@ namespace Hecton8.EditorTools
         {
             if (lines[lineIdx].Contains("COLD ALLOC")) return true;
             if (lineIdx > 0 && lines[lineIdx - 1].Contains("COLD ALLOC")) return true;
+            return false;
+        }
+
+        /// <summary>
+        /// Checks whether a file participates in the native memory sentinel registry.
+        /// </summary>
+        private static bool FileDeclaresNativeMemorySentinelRegistration(string[] lines)
+        {
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i].Contains("NativeMemorySentinel.Register"))
+                    return true;
+            }
+
             return false;
         }
     }

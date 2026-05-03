@@ -48,7 +48,7 @@ namespace Hecton8.Editor
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredForTick = true;
+            _registeredForTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void OnDisable()

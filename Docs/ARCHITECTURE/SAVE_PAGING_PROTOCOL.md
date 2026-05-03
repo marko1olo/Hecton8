@@ -87,6 +87,16 @@ Slot address:
 entryOffset = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize + (slotIndex * sizeof(SectorEntry))
 ```
 
+Directory validation uses subtraction-based bounds checks. Readers must validate sector ranges as:
+
+```text
+SectorEntry.ByteOffset >= metadataEndOffset
+SectorEntry.CompressedSize > 0
+SectorEntry.ByteOffset <= fileLength - SectorEntry.CompressedSize
+```
+
+Do not validate sector end with `ByteOffset + CompressedSize <= fileLength`; malformed large offsets can overflow signed addition before the comparison.
+
 ## Commit Target Resolution
 
 Given:
@@ -210,6 +220,26 @@ Rules:
 - `checksum` = low 32 bits of `XXHash3-64(rawBlockBytes)`
 - validation happens immediately after each sub-block decompress
 - one bad sub-block invalidates only that sector block load, not the whole save
+
+## Mod Payload Sidecar Sectors
+
+Mod save payloads are stored as isolated `16 KB` sub-sector records under the `MODP` sector hash prefix. The main save metadata still carries a hashed fallback key, but the MMF sidecar is the authoritative large-payload path.
+
+Batch load path:
+
+1. storage opens and validates the `.sav` once
+2. storage streams the fixed `4096` `SectorEntry` slots directly from the MMF view
+3. storage rejects entries whose byte ranges overlap metadata or exceed file bounds
+4. storage decompresses only `MODP` sectors into native scratch
+5. each `MODP` sector verifies the sector checksum and payload checksum
+6. the mod facade receives validated payload bytes through a cached handler
+
+Rules:
+
+- do not allocate `SectorEntry[4096]` for mod payload scans
+- do not reopen the MMF once per mod payload
+- payload strings are UTF-16; odd payload byte lengths are corruption and must be rejected
+- mod payload failure is isolated from player-world save load, but editor/development builds must report the failure
 
 ## Defrag Relationship
 

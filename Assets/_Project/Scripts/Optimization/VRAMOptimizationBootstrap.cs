@@ -6,7 +6,7 @@ namespace Hecton8.Optimization
 {
     /// <summary>
     /// Bootstrap for VRAM optimization systems.
-    /// Creates singleton instances and ensures DontDestroyOnLoad.
+    /// Creates registry-owned runtime services under the active GameBootstrapper.
     /// </summary>
     [DefaultExecutionOrder(-8000)]
     public sealed class VRAMOptimizationBootstrap : MonoBehaviour

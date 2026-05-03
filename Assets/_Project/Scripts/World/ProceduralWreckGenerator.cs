@@ -1579,7 +1579,7 @@ namespace Hecton8.World
                     Rotation = placement.Rotation
                 };
 
-                job.Run();
+                job.Execute();
                 scheduledJobCount++;
 
                 vertexOffset += sourceMesh.vertexCount;
@@ -1814,7 +1814,8 @@ namespace Hecton8.World
                 Indices = indices
             };
 
-            job.Run(proxyPlacementCount);
+            for (int index = 0; index < proxyPlacementCount; index++)
+                job.Execute(index);
 
             Bounds localBounds = CalculateLocalBounds(_filteredPlacements);
             meshData.subMeshCount = 1;
@@ -1976,7 +1977,8 @@ namespace Hecton8.World
                 Indices = indices
             };
 
-            job.Run(stampCount);
+            for (int index = 0; index < stampCount; index++)
+                job.Execute(index);
 
             Bounds localBounds = CalculateDamageDecalBounds(_damageDecalStamps);
             meshData.subMeshCount = 1;

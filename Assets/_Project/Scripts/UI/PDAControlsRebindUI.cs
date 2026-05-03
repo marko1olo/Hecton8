@@ -1,5 +1,4 @@
 using System;
-using System.Text;
 using Hecton8.Core;
 using Hecton8.Input;
 using TMPro;
@@ -15,7 +14,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Controls Rebind UI")]
-    public sealed class PDAControlsRebindUI : MonoBehaviour, IPDAEventListener
+    public sealed class PDAControlsRebindUI : MonoBehaviour, IPDAEventListener, IGlobalRegistryHotSwapListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.8f);
         private static readonly Color RuleColor = new Color(0.46f, 0.98f, 0.94f, 0.18f);
@@ -86,13 +85,18 @@ namespace Hecton8.UI
         private bool _built;
         private int _selectedIndex;
         private bool _subscribed;
+        private InputManager _subscribedInput;
+        private IInputBindingService _subscribedRebindingService;
+        private bool _hotSwapListenerRegistered;
         private Image[] _rowBackgrounds = Array.Empty<Image>();
         private Image[] _rowAccentBars = Array.Empty<Image>();
         private Image[] _bindingBackgrounds = Array.Empty<Image>();
+        private CanvasGroup[] _selectedIndicatorGroups = Array.Empty<CanvasGroup>();
         private Image _statusBackground;
         private TextMeshProUGUI _headerHintText;
-        private readonly StringBuilder _headerHintBuilder = new StringBuilder(128); // COLD ALLOC: StringBuilder[128] — controls header hint formatting buffer — owner: PDAControlsRebindUI
-        private readonly StringBuilder _statusBuilder = new StringBuilder(192); // COLD ALLOC: StringBuilder[192] — controls status formatting buffer — owner: PDAControlsRebindUI
+        private readonly char[] _headerHintBuffer = new char[128]; // COLD ALLOC: char[128] — controls header hint formatting buffer — owner: PDAControlsRebindUI
+        private readonly char[] _statusBuffer = new char[192]; // COLD ALLOC: char[192] — controls status formatting buffer — owner: PDAControlsRebindUI
+        private readonly char[] _bindingDisplayBuffer = new char[64]; // COLD ALLOC: char[64] — binding display text buffer — owner: PDAControlsRebindUI
 
         private bool IsControlsTabActive =>
             isActiveAndEnabled &&
@@ -135,6 +139,7 @@ namespace Hecton8.UI
             AutoResolveTabIndex();
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void AutoResolveTabIndex()
         {
             if (gameObject.name.Contains("Controls", StringComparison.OrdinalIgnoreCase))
@@ -143,6 +148,14 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            Subscribe();
+            RefreshAll();
+        }
+
+        private void Start()
+        {
+            TryRegisterHotSwapListener();
             Subscribe();
             RefreshAll();
         }
@@ -150,11 +163,13 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             Unsubscribe();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
             Unsubscribe();
+            TryUnregisterHotSwapListener();
             PDAEvents.AssertUnregistered(this, nameof(PDAControlsRebindUI));
         }
 
@@ -162,7 +177,7 @@ namespace Hecton8.UI
         {
             if (_subscribed) return;
 
-            var input = InputManager.Instance;
+            InputManager input = ResolveInputManager();
             IInputBindingService rebinding = ResolveRebindingService();
             if (input == null || rebinding == null)
                 return;
@@ -183,6 +198,8 @@ namespace Hecton8.UI
 
             PDAEvents.Register(this);
 
+            _subscribedInput = input;
+            _subscribedRebindingService = rebinding;
             _subscribed = true;
         }
 
@@ -190,7 +207,7 @@ namespace Hecton8.UI
         {
             if (!_subscribed) return;
 
-            var input = InputManager.Instance;
+            InputManager input = _subscribedInput;
             if (input != null)
             {
                 input.OnNavigate -= HandleNavigate;
@@ -201,7 +218,7 @@ namespace Hecton8.UI
                 input.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
             }
 
-            IInputBindingService rebinding = ResolveRebindingService();
+            IInputBindingService rebinding = _subscribedRebindingService;
             if (rebinding != null)
             {
                 rebinding.OnRebindStarted -= HandleRebindStarted;
@@ -214,7 +231,50 @@ namespace Hecton8.UI
 
             PDAEvents.Unregister(this);
 
+            _subscribedInput = null;
+            _subscribedRebindingService = null;
             _subscribed = false;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.InputBinding)
+            {
+                return;
+            }
+
+            Unsubscribe();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            Subscribe();
+            RefreshAll();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
         }
 
         private void HandleNavigate(Vector2 direction)
@@ -245,7 +305,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
+            InputManager inputManager = ResolveInputManager();
+            if (inputManager == null)
+            {
+                SetStatus("Input manager unavailable.");
+                return;
+            }
+
+            InputAction action = inputManager.GetAction(row.actionName, row.actionMap);
             if (action == null)
             {
                 SetStatusActionNotFound(row);
@@ -304,15 +371,16 @@ namespace Hecton8.UI
         private void HandleRebindStarted(string actionName, string actionMap, int bindingIndex)
         {
             if (!IsControlsTabActive) return;
-            _statusBuilder.Clear();
-            _statusBuilder.Append(rebindingPrefix)
-                .Append("  [")
-                .Append(actionMap)
-                .Append('/')
-                .Append(actionName)
-                .Append(']');
+            int statusLength = 0;
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, rebindingPrefix);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, "  [");
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, actionMap);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, '/');
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, actionName);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, ']');
             SetStatus(
-                _statusBuilder,
+                _statusBuffer,
+                statusLength,
                 new Color(0.82f, 0.98f, 1f, 0.96f),
                 new Color(0.08f, 0.22f, 0.34f, 0.9f));
         }
@@ -321,12 +389,13 @@ namespace Hecton8.UI
         {
             RefreshAllBindings();
             if (!IsControlsTabActive) return;
-            _statusBuilder.Clear();
-            _statusBuilder.Append(actionName)
-                .Append(": ")
-                .Append(display);
+            int statusLength = 0;
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, actionName);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, ": ");
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, display);
             SetStatus(
-                _statusBuilder,
+                _statusBuffer,
+                statusLength,
                 new Color(0.76f, 0.98f, 0.94f, 0.96f),
                 new Color(0.08f, 0.2f, 0.18f, 0.88f));
         }
@@ -388,7 +457,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
+            InputManager inputManager = ResolveInputManager();
+            if (inputManager == null)
+            {
+                SetStatus("Input manager unavailable.");
+                return;
+            }
+
+            InputAction action = inputManager.GetAction(row.actionName, row.actionMap);
             if (action == null)
             {
                 SetStatusActionNotFound(row);
@@ -455,6 +531,7 @@ namespace Hecton8.UI
 
             if (alreadyHasRowRefs && statusText != null)
             {
+                RebuildSelectedIndicatorGroupCache();
                 _built = true;
                 return;
             }
@@ -487,6 +564,7 @@ namespace Hecton8.UI
             _rowBackgrounds = new Image[rows.Length];
             _rowAccentBars = new Image[rows.Length];
             _bindingBackgrounds = new Image[rows.Length];
+            _selectedIndicatorGroups = new CanvasGroup[rows.Length]; // COLD ALLOC: CanvasGroup[rows.Length] — selection indicator cache — owner: PDAControlsRebindUI
 
             const float rowHeight = 30f;
             const float rowGap = 6f;
@@ -546,6 +624,7 @@ namespace Hecton8.UI
                 row.labelText = label;
                 row.bindingText = binding;
                 row.selectedIndicator = selected.gameObject;
+                _selectedIndicatorGroups[i] = EnsureCanvasGroup(selected.gameObject);
             }
 
             RectTransform statusRoot = CreateRect(self, "Status");
@@ -626,6 +705,8 @@ namespace Hecton8.UI
                     if (t != null) row.selectedIndicator = t.gameObject;
                 }
             }
+
+            RebuildSelectedIndicatorGroupCache();
         }
 
         private static Transform FindDeepChild(Transform parent, string targetName)
@@ -715,7 +796,10 @@ namespace Hecton8.UI
 
             if (row.bindingText == null) return;
 
-            InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
+            InputManager inputManager = ResolveInputManager();
+            InputAction action = inputManager != null
+                ? inputManager.GetAction(row.actionName, row.actionMap)
+                : null;
             int bindingIndex = action != null
                 ? ResolveBindingIndex(action, row.actionName, row.actionMap, row.bindingIndex)
                 : -1;
@@ -725,7 +809,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            row.bindingText.SetText(GetBindingDisplaySafe(action, bindingIndex));
+            if (InputManager.TryWriteBindingDisplayStringSafe(action, bindingIndex, _bindingDisplayBuffer, 0, out int charsWritten) &&
+                charsWritten > 0)
+            {
+                row.bindingText.SetCharArray(_bindingDisplayBuffer, 0, charsWritten);
+                return;
+            }
+
+            row.bindingText.SetText("--");
         }
 
         private void RefreshSelectionVisuals()
@@ -738,10 +829,12 @@ namespace Hecton8.UI
                 if (!IsBindableRow(row))
                     continue;
 
-                GameObject indicator = row.selectedIndicator;
-                if (indicator != null)
+                CanvasGroup indicatorGroup = _selectedIndicatorGroups != null && i < _selectedIndicatorGroups.Length
+                    ? _selectedIndicatorGroups[i]
+                    : null;
+                if (indicatorGroup != null)
                 {
-                    SetIndicatorVisible(indicator, i == _selectedIndex);
+                    SetIndicatorVisible(indicatorGroup, i == _selectedIndex);
                 }
 
                 if (_rowBackgrounds != null && i < _rowBackgrounds.Length && _rowBackgrounds[i] != null)
@@ -767,18 +860,50 @@ namespace Hecton8.UI
             }
         }
 
-        private static void SetIndicatorVisible(GameObject indicator, bool visible)
+        private static void SetIndicatorVisible(CanvasGroup canvasGroup, bool visible)
         {
-            if (indicator == null)
-                return;
-
-            CanvasGroup canvasGroup = indicator.GetComponent<CanvasGroup>();
             if (canvasGroup == null)
-                canvasGroup = indicator.AddComponent<CanvasGroup>();
+                return;
 
             canvasGroup.alpha = visible ? 1f : 0f;
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
+        }
+
+        private void RebuildSelectedIndicatorGroupCache()
+        {
+            if (rows == null || rows.Length == 0)
+            {
+                _selectedIndicatorGroups = Array.Empty<CanvasGroup>();
+                return;
+            }
+
+            if (_selectedIndicatorGroups == null || _selectedIndicatorGroups.Length != rows.Length)
+                _selectedIndicatorGroups = new CanvasGroup[rows.Length]; // COLD ALLOC: CanvasGroup[rows.Length] — selection indicator cache rebuild — owner: PDAControlsRebindUI
+
+            for (int i = 0; i < rows.Length; i++)
+            {
+                RebindRow row = rows[i];
+                _selectedIndicatorGroups[i] = row != null && row.selectedIndicator != null
+                    ? EnsureCanvasGroup(row.selectedIndicator)
+                    : null;
+            }
+        }
+
+        private static CanvasGroup EnsureCanvasGroup(GameObject owner)
+        {
+            if (owner == null)
+                return null;
+
+            if (!owner.TryGetComponent(out CanvasGroup canvasGroup))
+            {
+                // COLD ALLOC: CanvasGroup[1] — missing selection indicator visibility proxy — owner: PDAControlsRebindUI
+                canvasGroup = owner.AddComponent<CanvasGroup>();
+            }
+
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+            return canvasGroup;
         }
 
         private void UpdateStatusForSelected()
@@ -789,26 +914,39 @@ namespace Hecton8.UI
                 return;
             }
 
-            string binding = "--";
-            InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
+            bool hasBindingDisplay = false;
+            int bindingCharsWritten = 0;
+            InputManager inputManager = ResolveInputManager();
+            InputAction action = inputManager != null
+                ? inputManager.GetAction(row.actionName, row.actionMap)
+                : null;
             if (action != null)
             {
                 int bindingIndex = ResolveBindingIndex(action, row.actionName, row.actionMap, row.bindingIndex);
                 if (bindingIndex >= 0)
                 {
-                    binding = GetBindingDisplaySafe(action, bindingIndex);
+                    hasBindingDisplay = InputManager.TryWriteBindingDisplayStringSafe(
+                        action,
+                        bindingIndex,
+                        _bindingDisplayBuffer,
+                        0,
+                        out bindingCharsWritten) &&
+                        bindingCharsWritten > 0;
                 }
             }
 
-            _statusBuilder.Clear();
-            _statusBuilder.Append(readyPrefix)
-                .Append(": ")
-                .Append(row.label)
-                .Append(" [")
-                .Append(binding)
-                .Append("]  |  ");
-            AppendResetHintText(_statusBuilder);
-            SetStatus(_statusBuilder);
+            int statusLength = 0;
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, readyPrefix);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, ": ");
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, row.label);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, " [");
+            if (hasBindingDisplay)
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, _bindingDisplayBuffer, bindingCharsWritten);
+            else
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, "--");
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, "]  |  ");
+            AppendResetHintText(_statusBuffer, ref statusLength);
+            SetStatus(_statusBuffer, statusLength);
         }
 
         private bool TryGetSelectedRow(out RebindRow row, out int rowIndex)
@@ -882,12 +1020,12 @@ namespace Hecton8.UI
             }
         }
 
-        private static int ResolveBindingIndex(InputAction action, string actionName, string actionMap, int preferredIndex)
+        private int ResolveBindingIndex(InputAction action, string actionName, string actionMap, int preferredIndex)
         {
             if (action == null)
                 return -1;
 
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = ResolveInputManager();
             if (inputManager != null)
             {
                 int displayPreferredIndex = inputManager.GetPreferredBindingIndex(actionName, actionMap);
@@ -944,38 +1082,31 @@ namespace Hecton8.UI
             }
         }
 
-        private static string GetBindingDisplaySafe(InputAction action, int bindingIndex)
+        private void AppendResetHintText(char[] buffer, ref int index)
         {
-            if (action == null || bindingIndex < 0)
-                return "--";
-
-            return InputManager.TryGetBindingDisplayStringSafe(action, bindingIndex, out string binding) &&
-                   !string.IsNullOrEmpty(binding)
-                ? binding
-                : "--";
-        }
-
-        private void AppendResetHintText(StringBuilder builder)
-        {
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = ResolveInputManager();
             if (inputManager == null)
             {
-                builder.Append(resetHint);
+                index = AppendToBuffer(buffer, index, resetHint);
                 return;
             }
 
-            string resetOne = inputManager.GetBindingDisplayString("TabNext", "UI", -1);
-            string resetAll = inputManager.GetBindingDisplayString("TabPrevious", "UI", -1);
-            if (string.IsNullOrWhiteSpace(resetOne) || string.IsNullOrWhiteSpace(resetAll))
+            int startLength = index;
+            if (!TryAppendBindingDisplay(inputManager, "TabNext", "UI", buffer, ref index))
             {
-                builder.Append(resetHint);
+                index = AppendToBuffer(buffer, index, resetHint);
                 return;
             }
 
-            builder.Append(resetOne)
-                .Append(" = reset selected, ")
-                .Append(resetAll)
-                .Append(" = reset all");
+            index = AppendToBuffer(buffer, index, " = reset selected, ");
+            if (!TryAppendBindingDisplay(inputManager, "TabPrevious", "UI", buffer, ref index))
+            {
+                index = startLength;
+                index = AppendToBuffer(buffer, index, resetHint);
+                return;
+            }
+
+            index = AppendToBuffer(buffer, index, " = reset all");
         }
 
         private void UpdateHeaderHintText()
@@ -983,49 +1114,77 @@ namespace Hecton8.UI
             if (_headerHintText == null)
                 return;
 
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = ResolveInputManager();
             if (inputManager == null)
             {
-                _headerHintText.SetText("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
+                SetHeaderHint("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
                 return;
             }
 
-            string submit = inputManager.GetBindingDisplayString("Submit", "UI", -1);
-            string resetOne = inputManager.GetBindingDisplayString("TabNext", "UI", -1);
-            string resetAll = inputManager.GetBindingDisplayString("TabPrevious", "UI", -1);
-            if (string.IsNullOrWhiteSpace(submit) ||
-                string.IsNullOrWhiteSpace(resetOne) ||
-                string.IsNullOrWhiteSpace(resetAll))
+            int headerLength = 0;
+            if (!TryAppendBindingDisplay(inputManager, "Submit", "UI", _headerHintBuffer, ref headerLength))
             {
-                _headerHintText.SetText("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
+                SetHeaderHint("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
                 return;
             }
 
-            _headerHintBuilder.Clear();
-            _headerHintBuilder.Append(submit)
-                .Append(" = rebind  |  ")
-                .Append(resetOne)
-                .Append(" = reset one  |  ")
-                .Append(resetAll)
-                .Append(" = reset all");
-            _headerHintText.SetText(_headerHintBuilder);
+            headerLength = AppendToBuffer(_headerHintBuffer, headerLength, " = rebind  |  ");
+            if (!TryAppendBindingDisplay(inputManager, "TabNext", "UI", _headerHintBuffer, ref headerLength))
+            {
+                SetHeaderHint("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
+                return;
+            }
+
+            headerLength = AppendToBuffer(_headerHintBuffer, headerLength, " = reset one  |  ");
+            if (!TryAppendBindingDisplay(inputManager, "TabPrevious", "UI", _headerHintBuffer, ref headerLength))
+            {
+                SetHeaderHint("SUBMIT = rebind  |  TAB NEXT = reset one  |  TAB PREV = reset all");
+                return;
+            }
+
+            headerLength = AppendToBuffer(_headerHintBuffer, headerLength, " = reset all");
+            SetHeaderHint(_headerHintBuffer, headerLength);
+        }
+
+        private bool TryAppendBindingDisplay(InputManager inputManager, string actionName, string actionMap, char[] buffer, ref int index)
+        {
+            if (inputManager == null || buffer == null || index < 0 || index >= buffer.Length)
+                return false;
+
+            InputAction action = inputManager.GetAction(actionName, actionMap);
+            if (action == null)
+                return false;
+
+            int bindingIndex = ResolveBindingIndex(action, actionName, actionMap, -1);
+            if (bindingIndex < 0)
+                return false;
+
+            if (!InputManager.TryWriteBindingDisplayStringSafe(action, bindingIndex, buffer, index, out int charsWritten) ||
+                charsWritten <= 0)
+            {
+                return false;
+            }
+
+            index += charsWritten;
+            return true;
         }
 
         private void SetStatus(string value)
         {
-            SetStatus(value, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
+            SetStatus(value.AsSpan(), HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
         }
 
-        private void SetStatus(StringBuilder value)
+        private void SetStatus(char[] value, int length)
         {
-            SetStatus(value, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
+            SetStatus(value, length, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
         }
 
-        private void SetStatus(string value, Color textColor, Color backgroundColor)
+        private void SetStatus(ReadOnlySpan<char> value, Color textColor, Color backgroundColor)
         {
             if (statusText != null)
             {
-                statusText.SetText(value);
+                int length = CopyToBuffer(_statusBuffer, value);
+                statusText.SetCharArray(_statusBuffer, 0, length);
                 statusText.color = textColor;
             }
 
@@ -1035,11 +1194,12 @@ namespace Hecton8.UI
             }
         }
 
-        private void SetStatus(StringBuilder value, Color textColor, Color backgroundColor)
+        private void SetStatus(char[] value, int length, Color textColor, Color backgroundColor)
         {
             if (statusText != null)
             {
-                statusText.SetText(value);
+                int safeLength = value != null ? Mathf.Clamp(length, 0, value.Length) : 0;
+                statusText.SetCharArray(value ?? _statusBuffer, 0, safeLength);
                 statusText.color = textColor;
             }
 
@@ -1051,28 +1211,94 @@ namespace Hecton8.UI
 
         private void SetStatusActionNotFound(RebindRow row)
         {
-            _statusBuilder.Clear();
-            _statusBuilder.Append("Action not found: ")
-                .Append(row.actionMap)
-                .Append('/')
-                .Append(row.actionName);
-            SetStatus(_statusBuilder);
+            int statusLength = 0;
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, "Action not found: ");
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, row.actionMap);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, '/');
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, row.actionName);
+            SetStatus(_statusBuffer, statusLength);
         }
 
         private void SetStatusNoRebindableBinding(string label)
         {
-            _statusBuilder.Clear();
-            _statusBuilder.Append("No rebindable binding: ")
-                .Append(label);
-            SetStatus(_statusBuilder);
+            int statusLength = 0;
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, "No rebindable binding: ");
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, label);
+            SetStatus(_statusBuffer, statusLength);
         }
 
         private void SetStatusFailedToStart(string label)
         {
-            _statusBuilder.Clear();
-            _statusBuilder.Append("Failed to start: ")
-                .Append(label);
-            SetStatus(_statusBuilder);
+            int statusLength = 0;
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, "Failed to start: ");
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, label);
+            SetStatus(_statusBuffer, statusLength);
+        }
+
+        private void SetHeaderHint(string value)
+        {
+            SetHeaderHint(value.AsSpan());
+        }
+
+        private void SetHeaderHint(ReadOnlySpan<char> value)
+        {
+            if (_headerHintText == null)
+                return;
+
+            int length = CopyToBuffer(_headerHintBuffer, value);
+            _headerHintText.SetCharArray(_headerHintBuffer, 0, length);
+        }
+
+        private void SetHeaderHint(char[] value, int length)
+        {
+            if (_headerHintText == null)
+                return;
+
+            int safeLength = value != null ? Mathf.Clamp(length, 0, value.Length) : 0;
+            _headerHintText.SetCharArray(value ?? _headerHintBuffer, 0, safeLength);
+        }
+
+        private static int CopyToBuffer(char[] buffer, ReadOnlySpan<char> value)
+        {
+            if (buffer == null || value.IsEmpty)
+                return 0;
+
+            int length = Mathf.Min(buffer.Length, value.Length);
+            value.Slice(0, length).CopyTo(buffer);
+            return length;
+        }
+
+        private static int AppendToBuffer(char[] buffer, int index, string value)
+        {
+            return AppendToBuffer(buffer, index, value.AsSpan());
+        }
+
+        private static int AppendToBuffer(char[] buffer, int index, char value)
+        {
+            if (buffer == null || index < 0 || index >= buffer.Length)
+                return index;
+
+            buffer[index] = value;
+            return index + 1;
+        }
+
+        private static int AppendToBuffer(char[] buffer, int index, char[] value, int valueLength)
+        {
+            if (value == null || valueLength <= 0)
+                return index;
+
+            int safeLength = Mathf.Min(valueLength, value.Length);
+            return AppendToBuffer(buffer, index, new ReadOnlySpan<char>(value, 0, safeLength));
+        }
+
+        private static int AppendToBuffer(char[] buffer, int index, ReadOnlySpan<char> value)
+        {
+            if (buffer == null || value.IsEmpty || index < 0 || index >= buffer.Length)
+                return index;
+
+            int length = Mathf.Min(value.Length, buffer.Length - index);
+            value.Slice(0, length).CopyTo(buffer.AsSpan(index, length));
+            return index + length;
         }
 
         private static int WrapIndex(int value, int max)
@@ -1086,6 +1312,13 @@ namespace Hecton8.UI
         private static IInputBindingService ResolveRebindingService()
         {
             return GlobalRegistry.InputBinding;
+        }
+
+        private InputManager ResolveInputManager()
+        {
+            return _subscribedInput != null
+                ? _subscribedInput
+                : GlobalRegistry.NativeInputManager;
         }
 
         public void Configure(PlayerPDA pda, TextMeshProUGUI statusOutput, int tabIndex)

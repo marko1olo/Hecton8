@@ -57,10 +57,19 @@ namespace Hecton8.UI
         [SerializeField] private GameObject[] configuredTabs = new GameObject[8];
         // COLD ALLOC: List<RaycastResult>(16) — reusable diegetic PDA UI hit cache — owner: DiegeticPDAController
         private readonly List<RaycastResult> _raycastResults = new List<RaycastResult>(16);
+        // COLD ALLOC: List<Renderer>[8] — tablet visual visibility cache — owner: DiegeticPDAController
+        private readonly List<Renderer> _tabletRenderers = new List<Renderer>(8);
+        // COLD ALLOC: List<Collider>[4] — tablet collision visibility cache — owner: DiegeticPDAController
+        private readonly List<Collider> _tabletColliders = new List<Collider>(4);
+        // COLD ALLOC: List<CanvasGroup>[4] — tablet UI visibility cache — owner: DiegeticPDAController
+        private readonly List<CanvasGroup> _tabletCanvasGroups = new List<CanvasGroup>(4);
 
         private bool _registeredToTickManager;
         private bool _uiConfigured;
         private bool _lastOpenState;
+        private bool _tabletVisibilityInitialized;
+        private bool _tabletVisible;
+        private GameObject _cachedTabletRoot;
         private Canvas _panelCanvas;
         private GraphicRaycaster _panelGraphicRaycaster;
         private EventSystem _eventSystem;
@@ -161,7 +170,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()
@@ -260,6 +269,9 @@ namespace Hecton8.UI
             if (tabletScreenRenderer == null && tabletRoot != null)
                 tabletScreenRenderer = tabletRoot.GetComponentInChildren<Renderer>(true);
 
+            if (!ReferenceEquals(_cachedTabletRoot, tabletRoot))
+                RebuildTabletVisibilityCache();
+
 #if UNITY_EDITOR
             if (tabletScreenUnlitShader == null)
                 tabletScreenUnlitShader = UnityEditor.AssetDatabase.LoadAssetAtPath<Shader>(TabletScreenShaderPath);
@@ -316,8 +328,8 @@ namespace Hecton8.UI
 
             _lastOpenState = openState;
 
-            if (tabletRoot != null && hideTabletWhenClosed && tabletRoot.activeSelf != openState)
-                tabletRoot.SetActive(openState);
+            if (tabletRoot != null && hideTabletWhenClosed)
+                SetTabletVisible(openState);
 
             if (diegeticPanel != null && diegeticPanel.enabled != openState)
                 diegeticPanel.enabled = openState;
@@ -334,6 +346,56 @@ namespace Hecton8.UI
 
             if (openState && diegeticPanel != null)
                 diegeticPanel.ForceRefreshRenderTexture();
+        }
+
+        private void RebuildTabletVisibilityCache()
+        {
+            _cachedTabletRoot = tabletRoot;
+            _tabletRenderers.Clear();
+            _tabletColliders.Clear();
+            _tabletCanvasGroups.Clear();
+            _tabletVisibilityInitialized = false;
+
+            if (tabletRoot == null)
+                return;
+
+            tabletRoot.GetComponentsInChildren(true, _tabletRenderers);
+            tabletRoot.GetComponentsInChildren(true, _tabletColliders);
+            tabletRoot.GetComponentsInChildren(true, _tabletCanvasGroups);
+        }
+
+        private void SetTabletVisible(bool visible)
+        {
+            if (tabletRoot == null || (_tabletVisibilityInitialized && _tabletVisible == visible))
+                return;
+
+            for (int i = 0; i < _tabletRenderers.Count; i++)
+            {
+                Renderer target = _tabletRenderers[i];
+                if (target != null)
+                    target.enabled = visible;
+            }
+
+            for (int i = 0; i < _tabletColliders.Count; i++)
+            {
+                Collider target = _tabletColliders[i];
+                if (target != null)
+                    target.enabled = visible;
+            }
+
+            for (int i = 0; i < _tabletCanvasGroups.Count; i++)
+            {
+                CanvasGroup target = _tabletCanvasGroups[i];
+                if (target == null)
+                    continue;
+
+                target.alpha = visible ? 1f : 0f;
+                target.interactable = visible;
+                target.blocksRaycasts = visible;
+            }
+
+            _tabletVisible = visible;
+            _tabletVisibilityInitialized = true;
         }
 
         private bool EnsureUiInteractionState()

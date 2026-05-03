@@ -112,7 +112,11 @@ namespace Hecton8.Environment
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnWeatherEvent(in payload);
+                    {
+                        IWeatherEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnWeatherEvent(in payload);
+                    }
                 }
                 finally
                 {

@@ -275,6 +275,11 @@ namespace Hecton8.UI
         private PanelData _panelData;
         private RectTransform _resolvedPanelRect;
         private Transform _resolvedPanelTransform;
+        private Transform _cachedCursorTransform;
+        private CanvasGroup _cursorCanvasGroup;
+        private Graphic _cursorGraphic;
+        private Renderer _cursorRenderer;
+        private Collider _cursorCollider;
         private Camera _resolvedInteractionCamera;
         private GraphicRaycaster _cachedGraphicRaycaster;
         private Canvas _cachedGraphicRaycasterCanvas;
@@ -298,6 +303,7 @@ namespace Hecton8.UI
         private bool _renderPipelineHookRegistered;
         private bool _wasPressedLastFrame;
         private bool _cursorVisible;
+        private bool _cursorVisibilityInitialized;
         private bool _cursorStateInitialized;
         private bool _matrixStateInitialized;
         private bool _canvasSettingsApplied;
@@ -609,6 +615,9 @@ namespace Hecton8.UI
             _resolvedPanelRect = panelRect;
             _resolvedPanelTransform = _resolvedPanelRect != null ? _resolvedPanelRect.transform : transform;
 
+            if (!ReferenceEquals(_cachedCursorTransform, cursorTransform))
+                ResolveCursorVisibilityTargets();
+
             if (resolveGraphicRaycaster &&
                 targetCanvas != null &&
                 !ReferenceEquals(_cachedGraphicRaycasterCanvas, targetCanvas))
@@ -616,6 +625,33 @@ namespace Hecton8.UI
                 targetCanvas.TryGetComponent(out _cachedGraphicRaycaster);
                 _cachedGraphicRaycasterCanvas = targetCanvas;
             }
+        }
+
+        private void ResolveCursorVisibilityTargets()
+        {
+            _cachedCursorTransform = cursorTransform;
+            _cursorCanvasGroup = null;
+            _cursorGraphic = null;
+            _cursorRenderer = null;
+            _cursorCollider = null;
+            _cursorVisibilityInitialized = false;
+
+            if (cursorTransform == null)
+                return;
+
+            cursorTransform.TryGetComponent(out _cursorCanvasGroup);
+            cursorTransform.TryGetComponent(out _cursorGraphic);
+            cursorTransform.TryGetComponent(out _cursorRenderer);
+            cursorTransform.TryGetComponent(out _cursorCollider);
+
+            if (_cursorGraphic == null)
+                _cursorGraphic = cursorTransform.GetComponentInChildren<Graphic>(true);
+
+            if (_cursorRenderer == null)
+                _cursorRenderer = cursorTransform.GetComponentInChildren<Renderer>(true);
+
+            if (_cursorCollider == null)
+                _cursorCollider = cursorTransform.GetComponentInChildren<Collider>(true);
         }
 
         private void ResolveInterfaces()
@@ -1257,11 +1293,27 @@ namespace Hecton8.UI
 
         private void SetCursorVisible(bool visible)
         {
-            if (cursorTransform == null || _cursorVisible == visible)
+            if (cursorTransform == null || (_cursorVisibilityInitialized && _cursorVisible == visible))
                 return;
 
-            cursorTransform.gameObject.SetActive(visible);
+            if (_cursorCanvasGroup != null)
+            {
+                _cursorCanvasGroup.alpha = visible ? 1f : 0f;
+                _cursorCanvasGroup.blocksRaycasts = false;
+                _cursorCanvasGroup.interactable = false;
+            }
+
+            if (_cursorGraphic != null)
+                _cursorGraphic.enabled = visible;
+
+            if (_cursorRenderer != null)
+                _cursorRenderer.enabled = visible;
+
+            if (_cursorCollider != null)
+                _cursorCollider.enabled = visible;
+
             _cursorVisible = visible;
+            _cursorVisibilityInitialized = true;
         }
 
         private void TryRegisterTick()
@@ -1276,7 +1328,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
             TryRegisterLateFrameTick();
         }
 
@@ -1286,7 +1338,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _lateFrameRegistered = true;
+            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
         }
 
         private void UnregisterTick()

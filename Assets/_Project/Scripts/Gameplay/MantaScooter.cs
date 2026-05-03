@@ -1716,7 +1716,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredTick = true;
+            _registeredTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTick()

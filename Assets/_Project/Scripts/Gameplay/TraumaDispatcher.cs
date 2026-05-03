@@ -385,7 +385,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryRegisterLateFrame()
@@ -394,7 +394,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _lateFrameRegistered = true;
+            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
         }
 
         private void TryUnregister()

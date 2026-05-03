@@ -297,7 +297,7 @@ namespace Hecton8.AI
             if (!_dispatcherRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _dispatcherRegistered = true;
+                _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this);
             }
 
             RegisterSpatialHandle();

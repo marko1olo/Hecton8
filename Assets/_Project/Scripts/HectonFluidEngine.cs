@@ -39,6 +39,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.Bootstrap;
+using Hecton8.Celestial;
 using Hecton8.Environment;
 using Hecton8.World;
 using Unity.Burst;
@@ -68,8 +69,11 @@ namespace Hecton8.Physics
         private const int MaxCavitationBurstEvents = 8;
         private const int CavitationShockwaveHitCapacity = 64;
         private const float AbyssalBiolumeSurgeHoldSeconds = 4f;
+        private const float GiantWakeDirectionEpsilonSq = 0.0001f;
         private const string NonFiniteBuoyancyForceLog = "[HectonFluidEngine] Non-finite buoyancy force output detected. Zeroing packet.";
         private const string NonFiniteBuoyancyTorqueLog = "[HectonFluidEngine] Non-finite buoyancy torque output detected. Zeroing packet.";
+        private const string NativeMemoryOwner = nameof(HectonFluidEngine);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         [StructLayout(LayoutKind.Sequential)]
         private struct GpuBuoyancyObjectData
@@ -194,6 +198,18 @@ namespace Hecton8.Physics
         [SerializeField, Range(0f, 1f)] private float currentVerticalFactor = 0.18f;
         [SerializeField] private float phantomCurrentStrength = 0.9f;
 
+        [Header("-- Giant's Wake -----------------------")]
+        [Tooltip("Adds a subtle abyssal current bias from the parent gas giant sky direction.")]
+        [SerializeField] private bool enableGiantWakeCurrent = true;
+        [Tooltip("Meters-per-second current bias applied when deep enough below the water surface.")]
+        [SerializeField, Min(0f)] private float giantWakeCurrentStrength = 0.18f;
+        [Tooltip("Vertical component mixed into the horizontal planet-facing wake direction.")]
+        [SerializeField, Range(-1f, 1f)] private float giantWakeVerticalBias = -0.04f;
+        [Tooltip("Depth below water surface where the wake starts contributing.")]
+        [SerializeField, Min(0f)] private float giantWakeDepthFadeStart = 120f;
+        [Tooltip("Depth span used to fade the wake from zero to full strength.")]
+        [SerializeField, Min(1f)] private float giantWakeDepthFadeRange = 480f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PERFORMANCE
         // ══════════════════════════════════════════════════════════
@@ -224,6 +240,8 @@ namespace Hecton8.Physics
         [SerializeField] private float gizmoCurrentVectorScale = 4f;
         [SerializeField] private uint _debugAbyssalAggregateMask;
         [SerializeField] private int _debugAbyssalHeatSourceCount;
+        [SerializeField] private Vector3 _debugGiantWakeCurrent;
+        private float3 _resolvedGiantWakeCurrent;
 
         [Header("â”€â”€ GPU Buoyancy Offload â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [SerializeField] private bool enableGpuBuoyancySampling = true;
@@ -347,6 +365,8 @@ namespace Hecton8.Physics
 
         /// <summary>Количество зарегистрированных объектов.</summary>
         public int ObjectCount => _objects.Count;
+
+        public Vector3 GiantWakeCurrent => _debugGiantWakeCurrent;
 
         /// <summary>
         /// Queues one thruster cavitation burst for post-fixed particle emission and shockwave force routing.
@@ -518,7 +538,7 @@ namespace Hecton8.Physics
             if (Application.isPlaying && !_fluidRuntimeRegistered)
             {
                 GlobalRegistry.RegisterFluidRuntime(this);
-                _fluidRuntimeRegistered = true;
+                _fluidRuntimeRegistered = ReferenceEquals(GlobalRegistry.Fluid, this);
             }
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -527,13 +547,13 @@ namespace Hecton8.Physics
             if (!_fixedTickRegistered)
             {
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-                _fixedTickRegistered = true;
+                _fixedTickRegistered = GlobalRegistry.FixedTickables.Contains(this);
             }
 
             if (!_postFixedRegistered)
             {
                 GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
-                _postFixedRegistered = true;
+                _postFixedRegistered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
             }
         }
 
@@ -629,7 +649,8 @@ namespace Hecton8.Physics
             Vector3 authoredCurrent = CurrentVolume.SampleCombinedCurrent(runtimePosition);
             float3 weatherCurrent = weatherSnapshot.CurrentMeta.GlobalBaseVector * math.max(0f, weatherSnapshot.CurrentMeta.GlobalScale);
             float3 configuredCurrent = new float3(currentVector.x, currentVector.y, currentVector.z) * math.max(0f, currentStrength);
-            flowVector = configuredCurrent + weatherCurrent + new float3(authoredCurrent.x, authoredCurrent.y, authoredCurrent.z);
+            float3 giantWakeCurrent = ResolveGiantWakeCurrentForDepth(query.y);
+            flowVector = configuredCurrent + weatherCurrent + giantWakeCurrent + new float3(authoredCurrent.x, authoredCurrent.y, authoredCurrent.z);
             if (!math.all(math.isfinite(flowVector)))
             {
                 flowVector = default;
@@ -744,6 +765,8 @@ namespace Hecton8.Physics
                 _scheduledBodies[i] = _bodies[i];
 
             WeatherRuntimeSnapshot weatherSnapshot = ResolveWeatherSnapshot();
+            _resolvedGiantWakeCurrent = ResolveGiantWakeCurrentBase();
+            _debugGiantWakeCurrent = new Vector3(_resolvedGiantWakeCurrent.x, _resolvedGiantWakeCurrent.y, _resolvedGiantWakeCurrent.z);
             ConsumeGpuAbyssalFlowReadbacks();
             ConsumeGpuBuoyancyReadbacks();
             TryDispatchGpuAbyssalFlowField(weatherSnapshot);
@@ -790,6 +813,9 @@ namespace Hecton8.Physics
                     currentVector.x * currentStrength,
                     currentVector.y * currentStrength,
                     currentVector.z * currentStrength),
+                giantWakeCurrent = _resolvedGiantWakeCurrent,
+                giantWakeDepthFadeStart = giantWakeDepthFadeStart,
+                giantWakeDepthFadeRange = giantWakeDepthFadeRange,
                 time             = Time.unscaledTime,
                 weatherStateMask = (uint)weatherSnapshot.StateMask,
                 weatherCurrentDirection = weatherSnapshot.CurrentMeta.GlobalBaseVector,
@@ -1281,6 +1307,7 @@ namespace Hecton8.Physics
                                  NativeArrayOptions.ClearMemory);
             _gpuAbyssalHeatSourceUpload = new NativeArray<GpuHeatSourceData>(MaxAbyssalHeatSourceCount, Allocator.Persistent,
                                  NativeArrayOptions.ClearMemory);
+            RegisterNativeMemorySentinel();
             _scheduledBodies = new Rigidbody[newCapacity];
             EnsureGpuBuoyancyBuffers(newCapacity);
             EnsureGpuAbyssalFlowBuffers();
@@ -1318,12 +1345,29 @@ namespace Hecton8.Physics
             _nativeCapacity = 0;
         }
 
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_positions, NativeMemoryOwner, nameof(_positions), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_velocities, NativeMemoryOwner, nameof(_velocities), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_angularVelocities, NativeMemoryOwner, nameof(_angularVelocities), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_upVectors, NativeMemoryOwner, nameof(_upVectors), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_params, NativeMemoryOwner, nameof(_params), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_waveOffsets, NativeMemoryOwner, nameof(_waveOffsets), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_gpuBuoyancyForcesY, NativeMemoryOwner, nameof(_gpuBuoyancyForcesY), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_resultForces, NativeMemoryOwner, nameof(_resultForces), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_resultTorques, NativeMemoryOwner, nameof(_resultTorques), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_gpuBuoyancyObjectDataUpload, NativeMemoryOwner, nameof(_gpuBuoyancyObjectDataUpload), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_gpuBuoyancyReadback, NativeMemoryOwner, nameof(_gpuBuoyancyReadback), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_gpuAbyssalHeatSourceUpload, NativeMemoryOwner, nameof(_gpuAbyssalHeatSourceUpload), NativeMemoryLifetime);
+        }
+
         private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             if (dependency.IsCompleted)
                 array.Dispose();
             else
@@ -1528,10 +1572,13 @@ namespace Hecton8.Physics
             abyssalFlowFieldCompute.SetBuffer(_gpuAbyssalSurgeKernel, _AbyssalAggregateMaskId, _gpuAbyssalAggregateBuffer);
 
             Vector3 centerManaged = new Vector3(flowCenter.x, flowCenter.y, flowCenter.z);
+            float3 resolvedWeatherCurrent =
+                weatherSnapshot.CurrentMeta.GlobalBaseVector * weatherSnapshot.CurrentMeta.GlobalScale +
+                ResolveGiantWakeCurrentForDepth(flowCenter.y);
             Vector3 weatherCurrentManaged = new Vector3(
-                weatherSnapshot.CurrentMeta.GlobalBaseVector.x * weatherSnapshot.CurrentMeta.GlobalScale,
-                weatherSnapshot.CurrentMeta.GlobalBaseVector.y * weatherSnapshot.CurrentMeta.GlobalScale,
-                weatherSnapshot.CurrentMeta.GlobalBaseVector.z * weatherSnapshot.CurrentMeta.GlobalScale);
+                resolvedWeatherCurrent.x,
+                resolvedWeatherCurrent.y,
+                resolvedWeatherCurrent.z);
             Vector3 weatherWindManaged = new Vector3(
                 weatherSnapshot.GlobalWindVector.x,
                 weatherSnapshot.GlobalWindVector.y,
@@ -1626,6 +1673,40 @@ namespace Hecton8.Physics
                 observerPosition.x,
                 math.min(observerPosition.y, waterLevel - 32f),
                 observerPosition.z);
+        }
+
+        private float3 ResolveGiantWakeCurrentBase()
+        {
+            if (!enableGiantWakeCurrent || giantWakeCurrentStrength <= 0f)
+                return float3.zero;
+
+            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            if (celestialEngine == null || !celestialEngine.TryGetAegirSkyDirection(out Vector3 directionManaged))
+                return float3.zero;
+
+            float3 skyDirection = new float3(directionManaged.x, directionManaged.y, directionManaged.z);
+            float3 horizontalDirection = new float3(skyDirection.x, 0f, skyDirection.z);
+            float horizontalLengthSq = math.lengthsq(horizontalDirection);
+            if (horizontalLengthSq <= GiantWakeDirectionEpsilonSq)
+                return float3.zero;
+
+            float3 wakeDirection = horizontalDirection * math.rsqrt(horizontalLengthSq);
+            wakeDirection.y = giantWakeVerticalBias;
+            wakeDirection = math.normalizesafe(wakeDirection, new float3(1f, 0f, 0f));
+            return wakeDirection * math.max(0f, giantWakeCurrentStrength);
+        }
+
+        private float3 ResolveGiantWakeCurrentForDepth(float sampleY)
+        {
+            float3 wakeCurrent = _resolvedGiantWakeCurrent;
+            if (math.lengthsq(wakeCurrent) <= GiantWakeDirectionEpsilonSq)
+                wakeCurrent = ResolveGiantWakeCurrentBase();
+
+            float depthBelowSurface = math.max(0f, waterLevel - sampleY);
+            float fadeStart = math.max(0f, giantWakeDepthFadeStart);
+            float fadeRange = math.max(0.001f, giantWakeDepthFadeRange);
+            float depthFade = math.saturate((depthBelowSurface - fadeStart) / fadeRange);
+            return wakeCurrent * depthFade;
         }
 
         private int GetAbyssalFlowNodeCount()
@@ -1808,6 +1889,10 @@ namespace Hecton8.Physics
             if (currentNoiseScale < 0.0001f) currentNoiseScale = 0.0001f;
             if (currentTimeScale < 0f) currentTimeScale = 0f;
             if (phantomCurrentStrength < 0f) phantomCurrentStrength = 0f;
+            if (giantWakeCurrentStrength < 0f) giantWakeCurrentStrength = 0f;
+            giantWakeVerticalBias = Mathf.Clamp(giantWakeVerticalBias, -1f, 1f);
+            if (giantWakeDepthFadeStart < 0f) giantWakeDepthFadeStart = 0f;
+            if (giantWakeDepthFadeRange < 1f) giantWakeDepthFadeRange = 1f;
             if (nearLodDistance < 1f) nearLodDistance = 1f;
             if (mediumLodDistance < nearLodDistance) mediumLodDistance = nearLodDistance;
             if (farLodDistance < mediumLodDistance) farLodDistance = mediumLodDistance;
@@ -2053,6 +2138,9 @@ namespace Hecton8.Physics
         public float  angularDragCoeff;
         public float  gravity;
         public float3 baseCurrentForce;
+        public float3 giantWakeCurrent;
+        public float  giantWakeDepthFadeStart;
+        public float  giantWakeDepthFadeRange;
         public float  time;
         public uint   weatherStateMask;
         public float3 weatherCurrentDirection;
@@ -2145,6 +2233,11 @@ namespace Hecton8.Physics
             //  3. ПОДВОДНОЕ ТЕЧЕНИЕ (Current)
             // ══════════════════════════════════════════════
             float3 sampledCurrent = baseCurrentForce + p.localCurrent;
+            float giantWakeDepth01 = math.saturate(
+                (depthBelowSurface - math.max(0f, giantWakeDepthFadeStart)) /
+                math.max(0.001f, giantWakeDepthFadeRange));
+            sampledCurrent += giantWakeCurrent * giantWakeDepth01;
+
             if (enablePhantomCurrent != 0 && p.currentResponse > 0.0001f)
             {
                 sampledCurrent += CurrentManager.SampleCurrent(

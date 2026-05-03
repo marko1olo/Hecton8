@@ -1,6 +1,7 @@
 using UnityEngine;
 using TMPro;
 using Hecton8.Core;
+using System;
 
 namespace Hecton8.UI
 {
@@ -39,17 +40,19 @@ namespace Hecton8.UI
         private int _lastRenderedPendingGraphicsPreset = -1;
         private float _cachedCurrentFPS;
         private float _cachedEstimatedFPS;
-        private string _cachedImpactText = string.Empty;
+        private int _cachedImpactDelta = int.MinValue;
 
-        // COLD ALLOC: StringBuilder[128] â€” FPS text assembly â€” owner: SettingsComparisonView
-        private readonly System.Text.StringBuilder _fpsBuilder = new System.Text.StringBuilder(128);
+        private readonly char[] _currentFpsText = new char[16]; // COLD ALLOC: char[16] - current FPS TMP buffer - owner: SettingsComparisonView
+        private readonly char[] _estimatedFpsText = new char[16]; // COLD ALLOC: char[16] - estimated FPS TMP buffer - owner: SettingsComparisonView
+        private readonly char[] _impactText = new char[32]; // COLD ALLOC: char[32] - FPS impact TMP buffer - owner: SettingsComparisonView
 
         // FPS estimates per quality level (Low/Medium/High/Ultra)
         private static readonly float[] FPSEstimates = { 60f, 50f, 40f, 30f };
 
-        private const string NoChangeText = "No change";
-        private const string BetterSuffix = " FPS (Better)";
-        private const string WorseSuffix = " FPS (Worse)";
+        private static readonly char[] FpsSuffix = { ' ', 'F', 'P', 'S' };
+        private static readonly char[] NoChangeText = { 'N', 'o', ' ', 'c', 'h', 'a', 'n', 'g', 'e' };
+        private static readonly char[] BetterSuffix = { ' ', 'F', 'P', 'S', ' ', '(', 'B', 'e', 't', 't', 'e', 'r', ')' };
+        private static readonly char[] WorseSuffix = { ' ', 'F', 'P', 'S', ' ', '(', 'W', 'o', 'r', 's', 'e', ')' };
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // LIFECYCLE
@@ -57,7 +60,11 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            _settings = SettingsManager.Instance;
+            _settings = GlobalRegistry.Settings;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (_settings == null)
+                Debug.LogWarning("[SettingsComparisonView] Settings runtime is not registered. Comparison panel disabled.");
+#endif
             TryRegister();
             RefreshComparison();
         }
@@ -157,10 +164,8 @@ namespace Hecton8.UI
                 _cachedCurrentFPS = currentFPS;
                 if (txtCurrentFPS != null)
                 {
-                    _fpsBuilder.Clear();
-                    _fpsBuilder.Append(Mathf.RoundToInt(currentFPS));
-                    _fpsBuilder.Append(" FPS");
-                    txtCurrentFPS.SetText(_fpsBuilder);
+                    int length = WriteFpsText(Mathf.RoundToInt(currentFPS), _currentFpsText);
+                    txtCurrentFPS.SetCharArray(_currentFpsText, 0, length);
                 }
             }
 
@@ -169,20 +174,21 @@ namespace Hecton8.UI
                 _cachedEstimatedFPS = estimatedFPS;
                 if (txtEstimatedFPS != null)
                 {
-                    _fpsBuilder.Clear();
-                    _fpsBuilder.Append(Mathf.RoundToInt(estimatedFPS));
-                    _fpsBuilder.Append(" FPS");
-                    txtEstimatedFPS.SetText(_fpsBuilder);
+                    int length = WriteFpsText(Mathf.RoundToInt(estimatedFPS), _estimatedFpsText);
+                    txtEstimatedFPS.SetCharArray(_estimatedFpsText, 0, length);
                 }
             }
 
             // Calculate impact
-            string impactText = CalculateImpactText(currentFPS, estimatedFPS);
-            if (_cachedImpactText != impactText)
+            int impactDelta = CalculateImpactDelta(currentFPS, estimatedFPS);
+            if (_cachedImpactDelta != impactDelta)
             {
-                _cachedImpactText = impactText;
+                _cachedImpactDelta = impactDelta;
                 if (txtPerformanceImpact != null)
-                    txtPerformanceImpact.SetText(impactText);
+                {
+                    int length = WriteImpactText(impactDelta, _impactText);
+                    txtPerformanceImpact.SetCharArray(_impactText, 0, length);
+                }
             }
         }
 
@@ -194,26 +200,58 @@ namespace Hecton8.UI
             return FPSEstimates[qualityLevel];
         }
 
-        private string CalculateImpactText(float currentFPS, float estimatedFPS)
+        private static int CalculateImpactDelta(float currentFPS, float estimatedFPS)
         {
             float delta = estimatedFPS - currentFPS;
             if (Mathf.Abs(delta) < 1f)
-                return NoChangeText;
+                return 0;
 
-            _fpsBuilder.Clear();
-            if (delta > 0f)
-            {
-                _fpsBuilder.Append('+');
-                _fpsBuilder.Append(Mathf.RoundToInt(delta));
-                _fpsBuilder.Append(BetterSuffix);
-            }
-            else
-            {
-                _fpsBuilder.Append(Mathf.RoundToInt(delta));
-                _fpsBuilder.Append(WorseSuffix);
-            }
+            return Mathf.RoundToInt(delta);
+        }
 
-            return _fpsBuilder.ToString();
+        private static int WriteFpsText(int fps, char[] buffer)
+        {
+            int cursor = 0;
+            if (!fps.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int written))
+                return 0;
+
+            cursor += written;
+            return AppendChars(FpsSuffix, buffer, cursor);
+        }
+
+        private static int WriteImpactText(int delta, char[] buffer)
+        {
+            if (delta == 0)
+                return CopyChars(NoChangeText, buffer);
+
+            int cursor = 0;
+            if (delta > 0)
+                buffer[cursor++] = '+';
+
+            if (!delta.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int written))
+                return 0;
+
+            cursor += written;
+            return AppendChars(delta > 0 ? BetterSuffix : WorseSuffix, buffer, cursor);
+        }
+
+        private static int CopyChars(char[] source, char[] destination)
+        {
+            int length = source.Length <= destination.Length ? source.Length : destination.Length;
+            for (int i = 0; i < length; i++)
+                destination[i] = source[i];
+
+            return length;
+        }
+
+        private static int AppendChars(char[] source, char[] destination, int offset)
+        {
+            int available = destination.Length - offset;
+            int length = source.Length <= available ? source.Length : available;
+            for (int i = 0; i < length; i++)
+                destination[offset + i] = source[i];
+
+            return offset + length;
         }
 
         private void TryRegister()
@@ -225,7 +263,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void Unregister()

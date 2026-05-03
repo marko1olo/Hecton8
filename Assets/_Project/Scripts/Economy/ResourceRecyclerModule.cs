@@ -246,7 +246,7 @@ namespace Hecton8.Economy
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

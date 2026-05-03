@@ -48,7 +48,7 @@ namespace Hecton8.Tests.PlayMode
                 Assert.Inconclusive($"Save operation failed: {saveManager.LastOperationError}");
             }
 
-            LogAssertion.NoUnexpectedReceived();
+            LogAssert.NoUnexpectedReceived();
         }
 
         [UnityTest]
@@ -76,7 +76,7 @@ namespace Hecton8.Tests.PlayMode
                 Assert.Inconclusive($"Load operation failed: {saveManager.LastOperationError}");
             }
 
-            LogAssertion.NoUnexpectedReceived();
+            LogAssert.NoUnexpectedReceived();
         }
 
         [UnityTest]
@@ -98,7 +98,7 @@ namespace Hecton8.Tests.PlayMode
             Assert.IsNotNull(metadata, "Metadata should not be null");
             Assert.AreEqual(TestSlot, metadata.SlotName, "Metadata slot name should match");
 
-            LogAssertion.NoUnexpectedReceived();
+            LogAssert.NoUnexpectedReceived();
         }
 
         [UnityTest]
@@ -120,7 +120,7 @@ namespace Hecton8.Tests.PlayMode
             // Verify deleted
             Assert.IsFalse(saveManager.SaveExists(TestSlot), "Save should not exist after delete");
 
-            LogAssertion.NoUnexpectedReceived();
+            LogAssert.NoUnexpectedReceived();
         }
 
         [UnityTest]
@@ -144,7 +144,7 @@ namespace Hecton8.Tests.PlayMode
             Assert.IsFalse(saveManager.LastOperationSucceeded, "Load should fail for non-existent save");
             Assert.IsNotEmpty(saveManager.LastOperationError, "Should have error message");
 
-            LogAssertion.NoUnexpectedReceived();
+            LogAssert.NoUnexpectedReceived();
         }
     }
 }

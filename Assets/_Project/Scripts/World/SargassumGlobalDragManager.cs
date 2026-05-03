@@ -235,13 +235,20 @@ namespace Hecton8.World
         private static SargassumGlobalDragManager _instance;
         private static readonly RegistryBucket<ISargassumGlobalDragEventListener> _listeners = new RegistryBucket<ISargassumGlobalDragEventListener>(16);
         private static NativeQueue<EntanglementStrainSignal> _pendingEntanglementStrain;
+        private static NativeQueue<EntanglementStrainSignal> _nextFrameEntanglementStrain;
         private static NativeQueue<MassiveDisplacementSignal> _pendingMassiveDisplacement;
+        private static NativeQueue<MassiveDisplacementSignal> _nextFrameMassiveDisplacement;
         private static int _pendingEntanglementStrainCount;
+        private static int _nextFrameEntanglementStrainCount;
         private static int _pendingMassiveDisplacementCount;
+        private static int _nextFrameMassiveDisplacementCount;
+        private static bool _isDispatchingEvents;
 
         public static int PendingEventCount =>
-            (_pendingEntanglementStrain.IsCreated ? _pendingEntanglementStrainCount : 0) +
-            (_pendingMassiveDisplacement.IsCreated ? _pendingMassiveDisplacementCount : 0);
+            _pendingEntanglementStrainCount +
+            _nextFrameEntanglementStrainCount +
+            _pendingMassiveDisplacementCount +
+            _nextFrameMassiveDisplacementCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -254,6 +261,13 @@ namespace Hecton8.World
                 _pendingEntanglementStrain = default;
             }
 
+            if (_nextFrameEntanglementStrain.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_nextFrameEntanglementStrain));
+                _nextFrameEntanglementStrain.Dispose();
+                _nextFrameEntanglementStrain = default;
+            }
+
             if (_pendingMassiveDisplacement.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_pendingMassiveDisplacement));
@@ -261,8 +275,18 @@ namespace Hecton8.World
                 _pendingMassiveDisplacement = default;
             }
 
+            if (_nextFrameMassiveDisplacement.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_nextFrameMassiveDisplacement));
+                _nextFrameMassiveDisplacement.Dispose();
+                _nextFrameMassiveDisplacement = default;
+            }
+
             _pendingEntanglementStrainCount = 0;
+            _nextFrameEntanglementStrainCount = 0;
             _pendingMassiveDisplacementCount = 0;
+            _nextFrameMassiveDisplacementCount = 0;
+            _isDispatchingEvents = false;
             _listeners.Clear();
         }
 
@@ -754,12 +778,21 @@ namespace Hecton8.World
         /// </summary>
         public static void RaiseEntanglementStrain(EntanglementStrainSignal signal)
         {
-            if (_listeners.Count <= 0 || _pendingEntanglementStrainCount >= EntanglementStrainEventCapacity)
+            if (_listeners.Count <= 0 ||
+                _pendingEntanglementStrainCount + _nextFrameEntanglementStrainCount >= EntanglementStrainEventCapacity)
                 return;
 
             EnsureEventQueues();
-            _pendingEntanglementStrain.Enqueue(signal);
-            _pendingEntanglementStrainCount++;
+            if (_isDispatchingEvents)
+            {
+                _nextFrameEntanglementStrain.Enqueue(signal);
+                _nextFrameEntanglementStrainCount++;
+            }
+            else
+            {
+                _pendingEntanglementStrain.Enqueue(signal);
+                _pendingEntanglementStrainCount++;
+            }
         }
 
         /// <summary>
@@ -768,67 +801,45 @@ namespace Hecton8.World
         /// <param name="signal">Displacement payload.</param>
         public static void RaiseMassiveDisplacement(MassiveDisplacementSignal signal)
         {
-            if (_listeners.Count <= 0 || _pendingMassiveDisplacementCount >= MassiveDisplacementEventCapacity)
+            if (_listeners.Count <= 0 ||
+                _pendingMassiveDisplacementCount + _nextFrameMassiveDisplacementCount >= MassiveDisplacementEventCapacity)
                 return;
 
             EnsureEventQueues();
-            _pendingMassiveDisplacement.Enqueue(signal);
-            _pendingMassiveDisplacementCount++;
+            if (_isDispatchingEvents)
+            {
+                _nextFrameMassiveDisplacement.Enqueue(signal);
+                _nextFrameMassiveDisplacementCount++;
+            }
+            else
+            {
+                _pendingMassiveDisplacement.Enqueue(signal);
+                _pendingMassiveDisplacementCount++;
+            }
         }
 
+        /// <summary>
+        /// Flushes queued sargassum signal payloads through the dispatcher event budget.
+        /// </summary>
         public static void FlushPendingEvents()
         {
-            if (_pendingEntanglementStrain.IsCreated)
+            bool completed = false;
+            _isDispatchingEvents = true;
+            try
             {
-                int scanBudget = _pendingEntanglementStrainCount > 0
-                    ? _pendingEntanglementStrainCount
-                    : EntanglementStrainEventCapacity;
-                while (scanBudget-- > 0 && !_pendingEntanglementStrain.IsEmpty())
-                {
-                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
-
-                    if (!_pendingEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
-                        break;
-
-                    if (_pendingEntanglementStrainCount > 0)
-                        _pendingEntanglementStrainCount--;
-
-                    ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
-                    int count = _listeners.Count;
-                    for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnSargassumEntanglementStrain(in signal);
-                }
-
-                if (_pendingEntanglementStrain.IsEmpty())
-                    _pendingEntanglementStrainCount = 0;
+                completed = FlushEntanglementStrain();
+                if (completed)
+                    completed = FlushMassiveDisplacement();
+            }
+            finally
+            {
+                _isDispatchingEvents = false;
             }
 
-            if (_pendingMassiveDisplacement.IsCreated)
-            {
-                int scanBudget = _pendingMassiveDisplacementCount > 0
-                    ? _pendingMassiveDisplacementCount
-                    : MassiveDisplacementEventCapacity;
-                while (scanBudget-- > 0 && !_pendingMassiveDisplacement.IsEmpty())
-                {
-                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
+            if (!completed || HasPendingFrontEvents())
+                return;
 
-                    if (!_pendingMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
-                        break;
-
-                    if (_pendingMassiveDisplacementCount > 0)
-                        _pendingMassiveDisplacementCount--;
-
-                    ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
-                    int count = _listeners.Count;
-                    for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnSargassumMassiveDisplacement(in signal);
-                }
-
-                if (_pendingMassiveDisplacement.IsEmpty())
-                    _pendingMassiveDisplacementCount = 0;
-            }
+            PromoteNextFrameEvents();
         }
 
         private static void EnsureEventQueues()
@@ -844,6 +855,17 @@ namespace Hecton8.World
                     NativeAllocationLifetime.Session);
             }
 
+            if (!_nextFrameEntanglementStrain.IsCreated)
+            {
+                _nextFrameEntanglementStrain = new NativeQueue<EntanglementStrainSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntanglementStrainSignal>[16] - next-frame sargassum strain lane - owner: SargassumGlobalDragManager
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEntanglementStrain,
+                    EntanglementStrainEventCapacity,
+                    nameof(SargassumGlobalDragManager),
+                    nameof(_nextFrameEntanglementStrain),
+                    NativeAllocationLifetime.Session);
+            }
+
             if (!_pendingMassiveDisplacement.IsCreated)
             {
                 _pendingMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - sargassum displacement event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
@@ -853,6 +875,120 @@ namespace Hecton8.World
                     nameof(SargassumGlobalDragManager),
                     nameof(_pendingMassiveDisplacement),
                     NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameMassiveDisplacement.IsCreated)
+            {
+                _nextFrameMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - next-frame sargassum displacement lane - owner: SargassumGlobalDragManager
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameMassiveDisplacement,
+                    MassiveDisplacementEventCapacity,
+                    nameof(SargassumGlobalDragManager),
+                    nameof(_nextFrameMassiveDisplacement),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static bool FlushEntanglementStrain()
+        {
+            if (!_pendingEntanglementStrain.IsCreated)
+                return true;
+
+            int scanBudget = _pendingEntanglementStrainCount > 0
+                ? _pendingEntanglementStrainCount
+                : EntanglementStrainEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEntanglementStrain.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
+                    return true;
+
+                if (_pendingEntanglementStrainCount > 0)
+                    _pendingEntanglementStrainCount--;
+
+                ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    ISargassumGlobalDragEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnSargassumEntanglementStrain(in signal);
+                }
+            }
+
+            if (_pendingEntanglementStrain.IsEmpty())
+                _pendingEntanglementStrainCount = 0;
+
+            return true;
+        }
+
+        private static bool FlushMassiveDisplacement()
+        {
+            if (!_pendingMassiveDisplacement.IsCreated)
+                return true;
+
+            int scanBudget = _pendingMassiveDisplacementCount > 0
+                ? _pendingMassiveDisplacementCount
+                : MassiveDisplacementEventCapacity;
+            while (scanBudget-- > 0 && !_pendingMassiveDisplacement.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
+                    return true;
+
+                if (_pendingMassiveDisplacementCount > 0)
+                    _pendingMassiveDisplacementCount--;
+
+                ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    ISargassumGlobalDragEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnSargassumMassiveDisplacement(in signal);
+                }
+            }
+
+            if (_pendingMassiveDisplacement.IsEmpty())
+                _pendingMassiveDisplacementCount = 0;
+
+            return true;
+        }
+
+        private static bool HasPendingFrontEvents()
+        {
+            return (_pendingEntanglementStrain.IsCreated && !_pendingEntanglementStrain.IsEmpty())
+                || (_pendingMassiveDisplacement.IsCreated && !_pendingMassiveDisplacement.IsEmpty());
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            if (_nextFrameEntanglementStrain.IsCreated)
+            {
+                while (_nextFrameEntanglementStrainCount > 0 && _nextFrameEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
+                {
+                    _nextFrameEntanglementStrainCount--;
+                    _pendingEntanglementStrain.Enqueue(signal);
+                    _pendingEntanglementStrainCount++;
+                }
+            }
+
+            if (_nextFrameMassiveDisplacement.IsCreated)
+            {
+                while (_nextFrameMassiveDisplacementCount > 0 && _nextFrameMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
+                {
+                    _nextFrameMassiveDisplacementCount--;
+                    _pendingMassiveDisplacement.Enqueue(signal);
+                    _pendingMassiveDisplacementCount++;
+                }
             }
         }
 

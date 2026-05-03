@@ -49,6 +49,8 @@ namespace Hecton8.Caves
         private const byte DeltaShapeBox = 1;
         private const byte DeltaShapeCapsule = 2;
         private const int NativeSnapshotMagic = unchecked((int)0x48584432);
+        private const string NativeMemoryOwner = nameof(VoxelDeltaProcessor);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly ProfilerMarker _carveScheduleProfilerMarker = new ProfilerMarker("H8.VoxelDelta.ScheduleCarve");
         private static readonly ProfilerMarker _carveCommitProfilerMarker = new ProfilerMarker("H8.VoxelDelta.CommitCarve");
 
@@ -100,13 +102,13 @@ namespace Hecton8.Caves
             if (!_dispatcherRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _dispatcherRegistered = true;
+                _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_lateFrameRegistered)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = true;
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
 
             TryRegisterSaveService();
@@ -1057,8 +1059,7 @@ namespace Hecton8.Caves
 
                     if (_scheduledCarveWrites.IsCreated)
                     {
-                        _scheduledCarveWrites.Dispose();
-                        _scheduledCarveWrites = default;
+                        DisposeTrackedNativeArray(ref _scheduledCarveWrites);
                     }
                 }
             }
@@ -1432,13 +1433,11 @@ namespace Hecton8.Caves
                 return;
 
             if (_scheduledCarveWrites.IsCreated)
-            {
-                _scheduledCarveWrites.Dispose();
-                _scheduledCarveWrites = default;
-            }
+                DisposeTrackedNativeArray(ref _scheduledCarveWrites);
 
             // COLD ALLOC: NativeArray<CarveCellWrite>[requiredCount] â€” staged carve-write buffer for deferred voxel SDF mutation commits â€” owner: VoxelDeltaProcessor
             _scheduledCarveWrites = new NativeArray<CarveCellWrite>(requiredCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterTrackedNativeArray(_scheduledCarveWrites, nameof(_scheduledCarveWrites));
         }
 
         private void DisposeScheduledCarveBuffers()
@@ -1447,11 +1446,9 @@ namespace Hecton8.Caves
             if (_scheduledCarveWrites.IsCreated)
             {
                 if (_scheduledCarveRunning)
-                    _scheduledCarveWrites.Dispose(dependency);
+                    DisposeTrackedNativeArray(ref _scheduledCarveWrites, dependency);
                 else
-                    _scheduledCarveWrites.Dispose();
-
-                _scheduledCarveWrites = default;
+                    DisposeTrackedNativeArray(ref _scheduledCarveWrites);
             }
 
             _scheduledCarveHandle = default;
@@ -1466,6 +1463,34 @@ namespace Hecton8.Caves
                 enumerator.Current.Value.Dispose();
 
             _chunkStates.Clear();
+        }
+
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose(dependency);
+            array = default;
         }
 
         private static void RemoveVolume(List<HectonVoxelVolume> list, HectonVoxelVolume volume)
@@ -1710,21 +1735,18 @@ namespace Hecton8.Caves
                 SdfValueBits = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 MaterialIds = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 CellFlags = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(DirtyMaskWords, nameof(DirtyMaskWords));
+                RegisterTrackedNativeArray(SdfValueBits, nameof(SdfValueBits));
+                RegisterTrackedNativeArray(MaterialIds, nameof(MaterialIds));
+                RegisterTrackedNativeArray(CellFlags, nameof(CellFlags));
             }
 
             public void Dispose()
             {
-                if (DirtyMaskWords.IsCreated)
-                    DirtyMaskWords.Dispose();
-
-                if (SdfValueBits.IsCreated)
-                    SdfValueBits.Dispose();
-
-                if (MaterialIds.IsCreated)
-                    MaterialIds.Dispose();
-
-                if (CellFlags.IsCreated)
-                    CellFlags.Dispose();
+                DisposeTrackedNativeArray(ref DirtyMaskWords);
+                DisposeTrackedNativeArray(ref SdfValueBits);
+                DisposeTrackedNativeArray(ref MaterialIds);
+                DisposeTrackedNativeArray(ref CellFlags);
             }
         }
     }

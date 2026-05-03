@@ -182,7 +182,11 @@ namespace Hecton8.Physics
 
             IPhysicsImpactEventListener[] rawArray = _impactListeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnPhysicsImpact(in impactSignal);
+            {
+                IPhysicsImpactEventListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnPhysicsImpact(in impactSignal);
+            }
         }
     }
 
@@ -587,7 +591,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterPhysicsStateManager(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PhysicsStateManager, this);
         }
 
         private void TryUnregisterService()

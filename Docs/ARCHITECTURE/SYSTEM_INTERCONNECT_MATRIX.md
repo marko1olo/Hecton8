@@ -37,60 +37,75 @@ Source: `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
 1. `CompleteDispatcherRaycasts()`
 2. `ILateFrameTickable.LateFrameTick()` lane pass
 3. `ThreadSafeCommandQueue.DrainToMainThread()` if budget remains
-4. `Hecton8.Modding.ModCommandDispatcher.DrainLateFrame()`
-5. `Hecton8.Bootstrap.BootstrapEvents.FlushPending()`
-6. `NarrativeEvents.FlushPending()`
-7. `Hecton8.Interaction.InteractionEvents.FlushPending()`
-8. `Hecton8.Crafting.CraftingEvents.FlushPending()`
-9. `ScanEvents.FlushPending()`
-10. `SaveEvents.FlushPending()`
-11. `QuestEvents.FlushPending()`
-12. `FirstHourEvents.FlushPending()`
-13. `EndingEvents.FlushPending()`
-14. `AudioLogEvents.FlushPending()`
-15. `AtmosphereEvents.FlushPending()`
-16. `CelestialEvents.FlushPending()`
-17. `EclipseGameplayEvents.FlushPending()`
-18. `AcousticZoneEvents.FlushPending()`
-19. `SpectrumEvents.FlushPending()`
-20. `ProceduralAudioEvents.FlushPending()`
-21. `HectonSubmarineOsEvents.FlushPending()`
-22. `FlashlightEvents.FlushPending()`
-23. `LaserCutterEvents.FlushPending()`
-24. `PlayerSignalEvents.FlushPending()`
-25. `MapMagicBiomeEvents.FlushPending()`
-26. `BiomeMatrixEvents.FlushPending()`
-27. `DirectorAIEvents.FlushPending()`
-28. `WeatherEvents.FlushPending()`
-29. `RandomEventEvents.FlushPending()`
-30. `PowerGridTelemetryEvents.FlushPending()`
-31. `ModuleStatusEvents.FlushPending()`
-32. `DepthZoneEvents.FlushPending()`
-33. `SoundscapeEvents.FlushPending()`
-34. `EmergencyServiceRelayEvents.FlushPending()`
-35. `SargassumGlobalDragManager.FlushPendingEvents()`
-36. `Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending()`
-37. `InventoryEvents.FlushPending()`
-38. `PlayerExpressionEvents.FlushPending()`
-39. `Hecton8.UI.BaseIntegrityEvents.FlushPending()`
-40. `Hecton8.UI.NotificationEvents.FlushPending()`
-41. `Hecton8.UI.PDAIntrusionEvents.FlushPending()`
-42. `Hecton8.UI.PDAEvents.FlushPending(MaxPdaEventsPerFrame)`
-43. `Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents()`
-44. `ObjectPoolDiagnostics.FlushPending()`
-45. `PerformanceEvents.FlushPending()`
-46. `Hecton8.AtlasSignal.Atlas6Events.FlushPending()`
-47. `GlobalRegistry.FlushPendingServiceReboundEvents()`
-48. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
-49. `WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount)`
+4. `ThreadSafeCommandQueue.FlushStorageReservationCommitResolvedEvents()`
+5. `Hecton8.Modding.ModCommandDispatcher.DrainLateFrame()`
+6. `Hecton8.Modding.ModRegistryEvents.FlushPending()`
+7. `Hecton8.Bootstrap.BootstrapEvents.FlushPending()`
+8. `Hecton.Localization.LocalizationEvents.FlushPending()`
+9. `NarrativeEvents.FlushPending()`
+10. `Hecton8.Interaction.InteractionEvents.FlushPending()`
+11. `Hecton8.Crafting.CraftingEvents.FlushPending()`
+12. `ScanEvents.FlushPending()`
+13. `SaveEvents.FlushPending()`
+14. `QuestEvents.FlushPending()`
+15. `FirstHourEvents.FlushPending()`
+16. `EndingEvents.FlushPending()`
+17. `AudioLogEvents.FlushPending()`
+18. `AtmosphereEvents.FlushPending()`
+19. `HighPressureEvents.FlushPending()`
+20. `FatalPressureImplosionEvents.FlushPending()`
+21. `CelestialEvents.FlushPending()`
+22. `EclipseGameplayEvents.FlushPending()`
+23. `AcousticZoneEvents.FlushPending()`
+24. `PhysicsEventBus.FlushPending()`
+25. `FluidFeedbackEvents.FlushPending()`
+26. `RepairDroneTorchAcousticEvents.FlushPending()`
+27. `ElectrolysisAcousticEvents.FlushPending()`
+28. `AudioCaptionEvents.FlushPending()`
+29. `SpectrumEvents.FlushPending()`
+30. `ProceduralAudioEvents.FlushPending()`
+31. `HectonSubmarineOsEvents.FlushPending()`
+32. `FlashlightEvents.FlushPending()`
+33. `LaserCutterEvents.FlushPending()`
+34. `PlayerSignalEvents.FlushPending()`
+35. `MapMagicBiomeEvents.FlushPending()`
+36. `BiomeMatrixEvents.FlushPending()`
+37. `DirectorAIEvents.FlushPending()`
+38. `HectonDroneFleetEvents.FlushPending()`
+39. `WeatherEvents.FlushPending()`
+40. `RandomEventEvents.FlushPending()`
+41. `PowerGridTelemetryEvents.FlushPending()`
+42. `ModuleStatusEvents.FlushPending()`
+43. `BaseAirlockEvents.FlushPending()`
+44. `DepthZoneEvents.FlushPending()`
+45. `SoundscapeEvents.FlushPending()`
+46. `EmergencyServiceRelayEvents.FlushPending()`
+47. `SargassumGlobalDragManager.FlushPendingEvents()`
+48. `Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending()`
+49. `InventoryEvents.FlushPending()`
+50. `PlayerExpressionEvents.FlushPending()`
+51. `Hecton8.UI.BaseIntegrityEvents.FlushPending()`
+52. `Hecton8.UI.NotificationEvents.FlushPending()`
+53. `Hecton8.UI.PDAIntrusionEvents.FlushPending()`
+54. `Hecton8.UI.PDAEvents.FlushPending(MaxPdaEventsPerFrame)`
+55. `Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents()`
+56. `ObjectPoolDiagnostics.FlushPending()`
+57. `PerformanceEvents.FlushPending()`
+58. `Hecton8.AtlasSignal.Atlas6Events.FlushPending()`
+59. `GlobalRegistry.FlushPendingServiceReboundEvents()`
+60. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
+61. `WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount)`
 
 ## Queue-Backed Lanes
 
 | Lane Owner | Backing Queue | Listener Contract | Raise Surface | Flush Owner | Notes |
 | --- | --- | --- | --- | --- | --- |
+| `ModRegistryEvents` | front/back `NativeQueue<ModRegistryEventPayload>` | `IModRegistryEventListener` | `NotifyRuntimeRegistryChanged`, `NotifySettingsRegistryChanged`, `NotifyRecipeRegistryChanged`, `NotifyBuildableRegistryChanged` | `SystemDispatcher.LateUpdate()` | Coalesced mod registry invalidation lane. Listener reenqueue writes to the next-frame queue; per-registry queued flags stay active until that payload is drained. |
 | `BootstrapEvents` | front/back `NativeQueue<BootstrapEventPayload>` | `IBootstrapEventListener` | `NotifyBootstrapComplete` | `SystemDispatcher.LateUpdate()` | Bootstrap-complete notification lane. Listener reenqueue writes to the next-frame queue; payload is unmanaged and capped at four pending events. |
+| `LocalizationEvents` | front/back `NativeQueue<LocalizationEventPayload>` | `ILocalizationLanguageChangedListener`, `ILocalizationCorruptionVisualStateListener` | `PublishLanguageChanged`, `PublishCorruptionVisualStateChanged` | `SystemDispatcher.LateUpdate()` | Localization language/corruption visual lane. Listener reenqueue writes to the next-frame queue; no-listener drain preserves the existing no-budget clear behavior. |
 | `NarrativeEvents` | front/back `NativeQueue<NarrativeEventPayload>` | `INarrativeEventListener` | `RaiseNarrativePOIRegistered`, `RaiseNarrativePOIDisposed`, `RaiseDiscoveryMade`, `RaiseDepthTierReached` | `SystemDispatcher.LateUpdate()` | Queue listener reenqueue writes to the next-frame queue. Immediate `INarrativePointOfInterestListener` POI buckets stay outside the queue lane. |
 | `PhysicsEvents` | `GlobalPhysicsStateManager` owned `NativeQueue<PhysicsImpactEventData>` | `IPhysicsImpactEventListener` | internal `RaiseImpact` after native impact flush | `GlobalPhysicsStateManager.LateFrameTick()` during `ILateFrameTickable` pass | Fixed-step impact payloads are queued first, then listener-bucket dispatched after physics. |
+| `PhysicsEventBus` | front/back `NativeQueue<PhysicsEventPayload>` | `IPressureImpulseEventListener`, `IElectromagneticPulseEventListener`, `IAcousticPingEventListener` | `NotifyPressureImpulse`, `NotifyElectromagneticPulse`, `NotifyAcousticPing` | `SystemDispatcher.LateUpdate()` | Physics-domain pressure/EMP/acoustic signal lane. Listener reenqueue writes to the next-frame queue; overflow telemetry remains frame-throttled. |
 | `InteractionEvents` | front/back `NativeQueue<InteractionEventPayload>` | `IInteractionEventListener` | `RaiseItemCollected`, `RaiseInteractionStarted`, `RaiseHoverChanged` | `SystemDispatcher.LateUpdate()` | First-party interaction lane. Listener reenqueue writes to the next-frame queue; same-frame generation split is source-present for this lane. |
 | `CraftingEvents` | front/back `NativeQueue<CraftingEventPayload>` | `ICraftingEventListener` | `RaiseCraftStarted`, `RaiseCraftCompleted`, `RaiseCraftCancelled` | `SystemDispatcher.LateUpdate()` | Crafting lane. Listener reenqueue writes to the next-frame queue; sidecar references are released after listener dispatch or no-listener drain. |
 | `ScanEvents` | front/back `NativeQueue<ScanEventPayload>` | `IScanEventListener` | `RaiseScanTriggered`, `RaiseNodeFound`, `RaiseEntryDiscovered` | `SystemDispatcher.LateUpdate()` | Scanner lane for node discovery and radius scan traffic. Listener reenqueue writes to the next-frame queue; metadata hash cache is retained outside the native payload. |
@@ -98,34 +113,51 @@ Source: `Assets/_Project/Scripts/Core/SystemDispatcher.cs`
 | `QuestEvents` | front/back `NativeQueue<QuestEventPayload>` | `IQuestEventListener` | `RaiseActivated`, `RaiseCompleted`, `RaiseFailed`, `RaiseRevertRequested` | `SystemDispatcher.LateUpdate()` | Listener reenqueue writes to the next-frame queue. `FlushPending()` still forces `QuestGraphEvaluator.FlushPendingSignals()` before quest event drain. |
 | `FirstHourEvents` | front/back `NativeQueue<FirstHourEventPayload>` | `IFirstHourEventListener` | `RaiseMilestone` | `SystemDispatcher.LateUpdate()` | First-hour milestone lane. Listener reenqueue writes to the next-frame queue; replaces `FirstHourEvents.OnMilestoneReached` delegate. |
 | `EndingEvents` | front/back `NativeQueue<EndingEventPayload>` | `IEndingEventListener` | `RaiseConditionMet`, `RaiseChosen`, `RaiseSequenceComplete` | `SystemDispatcher.LateUpdate()` | Atlas-6 ending terminal state lane. Listener reenqueue writes to the next-frame queue; replaces `EndingEvents.On*` delegates. |
-| `AudioLogEvents` | `NativeQueue<AudioLogEventPayload>` | `IAudioLogEventListener` | `RaiseLogDiscovered`, `RaisePlaybackStarted`, `RaisePlaybackStopped`, `RaisePlaybackCompleted` | `SystemDispatcher.LateUpdate()` | Audio-log playback and subtitle timing lane; replaces direct `SubtitleEventBus.OnPlaybackEvent` delegate delivery. |
+| `AudioLogEvents` | front/back `NativeQueue<AudioLogEventPayload>` | `IAudioLogEventListener` | `RaiseLogDiscovered`, `RaisePlaybackStarted`, `RaisePlaybackStopped`, `RaisePlaybackCompleted` | `SystemDispatcher.LateUpdate()` | Audio-log playback and subtitle timing lane. Listener reenqueue writes to the next-frame queue; managed `AudioLogData` references are sidecar-resolved and released during dispatch/no-listener drain. |
 | `AtmosphereEvents` | front/back `NativeQueue<EnvironmentState>` | `IAtmosphereStateEventListener` | `RaiseStateChanged` | `SystemDispatcher.LateUpdate()` | Atmosphere state lane consumed by acoustic-zone context. Listener reenqueue writes to the next-frame queue; replaces `HectonAtmosphereManager.OnStateChanged`. |
 | `CelestialEvents` | front/back `NativeQueue<CelestialEventPayload>` | `ICelestialEventListener` | `RaiseEclipseStarted`, `RaiseEclipseEnded`, `RaiseSunAngleChanged`, `RaisePlanetPhaseChanged` | `SystemDispatcher.LateUpdate()` | Celestial eclipse/sun/planet lane for eclipse gameplay and quest graph consumers. Listener reenqueue writes to the next-frame queue; high-frequency sun and phase payloads are coalesced. |
 | `EclipseGameplayEvents` | front/back `NativeQueue<EclipseGameplayEventPayload>` | `IEclipseGameplayEventListener` | `RaisePhaseChanged`, `RaiseNightPredatorsRising`, `RaiseTemperatureDelta` | `SystemDispatcher.LateUpdate()` | Eclipse gameplay consequence lane for biolum and future predator/temperature consumers. Listener reenqueue writes to the next-frame queue; replaces `EclipseGameplayEvents.On*` delegates. |
 | `AcousticZoneEvents` | front/back `NativeQueue<AcousticZoneChangedEvent>` | `IAcousticZoneEventListener` | `Raise` | `SystemDispatcher.LateUpdate()` | Acoustic zone edge changes for music/acoustic-context consumers. Listener reenqueue writes to the next-frame queue; replaces `AcousticZoneController.OnAcousticZoneChanged`. |
-| `SpectrumEvents` | `NativeQueue<SpectrumMode>`, `NativeQueue<float>`, `NativeQueue<SpatialSonarSnapshot>`, `NativeQueue<AcousticEchoEvent>` | `ISpectrumModeEventListener`, `ISonarPulseEventListener`, `ISonarPingEventListener`, `ISonarSnapshotEventListener`, `IAcousticEchoEventListener` | `RaiseModeChanged`, `RaiseSonarPulse`, `RaiseSonarPingSent`, `RaiseSonarSnapshotUpdated`, `RaiseAcousticEchoReturned` | `SystemDispatcher.LateUpdate()` | Active sonar, sonar snapshot, echo-return, biolum, AI pressure, and HUD compass lane. |
-| `ProceduralAudioEvents` | `NativeQueue<AudioPingTriggerInfo>`, `NativeQueue<StructuralStressAudioInfo>` | `IProceduralAudioEventListener` | `RaiseAudioPingTriggered`, `RaiseStructuralStressTriggered` | `SystemDispatcher.LateUpdate()` | Sample-accurate procedural audio and habitat stress lane. |
-| `LaserCutterEvents` | `NativeQueue<LaserCutterEventPayload>` | `ILaserCutterEventListener` | `RaiseHeatChanged`, `RaiseBeamStateChanged` | `SystemDispatcher.LateUpdate()` | Laser cutter heat and beam-state lane for critical audio and abyssal cable cutting; live `Transform` resolution is sidecar-keyed by cutter instance id, not stored in the native payload. |
-| `PlayerSignalEvents` | `NativeQueue<TraumaHudSignal>`, `NativeQueue<InteractionSignal>`, `NativeQueue<ToolDepletedSignal>` | `IPlayerSignalEventListener` | `RaiseTraumaHudSignal`, `RaiseInteractionSignal`, `RaiseToolDepletedSignal` | `SystemDispatcher.LateUpdate()` | HUD/stress/tool signal lane; replaces static `Action` subscriptions. |
+| `HighPressureEvents` | front/back `NativeQueue<HighPressureEventPayload>` | `IHighPressureEventListener` | `Notify` | `SystemDispatcher.LateUpdate()` | Submarine high-pressure warning lane. Listener reenqueue writes to the next-frame queue; overflow telemetry remains frame-throttled. |
+| `FatalPressureImplosionEvents` | front/back `NativeQueue<FatalPressureImplosionEventPayload>` | `IFatalPressureImplosionEventListener` | `Notify` | `SystemDispatcher.LateUpdate()` | Catastrophic pressure implosion lane. Listener reenqueue writes to the next-frame queue; overflow telemetry remains frame-throttled. |
+| `FluidFeedbackEvents` | front/back `NativeQueue<SplashEvent>` | `IFluidSplashEventListener` | `PublishSplashQueued` | `SystemDispatcher.LateUpdate()` | Fluid splash presentation lane. Listener reenqueue writes to the next-frame queue; overflow telemetry remains frame-throttled. |
+| `RepairDroneTorchAcousticEvents` | front/back `NativeQueue<RepairDroneTorchAcousticPayload>` | `IRepairDroneTorchAcousticListener` | `Notify` | `SystemDispatcher.LateUpdate()` | Repair-drone torch acoustic lane. Listener reenqueue writes to the next-frame queue; managed `AudioClip` sidecar slots are released during dispatch. |
+| `ElectrolysisAcousticEvents` | front/back `NativeQueue<ElectrolysisAcousticPayload>` | `IElectrolysisAcousticEventListener` | `Notify` | `SystemDispatcher.LateUpdate()` | Electrolysis acoustic/threat lane. Listener reenqueue writes to the next-frame queue; overflow telemetry remains frame-throttled. |
+| `AudioCaptionEvents` | front/back `NativeQueue<AudioCaptionPayload>` | `IAudioCaptionEventListener` | `Raise` | `SystemDispatcher.LateUpdate()` | Spatial audio caption lane. Listener reenqueue writes to the next-frame queue; managed caption text sidecar slots are released during dispatch. |
+| `SpectrumEvents` | front/back `NativeQueue<SpectrumMode>`, `NativeQueue<float>`, `NativeQueue<SpatialSonarSnapshot>`, `NativeQueue<AcousticEchoEvent>` | `ISpectrumModeEventListener`, `ISonarPulseEventListener`, `ISonarPingEventListener`, `ISonarSnapshotEventListener`, `IAcousticEchoEventListener` | `RaiseModeChanged`, `RaiseSonarPulse`, `RaiseSonarPingSent`, `RaiseSonarSnapshotUpdated`, `RaiseAcousticEchoReturned` | `SystemDispatcher.LateUpdate()` | Active sonar, sonar snapshot, echo-return, biolum, AI pressure, and HUD compass lane. Listener reenqueue writes to next-frame queues per payload lane. |
+| `ProceduralAudioEvents` | front/back `NativeQueue<AudioPingTriggerInfo>`, `NativeQueue<StructuralStressAudioInfo>` | `IProceduralAudioEventListener` | `RaiseAudioPingTriggered`, `RaiseStructuralStressTriggered` | `SystemDispatcher.LateUpdate()` | Sample-accurate procedural audio and habitat stress lane. Listener reenqueue writes to the next-frame queue; no-listener drain preserves budget behavior. |
+| `HectonSubmarineOsEvents` | front/back `NativeQueue<SubmarineOsEventPayload>` | `ISubmarineOsEventListener` | `RaiseSnapshotUpdated`, `RaiseLogRequested` | `SystemDispatcher.LateUpdate()` | Submarine OS telemetry/log request lane. Listener reenqueue writes to the next-frame queue; snapshot/log builders remain payload-local and unmanaged. |
+| `LaserCutterEvents` | front/back `NativeQueue<LaserCutterEventPayload>` | `ILaserCutterEventListener` | `RaiseHeatChanged`, `RaiseBeamStateChanged` | `SystemDispatcher.LateUpdate()` | Laser cutter heat and beam-state lane. Listener reenqueue writes to the next-frame queue; live `Transform` resolution stays sidecar-keyed by cutter instance id. |
+| `FlashlightEvents` | front/back `NativeQueue<FlashlightEventPayload>` | `IFlashlightEventListener` | `RaiseToggled`, `RaiseBatteryDepleted`, `RaiseOverheat`, `RaiseFlickerStart` | `SystemDispatcher.LateUpdate()` | Player flashlight notification lane. Listener reenqueue writes to the next-frame queue; no-listener drain clears both generations. |
+| `PlayerSignalEvents` | front/back `NativeQueue<TraumaHudSignal>`, `NativeQueue<InteractionSignal>`, `NativeQueue<ToolDepletedSignal>` | `IPlayerSignalEventListener` | `RaiseTraumaHudSignal`, `RaiseInteractionSignal`, `RaiseToolDepletedSignal` | `SystemDispatcher.LateUpdate()` | HUD/stress/tool signal lane; replaces static `Action` subscriptions. Listener reenqueue writes to next-frame queues; no-listener drain preserves budget behavior. |
 | `MapMagicBiomeEvents` | front/back `NativeQueue<int>` | `IMapMagicBiomeEventListener` | `RaiseBiomeChanged` | `SystemDispatcher.LateUpdate()` | First-party MapMagic bridge lane for terrain biome index changes. Listener reenqueue writes to the next-frame queue; replaces `MapMagicBridge.OnBiomeChanged` without modifying MapMagic assets. |
 | `BiomeMatrixEvents` | front/back `NativeQueue<BiomeMatrixEventPayload>` | `IBiomeMatrixEventListener` | `RaiseMatrixBiomeChanged`, `RaiseDepthTierChanged` | `SystemDispatcher.LateUpdate()` | Biome/depth matrix lane for atmosphere, visuals, music, PDA spectrum, celestial texture residency, and scatter sampling invalidation. Listener reenqueue writes to the next-frame queue; replaces `BiomeMatrixDirector.On*` delegates. |
-| `DirectorAIEvents` | `NativeQueue<DirectorAIEventPayload>` | `IDirectorAIEventListener` | `RaiseSpawnHordeRequested`, `RaiseEquipmentGlitchRequested`, `RaiseRareDiscoveryRequested`, `RaiseWeatherShiftRequested`, `RaiseMissionTriggerRequested`, `RaisePredatorPressureChanged` | `SystemDispatcher.LateUpdate()` | Encounter-director output lane for music, PDA intrusion, narrative discovery, and mission bridge consumers; replaces `HectonDirectorAI.OnRequest*` delegates. |
+| `DirectorAIEvents` | front/back `NativeQueue<DirectorAIEventPayload>` | `IDirectorAIEventListener` | `RaiseSpawnHordeRequested`, `RaiseEquipmentGlitchRequested`, `RaiseRareDiscoveryRequested`, `RaiseWeatherShiftRequested`, `RaiseMissionTriggerRequested`, `RaisePredatorPressureChanged` | `SystemDispatcher.LateUpdate()` | Encounter-director output lane for music, PDA intrusion, narrative discovery, and mission bridge consumers. Listener reenqueue writes to the next-frame queue; replaces `HectonDirectorAI.OnRequest*` delegates. |
+| `HectonDroneFleetEvents` | front/back `NativeQueue<HectonDroneFleetSnapshotPayload>` | `IDroneFleetSnapshotEventListener` | `RaiseSnapshotUpdated` | `SystemDispatcher.LateUpdate()` | Drone fleet telemetry lane for submarine OS diagnostics. Listener reenqueue writes to the next-frame queue; overflow telemetry remains frame-throttled. |
 | `WeatherEvents` | front/back `NativeQueue<WeatherEventPayload>` | `IWeatherEventListener` | `RaiseSnapshotUpdated` | `SystemDispatcher.LateUpdate()` | Weather/current snapshot lane. Listener reenqueue writes to the next-frame queue; payload remains unmanaged. |
-| `RandomEventEvents` | `NativeQueue<RandomEventStartedPayload>`, `NativeQueue<RandomEventType>`, `NativeQueue<SeismicShockwaveEvent>` | `IRandomEventListener` | `RaiseStarted`, `RaiseEnded`, `RaiseSeismicShockwave` | `SystemDispatcher.LateUpdate()` | Random-event world state and seismic shockwave lane. |
+| `RandomEventEvents` | front/back `NativeQueue<RandomEventStartedPayload>`, `NativeQueue<RandomEventType>`, `NativeQueue<SeismicShockwaveEvent>` | `IRandomEventListener` | `RaiseStarted`, `RaiseEnded`, `RaiseSeismicShockwave` | `SystemDispatcher.LateUpdate()` | Random-event world state and seismic shockwave lane. Listener reenqueue writes to next-frame queues; `RaiseSeismicShockwave` keeps the existing `PhysicsEventBus` acoustic side effect before enqueue. |
 | `PowerGridTelemetryEvents` | front/back `NativeQueue<PowerGridTelemetrySnapshot>` | `IPowerGridTelemetryListener` | `Raise` | `SystemDispatcher.LateUpdate()` | Aggregate logistics power telemetry lane. Listener reenqueue writes to the next-frame queue; replaces direct telemetry delegate dispatch. |
-| `AtlasSignalEvents` | `NativeQueue<AtlasSignalEventPayload>` | `IAtlasSignalEventListener` | `RaisePulse`, `RaiseDetected`, `RaiseStrengthChanged`, `RaiseDecoded` | `SystemDispatcher.LateUpdate()` | Holds decoded Atlas signal message IDs through a local lookup table. |
+| `ModuleStatusEvents` | front/back `NativeQueue<ModuleStatusEventPayload>` | `IModuleStatusEventListener` | `NotifyEnter`, `NotifyExit` | `SystemDispatcher.LateUpdate()` | Base module enter/exit status lane. Listener reenqueue writes to the next-frame queue; managed `BaseModule` references are sidecar-resolved and released during dispatch/no-listener drain. |
+| `BaseAirlockEvents` | front/back `NativeQueue<BaseAirlockEventPayload>` | `IBaseAirlockEventListener` | `RaiseCycleStarted`, `RaiseCycleCompleted`, `RaiseEnvironmentChanged`, `RaiseEmergencyLockdownChanged`, `RaiseManualOverrideBlockedChanged`, `RaiseManualOverrideCompleted` | `SystemDispatcher.LateUpdate()` | Airlock transition and lockdown lane. `SystemDispatcher.InitializeService()` prewarms queue storage; listener reenqueue writes to the next-frame queue. Managed `BaseAirlock`/interactor references are sidecar-resolved and released during dispatch/no-listener drain. Legacy serialized UnityEvent hooks still exist for scene wiring and are not the runtime system bus. |
+| `DepthZoneEvents` | front/back `NativeQueue<DepthZoneEventPayload>` | `IDepthZoneEventListener` | `RaiseZoneEntered`, `RaiseZoneExited` | `SystemDispatcher.LateUpdate()` | Depth-zone enter/exit lane. Listener reenqueue writes to the next-frame queue; profile lookup remains in the existing hash sidecar. |
+| `SoundscapeEvents` | front/back `NativeQueue<SoundscapeEventPayload>` | `ISoundscapeEventListener` | `RaiseTierChanged` | `SystemDispatcher.LateUpdate()` | World soundscape tier lane. Listener reenqueue writes to the next-frame queue; producer still suppresses payloads when no listeners are registered. |
+| `EmergencyServiceRelayEvents` | front/back `NativeQueue<RelayEventPayload>` | `IEmergencyServiceRelayEventListener` | `RaiseRelayActivated` | `SystemDispatcher.LateUpdate()` | Emergency relay activation lane. Listener reenqueue writes to the next-frame queue; relay lookup remains in the existing entity-id sidecar. |
+| `SargassumGlobalDragManager` | front/back `NativeQueue<EntanglementStrainSignal>`, `NativeQueue<MassiveDisplacementSignal>` | `ISargassumGlobalDragEventListener` | `RaiseEntanglementStrain`, `RaiseMassiveDisplacement` | `SystemDispatcher.LateUpdate()` via `FlushPendingEvents()` | Floating sargassum entanglement/displacement lane. Listener reenqueue writes to next-frame queues; producer still suppresses payloads when no listeners are registered. |
+| `AtlasSignalEvents` | front/back `NativeQueue<AtlasSignalEventPayload>` | `IAtlasSignalEventListener` | `RaisePulse`, `RaiseDetected`, `RaiseStrengthChanged`, `RaiseDecoded` | `SystemDispatcher.LateUpdate()` | Holds decoded Atlas signal message IDs through a local lookup table. Listener reenqueue writes to the next-frame queue. |
 | `InventoryEvents` | front/back `NativeQueue<InventoryEventPayload>` | `IInventoryEventListener` | `NotifyInventoryFull`, `NotifyInventoryChanged`, `NotifyEncumbranceChanged` | `SystemDispatcher.LateUpdate()` | Inventory-full, contents-changed, and encumbrance lane. Listener reenqueue writes to the next-frame queue; managed `ItemData` and `PlayerInventory` references are sidecar-resolved during dispatch and duplicate payloads are suppressed per frame by `(sourceId << 32) | eventType`. |
-| `PlayerExpressionEvents` | `NativeQueue<PlayerExpressionEventPayload>` | `IPlayerExpressionEventListener` | `RaiseProfileChanged` | `SystemDispatcher.LateUpdate()` | Player-expression profile lane for PDA loadout refresh; managed `PlayerExpressionProfile` references are sidecar-resolved during dispatch. |
-| `BaseIntegrityEvents` | `NativeQueue<BaseIntegrityEventPayload>` | `IBaseIntegrityEventListener` | `RaiseIntegrityWarning`, `RaiseBreached`, `RaiseEmergency`, `RaiseAirQualityWarning` | `SystemDispatcher.LateUpdate()` | Base-module structural and air-quality warning lane for suit and PDA advisory consumers; replaces four `BaseIntegrityEvents.On*` delegates. |
+| `PlayerExpressionEvents` | front/back `NativeQueue<PlayerExpressionEventPayload>` | `IPlayerExpressionEventListener` | `RaiseProfileChanged` | `SystemDispatcher.LateUpdate()` | Player-expression profile lane for PDA loadout refresh. Listener reenqueue writes to the next-frame queue; managed `PlayerExpressionProfile` references are sidecar-resolved and released during dispatch/no-listener drain. |
+| `BaseIntegrityEvents` | front/back `NativeQueue<BaseIntegrityEventPayload>` | `IBaseIntegrityEventListener` | `RaiseIntegrityWarning`, `RaiseBreached`, `RaiseEmergency`, `RaiseAirQualityWarning` | `SystemDispatcher.LateUpdate()` | Base-module structural and air-quality warning lane. Listener reenqueue writes to the next-frame queue; replaces four `BaseIntegrityEvents.On*` delegates. |
 | `NotificationEvents` | front/back `NativeQueue<NotificationEventPayload>` | `INotificationEventListener` | `PushInfo`, `PushWarning`, `PushCritical` | `SystemDispatcher.LateUpdate()` | UI notification lane. Listener reenqueue writes to the next-frame queue; message text remains in the existing hash lookup. |
-| `PDAIntrusionEvents` | `NativeQueue<PDAIntrusionEventPayload>` | `IPDAIntrusionEventListener` | `RaiseRebootCompleted` | `SystemDispatcher.LateUpdate()` | PDA intrusion reboot lane; replaces `PDAIntrusionManager.OnRebootCompleted` delegate and keeps Hecton-OS boot recovery behind the dispatcher budget. |
-| `PDAEvents` | `NativeQueue<PDAEventPayload>` | `IPDAEventListener` | `RaiseOpened`, `RaiseClosed`, `RaiseTabChanged`, `RaiseMapChunkExplored`, `RaiseMarkerChanged`, `RaiseLogbookChanged` | `SystemDispatcher.LateUpdate()` | PDA open/tab/map/marker/logbook lane. |
-| `SceneBootstrap` | `NativeQueue<SceneBootstrapEventPayload>` | `ISceneBootstrapEventListener` | private `RaiseGameReadyEvent`, private `RaiseBootstrapFailedEvent` | `SystemDispatcher.LateUpdate()` via `FlushPendingEvents()` | Queue producer is internal to bootstrap orchestration. |
-| `PerformanceEvents` | `NativeQueue<PerformanceEventPayload>` | `IPerformanceEventListener` | `RaiseFrameTimeSpike`, `RaiseGCAllocExceeded`, `RaiseJobQueueBacklog` | `SystemDispatcher.LateUpdate()` | Performance threshold alert lane; replaces legacy `PerformanceMonitor` delegate alerts. |
-| `Atlas6Events` | `NativeQueue<Atlas6EventPayload>` | `IAtlas6EventListener` | `RaisePlayerStatusChanged`, `RaiseDirectiveConflict`, `RaiseBarterAccepted`, `RaiseScarcityDirective` | `SystemDispatcher.LateUpdate()` | Declared inside `Atlas6DirectiveSystem.cs`; separate lane from `AtlasSignalEvents`. |
+| `PDAIntrusionEvents` | front/back `NativeQueue<PDAIntrusionEventPayload>` | `IPDAIntrusionEventListener` | `RaiseRebootCompleted` | `SystemDispatcher.LateUpdate()` | PDA intrusion reboot lane. Listener reenqueue writes to the next-frame queue; replaces `PDAIntrusionManager.OnRebootCompleted` delegate and keeps Hecton-OS boot recovery behind the dispatcher budget. |
+| `PDAEvents` | front/back `NativeQueue<PDAEventPayload>` | `IPDAEventListener` | `RaiseOpened`, `RaiseClosed`, `RaiseTabChanged`, `RaiseMapChunkExplored`, `RaiseMarkerChanged`, `RaiseLogbookChanged` | `SystemDispatcher.LateUpdate()` | PDA open/tab/map/marker/logbook lane. Listener reenqueue writes to the next-frame queue; dedup keys remain frame-scoped and no-listener drain still applies simulation side effects. |
+| `SceneBootstrap` | front/back `NativeQueue<SceneBootstrapEventPayload>` | `ISceneBootstrapEventListener` | private `RaiseGameReadyEvent`, private `RaiseBootstrapFailedEvent` | `SystemDispatcher.LateUpdate()` via `FlushPendingEvents()` | Scene bootstrap ready/failure lane. Listener reenqueue writes to the next-frame queue; queue producer remains internal to bootstrap orchestration. |
+| `ObjectPoolDiagnostics` | front/back `NativeQueue<PoolDiagnosticsEventPayload>` | `IObjectPoolDiagnosticsListener` | `PublishDataBusDepth`, internal pool warnings | `SystemDispatcher.LateUpdate()` | Pool diagnostics/data-bus alert lane. Zero-depth samples are suppressed; no-listener drain drops bounded diagnostic payloads without consuming the shared event budget; listener reenqueue writes to the next-frame queue; pool-name hash lookup remains in the existing cold-path dictionary. |
+| `PerformanceEvents` | front/back `NativeQueue<PerformanceEventPayload>` | `IPerformanceEventListener` | `RaiseFrameTimeSpike`, `RaiseGCAllocExceeded`, `RaiseJobQueueBacklog` | `SystemDispatcher.LateUpdate()` | Performance threshold alert lane. Listener reenqueue writes to the next-frame queue; no-listener drain preserves existing drop behavior and replaces legacy `PerformanceMonitor` delegate alerts. |
+| `Atlas6Events` | front/back `NativeQueue<Atlas6EventPayload>` | `IAtlas6EventListener` | `RaisePlayerStatusChanged`, `RaiseDirectiveConflict`, `RaiseBarterAccepted`, `RaiseScarcityDirective` | `SystemDispatcher.LateUpdate()` | Declared inside `Atlas6DirectiveSystem.cs`; separate lane from `AtlasSignalEvents`. Listener reenqueue writes to the next-frame queue. |
+| `GlobalRegistry` service rebound events | front/back `NativeQueue<RegistryEventPayload>` plus fixed sidecar slots | `IRegistryEventListener`, `IGlobalRegistryHotSwapListener` | service `Register*` / `Unregister*` rebound queueing | `SystemDispatcher.LateUpdate()` via `FlushPendingServiceReboundEvents()` | Service replacement/unregister notification lane. Listener-induced service changes write to the next-frame queue; managed service refs stay in fixed sidecar slots until dispatch releases them. |
 | `ModCommandDispatcher` | `NativeQueue<ModCommand>`, `NativeQueue<ModAupCommand>`, `NativeQueue<ModRenderInstanceCommand>` | `IModCommandKernel`, `IDispatcherRaycastReceiver`, `HectonEventBus` unmanaged result payloads | `Request`, `RequestAup`, `RequestRenderInstance` | `SystemDispatcher.LateUpdate()` before first-party event flushes | Commands are throttled to 128/mod/tick and drained after dispatcher raycasts complete. |
 
-World-domain lanes use queue payloads with interface listener buckets, not delegate buckets. Current listener contracts include `IDepthZoneEventListener`, `ISoundscapeEventListener`, `IEmergencyServiceRelayEventListener`, and `ISargassumGlobalDragEventListener`.
+World-domain lanes use queue payloads with interface listener buckets, not delegate buckets. Current listener contracts include `IBaseAirlockEventListener`, `IDepthZoneEventListener`, `ISoundscapeEventListener`, `IEmergencyServiceRelayEventListener`, and `ISargassumGlobalDragEventListener`.
 
 ## Immediate Pre-Mutation Routers
 

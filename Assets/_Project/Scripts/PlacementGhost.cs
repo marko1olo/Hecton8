@@ -191,7 +191,7 @@ namespace Hecton8.Building
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
-            _registeredFixedTick = true;
+            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
         }
 
         private void TryUnregisterFixedTickable()

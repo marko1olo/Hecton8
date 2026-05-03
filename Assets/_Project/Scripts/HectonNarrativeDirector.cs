@@ -158,14 +158,14 @@ namespace Hecton8.Gameplay
             if (!_registeredNarrativeRuntime)
             {
                 GlobalRegistry.RegisterNarrativeDirectorRuntime(this);
-                _registeredNarrativeRuntime = true;
+                _registeredNarrativeRuntime = ReferenceEquals(GlobalRegistry.NarrativeDirector, this);
             }
 
             if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = true;
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()

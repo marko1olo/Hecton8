@@ -16,7 +16,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Interaction UI")]
-    public sealed class InteractionUI : MonoBehaviour, IInteractionEventListener, ILocalizationLanguageChangedListener
+    public sealed class InteractionUI : MonoBehaviour, IInteractionEventListener, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         [Header("UI References")]
         [SerializeField, Tooltip("The TextMeshProUGUI label that displays the interaction prompt.")]
@@ -32,6 +32,9 @@ namespace Hecton8.Interaction
         private IInteractable _lastDisplayedTarget;
         private int _cachedInteractPrefixLength;
         private CanvasGroup _promptCanvasGroup;
+        private IInputBindingService _subscribedInputBindingService;
+        private InputManager _subscribedInputManager;
+        private bool _hotSwapListenerRegistered;
 
         // COLD ALLOC: char[192] - hover prompt rich-text buffer - owner: InteractionUI
         private readonly char[] _charBuffer = new char[192];
@@ -47,17 +50,10 @@ namespace Hecton8.Interaction
         {
             InteractionEvents.Register(this);
 
-            IInputBindingService rebindingManager = GlobalRegistry.InputBinding;
-            if (rebindingManager != null)
-            {
-                rebindingManager.OnRebindCompleted += HandleBindingChanged;
-                rebindingManager.OnRebindCanceled += HandleBindingCanceled;
-                rebindingManager.OnOverridesLoaded += HandleOverridesLoaded;
-                rebindingManager.OnOverridesCleared += HandleOverridesCleared;
-            }
+            TryRegisterHotSwapListener();
+            SubscribeInputBindingServiceIfAvailable();
 
-            if (InputManager.Instance != null)
-                InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+            SubscribeInputManagerIfAvailable();
 
             LocalizationEvents.RegisterLanguageListener(this);
 
@@ -67,25 +63,35 @@ namespace Hecton8.Interaction
             HidePrompt();
         }
 
+        private void Start()
+        {
+            TryRegisterHotSwapListener();
+            SubscribeInputBindingServiceIfAvailable();
+            SubscribeInputManagerIfAvailable();
+            RefreshInteractPrefixCache();
+            RefreshCurrentPrompt();
+        }
+
         private void OnDisable()
         {
             InteractionEvents.Unregister(this);
 
-            IInputBindingService rebindingManager = GlobalRegistry.InputBinding;
-            if (rebindingManager != null)
-            {
-                rebindingManager.OnRebindCompleted -= HandleBindingChanged;
-                rebindingManager.OnRebindCanceled -= HandleBindingCanceled;
-                rebindingManager.OnOverridesLoaded -= HandleOverridesLoaded;
-                rebindingManager.OnOverridesCleared -= HandleOverridesCleared;
-            }
+            UnsubscribeInputBindingService();
 
-            if (InputManager.Instance != null)
-                InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
+            UnsubscribeInputManager();
+
+            TryUnregisterHotSwapListener();
 
             LocalizationEvents.UnregisterLanguageListener(this);
 
             HidePrompt();
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeInputBindingService();
+            UnsubscribeInputManager();
+            TryUnregisterHotSwapListener();
         }
 
         private void HandleHoverChanged(IInteractable target)
@@ -222,13 +228,9 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            if (InputManager.Instance != null &&
-                InputManager.Instance.TryGetBindingMarkupForToken("interact", out string markup) &&
-                !string.IsNullOrEmpty(markup))
-            {
-                CachePrefixLiteral(markup.AsSpan(), appendTrailingSpace: true);
+            SubscribeInputManagerIfAvailable();
+            if (_subscribedInputManager != null && CacheInteractBindingMarkup(_subscribedInputManager))
                 return;
-            }
 
             LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
             if (localizationManager != null)
@@ -314,6 +316,154 @@ namespace Hecton8.Interaction
                 _prefixBuffer[cursor++] = ' ';
 
             _cachedInteractPrefixLength = cursor;
+        }
+
+        private void SubscribeInputManagerIfAvailable()
+        {
+            if (_subscribedInputManager != null)
+                return;
+
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            if (inputManager == null)
+                return;
+
+            _subscribedInputManager = inputManager;
+            _subscribedInputManager.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+        }
+
+        private void SubscribeInputBindingServiceIfAvailable()
+        {
+            SubscribeInputBindingServiceIfAvailable(GlobalRegistry.InputBinding);
+        }
+
+        private void SubscribeInputBindingServiceIfAvailable(IInputBindingService rebindingManager)
+        {
+            if (_subscribedInputBindingService != null)
+                return;
+
+            if (rebindingManager == null)
+                return;
+
+            _subscribedInputBindingService = rebindingManager;
+            _subscribedInputBindingService.OnRebindCompleted += HandleBindingChanged;
+            _subscribedInputBindingService.OnRebindCanceled += HandleBindingCanceled;
+            _subscribedInputBindingService.OnOverridesLoaded += HandleOverridesLoaded;
+            _subscribedInputBindingService.OnOverridesCleared += HandleOverridesCleared;
+        }
+
+        private void UnsubscribeInputManager()
+        {
+            if (_subscribedInputManager == null)
+                return;
+
+            _subscribedInputManager.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
+            _subscribedInputManager = null;
+        }
+
+        private void UnsubscribeInputBindingService()
+        {
+            if (_subscribedInputBindingService == null)
+                return;
+
+            _subscribedInputBindingService.OnRebindCompleted -= HandleBindingChanged;
+            _subscribedInputBindingService.OnRebindCanceled -= HandleBindingCanceled;
+            _subscribedInputBindingService.OnOverridesLoaded -= HandleOverridesLoaded;
+            _subscribedInputBindingService.OnOverridesCleared -= HandleOverridesCleared;
+            _subscribedInputBindingService = null;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            switch (serviceSlot)
+            {
+                case GlobalRegistryServiceSlot.Input:
+                    UnsubscribeInputManager();
+                    if (isActiveAndEnabled)
+                        SubscribeInputManagerIfAvailable();
+                    break;
+
+                case GlobalRegistryServiceSlot.InputBinding:
+                    UnsubscribeInputBindingService();
+                    if (isActiveAndEnabled)
+                        SubscribeInputBindingServiceIfAvailable(currentService as IInputBindingService);
+                    break;
+
+                default:
+                    return;
+            }
+
+            RefreshInteractPrefixCache();
+            RefreshCurrentPrompt();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
+        }
+
+        private bool CacheInteractBindingMarkup(InputManager inputManager)
+        {
+            int offset = 0;
+            if (!TryAppendPrefixLiteral("<b><color=#AEE8FF>".AsSpan(), ref offset))
+                return false;
+
+            if (offset >= _prefixBuffer.Length)
+                return false;
+
+            _prefixBuffer[offset++] = inputManager.CurrentDisplayStyle == InputDisplayStyle.Gamepad
+                ? '\u25C6'
+                : '\u2328';
+
+            if (!TryAppendPrefixLiteral("</color> ".AsSpan(), ref offset))
+                return false;
+
+            if (!inputManager.TryWriteBindingDisplayString(
+                    "Interact",
+                    "Player",
+                    -1,
+                    _prefixBuffer,
+                    offset,
+                    out int displayLength) ||
+                displayLength <= 0)
+            {
+                return false;
+            }
+
+            offset += displayLength;
+            if (!TryAppendPrefixLiteral("</b> ".AsSpan(), ref offset))
+                return false;
+
+            _cachedInteractPrefixLength = offset;
+            return true;
+        }
+
+        private bool TryAppendPrefixLiteral(ReadOnlySpan<char> literal, ref int offset)
+        {
+            if (literal.IsEmpty || offset < 0 || offset > _prefixBuffer.Length - literal.Length)
+                return false;
+
+            literal.CopyTo(_prefixBuffer.AsSpan(offset));
+            offset += literal.Length;
+            return true;
         }
 
         private static bool ContainsExpansionToken(string value)

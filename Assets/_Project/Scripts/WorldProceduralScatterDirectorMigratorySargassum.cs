@@ -1,4 +1,5 @@
 using Hecton8.Gameplay;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -13,6 +14,8 @@ namespace Hecton8.World
         private const int MaxMigratorySargassumIslandCount = 24;
         private const float MigratorySargassumMinimumSpatialRadiusMeters = 1f;
         private const float MigratorySargassumMaximumDeltaTimeSeconds = 2f;
+        private const string MigratorySargassumNativeMemoryOwner = "WorldProceduralScatterDirector.MigratorySargassum";
+        private const NativeAllocationLifetime MigratorySargassumNativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         private static readonly int _MigratorySargassumSpeciesHash = ComputeStableStringHash("flora.halo_sargassum");
         private static readonly ProfilerMarker _migratorySargassumProfilerMarker = new("WorldScatter.MigratorySargassum");
@@ -199,6 +202,12 @@ namespace Hecton8.World
             _migratorySargassumSpatialHandles = new NativeArray<int>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
             // COLD ALLOC: NativeArray<int>[MaxMigratorySargassumIslandCount] — AUP spatial hash handle reconciliation scratch — owner: WorldProceduralScatterDirector
             _migratorySargassumScratchSpatialHandles = new NativeArray<int>(MaxMigratorySargassumIslandCount, Allocator.Persistent);
+            RegisterMigratoryNativeArray(_migratorySargassumIslands, nameof(_migratorySargassumIslands));
+            RegisterMigratoryNativeArray(_migratorySargassumScratchIslands, nameof(_migratorySargassumScratchIslands));
+            RegisterMigratoryNativeArray(_migratorySargassumSelectedSources, nameof(_migratorySargassumSelectedSources));
+            RegisterMigratoryNativeArray(_migratorySargassumFlowSamples, nameof(_migratorySargassumFlowSamples));
+            RegisterMigratoryNativeArray(_migratorySargassumSpatialHandles, nameof(_migratorySargassumSpatialHandles));
+            RegisterMigratoryNativeArray(_migratorySargassumScratchSpatialHandles, nameof(_migratorySargassumScratchSpatialHandles));
             // COLD ALLOC: HectonSpatialHash[MaxMigratorySargassumIslandCount] — AUP broadphase for migratory Sargassum island volumes — owner: WorldProceduralScatterDirector
             _migratorySargassumSpatialHash = new HectonSpatialHash(MaxMigratorySargassumIslandCount, MaxMigratorySargassumIslandCount * 128, 32d);
         }
@@ -243,8 +252,22 @@ namespace Hecton8.World
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose(dependency);
             array = default;
+        }
+
+        private static void RegisterMigratoryNativeArray<T>(NativeArray<T> array, string label)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                MigratorySargassumNativeMemoryOwner,
+                label,
+                MigratorySargassumNativeMemoryLifetime);
         }
 
         private void TickMigratorySargassumLane(float now)

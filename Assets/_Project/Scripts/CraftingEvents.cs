@@ -202,7 +202,11 @@ namespace Hecton8.Crafting
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnCraftingEvent(in payload);
+                    {
+                        ICraftingEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnCraftingEvent(in payload);
+                    }
                 }
                 finally
                 {

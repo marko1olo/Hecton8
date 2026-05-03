@@ -11,6 +11,9 @@ namespace ScifiOffice
         CapsuleCollider col;
         bool isCrouching;
         bool _registeredTick;
+        private const string ToggleControlModeBinding = "<Keyboard>/e";
+        private const string CrouchPrimaryBinding = "<Keyboard>/leftCtrl";
+        private const string CrouchSecondaryBinding = "<Keyboard>/leftShift";
 
         public Transform playerBody;
 
@@ -32,14 +35,32 @@ namespace ScifiOffice
         private InputManager _inputManager;
         private CanvasGroup _canvasGroup;
         private bool _mobileControlsVisible;
+        private InputAction _toggleControlModeAction;
+        private InputAction _keyboardCrouchAction;
+        private bool _demoInputActionsReady;
+
+        private void Awake()
+        {
+            InitializeDemoInputActions();
+        }
 
         private void Start()
         {
-            rb = playerBody.GetComponent<Rigidbody>();
-            col = playerBody.GetComponent<CapsuleCollider>();
-            _inputManager = InputManager.Instance;
+            if (playerBody == null)
+            {
+                enabled = false;
+                return;
+            }
+
+            if (!playerBody.TryGetComponent(out rb) || !playerBody.TryGetComponent(out col))
+            {
+                enabled = false;
+                return;
+            }
+
+            _inputManager = GlobalRegistry.NativeInputManager;
             if (canvas != null && !canvas.TryGetComponent(out _canvasGroup))
-                _canvasGroup = canvas.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] - mobile demo controls visibility without per-frame SetActive - owner: DemoFirstPersonController
+                _canvasGroup = canvas.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] — mobile demo controls visibility without per-frame SetActive — owner: DemoFirstPersonController
             _mobileControlsVisible = controlType != ControlType.android;
             SetMobileControlsVisible(controlType == ControlType.android);
 
@@ -49,6 +70,8 @@ namespace ScifiOffice
 
         private void OnEnable()
         {
+            EnableDemoInputActions();
+
             if (_registeredTick || !Application.isPlaying)
                 return;
 
@@ -56,16 +79,19 @@ namespace ScifiOffice
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredTick = true;
+            _registeredTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void OnDisable()
         {
-            if (!_registeredTick)
-                return;
+            DisableDemoInputActions();
+            UnregisterTick();
+        }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            _registeredTick = false;
+        private void OnDestroy()
+        {
+            UnregisterTick();
+            DisposeDemoInputActions();
         }
 
         public void Tick(float deltaTime)
@@ -77,7 +103,7 @@ namespace ScifiOffice
             Look(deltaTime);
 
             // E to switch keyboard control type between keyboardMouse and keyboard.
-            if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
+            if (IsToggleControlModePressed())
             {
                 if (controlType == ControlType.keyboardMouse)
                 {
@@ -194,7 +220,7 @@ namespace ScifiOffice
 
                 // Clamp velocity to the maximum speed.
                 if (rb.linearVelocity.magnitude > maxSpeed)
-                    rb.linearVelocity = rb.linearVelocity.normalized * speed;
+                    rb.linearVelocity = rb.linearVelocity.normalized * maxSpeed;
             }
             else
             {
@@ -210,8 +236,7 @@ namespace ScifiOffice
 
         void Crouch()
         {
-            bool keyboardCrouch = Keyboard.current != null &&
-                                  (Keyboard.current.leftCtrlKey.isPressed || Keyboard.current.leftShiftKey.isPressed);
+            bool keyboardCrouch = IsKeyboardCrouchPressed();
             bool sprintCrouch = _inputManager != null && _inputManager.IsSprinting;
             bool isCrouchPressed = keyboardCrouch || sprintCrouch;
 
@@ -226,6 +251,84 @@ namespace ScifiOffice
                 col.height = 2f;
                 isCrouching = false;
             }
+        }
+
+        private void InitializeDemoInputActions()
+        {
+            if (_demoInputActionsReady)
+                return;
+
+            // COLD ALLOC: InputAction[1] — demo keyboard control-mode toggle — owner: DemoFirstPersonController
+            _toggleControlModeAction = new InputAction("DemoToggleControlMode", InputActionType.Button, ToggleControlModeBinding);
+
+            // COLD ALLOC: InputAction[1] — demo keyboard crouch compatibility bindings — owner: DemoFirstPersonController
+            _keyboardCrouchAction = new InputAction("DemoKeyboardCrouch", InputActionType.Button);
+            _keyboardCrouchAction.AddBinding(CrouchPrimaryBinding);
+            _keyboardCrouchAction.AddBinding(CrouchSecondaryBinding);
+
+            _demoInputActionsReady = true;
+        }
+
+        private void EnableDemoInputActions()
+        {
+            if (!_demoInputActionsReady)
+                return;
+
+            if (_toggleControlModeAction != null && !_toggleControlModeAction.enabled)
+                _toggleControlModeAction.Enable();
+
+            if (_keyboardCrouchAction != null && !_keyboardCrouchAction.enabled)
+                _keyboardCrouchAction.Enable();
+        }
+
+        private void DisableDemoInputActions()
+        {
+            if (!_demoInputActionsReady)
+                return;
+
+            if (_toggleControlModeAction != null && _toggleControlModeAction.enabled)
+                _toggleControlModeAction.Disable();
+
+            if (_keyboardCrouchAction != null && _keyboardCrouchAction.enabled)
+                _keyboardCrouchAction.Disable();
+        }
+
+        private void DisposeDemoInputActions()
+        {
+            if (_toggleControlModeAction != null)
+            {
+                _toggleControlModeAction.Dispose();
+                _toggleControlModeAction = null;
+            }
+
+            if (_keyboardCrouchAction != null)
+            {
+                _keyboardCrouchAction.Dispose();
+                _keyboardCrouchAction = null;
+            }
+
+            _demoInputActionsReady = false;
+        }
+
+        private bool IsToggleControlModePressed()
+        {
+            return _toggleControlModeAction != null && _toggleControlModeAction.WasPressedThisFrame();
+        }
+
+        private bool IsKeyboardCrouchPressed()
+        {
+            return _keyboardCrouchAction != null && _keyboardCrouchAction.IsPressed();
+        }
+
+        private void UnregisterTick()
+        {
+            if (!_registeredTick)
+                return;
+
+            if (GlobalRegistry.Dispatcher != null)
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+
+            _registeredTick = false;
         }
 
         // Crouching for android build.

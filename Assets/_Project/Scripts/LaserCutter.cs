@@ -103,13 +103,16 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: SourceRecord[8] - cutter source sidecar for live Transform resolution - owner: LaserCutterEvents
         private static readonly SourceRecord[] _sources = new SourceRecord[SourceCapacity];
         private static NativeQueue<LaserCutterEventPayload> _pendingEvents;
+        private static NativeQueue<LaserCutterEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
         private static int _sourceCount;
 
         /// <summary>
         /// Pending payload count in the cutter event lane.
         /// </summary>
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         /// <summary>
         /// Registers a cutter event listener.
@@ -147,6 +150,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -161,12 +165,27 @@ namespace Hecton8.Gameplay
 
                 ILaserCutterEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnLaserCutterEvent(in payload);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        ILaserCutterEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnLaserCutterEvent(in payload);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         /// <summary>
@@ -193,16 +212,27 @@ namespace Hecton8.Gameplay
 
         internal static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<LaserCutterEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LaserCutterEventPayload>[16] - deferred cutter event lane flushed by SystemDispatcher LateUpdate - owner: LaserCutterEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(LaserCutterEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<LaserCutterEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LaserCutterEventPayload>[16] - deferred cutter event lane flushed by SystemDispatcher LateUpdate - owner: LaserCutterEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(LaserCutterEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<LaserCutterEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LaserCutterEventPayload>[16] - next-frame cutter event lane prevents same-frame reentrant dispatch - owner: LaserCutterEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(LaserCutterEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         internal static void RegisterSource(LaserCutter source, int cutterInstanceId, Transform cachedTransform)
@@ -299,12 +329,21 @@ namespace Hecton8.Gameplay
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(LaserCutterEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             for (int i = 0; i < _sourceCount; i++)
                 _sources[i] = default;
 
             _sourceCount = 0;
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         private static void Enqueue(in LaserCutterEventPayload payload)
@@ -313,8 +352,15 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
@@ -322,24 +368,61 @@ namespace Hecton8.Gameplay
 
         private static void DrainWithoutDispatch()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                 return;
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            if (_pendingEventCount <= 0)
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                PromoteNextFrameEventsIfFrontEmpty();
+                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                     return;
-
-                if (!_pendingEvents.TryDequeue(out _))
-                    break;
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<LaserCutterEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
+                return true;
+
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<LaserCutterEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 

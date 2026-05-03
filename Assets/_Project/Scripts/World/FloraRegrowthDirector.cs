@@ -40,6 +40,8 @@ namespace Hecton8.World
         private const ulong BlindcapTemplateHash = 0x1FB3740AUL;
         private const byte StateWaiting = 0;
         private const byte StateActive = 1;
+        private const string NativeMemoryOwner = nameof(FloraRegrowthDirector);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         [StructLayout(LayoutKind.Sequential, Pack = 4)]
         private struct FloraRegrowthState
@@ -424,6 +426,7 @@ namespace Hecton8.World
                 Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[128] - MST best squared edge distances - owner: FloraRegrowthDirector
             _lastSeedPlayTime = GetCurrentPlayTimeSeconds();
+            RegisterNativeMemorySentinel();
         }
 
         private void ResolveLocalComponentReferences()
@@ -513,99 +516,22 @@ namespace Hecton8.World
 
             JobHandle disposeHandle = _maturationJobScheduled ? _maturationJobHandle : default;
             JobHandle symbioticDisposeHandle = _symbioticMstJobScheduled ? _symbioticMstJobHandle : default;
-            if (_destroyedFloraScratch.IsCreated)
-                _destroyedFloraScratch.Dispose();
-
-            if (_pendingSeedScratch.IsCreated)
-                _pendingSeedScratch.Dispose();
-
-            if (_regrowthStates.IsCreated)
-                _regrowthStates.Dispose();
-
-            if (_stateIndexByInstanceUid.IsCreated)
-                _stateIndexByInstanceUid.Dispose();
-
-            if (_seedFlightStates.IsCreated)
-                _seedFlightStates.Dispose();
-
-            if (_seedFlightIndexByUid.IsCreated)
-                _seedFlightIndexByUid.Dispose();
-
-            if (_seedEmissionByDestroyedUid.IsCreated)
-                _seedEmissionByDestroyedUid.Dispose();
-
-            if (_maturationResults.IsCreated)
-            {
-                if (_maturationJobScheduled)
-                    _maturationResults.Dispose(disposeHandle);
-                else
-                    _maturationResults.Dispose();
-                _maturationResults = default;
-            }
-
-            if (_maturationStates.IsCreated)
-            {
-                if (_maturationJobScheduled)
-                    _maturationStates.Dispose(disposeHandle);
-                else
-                    _maturationStates.Dispose();
-            }
-
-            if (_maturationIndexByInstanceUid.IsCreated)
-            {
-                if (_maturationJobScheduled)
-                    _maturationIndexByInstanceUid.Dispose(disposeHandle);
-                else
-                    _maturationIndexByInstanceUid.Dispose();
-            }
-
-            if (_symbioticFungalBuffs.IsCreated)
-            {
-                if (_maturationJobScheduled)
-                    _symbioticFungalBuffs.Dispose(disposeHandle);
-                else
-                    _symbioticFungalBuffs.Dispose();
-            }
-
-            if (_symbioticFungalNodes.IsCreated)
-            {
-                if (_symbioticMstJobScheduled)
-                    _symbioticFungalNodes.Dispose(symbioticDisposeHandle);
-                else
-                    _symbioticFungalNodes.Dispose();
-            }
-
-            if (_symbioticMstResults.IsCreated)
-            {
-                if (_symbioticMstJobScheduled)
-                    _symbioticMstResults.Dispose(symbioticDisposeHandle);
-                else
-                    _symbioticMstResults.Dispose();
-            }
-
-            if (_symbioticMstVisited.IsCreated)
-            {
-                if (_symbioticMstJobScheduled)
-                    _symbioticMstVisited.Dispose(symbioticDisposeHandle);
-                else
-                    _symbioticMstVisited.Dispose();
-            }
-
-            if (_symbioticMstParent.IsCreated)
-            {
-                if (_symbioticMstJobScheduled)
-                    _symbioticMstParent.Dispose(symbioticDisposeHandle);
-                else
-                    _symbioticMstParent.Dispose();
-            }
-
-            if (_symbioticMstBestDistanceSq.IsCreated)
-            {
-                if (_symbioticMstJobScheduled)
-                    _symbioticMstBestDistanceSq.Dispose(symbioticDisposeHandle);
-                else
-                    _symbioticMstBestDistanceSq.Dispose();
-            }
+            DisposeNativeList(ref _destroyedFloraScratch, nameof(_destroyedFloraScratch));
+            DisposeNativeList(ref _pendingSeedScratch, nameof(_pendingSeedScratch));
+            DisposeNativeList(ref _regrowthStates, nameof(_regrowthStates));
+            DisposeNativeHashMap(ref _stateIndexByInstanceUid, nameof(_stateIndexByInstanceUid));
+            DisposeNativeList(ref _seedFlightStates, nameof(_seedFlightStates));
+            DisposeNativeHashMap(ref _seedFlightIndexByUid, nameof(_seedFlightIndexByUid));
+            DisposeNativeHashMap(ref _seedEmissionByDestroyedUid, nameof(_seedEmissionByDestroyedUid));
+            DisposeNativeArray(ref _maturationResults, disposeHandle, _maturationJobScheduled);
+            DisposeNativeList(ref _maturationStates, nameof(_maturationStates), disposeHandle, _maturationJobScheduled);
+            DisposeNativeHashMap(ref _maturationIndexByInstanceUid, nameof(_maturationIndexByInstanceUid), disposeHandle, _maturationJobScheduled);
+            DisposeNativeList(ref _symbioticFungalBuffs, nameof(_symbioticFungalBuffs), disposeHandle, _maturationJobScheduled);
+            DisposeNativeList(ref _symbioticFungalNodes, nameof(_symbioticFungalNodes), symbioticDisposeHandle, _symbioticMstJobScheduled);
+            DisposeNativeArray(ref _symbioticMstResults, symbioticDisposeHandle, _symbioticMstJobScheduled);
+            DisposeNativeArray(ref _symbioticMstVisited, symbioticDisposeHandle, _symbioticMstJobScheduled);
+            DisposeNativeArray(ref _symbioticMstParent, symbioticDisposeHandle, _symbioticMstJobScheduled);
+            DisposeNativeArray(ref _symbioticMstBestDistanceSq, symbioticDisposeHandle, _symbioticMstJobScheduled);
         }
 
         private void SyncMaturationStates(PersistentWorldRegistry registry, float currentPlayTime)
@@ -1017,12 +943,13 @@ namespace Hecton8.World
                 return;
 
             if (_maturationResults.IsCreated)
-                _maturationResults.Dispose();
+                DisposeNativeArray(ref _maturationResults);
 
             _maturationResults = new NativeArray<FloraMaturationResult>(
                 requiredCount,
                 Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<FloraMaturationResult>[requiredCount] - burst maturation result lane for slow-tick flora growth application - owner: FloraRegrowthDirector
+            NativeMemorySentinel.RegisterNativeArray(_maturationResults, NativeMemoryOwner, nameof(_maturationResults), NativeMemoryLifetime);
         }
 
         private void RemoveMaturationStateAtSwapBack(int index)
@@ -1446,6 +1373,66 @@ namespace Hecton8.World
                     _symbioticFungalNodes[i] = state;
                 }
             }
+        }
+
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeList(_destroyedFloraScratch, NativeMemoryOwner, nameof(_destroyedFloraScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_pendingSeedScratch, NativeMemoryOwner, nameof(_pendingSeedScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_regrowthStates, NativeMemoryOwner, nameof(_regrowthStates), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_stateIndexByInstanceUid, NativeMemoryOwner, nameof(_stateIndexByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_seedFlightStates, NativeMemoryOwner, nameof(_seedFlightStates), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_seedFlightIndexByUid, NativeMemoryOwner, nameof(_seedFlightIndexByUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_seedEmissionByDestroyedUid, NativeMemoryOwner, nameof(_seedEmissionByDestroyedUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_maturationStates, NativeMemoryOwner, nameof(_maturationStates), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_maturationIndexByInstanceUid, NativeMemoryOwner, nameof(_maturationIndexByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_symbioticFungalNodes, NativeMemoryOwner, nameof(_symbioticFungalNodes), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_symbioticFungalBuffs, NativeMemoryOwner, nameof(_symbioticFungalBuffs), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_symbioticMstResults, NativeMemoryOwner, nameof(_symbioticMstResults), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_symbioticMstVisited, NativeMemoryOwner, nameof(_symbioticMstVisited), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_symbioticMstParent, NativeMemoryOwner, nameof(_symbioticMstParent), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_symbioticMstBestDistanceSq, NativeMemoryOwner, nameof(_symbioticMstBestDistanceSq), NativeMemoryLifetime);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency = default, bool deferDisposal = false) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            if (deferDisposal)
+                array.Dispose(dependency);
+            else
+                array.Dispose();
+            array = default;
+        }
+
+        private static void DisposeNativeList<T>(ref NativeList<T> list, string label, JobHandle dependency = default, bool deferDisposal = false) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+            if (deferDisposal)
+                list.Dispose(dependency);
+            else
+                list.Dispose();
+            list = default;
+        }
+
+        private static void DisposeNativeHashMap<TKey, TValue>(ref NativeHashMap<TKey, TValue> map, string label, JobHandle dependency = default, bool deferDisposal = false)
+            where TKey : unmanaged, System.IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeHashMap(NativeMemoryOwner, label);
+            if (deferDisposal)
+                map.Dispose(dependency);
+            else
+                map.Dispose();
+            map = default;
         }
 
         private static Vector3 ExtractTranslation(Matrix4x4 matrix)

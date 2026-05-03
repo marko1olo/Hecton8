@@ -452,13 +452,14 @@ namespace Hecton8.Atmosphere
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this) ||
+                                  SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
 
             if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = true;
+                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
             }
         }
 
@@ -466,8 +467,12 @@ namespace Hecton8.Atmosphere
         {
             if (_registeredTick)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                if (GlobalRegistry.Updatables.Contains(this))
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+
+                if (SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this))
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
                 _registeredTick = false;
             }
 

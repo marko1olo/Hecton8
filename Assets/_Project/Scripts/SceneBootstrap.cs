@@ -82,14 +82,18 @@ namespace Hecton8.Bootstrap
     [DefaultExecutionOrder(-20000)] // Раньше ВСЕХ игровых систем
     public sealed class SceneBootstrap : MonoBehaviour
     {
+        private const int PendingEventCapacity = 12;
         // COLD ALLOC: RegistryBucket<ISceneBootstrapEventListener>[12] - bootstrap listeners drained on dispatcher LateUpdate - owner: SceneBootstrap
-        private static readonly RegistryBucket<ISceneBootstrapEventListener> _listeners = new RegistryBucket<ISceneBootstrapEventListener>(12);
+        private static readonly RegistryBucket<ISceneBootstrapEventListener> _listeners = new RegistryBucket<ISceneBootstrapEventListener>(PendingEventCapacity);
         // COLD ALLOC: Dictionary<uint,string>[8] - hashed bootstrap failure reasons for cold-path diagnostics resolution - owner: SceneBootstrap
         private static readonly Dictionary<uint, string> _failureReasonsByHash = new Dictionary<uint, string>(8);
         private static NativeQueue<SceneBootstrapEventPayload> _pendingEvents;
+        private static NativeQueue<SceneBootstrapEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
-        public static int PendingEventCount => _pendingEventCount;
+        public static int PendingEventCount => _pendingEventCount + _nextFrameEventCount;
 #if UNITY_EDITOR
         private static readonly List<GameObject> _dontDestroyRootScratch = new List<GameObject>(32); // COLD ALLOC: List<GameObject>[32] - editor-only DDOL residue scan scratch - owner: SceneBootstrap
 #endif
@@ -148,9 +152,18 @@ namespace Hecton8.Bootstrap
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SceneBootstrap), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _failureReasonsByHash.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
             BootstrapState.Reset();
             ActiveInstance = null;
         }
@@ -180,7 +193,8 @@ namespace Hecton8.Bootstrap
                 return;
             }
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : 12;
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget > 0 && !_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
@@ -194,12 +208,27 @@ namespace Hecton8.Bootstrap
                 scanBudget--;
                 ISceneBootstrapEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnSceneBootstrapEvent(in payload);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        ISceneBootstrapEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnSceneBootstrapEvent(in payload);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         public static bool TryResolveBootstrapFailureReason(uint errorHash, out string reason)
@@ -214,9 +243,20 @@ namespace Hecton8.Bootstrap
                 _pendingEvents = new NativeQueue<SceneBootstrapEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SceneBootstrapEventPayload>[12] - deferred bootstrap event lane flushed by SystemDispatcher LateUpdate - owner: SceneBootstrap
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
-                    12,
+                    PendingEventCapacity,
                     nameof(SceneBootstrap),
                     nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<SceneBootstrapEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SceneBootstrapEventPayload>[12] - next-frame bootstrap event lane prevents same-frame reentrant dispatch - owner: SceneBootstrap
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(SceneBootstrap),
+                    nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
             }
         }
@@ -224,15 +264,24 @@ namespace Hecton8.Bootstrap
         private static void RaiseGameReadyEvent()
         {
             EnsureEventQueueInitialized();
-            if (_pendingEventCount >= 12)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
-            _pendingEvents.Enqueue(new SceneBootstrapEventPayload
+            SceneBootstrapEventPayload payload = new SceneBootstrapEventPayload
             {
                 ErrorHash = 0u,
                 EventType = (ushort)SceneBootstrapEventType.GameReady,
                 Reserved = 0
-            });
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
         }
 
@@ -242,39 +291,85 @@ namespace Hecton8.Bootstrap
                 ? 0u
                 : unchecked((uint)Hecton.Localization.LocHash.Compute(error));
             EnsureEventQueueInitialized();
-            if (_pendingEventCount >= 12)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
             if (errorHash != 0u && !_failureReasonsByHash.ContainsKey(errorHash))
                 _failureReasonsByHash.Add(errorHash, error);
 
-            _pendingEvents.Enqueue(new SceneBootstrapEventPayload
+            SceneBootstrapEventPayload payload = new SceneBootstrapEventPayload
             {
                 ErrorHash = errorHash,
                 EventType = (ushort)SceneBootstrapEventType.BootstrapFailed,
                 Reserved = 0
-            });
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
         }
 
         private static void DrainPendingEventsWithoutDispatch()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                 return;
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : 12;
-            while (scanBudget > 0 && !_pendingEvents.IsEmpty())
+            if (_pendingEventCount <= 0)
             {
-                if (!_pendingEvents.TryDequeue(out _))
+                PromoteNextFrameEventsIfFrontEmpty();
+                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                     return;
+            }
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<SceneBootstrapEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
+                return true;
+
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget > 0 && !queue.IsEmpty())
+            {
+                if (!queue.TryDequeue(out _))
+                    return false;
+
+                if (pendingCount > 0)
+                    pendingCount--;
                 scanBudget--;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<SceneBootstrapEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
 
         // ══════════════════════════════════════════════════════════

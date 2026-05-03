@@ -59,7 +59,7 @@ namespace Hecton8.Tools
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void OnDisable()
@@ -306,7 +306,7 @@ namespace Hecton8.Tools
 
         private bool IsPauseInputModeValid()
         {
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
             if (inputManager == null || !inputManager.CanSwitchActionMaps)
                 return false;
 
@@ -315,7 +315,7 @@ namespace Hecton8.Tools
 
         private bool IsGameplayInputModeValid()
         {
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
             if (inputManager == null || !inputManager.CanSwitchActionMaps)
                 return false;
 

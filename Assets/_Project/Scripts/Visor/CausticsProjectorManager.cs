@@ -418,13 +418,13 @@ namespace Hecton8.Visor
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-                _registeredSlowTick = true;
+                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
             }
         }
 

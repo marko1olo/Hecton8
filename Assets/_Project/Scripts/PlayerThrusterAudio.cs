@@ -347,7 +347,7 @@ namespace Hecton8.Audio
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

@@ -30,8 +30,8 @@
 // ZERO GC:
 //   • TryGetBiomeIndex: GetPixelBilinear — zero GC (Color struct).
 //   • alphamapTextures — Unity cached property, zero GC.
-//   • TryGetHeight: SampleHeight — zero GC.
-//   • FindTerrainAt: Terrain.activeTerrains — Unity cached array.
+//   • TryGetHeight: normalized TerrainData interpolation after cached tile lookup.
+//   • FindTerrainAt: cached MapMagic TerrainTile array — no Unity global terrain scan.
 //   • SlowTick: no allocations at all.
 // ============================================================================
 
@@ -539,13 +539,6 @@ namespace Hecton8.Core
             TerrainData terrainData = terrain.terrainData;
             Vector3 terrainPosition = terrain.transform.position;
 
-            if (terrain.isActiveAndEnabled)
-            {
-                float localHeight = terrain.SampleHeight(new Vector3(x, 0f, z));
-                height = localHeight + terrainPosition.y;
-                return true;
-            }
-
             Vector3 terrainSize = terrainData.size;
             if (terrainSize.x <= 0f || terrainSize.z <= 0f)
                 return false;
@@ -597,6 +590,44 @@ namespace Hecton8.Core
 
             terrain = FindTerrainAt(x, z);
             return terrain != null && terrain.terrainData != null;
+        }
+
+        internal int CopyResolvedTerrainsTo(Terrain[] destination)
+        {
+            if (destination == null || destination.Length == 0 || mapMagicObject == null)
+                return 0;
+
+            RefreshTerrainTileCache(force: false);
+
+            TerrainTile[] terrainTiles = _cachedTerrainTiles;
+            int tileCount = terrainTiles != null ? terrainTiles.Length : 0;
+            int written = 0;
+
+            for (int i = 0; i < tileCount && written < destination.Length; i++)
+            {
+                TerrainTile tile = terrainTiles[i];
+                Terrain terrain = ResolveTileTerrain(tile);
+                if (terrain == null || terrain.terrainData == null)
+                    continue;
+
+                bool alreadyWritten = false;
+                for (int j = 0; j < written; j++)
+                {
+                    if (!ReferenceEquals(destination[j], terrain))
+                        continue;
+
+                    alreadyWritten = true;
+                    break;
+                }
+
+                if (alreadyWritten)
+                    continue;
+
+                destination[written] = terrain;
+                written++;
+            }
+
+            return written;
         }
 
         /// <summary>
@@ -1204,10 +1235,10 @@ namespace Hecton8.Core
         /// Находит Terrain, покрывающий мировые координаты (x, z).
         ///
         /// Стратегия:
-        ///   1. Проверяем Terrain.activeTerrain (быстро, один тайл).
-        ///   2. Если не подходит — перебираем activeTerrains.
+        ///   1. Reuse the last resolved MapMagic TerrainTile.
+        ///   2. Scan the cached MapMagic TerrainTile array refreshed outside the hot path.
         ///
-        /// ZERO GC: Terrain.activeTerrains — Unity cached array.
+        /// ZERO GC: no Unity global terrain fallback.
         /// </summary>
         private Terrain FindTerrainAt(float x, float z)
         {
@@ -1217,22 +1248,6 @@ namespace Hecton8.Core
                 Terrain cachedTerrain = ResolveTileTerrain(_lastResolvedTerrainTile);
                 if (cachedTerrain != null && cachedTerrain.terrainData != null)
                     return cachedTerrain;
-            }
-
-            Terrain active = Terrain.activeTerrain;
-            if (active != null && IsPointInTerrain(active, x, z))
-                return active;
-
-            Terrain[] terrains = Terrain.activeTerrains;
-            if (terrains == null) return null;
-
-            int count = terrains.Length;
-
-            for (int i = 0; i < count; i++)
-            {
-                Terrain t = terrains[i];
-                if (t != null && IsPointInTerrain(t, x, z))
-                    return t;
             }
 
             TerrainTile[] terrainTiles = _cachedTerrainTiles;

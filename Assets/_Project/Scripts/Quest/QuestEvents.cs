@@ -85,7 +85,8 @@ namespace Hecton8.Quest
                 return;
 
             EnsureInitialized();
-            _listeners.Register(listener);
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
         }
 
         public static void Unregister(IQuestEventListener listener)
@@ -93,7 +94,8 @@ namespace Hecton8.Quest
             if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
         }
 
         public static void FlushPending()
@@ -125,7 +127,11 @@ namespace Hecton8.Quest
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnQuestEvent(in payload);
+                    {
+                        IQuestEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnQuestEvent(in payload);
+                    }
                 }
                 finally
                 {

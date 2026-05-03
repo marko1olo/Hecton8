@@ -698,7 +698,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Player);
-            _registeredPostFixedTick = true;
+            _registeredPostFixedTick = SystemDispatcher.GetPostFixedLane(PriorityLayer.Player).Contains(this);
         }
 
         private void TryUnregisterPostFixedTick()
@@ -716,7 +716,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterPlayerMotorService(this);
-            _registeredMotorService = true;
+            _registeredMotorService = ReferenceEquals(GlobalRegistry.PlayerMotor, this);
         }
 
         private void TryUnregisterMotorService()

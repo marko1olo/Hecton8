@@ -23,6 +23,7 @@ namespace Hecton8.Core
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredContext;
+        private bool _syncInProgress;
         private bool _dynamicContextReferencesEnabled;
         private GameObject _playerRootOverride;
         private GameObject _playerObject;
@@ -360,6 +361,22 @@ namespace Hecton8.Core
 
         private void SyncPlayerContext()
         {
+            if (_syncInProgress)
+                return;
+
+            _syncInProgress = true;
+            try
+            {
+                SyncPlayerContextInternal();
+            }
+            finally
+            {
+                _syncInProgress = false;
+            }
+        }
+
+        private void SyncPlayerContextInternal()
+        {
             GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject != null ? BootstrapState.CurrentPlayerObject : _playerRootOverride;
             if (ReferenceEquals(_playerObject, currentPlayerObject) &&
                 _playerTransform != null &&
@@ -618,7 +635,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterPlayerRuntimeContext(this);
-            _registeredContext = true;
+            _registeredContext = ReferenceEquals(GlobalRegistry.Player, this);
         }
 
         private void TryUnregisterContext()

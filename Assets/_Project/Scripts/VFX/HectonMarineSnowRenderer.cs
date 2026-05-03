@@ -334,7 +334,7 @@ namespace Hecton8.Environment
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = true;
+            _registeredTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void EnsureBuffers()
@@ -349,7 +349,7 @@ namespace Hecton8.Environment
             _kernelIndex = marineSnowCompute.FindKernel("CSMain");
             if (_kernelIndex < 0)
             {
-                Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
+                LogMissingMainKernel();
                 enabled = false;
                 return;
             }
@@ -358,7 +358,7 @@ namespace Hecton8.Environment
             _sonarGlowAccumulateKernel = marineSnowCompute.FindKernel("AccumulateSonarGlow");
             if (_sonarGlowClearKernel < 0 || _sonarGlowAccumulateKernel < 0)
             {
-                Debug.LogError("HectonMarineSnowRenderer: sonar glow kernels not found. Disabling compute marine snow.");
+                LogMissingSonarGlowKernels();
                 enabled = false;
                 return;
             }
@@ -379,6 +379,22 @@ namespace Hecton8.Environment
             EnsureSonarGlowTexture();
             _buffersReady = true;
             _staticBindingsDirty = true;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingMainKernel()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("HectonMarineSnowRenderer: compute kernel CSMain not found. Disabling compute marine snow.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingSonarGlowKernels()
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("HectonMarineSnowRenderer: sonar glow kernels not found. Disabling compute marine snow.");
+#endif
         }
 
         private void BootstrapParticles(int particleCount)

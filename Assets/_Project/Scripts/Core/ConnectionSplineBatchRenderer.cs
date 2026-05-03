@@ -385,7 +385,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrameTick = true;
+            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregisterLateFrameTickable()

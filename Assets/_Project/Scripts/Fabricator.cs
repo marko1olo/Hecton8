@@ -183,6 +183,8 @@ namespace Hecton8.Crafting
 
         /// <summary>Порог публикации прогресса.</summary>
         private const float ProgressPublishThreshold = 0.01f;
+        private const string NativeMemoryOwner = nameof(Fabricator);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API — QUERIES
@@ -648,10 +650,12 @@ namespace Hecton8.Crafting
                 {
                     if (resultHashId == 0 || !_playerInventory.TryAddItem(resultHashId, 1))
                     {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                         Debug.LogWarning(
                             $"[Fabricator] Инвентарь полон! " +
                             $"Не удалось добавить: {result.itemName} " +
                             $"(потеряно {recipe.resultQuantity - i} шт.)");
+#endif
                         break;
                     }
                 }
@@ -757,36 +761,42 @@ namespace Hecton8.Crafting
             {
                 // COLD ALLOC: NativeParallelHashMap<Int32,Int32>[128] — temporary per-craft accessible item counts — owner: Fabricator
                 _craftInventoryCounts = new NativeParallelHashMap<int, int>(128, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeParallelHashMap(_craftInventoryCounts, NativeMemoryOwner, nameof(_craftInventoryCounts), NativeMemoryLifetime);
             }
 
             if (!_craftRecipeCosts.IsCreated)
             {
                 // COLD ALLOC: NativeArray<int2>[32] — flattened recipe ingredient cost buffer — owner: Fabricator
                 _craftRecipeCosts = new NativeArray<int2>(CraftingSystem.MaxRecipeIngredientCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_craftRecipeCosts, nameof(_craftRecipeCosts));
             }
 
             if (!_craftRecipeEvaluationResult.IsCreated)
             {
                 // COLD ALLOC: NativeArray<byte>[1] — Burst crafting-availability result cell — owner: Fabricator
                 _craftRecipeEvaluationResult = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_craftRecipeEvaluationResult, nameof(_craftRecipeEvaluationResult));
             }
 
             if (!_deconstructionFlattenedCosts.IsCreated)
             {
                 // COLD ALLOC: NativeArray<int2>[64] — recursive deconstruction flattened ingredient scratch — owner: Fabricator
                 _deconstructionFlattenedCosts = new NativeArray<int2>(CraftingSystem.MaxRecursiveDeconstructionNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_deconstructionFlattenedCosts, nameof(_deconstructionFlattenedCosts));
             }
 
             if (!_deconstructionRecipeOutputs.IsCreated)
             {
                 // COLD ALLOC: NativeArray<int2>[32] — deconstruction output yield scratch — owner: Fabricator
                 _deconstructionRecipeOutputs = new NativeArray<int2>(CraftingSystem.MaxDeconstructionOutputCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_deconstructionRecipeOutputs, nameof(_deconstructionRecipeOutputs));
             }
 
             if (!_deconstructionOutputCount.IsCreated)
             {
                 // COLD ALLOC: NativeArray<int>[1] — deconstruction output count cell — owner: Fabricator
                 _deconstructionOutputCount = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_deconstructionOutputCount, nameof(_deconstructionOutputCount));
             }
         }
 
@@ -799,22 +809,38 @@ namespace Hecton8.Crafting
             }
 
             if (_craftInventoryCounts.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, nameof(_craftInventoryCounts));
                 _craftInventoryCounts.Dispose();
+            }
 
-            if (_craftRecipeCosts.IsCreated)
-                _craftRecipeCosts.Dispose();
+            DisposeTrackedNativeArray(ref _craftRecipeCosts);
+            DisposeTrackedNativeArray(ref _craftRecipeEvaluationResult);
+            DisposeTrackedNativeArray(ref _deconstructionFlattenedCosts);
+            DisposeTrackedNativeArray(ref _deconstructionRecipeOutputs);
+            DisposeTrackedNativeArray(ref _deconstructionOutputCount);
+        }
 
-            if (_craftRecipeEvaluationResult.IsCreated)
-                _craftRecipeEvaluationResult.Dispose();
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
 
-            if (_deconstructionFlattenedCosts.IsCreated)
-                _deconstructionFlattenedCosts.Dispose();
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                NativeMemoryOwner,
+                label,
+                NativeMemoryLifetime);
+        }
 
-            if (_deconstructionRecipeOutputs.IsCreated)
-                _deconstructionRecipeOutputs.Dispose();
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
 
-            if (_deconstructionOutputCount.IsCreated)
-                _deconstructionOutputCount.Dispose();
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private bool TrySynthesizeCraftOutput(RecipeData recipe, ItemData result)
@@ -1368,7 +1394,7 @@ namespace Hecton8.Crafting
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

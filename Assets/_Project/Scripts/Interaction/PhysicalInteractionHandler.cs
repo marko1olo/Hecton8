@@ -417,7 +417,7 @@ namespace Hecton8.Interaction
 
             _state = InteractionState.PullingPocketItem;
             _debugState = "PullingPocketItem";
-            _debugTargetName = _activeBehaviour.gameObject.name;
+            CacheDebugTargetName(_activeBehaviour);
             return true;
         }
 
@@ -471,8 +471,14 @@ namespace Hecton8.Interaction
 
             _state = InteractionState.DraggingHeavyObject;
             _debugState = "DraggingHeavyObject";
-            _debugTargetName = _activeBehaviour.gameObject.name;
+            CacheDebugTargetName(_activeBehaviour);
             return true;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private void CacheDebugTargetName(MonoBehaviour behaviour)
+        {
+            _debugTargetName = behaviour != null ? behaviour.name : null;
         }
 
         private bool EnsurePhysicalHandController()
@@ -698,19 +704,19 @@ namespace Hecton8.Interaction
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredFixedTick)
             {
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
-                _registeredFixedTick = true;
+                _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
             }
 
             if (!_registeredLateFrameTick)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-                _registeredLateFrameTick = true;
+                _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
             }
         }
 

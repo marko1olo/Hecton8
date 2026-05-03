@@ -68,13 +68,16 @@ namespace Hecton8.Construction
         // COLD ALLOC: bool[32] - clip sidecar occupancy map prevents wrap overwrite before deferred flush - owner: RepairDroneTorchAcousticEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<RepairDroneTorchAcousticPayload> _pendingEvents;
+        private static NativeQueue<RepairDroneTorchAcousticPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _lastOverflowWarningFrame = -1;
 
         /// <summary>Number of repair drone torch acoustic payloads waiting for late-frame dispatch.</summary>
-        public static int PendingCount => _pendingEventCount;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -86,9 +89,18 @@ namespace Hecton8.Construction
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(RepairDroneTorchAcousticEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             ClearReferenceSlots();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
             _referenceWriteIndex = 0;
             _referencePendingCount = 0;
             _lastOverflowWarningFrame = -1;
@@ -120,6 +132,7 @@ namespace Hecton8.Construction
             if (!_pendingEvents.IsCreated)
                 return;
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -137,7 +150,10 @@ namespace Hecton8.Construction
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         /// <summary>Queues one repair-drone torch acoustic pulse.</summary>
@@ -167,21 +183,32 @@ namespace Hecton8.Construction
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<RepairDroneTorchAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RepairDroneTorchAcousticPayload>[32] - deferred repair drone torch acoustic lane flushed by SystemDispatcher LateUpdate - owner: RepairDroneTorchAcousticEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(RepairDroneTorchAcousticEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<RepairDroneTorchAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RepairDroneTorchAcousticPayload>[32] - deferred repair drone torch acoustic lane flushed by SystemDispatcher LateUpdate - owner: RepairDroneTorchAcousticEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(RepairDroneTorchAcousticEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<RepairDroneTorchAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RepairDroneTorchAcousticPayload>[32] - next-frame repair drone torch acoustic lane prevents same-frame reentrant dispatch - owner: RepairDroneTorchAcousticEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(RepairDroneTorchAcousticEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static bool Enqueue(in RepairDroneTorchAcousticPayload payload)
         {
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReleaseReferenceSlot(payload.ReferenceSlot);
                 ReportOverflowOncePerFrame();
@@ -189,6 +216,13 @@ namespace Hecton8.Construction
             }
 
             EnsureInitialized();
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return true;
+            }
+
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
@@ -214,8 +248,20 @@ namespace Hecton8.Construction
 
             IRepairDroneTorchAcousticListener[] rawArray = _listeners.RawArray;
             int count = _listeners.Count;
-            for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnRepairDroneTorchAcoustic(in acousticEvent);
+            _isDispatching = true;
+            try
+            {
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    IRepairDroneTorchAcousticListener listener = rawArray[i];
+                    if (listener != null)
+                        listener.OnRepairDroneTorchAcoustic(in acousticEvent);
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
+            }
         }
 
         private static bool TryReserveReferenceSlot(out int referenceSlot)
@@ -276,6 +322,23 @@ namespace Hecton8.Construction
 
             _lastOverflowWarningFrame = frame;
             GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<RepairDroneTorchAcousticPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 

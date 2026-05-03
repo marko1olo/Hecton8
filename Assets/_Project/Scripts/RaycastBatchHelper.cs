@@ -328,7 +328,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrame = true;
+            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregisterLateFrame()

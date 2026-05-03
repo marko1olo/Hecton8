@@ -205,7 +205,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredUpdatable = true;
+            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

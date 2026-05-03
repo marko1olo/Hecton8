@@ -239,9 +239,9 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToDispatcher = true;
+            _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrame = true;
+            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregister()
@@ -332,10 +332,18 @@ namespace Hecton8.World
             if (!_loggedMissingSeamDitherMaterial)
             {
                 _loggedMissingSeamDitherMaterial = true;
-                Debug.LogError("[SeamGapDitherRenderer] Missing seamDitherMaterial asset. Runtime material creation is forbidden for seam gap indirect draws.", this);
+                LogMissingSeamDitherMaterial(this);
             }
 
             return null;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingSeamDitherMaterial(UnityEngine.Object context)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError("[SeamGapDitherRenderer] Missing seamDitherMaterial asset. Runtime material creation is forbidden for seam gap indirect draws.", context);
+#endif
         }
 
         private int BuildInstances()

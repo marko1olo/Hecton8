@@ -582,6 +582,8 @@ namespace Hecton8.Gameplay
         private const float Tier1DistanceMax = 25.0f;
         private const int MaxRendererSearchDepth = 32;
         private const int MaxRendererSearchNodes = 512;
+        private const string NativeMemoryOwner = nameof(ContextualPhysicalIkRig);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly int MuscleBulgeShaderId = Shader.PropertyToID("_MuscleBulge");
 
         [System.Serializable]
@@ -1115,6 +1117,7 @@ namespace Hecton8.Gameplay
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - previous-frame muscle tension signal - owner: ContextualPhysicalIkRig
 
+            RegisterNativeMemorySentinel();
             BindCoreHandles();
             BuildTwoBoneSetups();
             BuildAppendageRuntimeData();
@@ -1596,6 +1599,22 @@ namespace Hecton8.Gameplay
             _runtimeInitialized = false;
         }
 
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_streamHandles, NativeMemoryOwner, nameof(_streamHandles), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_twoBoneSetups, NativeMemoryOwner, nameof(_twoBoneSetups), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_appendageChainRuntimes, NativeMemoryOwner, nameof(_appendageChainRuntimes), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_appendageSegmentLengths, NativeMemoryOwner, nameof(_appendageSegmentLengths), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_appendageTargets, NativeMemoryOwner, nameof(_appendageTargets), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_appendageScratchPositions, NativeMemoryOwner, nameof(_appendageScratchPositions), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_spineChainRuntimes, NativeMemoryOwner, nameof(_spineChainRuntimes), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_spineTargets, NativeMemoryOwner, nameof(_spineTargets), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_secondaryChainRuntimes, NativeMemoryOwner, nameof(_secondaryChainRuntimes), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_secondaryStates, NativeMemoryOwner, nameof(_secondaryStates), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_cachedLocalPoseStates, NativeMemoryOwner, nameof(_cachedLocalPoseStates), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_muscleBulgeOutput, NativeMemoryOwner, nameof(_muscleBulgeOutput), NativeMemoryLifetime);
+        }
+
         private void TryRegisterOriginShiftListener()
         {
             if (_registeredOriginShiftListener)
@@ -1667,6 +1686,7 @@ namespace Hecton8.Gameplay
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose(default);
             array = default;
         }

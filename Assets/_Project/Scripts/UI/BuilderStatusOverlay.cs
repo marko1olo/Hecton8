@@ -1,4 +1,4 @@
-using System.Text;
+using System;
 using Hecton.Localization;
 using Hecton8.Building;
 using Hecton8.Bootstrap;
@@ -23,22 +23,6 @@ namespace Hecton8.UI
         private static readonly Color RuleColor = new Color(0.2f, 0.86f, 0.96f, 0.38f);
         private static readonly Color TitleColor = new Color(0.52f, 0.97f, 0.95f, 0.96f);
 
-        private static readonly string[] _cachedUpperStrings = new string[16];
-
-        private static string CachedToUpperInvariant(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return input;
-
-            int hash = input.GetHashCode() & 0xF;
-            string cached = _cachedUpperStrings[hash];
-            if (cached != null && string.Equals(cached, input, System.StringComparison.OrdinalIgnoreCase))
-                return cached;
-
-            string upper = input.ToUpperInvariant();
-            _cachedUpperStrings[hash] = upper;
-            return upper;
-        }
         private static readonly Color ValueColor = new Color(0.9f, 0.98f, 1f, 0.96f);
         private static readonly Color DimColor = new Color(0.58f, 0.77f, 0.82f, 0.8f);
         private static readonly Color ReadyColor = new Color(0.34f, 0.95f, 0.74f, 0.96f);
@@ -75,7 +59,22 @@ namespace Hecton8.UI
         private float _nextAutoResolveAt;
         private int _lastStaticStateHash;
         private int _lastLiveStateHash;
-        private readonly StringBuilder _sb = new StringBuilder(192);
+        // COLD ALLOC: char[192] — builder overlay module label buffer — owner: BuilderStatusOverlay
+        private readonly char[] _moduleBuffer = new char[192];
+        // COLD ALLOC: char[64] — builder overlay module index numeric buffer — owner: BuilderStatusOverlay
+        private readonly char[] _indexBuffer = new char[64];
+        // COLD ALLOC: char[192] — builder overlay queue label buffer — owner: BuilderStatusOverlay
+        private readonly char[] _queueBuffer = new char[192];
+        // COLD ALLOC: char[128] — builder overlay placement label buffer — owner: BuilderStatusOverlay
+        private readonly char[] _placementBuffer = new char[128];
+        // COLD ALLOC: char[128] — builder overlay resource label buffer — owner: BuilderStatusOverlay
+        private readonly char[] _resourceBuffer = new char[128];
+        // COLD ALLOC: char[192] — builder overlay power label buffer — owner: BuilderStatusOverlay
+        private readonly char[] _powerBuffer = new char[192];
+        // COLD ALLOC: char[256] — builder overlay cost label buffer — owner: BuilderStatusOverlay
+        private readonly char[] _costBuffer = new char[256];
+        // COLD ALLOC: char[192] — builder overlay hint label buffer — owner: BuilderStatusOverlay
+        private readonly char[] _hintBuffer = new char[192];
         private bool _tickRegistered;
         private PlayerInventory _subscribedInventory;
         private PlayerToolManager _subscribedToolManager;
@@ -283,7 +282,7 @@ namespace Hecton8.UI
 
             _title = CreateText("Title", _self, labelFont, 11f, FontStyles.Bold, TitleColor, TextAlignmentOptions.Left);
             Anchor(_title.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -10f), new Vector2(-14f, 18f));
-            _title.text = "CONSTRUCTION STATUS";
+            _title.SetText("CONSTRUCTION STATUS");
 
             _moduleName = CreateText("ModuleName", _self, labelFont, 18f, FontStyles.Bold, ValueColor, TextAlignmentOptions.Left);
             Anchor(_moduleName.rectTransform, new Vector2(0f, 1f), new Vector2(1f, 1f), new Vector2(14f, -40f), new Vector2(-14f, 24f));
@@ -350,33 +349,44 @@ namespace Hecton8.UI
                 _lastStaticStateHash = staticStateHash;
                 if (data != null)
                 {
-                    // ZERO-GC: Use StringBuilder to avoid string concatenation allocation
-                    _sb.Clear();
-                    _sb.Append(CachedToUpperInvariant(data.moduleName)).Append(" [").Append(data.FamilyShortCode).Append(']');
-                    _moduleName.SetText(_sb);
+                    int moduleLength = 0;
+                    moduleLength = AppendUpperInvariant(_moduleBuffer, moduleLength, data.moduleName);
+                    moduleLength = Append(_moduleBuffer, moduleLength, " [");
+                    moduleLength = Append(_moduleBuffer, moduleLength, data.FamilyShortCode);
+                    moduleLength = Append(_moduleBuffer, moduleLength, ']');
+                    SetBufferText(_moduleName, _moduleBuffer, moduleLength);
                 }
                 else
                 {
-                    _moduleName.SetText("NO MODULE");
+                    SetLiteral(_moduleName, _moduleBuffer, "NO MODULE");
                 }
 
                 SetNumericText(
                     _indexLine,
-                    ModuleIndexTemplate,
+                    _indexBuffer,
                     LocNumericArg.Int(activeIndex + 1),
                     LocNumericArg.Int(Mathf.Max(1, buildCount)),
                     LocNumericArg.Int(builtModuleCount));
                 BuildQueueHint(activeIndex, buildCount);
 
                 int roundedPowerRating = Mathf.RoundToInt(powerRating);
-                _sb.Clear();
-                _sb.Append("ROLE // ").Append(playerBuilder.GetActiveBuildRoleLabel());
+                int powerLength = 0;
+                powerLength = Append(_powerBuffer, powerLength, "ROLE // ");
+                powerLength = Append(_powerBuffer, powerLength, playerBuilder.GetActiveBuildRoleLabel());
                 if (roundedPowerRating > 0)
-                    _sb.Append("  //  +").Append(roundedPowerRating).Append("W NET");
+                {
+                    powerLength = Append(_powerBuffer, powerLength, "  //  +");
+                    powerLength = AppendInt(_powerBuffer, powerLength, roundedPowerRating);
+                    powerLength = Append(_powerBuffer, powerLength, "W NET");
+                }
                 else if (roundedPowerRating < 0)
-                    _sb.Append("  //  ").Append(roundedPowerRating).Append("W LOAD");
+                {
+                    powerLength = Append(_powerBuffer, powerLength, "  //  ");
+                    powerLength = AppendInt(_powerBuffer, powerLength, roundedPowerRating);
+                    powerLength = Append(_powerBuffer, powerLength, "W LOAD");
+                }
 
-                _powerLine.SetText(_sb);
+                SetBufferText(_powerLine, _powerBuffer, powerLength);
 
                 BuildCostSummary(data, hasResources);
             }
@@ -387,30 +397,29 @@ namespace Hecton8.UI
                 if (!hasResources)
                 {
                     _placementLine.color = BlockedColor;
-                    _placementLine.SetText("PLACEMENT // HOLD - MISSING COST");
+                    SetLiteral(_placementLine, _placementBuffer, "PLACEMENT // HOLD - MISSING COST");
                 }
                 else if (!canPlace)
                 {
                     _placementLine.color = WarnColor;
-                    _placementLine.SetText(snapped ? "PLACEMENT // SOCKET BLOCKED" : "PLACEMENT // BLOCKED");
+                    SetLiteral(_placementLine, _placementBuffer, snapped ? "PLACEMENT // SOCKET BLOCKED" : "PLACEMENT // BLOCKED");
                 }
                 else if (snapped)
                 {
                     _placementLine.color = ReadyColor;
-                    _placementLine.SetText("PLACEMENT // SNAPPED READY");
+                    SetLiteral(_placementLine, _placementBuffer, "PLACEMENT // SNAPPED READY");
                 }
                 else
                 {
                     _placementLine.color = TitleColor;
-                    _placementLine.SetText("PLACEMENT // READY");
+                    SetLiteral(_placementLine, _placementBuffer, "PLACEMENT // READY");
                 }
 
                 _resourceLine.color = hasResources ? ReadyColor : WarnColor;
-                _resourceLine.SetText(hasResources ? "RESOURCES // READY" : "RESOURCES // INSUFFICIENT");
+                SetLiteral(_resourceLine, _resourceBuffer, hasResources ? "RESOURCES // READY" : "RESOURCES // INSUFFICIENT");
                 _costLine.color = hasResources ? DimColor : WarnColor;
-                _sb.Clear();
-                _sb.Append(CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()));
-                _hintLine.SetText(_sb);
+                int hintLength = AppendUpperInvariant(_hintBuffer, 0, playerBuilder.GetActiveBuildAdvice());
+                SetBufferText(_hintLine, _hintBuffer, hintLength);
             }
         }
 
@@ -463,7 +472,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterTick()
@@ -520,21 +529,27 @@ namespace Hecton8.UI
 
             if (playerBuilder == null || buildCount <= 0)
             {
-                _queueLine.SetText("CATALOG // OFFLINE");
+                SetLiteral(_queueLine, _queueBuffer, "CATALOG // OFFLINE");
                 return;
             }
 
             BuildableData prev = playerBuilder.GetRelativeBuildable(-1);
             BuildableData next = playerBuilder.GetRelativeBuildable(1);
 
-            _sb.Clear();
-            _sb.Append("QUEUE // ");
-            _sb.Append(prev != null ? CachedToUpperInvariant(prev.moduleName) : "NONE");
-            _sb.Append("  <  ");
-            _sb.Append(activeIndex + 1);
-            _sb.Append("  >  ");
-            _sb.Append(next != null ? CachedToUpperInvariant(next.moduleName) : "NONE");
-            _queueLine.SetText(_sb);
+            int length = 0;
+            length = Append(_queueBuffer, length, "QUEUE // ");
+            if (prev != null)
+                length = AppendUpperInvariant(_queueBuffer, length, prev.moduleName);
+            else
+                length = Append(_queueBuffer, length, "NONE");
+            length = Append(_queueBuffer, length, "  <  ");
+            length = AppendInt(_queueBuffer, length, activeIndex + 1);
+            length = Append(_queueBuffer, length, "  >  ");
+            if (next != null)
+                length = AppendUpperInvariant(_queueBuffer, length, next.moduleName);
+            else
+                length = Append(_queueBuffer, length, "NONE");
+            SetBufferText(_queueLine, _queueBuffer, length);
         }
 
         private void BuildCostSummary(BuildableData data, bool hasResources)
@@ -545,12 +560,12 @@ namespace Hecton8.UI
             if (data == null || data.buildCost == null || data.buildCost.Count == 0)
             {
                 _costLine.color = DimColor;
-                _costLine.SetText("COST // NONE");
+                SetLiteral(_costLine, _costBuffer, "COST // NONE");
                 return;
             }
 
-            _sb.Clear();
-            _sb.Append("COST // ");
+            int length = 0;
+            length = Append(_costBuffer, length, "COST // ");
 
             for (int i = 0; i < data.buildCost.Count; i++)
             {
@@ -561,18 +576,18 @@ namespace Hecton8.UI
                 int owned = inventory != null && cost.item != null
                     ? inventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId))
                     : 0;
-                if (_sb.Length > 8)
-                    _sb.Append("  |  ");
+                if (length > 8)
+                    length = Append(_costBuffer, length, "  |  ");
 
-                _sb.Append(cost.item.itemName);
-                _sb.Append(' ');
-                _sb.Append(owned);
-                _sb.Append('/');
-                _sb.Append(cost.amount);
+                length = Append(_costBuffer, length, cost.item.itemName);
+                length = Append(_costBuffer, length, ' ');
+                length = AppendInt(_costBuffer, length, owned);
+                length = Append(_costBuffer, length, '/');
+                length = AppendInt(_costBuffer, length, cost.amount);
             }
 
             _costLine.color = hasResources ? DimColor : WarnColor;
-            _costLine.SetText(_sb);
+            SetBufferText(_costLine, _costBuffer, length);
         }
 
         private static RectTransform CreateRect(string name, RectTransform parent)
@@ -607,15 +622,100 @@ namespace Hecton8.UI
             return text;
         }
 
-        private static void SetNumericText(TextMeshProUGUI label, string template, LocNumericArg value0, LocNumericArg value1, LocNumericArg value2)
+        private static void SetNumericText(TextMeshProUGUI label, char[] destination, LocNumericArg value0, LocNumericArg value1, LocNumericArg value2)
         {
-            if (label == null)
+            if (label == null || destination == null)
                 return;
 
-            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(ModuleIndexTemplateChars), value0, value1, value2, out char[] buffer, out int length);
-            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
+            if (!LocNumericBuffer.TryWrite(new ReadOnlySpan<char>(ModuleIndexTemplateChars), destination.AsSpan(), value0, value1, value2, out int length))
+            {
+                length = 0;
+            }
+
+            SetBufferText(label, destination, length);
+        }
+
+        private static void SetLiteral(TextMeshProUGUI label, char[] buffer, string value)
+        {
+            int length = CopyToBuffer(buffer, value);
+            SetBufferText(label, buffer, length);
+        }
+
+        private static void SetBufferText(TextMeshProUGUI label, char[] buffer, int length)
+        {
+            if (label == null || buffer == null)
+                return;
+
+            int safeLength = Mathf.Clamp(length, 0, buffer.Length);
             label.SetCharArray(buffer, 0, safeLength);
             label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private static int CopyToBuffer(char[] buffer, string value)
+        {
+            if (buffer == null || string.IsNullOrEmpty(value))
+                return 0;
+
+            int length = Mathf.Min(value.Length, buffer.Length);
+            value.AsSpan(0, length).CopyTo(buffer.AsSpan());
+            return length;
+        }
+
+        private static int Append(char[] buffer, int index, string value)
+        {
+            if (buffer == null || string.IsNullOrEmpty(value) || index >= buffer.Length)
+                return Mathf.Clamp(index, 0, buffer != null ? buffer.Length : 0);
+
+            int length = Mathf.Min(value.Length, buffer.Length - index);
+            value.AsSpan(0, length).CopyTo(buffer.AsSpan(index));
+            return index + length;
+        }
+
+        private static int Append(char[] buffer, int index, char value)
+        {
+            if (buffer == null)
+                return 0;
+
+            if (index < 0)
+                index = 0;
+            if (index >= buffer.Length)
+                return buffer.Length;
+
+            buffer[index] = value;
+            return index + 1;
+        }
+
+        private static int AppendUpperInvariant(char[] buffer, int index, string value)
+        {
+            if (buffer == null || string.IsNullOrEmpty(value))
+                return Mathf.Clamp(index, 0, buffer != null ? buffer.Length : 0);
+
+            if (index < 0)
+                index = 0;
+
+            int length = Mathf.Min(value.Length, buffer.Length - index);
+            for (int i = 0; i < length; i++)
+            {
+                buffer[index + i] = char.ToUpperInvariant(value[i]);
+            }
+
+            return index + length;
+        }
+
+        private static int AppendInt(char[] buffer, int index, int value)
+        {
+            if (buffer == null)
+                return 0;
+
+            if (index < 0)
+                index = 0;
+            if (index >= buffer.Length)
+                return buffer.Length;
+
+            if (!value.TryFormat(buffer.AsSpan(index), out int written))
+                return index;
+
+            return index + written;
         }
     }
 }

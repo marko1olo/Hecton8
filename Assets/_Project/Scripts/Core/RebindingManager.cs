@@ -31,7 +31,9 @@ namespace Hecton8.Input
         [SerializeField] private bool verboseLogging;
 
         private InputActionRebindingExtensions.RebindingOperation _activeRebind;
+        private InputManager _nativeInputManager;
         private bool _registeredService;
+        private bool _initialOverridesLoadAttempted;
 
         internal static RebindingManager ActiveRuntimeInstance { get; private set; }
 
@@ -63,8 +65,7 @@ namespace Hecton8.Input
             ActiveRuntimeInstance = this;
             TryRegisterService();
 
-            if (!loadOverridesOnAwake) return;
-            LoadOverrides();
+            TryLoadInitialOverrides();
         }
 
         private void OnEnable()
@@ -90,6 +91,19 @@ namespace Hecton8.Input
             TryUnregisterService();
         }
 
+        /// <summary>
+        /// Binds the bootstrap-owned native input action owner used for rebind operations.
+        /// </summary>
+        /// <param name="inputManager">Bootstrap-owned native input manager.</param>
+        internal void BindNativeInputManager(InputManager inputManager)
+        {
+            if (ReferenceEquals(_nativeInputManager, inputManager))
+                return;
+
+            _nativeInputManager = inputManager;
+            TryLoadInitialOverrides();
+        }
+
         public bool StartInteractiveRebind(
             string actionName,
             string actionMap = "Player",
@@ -104,7 +118,14 @@ namespace Hecton8.Input
                 return false;
             }
 
-            InputAction action = InputManager.Instance.GetAction(actionName, actionMap);
+            InputManager inputManager = ResolveNativeInputManager();
+            if (inputManager == null)
+            {
+                LogWarning("Cannot start rebind because the native input manager is not bound.");
+                return false;
+            }
+
+            InputAction action = inputManager.GetAction(actionName, actionMap);
             if (action == null)
             {
                 LogWarning($"Action not found: map='{actionMap}', action='{actionName}'.");
@@ -244,7 +265,14 @@ namespace Hecton8.Input
                 return false;
             }
 
-            InputAction action = InputManager.Instance.GetAction(actionName, actionMap);
+            InputManager inputManager = ResolveNativeInputManager();
+            if (inputManager == null)
+            {
+                LogWarning("Cannot start rebind by id because the native input manager is not bound.");
+                return false;
+            }
+
+            InputAction action = inputManager.GetAction(actionName, actionMap);
             if (action == null)
             {
                 LogWarning($"Action not found: map='{actionMap}', action='{actionName}'.");
@@ -276,10 +304,10 @@ namespace Hecton8.Input
 
         public void SaveOverrides()
         {
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = ResolveNativeInputManager();
             if (inputManager == null)
             {
-                LogWarning("Cannot save binding overrides because InputManager.Instance is null.");
+                LogWarning("Cannot save binding overrides because the native input manager is not bound.");
                 return;
             }
 
@@ -303,10 +331,10 @@ namespace Hecton8.Input
 
         public void LoadOverrides()
         {
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = ResolveNativeInputManager();
             if (inputManager == null)
             {
-                LogWarning("Cannot load binding overrides because InputManager.Instance is null.");
+                LogWarning("Cannot load binding overrides because the native input manager is not bound.");
                 return;
             }
 
@@ -322,7 +350,7 @@ namespace Hecton8.Input
         public void ClearOverrides(bool clearPlayerPrefs = true)
         {
             CancelRebind();
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = ResolveNativeInputManager();
             if (inputManager != null)
                 inputManager.ClearBindingOverrides();
 
@@ -534,7 +562,7 @@ namespace Hecton8.Input
                 return;
 
             GlobalRegistry.RegisterInputBindingService(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.InputBinding, this);
         }
 
         private void TryUnregisterService()
@@ -546,6 +574,20 @@ namespace Hecton8.Input
                 GlobalRegistry.UnregisterInputBindingService(this);
 
             _registeredService = false;
+        }
+
+        private InputManager ResolveNativeInputManager()
+        {
+            return _nativeInputManager;
+        }
+
+        private void TryLoadInitialOverrides()
+        {
+            if (!loadOverridesOnAwake || _initialOverridesLoadAttempted || _nativeInputManager == null)
+                return;
+
+            _initialOverridesLoadAttempted = true;
+            LoadOverrides();
         }
 
         private void DisposeActiveRebind()
@@ -573,7 +615,8 @@ namespace Hecton8.Input
         /// </summary>
         private string DetectConflict(InputAction currentAction, int currentBindingIndex, string currentActionMap)
         {
-            if (currentAction == null || InputManager.Instance == null)
+            InputManager inputManager = ResolveNativeInputManager();
+            if (currentAction == null || inputManager == null)
                 return null;
 
             string newPath;
@@ -590,7 +633,7 @@ namespace Hecton8.Input
                 return null;
 
             // Check all actions in the same action map for conflicts
-            InputActionMap actionMap = InputManager.Instance.GetActionMap(currentActionMap);
+            InputActionMap actionMap = inputManager.GetActionMap(currentActionMap);
             if (actionMap == null)
                 return null;
 

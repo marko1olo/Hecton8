@@ -883,7 +883,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUIService(this);
-            _ownsGlobalUiSlot = true;
+            _ownsGlobalUiSlot = ReferenceEquals(GlobalRegistry.UI, this);
         }
 
         private void UnregisterUiService()
@@ -5357,20 +5357,20 @@ namespace Hecton8.UI
             if (!_tickRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _tickRegistered = true;
+                _tickRegistered = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_lateFrameTickRegistered)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-                _lateFrameTickRegistered = true;
+                _lateFrameTickRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
             }
 
             if (_slowTickRegistered)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _slowTickRegistered = true;
+            _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterRuntimeTick()
@@ -5766,14 +5766,14 @@ namespace Hecton8.UI
             if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTickManager = true;
+                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (_registeredToSlowTickManager || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registeredToSlowTickManager = true;
+            _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

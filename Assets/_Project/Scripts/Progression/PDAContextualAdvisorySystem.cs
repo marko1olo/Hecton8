@@ -473,7 +473,7 @@ namespace Hecton8.Progression
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-            _registeredToTick = true;
+            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

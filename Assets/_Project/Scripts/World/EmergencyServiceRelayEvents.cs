@@ -30,9 +30,12 @@ namespace Hecton8.World
         private static readonly RegistryBucket<IEmergencyServiceRelayEventListener> _listeners = new RegistryBucket<IEmergencyServiceRelayEventListener>(16);
         private static readonly System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay> _relaysByInstanceId = new System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay>(32);
         private static NativeQueue<RelayEventPayload> _pendingEvents;
+        private static NativeQueue<RelayEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -44,7 +47,16 @@ namespace Hecton8.World
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(EmergencyServiceRelayEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
             _listeners.Clear();
             _relaysByInstanceId.Clear();
         }
@@ -68,17 +80,26 @@ namespace Hecton8.World
         /// <param name="firstActivation">True when this was the first discovery-grade access.</param>
         public static void RaiseRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
         {
-            if (relay == null || _listeners.Count <= 0 || _pendingEventCount >= PendingEventCapacity)
+            if (relay == null || _listeners.Count <= 0 || _pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
             EnsureInitialized();
             ulong relayEntityId = UnityEngine.EntityId.ToULong(relay.GetEntityId());
             _relaysByInstanceId[relayEntityId] = relay;
-            _pendingEvents.Enqueue(new RelayEventPayload
+            RelayEventPayload payload = new RelayEventPayload
             {
                 RelayEntityId = relayEntityId,
                 FirstActivation = firstActivation ? (byte)1 : (byte)0
-            });
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
         }
 
@@ -87,6 +108,7 @@ namespace Hecton8.World
             if (!_pendingEvents.IsCreated)
                 return;
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -105,12 +127,27 @@ namespace Hecton8.World
                 IEmergencyServiceRelayEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 bool firstActivation = payload.FirstActivation != 0;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnEmergencyServiceRelayActivated(relay, firstActivation);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IEmergencyServiceRelayEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnEmergencyServiceRelayActivated(relay, firstActivation);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         private static void EnsureInitialized()
@@ -125,6 +162,34 @@ namespace Hecton8.World
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
             }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<RelayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RelayEventPayload>[16] - next-frame emergency relay event lane prevents same-frame reentrant dispatch - owner: EmergencyServiceRelayEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(EmergencyServiceRelayEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<RelayEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 }

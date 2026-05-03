@@ -184,7 +184,11 @@ namespace Hecton8.Gameplay
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnFirstHourMilestoneReached(in payload);
+                    {
+                        IFirstHourEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnFirstHourMilestoneReached(in payload);
+                    }
                 }
                 finally
                 {
@@ -529,7 +533,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()

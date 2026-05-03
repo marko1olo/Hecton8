@@ -442,7 +442,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()
@@ -459,7 +459,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterPlayerActionRuntime(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerActions, this);
         }
 
         private void TryUnregisterService()

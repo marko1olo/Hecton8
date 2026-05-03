@@ -115,7 +115,7 @@ namespace Hecton8.UI
         private bool _lastIntrusionActive;
         private bool _lastMechModeActive;
         private int _lastRebootProgressPercent = -1;
-        private string _cachedRebootBinding = string.Empty;
+        private int _cachedRebootBindingLength;
         private InputDisplayStyle _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
         private string _localizedMechModeTag = MechModeTag;
         private string _localizedIntrusionHintPrefix = "REBOOT // HOLD ";
@@ -132,6 +132,8 @@ namespace Hecton8.UI
         private char[] _contextTagBuffer = new char[64];
         // COLD ALLOC: char[96] - intrusion status hint buffer - owner: PDAShellChrome
         private readonly char[] _intrusionHintBuffer = new char[96];
+        // COLD ALLOC: char[48] - cached PDA reboot binding label - owner: PDAShellChrome
+        private readonly char[] _rebootBindingBuffer = new char[48];
         private int _appliedTitleVersion = int.MinValue;
         private int _appliedTabVersion = int.MinValue;
         private int _appliedIntrusionVersion = int.MinValue;
@@ -532,7 +534,7 @@ namespace Hecton8.UI
             _lastIntrusionActive = false;
             _lastMechModeActive = false;
             _lastRebootProgressPercent = -1;
-            _cachedRebootBinding = string.Empty;
+            _cachedRebootBindingLength = 0;
             _cachedRebootBindingStyle = (InputDisplayStyle)(-1);
             InvalidateAppliedLabelVersions();
             RefreshChrome();
@@ -735,7 +737,7 @@ namespace Hecton8.UI
             {
                 if (intrusionActive)
                 {
-                    string rebootBinding = ResolveRebootBinding();
+                    ReadOnlySpan<char> rebootBinding = ResolveRebootBinding();
                     SetIntrusionHintText(_intrusionText, rebootBinding, rtl, useStressReactiveStrings, stressReactiveIntensity, stressBucket);
                     _intrusionText.alpha = 1f;
                 }
@@ -899,7 +901,7 @@ namespace Hecton8.UI
 
         private void SetIntrusionHintText(
             TMP_Text label,
-            string binding,
+            ReadOnlySpan<char> binding,
             bool rtl,
             bool useStressReactiveStrings,
             float stressReactiveIntensity,
@@ -908,12 +910,13 @@ namespace Hecton8.UI
             if (label == null)
                 return;
 
+            ReadOnlySpan<char> resolvedBinding = binding.IsEmpty ? "SUBMIT".AsSpan() : binding;
             int index = 0;
             index = CopyLiteralToBuffer(_intrusionHintBuffer, index, _localizedIntrusionHintPrefix);
-            index = CopyLiteralToBuffer(_intrusionHintBuffer, index, string.IsNullOrEmpty(binding) ? "SUBMIT" : binding);
+            index = CopySpanToBuffer(_intrusionHintBuffer, index, resolvedBinding);
             index = CopyLiteralToBuffer(_intrusionHintBuffer, index, _localizedIntrusionHintSuffix);
 
-            int version = unchecked((((ComputeTextVersion(_localizedIntrusionHintPrefix.AsSpan(), 239, stressBucket) * 397) ^ ComputeTextVersion(_localizedIntrusionHintSuffix.AsSpan(), 241, stressBucket)) * 397) ^ ComputeTextVersion((string.IsNullOrEmpty(binding) ? "SUBMIT" : binding).AsSpan(), 243, stressBucket));
+            int version = unchecked((((ComputeTextVersion(_localizedIntrusionHintPrefix.AsSpan(), 239, stressBucket) * 397) ^ ComputeTextVersion(_localizedIntrusionHintSuffix.AsSpan(), 241, stressBucket)) * 397) ^ ComputeTextVersion(resolvedBinding, 243, stressBucket));
             ApplyTextBuffer(
                 label,
                 _intrusionHintBuffer,
@@ -943,6 +946,16 @@ namespace Hecton8.UI
 
             int copyLength = Mathf.Min(value.Length, buffer.Length - startIndex);
             value.AsSpan(0, copyLength).CopyTo(buffer.AsSpan(startIndex, copyLength));
+            return startIndex + copyLength;
+        }
+
+        private static int CopySpanToBuffer(char[] buffer, int startIndex, ReadOnlySpan<char> value)
+        {
+            if (buffer == null || value.IsEmpty || startIndex >= buffer.Length)
+                return startIndex;
+
+            int copyLength = Mathf.Min(value.Length, buffer.Length - startIndex);
+            value.Slice(0, copyLength).CopyTo(buffer.AsSpan(startIndex, copyLength));
             return startIndex + copyLength;
         }
 
@@ -1123,29 +1136,37 @@ namespace Hecton8.UI
             _appliedRightFooterVersion = int.MinValue;
         }
 
-        private string ResolveRebootBinding()
+        private ReadOnlySpan<char> ResolveRebootBinding()
         {
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
             InputDisplayStyle displayStyle = inputManager != null
                 ? inputManager.CurrentDisplayStyle
                 : InputDisplayStyle.KeyboardMouse;
 
-            if (!string.IsNullOrEmpty(_cachedRebootBinding) && _cachedRebootBindingStyle == displayStyle)
-                return _cachedRebootBinding;
+            if (_cachedRebootBindingLength > 0 && _cachedRebootBindingStyle == displayStyle)
+                return new ReadOnlySpan<char>(_rebootBindingBuffer, 0, _cachedRebootBindingLength);
 
-            string binding = string.Empty;
-            if (inputManager != null)
+            _cachedRebootBindingLength = 0;
+            _cachedRebootBindingStyle = displayStyle;
+            if (inputManager != null &&
+                inputManager.TryWriteBindingDisplayString(
+                    "Submit",
+                    "UI",
+                    -1,
+                    _rebootBindingBuffer,
+                    0,
+                    out int bindingLength) &&
+                bindingLength > 0)
             {
-                if (!inputManager.TryGetBindingMarkupForToken("submit", out binding) || string.IsNullOrWhiteSpace(binding))
-                    binding = inputManager.GetBindingDisplayString("Submit", "UI", -1);
+                _cachedRebootBindingLength = bindingLength;
+                return new ReadOnlySpan<char>(_rebootBindingBuffer, 0, _cachedRebootBindingLength);
             }
 
-            if (string.IsNullOrWhiteSpace(binding))
-                binding = "SUBMIT";
+            ReadOnlySpan<char> fallback = "SUBMIT".AsSpan();
+            fallback.CopyTo(_rebootBindingBuffer);
+            _cachedRebootBindingLength = fallback.Length;
 
-            _cachedRebootBinding = binding;
-            _cachedRebootBindingStyle = displayStyle;
-            return _cachedRebootBinding;
+            return new ReadOnlySpan<char>(_rebootBindingBuffer, 0, _cachedRebootBindingLength);
         }
 
         private void EvaluateTickRegistration()
@@ -1165,7 +1186,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

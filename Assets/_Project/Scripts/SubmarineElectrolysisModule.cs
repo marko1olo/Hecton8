@@ -47,13 +47,16 @@ namespace Hecton8.Gameplay
         private static readonly RegistryBucket<IElectrolysisAcousticEventListener> _listeners = new RegistryBucket<IElectrolysisAcousticEventListener>(ListenerCapacity);
 
         private static NativeQueue<ElectrolysisAcousticPayload> _pendingEvents;
+        private static NativeQueue<ElectrolysisAcousticPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
         private static int _lastOverflowWarningFrame = -1;
 
         /// <summary>
         /// Number of pending electrolysis acoustic payloads waiting for late-frame dispatch.
         /// </summary>
-        public static int PendingCount => _pendingEventCount;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -65,8 +68,17 @@ namespace Hecton8.Gameplay
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ElectrolysisAcousticEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
             _lastOverflowWarningFrame = -1;
         }
 
@@ -117,6 +129,7 @@ namespace Hecton8.Gameplay
             if (!_pendingEvents.IsCreated)
                 return;
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -138,37 +151,70 @@ namespace Hecton8.Gameplay
 
                 IElectrolysisAcousticEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnElectrolysisAcoustic(in acousticEvent);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IElectrolysisAcousticEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnElectrolysisAcoustic(in acousticEvent);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<ElectrolysisAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - deferred electrolysis acoustic lane flushed by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(ElectrolysisAcousticEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<ElectrolysisAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - deferred electrolysis acoustic lane flushed by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(ElectrolysisAcousticEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<ElectrolysisAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - next-frame electrolysis acoustic lane prevents same-frame reentrant dispatch - owner: ElectrolysisAcousticEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(ElectrolysisAcousticEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static bool Enqueue(in ElectrolysisAcousticPayload payload)
         {
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportOverflowOncePerFrame();
                 return false;
             }
 
             EnsureInitialized();
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return true;
+            }
+
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
@@ -182,6 +228,23 @@ namespace Hecton8.Gameplay
 
             _lastOverflowWarningFrame = frame;
             GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<ElectrolysisAcousticPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 
@@ -441,7 +504,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()

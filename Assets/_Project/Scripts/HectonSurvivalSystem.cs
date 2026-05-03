@@ -327,6 +327,8 @@ namespace Hecton8.Gameplay
         private const float OverpressureSeveritySafeDepthScale = 0.35f;
         private const int SurvivalDatabaseRowCapacity = 256;
         private const int SurvivalDatabaseColumnCapacity = 16;
+        private const string NativeMemoryOwner = nameof(HectonSurvivalSystem);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         private const float Epsilon       = 0.1f;
         private const float DirtySentinel = -9999f;
@@ -502,13 +504,13 @@ namespace Hecton8.Gameplay
             if (!_registeredUpdatable)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registeredUpdatable = true;
+                _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredSlowTickable)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-                _registeredSlowTickable = true;
+                _registeredSlowTickable = GlobalRegistry.SlowTickables.Contains(this);
             }
         }
 
@@ -1306,27 +1308,34 @@ namespace Hecton8.Gameplay
 
         private void DisposeInjectedSurvivalDatabase()
         {
-            if (_survivalDatabaseStableHashes.IsCreated)
-                _survivalDatabaseStableHashes.Dispose();
-
-            if (_survivalDatabaseMassKilograms.IsCreated)
-                _survivalDatabaseMassKilograms.Dispose();
-
-            if (_survivalDatabaseVolumeLiters.IsCreated)
-                _survivalDatabaseVolumeLiters.Dispose();
-
-            if (_survivalDatabaseEnergyDensityMegajoulesPerKilogram.IsCreated)
-                _survivalDatabaseEnergyDensityMegajoulesPerKilogram.Dispose();
-
-            if (_survivalDatabaseBaseDurability.IsCreated)
-                _survivalDatabaseBaseDurability.Dispose();
-
-            _survivalDatabaseStableHashes = default;
-            _survivalDatabaseMassKilograms = default;
-            _survivalDatabaseVolumeLiters = default;
-            _survivalDatabaseEnergyDensityMegajoulesPerKilogram = default;
-            _survivalDatabaseBaseDurability = default;
+            DisposeTrackedNativeArray(ref _survivalDatabaseStableHashes);
+            DisposeTrackedNativeArray(ref _survivalDatabaseMassKilograms);
+            DisposeTrackedNativeArray(ref _survivalDatabaseVolumeLiters);
+            DisposeTrackedNativeArray(ref _survivalDatabaseEnergyDensityMegajoulesPerKilogram);
+            DisposeTrackedNativeArray(ref _survivalDatabaseBaseDurability);
             _survivalDatabaseItemCount = 0;
+        }
+
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                NativeMemoryOwner,
+                label,
+                NativeMemoryLifetime);
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         // ═════════════════════════════════════════════════════════
@@ -1516,6 +1525,11 @@ namespace Hecton8.Gameplay
             _survivalDatabaseVolumeLiters = new NativeArray<float>(parsedItemCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             _survivalDatabaseEnergyDensityMegajoulesPerKilogram = new NativeArray<float>(parsedItemCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             _survivalDatabaseBaseDurability = new NativeArray<int>(parsedItemCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(_survivalDatabaseStableHashes, nameof(_survivalDatabaseStableHashes));
+            RegisterTrackedNativeArray(_survivalDatabaseMassKilograms, nameof(_survivalDatabaseMassKilograms));
+            RegisterTrackedNativeArray(_survivalDatabaseVolumeLiters, nameof(_survivalDatabaseVolumeLiters));
+            RegisterTrackedNativeArray(_survivalDatabaseEnergyDensityMegajoulesPerKilogram, nameof(_survivalDatabaseEnergyDensityMegajoulesPerKilogram));
+            RegisterTrackedNativeArray(_survivalDatabaseBaseDurability, nameof(_survivalDatabaseBaseDurability));
             _survivalDatabaseItemCount = parsedItemCount;
 
             for (int i = 0; i < parsedItemCount; i++)
@@ -2260,7 +2274,7 @@ namespace Hecton8.Gameplay
             // COLD ALLOC: SurvivalDatabaseItemRecord[parsedRowCount] — immutable injected item-parameter snapshot — owner: HectonSurvivalSystem
             parsedItems = new NativeArray<SurvivalDatabaseItemRecord>(
                 parsedItemCount,
-                Allocator.Persistent,
+                Allocator.TempJob,
                 NativeArrayOptions.UninitializedMemory);
 
             for (int i = 0; i < parsedItemCount; i++)

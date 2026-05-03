@@ -66,12 +66,15 @@ namespace Hecton8.UI
         // COLD ALLOC: RegistryBucket<IBaseIntegrityEventListener>[8] - base integrity listeners drained by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
         private static readonly RegistryBucket<IBaseIntegrityEventListener> _listeners = new RegistryBucket<IBaseIntegrityEventListener>(8);
         private static NativeQueue<BaseIntegrityEventPayload> _pendingEvents;
+        private static NativeQueue<BaseIntegrityEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
         /// <summary>
         /// Number of pending payloads waiting for LateUpdate dispatch.
         /// </summary>
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -83,8 +86,17 @@ namespace Hecton8.UI
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(BaseIntegrityEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         /// <summary>
@@ -168,6 +180,7 @@ namespace Hecton8.UI
                 return;
             }
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -182,64 +195,136 @@ namespace Hecton8.UI
 
                 IBaseIntegrityEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnBaseIntegrityEvent(in payload);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IBaseIntegrityEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnBaseIntegrityEvent(in payload);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         private static void Enqueue(BaseIntegrityEventType eventType, BaseModuleFailureMode failureMode, float value)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
-            _pendingEvents.Enqueue(new BaseIntegrityEventPayload
+            BaseIntegrityEventPayload payload = new BaseIntegrityEventPayload
             {
                 Value = value,
                 FailureMode = (byte)failureMode,
                 EventType = (byte)eventType,
                 Reserved = 0
-            });
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
         }
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] - deferred base integrity lane flushed by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(BaseIntegrityEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] - deferred base integrity lane flushed by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(BaseIntegrityEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] - next-frame base integrity lane prevents same-frame reentrant dispatch - owner: BaseIntegrityEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(BaseIntegrityEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void DrainWithoutDispatch()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                 return;
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            if (_pendingEventCount <= 0)
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                PromoteNextFrameEventsIfFrontEmpty();
+                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                     return;
-
-                if (!_pendingEvents.TryDequeue(out _))
-                    break;
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<BaseIntegrityEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
+                return true;
+
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<BaseIntegrityEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 
@@ -260,11 +345,6 @@ namespace Hecton8.UI
 
         [SerializeField] private LayerMask moduleLayerMask = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
-        public static BaseIntegrityHUD Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticInstance() => Instance = null;
-
         private Transform _playerTransform;
         private bool _registered;
         private float _lastWarningIntegrity = 1f;
@@ -276,23 +356,25 @@ namespace Hecton8.UI
         private BaseModule _lastBreachedModule;
         private float _nextEmergencyTime;
 
-        // COLD ALLOC: Collider[8] - nearest-module overlap scan buffer - owner: BaseIntegrityHUD
-        private readonly Collider[] _scanBuffer = new Collider[8];
-
         private const float WarningCooldown = 30f;
         private const float EmergencyCooldown = 12f;
         private const float AirWarningCooldown = 18f;
+        private const int PercentMessageCacheSize = 101;
 
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            Instance = this;
-        }
+        // COLD ALLOC: Collider[8] - nearest-module overlap scan buffer - owner: BaseIntegrityHUD
+        private readonly Collider[] _scanBuffer = new Collider[8];
+        // COLD ALLOC: uint[101] — cached danger notification hashes by rounded percent — owner: BaseIntegrityHUD
+        private readonly uint[] _dangerNotificationHashes = new uint[PercentMessageCacheSize];
+        // COLD ALLOC: uint[101] — cached critical notification hashes by rounded percent — owner: BaseIntegrityHUD
+        private readonly uint[] _criticalNotificationHashes = new uint[PercentMessageCacheSize];
+        // COLD ALLOC: uint[101] — cached warning notification hashes by rounded percent — owner: BaseIntegrityHUD
+        private readonly uint[] _warningNotificationHashes = new uint[PercentMessageCacheSize];
+        // COLD ALLOC: uint[101] — cached air-critical notification hashes by rounded percent — owner: BaseIntegrityHUD
+        private readonly uint[] _airCriticalNotificationHashes = new uint[PercentMessageCacheSize];
+        private uint _dangerFormatHash;
+        private uint _criticalFormatHash;
+        private uint _warningFormatHash;
+        private uint _airCriticalFormatHash;
 
         private void OnEnable()
         {
@@ -308,9 +390,6 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             TryUnregister();
-
-            if (Instance == this)
-                Instance = null;
         }
 
         public void SlowTick()
@@ -369,14 +448,17 @@ namespace Hecton8.UI
                 return;
 
             _lastWarningIntegrity = integrity;
-            float integrityPercent = integrity * 100f;
+            int integrityPercent = NormalizedPercent(integrity);
 
             if (integrity <= dangerThreshold)
             {
                 _nextWarningTime = Time.time + WarningCooldown * 0.3f;
-                NotificationEvents.PushWarning(string.Format(
+                uint messageHash = GetPercentNotificationHash(
+                    _dangerNotificationHashes,
+                    ref _dangerFormatHash,
                     ResolveLocalized(LocalizationKeys.BASE_INTEGRITY_DANGER, "BASE CRITICAL: {0}% - BREACH IMMINENT!"),
-                    integrityPercent));
+                    integrityPercent);
+                NotificationEvents.PushRegisteredWarning(messageHash);
                 BaseIntegrityEvents.RaiseIntegrityWarning(integrity);
                 return;
             }
@@ -384,9 +466,12 @@ namespace Hecton8.UI
             if (integrity <= criticalThreshold)
             {
                 _nextWarningTime = Time.time + WarningCooldown * 0.5f;
-                NotificationEvents.PushWarning(string.Format(
+                uint messageHash = GetPercentNotificationHash(
+                    _criticalNotificationHashes,
+                    ref _criticalFormatHash,
                     ResolveLocalized(LocalizationKeys.BASE_INTEGRITY_CRITICAL, "HECTON-OS: MODULE INTEGRITY {0}% - REPAIRS REQUIRED."),
-                    integrityPercent));
+                    integrityPercent);
+                NotificationEvents.PushRegisteredWarning(messageHash);
                 BaseIntegrityEvents.RaiseIntegrityWarning(integrity);
                 return;
             }
@@ -394,9 +479,12 @@ namespace Hecton8.UI
             if (integrity <= warningThreshold)
             {
                 _nextWarningTime = Time.time + WarningCooldown;
-                NotificationEvents.PushInfo(string.Format(
+                uint messageHash = GetPercentNotificationHash(
+                    _warningNotificationHashes,
+                    ref _warningFormatHash,
                     ResolveLocalized(LocalizationKeys.BASE_INTEGRITY_WARNING, "BASE MODULE: INTEGRITY {0}%."),
-                    integrityPercent));
+                    integrityPercent);
+                NotificationEvents.PushRegisteredInfo(messageHash);
             }
         }
 
@@ -454,7 +542,12 @@ namespace Hecton8.UI
 
             if (airQuality <= airCriticalThreshold)
             {
-                NotificationEvents.PushWarning(string.Format("BASE AIR QUALITY CRITICAL: {0}%", Mathf.RoundToInt(airQuality * 100f)));
+                uint messageHash = GetPercentNotificationHash(
+                    _airCriticalNotificationHashes,
+                    ref _airCriticalFormatHash,
+                    "BASE AIR QUALITY CRITICAL: {0}%",
+                    NormalizedPercent(airQuality));
+                NotificationEvents.PushRegisteredWarning(messageHash);
             }
         }
 
@@ -482,7 +575,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -492,6 +585,34 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
             _registered = false;
+        }
+
+        private uint GetPercentNotificationHash(uint[] cache, ref uint cachedFormatHash, string format, int percent)
+        {
+            if (cache == null || cache.Length != PercentMessageCacheSize || string.IsNullOrEmpty(format))
+                return 0u;
+
+            uint currentFormatHash = NotificationEvents.ComputeMessageHash(format);
+            if (cachedFormatHash != currentFormatHash)
+            {
+                System.Array.Clear(cache, 0, cache.Length);
+                cachedFormatHash = currentFormatHash;
+            }
+
+            int clampedPercent = Mathf.Clamp(percent, 0, PercentMessageCacheSize - 1);
+            uint messageHash = cache[clampedPercent];
+            if (messageHash != 0u)
+                return messageHash;
+
+            string message = string.Format(format, clampedPercent);
+            messageHash = NotificationEvents.RegisterMessage(message);
+            cache[clampedPercent] = messageHash;
+            return messageHash;
+        }
+
+        private static int NormalizedPercent(float value)
+        {
+            return Mathf.Clamp(Mathf.RoundToInt(value * 100f), 0, PercentMessageCacheSize - 1);
         }
 
         private static string ResolveLocalized(string key, string fallback)

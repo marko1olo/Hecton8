@@ -27,6 +27,9 @@ namespace Hecton8.UI
     public class BeaconHUDElement : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
         private static readonly char[] s_EmptyChars = new char[1];
+        private const int BeaconLabelTextCapacity = 96;
+        private const uint LabelHashSeed = 2166136261u;
+        private const uint LabelHashPrime = 16777619u;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -92,16 +95,19 @@ namespace Hecton8.UI
                 for (int i = 0; i < _iconDisplays.Length; i++)
                 {
                     GameObject icon = Instantiate(beaconIconPrefab, iconContainer);
-                    CanvasGroup canvasGroup = icon.GetComponent<CanvasGroup>();
-                    if (canvasGroup == null)
+                    if (!icon.TryGetComponent(out CanvasGroup canvasGroup))
+                    {
+                        // COLD ALLOC: CanvasGroup[1] — missing beacon icon visibility proxy — owner: BeaconHUDElement
                         canvasGroup = icon.AddComponent<CanvasGroup>();
+                    }
                     _iconDisplays[i] = new BeaconIconDisplay
                     {
                         gameObject = icon,
                         transform = icon.transform,
                         canvasGroup = canvasGroup,
                         labelText = ResolveChildText(icon.transform, "Label"),
-                        distanceText = ResolveChildText(icon.transform, "Distance")
+                        distanceText = ResolveChildText(icon.transform, "Distance"),
+                        labelBuffer = new char[BeaconLabelTextCapacity] // COLD ALLOC: char[96] - beacon HUD label text staging buffer - owner: BeaconHUDElement
                     };
 
                     ApplyDisplayVisible(_iconDisplays[i], false, 0f);
@@ -225,18 +231,29 @@ namespace Hecton8.UI
                 if (showLabel)
                 {
                     string displayLabel = beacon.DisplayLabel;
-                    if (!string.Equals(display.CachedLabel, displayLabel, System.StringComparison.Ordinal))
+                    int labelLength = ResolveLabelDisplayLength(displayLabel, display.labelBuffer);
+                    bool truncated = IsLabelTruncated(displayLabel, labelLength, display.labelBuffer);
+                    uint labelHash = ComputeLabelDisplayHash(displayLabel, labelLength, truncated);
+                    if (!display.HasCachedLabel ||
+                        display.CachedLabelLength != labelLength ||
+                        display.CachedLabelHash != labelHash ||
+                        !LabelBufferMatches(display, displayLabel, labelLength, truncated))
                     {
-                        string resolvedLabel = displayLabel ?? string.Empty;
-                        display.labelText.SetText(resolvedLabel);
-                        display.CachedLabel = resolvedLabel;
+                        WriteLabelToBuffer(displayLabel, display.labelBuffer, labelLength, truncated);
+                        display.labelText.SetCharArray(display.labelBuffer, 0, labelLength);
+                        display.labelText.UpdateVertexData(TMPro.TMP_VertexDataUpdateFlags.All);
+                        display.CachedLabelLength = labelLength;
+                        display.CachedLabelHash = labelHash;
+                        display.HasCachedLabel = true;
                     }
                 }
-                else if (!string.IsNullOrEmpty(display.CachedLabel))
+                else if (display.HasCachedLabel)
                 {
                     display.labelText.SetCharArray(s_EmptyChars, 0, 0);
                     display.labelText.UpdateVertexData(TMPro.TMP_VertexDataUpdateFlags.All);
-                    display.CachedLabel = string.Empty;
+                    display.CachedLabelLength = 0;
+                    display.CachedLabelHash = LabelHashSeed;
+                    display.HasCachedLabel = false;
                 }
             }
 
@@ -265,6 +282,59 @@ namespace Hecton8.UI
             }
         }
 
+        private static bool LabelBufferMatches(BeaconIconDisplay display, string displayLabel, int labelLength, bool truncated)
+        {
+            for (int i = 0; i < labelLength; i++)
+            {
+                if (display.labelBuffer[i] != ResolveLabelDisplayChar(displayLabel, i, labelLength, truncated))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static int ResolveLabelDisplayLength(string displayLabel, char[] destination)
+        {
+            if (string.IsNullOrEmpty(displayLabel) || destination == null || destination.Length == 0)
+                return 0;
+
+            return Mathf.Min(displayLabel.Length, destination.Length);
+        }
+
+        private static bool IsLabelTruncated(string displayLabel, int labelLength, char[] destination)
+        {
+            return displayLabel != null &&
+                   destination != null &&
+                   displayLabel.Length > destination.Length &&
+                   labelLength >= 3;
+        }
+
+        private static void WriteLabelToBuffer(string displayLabel, char[] destination, int labelLength, bool truncated)
+        {
+            for (int i = 0; i < labelLength; i++)
+                destination[i] = ResolveLabelDisplayChar(displayLabel, i, labelLength, truncated);
+        }
+
+        private static uint ComputeLabelDisplayHash(string displayLabel, int labelLength, bool truncated)
+        {
+            uint hash = LabelHashSeed;
+            for (int i = 0; i < labelLength; i++)
+            {
+                hash ^= ResolveLabelDisplayChar(displayLabel, i, labelLength, truncated);
+                hash *= LabelHashPrime;
+            }
+
+            return hash;
+        }
+
+        private static char ResolveLabelDisplayChar(string displayLabel, int index, int labelLength, bool truncated)
+        {
+            if (truncated && index >= labelLength - 3)
+                return '.';
+
+            return displayLabel[index];
+        }
+
         private void HideAllIcons()
         {
             for (int i = 0; i < _iconDisplays.Length; i++)
@@ -282,13 +352,7 @@ namespace Hecton8.UI
 
             CanvasGroup canvasGroup = display.canvasGroup;
             if (canvasGroup == null)
-            {
-                canvasGroup = display.gameObject.GetComponent<CanvasGroup>();
-                if (canvasGroup == null)
-                    canvasGroup = display.gameObject.AddComponent<CanvasGroup>();
-
-                display.canvasGroup = canvasGroup;
-            }
+                return;
 
             canvasGroup.alpha = visible ? Mathf.Clamp01(alpha) : 0f;
             canvasGroup.blocksRaycasts = false;
@@ -304,7 +368,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTick()
@@ -371,7 +435,9 @@ namespace Hecton8.UI
                 if (display == null)
                     continue;
 
-                display.CachedLabel = null;
+                display.CachedLabelLength = 0;
+                display.CachedLabelHash = LabelHashSeed;
+                display.HasCachedLabel = false;
                 display.CachedDistanceMeters = 0;
                 display.HasCachedDistance = false;
             }
@@ -407,7 +473,10 @@ namespace Hecton8.UI
             public CanvasGroup canvasGroup;
             public TMPro.TMP_Text labelText;
             public TMPro.TMP_Text distanceText;
-            public string CachedLabel;
+            public char[] labelBuffer;
+            public int CachedLabelLength;
+            public uint CachedLabelHash = LabelHashSeed;
+            public bool HasCachedLabel;
             public int CachedDistanceMeters;
             public bool HasCachedDistance;
         }

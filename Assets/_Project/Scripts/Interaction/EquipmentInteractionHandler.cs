@@ -335,7 +335,8 @@ namespace Hecton8.Interaction
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-            _dispatcherRegistered = true;
+            _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this) ||
+                                    SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this);
         }
 
         private void TryUnregisterFromDispatcher()
@@ -343,8 +344,12 @@ namespace Hecton8.Interaction
             if (!_dispatcherRegistered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+            if (GlobalRegistry.Updatables.Contains(this))
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+
+            if (SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this))
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
+
             _dispatcherRegistered = false;
         }
 
@@ -354,7 +359,7 @@ namespace Hecton8.Interaction
                 return;
 
             GlobalRegistry.RegisterInteractionSignalService(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.InteractionSignals, this);
         }
 
         private void TryUnregisterSignalService()

@@ -24,6 +24,8 @@ namespace Hecton8.UI
     using Hecton8.Interaction;
     using Hecton8.Items;
     using Hecton8.Tools;
+    using System;
+    using System.Runtime.CompilerServices;
     using UnityEngine;
     using UnityEngine.Events;
 
@@ -32,7 +34,7 @@ namespace Hecton8.UI
     /// Shows different prompts based on looked-at object and held tool.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class InteractionUI : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
+    public class InteractionUI : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener, IGlobalRegistryHotSwapListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -91,6 +93,13 @@ namespace Hecton8.UI
         private PlayerInventory _inventory;
         private bool _registered;
         private string _currentPrompt;
+        private string _currentPromptSource;
+        private Collider _cachedPromptCollider;
+        private string _cachedPrompt;
+        private int _cachedPromptStateHash;
+        private bool _hasCachedPrompt;
+        private InputManager _subscribedInputManager;
+        private bool _hotSwapListenerRegistered;
         private bool _isVisible;
         private float _cameraRetryTime;
         private const float CameraRetryInterval = 2f;
@@ -144,20 +153,35 @@ namespace Hecton8.UI
         {
             ResolvePlayerReferences();
             LocalizationEvents.RegisterLanguageListener(this);
-            if (InputManager.Instance != null)
-                InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+            TryRegisterHotSwapListener();
+            SubscribeInputManagerIfAvailable();
             ConfigurePromptText();
             RefreshLocalizedPromptCache();
             RegisterToTick();
         }
 
+        private void Start()
+        {
+            TryRegisterHotSwapListener();
+            SubscribeInputManagerIfAvailable();
+            RefreshLocalizedPromptCache();
+            ClearPromptBuildCache();
+        }
+
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
-            if (InputManager.Instance != null)
-                InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
+            UnsubscribeInputManager();
+            TryUnregisterHotSwapListener();
             UnregisterFromTick();
+            ClearPromptBuildCache();
             SetVisible(false);
+        }
+
+        private void OnDestroy()
+        {
+            UnsubscribeInputManager();
+            TryUnregisterHotSwapListener();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -248,8 +272,39 @@ namespace Hecton8.UI
         private string BuildPrompt(Collider collider, float distance)
         {
             if (!InteractableRegistry.TryResolve(collider, out InteractableRegistry.TargetInfo targetInfo))
+            {
+                ClearPromptBuildCache();
                 return null;
+            }
 
+            bool canCachePrompt = CanCachePrompt(in targetInfo);
+            int promptStateHash = canCachePrompt ? ComputePromptStateHash(in targetInfo) : 0;
+            if (canCachePrompt &&
+                _hasCachedPrompt &&
+                ReferenceEquals(_cachedPromptCollider, collider) &&
+                _cachedPromptStateHash == promptStateHash)
+            {
+                return _cachedPrompt;
+            }
+
+            string prompt = BuildPromptUncached(in targetInfo);
+            if (canCachePrompt)
+            {
+                _cachedPromptCollider = collider;
+                _cachedPromptStateHash = promptStateHash;
+                _cachedPrompt = prompt;
+                _hasCachedPrompt = true;
+            }
+            else
+            {
+                ClearPromptBuildCache();
+            }
+
+            return prompt;
+        }
+
+        private string BuildPromptUncached(in InteractableRegistry.TargetInfo targetInfo)
+        {
             if (targetInfo.Interactable != null)
                 return BuildInteractablePrompt(targetInfo);
 
@@ -266,6 +321,75 @@ namespace Hecton8.UI
                 return BuildPickupItemPrompt(targetInfo.Pickup);
 
             return null;
+        }
+
+        private static bool CanCachePrompt(in InteractableRegistry.TargetInfo targetInfo)
+        {
+            return targetInfo.BatteryTool != null ||
+                   targetInfo.Charger != null ||
+                   targetInfo.Reactor != null ||
+                   targetInfo.Crate != null ||
+                   targetInfo.Pickup != null;
+        }
+
+        private int ComputePromptStateHash(in InteractableRegistry.TargetInfo targetInfo)
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + ReferenceHash(targetInfo.Interactable);
+                hash = hash * 31 + ReferenceHash(targetInfo.BatteryTool);
+                hash = hash * 31 + ReferenceHash(targetInfo.Charger);
+                hash = hash * 31 + ReferenceHash(targetInfo.Reactor);
+                hash = hash * 31 + ReferenceHash(targetInfo.Crate);
+                hash = hash * 31 + ReferenceHash(targetInfo.Pickup);
+
+                if (targetInfo.BatteryTool != null)
+                    hash = hash * 31 + (targetInfo.BatteryTool.HasBattery ? 1 : 0);
+
+                if (targetInfo.Charger != null)
+                {
+                    hash = hash * 31 + (targetInfo.Charger.HasBatteryInSlot(0) ? 1 : 0);
+                    hash = hash * 31 + (targetInfo.Charger.HasBatteryInSlot(1) ? 1 : 0);
+                }
+
+                PlayerTool heldTool = _toolManager != null ? _toolManager.CurrentTool : null;
+                hash = hash * 31 + ReferenceHash(heldTool);
+                if (heldTool is IBatteryTool heldBatteryTool)
+                    hash = hash * 31 + (heldBatteryTool.HasBattery ? 1 : 0);
+
+                if (targetInfo.Reactor != null)
+                    hash = hash * 31 + (_inventory != null ? targetInfo.Reactor.CountFuelInInventory(_inventory) : 0);
+
+                if (targetInfo.Crate != null)
+                    hash = hash * 31 + (targetInfo.Crate.IsEmpty() ? 1 : 0);
+
+                if (targetInfo.Pickup != null)
+                {
+                    ItemData item = targetInfo.Pickup.ItemData;
+                    hash = hash * 31 + ReferenceHash(item);
+                    if (item != null)
+                    {
+                        hash = hash * 31 + LocHash.Compute(item.PersistentId);
+                        hash = hash * 31 + (item.isConsumable ? 1 : 0);
+                        hash = hash * 31 + Mathf.RoundToInt(item.UseDuration * 10f);
+                        hash = hash * 31 + (item.integrityRestore > 0f ? 1 : 0);
+                        hash = hash * 31 + (item.thirstRestore > 0f ? 1 : 0);
+                        hash = hash * 31 + (item.hungerRestore > 0f ? 1 : 0);
+                        hash = hash * 31 + (item.oxygenRestore > 0f ? 1 : 0);
+                    }
+
+                    string cachedInteractText = targetInfo.Pickup.GetInteractText();
+                    hash = hash * 31 + (cachedInteractText != null ? cachedInteractText.GetHashCode() : 0);
+                }
+
+                return hash;
+            }
+        }
+
+        private static int ReferenceHash(object value)
+        {
+            return value != null ? RuntimeHelpers.GetHashCode(value) : 0;
         }
 
         /// <summary>
@@ -408,8 +532,12 @@ namespace Hecton8.UI
 
         private void UpdatePrompt(string prompt)
         {
+            if (string.Equals(_currentPromptSource, prompt, StringComparison.Ordinal))
+                return;
+
             LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             string expandedPrompt = localization != null ? localization.ExpandText(prompt) : prompt;
+            _currentPromptSource = prompt;
             if (_currentPrompt == expandedPrompt)
                 return;
 
@@ -488,12 +616,85 @@ namespace Hecton8.UI
             ConfigurePromptText();
             RefreshLocalizedPromptCache();
             _currentPrompt = null;
+            _currentPromptSource = null;
+            ClearPromptBuildCache();
         }
 
         private void HandleInputDisplayStyleChanged(InputDisplayStyle displayStyle)
         {
             RefreshLocalizedPromptCache();
             _currentPrompt = null;
+            _currentPromptSource = null;
+            ClearPromptBuildCache();
+        }
+
+        private void SubscribeInputManagerIfAvailable()
+        {
+            if (_subscribedInputManager != null)
+                return;
+
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            if (inputManager == null)
+                return;
+
+            _subscribedInputManager = inputManager;
+            _subscribedInputManager.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+        }
+
+        private void UnsubscribeInputManager()
+        {
+            if (_subscribedInputManager == null)
+                return;
+
+            _subscribedInputManager.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
+            _subscribedInputManager = null;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input)
+                return;
+
+            UnsubscribeInputManager();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            SubscribeInputManagerIfAvailable();
+            RefreshLocalizedPromptCache();
+            ClearPromptBuildCache();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void ClearPromptBuildCache()
+        {
+            _cachedPromptCollider = null;
+            _cachedPrompt = null;
+            _cachedPromptStateHash = 0;
+            _hasCachedPrompt = false;
         }
 
         private void ConfigurePromptText()
@@ -559,7 +760,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTick()

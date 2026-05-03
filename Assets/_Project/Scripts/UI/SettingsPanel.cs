@@ -1,4 +1,5 @@
 using TMPro;
+using Hecton8.Core;
 using Hecton8.Modding;
 using UnityEngine;
 using UnityEngine.Events;
@@ -236,11 +237,11 @@ namespace Hecton8.UI
 
         private void Initialize()
         {
-            _settings = SettingsManager.Instance;
+            _settings = GlobalRegistry.Settings;
             if (_settings == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsPanel] SettingsManager.Instance is null. Settings unavailable.");
+                Debug.LogWarning("[SettingsPanel] SettingsManager runtime is null. Settings unavailable.");
 #endif
                 return;
             }
@@ -925,7 +926,7 @@ namespace Hecton8.UI
 
         private static void SetTextIfChanged(TMP_Text label, string text)
         {
-            if (label != null && label.text != text)
+            if (label != null)
                 label.SetText(text);
         }
 

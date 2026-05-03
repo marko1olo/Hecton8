@@ -469,7 +469,7 @@ namespace Hecton8.Power
                 return;
 
             GlobalRegistry.RegisterPowerGridService(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PowerGrid, this);
         }
 
         private void TryUnregister()

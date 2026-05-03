@@ -146,15 +146,26 @@ namespace Hecton8.Visor
             new RegistryBucket<IAcousticEchoEventListener>(AcousticEchoListenerCapacity);
 
         private static NativeQueue<SpectrumMode> _pendingModeChanged;
+        private static NativeQueue<SpectrumMode> _nextFrameModeChanged;
         private static NativeQueue<float> _pendingSonarPulses;
+        private static NativeQueue<float> _nextFrameSonarPulses;
         private static NativeQueue<float> _pendingSonarPings;
+        private static NativeQueue<float> _nextFrameSonarPings;
         private static NativeQueue<SpatialSonarSnapshot> _pendingSonarSnapshots;
+        private static NativeQueue<SpatialSonarSnapshot> _nextFrameSonarSnapshots;
         private static NativeQueue<AcousticEchoEvent> _pendingAcousticEchoes;
+        private static NativeQueue<AcousticEchoEvent> _nextFrameAcousticEchoes;
         private static int _pendingModeChangedCount;
+        private static int _nextFrameModeChangedCount;
         private static int _pendingSonarPulseCount;
+        private static int _nextFrameSonarPulseCount;
         private static int _pendingSonarPingCount;
+        private static int _nextFrameSonarPingCount;
         private static int _pendingSonarSnapshotCount;
+        private static int _nextFrameSonarSnapshotCount;
         private static int _pendingAcousticEchoCount;
+        private static int _nextFrameAcousticEchoCount;
+        private static bool _isDispatching;
         private const int PendingModeChangedCapacity = 8;
         private const int PendingSonarPulseCapacity = 8;
         private const int PendingSonarPingCapacity = 24;
@@ -187,10 +198,15 @@ namespace Hecton8.Visor
             get
             {
                 return _pendingModeChangedCount
+                    + _nextFrameModeChangedCount
                     + _pendingSonarPulseCount
+                    + _nextFrameSonarPulseCount
                     + _pendingSonarPingCount
+                    + _nextFrameSonarPingCount
                     + _pendingSonarSnapshotCount
-                    + _pendingAcousticEchoCount;
+                    + _nextFrameSonarSnapshotCount
+                    + _pendingAcousticEchoCount
+                    + _nextFrameAcousticEchoCount;
             }
         }
 
@@ -312,15 +328,29 @@ namespace Hecton8.Visor
         /// <summary>Flushes queued spectrum payloads through registered listeners.</summary>
         public static void FlushPending()
         {
-            if (!FlushModeChanged())
+            bool completed = false;
+            _isDispatching = true;
+            try
+            {
+                completed = FlushModeChanged();
+                if (completed)
+                    completed = FlushSonarPulses();
+                if (completed)
+                    completed = FlushSonarPings();
+                if (completed)
+                    completed = FlushSonarSnapshots();
+                if (completed)
+                    completed = FlushAcousticEchoes();
+            }
+            finally
+            {
+                _isDispatching = false;
+            }
+
+            if (!completed || HasPendingFrontEvents())
                 return;
-            if (!FlushSonarPulses())
-                return;
-            if (!FlushSonarPings())
-                return;
-            if (!FlushSonarSnapshots())
-                return;
-            FlushAcousticEchoes();
+
+            PromoteNextFrameEvents();
         }
 
         /// <summary>Queues a spectrum mode change.</summary>
@@ -328,11 +358,19 @@ namespace Hecton8.Visor
         public static void RaiseModeChanged(SpectrumMode mode)
         {
             EnsureInitialized();
-            if (_pendingModeChangedCount >= PendingModeChangedCapacity)
+            if (_pendingModeChangedCount + _nextFrameModeChangedCount >= PendingModeChangedCapacity)
                 return;
 
-            _pendingModeChanged.Enqueue(mode);
-            _pendingModeChangedCount++;
+            if (_isDispatching)
+            {
+                _nextFrameModeChanged.Enqueue(mode);
+                _nextFrameModeChangedCount++;
+            }
+            else
+            {
+                _pendingModeChanged.Enqueue(mode);
+                _pendingModeChangedCount++;
+            }
         }
 
         /// <summary>Queues a sonar pulse radius broadcast.</summary>
@@ -341,11 +379,19 @@ namespace Hecton8.Visor
         {
             LastSonarPulseRadiusMeters = Mathf.Max(0f, radius);
             EnsureInitialized();
-            if (_pendingSonarPulseCount >= PendingSonarPulseCapacity)
+            if (_pendingSonarPulseCount + _nextFrameSonarPulseCount >= PendingSonarPulseCapacity)
                 return;
 
-            _pendingSonarPulses.Enqueue(LastSonarPulseRadiusMeters);
-            _pendingSonarPulseCount++;
+            if (_isDispatching)
+            {
+                _nextFrameSonarPulses.Enqueue(LastSonarPulseRadiusMeters);
+                _nextFrameSonarPulseCount++;
+            }
+            else
+            {
+                _pendingSonarPulses.Enqueue(LastSonarPulseRadiusMeters);
+                _pendingSonarPulseCount++;
+            }
         }
 
         /// <summary>Queues an active sonar ping broadcast.</summary>
@@ -353,11 +399,19 @@ namespace Hecton8.Visor
         public static void RaiseSonarPingSent(float intensity)
         {
             EnsureInitialized();
-            if (_pendingSonarPingCount >= PendingSonarPingCapacity)
+            if (_pendingSonarPingCount + _nextFrameSonarPingCount >= PendingSonarPingCapacity)
                 return;
 
-            _pendingSonarPings.Enqueue(intensity);
-            _pendingSonarPingCount++;
+            if (_isDispatching)
+            {
+                _nextFrameSonarPings.Enqueue(intensity);
+                _nextFrameSonarPingCount++;
+            }
+            else
+            {
+                _pendingSonarPings.Enqueue(intensity);
+                _pendingSonarPingCount++;
+            }
         }
 
         /// <summary>Queues an updated spatial sonar snapshot.</summary>
@@ -365,11 +419,19 @@ namespace Hecton8.Visor
         public static void RaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot)
         {
             EnsureInitialized();
-            if (_pendingSonarSnapshotCount >= PendingSonarSnapshotCapacity)
+            if (_pendingSonarSnapshotCount + _nextFrameSonarSnapshotCount >= PendingSonarSnapshotCapacity)
                 return;
 
-            _pendingSonarSnapshots.Enqueue(snapshot);
-            _pendingSonarSnapshotCount++;
+            if (_isDispatching)
+            {
+                _nextFrameSonarSnapshots.Enqueue(snapshot);
+                _nextFrameSonarSnapshotCount++;
+            }
+            else
+            {
+                _pendingSonarSnapshots.Enqueue(snapshot);
+                _pendingSonarSnapshotCount++;
+            }
         }
 
         /// <summary>Queues one acoustic echo return.</summary>
@@ -377,11 +439,19 @@ namespace Hecton8.Visor
         public static void RaiseAcousticEchoReturned(AcousticEchoEvent echoEvent)
         {
             EnsureInitialized();
-            if (_pendingAcousticEchoCount >= PendingAcousticEchoCapacity)
+            if (_pendingAcousticEchoCount + _nextFrameAcousticEchoCount >= PendingAcousticEchoCapacity)
                 return;
 
-            _pendingAcousticEchoes.Enqueue(echoEvent);
-            _pendingAcousticEchoCount++;
+            if (_isDispatching)
+            {
+                _nextFrameAcousticEchoes.Enqueue(echoEvent);
+                _nextFrameAcousticEchoCount++;
+            }
+            else
+            {
+                _pendingAcousticEchoes.Enqueue(echoEvent);
+                _pendingAcousticEchoCount++;
+            }
         }
 
         private static void EnsureInitialized()
@@ -396,6 +466,16 @@ namespace Hecton8.Visor
                     nameof(_pendingModeChanged),
                     NativeAllocationLifetime.Session);
             }
+            if (!_nextFrameModeChanged.IsCreated)
+            {
+                _nextFrameModeChanged = new NativeQueue<SpectrumMode>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpectrumMode>[8] - next-frame spectrum mode lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameModeChanged,
+                    PendingModeChangedCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_nextFrameModeChanged),
+                    NativeAllocationLifetime.Session);
+            }
             if (!_pendingSonarPulses.IsCreated)
             {
                 _pendingSonarPulses = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[8] - deferred sonar pulse lane - owner: SpectrumEvents
@@ -404,6 +484,16 @@ namespace Hecton8.Visor
                     PendingSonarPulseCapacity,
                     nameof(SpectrumEvents),
                     nameof(_pendingSonarPulses),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_nextFrameSonarPulses.IsCreated)
+            {
+                _nextFrameSonarPulses = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[8] - next-frame sonar pulse lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameSonarPulses,
+                    PendingSonarPulseCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_nextFrameSonarPulses),
                     NativeAllocationLifetime.Session);
             }
             if (!_pendingSonarPings.IsCreated)
@@ -416,6 +506,16 @@ namespace Hecton8.Visor
                     nameof(_pendingSonarPings),
                     NativeAllocationLifetime.Session);
             }
+            if (!_nextFrameSonarPings.IsCreated)
+            {
+                _nextFrameSonarPings = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[24] - next-frame active sonar ping lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameSonarPings,
+                    PendingSonarPingCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_nextFrameSonarPings),
+                    NativeAllocationLifetime.Session);
+            }
             if (!_pendingSonarSnapshots.IsCreated)
             {
                 _pendingSonarSnapshots = new NativeQueue<SpatialSonarSnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpatialSonarSnapshot>[8] - deferred sonar snapshot lane - owner: SpectrumEvents
@@ -426,6 +526,16 @@ namespace Hecton8.Visor
                     nameof(_pendingSonarSnapshots),
                     NativeAllocationLifetime.Session);
             }
+            if (!_nextFrameSonarSnapshots.IsCreated)
+            {
+                _nextFrameSonarSnapshots = new NativeQueue<SpatialSonarSnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpatialSonarSnapshot>[8] - next-frame sonar snapshot lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameSonarSnapshots,
+                    PendingSonarSnapshotCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_nextFrameSonarSnapshots),
+                    NativeAllocationLifetime.Session);
+            }
             if (!_pendingAcousticEchoes.IsCreated)
             {
                 _pendingAcousticEchoes = new NativeQueue<AcousticEchoEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticEchoEvent>[8] - deferred acoustic echo lane - owner: SpectrumEvents
@@ -434,6 +544,16 @@ namespace Hecton8.Visor
                     PendingAcousticEchoCapacity,
                     nameof(SpectrumEvents),
                     nameof(_pendingAcousticEchoes),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_nextFrameAcousticEchoes.IsCreated)
+            {
+                _nextFrameAcousticEchoes = new NativeQueue<AcousticEchoEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticEchoEvent>[8] - next-frame acoustic echo lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameAcousticEchoes,
+                    PendingAcousticEchoCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_nextFrameAcousticEchoes),
                     NativeAllocationLifetime.Session);
             }
         }
@@ -458,7 +578,13 @@ namespace Hecton8.Visor
                 ISpectrumModeEventListener[] rawArray = _modeListeners.RawArray;
                 int count = _modeListeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnSpectrumModeChanged(mode);
+                {
+                    ISpectrumModeEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnSpectrumModeChanged(mode);
+                }
 
             }
 
@@ -488,7 +614,13 @@ namespace Hecton8.Visor
                 ISonarPulseEventListener[] rawArray = _sonarPulseListeners.RawArray;
                 int count = _sonarPulseListeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnSonarPulse(radius);
+                {
+                    ISonarPulseEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnSonarPulse(radius);
+                }
 
             }
 
@@ -518,7 +650,13 @@ namespace Hecton8.Visor
                 ISonarPingEventListener[] rawArray = _sonarPingListeners.RawArray;
                 int count = _sonarPingListeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnSonarPingSent(intensity);
+                {
+                    ISonarPingEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnSonarPingSent(intensity);
+                }
 
             }
 
@@ -548,7 +686,13 @@ namespace Hecton8.Visor
                 ISonarSnapshotEventListener[] rawArray = _sonarSnapshotListeners.RawArray;
                 int count = _sonarSnapshotListeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnSonarSnapshotUpdated(in snapshot);
+                {
+                    ISonarSnapshotEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnSonarSnapshotUpdated(in snapshot);
+                }
 
             }
 
@@ -578,7 +722,13 @@ namespace Hecton8.Visor
                 IAcousticEchoEventListener[] rawArray = _acousticEchoListeners.RawArray;
                 int count = _acousticEchoListeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnAcousticEchoReturned(in echoEvent);
+                {
+                    IAcousticEchoEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnAcousticEchoReturned(in echoEvent);
+                }
             }
 
             if (_pendingAcousticEchoes.IsEmpty())
@@ -596,11 +746,25 @@ namespace Hecton8.Visor
                 _pendingModeChanged = default;
             }
 
+            if (_nextFrameModeChanged.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_nextFrameModeChanged));
+                _nextFrameModeChanged.Dispose();
+                _nextFrameModeChanged = default;
+            }
+
             if (_pendingSonarPulses.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_pendingSonarPulses));
                 _pendingSonarPulses.Dispose();
                 _pendingSonarPulses = default;
+            }
+
+            if (_nextFrameSonarPulses.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_nextFrameSonarPulses));
+                _nextFrameSonarPulses.Dispose();
+                _nextFrameSonarPulses = default;
             }
 
             if (_pendingSonarPings.IsCreated)
@@ -610,11 +774,25 @@ namespace Hecton8.Visor
                 _pendingSonarPings = default;
             }
 
+            if (_nextFrameSonarPings.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_nextFrameSonarPings));
+                _nextFrameSonarPings.Dispose();
+                _nextFrameSonarPings = default;
+            }
+
             if (_pendingSonarSnapshots.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_pendingSonarSnapshots));
                 _pendingSonarSnapshots.Dispose();
                 _pendingSonarSnapshots = default;
+            }
+
+            if (_nextFrameSonarSnapshots.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_nextFrameSonarSnapshots));
+                _nextFrameSonarSnapshots.Dispose();
+                _nextFrameSonarSnapshots = default;
             }
 
             if (_pendingAcousticEchoes.IsCreated)
@@ -624,11 +802,86 @@ namespace Hecton8.Visor
                 _pendingAcousticEchoes = default;
             }
 
+            if (_nextFrameAcousticEchoes.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_nextFrameAcousticEchoes));
+                _nextFrameAcousticEchoes.Dispose();
+                _nextFrameAcousticEchoes = default;
+            }
+
             _pendingModeChangedCount = 0;
+            _nextFrameModeChangedCount = 0;
             _pendingSonarPulseCount = 0;
+            _nextFrameSonarPulseCount = 0;
             _pendingSonarPingCount = 0;
+            _nextFrameSonarPingCount = 0;
             _pendingSonarSnapshotCount = 0;
+            _nextFrameSonarSnapshotCount = 0;
             _pendingAcousticEchoCount = 0;
+            _nextFrameAcousticEchoCount = 0;
+            _isDispatching = false;
+        }
+
+        private static bool HasPendingFrontEvents()
+        {
+            return (_pendingModeChanged.IsCreated && !_pendingModeChanged.IsEmpty())
+                || (_pendingSonarPulses.IsCreated && !_pendingSonarPulses.IsEmpty())
+                || (_pendingSonarPings.IsCreated && !_pendingSonarPings.IsEmpty())
+                || (_pendingSonarSnapshots.IsCreated && !_pendingSonarSnapshots.IsEmpty())
+                || (_pendingAcousticEchoes.IsCreated && !_pendingAcousticEchoes.IsEmpty());
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            if (_nextFrameModeChanged.IsCreated)
+            {
+                while (_nextFrameModeChangedCount > 0 && _nextFrameModeChanged.TryDequeue(out SpectrumMode mode))
+                {
+                    _nextFrameModeChangedCount--;
+                    _pendingModeChanged.Enqueue(mode);
+                    _pendingModeChangedCount++;
+                }
+            }
+
+            if (_nextFrameSonarPulses.IsCreated)
+            {
+                while (_nextFrameSonarPulseCount > 0 && _nextFrameSonarPulses.TryDequeue(out float radius))
+                {
+                    _nextFrameSonarPulseCount--;
+                    _pendingSonarPulses.Enqueue(radius);
+                    _pendingSonarPulseCount++;
+                }
+            }
+
+            if (_nextFrameSonarPings.IsCreated)
+            {
+                while (_nextFrameSonarPingCount > 0 && _nextFrameSonarPings.TryDequeue(out float intensity))
+                {
+                    _nextFrameSonarPingCount--;
+                    _pendingSonarPings.Enqueue(intensity);
+                    _pendingSonarPingCount++;
+                }
+            }
+
+            if (_nextFrameSonarSnapshots.IsCreated)
+            {
+                while (_nextFrameSonarSnapshotCount > 0 && _nextFrameSonarSnapshots.TryDequeue(out SpatialSonarSnapshot snapshot))
+                {
+                    _nextFrameSonarSnapshotCount--;
+                    _pendingSonarSnapshots.Enqueue(snapshot);
+                    _pendingSonarSnapshotCount++;
+                }
+            }
+
+            if (_nextFrameAcousticEchoes.IsCreated)
+            {
+                while (_nextFrameAcousticEchoCount > 0 && _nextFrameAcousticEchoes.TryDequeue(out AcousticEchoEvent echoEvent))
+                {
+                    _nextFrameAcousticEchoCount--;
+                    _pendingAcousticEchoes.Enqueue(echoEvent);
+                    _pendingAcousticEchoCount++;
+                }
+            }
         }
     }
 
@@ -859,7 +1112,7 @@ namespace Hecton8.Visor
             if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registered = true;
+                _registered = GlobalRegistry.Updatables.Contains(this);
             }
 
             ResolveSurvivalSystem();

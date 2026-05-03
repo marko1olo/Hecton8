@@ -3,7 +3,7 @@
 // Laser-cuttable sealed door for wrecks and restricted areas.
 //
 // ARCHITECTURE:
-//   • Standalone prop — uses ITickable via GameTickManager (no Update).
+//   • Standalone prop — driven by LaserCutter hit cadence (no Update).
 //   • Progress-based cutting system.
 //   • UnityEvents for progress UI and door opening.
 //   • ICuttable integration for LaserCutter tool.
@@ -12,7 +12,7 @@
 //   • ITickable.Tick() — no Update(), no allocations.
 //   • Cached Transform, Renderer, Collider.
 //   • State machine with enum (no coroutines).
-//   • MaterialPropertyBlock for progress visualization.
+//   • Progress callbacks and renderer updates are coalesced to fixed thresholds.
 //
 // USAGE:
 //   1. Place on door GameObject with mesh and collider.
@@ -54,6 +54,7 @@ namespace Hecton8.Gameplay
 
         private static readonly int _ProgressID = Shader.PropertyToID("_CutProgress");
         private static readonly int _GlowColorID = Shader.PropertyToID("_CutGlowColor");
+        private const float ProgressPublishEpsilon = 0.01f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — CUTTING
@@ -136,8 +137,9 @@ namespace Hecton8.Gameplay
         private Collider _collider;
         private DoorState _state = DoorState.Sealed;
         private float _currentProgress;
+        private float _lastPublishedProgress = -1f;
+        private float _lastVisualProgress = -1f;
         private bool _isBeingCut;
-        private bool _isRegistered;
 
         /// <summary>
         /// Cached MaterialPropertyBlock for progress VFX.
@@ -200,12 +202,10 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            UnregisterFromTick();
         }
 
         private void OnDestroy()
         {
-            UnregisterFromTick();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -213,8 +213,7 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Called by GameTickManager every frame.
-        /// Handles cutting progress decay (optional) and state management.
+        /// Compatibility tick surface. Cutting progress is driven by tool-hit cadence.
         /// </summary>
         /// <param name="deltaTime">Time.deltaTime.</param>
         public void Tick(float deltaTime)
@@ -269,17 +268,15 @@ namespace Hecton8.Gameplay
             // Add progress
             _currentProgress += amount;
 
-            // Update visuals
-            UpdateProgressVisuals(hitPoint);
-
-            // Fire progress event
-            OnProgressChanged?.Invoke(ProgressNormalized);
-
             // Check for completion
             if (_currentProgress >= requiredCuttingTime)
             {
+                PublishProgress(1f, true);
                 OpenDoor();
+                return;
             }
+
+            PublishProgress(ProgressNormalized, false);
         }
 
         /// <summary>
@@ -309,8 +306,6 @@ namespace Hecton8.Gameplay
             // Fire stopped event
             OnCuttingStopped?.Invoke();
 
-            // Unregister from tick (no longer need per-frame updates)
-            UnregisterFromTick();
         }
 
         /// <summary>
@@ -365,8 +360,7 @@ namespace Hecton8.Gameplay
             // Fire started event
             OnCuttingStarted?.Invoke();
 
-            // Register for tick (for any per-frame logic)
-            RegisterToTick();
+            // No dispatcher registration: cutting is driven by tool-hit cadence and Tick is intentionally empty.
         }
 
         private void OpenDoor()
@@ -410,25 +404,44 @@ namespace Hecton8.Gameplay
             // Fire opened event
             OnDoorOpened?.Invoke();
 
-            // Fire final progress event
-            OnProgressChanged?.Invoke(1f);
-
-            // Unregister from tick
-            UnregisterFromTick();
         }
 
         // ══════════════════════════════════════════════════════════
         //  VISUALS
         // ══════════════════════════════════════════════════════════
 
-        private void UpdateProgressVisuals(Vector3 hitPoint)
+        private void PublishProgress(float progressNormalized, bool force)
+        {
+            float clampedProgress = Mathf.Clamp01(progressNormalized);
+            if (force || ShouldPublishProgress(clampedProgress, _lastVisualProgress))
+            {
+                UpdateProgressVisuals(clampedProgress);
+                _lastVisualProgress = clampedProgress;
+            }
+
+            if (force || ShouldPublishProgress(clampedProgress, _lastPublishedProgress))
+            {
+                _lastPublishedProgress = clampedProgress;
+                OnProgressChanged?.Invoke(clampedProgress);
+            }
+        }
+
+        private static bool ShouldPublishProgress(float currentProgress, float lastProgress)
+        {
+            return lastProgress < 0f ||
+                   currentProgress <= 0f ||
+                   currentProgress >= 1f ||
+                   Mathf.Abs(currentProgress - lastProgress) >= ProgressPublishEpsilon;
+        }
+
+        private void UpdateProgressVisuals(float progressNormalized)
         {
             if (doorRenderer == null) return;
             if (_mpb == null) return;
 
             // Update shader properties
             doorRenderer.GetPropertyBlock(_mpb);
-            _mpb.SetFloat(_ProgressID, ProgressNormalized);
+            _mpb.SetFloat(_ProgressID, progressNormalized);
             _mpb.SetColor(_GlowColorID, cutGlowColor);
             doorRenderer.SetPropertyBlock(_mpb);
         }
@@ -441,6 +454,7 @@ namespace Hecton8.Gameplay
             doorRenderer.GetPropertyBlock(_mpb);
             _mpb.SetFloat(_ProgressID, 0f);
             doorRenderer.SetPropertyBlock(_mpb);
+            _lastVisualProgress = 0f;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -451,6 +465,8 @@ namespace Hecton8.Gameplay
         {
             _state = canBeCut ? DoorState.Sealed : DoorState.Locked;
             _currentProgress = 0f;
+            _lastPublishedProgress = -1f;
+            _lastVisualProgress = -1f;
             _isBeingCut = false;
 
             // Reset visuals
@@ -470,7 +486,7 @@ namespace Hecton8.Gameplay
         }
 
         // ══════════════════════════════════════════════════════════
-        //  PRIVATE — TICK REGISTRATION
+        //  PRIVATE HELPERS
         // ══════════════════════════════════════════════════════════
 
         private static bool TryResolveOwnedComponent<T>(Transform root, out T component) where T : Component
@@ -489,23 +505,6 @@ namespace Hecton8.Gameplay
             }
 
             return false;
-        }
-
-        private void RegisterToTick()
-        {
-            if (_isRegistered) return;
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = true;
-        }
-
-        private void UnregisterFromTick()
-        {
-            if (!_isRegistered) return;
-
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

@@ -1831,7 +1831,8 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = true;
+            _registered = GlobalRegistry.FixedTickables.Contains(this) ||
+                          GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()
@@ -1839,8 +1840,12 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+            if (GlobalRegistry.FixedTickables.Contains(this))
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
+
+            if (GlobalRegistry.Updatables.Contains(this))
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+
             _registered = false;
         }
 

@@ -110,27 +110,27 @@ namespace Hecton8.Optimization.Editor
             report.AppendLine("| Subsystem | Current | Budget | Status |");
             report.AppendLine("|-----------|---------|--------|--------|");
             
-            if (VisorRTManager.Instance != null)
+            VisorRTManager visor = Hecton8.Core.GlobalRegistry.VisorRT;
+            if (visor != null)
             {
-                var visor = VisorRTManager.Instance;
                 report.AppendLine($"| Visor | {visor.VisorRTMemoryBytes / (1024f * 1024f):F2} MB | 64 MB | {(visor.IsOverBudget ? "⚠️ OVER BUDGET" : "✅ OK")} |");
             }
             
-            if (CameraRTManager.Instance != null)
+            CameraRTManager camera = Hecton8.Core.GlobalRegistry.CameraRT;
+            if (camera != null)
             {
-                var camera = CameraRTManager.Instance;
                 report.AppendLine($"| Camera | {camera.CameraRTMemoryBytes / (1024f * 1024f):F2} MB | 256 MB | {(camera.IsOverBudget ? "⚠️ OVER BUDGET" : "✅ OK")} |");
             }
             
-            if (PostFXRTManager.Instance != null)
+            PostFXRTManager postfx = Hecton8.Core.GlobalRegistry.PostFXRT;
+            if (postfx != null)
             {
-                var postfx = PostFXRTManager.Instance;
                 report.AppendLine($"| PostFX | {postfx.PostFXRTMemoryBytes / (1024f * 1024f):F2} MB | 128 MB | {(postfx.IsOverBudget ? "⚠️ OVER BUDGET" : "✅ OK")} |");
             }
             
-            if (UIRTManager.Instance != null)
+            UIRTManager ui = Hecton8.Core.GlobalRegistry.UIRT;
+            if (ui != null)
             {
-                var ui = UIRTManager.Instance;
                 report.AppendLine($"| UI | {ui.UIRTMemoryBytes / (1024f * 1024f):F2} MB | 64 MB | {(ui.IsOverBudget ? "⚠️ OVER BUDGET" : "✅ OK")} |");
             }
             

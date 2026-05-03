@@ -115,7 +115,7 @@ namespace Hecton8.Core
 
             GlobalRegistry.RegisterObjectPoolService(this);
             GlobalTelemetryBus.Initialize();
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ObjectPool, this);
         }
 
         /// <summary>
@@ -263,8 +263,7 @@ namespace Hecton8.Core
 
             if (!instance.TryGetComponent(out PoolItemMarker marker))
             {
-                Debug.LogWarning(
-                    $"[ObjectPoolManager] Despawn: '{instance.name}' has no PoolItemMarker. Destroying instead.");
+                LogDespawnMissingMarker(instance);
                 Destroy(instance);
                 return;
             }
@@ -272,8 +271,7 @@ namespace Hecton8.Core
             int prefabId = marker.PrefabId;
             if (!_pools.TryGetValue(prefabId, out Pool pool))
             {
-                Debug.LogWarning(
-                    $"[ObjectPoolManager] Despawn: Pool for '{instance.name}' not found. Destroying.");
+                LogDespawnMissingPool(instance);
                 Destroy(instance);
                 return;
             }
@@ -317,9 +315,38 @@ namespace Hecton8.Core
                 return;
             }
 
-            Debug.LogWarning(
-                $"[ObjectPoolManager] Prefab '{instance.name}' is missing a DespawnTimer component. Despawning immediately.");
+            LogMissingDespawnTimer(instance);
             Despawn(instance);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDespawnMissingMarker(GameObject instance)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string instanceName = instance != null ? instance.name : "<null>";
+            Debug.LogWarning(
+                $"[ObjectPoolManager] Despawn: '{instanceName}' has no PoolItemMarker. Destroying instead.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDespawnMissingPool(GameObject instance)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string instanceName = instance != null ? instance.name : "<null>";
+            Debug.LogWarning(
+                $"[ObjectPoolManager] Despawn: Pool for '{instanceName}' not found. Destroying.");
+#endif
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMissingDespawnTimer(GameObject instance)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string instanceName = instance != null ? instance.name : "<null>";
+            Debug.LogWarning(
+                $"[ObjectPoolManager] Prefab '{instanceName}' is missing a DespawnTimer component. Despawning immediately.");
+#endif
         }
 
         /// <summary>
@@ -598,7 +625,7 @@ namespace Hecton8.Core
                 if (!_registeredToTickManager)
                 {
                     GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                    _registeredToTickManager = true;
+                    _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
                 }
             }
 

@@ -919,7 +919,7 @@ namespace Hecton8.World
             }
 
             GlobalRegistry.RegisterPersistentWorldRegistry(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PersistentWorldRegistry, this);
         }
 
         private void TryUnregisterService()
@@ -2003,13 +2003,13 @@ namespace Hecton8.World
             if (!_tickRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _tickRegistered = true;
+                _tickRegistered = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_slowTickRegistered)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = true;
+                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
             }
         }
 

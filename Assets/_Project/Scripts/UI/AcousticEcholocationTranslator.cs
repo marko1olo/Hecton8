@@ -7,7 +7,6 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Visor;
 using Hecton8.World;
-using System.Text;
 using TMPro;
 using Unity.Collections;
 using UnityEngine;
@@ -82,6 +81,8 @@ namespace Hecton8.UI
         private const float PulseDecaySharpness = 3.6f;
         private const float AnchorClassificationRadius = 112f;
         private const int MaxBioformContacts = 24;
+        private const int HeaderTextCapacity = 64;
+        private const int ClassificationTextCapacity = 192;
         private const string OverlayName = "AcousticEcholocationTranslatorOverlay";
         private const string DefaultContactHeader = "[SONAR CONTACT]";
         private const string DefaultClassificationPrefix = "CLASSIFICATION";
@@ -95,8 +96,9 @@ namespace Hecton8.UI
 
         // COLD ALLOC: SpatialQueryHit[24] — active-sonar leviathan classification buffer — owner: AcousticEcholocationTranslator
         private readonly SpatialQueryHit[] _bioformContacts = new SpatialQueryHit[MaxBioformContacts];
-        // COLD ALLOC: StringBuilder[128] — sonar contact line assembly buffer — owner: AcousticEcholocationTranslator
-        private readonly StringBuilder _lineBuilder = new StringBuilder(128);
+        private readonly char[] _headerTextBuffer = new char[HeaderTextCapacity]; // COLD ALLOC: char[64] - sonar header TMP buffer - owner: AcousticEcholocationTranslator
+        private readonly char[] _classificationTextBuffer = new char[ClassificationTextCapacity]; // COLD ALLOC: char[192] - sonar classification TMP buffer - owner: AcousticEcholocationTranslator
+        private readonly char[] _classificationStressTextBuffer = new char[ClassificationTextCapacity]; // COLD ALLOC: char[192] - corrupted sonar classification TMP buffer - owner: AcousticEcholocationTranslator
 
         [Header("── Font ──────────────────")]
         [Tooltip("Optional readable font override for the acoustic translator overlay.")]
@@ -123,6 +125,8 @@ namespace Hecton8.UI
         private string _localizedClassificationPrefix = DefaultClassificationPrefix;
         private string _localizedLeviathanClass = DefaultLeviathanClass;
         private string _localizedWreckageClass = DefaultWreckageClass;
+        private ContactClassification _lastRenderedClassification = ContactClassification.None;
+        private int _lastRenderedDistanceMeters = int.MinValue;
 
         private void OnEnable()
         {
@@ -186,6 +190,8 @@ namespace Hecton8.UI
             ApplyRootAlpha(0f);
             _lastHeaderText = string.Empty;
             _lastClassificationText = string.Empty;
+            _lastRenderedClassification = ContactClassification.None;
+            _lastRenderedDistanceMeters = int.MinValue;
             UnregisterFromTickManager();
         }
 
@@ -236,6 +242,8 @@ namespace Hecton8.UI
             RefreshLocalizedCache();
             _lastHeaderText = string.Empty;
             _lastClassificationText = string.Empty;
+            _lastRenderedClassification = ContactClassification.None;
+            _lastRenderedDistanceMeters = int.MinValue;
         }
 
         private bool TryResolveContact(SpatialSonarSnapshot snapshot, out ContactClassification classification, out int distanceMeters)
@@ -329,30 +337,19 @@ namespace Hecton8.UI
 
         private void ShowClassification(ContactClassification classification, int distanceMeters)
         {
-            string headerText = ResolveStressReactiveText(_localizedContactHeader);
             string classText = classification == ContactClassification.Leviathan
                 ? _localizedLeviathanClass
                 : _localizedWreckageClass;
 
-            _lineBuilder.Clear();
-            _lineBuilder.Append(_localizedClassificationPrefix);
-            _lineBuilder.Append(": ");
-            _lineBuilder.Append(classText);
-            _lineBuilder.Append(" // ");
-            _lineBuilder.Append(distanceMeters);
-            _lineBuilder.Append('M');
-            string classificationText = ResolveStressReactiveText(_lineBuilder.ToString());
-
-            if (!string.Equals(_lastHeaderText, headerText, System.StringComparison.Ordinal))
+            LocalizationManager localization = GlobalRegistry.Localization;
+            bool useStressMutation = ShouldUseStressMutation(localization);
+            if (useStressMutation)
             {
-                _headerLabel.text = headerText;
-                _lastHeaderText = headerText;
+                ApplyStressMutatedClassification(localization, classText, distanceMeters);
             }
-
-            if (!string.Equals(_lastClassificationText, classificationText, System.StringComparison.Ordinal))
+            else
             {
-                _classificationLabel.text = classificationText;
-                _lastClassificationText = classificationText;
+                ApplyPlainClassification(classification, classText, distanceMeters);
             }
 
             _visibleTimer = VisibleDuration;
@@ -360,6 +357,105 @@ namespace Hecton8.UI
             _pulse01 = Mathf.Max(_pulse01, 1f);
             ApplyVisualState(1f);
             RegisterToTickManager();
+        }
+
+        private void ApplyPlainClassification(ContactClassification classification, string classText, int distanceMeters)
+        {
+            if (!string.Equals(_lastHeaderText, _localizedContactHeader, System.StringComparison.Ordinal))
+            {
+                int headerLength = CopyStringToBuffer(_localizedContactHeader, _headerTextBuffer);
+                _headerLabel.SetCharArray(_headerTextBuffer, 0, headerLength);
+                _lastHeaderText = _localizedContactHeader;
+            }
+
+            if (_lastRenderedClassification != classification ||
+                _lastRenderedDistanceMeters != distanceMeters ||
+                _lastClassificationText.Length != 0)
+            {
+                int classificationLength = WriteClassificationText(classText, distanceMeters, _classificationTextBuffer);
+                _classificationLabel.SetCharArray(_classificationTextBuffer, 0, classificationLength);
+                _lastClassificationText = string.Empty;
+                _lastRenderedClassification = classification;
+                _lastRenderedDistanceMeters = distanceMeters;
+            }
+        }
+
+        private void ApplyStressMutatedClassification(LocalizationManager localization, string classText, int distanceMeters)
+        {
+            if (localization.TryApplyHullStressCorruptionIfNeeded(
+                    _localizedContactHeader.AsSpan(),
+                    _headerTextBuffer,
+                    out int headerLength))
+            {
+                _headerLabel.SetCharArray(_headerTextBuffer, 0, headerLength);
+                _lastHeaderText = string.Empty;
+            }
+
+            int sourceLength = WriteClassificationText(classText, distanceMeters, _classificationTextBuffer);
+            if (localization.TryApplyHullStressCorruptionIfNeeded(
+                    new ReadOnlySpan<char>(_classificationTextBuffer, 0, sourceLength),
+                    _classificationStressTextBuffer,
+                    out int classificationLength))
+            {
+                _classificationLabel.SetCharArray(_classificationStressTextBuffer, 0, classificationLength);
+                _lastClassificationText = string.Empty;
+                _lastRenderedClassification = ContactClassification.None;
+                _lastRenderedDistanceMeters = int.MinValue;
+            }
+        }
+
+        private static bool ShouldUseStressMutation(LocalizationManager localization)
+        {
+            return localization != null &&
+                   (localization.GetHullStressCorruptionIntensity() > 0f ||
+                    localization.IsMadnessWhisperVisualActive());
+        }
+
+        private int WriteClassificationText(string classText, int distanceMeters, char[] buffer)
+        {
+            int cursor = AppendStringToBuffer(_localizedClassificationPrefix, buffer, 0);
+            cursor = AppendCharToBuffer(':', buffer, cursor);
+            cursor = AppendCharToBuffer(' ', buffer, cursor);
+            cursor = AppendStringToBuffer(classText, buffer, cursor);
+            cursor = AppendCharToBuffer(' ', buffer, cursor);
+            cursor = AppendCharToBuffer('/', buffer, cursor);
+            cursor = AppendCharToBuffer('/', buffer, cursor);
+            cursor = AppendCharToBuffer(' ', buffer, cursor);
+
+            if (cursor < buffer.Length &&
+                distanceMeters.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int written))
+            {
+                cursor += written;
+            }
+
+            return AppendCharToBuffer('M', buffer, cursor);
+        }
+
+        private static int CopyStringToBuffer(string source, char[] buffer)
+        {
+            return AppendStringToBuffer(source, buffer, 0);
+        }
+
+        private static int AppendStringToBuffer(string source, char[] buffer, int offset)
+        {
+            if (string.IsNullOrEmpty(source) || offset >= buffer.Length)
+                return offset;
+
+            int available = buffer.Length - offset;
+            int length = source.Length <= available ? source.Length : available;
+            for (int i = 0; i < length; i++)
+                buffer[offset + i] = source[i];
+
+            return offset + length;
+        }
+
+        private static int AppendCharToBuffer(char value, char[] buffer, int offset)
+        {
+            if (offset >= buffer.Length)
+                return offset;
+
+            buffer[offset] = value;
+            return offset + 1;
         }
 
         private void ApplyVisualState(float alpha)
@@ -449,7 +545,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()
@@ -482,17 +578,6 @@ namespace Hecton8.UI
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
-        }
-
-        private static string ResolveStressReactiveText(string text)
-        {
-            if (string.IsNullOrEmpty(text))
-                return string.Empty;
-
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return manager != null
-                ? manager.ApplyHullStressCorruptionIfNeeded(text)
-                : text;
         }
 
         private void CreateRule(Vector2 leftOffset, Vector2 rightOffset)
@@ -572,6 +657,7 @@ namespace Hecton8.UI
         private const float HiddenAlphaCutoff = 0.01f;
         private const float OverlayWidth = 436f;
         private const float OverlayHeight = 148f;
+        private const int SequenceTextCapacity = 192;
         private const string OverlayName = "TerminalBootSequenceOverlay";
         private const string DefaultStatusOk = "[OK]";
         private const string DefaultStatusDegraded = "[DEGRADED]";
@@ -591,7 +677,7 @@ namespace Hecton8.UI
         private float _visibleCharacterProgress;
         private int _visibleCharacterTarget;
         private HectonSurvivalSystem _survivalSystem;
-        private readonly StringBuilder _sequenceBuilder = new StringBuilder(192); // COLD ALLOC: StringBuilder[192] — sonar boot sequence formatting buffer — owner: TerminalBootSequence
+        private readonly char[] _sequenceTextBuffer = new char[SequenceTextCapacity]; // COLD ALLOC: char[192] - sonar boot sequence TMP buffer - owner: TerminalBootSequence
 
         private void OnEnable()
         {
@@ -662,8 +748,8 @@ namespace Hecton8.UI
             if (_consoleLabel == null || _overlayGroup == null)
                 return;
 
-            BuildSequenceText(_sequenceBuilder);
-            _consoleLabel.SetText(_sequenceBuilder);
+            int sequenceTextLength = BuildSequenceText(_sequenceTextBuffer);
+            _consoleLabel.SetCharArray(_sequenceTextBuffer, 0, sequenceTextLength);
             _consoleLabel.ForceMeshUpdate();
             _visibleCharacterTarget = _consoleLabel.textInfo.characterCount;
             _visibleCharacterProgress = 0f;
@@ -687,10 +773,8 @@ namespace Hecton8.UI
                 TryGetComponent(out _survivalSystem);
         }
 
-        private void BuildSequenceText(StringBuilder builder)
+        private int BuildSequenceText(char[] buffer)
         {
-            builder.Clear();
-
             float integrity01 = _survivalSystem != null ? _survivalSystem.IntegrityNormalized : 0f;
             float energy01 = _survivalSystem != null ? _survivalSystem.EnergyNormalized : 0f;
             float hullStress01 = _survivalSystem != null ? Mathf.Clamp01(1f - integrity01) : 1f;
@@ -698,19 +782,63 @@ namespace Hecton8.UI
             string powerStatus = energy01 >= 0.25f ? DefaultStatusOk : DefaultStatusDegraded;
             string linkStatus = hullStress01 <= 0.18f ? DefaultStatusOk : DefaultStatusDegraded;
 
-            builder.Append(DefaultStatusOk).AppendLine(" MOUNTING SONAR_DRIVER...");
-            builder.Append(DefaultStatusOk).AppendLine(" CALIBRATING LIDAR ARRAY...");
-            builder.Append(linkStatus).Append(" ACOUSTIC BUS LINK... HULL ")
-                .Append(_survivalSystem != null ? Mathf.RoundToInt(integrity01 * 100f) : 0)
-                .Append('%')
-                .AppendLine();
-            builder.Append(powerStatus).Append(" POWER FEED... ")
-                .Append(_survivalSystem != null ? Mathf.RoundToInt(energy01 * 100f) : 0)
-                .Append('%')
-                .AppendLine();
-            builder.Append(hullStatus).Append(" NOISE FILTER... STRESS ")
-                .Append(_survivalSystem != null ? Mathf.RoundToInt(hullStress01 * 100f) : 100)
-                .Append('%');
+            int cursor = 0;
+            cursor = AppendString(buffer, cursor, DefaultStatusOk);
+            cursor = AppendLine(buffer, cursor, " MOUNTING SONAR_DRIVER...");
+            cursor = AppendString(buffer, cursor, DefaultStatusOk);
+            cursor = AppendLine(buffer, cursor, " CALIBRATING LIDAR ARRAY...");
+            cursor = AppendString(buffer, cursor, linkStatus);
+            cursor = AppendString(buffer, cursor, " ACOUSTIC BUS LINK... HULL ");
+            cursor = AppendInt(buffer, cursor, _survivalSystem != null ? Mathf.RoundToInt(integrity01 * 100f) : 0);
+            cursor = AppendChar(buffer, cursor, '%');
+            cursor = AppendChar(buffer, cursor, '\n');
+            cursor = AppendString(buffer, cursor, powerStatus);
+            cursor = AppendString(buffer, cursor, " POWER FEED... ");
+            cursor = AppendInt(buffer, cursor, _survivalSystem != null ? Mathf.RoundToInt(energy01 * 100f) : 0);
+            cursor = AppendChar(buffer, cursor, '%');
+            cursor = AppendChar(buffer, cursor, '\n');
+            cursor = AppendString(buffer, cursor, hullStatus);
+            cursor = AppendString(buffer, cursor, " NOISE FILTER... STRESS ");
+            cursor = AppendInt(buffer, cursor, _survivalSystem != null ? Mathf.RoundToInt(hullStress01 * 100f) : 100);
+            return AppendChar(buffer, cursor, '%');
+        }
+
+        private static int AppendLine(char[] buffer, int cursor, string value)
+        {
+            cursor = AppendString(buffer, cursor, value);
+            return AppendChar(buffer, cursor, '\n');
+        }
+
+        private static int AppendString(char[] buffer, int cursor, string value)
+        {
+            if (buffer == null || string.IsNullOrEmpty(value) || cursor >= buffer.Length)
+                return cursor;
+
+            int available = buffer.Length - cursor;
+            int length = value.Length <= available ? value.Length : available;
+            for (int i = 0; i < length; i++)
+                buffer[cursor + i] = value[i];
+
+            return cursor + length;
+        }
+
+        private static int AppendInt(char[] buffer, int cursor, int value)
+        {
+            if (buffer == null || cursor >= buffer.Length)
+                return cursor;
+
+            return value.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int written)
+                ? cursor + written
+                : cursor;
+        }
+
+        private static int AppendChar(char[] buffer, int cursor, char value)
+        {
+            if (buffer == null || cursor >= buffer.Length)
+                return cursor;
+
+            buffer[cursor] = value;
+            return cursor + 1;
         }
 
         private static string ResolveIntegrityStatus(float integrity01)
@@ -806,7 +934,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()
@@ -870,6 +998,9 @@ namespace Hecton8.UI
         private const float RadiusMax = 188f;
         private const float VerticalBias = -14f;
         private const float BehindFlipBias = 0.18f;
+        private const int CaptionTextCapacity = 128;
+        private const uint CaptionHashSeed = 2166136261u;
+        private const uint CaptionHashPrime = 16777619u;
         private const string OverlayName = "AudioCaptionOverlay";
 
         private static readonly Color CaptionColor = new Color(0.86f, 0.97f, 0.92f, 0.94f);
@@ -886,7 +1017,9 @@ namespace Hecton8.UI
             public float Duration;
             public float Intensity;
             public Vector3 WorldPosition;
-            public string LastCaptionText;
+            public char[] TextBuffer;
+            public int TextLength;
+            public uint TextHash;
         }
 
         [Header("── Font ──────────────────")]
@@ -975,10 +1108,16 @@ namespace Hecton8.UI
             slot.Duration = Mathf.Max(MinDuration, request.DurationSeconds > 0f ? request.DurationSeconds : DefaultDuration);
             slot.Intensity = Mathf.Clamp01(request.Intensity);
             slot.WorldPosition = request.WorldPosition;
-            if (!string.Equals(slot.LastCaptionText, request.CaptionText, System.StringComparison.Ordinal))
+            string captionText = request.CaptionText;
+            if (slot.Label != null &&
+                slot.TextBuffer != null &&
+                !string.IsNullOrWhiteSpace(captionText) &&
+                !SlotTextMatches(ref slot, captionText, out int displayLength, out uint displayHash))
             {
-                slot.Label.SetText(request.CaptionText);
-                slot.LastCaptionText = request.CaptionText;
+                WriteCaptionToBuffer(captionText, slot.TextBuffer, displayLength);
+                slot.Label.SetCharArray(slot.TextBuffer, 0, displayLength);
+                slot.TextLength = displayLength;
+                slot.TextHash = displayHash;
             }
 
             slot.Group.alpha = 1f;
@@ -1066,8 +1205,10 @@ namespace Hecton8.UI
             text.color = CaptionColor;
             text.outlineColor = CaptionShadowColor;
             text.outlineWidth = 0.18f;
-            text.SetText(string.Empty);
             text.raycastTarget = false;
+
+            char[] textBuffer = new char[CaptionTextCapacity]; // COLD ALLOC: char[128] - pooled spatial caption TMP buffer - owner: AudioCaptionOverlay
+            text.SetCharArray(textBuffer, 0, 0);
 
             _slots[index] = new CaptionSlot
             {
@@ -1079,7 +1220,9 @@ namespace Hecton8.UI
                 Duration = DefaultDuration,
                 Intensity = 0f,
                 WorldPosition = Vector3.zero,
-                LastCaptionText = string.Empty
+                TextBuffer = textBuffer,
+                TextLength = 0,
+                TextHash = CaptionHashSeed
             };
         }
 
@@ -1180,6 +1323,67 @@ namespace Hecton8.UI
             }
         }
 
+        private static bool SlotTextMatches(ref CaptionSlot slot, string captionText, out int displayLength, out uint displayHash)
+        {
+            displayLength = ResolveCaptionDisplayLength(captionText, slot.TextBuffer);
+            bool truncated = IsCaptionTruncated(captionText, displayLength, slot.TextBuffer);
+            displayHash = ComputeCaptionDisplayHash(captionText, displayLength, truncated);
+
+            if (slot.TextLength != displayLength || slot.TextHash != displayHash)
+                return false;
+
+            for (int i = 0; i < displayLength; i++)
+            {
+                if (slot.TextBuffer[i] != ResolveCaptionDisplayChar(captionText, i, displayLength, truncated))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static int ResolveCaptionDisplayLength(string captionText, char[] destination)
+        {
+            if (string.IsNullOrEmpty(captionText) || destination == null || destination.Length == 0)
+                return 0;
+
+            return Mathf.Min(captionText.Length, destination.Length);
+        }
+
+        private static bool IsCaptionTruncated(string captionText, int displayLength, char[] destination)
+        {
+            return captionText != null &&
+                   destination != null &&
+                   captionText.Length > destination.Length &&
+                   displayLength >= 3;
+        }
+
+        private static void WriteCaptionToBuffer(string captionText, char[] destination, int displayLength)
+        {
+            bool truncated = IsCaptionTruncated(captionText, displayLength, destination);
+            for (int i = 0; i < displayLength; i++)
+                destination[i] = ResolveCaptionDisplayChar(captionText, i, displayLength, truncated);
+        }
+
+        private static uint ComputeCaptionDisplayHash(string captionText, int displayLength, bool truncated)
+        {
+            uint hash = CaptionHashSeed;
+            for (int i = 0; i < displayLength; i++)
+            {
+                hash ^= ResolveCaptionDisplayChar(captionText, i, displayLength, truncated);
+                hash *= CaptionHashPrime;
+            }
+
+            return hash;
+        }
+
+        private static char ResolveCaptionDisplayChar(string captionText, int index, int displayLength, bool truncated)
+        {
+            if (truncated && index >= displayLength - 3)
+                return '.';
+
+            return captionText[index];
+        }
+
         private void RegisterToTickManager()
         {
             if (_tickRegistered || !Application.isPlaying)
@@ -1189,7 +1393,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

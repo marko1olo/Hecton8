@@ -294,7 +294,7 @@ namespace Hecton8.UI
             if (GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

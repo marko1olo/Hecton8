@@ -47,7 +47,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void OnDisable()

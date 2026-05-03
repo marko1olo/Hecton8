@@ -285,6 +285,7 @@ namespace Hecton8.World
         private const int MaxDefensiveSporeBursts = 6;
         private const int InteractionPointStride = 32;
         private const int FlowFieldStride = sizeof(float) * 2;
+        private const int CascadePhaseSeedJobBatchSize = 64;
         private const float DefaultVegetationWaterLevel = 4900f;
         private const float FlowFieldUploadIntervalSeconds = 0.1f;
         private const float FlowFieldRecenterThresholdCells = 0.5f;
@@ -302,6 +303,8 @@ namespace Hecton8.World
         private const float MinimumParasiteScale = 0.1f;
         private const byte ParasiteNodeStateAlive = 1;
         private const byte ParasiteNodeStateDead = 2;
+        private const string NativeMemoryOwner = nameof(FloraInteractionManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 #if UNITY_EDITOR
         private const string WakeTrailSimulationComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_VegetationWakeTrailSim.compute";
 #endif
@@ -897,6 +900,12 @@ namespace Hecton8.World
         private int _defensiveSporeBurstCount;
         private int _surfaceCascadeEventCount;
         private int _underwaterCascadeEventCount;
+        private JobHandle _surfaceCascadePhaseSeedHandle;
+        private JobHandle _underwaterCascadePhaseSeedHandle;
+        private int _surfaceCascadePhaseSeedUploadCount;
+        private int _underwaterCascadePhaseSeedUploadCount;
+        private bool _surfaceCascadePhaseSeedScheduled;
+        private bool _underwaterCascadePhaseSeedScheduled;
 
         /// <summary>Last interaction point count pushed into the global flora buffer.</summary>
         public int PublishedInteractionCount => _lastPublishedInteractionCount;
@@ -1021,6 +1030,7 @@ namespace Hecton8.World
             _underwaterCascadeEvents = new NativeArray<FloraCascadeEventPayload>(MaxCascadeEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<FloraCascadeEventPayload>[4] - bounded active underwater cascade wavefront descriptors - owner: FloraInteractionManager
             _parasiteNodes = new NativeArray<ParasiteNode>(_headlessParasiteCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ParasiteNode>[_headlessParasiteCapacity] - headless module parasite simulation state - owner: FloraInteractionManager
             _defensiveSporeBursts = new DefensiveSporeBurstState[MaxDefensiveSporeBursts]; // COLD ALLOC: DefensiveSporeBurstState[6] - bounded active toxicity cloud descriptors - owner: FloraInteractionManager
+            RegisterNativeMemorySentinel();
 
             Shader.SetGlobalBuffer(_InteractionBufferId, _interactionBuffer);
             PublishFlowFieldGlobals();
@@ -1060,7 +1070,7 @@ namespace Hecton8.World
             ClearDefensiveSporeHazard();
             ClearModuleParasiteState();
             ResetInteractionGlobals();
-            ClearReactiveFloraSpatialState();
+            ClearReactiveFloraSpatialState(forceCompleteJobs: true);
         }
 
         private void OnDestroy()
@@ -1074,13 +1084,10 @@ namespace Hecton8.World
             ClearDefensiveSporeHazard();
             ClearModuleParasiteState();
             ResetInteractionGlobals();
-            ClearReactiveFloraSpatialState();
+            ClearReactiveFloraSpatialState(forceCompleteJobs: true);
 
-            if (_oceanFlowSamplePositions.IsCreated)
-                _oceanFlowSamplePositions.Dispose();
-
-            if (_oceanFlowSampleResults.IsCreated)
-                _oceanFlowSampleResults.Dispose();
+            DisposeNativeArray(ref _oceanFlowSamplePositions);
+            DisposeNativeArray(ref _oceanFlowSampleResults);
 
             DisposeNativeArray(ref _cascadeReactiveTemplateMask);
             DisposeNativeArray(ref _defensiveSporeBurstTemplateMask);
@@ -1091,9 +1098,9 @@ namespace Hecton8.World
             DisposeNativeArray(ref _surfaceCascadeEvents);
             DisposeNativeArray(ref _underwaterCascadeEvents);
             DisposeParasiteNodeArray();
-            DisposeNativeList(ref _reactiveFloraQueryHandles);
-            DisposeNativeList(ref _surfaceReactiveFloraHandles);
-            DisposeNativeList(ref _underwaterReactiveFloraHandles);
+            DisposeNativeList(ref _reactiveFloraQueryHandles, nameof(_reactiveFloraQueryHandles));
+            DisposeNativeList(ref _surfaceReactiveFloraHandles, nameof(_surfaceReactiveFloraHandles));
+            DisposeNativeList(ref _underwaterReactiveFloraHandles, nameof(_underwaterReactiveFloraHandles));
             ReleaseGraphicsBuffer(ref _surfaceCascadePhaseSeedBuffer);
             ReleaseGraphicsBuffer(ref _underwaterCascadePhaseSeedBuffer);
 
@@ -1199,6 +1206,8 @@ namespace Hecton8.World
         /// </summary>
         public void LateFrameTick()
         {
+            CompleteCascadePhaseSeedJob(underwater: false, forceComplete: false, uploadAfterComplete: true);
+            CompleteCascadePhaseSeedJob(underwater: true, forceComplete: false, uploadAfterComplete: true);
             CompleteHeadlessParasiteSimulation(force: false);
         }
 
@@ -2140,8 +2149,8 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureByteNativeArray(ref _allelopathicBloodKelpTemplateMask, templateCount);
-            EnsureByteNativeArray(ref _allelopathicGhostWeedTemplateMask, templateCount);
+            EnsureByteNativeArray(ref _allelopathicBloodKelpTemplateMask, templateCount, nameof(_allelopathicBloodKelpTemplateMask));
+            EnsureByteNativeArray(ref _allelopathicGhostWeedTemplateMask, templateCount, nameof(_allelopathicGhostWeedTemplateMask));
             for (int i = 0; i < templateCount; i++)
             {
                 _allelopathicBloodKelpTemplateMask[i] = 0;
@@ -3225,7 +3234,9 @@ namespace Hecton8.World
             else
                 _surfaceReactiveFloraHash = spatialHash;
 
-            EnsureCascadePhaseSeedResources(underwater, safeCount);
+            if (!EnsureCascadePhaseSeedResources(underwater, safeCount))
+                return;
+
             if (eventCount > 0)
             {
                 RecomputeCascadePhaseSeeds(underwater, matrices, metadata, safeCount);
@@ -3323,7 +3334,9 @@ namespace Hecton8.World
                 _cascadePropagationRadius,
                 ReactiveFloraKindMask,
                 _reactiveFloraQueryHandles);
-            RegisterCascadeEvent(underwater, sourcePositionWS, simulationTime);
+            if (!RegisterCascadeEvent(underwater, sourcePositionWS, simulationTime))
+                return;
+
             RecomputeCascadePhaseSeeds(underwater, matrices, metadata, count);
 
             if (underwater)
@@ -3338,8 +3351,11 @@ namespace Hecton8.World
             }
         }
 
-        private void RegisterCascadeEvent(bool underwater, Vector3 centerWS, float simulationTime)
+        private bool RegisterCascadeEvent(bool underwater, Vector3 centerWS, float simulationTime)
         {
+            if (HasPendingCascadePhaseSeedJob(underwater))
+                return false;
+
             NativeArray<FloraCascadeEventPayload> cascadeEvents = underwater ? _underwaterCascadeEvents : _surfaceCascadeEvents;
             int eventCount = underwater ? _underwaterCascadeEventCount : _surfaceCascadeEventCount;
             CompactCascadeEvents(cascadeEvents, ref eventCount, simulationTime, _cascadeReleaseDurationSeconds);
@@ -3361,6 +3377,8 @@ namespace Hecton8.World
                 _underwaterCascadeEventCount = eventCount;
             else
                 _surfaceCascadeEventCount = eventCount;
+
+            return true;
         }
 
         private void RecomputeCascadePhaseSeeds(
@@ -3372,6 +3390,9 @@ namespace Hecton8.World
             NativeArray<float> phaseSeeds = underwater ? _underwaterCascadePhaseSeeds : _surfaceCascadePhaseSeeds;
             NativeArray<FloraCascadeEventPayload> cascadeEvents = underwater ? _underwaterCascadeEvents : _surfaceCascadeEvents;
             int eventCount = underwater ? _underwaterCascadeEventCount : _surfaceCascadeEventCount;
+            if (HasPendingCascadePhaseSeedJob(underwater))
+                return;
+
             if (!phaseSeeds.IsCreated || count <= 0)
                 return;
 
@@ -3399,12 +3420,14 @@ namespace Hecton8.World
                 InactiveSeed = InactiveCascadeSeed,
                 PhaseSeeds = phaseSeeds
             };
-            job.Run(count);
-            UploadCascadePhaseSeedBuffer(underwater, count);
+            ScheduleCascadePhaseSeedJob(underwater, job, count);
         }
 
         private void ClearCascadePhaseSeeds(bool underwater, int count)
         {
+            if (HasPendingCascadePhaseSeedJob(underwater))
+                return;
+
             NativeArray<float> phaseSeeds = underwater ? _underwaterCascadePhaseSeeds : _surfaceCascadePhaseSeeds;
             if (!phaseSeeds.IsCreated)
                 return;
@@ -3429,27 +3452,34 @@ namespace Hecton8.World
             _vegetationBridge.BindReactivePhaseSeedBuffer(underwater, phaseSeedBuffer);
         }
 
-        private void EnsureCascadePhaseSeedResources(bool underwater, int count)
+        private bool EnsureCascadePhaseSeedResources(bool underwater, int count)
         {
+            if (HasPendingCascadePhaseSeedJob(underwater))
+                return false;
+
             if (count <= 0)
             {
                 ReleaseCascadePhaseSeedChannel(underwater);
-                return;
+                return true;
             }
 
             if (underwater)
             {
-                EnsureFloatNativeArray(ref _underwaterCascadePhaseSeeds, count);
+                EnsureFloatNativeArray(ref _underwaterCascadePhaseSeeds, count, nameof(_underwaterCascadePhaseSeeds));
                 EnsureStructuredFloatBuffer(ref _underwaterCascadePhaseSeedBuffer, count);
-                return;
+                return true;
             }
 
-            EnsureFloatNativeArray(ref _surfaceCascadePhaseSeeds, count);
+            EnsureFloatNativeArray(ref _surfaceCascadePhaseSeeds, count, nameof(_surfaceCascadePhaseSeeds));
             EnsureStructuredFloatBuffer(ref _surfaceCascadePhaseSeedBuffer, count);
+            return true;
         }
 
-        private void ReleaseCascadePhaseSeedChannel(bool underwater)
+        private void ReleaseCascadePhaseSeedChannel(bool underwater, bool forceComplete = false)
         {
+            if (!CompleteCascadePhaseSeedJob(underwater, forceComplete, uploadAfterComplete: false))
+                return;
+
             if (_vegetationBridge != null)
                 _vegetationBridge.BindReactivePhaseSeedBuffer(underwater, null);
 
@@ -3462,6 +3492,68 @@ namespace Hecton8.World
 
             DisposeNativeArray(ref _surfaceCascadePhaseSeeds);
             ReleaseGraphicsBuffer(ref _surfaceCascadePhaseSeedBuffer);
+        }
+
+        private bool HasPendingCascadePhaseSeedJob(bool underwater)
+        {
+            return underwater ? _underwaterCascadePhaseSeedScheduled : _surfaceCascadePhaseSeedScheduled;
+        }
+
+        private void ScheduleCascadePhaseSeedJob(bool underwater, PopulateCascadePhaseSeedsJob job, int count)
+        {
+            int safeCount = math.max(0, count);
+            if (safeCount <= 0)
+                return;
+
+            JobHandle handle = job.Schedule(safeCount, CascadePhaseSeedJobBatchSize);
+            if (underwater)
+            {
+                _underwaterCascadePhaseSeedHandle = handle;
+                _underwaterCascadePhaseSeedUploadCount = safeCount;
+                _underwaterCascadePhaseSeedScheduled = true;
+            }
+            else
+            {
+                _surfaceCascadePhaseSeedHandle = handle;
+                _surfaceCascadePhaseSeedUploadCount = safeCount;
+                _surfaceCascadePhaseSeedScheduled = true;
+            }
+
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private bool CompleteCascadePhaseSeedJob(bool underwater, bool forceComplete, bool uploadAfterComplete)
+        {
+            if (underwater)
+            {
+                if (!_underwaterCascadePhaseSeedScheduled)
+                    return true;
+
+                if (!DispatcherJobSwap.TryComplete(ref _underwaterCascadePhaseSeedHandle, forceComplete))
+                    return false;
+
+                _underwaterCascadePhaseSeedScheduled = false;
+                int uploadCount = _underwaterCascadePhaseSeedUploadCount;
+                _underwaterCascadePhaseSeedUploadCount = 0;
+                if (uploadAfterComplete && uploadCount > 0)
+                    UploadCascadePhaseSeedBuffer(underwater: true, uploadCount);
+
+                return true;
+            }
+
+            if (!_surfaceCascadePhaseSeedScheduled)
+                return true;
+
+            if (!DispatcherJobSwap.TryComplete(ref _surfaceCascadePhaseSeedHandle, forceComplete))
+                return false;
+
+            _surfaceCascadePhaseSeedScheduled = false;
+            int surfaceUploadCount = _surfaceCascadePhaseSeedUploadCount;
+            _surfaceCascadePhaseSeedUploadCount = 0;
+            if (uploadAfterComplete && surfaceUploadCount > 0)
+                UploadCascadePhaseSeedBuffer(underwater: false, surfaceUploadCount);
+
+            return true;
         }
 
         private void EnsureReactiveFloraHashCapacity(ref HectonSpatialHash spatialHash, int count)
@@ -3541,7 +3633,7 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureByteNativeArray(ref _cascadeReactiveTemplateMask, templateCount);
+            EnsureByteNativeArray(ref _cascadeReactiveTemplateMask, templateCount, nameof(_cascadeReactiveTemplateMask));
             for (int i = 0; i < _cascadeReactiveTemplateMask.Length; i++)
                 _cascadeReactiveTemplateMask[i] = 0;
 
@@ -3573,7 +3665,7 @@ namespace Hecton8.World
                 return;
             }
 
-            EnsureByteNativeArray(ref _defensiveSporeBurstTemplateMask, templateCount);
+            EnsureByteNativeArray(ref _defensiveSporeBurstTemplateMask, templateCount, nameof(_defensiveSporeBurstTemplateMask));
             for (int i = 0; i < _defensiveSporeBurstTemplateMask.Length; i++)
                 _defensiveSporeBurstTemplateMask[i] = 0;
 
@@ -3674,15 +3766,15 @@ namespace Hecton8.World
             metadata[index] = instanceData;
         }
 
-        private void ClearReactiveFloraSpatialState()
+        private void ClearReactiveFloraSpatialState(bool forceCompleteJobs)
         {
             if (_surfaceReactiveFloraHandles.IsCreated && _surfaceReactiveFloraHash != null)
                 ClearRegisteredReactiveFloraHandles(_surfaceReactiveFloraHash, _surfaceReactiveFloraHandles);
             if (_underwaterReactiveFloraHandles.IsCreated && _underwaterReactiveFloraHash != null)
                 ClearRegisteredReactiveFloraHandles(_underwaterReactiveFloraHash, _underwaterReactiveFloraHandles);
 
-            ReleaseCascadePhaseSeedChannel(underwater: false);
-            ReleaseCascadePhaseSeedChannel(underwater: true);
+            ReleaseCascadePhaseSeedChannel(underwater: false, forceCompleteJobs);
+            ReleaseCascadePhaseSeedChannel(underwater: true, forceCompleteJobs);
             _surfaceCascadeEventCount = 0;
             _underwaterCascadeEventCount = 0;
             _lastSurfaceCascadeSourcePayloadIndex = -1;
@@ -3692,7 +3784,7 @@ namespace Hecton8.World
             _defensiveSporeBurstCount = 0;
         }
 
-        private static void EnsureByteNativeArray(ref NativeArray<byte> array, int requiredCount)
+        private static void EnsureByteNativeArray(ref NativeArray<byte> array, int requiredCount, string label)
         {
             if (requiredCount <= 0)
             {
@@ -3705,9 +3797,10 @@ namespace Hecton8.World
 
             DisposeNativeArray(ref array);
             array = new NativeArray<byte>(requiredCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[templateCount] - reactive flora template membership mask - owner: FloraInteractionManager
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
-        private static void EnsureFloatNativeArray(ref NativeArray<float> array, int requiredCount)
+        private static void EnsureFloatNativeArray(ref NativeArray<float> array, int requiredCount, string label)
         {
             if (requiredCount <= 0)
             {
@@ -3720,6 +3813,7 @@ namespace Hecton8.World
 
             DisposeNativeArray(ref array);
             array = new NativeArray<float>(requiredCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[instanceCount] - per-instance cascade phase seed staging - owner: FloraInteractionManager
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
         private static void EnsureStructuredFloatBuffer(ref GraphicsBuffer buffer, int requiredCount)
@@ -3737,11 +3831,24 @@ namespace Hecton8.World
             buffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float>(requiredCount); // COLD ALLOC: GraphicsBuffer[instanceCount] - per-instance cascade phase seed GPU buffer - owner: FloraInteractionManager
         }
 
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_oceanFlowSamplePositions, NativeMemoryOwner, nameof(_oceanFlowSamplePositions), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_oceanFlowSampleResults, NativeMemoryOwner, nameof(_oceanFlowSampleResults), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_reactiveFloraQueryHandles, NativeMemoryOwner, nameof(_reactiveFloraQueryHandles), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_surfaceReactiveFloraHandles, NativeMemoryOwner, nameof(_surfaceReactiveFloraHandles), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_underwaterReactiveFloraHandles, NativeMemoryOwner, nameof(_underwaterReactiveFloraHandles), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_surfaceCascadeEvents, NativeMemoryOwner, nameof(_surfaceCascadeEvents), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_underwaterCascadeEvents, NativeMemoryOwner, nameof(_underwaterCascadeEvents), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_parasiteNodes, NativeMemoryOwner, nameof(_parasiteNodes), NativeMemoryLifetime);
+        }
+
         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
         {
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
         }
@@ -3753,6 +3860,7 @@ namespace Hecton8.World
 
             if (_parasiteGrowthScheduled)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_parasiteNodes);
                 _parasiteNodes.Dispose(_parasiteGrowthHandle);
                 _parasiteGrowthScheduled = false;
                 _parasiteGrowthHandle = default;
@@ -3761,16 +3869,18 @@ namespace Hecton8.World
                 return;
             }
 
+            NativeMemorySentinel.UnregisterNativeArray(_parasiteNodes);
             _parasiteNodes.Dispose();
             _parasiteNodeCount = 0;
             _parasiteNodes = default;
         }
 
-        private static void DisposeNativeList<T>(ref NativeList<T> list) where T : unmanaged
+        private static void DisposeNativeList<T>(ref NativeList<T> list, string label) where T : unmanaged
         {
             if (!list.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
             list.Dispose();
             list = default;
         }
@@ -3939,7 +4049,10 @@ namespace Hecton8.World
                 _wakeTrailWrite = CreateWakeTrailTexture("__VegetationWakeTrail_B");
 
             if (!_queuedWakeTrailStampCommands.IsCreated)
+            {
                 _queuedWakeTrailStampCommands = new NativeArray<WakeTrailStampCommand>(WakeTrailStampCommandCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<WakeTrailStampCommand>[4] - queued vegetation wake-trail stamps for single compute dispatch - owner: FloraInteractionManager
+                NativeMemorySentinel.RegisterNativeArray(_queuedWakeTrailStampCommands, NativeMemoryOwner, nameof(_queuedWakeTrailStampCommands), NativeMemoryLifetime);
+            }
 
             if (_wakeTrailStampCommandBuffer == null)
                 _wakeTrailStampCommandBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<WakeTrailStampCommand>(WakeTrailStampCommandCapacity); // COLD ALLOC: GraphicsBuffer[4] - queued vegetation wake-trail stamp buffer for single compute dispatch - owner: FloraInteractionManager
@@ -3971,8 +4084,7 @@ namespace Hecton8.World
                 _wakeTrailStampCommandBuffer = null;
             }
 
-            if (_queuedWakeTrailStampCommands.IsCreated)
-                _queuedWakeTrailStampCommands.Dispose();
+            DisposeNativeArray(ref _queuedWakeTrailStampCommands);
 
             _pendingWakeTrailScrollUv = Vector2.zero;
             _queuedWakeTrailStampCount = 0;

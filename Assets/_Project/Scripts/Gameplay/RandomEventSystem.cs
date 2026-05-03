@@ -102,17 +102,29 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: RegistryBucket<IRandomEventListener>[16] - deferred random event listeners - owner: RandomEventEvents
         private static readonly RegistryBucket<IRandomEventListener> _listeners = new RegistryBucket<IRandomEventListener>(ListenerCapacity);
         private static NativeQueue<RandomEventStartedPayload> _pendingStarted;
+        private static NativeQueue<RandomEventStartedPayload> _nextFrameStarted;
         private static NativeQueue<RandomEventType> _pendingEnded;
+        private static NativeQueue<RandomEventType> _nextFrameEnded;
         private static NativeQueue<SeismicShockwaveEvent> _pendingSeismicShockwaves;
+        private static NativeQueue<SeismicShockwaveEvent> _nextFrameSeismicShockwaves;
         private static int _pendingStartedCount;
+        private static int _nextFrameStartedCount;
         private static int _pendingEndedCount;
+        private static int _nextFrameEndedCount;
         private static int _pendingSeismicShockwaveCount;
+        private static int _nextFrameSeismicShockwaveCount;
+        private static bool _isDispatching;
 
         public static int PendingCount
         {
             get
             {
-                return _pendingStartedCount + _pendingEndedCount + _pendingSeismicShockwaveCount;
+                return _pendingStartedCount
+                    + _nextFrameStartedCount
+                    + _pendingEndedCount
+                    + _nextFrameEndedCount
+                    + _pendingSeismicShockwaveCount
+                    + _nextFrameSeismicShockwaveCount;
             }
         }
 
@@ -126,11 +138,25 @@ namespace Hecton8.Gameplay
                 _pendingStarted = default;
             }
 
+            if (_nextFrameStarted.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_nextFrameStarted));
+                _nextFrameStarted.Dispose();
+                _nextFrameStarted = default;
+            }
+
             if (_pendingEnded.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_pendingEnded));
                 _pendingEnded.Dispose();
                 _pendingEnded = default;
+            }
+
+            if (_nextFrameEnded.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_nextFrameEnded));
+                _nextFrameEnded.Dispose();
+                _nextFrameEnded = default;
             }
 
             if (_pendingSeismicShockwaves.IsCreated)
@@ -140,9 +166,20 @@ namespace Hecton8.Gameplay
                 _pendingSeismicShockwaves = default;
             }
 
+            if (_nextFrameSeismicShockwaves.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_nextFrameSeismicShockwaves));
+                _nextFrameSeismicShockwaves.Dispose();
+                _nextFrameSeismicShockwaves = default;
+            }
+
             _pendingStartedCount = 0;
+            _nextFrameStartedCount = 0;
             _pendingEndedCount = 0;
+            _nextFrameEndedCount = 0;
             _pendingSeismicShockwaveCount = 0;
+            _nextFrameSeismicShockwaveCount = 0;
+            _isDispatching = false;
             _listeners.Clear();
         }
 
@@ -167,41 +204,74 @@ namespace Hecton8.Gameplay
 
         public static void FlushPending()
         {
-            if (_listeners.Count <= 0)
+            bool completed = false;
+            _isDispatching = true;
+            try
             {
-                DrainWithoutDispatch();
-                return;
+                if (_listeners.Count <= 0)
+                {
+                    completed = DrainWithoutDispatch();
+                }
+                else
+                {
+                    completed = FlushStarted();
+                    if (completed)
+                        completed = FlushEnded();
+                    if (completed)
+                        completed = FlushSeismicShockwaves();
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
             }
 
-            if (!FlushStarted())
+            if (!completed || HasPendingFrontEvents())
                 return;
-            if (!FlushEnded())
-                return;
-            FlushSeismicShockwaves();
+
+            PromoteNextFrameEvents();
         }
 
         public static void RaiseStarted(RandomEventType type, float intensity)
         {
             EnsureInitialized();
-            if (_pendingStartedCount >= PendingStartedCapacity)
+            if (_pendingStartedCount + _nextFrameStartedCount >= PendingStartedCapacity)
                 return;
 
-            _pendingStarted.Enqueue(new RandomEventStartedPayload
+            RandomEventStartedPayload payload = new RandomEventStartedPayload
             {
                 Type = type,
                 Intensity = intensity
-            });
-            _pendingStartedCount++;
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameStarted.Enqueue(payload);
+                _nextFrameStartedCount++;
+            }
+            else
+            {
+                _pendingStarted.Enqueue(payload);
+                _pendingStartedCount++;
+            }
         }
 
         public static void RaiseEnded(RandomEventType type)
         {
             EnsureInitialized();
-            if (_pendingEndedCount >= PendingEndedCapacity)
+            if (_pendingEndedCount + _nextFrameEndedCount >= PendingEndedCapacity)
                 return;
 
-            _pendingEnded.Enqueue(type);
-            _pendingEndedCount++;
+            if (_isDispatching)
+            {
+                _nextFrameEnded.Enqueue(type);
+                _nextFrameEndedCount++;
+            }
+            else
+            {
+                _pendingEnded.Enqueue(type);
+                _pendingEndedCount++;
+            }
         }
 
         public static void RaiseSeismicShockwave(in SeismicShockwaveEvent payload)
@@ -214,11 +284,19 @@ namespace Hecton8.Gameplay
                 FieldTargetRole.HazardProbe,
                 0));
             EnsureInitialized();
-            if (_pendingSeismicShockwaveCount >= PendingSeismicShockwaveCapacity)
+            if (_pendingSeismicShockwaveCount + _nextFrameSeismicShockwaveCount >= PendingSeismicShockwaveCapacity)
                 return;
 
-            _pendingSeismicShockwaves.Enqueue(payload);
-            _pendingSeismicShockwaveCount++;
+            if (_isDispatching)
+            {
+                _nextFrameSeismicShockwaves.Enqueue(payload);
+                _nextFrameSeismicShockwaveCount++;
+            }
+            else
+            {
+                _pendingSeismicShockwaves.Enqueue(payload);
+                _pendingSeismicShockwaveCount++;
+            }
         }
 
         private static void EnsureInitialized()
@@ -233,6 +311,16 @@ namespace Hecton8.Gameplay
                     nameof(_pendingStarted),
                     NativeAllocationLifetime.Session);
             }
+            if (!_nextFrameStarted.IsCreated)
+            {
+                _nextFrameStarted = new NativeQueue<RandomEventStartedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - next-frame random-event starts - owner: RandomEventEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameStarted,
+                    PendingStartedCapacity,
+                    nameof(RandomEventEvents),
+                    nameof(_nextFrameStarted),
+                    NativeAllocationLifetime.Session);
+            }
             if (!_pendingEnded.IsCreated)
             {
                 _pendingEnded = new NativeQueue<RandomEventType>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RandomEventType>[16] - deferred random-event ends - owner: RandomEventEvents
@@ -243,6 +331,16 @@ namespace Hecton8.Gameplay
                     nameof(_pendingEnded),
                     NativeAllocationLifetime.Session);
             }
+            if (!_nextFrameEnded.IsCreated)
+            {
+                _nextFrameEnded = new NativeQueue<RandomEventType>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RandomEventType>[16] - next-frame random-event ends - owner: RandomEventEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEnded,
+                    PendingEndedCapacity,
+                    nameof(RandomEventEvents),
+                    nameof(_nextFrameEnded),
+                    NativeAllocationLifetime.Session);
+            }
             if (!_pendingSeismicShockwaves.IsCreated)
             {
                 _pendingSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - deferred seismic shockwaves - owner: RandomEventEvents
@@ -251,6 +349,16 @@ namespace Hecton8.Gameplay
                     PendingSeismicShockwaveCapacity,
                     nameof(RandomEventEvents),
                     nameof(_pendingSeismicShockwaves),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_nextFrameSeismicShockwaves.IsCreated)
+            {
+                _nextFrameSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - next-frame seismic shockwaves - owner: RandomEventEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameSeismicShockwaves,
+                    PendingSeismicShockwaveCapacity,
+                    nameof(RandomEventEvents),
+                    nameof(_nextFrameSeismicShockwaves),
                     NativeAllocationLifetime.Session);
             }
         }
@@ -274,7 +382,13 @@ namespace Hecton8.Gameplay
                 IRandomEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnRandomEventStarted(payload.Type, payload.Intensity);
+                {
+                    IRandomEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnRandomEventStarted(payload.Type, payload.Intensity);
+                }
             }
 
             if (_pendingStarted.IsEmpty())
@@ -302,7 +416,13 @@ namespace Hecton8.Gameplay
                 IRandomEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnRandomEventEnded(type);
+                {
+                    IRandomEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnRandomEventEnded(type);
+                }
             }
 
             if (_pendingEnded.IsEmpty())
@@ -330,7 +450,13 @@ namespace Hecton8.Gameplay
                 IRandomEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnSeismicShockwave(in payload);
+                {
+                    IRandomEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnSeismicShockwave(in payload);
+                }
             }
 
             if (_pendingSeismicShockwaves.IsEmpty())
@@ -339,7 +465,7 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static void DrainWithoutDispatch()
+        private static bool DrainWithoutDispatch()
         {
             if (_pendingStarted.IsCreated)
             {
@@ -347,10 +473,10 @@ namespace Hecton8.Gameplay
                 while (scanBudget > 0 && !_pendingStarted.IsEmpty())
                 {
                     if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
+                        return false;
 
                     if (!_pendingStarted.TryDequeue(out _))
-                        return;
+                        return true;
 
                     _pendingStartedCount--;
                     scanBudget--;
@@ -366,10 +492,10 @@ namespace Hecton8.Gameplay
                 while (scanBudget > 0 && !_pendingEnded.IsEmpty())
                 {
                     if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
+                        return false;
 
                     if (!_pendingEnded.TryDequeue(out _))
-                        return;
+                        return true;
 
                     _pendingEndedCount--;
                     scanBudget--;
@@ -385,10 +511,10 @@ namespace Hecton8.Gameplay
                 while (scanBudget > 0 && !_pendingSeismicShockwaves.IsEmpty())
                 {
                     if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
+                        return false;
 
                     if (!_pendingSeismicShockwaves.TryDequeue(out _))
-                        return;
+                        return true;
 
                     _pendingSeismicShockwaveCount--;
                     scanBudget--;
@@ -396,6 +522,48 @@ namespace Hecton8.Gameplay
 
                 if (_pendingSeismicShockwaves.IsEmpty())
                     _pendingSeismicShockwaveCount = 0;
+            }
+
+            return true;
+        }
+
+        private static bool HasPendingFrontEvents()
+        {
+            return (_pendingStarted.IsCreated && !_pendingStarted.IsEmpty())
+                || (_pendingEnded.IsCreated && !_pendingEnded.IsEmpty())
+                || (_pendingSeismicShockwaves.IsCreated && !_pendingSeismicShockwaves.IsEmpty());
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            if (_nextFrameStarted.IsCreated)
+            {
+                while (_nextFrameStartedCount > 0 && _nextFrameStarted.TryDequeue(out RandomEventStartedPayload payload))
+                {
+                    _nextFrameStartedCount--;
+                    _pendingStarted.Enqueue(payload);
+                    _pendingStartedCount++;
+                }
+            }
+
+            if (_nextFrameEnded.IsCreated)
+            {
+                while (_nextFrameEndedCount > 0 && _nextFrameEnded.TryDequeue(out RandomEventType type))
+                {
+                    _nextFrameEndedCount--;
+                    _pendingEnded.Enqueue(type);
+                    _pendingEndedCount++;
+                }
+            }
+
+            if (_nextFrameSeismicShockwaves.IsCreated)
+            {
+                while (_nextFrameSeismicShockwaveCount > 0 && _nextFrameSeismicShockwaves.TryDequeue(out SeismicShockwaveEvent payload))
+                {
+                    _nextFrameSeismicShockwaveCount--;
+                    _pendingSeismicShockwaves.Enqueue(payload);
+                    _pendingSeismicShockwaveCount++;
+                }
             }
         }
     }
@@ -541,7 +709,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()

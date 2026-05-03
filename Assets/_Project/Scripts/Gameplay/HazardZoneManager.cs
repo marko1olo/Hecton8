@@ -544,30 +544,42 @@ namespace Hecton8.Gameplay
             _candidateVolumeFlags = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _spatialHash = new HectonSpatialHash(safeCapacity, safeCapacity * 6, HazardSpatialCellSizeMeters);
             _spatialQueryHandles = new NativeList<int>(HazardSpatialQueryCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeArray(_volumes, nameof(HazardZoneManager), nameof(_volumes), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_volumeIds, nameof(HazardZoneManager), nameof(_volumeIds), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_volumeSpatialHandles, nameof(HazardZoneManager), nameof(_volumeSpatialHandles), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_volumeCurveLutSamples, nameof(HazardZoneManager), nameof(_volumeCurveLutSamples), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobVolumes, nameof(HazardZoneManager), nameof(_jobVolumes), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_jobResult, nameof(HazardZoneManager), nameof(_jobResult), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_candidateVolumeFlags, nameof(HazardZoneManager), nameof(_candidateVolumeFlags), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeList(_spatialQueryHandles, nameof(HazardZoneManager), nameof(_spatialQueryHandles), NativeAllocationLifetime.Session);
         }
 
         private void DisposeNativeState()
         {
             if (_volumes.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_volumes);
                 _volumes.Dispose();
                 _volumes = default;
             }
 
             if (_volumeIds.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_volumeIds);
                 _volumeIds.Dispose();
                 _volumeIds = default;
             }
 
             if (_volumeSpatialHandles.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_volumeSpatialHandles);
                 _volumeSpatialHandles.Dispose();
                 _volumeSpatialHandles = default;
             }
 
             if (_volumeCurveLutSamples.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_volumeCurveLutSamples);
                 _volumeCurveLutSamples.Dispose();
                 _volumeCurveLutSamples = default;
             }
@@ -577,24 +589,28 @@ namespace Hecton8.Gameplay
 
             if (_jobVolumes.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_jobVolumes);
                 _jobVolumes.Dispose(disposeHandle);
                 _jobVolumes = default;
             }
 
             if (_jobResult.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_jobResult);
                 _jobResult.Dispose(disposeHandle);
                 _jobResult = default;
             }
 
             if (_candidateVolumeFlags.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_candidateVolumeFlags);
                 _candidateVolumeFlags.Dispose(disposeHandle);
                 _candidateVolumeFlags = default;
             }
 
             if (_spatialQueryHandles.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeList(nameof(HazardZoneManager), nameof(_spatialQueryHandles));
                 _spatialQueryHandles.Dispose();
                 _spatialQueryHandles = default;
             }
@@ -1245,7 +1261,7 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregister()
@@ -1264,7 +1280,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterHazardZoneRuntime(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.HazardZones, this);
         }
 
         private void TryUnregisterService()

@@ -203,6 +203,7 @@ namespace Hecton8.UI
             RefreshSubscriptions();
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void AutoResolveTabIndex()
         {
             if (gameObject.name.Contains("Construction", System.StringComparison.OrdinalIgnoreCase))
@@ -678,7 +679,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterTick()

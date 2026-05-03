@@ -18,7 +18,6 @@ using Hecton8.Core;
 using Hecton8.Visor;
 using Hecton8.Gameplay;
 using Hecton8.World;
-using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -64,8 +63,9 @@ namespace Hecton8.UI
         private TextMeshProUGUI _signalSummaryLabel;
         private PDAMapTab _mapTab;
         private HectonSurvivalSystem _survivalSystem;
-        // COLD ALLOC: StringBuilder[96] — sonar contact line assembly — owner: PDASpectrumTab
-        private readonly StringBuilder _lineBuilder = new StringBuilder(96);
+        // COLD ALLOC: char[512] — spectrum diagnostic line assembly buffer — owner: PDASpectrumTab
+        private readonly char[] _lineBuffer = new char[512];
+        private int _lineLength;
 
         private static readonly string[] ModeNames =
         {
@@ -372,14 +372,14 @@ namespace Hecton8.UI
                 return;
             }
 
-            _lineBuilder.Clear();
-            _lineBuilder.Append(ModeDescriptions[modeIndex]);
-            _lineBuilder.Append('\n');
-            _lineBuilder.Append("BIOME // ");
+            ClearLine();
+            Append(ModeDescriptions[modeIndex]);
+            Append('\n');
+            Append("BIOME // ");
             AppendBiomeName(matrixProfile);
-            _lineBuilder.Append(" // DEPTH ");
+            Append(" // DEPTH ");
             AppendDistance(Mathf.RoundToInt(biomeDirector.CurrentDepthMeters));
-            _statusLabel.SetText(_lineBuilder);
+            SetLineText(_statusLabel);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -397,14 +397,14 @@ namespace Hecton8.UI
         {
             SetLabelText(_sonarStatusLabel, "SONAR ACTIVE // GRID LOCKED");
 
-            _lineBuilder.Clear();
-            _lineBuilder.Append("CONTACTS // RES ");
+            ClearLine();
+            Append("CONTACTS // RES ");
             AppendInt(snapshot.ResourceCount);
-            _lineBuilder.Append(" | BIO ");
+            Append(" | BIO ");
             AppendInt(snapshot.BioformCount);
-            _lineBuilder.Append(" | SIG ");
+            Append(" | SIG ");
             AppendInt(snapshot.SignalCount);
-            _contactSummaryLabel.SetText(_lineBuilder);
+            SetLineText(_contactSummaryLabel);
 
             SetDistanceLabel(_resourceSummaryLabel, "NEAREST RESOURCE // ", snapshot.HasNearestResource, snapshot.NearestResourceDistanceMeters, "NEAREST RESOURCE // NONE");
             SetDistanceLabel(_bioformSummaryLabel, "NEAREST BIOFORM // ", snapshot.HasNearestBioform, snapshot.NearestBioformDistanceMeters, "NEAREST BIOFORM // NONE");
@@ -423,35 +423,35 @@ namespace Hecton8.UI
                 return;
             }
 
-            _lineBuilder.Clear();
-            _lineBuilder.Append("MATRIX // ");
+            ClearLine();
+            Append("MATRIX // ");
             AppendBiomeName(matrixProfile);
-            _lineBuilder.Append(" // TIER ");
+            Append(" // TIER ");
             AppendInt(biomeDirector.CurrentDepthTier);
-            _sonarStatusLabel.SetText(_lineBuilder);
+            SetLineText(_sonarStatusLabel);
 
-            _lineBuilder.Clear();
-            _lineBuilder.Append("DEPTH // ");
+            ClearLine();
+            Append("DEPTH // ");
             AppendDistance(Mathf.RoundToInt(biomeDirector.CurrentDepthMeters));
-            _lineBuilder.Append(" // MATRIX ");
+            Append(" // MATRIX ");
             AppendInt(Mathf.Max(0, matrixProfile.matrixIndex));
-            _contactSummaryLabel.SetText(_lineBuilder);
+            SetLineText(_contactSummaryLabel);
 
             if (visualProfile != null)
             {
-                _lineBuilder.Clear();
-                _lineBuilder.Append("TURBIDITY // ");
+                ClearLine();
+                Append("TURBIDITY // ");
                 AppendTenths(visualProfile.turbidityMultiplier);
-                _resourceSummaryLabel.SetText(_lineBuilder);
+                SetLineText(_resourceSummaryLabel);
 
-                _lineBuilder.Clear();
-                _lineBuilder.Append("ABSORPTION RGB // ");
+                ClearLine();
+                Append("ABSORPTION RGB // ");
                 AppendTenths(visualProfile.depthFogDensity.x);
-                _lineBuilder.Append(" / ");
+                Append(" / ");
                 AppendTenths(visualProfile.depthFogDensity.y);
-                _lineBuilder.Append(" / ");
+                Append(" / ");
                 AppendTenths(visualProfile.depthFogDensity.z);
-                _bioformSummaryLabel.SetText(_lineBuilder);
+                SetLineText(_bioformSummaryLabel);
             }
             else
             {
@@ -461,13 +461,13 @@ namespace Hecton8.UI
 
             if (atmosphereProfile != null)
             {
-                _lineBuilder.Clear();
-                _lineBuilder.Append("THERMAL // ");
+                ClearLine();
+                Append("THERMAL // ");
                 AppendSignedTenths(atmosphereProfile.temperature);
-                _lineBuilder.Append(" C // RAD ");
+                Append(" C // RAD ");
                 AppendTenths(atmosphereProfile.radiation);
                 AppendLastLossSuffix();
-                _signalSummaryLabel.SetText(_lineBuilder);
+                SetLineText(_signalSummaryLabel);
             }
             else
             {
@@ -483,10 +483,10 @@ namespace Hecton8.UI
                 return;
             }
 
-            _lineBuilder.Clear();
-            _lineBuilder.Append(prefix);
+            ClearLine();
+            Append(prefix);
             AppendDistance(distanceMeters);
-            label.SetText(_lineBuilder);
+            SetLineText(label);
         }
 
         private void SetSignalDistanceLabel(SpatialSonarSnapshot snapshot)
@@ -500,12 +500,12 @@ namespace Hecton8.UI
                 return;
             }
 
-            _lineBuilder.Clear();
-            _lineBuilder.Append("NEAREST SIGNAL // ");
-            _lineBuilder.Append(ResolveSignalRoleLabel(snapshot.NearestSignalRole));
-            _lineBuilder.Append(' ');
+            ClearLine();
+            Append("NEAREST SIGNAL // ");
+            Append(ResolveSignalRoleLabel(snapshot.NearestSignalRole));
+            Append(' ');
             AppendDistance(snapshot.NearestSignalDistanceMeters);
-            _signalSummaryLabel.SetText(_lineBuilder);
+            SetLineText(_signalSummaryLabel);
         }
 
         private void RefreshLastLossLabel()
@@ -555,9 +555,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            _lineBuilder.Append(" // LOSS ");
-            _lineBuilder.Append(ResolveDeathCauseTag(record.Cause));
-            _lineBuilder.Append(' ');
+            Append(" // LOSS ");
+            Append(ResolveDeathCauseTag(record.Cause));
+            Append(' ');
             AppendDistance(Mathf.RoundToInt(Vector3.Distance(survival.transform.position, record.Position)));
         }
 
@@ -569,26 +569,26 @@ namespace Hecton8.UI
                 return false;
             }
 
-            _lineBuilder.Clear();
-            _lineBuilder.Append("LAST LOSS // ");
-            _lineBuilder.Append(ResolveDeathCauseTag(record.Cause));
-            _lineBuilder.Append(' ');
+            ClearLine();
+            Append("LAST LOSS // ");
+            Append(ResolveDeathCauseTag(record.Cause));
+            Append(' ');
             AppendDistance(Mathf.RoundToInt(Vector3.Distance(survival.transform.position, record.Position)));
-            _signalSummaryLabel.SetText(_lineBuilder);
+            SetLineText(_signalSummaryLabel);
             return true;
         }
 
         private void AppendInt(int value)
         {
             int clampedValue = Mathf.Clamp(value, 0, HudNumericStringCache.MaxIntegerValue);
-            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedValue]);
+            Append(HudNumericStringCache.IntStrings[clampedValue]);
         }
 
         private void AppendDistance(int distanceMeters)
         {
             int clampedDistance = Mathf.Clamp(distanceMeters, 0, HudNumericStringCache.MaxIntegerValue);
-            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedDistance]);
-            _lineBuilder.Append('M');
+            Append(HudNumericStringCache.IntStrings[clampedDistance]);
+            Append('M');
         }
 
         private void AppendTenths(float value)
@@ -596,9 +596,9 @@ namespace Hecton8.UI
             int roundedTenths = Mathf.Abs(Mathf.RoundToInt(value * 10f));
             int maxHudTenths = HudNumericStringCache.MaxIntegerValue * 10 + 9;
             int clampedTenths = Mathf.Clamp(roundedTenths, 0, maxHudTenths);
-            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
-            _lineBuilder.Append('.');
-            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
+            Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
+            Append('.');
+            Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
         }
 
         private void AppendSignedTenths(float value)
@@ -606,26 +606,26 @@ namespace Hecton8.UI
             int roundedTenths = Mathf.RoundToInt(value * 10f);
             if (roundedTenths < 0)
             {
-                _lineBuilder.Append('-');
+                Append('-');
                 roundedTenths = -roundedTenths;
             }
 
             int maxHudTenths = HudNumericStringCache.MaxIntegerValue * 10 + 9;
             int clampedTenths = Mathf.Clamp(roundedTenths, 0, maxHudTenths);
-            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
-            _lineBuilder.Append('.');
-            _lineBuilder.Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
+            Append(HudNumericStringCache.IntStrings[clampedTenths / 10]);
+            Append('.');
+            Append(HudNumericStringCache.IntStrings[clampedTenths % 10]);
         }
 
         private void AppendBiomeName(HectonBiomeMatrixProfile matrixProfile)
         {
             if (matrixProfile == null || string.IsNullOrEmpty(matrixProfile.biomeName))
             {
-                _lineBuilder.Append("UNRESOLVED");
+                Append("UNRESOLVED");
                 return;
             }
 
-            _lineBuilder.Append(matrixProfile.biomeName);
+            Append(matrixProfile.biomeName);
         }
 
         private static string ResolveSignalRoleLabel(FieldTargetRole role)
@@ -782,6 +782,40 @@ namespace Hecton8.UI
         {
             if (label != null)
                 label.SetText(value);
+        }
+
+        private void ClearLine()
+        {
+            _lineLength = 0;
+        }
+
+        private void SetLineText(TextMeshProUGUI label)
+        {
+            if (label == null)
+                return;
+
+            label.SetCharArray(_lineBuffer, 0, Mathf.Clamp(_lineLength, 0, _lineBuffer.Length));
+            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private void Append(string value)
+        {
+            if (string.IsNullOrEmpty(value) || _lineLength >= _lineBuffer.Length)
+                return;
+
+            int copyLength = Mathf.Min(value.Length, _lineBuffer.Length - _lineLength);
+            for (int i = 0; i < copyLength; i++)
+                _lineBuffer[_lineLength + i] = value[i];
+            _lineLength += copyLength;
+        }
+
+        private void Append(char value)
+        {
+            if (_lineLength >= _lineBuffer.Length)
+                return;
+
+            _lineBuffer[_lineLength] = value;
+            _lineLength++;
         }
 
         private static void Anchor(RectTransform r, Vector2 amin, Vector2 amax,

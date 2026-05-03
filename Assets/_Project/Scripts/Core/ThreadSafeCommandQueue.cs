@@ -400,7 +400,11 @@ namespace Hecton8.Core
                 IStorageReservationCommitResolvedListener[] rawArray = _storageReservationCommitListeners.RawArray;
                 int count = _storageReservationCommitListeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnStorageReservationCommitResolved(in payload);
+                {
+                    IStorageReservationCommitResolvedListener listener = rawArray[i];
+                    if (listener != null)
+                        listener.OnStorageReservationCommitResolved(in payload);
+                }
             }
 
             if (_pendingStorageReservationCommitResolved.IsEmpty())

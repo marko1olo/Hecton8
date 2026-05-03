@@ -516,9 +516,9 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = true;
+            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _registeredLateFrame = true;
+            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
         }
 
         private void UnregisterFromTickManager()

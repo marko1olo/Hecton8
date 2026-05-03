@@ -125,7 +125,8 @@ namespace Hecton8.Gameplay
                 return;
 
             EnsureInitialized();
-            _listeners.Register(listener);
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
         }
 
         public static void Unregister(IScanEventListener listener)
@@ -133,7 +134,8 @@ namespace Hecton8.Gameplay
             if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
         }
 
         public static void FlushPending()
@@ -163,7 +165,11 @@ namespace Hecton8.Gameplay
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnScanEvent(in payload);
+                    {
+                        IScanEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnScanEvent(in payload);
+                    }
                 }
                 finally
                 {

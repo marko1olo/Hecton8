@@ -1574,7 +1574,7 @@ namespace Hecton8.Physics
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryRegisterFluidSimulationService()

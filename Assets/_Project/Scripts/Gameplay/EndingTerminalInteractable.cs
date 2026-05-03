@@ -23,7 +23,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class EndingTerminalInteractable : MonoBehaviour, IInteractable, IEndingEventListener
+    public sealed class EndingTerminalInteractable : MonoBehaviour, IInteractable, IEndingEventListener, ILocalizationLanguageChangedListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -38,6 +38,10 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         private bool _choiceOpen;
+        private string _cachedInactiveText;
+        private string _cachedActiveText;
+        private string _cachedCompleteText;
+        private string _cachedDataLoadedText;
 
         // Pre-cached interact texts — zero GC
         private const string TextInactive = "ATLAS-6 TERMINAL UNAVAILABLE";
@@ -48,14 +52,24 @@ namespace Hecton8.Gameplay
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
+        private void Awake()
+        {
+            RebuildLocalizedTextCache();
+        }
+
         private void OnEnable()
         {
             EndingEvents.Register(this);
+            LocalizationEvents.RegisterLanguageListener(this);
+            RebuildLocalizedTextCache();
             UpdateActiveIndicator();
         }
 
         private void OnDisable()
         {
+            SetObjectActive(highlightObject, false);
+            _choiceOpen = false;
+            LocalizationEvents.UnregisterLanguageListener(this);
             EndingEvents.Unregister(this);
         }
 
@@ -65,14 +79,12 @@ namespace Hecton8.Gameplay
 
         public void OnHoverStart()
         {
-            if (highlightObject != null)
-                highlightObject.SetActive(true);
+            SetObjectActive(highlightObject, true);
         }
 
         public void OnHoverEnd()
         {
-            if (highlightObject != null)
-                highlightObject.SetActive(false);
+            SetObjectActive(highlightObject, false);
         }
 
         public void Interact(Transform interactor)
@@ -100,10 +112,10 @@ namespace Hecton8.Gameplay
         public string GetInteractText()
         {
             EndingSystem ending = GlobalRegistry.Ending;
-            if (ending == null) return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_INACTIVE, TextInactive);
-            if (ending.IsEndingComplete) return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_COMPLETE, TextComplete);
-            if (!ending.IsConditionMet)  return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_INACTIVE, TextInactive);
-            return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_ACTIVE, TextActive);
+            if (ending == null) return _cachedInactiveText;
+            if (ending.IsEndingComplete) return _cachedCompleteText;
+            if (!ending.IsConditionMet) return _cachedInactiveText;
+            return _cachedActiveText;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -121,9 +133,7 @@ namespace Hecton8.Gameplay
             // В финальной версии — отдельный UI экран с тремя кнопками
             // Сейчас — уведомления с инструкцией
             Hecton8.UI.NotificationEvents.PushWarning(
-                ResolveLocalized(
-                    LocalizationKeys.ENDING_TERMINAL_DATA_LOADED,
-                    "ATLAS-6: SEED PROGRAM DATA LOADED. LIFE ON HECTON-8 PRE-DATES HUMAN ARRIVAL. ATLAS-6 BUILT A PROTECTIVE SIGNAL FOR 847 DAYS."));
+                _cachedDataLoadedText);
 
             LogChoiceUiOpened();
         }
@@ -144,6 +154,12 @@ namespace Hecton8.Gameplay
             }
         }
 
+        /// <inheritdoc />
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+        {
+            RebuildLocalizedTextCache();
+        }
+
         private void HandleConditionMet()
         {
             UpdateActiveIndicator();
@@ -161,7 +177,23 @@ namespace Hecton8.Gameplay
 
             EndingSystem ending = GlobalRegistry.Ending;
             bool active = ending != null && ending.IsConditionMet && !ending.IsEndingComplete;
-            activeIndicator.SetActive(active);
+            SetObjectActive(activeIndicator, active);
+        }
+
+        private void RebuildLocalizedTextCache()
+        {
+            _cachedInactiveText = ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_INACTIVE, TextInactive);
+            _cachedActiveText = ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_ACTIVE, TextActive);
+            _cachedCompleteText = ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_COMPLETE, TextComplete);
+            _cachedDataLoadedText = ResolveLocalized(
+                LocalizationKeys.ENDING_TERMINAL_DATA_LOADED,
+                "ATLAS-6: SEED PROGRAM DATA LOADED. LIFE ON HECTON-8 PRE-DATES HUMAN ARRIVAL. ATLAS-6 BUILT A PROTECTIVE SIGNAL FOR 847 DAYS.");
+        }
+
+        private static void SetObjectActive(GameObject target, bool active)
+        {
+            if (target != null && target.activeSelf != active)
+                target.SetActive(active);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -183,8 +215,7 @@ namespace Hecton8.Gameplay
             if (manager == null)
                 return fallback;
 
-            string localized = manager.Get(key);
-            return string.IsNullOrWhiteSpace(localized) ? fallback : localized;
+            return manager.GetOrFallback(manager.CurrentLanguage, key, fallback);
         }
     }
 }

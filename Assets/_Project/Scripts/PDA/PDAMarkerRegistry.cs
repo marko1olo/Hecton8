@@ -435,7 +435,7 @@ namespace Hecton8.PDA
                 return;
 
             Hecton8.Core.GlobalRegistry.RegisterPDAMarkerRuntime(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.PDAMarkers, this);
         }
 
         private void TryUnregisterService()

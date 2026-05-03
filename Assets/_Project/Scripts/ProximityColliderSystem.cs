@@ -346,13 +346,13 @@ namespace Hecton8.Core
                 if (!_registeredToDispatcher)
                 {
                     GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                    _registeredToDispatcher = true;
+                    _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
                 }
 
                 if (!_registeredLateFrame)
                 {
                     GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                    _registeredLateFrame = true;
+                    _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
                 }
             }
         }

@@ -129,7 +129,11 @@ namespace Hecton8.Gameplay
             ToolEffectSignal signal = new ToolEffectSignal(effectType, module, sourceTransform, magnitude, hitPointWorld);
             IToolEffectListener[] rawArray = _listeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnToolEffectApplied(in signal);
+            {
+                IToolEffectListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnToolEffectApplied(in signal);
+            }
         }
     }
 }

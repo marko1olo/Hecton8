@@ -13,27 +13,36 @@ namespace Hecton8.Optimization
     [DefaultExecutionOrder(-7999)]
     public sealed class RenderTextureLifecycleTracker : MonoBehaviour, ISlowTickable
     {
-        // ── SINGLETON ──────────────────────────────────────────────────────────────
+        // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
         
-        private static RenderTextureLifecycleTracker _instance;
-        
-        /// <summary>
-        /// Singleton instance. Null-check required in OnDestroy.
-        /// </summary>
-        public static RenderTextureLifecycleTracker Instance => _instance;
         
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
         
         private bool _registeredSlowTick;
         private bool _registeredService;
         
-        // COLD ALLOC: Dictionary<EntityId, RenderTextureAllocationRecord>[256] — RT tracking — owner: LifecycleTracker
+        // COLD ALLOC: Dictionary<EntityId, RenderTextureAllocationRecord>[256] — RT tracking — owner: RenderTextureLifecycleTracker
         private readonly Dictionary<EntityId, RenderTextureAllocationRecord> _allocations = new Dictionary<EntityId, RenderTextureAllocationRecord>(256);
         
-        // COLD ALLOC: List<RenderTextureAllocationRecord>[32] — leak query — owner: LifecycleTracker
+        // COLD ALLOC: List<RenderTextureAllocationRecord>[32] — leak query — owner: RenderTextureLifecycleTracker
         private readonly List<RenderTextureAllocationRecord> _leakQueryResults = new List<RenderTextureAllocationRecord>(32);
+
+        // COLD ALLOC: List<RenderTextureAllocationRecord>[64] — audit report Visor bucket — owner: RenderTextureLifecycleTracker
+        private readonly List<RenderTextureAllocationRecord> _reportVisorRTs = new List<RenderTextureAllocationRecord>(64);
+
+        // COLD ALLOC: List<RenderTextureAllocationRecord>[64] — audit report Camera bucket — owner: RenderTextureLifecycleTracker
+        private readonly List<RenderTextureAllocationRecord> _reportCameraRTs = new List<RenderTextureAllocationRecord>(64);
+
+        // COLD ALLOC: List<RenderTextureAllocationRecord>[64] — audit report PostFX bucket — owner: RenderTextureLifecycleTracker
+        private readonly List<RenderTextureAllocationRecord> _reportPostFXRTs = new List<RenderTextureAllocationRecord>(64);
+
+        // COLD ALLOC: List<RenderTextureAllocationRecord>[64] — audit report UI bucket — owner: RenderTextureLifecycleTracker
+        private readonly List<RenderTextureAllocationRecord> _reportUIRTs = new List<RenderTextureAllocationRecord>(64);
+
+        // COLD ALLOC: List<RenderTextureAllocationRecord>[64] — audit report uncategorized bucket — owner: RenderTextureLifecycleTracker
+        private readonly List<RenderTextureAllocationRecord> _reportOtherRTs = new List<RenderTextureAllocationRecord>(64);
         
-        // COLD ALLOC: StringBuilder[2048] — zero-GC reporting — owner: LifecycleTracker
+        // COLD ALLOC: StringBuilder[2048] — zero-GC reporting — owner: RenderTextureLifecycleTracker
         private readonly StringBuilder _auditBuilder = new StringBuilder(2048);
         
         // ── PUBLIC PROPERTIES ──────────────────────────────────────────────────────
@@ -62,21 +71,10 @@ namespace Hecton8.Optimization
         
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
         
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            
-            _instance = this;
-        }
-        
         private void OnEnable()
         {
-            TryRegisterService();
-            TryRegister();
+            if (TryRegisterService())
+                TryRegister();
         }
         
         private void OnDisable()
@@ -89,9 +87,6 @@ namespace Hecton8.Optimization
         {
             TryUnregister();
             TryUnregisterService();
-
-            if (_instance == this)
-                _instance = null;
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -191,13 +186,8 @@ namespace Hecton8.Optimization
             reportBuilder.Append("Total Tracked: ").Append(TrackedRenderTextureCount).AppendLine();
             reportBuilder.Append("Total Memory: ").Append((TrackedRenderTextureMemoryBytes / (1024f * 1024f)).ToString("0.00")).AppendLine(" MB");
             reportBuilder.AppendLine();
-            
-            // Group by owner type
-            var visorRTs = new List<RenderTextureAllocationRecord>();
-            var cameraRTs = new List<RenderTextureAllocationRecord>();
-            var postFXRTs = new List<RenderTextureAllocationRecord>();
-            var uiRTs = new List<RenderTextureAllocationRecord>();
-            var otherRTs = new List<RenderTextureAllocationRecord>();
+
+            ClearReportBuckets();
             
             foreach (var kvp in _allocations)
             {
@@ -207,22 +197,22 @@ namespace Hecton8.Optimization
                 var ownerName = kvp.Value.Owner != null ? kvp.Value.Owner.GetType().Name : "Unknown";
                 
                 if (ownerName.Contains("Visor") || ownerName.Contains("HUD"))
-                    visorRTs.Add(kvp.Value);
+                    _reportVisorRTs.Add(kvp.Value);
                 else if (ownerName.Contains("Camera"))
-                    cameraRTs.Add(kvp.Value);
+                    _reportCameraRTs.Add(kvp.Value);
                 else if (ownerName.Contains("PostFX") || ownerName.Contains("Volume"))
-                    postFXRTs.Add(kvp.Value);
+                    _reportPostFXRTs.Add(kvp.Value);
                 else if (ownerName.Contains("UI") || ownerName.Contains("Canvas"))
-                    uiRTs.Add(kvp.Value);
+                    _reportUIRTs.Add(kvp.Value);
                 else
-                    otherRTs.Add(kvp.Value);
+                    _reportOtherRTs.Add(kvp.Value);
             }
             
-            AppendCategoryReport(reportBuilder, "Visor", visorRTs);
-            AppendCategoryReport(reportBuilder, "Camera", cameraRTs);
-            AppendCategoryReport(reportBuilder, "PostFX", postFXRTs);
-            AppendCategoryReport(reportBuilder, "UI", uiRTs);
-            AppendCategoryReport(reportBuilder, "Other", otherRTs);
+            AppendCategoryReport(reportBuilder, "Visor", _reportVisorRTs);
+            AppendCategoryReport(reportBuilder, "Camera", _reportCameraRTs);
+            AppendCategoryReport(reportBuilder, "PostFX", _reportPostFXRTs);
+            AppendCategoryReport(reportBuilder, "UI", _reportUIRTs);
+            AppendCategoryReport(reportBuilder, "Other", _reportOtherRTs);
         }
         
         /// <summary>
@@ -296,18 +286,30 @@ namespace Hecton8.Optimization
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = true;
-        }
-
-        private void TryRegisterService()
-        {
-            if (_registeredService || !Application.isPlaying)
+            if (!ReferenceEquals(GlobalRegistry.RenderTextureLifecycle, this))
                 return;
 
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_registeredService)
+                return true;
+            if (!Application.isPlaying)
+                return false;
+
+            RenderTextureLifecycleTracker registered = GlobalRegistry.RenderTextureLifecycle;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
             GlobalRegistry.RegisterRenderTextureLifecycleRuntime(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.RenderTextureLifecycle, this);
+            return _registeredService;
         }
 
         private void TryUnregister()
@@ -342,6 +344,15 @@ namespace Hecton8.Optimization
                 }
 #endif
             }
+        }
+
+        private void ClearReportBuckets()
+        {
+            _reportVisorRTs.Clear();
+            _reportCameraRTs.Clear();
+            _reportPostFXRTs.Clear();
+            _reportUIRTs.Clear();
+            _reportOtherRTs.Clear();
         }
         
         private void AppendCategoryReport(StringBuilder builder, string category, List<RenderTextureAllocationRecord> records)

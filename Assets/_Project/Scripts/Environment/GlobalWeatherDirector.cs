@@ -403,7 +403,8 @@ namespace Hecton8.Environment
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this) ||
+                                       GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterTickManager()
@@ -411,8 +412,12 @@ namespace Hecton8.Environment
             if (!_registeredToTickManager)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (GlobalRegistry.Updatables.Contains(this))
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+
+            if (GlobalRegistry.SlowTickables.Contains(this))
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+
             _registeredToTickManager = false;
         }
 

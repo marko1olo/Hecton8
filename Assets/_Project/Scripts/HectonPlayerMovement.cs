@@ -2911,13 +2911,13 @@ namespace Hecton8.Gameplay
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredFixedTick)
             {
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
-                _registeredFixedTick = true;
+                _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
             }
         }
 

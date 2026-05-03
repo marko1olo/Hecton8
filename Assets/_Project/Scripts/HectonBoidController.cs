@@ -403,7 +403,7 @@ namespace Hecton8.AI.GPU
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
 
             if (_playerTransform == null)
                 FindPlayer();

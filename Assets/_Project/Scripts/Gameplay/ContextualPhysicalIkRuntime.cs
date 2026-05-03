@@ -601,8 +601,9 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _registered = true;
-            _registeredLateFrame = true;
+            _registered = GlobalRegistry.Updatables.Contains(this) ||
+                          SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
+            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
         }
 
         private void TryUnregister()
@@ -610,8 +611,10 @@ namespace Hecton8.Gameplay
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            if (_registeredLateFrame)
+            if (GlobalRegistry.Updatables.Contains(this))
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+
+            if (_registeredLateFrame && SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this))
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
 
             _registered = false;

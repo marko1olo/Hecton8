@@ -37,6 +37,8 @@ namespace Hecton8.Quest
         private const uint EclipseFlagHash = 0xE011C1E5u;
         private const uint EntityDestroyFlagSalt = 0xD357F1A6u;
         private const uint DeadlockFlagSalt = 0xDEAD10CCu;
+        private const string NativeMemoryOwner = nameof(QuestStateManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly uint _abyssalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.abyssal");
         private static readonly uint _thermalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.thermal");
 
@@ -89,28 +91,61 @@ namespace Hecton8.Quest
 
         public uint StateChecksum => _stateChecksum;
 
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                NativeMemoryOwner,
+                label,
+                NativeMemoryLifetime);
+        }
+
         public void Dispose()
         {
             if (_activatedQuestIndices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_activatedQuestIndices));
                 _activatedQuestIndices.Dispose();
+            }
 
             if (_completedQuestIndices.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_completedQuestIndices));
                 _completedQuestIndices.Dispose();
+            }
 
             if (_nodes.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_nodes);
                 _nodes.Dispose();
+            }
 
             if (_prerequisites.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_prerequisites);
                 _prerequisites.Dispose();
+            }
 
             if (_globalPrerequisites.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_globalPrerequisites);
                 _globalPrerequisites.Dispose();
+            }
 
             if (_transitionHistory.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_transitionHistory);
                 _transitionHistory.Dispose();
+            }
 
             if (_transitionHistoryWords.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_transitionHistoryWords);
                 _transitionHistoryWords.Dispose();
+            }
 
             _runtimeResults.Clear();
             _bitAddressByHash = null;
@@ -146,6 +181,7 @@ namespace Hecton8.Quest
             _authoredQuestCount = allQuests != null ? allQuests.Length : 0;
             int questArrayLength = _authoredQuestCount + ProceduralQuestCapacity;
             _globalPrerequisites = new NativeArray<uint>(WordCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterTrackedNativeArray(_globalPrerequisites, nameof(_globalPrerequisites));
             _bitAddressByHash = new Dictionary<uint, QuestBitAddress>(Math.Max(questArrayLength * 6, 16)); // COLD ALLOC: Dictionary<uint,QuestBitAddress>[questArrayLength*6] - compiled flag lookup - owner: QuestStateManager
             _questIndexByHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 16)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - quest hash to source index mapping - owner: QuestStateManager
             _revertDescriptorIndexByItemHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 8)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - critical item revert lookup - owner: QuestStateManager
@@ -358,10 +394,12 @@ namespace Hecton8.Quest
 
             int nodeCapacity = nodeBuilder.Count + ProceduralQuestCapacity;
             _nodes = new NativeArray<QuestNodeDescriptor>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterTrackedNativeArray(_nodes, nameof(_nodes));
             for (int i = 0; i < nodeBuilder.Count; i++)
                 _nodes[i] = nodeBuilder[i];
 
             _prerequisites = new NativeArray<QuestPrerequisiteDescriptor>(prerequisiteBuilder.Count, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(_prerequisites, nameof(_prerequisites));
             for (int i = 0; i < prerequisiteBuilder.Count; i++)
                 _prerequisites[i] = prerequisiteBuilder[i];
 
@@ -372,6 +410,10 @@ namespace Hecton8.Quest
             _completedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), Allocator.Persistent);
             _transitionHistory = new NativeArray<QuestTransitionHistoryEntry>(TransitionHistoryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _transitionHistoryWords = new NativeArray<uint>(TransitionHistoryCapacity * WordCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeList(_activatedQuestIndices, NativeMemoryOwner, nameof(_activatedQuestIndices), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_completedQuestIndices, NativeMemoryOwner, nameof(_completedQuestIndices), NativeMemoryLifetime);
+            RegisterTrackedNativeArray(_transitionHistory, nameof(_transitionHistory));
+            RegisterTrackedNativeArray(_transitionHistoryWords, nameof(_transitionHistoryWords));
             _revertDescriptors = revertBuilder.ToArray();
             _depthThresholdFlags = depthFlags.ToArray();
             _isInitialized = true;
@@ -624,7 +666,7 @@ namespace Hecton8.Quest
                 ActivatedQuestIndices = _activatedQuestIndices,
                 CompletedQuestIndices = _completedQuestIndices
             };
-            job.Run();
+            job.Execute();
 
             bool graphMutation = _activatedQuestIndices.Length > 0 || _completedQuestIndices.Length > 0;
             for (int i = 0; i < _activatedQuestIndices.Length; i++)

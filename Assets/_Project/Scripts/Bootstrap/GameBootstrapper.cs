@@ -18,6 +18,7 @@ using Hecton8.Power;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -467,7 +468,10 @@ namespace Hecton8.Bootstrap
             {
                 bool phaseComplete = phaseAction == null || await phaseAction(ct);
                 if (!phaseComplete)
+                {
+                    LogBootstrapPhaseFailure(phase);
                     _currentPhase = BootstrapPhase.Fatal;
+                }
 
                 return phaseComplete;
             }
@@ -757,7 +761,7 @@ namespace Hecton8.Bootstrap
                 return false;
             }
 
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = ResolveBootstrapInputManager(gameObject.scene);
             if (inputManager == null)
             {
                 GameObject inputRoot = new GameObject("[InputManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned native input owner - owner: GameBootstrapper
@@ -792,6 +796,7 @@ namespace Hecton8.Bootstrap
                 rebindingManager = rebindingRoot.AddComponent<RebindingManager>();
             }
 
+            rebindingManager.BindNativeInputManager(inputManager);
             PersistRuntimeService(rebindingManager);
 
             ContextualPhysicalIkRuntime contextualIkRuntime = ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
@@ -804,10 +809,57 @@ namespace Hecton8.Bootstrap
             return true;
         }
 
+        private static InputManager ResolveBootstrapInputManager(Scene scene)
+        {
+            if (_bootstrapInputManager != null)
+                return _bootstrapInputManager;
+
+            if (!scene.IsValid() || !scene.isLoaded)
+                return null;
+
+            _bootstrapSceneRootScratch.Clear();
+            _bootstrapTransformScratch.Clear();
+            scene.GetRootGameObjects(_bootstrapSceneRootScratch);
+
+            for (int i = 0; i < _bootstrapSceneRootScratch.Count; i++)
+            {
+                GameObject root = _bootstrapSceneRootScratch[i];
+                if (root == null)
+                    continue;
+
+                _bootstrapTransformScratch.Add(root.transform);
+            }
+
+            while (_bootstrapTransformScratch.Count > 0)
+            {
+                int lastIndex = _bootstrapTransformScratch.Count - 1;
+                Transform current = _bootstrapTransformScratch[lastIndex];
+                _bootstrapTransformScratch.RemoveAt(lastIndex);
+
+                if (current == null)
+                    continue;
+
+                if (current.TryGetComponent(out InputManager inputManager) &&
+                    inputManager != null)
+                {
+                    _bootstrapSceneRootScratch.Clear();
+                    _bootstrapTransformScratch.Clear();
+                    return inputManager;
+                }
+
+                int childCount = current.childCount;
+                for (int i = 0; i < childCount; i++)
+                    _bootstrapTransformScratch.Add(current.GetChild(i));
+            }
+
+            _bootstrapSceneRootScratch.Clear();
+            _bootstrapTransformScratch.Clear();
+            return null;
+        }
+
         private async Awaitable<bool> InitializeUILayerAsync(CancellationToken ct)
         {
-            // No UI-layer GlobalRegistry adapter exists yet.
-            // Existing menu/HUD ownership remains on scene-authored controllers.
+            EnsureSettingsRuntimeRegistered();
             UIStateStore.EnsureInitialized();
 #if UNITY_ADDRESSABLES_EXIST
             if (!await LoadAddressableUIPrefabsAsync(ct))
@@ -815,6 +867,21 @@ namespace Hecton8.Bootstrap
 #endif
             await Awaitable.NextFrameAsync(cancellationToken: ct);
             return true;
+        }
+
+        private static SettingsManager EnsureSettingsRuntimeRegistered()
+        {
+            SettingsManager settingsManager = GlobalRegistry.Settings;
+            if (settingsManager == null)
+                settingsManager = SettingsManager.EnsureRuntimeInstance();
+
+            if (settingsManager == null)
+                return null;
+
+            PersistRuntimeService(settingsManager);
+            GlobalRegistry.RegisterSettingsRuntime(settingsManager);
+            settingsManager.RefreshPersistenceFromRegistry();
+            return settingsManager;
         }
 
         private async Awaitable<bool> LoadAddressableUIPrefabsAsync(CancellationToken ct)
@@ -977,6 +1044,7 @@ namespace Hecton8.Bootstrap
             if (_bootstrapExecutionOrderCount != (int)BootstrapDependencyNode.Count &&
                 !TryBuildBootstrapDependencyExecutionOrder(_bootstrapExecutionOrder, out _bootstrapExecutionOrderCount))
             {
+                LogBootstrapDependencyGraphFailure(phase);
                 return false;
             }
 
@@ -987,7 +1055,10 @@ namespace Hecton8.Bootstrap
                     continue;
 
                 if (!InitializeBootstrapDependencyNode(node))
+                {
+                    LogBootstrapDependencyFailure(phase, node);
                     return false;
+                }
             }
 
             return true;
@@ -1484,14 +1555,53 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.Audio is SpatialAudioManager registeredAudioService)
                 return registeredAudioService;
 
-            SpatialAudioManager sceneAudioService = SpatialAudioManager.ActiveRuntimeInstance;
+            SpatialAudioManager sceneAudioService = ResolveAuthoredSpatialAudioManager();
             if (sceneAudioService != null)
+            {
+                PersistRuntimeService(sceneAudioService);
                 return sceneAudioService;
+            }
 
-            GameObject runtimeRoot = new GameObject("[SpatialAudioManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned audio service root - owner: GameBootstrapper
-            SpatialAudioManager createdAudioService = runtimeRoot.AddComponent<SpatialAudioManager>(); // COLD ALLOC: SpatialAudioManager[1] - bootstrap-owned audio service runtime - owner: GameBootstrapper
-            PersistRuntimeService(createdAudioService);
-            return createdAudioService;
+            return null;
+        }
+
+        private static SpatialAudioManager ResolveAuthoredSpatialAudioManager()
+        {
+            SpatialAudioManager activeAudioService = SpatialAudioManager.ActiveRuntimeInstance;
+            if (activeAudioService != null)
+                return activeAudioService;
+
+            GameBootstrapper bootstrapper = _instance;
+            if (bootstrapper == null)
+                return null;
+
+            Transform root = bootstrapper.transform;
+            _bootstrapTransformScratch.Clear();
+            _bootstrapTransformScratch.Add(root);
+
+            while (_bootstrapTransformScratch.Count > 0)
+            {
+                int lastIndex = _bootstrapTransformScratch.Count - 1;
+                Transform current = _bootstrapTransformScratch[lastIndex];
+                _bootstrapTransformScratch.RemoveAt(lastIndex);
+
+                if (current == null)
+                    continue;
+
+                if (current.TryGetComponent(out SpatialAudioManager spatialAudioManager) &&
+                    spatialAudioManager != null)
+                {
+                    _bootstrapTransformScratch.Clear();
+                    return spatialAudioManager;
+                }
+
+                int childCount = current.childCount;
+                for (int i = 0; i < childCount; i++)
+                    _bootstrapTransformScratch.Add(current.GetChild(i));
+            }
+
+            _bootstrapTransformScratch.Clear();
+            return null;
         }
 
         private static bool InitializeSpatialAudioBootstrapNode()
@@ -1534,6 +1644,27 @@ namespace Hecton8.Bootstrap
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning($"[GameBootstrapper] {message}");
+#endif
+        }
+
+        private static void LogBootstrapDependencyGraphFailure(BootstrapPhase phase)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError($"[GameBootstrapper] Bootstrap dependency graph invalid. phase={phase}");
+#endif
+        }
+
+        private static void LogBootstrapDependencyFailure(BootstrapPhase phase, BootstrapDependencyNode node)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError($"[GameBootstrapper] Bootstrap dependency failed. phase={phase} node={node}");
+#endif
+        }
+
+        private static void LogBootstrapPhaseFailure(BootstrapPhase phase)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError($"[GameBootstrapper] Bootstrap phase failed. phase={phase}");
 #endif
         }
 

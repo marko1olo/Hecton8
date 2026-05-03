@@ -1872,16 +1872,16 @@ namespace Hecton8.Environment
             if (!Application.isPlaying || skyMaterial == null)
                 return;
 
-            if (ReferenceEquals(RenderSettings.skybox, skyMaterial))
+            if (AtmosphereDirector.IsSkybox(skyMaterial))
                 return;
 
-            RenderSettings.skybox = skyMaterial;
+            AtmosphereDirector.SetSkybox(skyMaterial);
         }
 
         private void ReleaseRuntimeSkyboxMaterial()
         {
-            if (skyMaterial != null && RenderSettings.skybox == null)
-                RenderSettings.skybox = skyMaterial;
+            if (skyMaterial != null && AtmosphereDirector.Skybox == null)
+                AtmosphereDirector.SetSkybox(skyMaterial);
         }
 
         private void CacheRuntimeSkyMaterialReference()
@@ -1898,8 +1898,8 @@ namespace Hecton8.Environment
             if (!ReferenceEquals(RuntimeSkyMaterialReference, skyMaterial))
                 RuntimeSkyMaterialReference = skyMaterial;
 
-            if (!ReferenceEquals(RenderSettings.skybox, skyMaterial))
-                RenderSettings.skybox = skyMaterial;
+            if (!AtmosphereDirector.IsSkybox(skyMaterial))
+                AtmosphereDirector.SetSkybox(skyMaterial);
         }
 
         internal static bool TryGetRuntimeSkyMaterialReference(out Material skyMaterialReference)
@@ -4962,8 +4962,10 @@ namespace Hecton8.Environment
                 Debug.LogError("[HectonUnderwaterVisuals] globalLightCurve is empty!", this);
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void WarnIfRuntimeReferencesStillMissing()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!Application.isPlaying)
                 return;
 
@@ -4980,6 +4982,7 @@ namespace Hecton8.Environment
 
             if (sunVisualTransform == null)
                 Debug.LogWarning("[HectonUnderwaterVisuals] sunVisualTransform still unresolved after runtime retry.", this);
+#endif
         }
 
         private void ResolveBiomeMatrixDirector()
@@ -5545,12 +5548,12 @@ namespace Hecton8.Environment
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
             if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = true;
+                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
             }
         }
 
@@ -5560,7 +5563,7 @@ namespace Hecton8.Environment
                 return;
 
             GlobalRegistry.Renderables.Register(this);
-            _registeredRenderable = true;
+            _registeredRenderable = GlobalRegistry.Renderables.Contains(this);
         }
 
         private void UnregisterRenderDispatcher()

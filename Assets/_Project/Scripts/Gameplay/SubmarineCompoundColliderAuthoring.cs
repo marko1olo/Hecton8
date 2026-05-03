@@ -222,7 +222,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredSlowTick = true;
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterSlowTickable()

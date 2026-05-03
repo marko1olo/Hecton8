@@ -52,6 +52,10 @@ namespace Hecton8.Modding
         // COLD ALLOC: RegistryBucket<IModRegistryEventListener>[32] - mod registry invalidation listeners drained by SystemDispatcher - owner: ModRegistryEvents
         private static readonly RegistryBucket<IModRegistryEventListener> _listeners = new RegistryBucket<IModRegistryEventListener>(ListenerCapacity);
         private static NativeQueue<ModRegistryEventPayload> _pendingEvents;
+        private static NativeQueue<ModRegistryEventPayload> _nextFrameEvents;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
         private static bool _runtimeRegistryChangeQueued;
         private static bool _settingsRegistryChangeQueued;
         private static bool _recipeRegistryChangeQueued;
@@ -60,7 +64,7 @@ namespace Hecton8.Modding
         /// <summary>
         /// Pending payload count in the mod registry event lane.
         /// </summary>
-        internal static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        internal static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -72,7 +76,17 @@ namespace Hecton8.Modding
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ModRegistryEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
             _runtimeRegistryChangeQueued = false;
             _settingsRegistryChangeQueued = false;
             _recipeRegistryChangeQueued = false;
@@ -151,15 +165,13 @@ namespace Hecton8.Modding
 
             if (_listeners.Count <= 0)
             {
-                while (_pendingEvents.TryDequeue(out ModRegistryEventPayload ignored))
-                {
-                    ClearQueuedFlag(ignored.EventType);
-                }
-
+                DrainPendingEventsWithoutDispatch();
                 return;
             }
 
-            while (!_pendingEvents.IsEmpty())
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
@@ -167,29 +179,63 @@ namespace Hecton8.Modding
                 if (!_pendingEvents.TryDequeue(out ModRegistryEventPayload payload))
                     return;
 
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
                 ClearQueuedFlag(payload.EventType);
 
                 IModRegistryEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnModRegistryEvent(in payload);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IModRegistryEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnModRegistryEvent(in payload);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
             }
         }
 
         private static void Enqueue(ModRegistryEventType eventType, uint modHash, uint subjectHash, ushort statusBits)
         {
             EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return;
+
             if (!TryMarkQueued(eventType))
                 return;
 
-            _pendingEvents.Enqueue(new ModRegistryEventPayload
+            ModRegistryEventPayload payload = new ModRegistryEventPayload
             {
                 Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
                 ModHash = modHash,
                 SubjectHash = subjectHash,
                 EventType = (ushort)eventType,
                 StatusBits = statusBits
-            });
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
         }
 
         private static bool TryMarkQueued(ModRegistryEventType eventType)
@@ -253,16 +299,85 @@ namespace Hecton8.Modding
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<ModRegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] - deferred coalesced mod registry event lane - owner: ModRegistryEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(ModRegistryEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<ModRegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] - next-frame mod registry lane prevents same-frame reentrant dispatch - owner: ModRegistryEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(ModRegistryEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void DrainPendingEventsWithoutDispatch()
+        {
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                 return;
 
-            _pendingEvents = new NativeQueue<ModRegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRegistryEventPayload>[4] - deferred coalesced mod registry event lane - owner: ModRegistryEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(ModRegistryEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (_pendingEventCount <= 0)
+            {
+                PromoteNextFrameEventsIfFrontEmpty();
+                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                    return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<ModRegistryEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
+                return true;
+
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!queue.TryDequeue(out ModRegistryEventPayload payload))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+
+                ClearQueuedFlag(payload.EventType);
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<ModRegistryEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 }

@@ -21,6 +21,7 @@ namespace Hecton8.Construction
         private const string LegacyRepairSupplyItemId = "Data_TitaniumScrap";
         private const int MaxDiscoveredSupplyCrates = 12;
         private const int SupplyOverlapCapacity = 24;
+        private const int SupplyCrateLookupCacheCapacity = SupplyOverlapCapacity;
         private const float SupplyRescanInterval = 5f;
         private static readonly List<RepairDroneHub> s_ActiveHubs = new List<RepairDroneHub>(8);
 
@@ -94,6 +95,10 @@ namespace Hecton8.Construction
         private readonly int[] _repairSupplyHashIds = new int[1];
         // COLD ALLOC: int[1] — repair-supply quantity bridge for logistics reservations — owner: RepairDroneHub
         private readonly int[] _repairSupplyAmounts = new int[1];
+        // COLD ALLOC: ulong[24] — overlap collider id cache for storage discovery — owner: RepairDroneHub
+        private readonly ulong[] _supplyCrateLookupColliderIds = new ulong[SupplyCrateLookupCacheCapacity];
+        // COLD ALLOC: StorageCrate[24] — overlap collider resolved storage cache — owner: RepairDroneHub
+        private readonly StorageCrate[] _supplyCrateLookupCrates = new StorageCrate[SupplyCrateLookupCacheCapacity];
 
         private Transform _cachedTransform;
         private PowerNode _powerNode;
@@ -103,6 +108,8 @@ namespace Hecton8.Construction
         private bool _hasPower = true;
         private float _supplyRescanTimer;
         private int _discoveredSupplyCount;
+        private int _supplyCrateLookupCount;
+        private int _supplyCrateLookupWriteCursor;
         private int _launchCountTotal;
 
         /// <summary>Hub power draw scales with the number of active sorties.</summary>
@@ -160,6 +167,7 @@ namespace Hecton8.Construction
         private void OnDisable()
         {
             TryUnregister();
+            ClearSupplyLookupCache();
             UnregisterHubInstance();
         }
 
@@ -169,6 +177,7 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             DroneFleetManager.ConfigureHeadlessRenderSource(dronePrefab);
             ResolveRepairSupplyItem();
+            ClearSupplyLookupCache();
             RefreshSupplyCrates(true);
             RegisterHubInstance();
             TryRegister();
@@ -183,6 +192,7 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             _debugCurrentTargetName = string.Empty;
             _debugActiveDroneCount = 0;
+            ClearSupplyLookupCache();
             UnregisterHubInstance();
             DroneFleetManager.NotifyFleetStateChanged();
         }
@@ -237,7 +247,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -287,8 +297,7 @@ namespace Hecton8.Construction
                 if (candidate == null)
                     continue;
 
-                StorageCrate crate = candidate.GetComponent<StorageCrate>() ?? candidate.GetComponentInParent<StorageCrate>();
-                if (crate == null || ContainsSupplyCrate(crate))
+                if (!TryResolveSupplyCrate(candidate, out StorageCrate crate) || ContainsSupplyCrate(crate))
                     continue;
 
                 _discoveredSupplyCrates[_discoveredSupplyCount++] = crate;
@@ -296,6 +305,78 @@ namespace Hecton8.Construction
 
             for (int i = hitCount; i < _supplyOverlapBuffer.Length; i++)
                 _supplyOverlapBuffer[i] = null;
+        }
+
+        private bool TryResolveSupplyCrate(Collider candidate, out StorageCrate crate)
+        {
+            crate = null;
+            if (candidate == null)
+                return false;
+
+            ulong colliderId = ResolveColliderRuntimeId(candidate);
+            if (colliderId != 0UL)
+            {
+                for (int i = 0; i < _supplyCrateLookupCount; i++)
+                {
+                    if (_supplyCrateLookupColliderIds[i] != colliderId)
+                        continue;
+
+                    crate = _supplyCrateLookupCrates[i];
+                    if (crate != null)
+                        return crate.gameObject.activeInHierarchy;
+
+                    _supplyCrateLookupColliderIds[i] = 0UL;
+                    break;
+                }
+            }
+
+            if (!candidate.TryGetComponent(out crate))
+                crate = candidate.GetComponentInParent<StorageCrate>();
+
+            if (colliderId != 0UL && crate != null)
+                CacheSupplyCrateLookup(colliderId, crate);
+
+            return crate != null;
+        }
+
+        private void CacheSupplyCrateLookup(ulong colliderId, StorageCrate crate)
+        {
+            if (colliderId == 0UL || crate == null)
+                return;
+
+            int slot;
+            if (_supplyCrateLookupCount < _supplyCrateLookupColliderIds.Length)
+            {
+                slot = _supplyCrateLookupCount;
+                _supplyCrateLookupCount++;
+            }
+            else
+            {
+                slot = _supplyCrateLookupWriteCursor;
+            }
+
+            _supplyCrateLookupColliderIds[slot] = colliderId;
+            _supplyCrateLookupCrates[slot] = crate;
+            _supplyCrateLookupWriteCursor = (_supplyCrateLookupWriteCursor + 1) % _supplyCrateLookupColliderIds.Length;
+        }
+
+        private void ClearSupplyLookupCache()
+        {
+            for (int i = 0; i < _supplyCrateLookupCount; i++)
+            {
+                _supplyCrateLookupColliderIds[i] = 0UL;
+                _supplyCrateLookupCrates[i] = null;
+            }
+
+            _supplyCrateLookupCount = 0;
+            _supplyCrateLookupWriteCursor = 0;
+        }
+
+        private static ulong ResolveColliderRuntimeId(Collider collider)
+        {
+            return collider != null
+                ? EntityId.ToULong(collider.GetEntityId())
+                : 0UL;
         }
 
         private bool ContainsSupplyCrate(StorageCrate crate)

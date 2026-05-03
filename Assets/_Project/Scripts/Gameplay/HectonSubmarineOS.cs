@@ -145,9 +145,12 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: RegistryBucket<ISubmarineOsEventListener>[16] - submarine OS deferred listeners - owner: HectonSubmarineOsEvents
         private static readonly RegistryBucket<ISubmarineOsEventListener> _listeners = new RegistryBucket<ISubmarineOsEventListener>(ListenerCapacity);
         private static NativeQueue<SubmarineOsEventPayload> _pendingEvents;
+        private static NativeQueue<SubmarineOsEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -159,8 +162,17 @@ namespace Hecton8.Gameplay
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(HectonSubmarineOsEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         /// <summary>
@@ -202,6 +214,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -218,7 +231,10 @@ namespace Hecton8.Gameplay
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         public static void RaiseSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)
@@ -303,13 +319,31 @@ namespace Hecton8.Gameplay
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
             }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<SubmarineOsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - next-frame submarine OS event lane prevents same-frame reentrant dispatch - owner: HectonSubmarineOsEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(HectonSubmarineOsEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void Enqueue(in SubmarineOsEventPayload payload)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
 
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
@@ -322,30 +356,79 @@ namespace Hecton8.Gameplay
                 return;
 
             ISubmarineOsEventListener[] rawArray = _listeners.RawArray;
-            for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnSubmarineOsEvent(in payload);
+            _isDispatching = true;
+            try
+            {
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    ISubmarineOsEventListener listener = rawArray[i];
+                    if (listener != null)
+                        listener.OnSubmarineOsEvent(in payload);
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
+            }
         }
 
         private static void DrainWithoutDispatch()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                 return;
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            if (_pendingEventCount <= 0)
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                PromoteNextFrameEventsIfFrontEmpty();
+                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                     return;
-
-                if (!_pendingEvents.TryDequeue(out _))
-                    break;
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<SubmarineOsEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
+                return true;
+
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<SubmarineOsEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 
@@ -378,14 +461,14 @@ namespace Hecton8.Gameplay
         private const byte LogPriorityNormal = 1;
         private const byte LogPriorityWarning = 2;
         private const byte LogPriorityCritical = 3;
+        private const string LowPowerCaptionText = "SUBMARINE LOW POWER";
+        private const string LifeSupportCaptionText = "LIFE SUPPORT CRITICAL";
+        private const string MultiFailureCaptionText = "MULTIPLE SYSTEM FAILURES";
+        private const string EmergencyDangerCaptionText = "EMERGENCY LEVEL DANGER";
+        private const string AbandonShipCaptionText = "ABANDON SHIP";
+        private const string HostileDroneCaptionText = "HOSTILE DRONE DETECTED";
         private static readonly int _EmissionColorId = Shader.PropertyToID("_EmissionColor");
         private static readonly Color BrownoutEmissiveColor = new Color(1f, 0.12f, 0.08f, 1f);
-        private static readonly char[] s_lowPowerCaption = "SUBMARINE LOW POWER".ToCharArray();
-        private static readonly char[] s_lifeSupportCaption = "LIFE SUPPORT CRITICAL".ToCharArray();
-        private static readonly char[] s_multiFailureCaption = "MULTIPLE SYSTEM FAILURES".ToCharArray();
-        private static readonly char[] s_emergencyDangerCaption = "EMERGENCY LEVEL DANGER".ToCharArray();
-        private static readonly char[] s_abandonShipCaption = "ABANDON SHIP".ToCharArray();
-        private static readonly char[] s_hostileDroneCaption = "HOSTILE DRONE DETECTED".ToCharArray();
 
         private struct BrownoutLightBinding
         {
@@ -643,7 +726,7 @@ namespace Hecton8.Gameplay
 
             _hostileDroneAlarmCount = alarmSequence;
             PublishLog(HectonSubmarineOsLogCode.HostileDroneDetected, LogPriorityCritical);
-            PlayVoiceAlarm(multiSystemFailureClip, s_hostileDroneCaption, 1f);
+            PlayVoiceAlarm(multiSystemFailureClip, HostileDroneCaptionText, 1f);
         }
 
         private void TryRegister()
@@ -654,19 +737,19 @@ namespace Hecton8.Gameplay
             if (!_registeredUpdatable)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdatable = true;
+                _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = true;
+                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
             }
 
             if (!_registeredRenderable)
             {
                 GlobalRegistry.Renderables.Register(this);
-                _registeredRenderable = true;
+                _registeredRenderable = GlobalRegistry.Renderables.Contains(this);
             }
         }
 
@@ -796,7 +879,7 @@ namespace Hecton8.Gameplay
                     nextLifeSupportCritical ? HectonSubmarineOsLogCode.LifeSupportCritical : HectonSubmarineOsLogCode.LifeSupportStabilized,
                     nextLifeSupportCritical ? LogPriorityCritical : LogPriorityNormal);
                 if (nextLifeSupportCritical)
-                    PlayVoiceAlarm(lifeSupportCriticalClip, s_lifeSupportCaption, 1f);
+                    PlayVoiceAlarm(lifeSupportCriticalClip, LifeSupportCaptionText, 1f);
             }
 
             if (nextPressureHighActive != _pressureHighActive)
@@ -835,7 +918,7 @@ namespace Hecton8.Gameplay
             {
                 _multiSystemFailureLatched = true;
                 PublishLog(HectonSubmarineOsLogCode.MultiSystemFailure, LogPriorityCritical);
-                PlayVoiceAlarm(multiSystemFailureClip, s_multiFailureCaption, 1f);
+                PlayVoiceAlarm(multiSystemFailureClip, MultiFailureCaptionText, 1f);
             }
             else if (!multiSystemFailure)
             {
@@ -877,7 +960,7 @@ namespace Hecton8.Gameplay
             Fabricator.SetEmergencyPowerLockAll(active);
             ApplyAmbientLightPolicy(active);
             if (active)
-                PlayVoiceAlarm(lowPowerWarningClip, s_lowPowerCaption, 0.8f);
+                PlayVoiceAlarm(lowPowerWarningClip, LowPowerCaptionText, 0.8f);
         }
 
         private void ApplyAmbientLightPolicy(bool forceBrownout)
@@ -946,7 +1029,7 @@ namespace Hecton8.Gameplay
 
             _fatalImplosionLatched = true;
             PublishLog(HectonSubmarineOsLogCode.FatalImplosion, LogPriorityCritical);
-            PlayVoiceAlarm(multiSystemFailureClip, s_multiFailureCaption, 1f);
+            PlayVoiceAlarm(multiSystemFailureClip, MultiFailureCaptionText, 1f);
         }
 
         private void PlayEmergencyLevelAlarm(SubmarineEmergencyLevel emergencyLevel)
@@ -958,7 +1041,7 @@ namespace Hecton8.Gameplay
                         abandonShipAlarmClip != null
                             ? abandonShipAlarmClip
                             : (lifeSupportCriticalClip != null ? lifeSupportCriticalClip : multiSystemFailureClip),
-                        s_abandonShipCaption,
+                        AbandonShipCaptionText,
                         1f,
                         true);
                     break;
@@ -966,7 +1049,7 @@ namespace Hecton8.Gameplay
                 case SubmarineEmergencyLevel.Danger:
                     PlayVoiceAlarm(
                         multiSystemFailureClip != null ? multiSystemFailureClip : lifeSupportCriticalClip,
-                        s_emergencyDangerCaption,
+                        EmergencyDangerCaptionText,
                         1f);
                     break;
             }
@@ -1170,7 +1253,7 @@ namespace Hecton8.Gameplay
             _brownoutVisualStateApplied = false;
         }
 
-        private void PlayVoiceAlarm(AudioClip clip, char[] captionChars, float intensity, bool requireRegistryAudioRoute = false)
+        private void PlayVoiceAlarm(AudioClip clip, string captionText, float intensity, bool requireRegistryAudioRoute = false)
         {
             IAudioService audioService = GlobalRegistry.Audio;
             bool played = false;
@@ -1191,10 +1274,9 @@ namespace Hecton8.Gameplay
                 audioManager.PlayStatic2D(clip, warningVolume, audioManager.InterfaceGroup);
             }
 
-            if (captionChars == null || captionChars.Length <= 0)
+            if (string.IsNullOrWhiteSpace(captionText))
                 return;
 
-            string captionText = new string(captionChars); // COLD ALLOC: string[1] — spatial caption payload authored on state-transition boundaries only — owner: HectonSubmarineOS
             AudioCaptionEvents.Raise(new AudioCaptionRequest(captionText, transform.position, 2.4f, math.saturate(intensity)));
         }
 

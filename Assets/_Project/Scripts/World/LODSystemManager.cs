@@ -302,7 +302,7 @@ namespace Hecton8.World
 
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()
@@ -321,7 +321,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _lateFrameRegistered = true;
+            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregisterLateFrame()

@@ -733,6 +733,12 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        internal delegate bool ModPayloadReadHandler(
+            in ModPayloadSectorInfo sectorInfo,
+            NativeArray<byte> payloadBytes,
+            int payloadLength,
+            out string error);
+
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = SaveFileHeaderPrefixSize)]
         private struct SaveFileHeaderPrefix
         {
@@ -1409,6 +1415,14 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (directoryHeader.MetadataCompressedSize < 0 ||
+                metadataOffset > mapping.Length - directoryHeader.MetadataCompressedSize)
+            {
+                error = "Indexed metadata block size is out of bounds.";
+                return false;
+            }
+
+            long metadataEndOffset = metadataOffset + directoryHeader.MetadataCompressedSize;
             sectorEntries = new SectorEntry[IndexedSectorDirectorySlotCount];
             int entryCursor = directoryOffset + IndexedSectorDirectoryHeaderSize;
             int populatedCount = 0;
@@ -1416,8 +1430,7 @@ namespace Hecton8.SaveSystem
             {
                 SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
                 if (IsIndexedSectorEntryPopulated(in entry) &&
-                    (entry.ByteOffset < metadataOffset + directoryHeader.MetadataCompressedSize ||
-                     entry.ByteOffset + entry.CompressedSize > mapping.Length))
+                    !IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, mapping.Length))
                 {
                     error = $"Indexed sector entry {i} exceeded the file bounds.";
                     return false;
@@ -1459,6 +1472,23 @@ namespace Hecton8.SaveSystem
         private static bool IsIndexedSectorEntryPopulated(in SectorEntry entry)
         {
             return entry.CompressedSize > 0 && entry.ByteOffset >= CurrentHeaderSize;
+        }
+
+        private static bool IsIndexedSectorEntryWithinFileBounds(
+            in SectorEntry entry,
+            long minimumByteOffset,
+            long fileLength)
+        {
+            if (!IsIndexedSectorEntryPopulated(in entry) ||
+                minimumByteOffset < CurrentHeaderSize ||
+                fileLength < minimumByteOffset)
+            {
+                return false;
+            }
+
+            return entry.ByteOffset >= minimumByteOffset &&
+                   entry.CompressedSize <= fileLength &&
+                   entry.ByteOffset <= fileLength - entry.CompressedSize;
         }
 
         private static int ResolveIndexedSectorDirectorySlot(long sectorHash)
@@ -2127,7 +2157,7 @@ namespace Hecton8.SaveSystem
                     SectorEntry entry = sectorEntries[i];
                     if (!IsIndexedSectorEntryPopulated(in entry) ||
                         entry.CompressedSize <= IndexedSectorBlockHeaderSize + ProtectedCompressedBlockHeaderBytes ||
-                        entry.ByteOffset + entry.CompressedSize > readMapping.Length)
+                        !IsIndexedSectorEntryWithinFileBounds(in entry, header.PlayerOffset, readMapping.Length))
                     {
                         continue;
                     }
@@ -2921,18 +2951,47 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                if (!TryReadIndexedDirectory(in header, ref mapping, out _, out SectorEntry[] sectorEntries, out error))
-                    return false;
-
-                using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                for (int i = 0; i < sectorEntries.Length; i++)
+                if (!TryReadIndexedDirectoryHeaderForMappedScan(
+                        in header,
+                        ref mapping,
+                        out IndexedSectorDirectoryHeader directoryHeader,
+                        out int entryCursor,
+                        out long metadataEndOffset,
+                        out error))
                 {
-                    SectorEntry entry = sectorEntries[i];
-                    if (!IsIndexedSectorEntryPopulated(in entry) || !IsModPayloadSectorHash(entry.SectorHash))
+                    return false;
+                }
+
+                byte* filePtr = (byte*)mapping.View;
+                int sectorEntrySize = UnsafeUtility.SizeOf<SectorEntry>();
+                int populatedCount = 0;
+                using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
+                {
+                    SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                    entryCursor += sectorEntrySize;
+                    if (!IsIndexedSectorEntryPopulated(in entry))
+                        continue;
+
+                    if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, mapping.Length))
+                    {
+                        error = $"Indexed sector entry {i} exceeded the file bounds.";
+                        return false;
+                    }
+
+                    populatedCount++;
+                    if (!IsModPayloadSectorHash(entry.SectorHash))
                         continue;
 
                     if (!TryReadModPayloadHeaderFromEntry(ref mapping, in entry, rawBlockBytes, out ModPayloadSubSectorHeader payloadHeader, out _))
                         continue;
+
+                    if (payloadHeader.ModHash == 0u ||
+                        entry.SectorHash != ComputeModPayloadSectorHash(payloadHeader.ModHash, payloadHeader.PagedSectorHash))
+                    {
+                        error = "Mod payload directory identity mismatch.";
+                        return false;
+                    }
 
                     results.Add(new ModPayloadSectorInfo(
                         entry.SectorHash,
@@ -2940,6 +2999,108 @@ namespace Hecton8.SaveSystem
                         payloadHeader.PagedSectorHash,
                         payloadHeader.PayloadLength,
                         payloadHeader.PayloadChecksum));
+                }
+
+                if (populatedCount != (int)directoryHeader.SectorCount)
+                {
+                    error = $"Indexed sector directory count mismatch. Header={directoryHeader.SectorCount}, Populated={populatedCount}.";
+                    return false;
+                }
+
+                return true;
+            }
+            finally
+            {
+                AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
+            }
+        }
+
+        internal static bool TryReadIndexedModPayloads(
+            string absolutePath,
+            List<ModPayloadSectorInfo> results,
+            NativeArray<byte> payloadBytes,
+            ModPayloadReadHandler readHandler,
+            out string error)
+        {
+            error = string.Empty;
+            if (!payloadBytes.IsCreated || payloadBytes.Length < ModPayloadMaxBytes || readHandler == null)
+            {
+                error = "Mod payload batch read request is invalid.";
+                return false;
+            }
+
+            bool collectResults = results != null;
+            if (collectResults)
+                results.Clear();
+
+            if (!TryReadValidatedHeader(absolutePath, out AsyncWriteManager.ReadOnlyMapping mapping, out SaveFileHeader header, out _, out error))
+                return false;
+
+            try
+            {
+                if (!TryReadIndexedDirectoryHeaderForMappedScan(
+                        in header,
+                        ref mapping,
+                        out IndexedSectorDirectoryHeader directoryHeader,
+                        out int entryCursor,
+                        out long metadataEndOffset,
+                        out error))
+                {
+                    return false;
+                }
+
+                byte* filePtr = (byte*)mapping.View;
+                int sectorEntrySize = UnsafeUtility.SizeOf<SectorEntry>();
+                int populatedCount = 0;
+                using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
+                for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
+                {
+                    SectorEntry entry = UnsafeUtility.ReadArrayElement<SectorEntry>(filePtr + entryCursor, 0);
+                    entryCursor += sectorEntrySize;
+                    if (!IsIndexedSectorEntryPopulated(in entry))
+                        continue;
+
+                    if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, mapping.Length))
+                    {
+                        error = $"Indexed sector entry {i} exceeded the file bounds.";
+                        return false;
+                    }
+
+                    populatedCount++;
+                    if (!IsModPayloadSectorHash(entry.SectorHash))
+                        continue;
+
+                    if (!TryReadModPayloadHeaderFromEntry(ref mapping, in entry, rawBlockBytes, out ModPayloadSubSectorHeader payloadHeader, out _))
+                        continue;
+
+                    if (payloadHeader.ModHash == 0u ||
+                        entry.SectorHash != ComputeModPayloadSectorHash(payloadHeader.ModHash, payloadHeader.PagedSectorHash))
+                    {
+                        error = "Mod payload directory identity mismatch.";
+                        return false;
+                    }
+
+                    ModPayloadSectorInfo sectorInfo = new ModPayloadSectorInfo(
+                        entry.SectorHash,
+                        payloadHeader.ModHash,
+                        payloadHeader.PagedSectorHash,
+                        payloadHeader.PayloadLength,
+                        payloadHeader.PayloadChecksum);
+
+                    if (!TryCopyModPayloadFromRawBlock(rawBlockBytes, payloadHeader.PayloadLength, payloadBytes, out error))
+                        return false;
+
+                    if (collectResults)
+                        results.Add(sectorInfo);
+
+                    if (!readHandler(in sectorInfo, payloadBytes, payloadHeader.PayloadLength, out error))
+                        return false;
+                }
+
+                if (populatedCount != (int)directoryHeader.SectorCount)
+                {
+                    error = $"Indexed sector directory count mismatch. Header={directoryHeader.SectorCount}, Populated={populatedCount}.";
+                    return false;
                 }
 
                 return true;
@@ -2999,18 +3160,7 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
-                byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlockBytes);
-                byte* destinationPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
-                if (payloadLength > 0)
-                {
-                    if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, destination.Length, rawPtr + ModPayloadHeaderSizeBytes, payloadLength))
-                    {
-                        error = "Mod payload read exceeded destination bounds.";
-                        return false;
-                    }
-                }
-
-                return true;
+                return TryCopyModPayloadFromRawBlock(rawBlockBytes, payloadLength, destination, out error);
             }
             finally
             {
@@ -3100,6 +3250,97 @@ namespace Hecton8.SaveSystem
             }
 
             error = string.Empty;
+            return true;
+        }
+
+        private static bool TryCopyModPayloadFromRawBlock(
+            NativeArray<byte> rawBlockBytes,
+            int payloadLength,
+            NativeArray<byte> destination,
+            out string error)
+        {
+            error = string.Empty;
+            if (!rawBlockBytes.IsCreated ||
+                !destination.IsCreated ||
+                rawBlockBytes.Length < ModPayloadSubBlockSizeBytes ||
+                payloadLength < 0 ||
+                payloadLength > ModPayloadMaxBytes ||
+                payloadLength > destination.Length)
+            {
+                error = "Mod payload copy request is invalid.";
+                return false;
+            }
+
+            if (payloadLength <= 0)
+                return true;
+
+            byte* rawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlockBytes);
+            byte* destinationPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(destination);
+            if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, destination.Length, rawPtr + ModPayloadHeaderSizeBytes, payloadLength))
+            {
+                error = "Mod payload read exceeded destination bounds.";
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryReadIndexedDirectoryHeaderForMappedScan(
+            in SaveFileHeader header,
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            out IndexedSectorDirectoryHeader directoryHeader,
+            out int entryCursor,
+            out long metadataEndOffset,
+            out string error)
+        {
+            directoryHeader = default;
+            entryCursor = 0;
+            metadataEndOffset = 0L;
+            error = string.Empty;
+
+            if (!TryValidateIndexedBlockStorageHeader(in header, out error))
+                return false;
+
+            int directoryOffset = CurrentHeaderSize;
+            if (mapping.Length < directoryOffset + IndexedSectorDirectoryHeaderSize)
+            {
+                error = "Indexed sector directory header is truncated.";
+                return false;
+            }
+
+            byte* filePtr = (byte*)mapping.View;
+            directoryHeader = UnsafeUtility.ReadArrayElement<IndexedSectorDirectoryHeader>(filePtr + directoryOffset, 0);
+            if (directoryHeader.SectorCount > IndexedSectorDirectorySlotCount)
+            {
+                error = $"Indexed sector directory count {directoryHeader.SectorCount} exceeded slot capacity {IndexedSectorDirectorySlotCount}.";
+                return false;
+            }
+
+            directoryHeader.ChunkSizeMeters = math.max(1, directoryHeader.ChunkSizeMeters);
+
+            int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+            if ((long)directoryOffset + directoryBytes > mapping.Length)
+            {
+                error = "Indexed sector directory exceeds the file bounds.";
+                return false;
+            }
+
+            long metadataOffset = header.PlayerOffset;
+            if (metadataOffset < directoryOffset + directoryBytes || metadataOffset >= mapping.Length)
+            {
+                error = "Indexed metadata block offset is out of bounds.";
+                return false;
+            }
+
+            if (directoryHeader.MetadataCompressedSize < 0 ||
+                metadataOffset > mapping.Length - directoryHeader.MetadataCompressedSize)
+            {
+                error = "Indexed metadata block size is out of bounds.";
+                return false;
+            }
+
+            entryCursor = directoryOffset + IndexedSectorDirectoryHeaderSize;
+            metadataEndOffset = metadataOffset + directoryHeader.MetadataCompressedSize;
             return true;
         }
 
@@ -3350,8 +3591,7 @@ namespace Hecton8.SaveSystem
 
                 int trailingBlockIndex = sortedIndices[sortedIndices.Count - 1];
                 SectorEntry trailingBlock = sectorEntries[trailingBlockIndex];
-                long trailingBlockEnd = trailingBlock.ByteOffset + trailingBlock.CompressedSize;
-                if (trailingBlock.ByteOffset < metadataEndOffset || trailingBlock.CompressedSize <= 0 || trailingBlockEnd > originalLength)
+                if (!IsIndexedSectorEntryWithinFileBounds(in trailingBlock, metadataEndOffset, originalLength))
                 {
                     error = "Indexed sector defrag found an invalid trailing sector block.";
                     return false;
@@ -3365,6 +3605,12 @@ namespace Hecton8.SaveSystem
                     SectorEntry entry = sectorEntries[sortedIndices[i]];
                     if (entry.CompressedSize <= 0)
                         continue;
+
+                    if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, originalLength))
+                    {
+                        error = "Indexed sector defrag found an invalid sector block.";
+                        return false;
+                    }
 
                     if (entry.ByteOffset > scanCursor)
                     {
@@ -4256,10 +4502,10 @@ namespace Hecton8.SaveSystem
         {
             int recordCount = persistentWorldDeltas.IsCreated ? persistentWorldDeltas.Length : 0;
             int capacity = math.max(recordCount, 1);
-            chunkLookup = new NativeParallelHashMap<int3, ushort>(capacity, Allocator.Persistent);
-            chunkTable = new NativeList<int3>(capacity, Allocator.Persistent);
-            itemHashLookup = new NativeParallelHashMap<ulong, ushort>(capacity, Allocator.Persistent);
-            itemHashTable = new NativeList<ulong>(capacity, Allocator.Persistent);
+            chunkLookup = new NativeParallelHashMap<int3, ushort>(capacity, Allocator.Temp);
+            chunkTable = new NativeList<int3>(capacity, Allocator.Temp);
+            itemHashLookup = new NativeParallelHashMap<ulong, ushort>(capacity, Allocator.Temp);
+            itemHashTable = new NativeList<ulong>(capacity, Allocator.Temp);
             error = string.Empty;
 
             for (int i = 0; i < recordCount; i++)

@@ -89,7 +89,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
 
             if (leafDebrisParticles != null && _particleCooldownRemaining <= 0f)
             {

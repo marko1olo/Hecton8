@@ -15,11 +15,10 @@ namespace Hecton8.Inventory
     using Hecton8.Modding;
     using Hecton8.Physics;
     using Hecton8.SaveSystem;
-    using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
-    using Unity.Jobs;
     using Unity.Mathematics;
+    using Unity.Profiling;
     using UnityEngine;
 
     [DisallowMultipleComponent]
@@ -46,8 +45,13 @@ namespace Hecton8.Inventory
         private const float Ln2 = 0.6931471805599453f;
         private const float KineticDamageThresholdG = 50f;
         private const string RadixSortBufferMismatchLog = "[PlayerInventory] Critical radix sort buffer mismatch. Sorting bypassed.";
+        private const string NativeMemoryOwner = nameof(PlayerInventory);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         internal const ushort DegradedQualityMilliThreshold = 250;
         private static readonly int _DepletedLeadHashId = LocHash.Compute("Data_DepletedLead");
+        private static readonly ProfilerMarker _slowTickProfilerMarker = new ProfilerMarker("H8.Inventory.PlayerInventory.SlowTick");
+        private static readonly ProfilerMarker _radioactiveHalfLifeProfilerMarker = new ProfilerMarker("H8.Inventory.PlayerInventory.RadioactiveHalfLife");
+        private static readonly ProfilerMarker _reactiveChemistryProfilerMarker = new ProfilerMarker("H8.Inventory.PlayerInventory.ReactiveChemistry");
 
         private struct InventorySortEntry : IComparable<InventorySortEntry>
         {
@@ -64,8 +68,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct InventoryRadixSortJob : IJob
+        private struct InventoryRadixSortKernel
         {
             private const int ByteBucketCount = 256;
             private const int PackedKeyPassCount = 6;
@@ -127,8 +130,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct InventoryMassVolumeJob : IJob
+        private struct InventoryMassVolumeKernel
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
             [ReadOnly] public NativeArray<ushort> StackCounts;
@@ -165,8 +167,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct InventoryRadioactiveHalfLifeJob : IJob
+        private struct InventoryRadioactiveHalfLifeKernel
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
             [ReadOnly] public NativeArray<ushort> StackCounts;
@@ -243,8 +244,7 @@ namespace Hecton8.Inventory
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct InventoryReactiveChemistryJob : IJob
+        private struct InventoryReactiveChemistryKernel
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
             [ReadOnly] public NativeArray<ushort> StackCounts;
@@ -570,6 +570,7 @@ namespace Hecton8.Inventory
             _thermalRunawayByAnchor = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] — reactive chemistry thermal runaway cache — owner: PlayerInventory
             _thermalRunawayPairs = new NativeArray<int2>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int2[columns * rows] — reactive chemistry explosion pair scratch — owner: PlayerInventory
             _thermalRunawayCounters = new NativeArray<int>(2, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[2] — reactive chemistry pair/change counters — owner: PlayerInventory
+            RegisterNativeMemorySentinel();
             _sortBuffer = new ItemPlacement[columns * rows];
             // COLD ALLOC: ItemPlacement[columns * rows] — placement reorder buffer — owner: PlayerInventory
             _sortedPlacements = new ItemPlacement[columns * rows];
@@ -599,71 +600,65 @@ namespace Hecton8.Inventory
                 _grid = null;
             }
 
-            if (_stackCounts.IsCreated)
-                _stackCounts.Dispose(default);
-
-            if (_craftLockedCounts.IsCreated)
-                _craftLockedCounts.Dispose(default);
-
-            if (_anchorStateFlags.IsCreated)
-                _anchorStateFlags.Dispose(default);
-
-            if (_itemStateFlags.IsCreated)
-                _itemStateFlags.Dispose(default);
-
-            if (_itemGeneticsWords.IsCreated)
-                _itemGeneticsWords.Dispose(default);
-
-            if (_qualityMilli.IsCreated)
-                _qualityMilli.Dispose(default);
-
-            if (_lastUpdateUnixSeconds.IsCreated)
-                _lastUpdateUnixSeconds.Dispose(default);
-
-            if (_scavengeSimStackCounts.IsCreated)
-                _scavengeSimStackCounts.Dispose(default);
-
-            if (_simulationOccupiedCells.IsCreated)
-                _simulationOccupiedCells.Dispose(default);
-
-            if (_anchorUnitMassKg.IsCreated)
-                _anchorUnitMassKg.Dispose(default);
-
-            if (_anchorUnitVolumeM3.IsCreated)
-                _anchorUnitVolumeM3.Dispose(default);
-
-            if (_anchorUnitRadiationSv.IsCreated)
-                _anchorUnitRadiationSv.Dispose(default);
-
-            if (_sortEntriesNative.IsCreated)
-                _sortEntriesNative.Dispose(default);
-
-            if (_sortScratchNative.IsCreated)
-                _sortScratchNative.Dispose(default);
-
-            if (_sortRadixCounts.IsCreated)
-                _sortRadixCounts.Dispose(default);
-
-            if (_derivedMassVolumeScratch.IsCreated)
-                _derivedMassVolumeScratch.Dispose(default);
-
-            if (_radioactiveConversionAnchors.IsCreated)
-                _radioactiveConversionAnchors.Dispose(default);
-
-            if (_radioactiveHalfLifeCounters.IsCreated)
-                _radioactiveHalfLifeCounters.Dispose(default);
-
-            if (_thermalRunawayByAnchor.IsCreated)
-                _thermalRunawayByAnchor.Dispose(default);
-
-            if (_thermalRunawayPairs.IsCreated)
-                _thermalRunawayPairs.Dispose(default);
-
-            if (_thermalRunawayCounters.IsCreated)
-                _thermalRunawayCounters.Dispose(default);
+            DisposeNativeArray(ref _stackCounts);
+            DisposeNativeArray(ref _craftLockedCounts);
+            DisposeNativeArray(ref _anchorStateFlags);
+            DisposeNativeArray(ref _itemStateFlags);
+            DisposeNativeArray(ref _itemGeneticsWords);
+            DisposeNativeArray(ref _qualityMilli);
+            DisposeNativeArray(ref _lastUpdateUnixSeconds);
+            DisposeNativeArray(ref _scavengeSimStackCounts);
+            DisposeNativeArray(ref _simulationOccupiedCells);
+            DisposeNativeArray(ref _anchorUnitMassKg);
+            DisposeNativeArray(ref _anchorUnitVolumeM3);
+            DisposeNativeArray(ref _anchorUnitRadiationSv);
+            DisposeNativeArray(ref _sortEntriesNative);
+            DisposeNativeArray(ref _sortScratchNative);
+            DisposeNativeArray(ref _sortRadixCounts);
+            DisposeNativeArray(ref _derivedMassVolumeScratch);
+            DisposeNativeArray(ref _radioactiveConversionAnchors);
+            DisposeNativeArray(ref _radioactiveHalfLifeCounters);
+            DisposeNativeArray(ref _thermalRunawayByAnchor);
+            DisposeNativeArray(ref _thermalRunawayPairs);
+            DisposeNativeArray(ref _thermalRunawayCounters);
 
             if (_instance == this)
                 _instance = null;
+        }
+
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_stackCounts, NativeMemoryOwner, nameof(_stackCounts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_craftLockedCounts, NativeMemoryOwner, nameof(_craftLockedCounts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorStateFlags, NativeMemoryOwner, nameof(_anchorStateFlags), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_itemStateFlags, NativeMemoryOwner, nameof(_itemStateFlags), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_itemGeneticsWords, NativeMemoryOwner, nameof(_itemGeneticsWords), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_qualityMilli, NativeMemoryOwner, nameof(_qualityMilli), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_lastUpdateUnixSeconds, NativeMemoryOwner, nameof(_lastUpdateUnixSeconds), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_scavengeSimStackCounts, NativeMemoryOwner, nameof(_scavengeSimStackCounts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_simulationOccupiedCells, NativeMemoryOwner, nameof(_simulationOccupiedCells), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorUnitMassKg, NativeMemoryOwner, nameof(_anchorUnitMassKg), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorUnitVolumeM3, NativeMemoryOwner, nameof(_anchorUnitVolumeM3), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorUnitRadiationSv, NativeMemoryOwner, nameof(_anchorUnitRadiationSv), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_sortEntriesNative, NativeMemoryOwner, nameof(_sortEntriesNative), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_sortScratchNative, NativeMemoryOwner, nameof(_sortScratchNative), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_sortRadixCounts, NativeMemoryOwner, nameof(_sortRadixCounts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_derivedMassVolumeScratch, NativeMemoryOwner, nameof(_derivedMassVolumeScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_radioactiveConversionAnchors, NativeMemoryOwner, nameof(_radioactiveConversionAnchors), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_radioactiveHalfLifeCounters, NativeMemoryOwner, nameof(_radioactiveHalfLifeCounters), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_thermalRunawayByAnchor, NativeMemoryOwner, nameof(_thermalRunawayByAnchor), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_thermalRunawayPairs, NativeMemoryOwner, nameof(_thermalRunawayPairs), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_thermalRunawayCounters, NativeMemoryOwner, nameof(_thermalRunawayCounters), NativeMemoryLifetime);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose(default);
+            array = default;
         }
 
         public void RemoveItemAt(int x, int y)
@@ -906,11 +901,14 @@ namespace Hecton8.Inventory
 
         public void SlowTick()
         {
-            ApplyInventoryEnvironmentalDegradation();
-            ApplyInventoryRadioactiveHalfLife();
-            ApplyInventoryReactiveChemistry();
-            ApplyInventoryDepthPressureCrush();
-            DispatchInventoryRadiationTrauma();
+            using (_slowTickProfilerMarker.Auto())
+            {
+                ApplyInventoryEnvironmentalDegradation();
+                ApplyInventoryRadioactiveHalfLife();
+                ApplyInventoryReactiveChemistry();
+                ApplyInventoryDepthPressureCrush();
+                DispatchInventoryRadiationTrauma();
+            }
         }
 
         public bool TryCopyAvailableItemCountsNonAlloc(
@@ -1275,14 +1273,14 @@ namespace Hecton8.Inventory
             for (int i = 0; i < count; i++)
                 _sortEntriesNative[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
 
-            // ZERO-GC SYNC JOB: inventory sort is explicit user action outside gameplay hot paths.
-            new InventoryRadixSortJob
+            // ZERO-GC INLINE KERNEL: inventory sort is explicit user action outside gameplay hot paths.
+            new InventoryRadixSortKernel
             {
                 Entries = _sortEntriesNative,
                 Scratch = _sortScratchNative,
                 Counts = _sortRadixCounts,
                 Count = count
-            }.Run();
+            }.Execute();
 
             for (int i = 0; i < count; i++)
                 _sortedPlacements[i] = _sortBuffer[_sortEntriesNative[i].OriginalIndex];
@@ -1868,7 +1866,7 @@ namespace Hecton8.Inventory
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-            _registeredSlowTick = true;
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterSlowTick()
@@ -1927,8 +1925,8 @@ namespace Hecton8.Inventory
             }
             else
             {
-                // ZERO-GC SYNC JOB: inventory-derived carry totals refresh only on authored inventory mutation.
-                new InventoryMassVolumeJob
+                // ZERO-GC INLINE KERNEL: inventory-derived carry totals refresh only on authored inventory mutation.
+                new InventoryMassVolumeKernel
                 {
                     AnchorHashIds = _grid.AnchorHashIds,
                     StackCounts = _stackCounts,
@@ -1936,7 +1934,7 @@ namespace Hecton8.Inventory
                     AnchorUnitVolumeM3 = _anchorUnitVolumeM3,
                     AnchorUnitRadiationSv = _anchorUnitRadiationSv,
                     Totals = _derivedMassVolumeScratch
-                }.Run();
+                }.Execute();
 
                 float3 totals = _derivedMassVolumeScratch[0];
                 TotalMassKg = totals.x;
@@ -2003,23 +2001,26 @@ namespace Hecton8.Inventory
                 return;
             }
 
-            // ZERO-GC SYNC JOB: bounded inventory SlowTick kernel; synchronous execution avoids cross-frame SOA mutation races.
-            new InventoryRadioactiveHalfLifeJob
+            // ZERO-GC INLINE KERNEL: bounded inventory SlowTick pass mutates only preallocated SOA state.
+            using (_radioactiveHalfLifeProfilerMarker.Auto())
             {
-                AnchorHashIds = _grid.AnchorHashIds,
-                StackCounts = _stackCounts,
-                AnchorUnitRadiationSv = _anchorUnitRadiationSv,
-                ItemStateFlags = _itemStateFlags,
-                QualityMilli = _qualityMilli,
-                ConversionAnchorIndices = _radioactiveConversionAnchors,
-                Counters = _radioactiveHalfLifeCounters,
-                DeltaSeconds = SlowTickIntervalSeconds,
-                BaseHalfLifeSeconds = RadioactiveHalfLifeBaseSeconds,
-                DefaultQuality = DefaultQualityMilli,
-                RadioactiveMask = RadioactiveItemStateMask,
-                DegradedMask = DegradedItemStateMask,
-                DegradedThreshold = DegradedQualityMilliThreshold
-            }.Run();
+                new InventoryRadioactiveHalfLifeKernel
+                {
+                    AnchorHashIds = _grid.AnchorHashIds,
+                    StackCounts = _stackCounts,
+                    AnchorUnitRadiationSv = _anchorUnitRadiationSv,
+                    ItemStateFlags = _itemStateFlags,
+                    QualityMilli = _qualityMilli,
+                    ConversionAnchorIndices = _radioactiveConversionAnchors,
+                    Counters = _radioactiveHalfLifeCounters,
+                    DeltaSeconds = SlowTickIntervalSeconds,
+                    BaseHalfLifeSeconds = RadioactiveHalfLifeBaseSeconds,
+                    DefaultQuality = DefaultQualityMilli,
+                    RadioactiveMask = RadioactiveItemStateMask,
+                    DegradedMask = DegradedItemStateMask,
+                    DegradedThreshold = DegradedQualityMilliThreshold
+                }.Execute();
+            }
 
             if (_radioactiveHalfLifeCounters.Length < 2 || _radioactiveHalfLifeCounters[1] == 0)
                 return;
@@ -2044,24 +2045,27 @@ namespace Hecton8.Inventory
                 return;
             }
 
-            // ZERO-GC SYNC JOB: bounded SOA slot-adjacency kernel; mutates only preallocated thermal cache.
-            new InventoryReactiveChemistryJob
+            // ZERO-GC INLINE KERNEL: bounded SOA slot-adjacency pass mutates only preallocated thermal cache.
+            using (_reactiveChemistryProfilerMarker.Auto())
             {
-                AnchorHashIds = _grid.AnchorHashIds,
-                StackCounts = _stackCounts,
-                CraftLockedCounts = _craftLockedCounts,
-                ItemStateFlags = _itemStateFlags,
-                ThermalRunawayByAnchor = _thermalRunawayByAnchor,
-                RunawayPairs = _thermalRunawayPairs,
-                Counters = _thermalRunawayCounters,
-                Columns = columns,
-                Rows = rows,
-                DeltaSeconds = SlowTickIntervalSeconds,
-                RunawayPerSecond = ThermalRunawayPerSecond,
-                CooldownPerSecond = ThermalRunawayCooldownPerSecond,
-                RadioactiveMask = RadioactiveItemStateMask,
-                FlammableMask = FlammableItemStateMask
-            }.Run();
+                new InventoryReactiveChemistryKernel
+                {
+                    AnchorHashIds = _grid.AnchorHashIds,
+                    StackCounts = _stackCounts,
+                    CraftLockedCounts = _craftLockedCounts,
+                    ItemStateFlags = _itemStateFlags,
+                    ThermalRunawayByAnchor = _thermalRunawayByAnchor,
+                    RunawayPairs = _thermalRunawayPairs,
+                    Counters = _thermalRunawayCounters,
+                    Columns = columns,
+                    Rows = rows,
+                    DeltaSeconds = SlowTickIntervalSeconds,
+                    RunawayPerSecond = ThermalRunawayPerSecond,
+                    CooldownPerSecond = ThermalRunawayCooldownPerSecond,
+                    RadioactiveMask = RadioactiveItemStateMask,
+                    FlammableMask = FlammableItemStateMask
+                }.Execute();
+            }
 
             if (_thermalRunawayCounters.Length < 2)
                 return;

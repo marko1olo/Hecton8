@@ -4,9 +4,7 @@ using Hecton8.Construction;
 using Hecton8.Inventory;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Crafting
@@ -21,8 +19,7 @@ namespace Hecton8.Crafting
         public const int MaxRecursiveDeconstructionNodeCount = 64;
         private const int MaxDeconstructionRecursionDepth = 64;
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct EvaluateRecipeAvailabilityJob : IJob
+        private struct EvaluateRecipeAvailabilityKernel
         {
             [ReadOnly] public NativeArray<int2> RecipeCosts;
             [ReadOnly] public NativeParallelHashMap<int, int> AvailableItemCounts;
@@ -50,8 +47,7 @@ namespace Hecton8.Crafting
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildDeconstructionYieldJob : IJob
+        private struct BuildDeconstructionYieldKernel
         {
             [ReadOnly] public NativeArray<int2> RecipeCosts;
             public NativeArray<int2> OutputYields;
@@ -130,13 +126,13 @@ namespace Hecton8.Crafting
             MergeAccessibleNetworkCounts(fabricator, availableItemCounts, recipeCosts, recipeCostCount);
 
             result[0] = 0;
-            new EvaluateRecipeAvailabilityJob
+            new EvaluateRecipeAvailabilityKernel
             {
                 RecipeCosts = recipeCosts,
                 AvailableItemCounts = availableItemCounts,
                 Result = result,
                 RecipeCostCount = recipeCostCount
-            }.Run();
+            }.Execute();
 
             return result[0] != 0;
         }
@@ -235,7 +231,7 @@ namespace Hecton8.Crafting
             }
 
             outputCount[0] = 0;
-            new BuildDeconstructionYieldJob
+            new BuildDeconstructionYieldKernel
             {
                 RecipeCosts = sourceCosts,
                 OutputYields = outputYields,
@@ -245,7 +241,7 @@ namespace Hecton8.Crafting
                 ReclaimPercent = math.clamp(reclaimPercent, 0, 100),
                 ScrapItemHashId = scrapItemHashId,
                 ForceScrapYield = resolvedForceScrapYield ? (byte)1 : (byte)0
-            }.Run();
+            }.Execute();
 
             return outputCount[0] > 0;
         }

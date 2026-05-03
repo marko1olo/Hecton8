@@ -432,14 +432,14 @@ namespace Hecton8.UI
             if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registeredToTickManager = true;
+                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (_registeredToSlowTickManager || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registeredToSlowTickManager = true;
+            _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

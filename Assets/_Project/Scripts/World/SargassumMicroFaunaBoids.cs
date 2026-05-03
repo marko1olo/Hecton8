@@ -4128,8 +4128,8 @@ namespace Hecton8.World
                 Output = _foveatedSimulationBackNative
             };
 
-            // COLD SYNC JOB: prime the foveated LOD front buffer before the first runtime Tick so tier selection stays Burst-authored from frame 0.
-            primeJob.Run();
+            // COLD DIRECT KERNEL: prime the foveated LOD front buffer before the first runtime Tick without a synchronous job-dispatch barrier.
+            primeJob.Execute();
             (_foveatedSimulationFrontNative, _foveatedSimulationBackNative) = (_foveatedSimulationBackNative, _foveatedSimulationFrontNative);
             _foveatedSimulationScheduled = false;
         }
@@ -4458,7 +4458,15 @@ namespace Hecton8.World
 
             _computeDispatchDisabled = true;
             ResetComputeKernelBindings();
-            Debug.LogError($"SargassumMicroFaunaBoids compute dispatch disabled: {message}", this);
+            LogComputeDispatchDisabled(message, this);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogComputeDispatchDisabled(string message, UnityEngine.Object context)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogError($"SargassumMicroFaunaBoids compute dispatch disabled: {message}", context);
+#endif
         }
 
         private void RenderStaticFallback(float cameraDistanceSq, float hibernation01)

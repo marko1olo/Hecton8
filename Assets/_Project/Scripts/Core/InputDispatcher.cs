@@ -59,6 +59,8 @@ namespace Hecton8.Core
         /// </summary>
         public bool IsPlayerInputEnabled => _nativeInputManager != null && _nativeInputManager.IsPlayerInputEnabled;
 
+        internal InputManager NativeInputManager => _nativeInputManager;
+
         /// <summary>
         /// Binds the bootstrap-owned native input action owner used by this dispatcher.
         /// </summary>
@@ -125,8 +127,8 @@ namespace Hecton8.Core
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
             TryRegisterToDispatcher();
-            TryRegisterInputService();
             _isInitialized = true;
+            TryRegisterInputService();
             CaptureState();
         }
 
@@ -403,7 +405,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = true;
+            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregisterFromDispatcher()
@@ -430,7 +432,7 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterInputService(this);
-            _registeredInputService = true;
+            _registeredInputService = ReferenceEquals(GlobalRegistry.RegisteredInput, this);
         }
 
         private void TryUnregisterInputService()
@@ -653,7 +655,9 @@ namespace Hecton8.Core
                 return;
             }
 
-            ResolveCachedGamepad();
+            if (_cachedGamepad != null && !_cachedGamepad.added)
+                _cachedGamepad = null;
+
             if (_cachedGamepad != null)
                 _cachedGamepad.SetMotorSpeeds(lowMotor, highMotor);
 

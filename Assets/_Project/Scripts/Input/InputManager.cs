@@ -47,6 +47,15 @@ namespace Hecton8.Input
         
         private static InputManager _instance;
         private static bool _isShuttingDown;
+        // COLD ALLOC: string[36] — cached single-character binding labels — owner: InputManager
+        private static readonly string[] SingleCharacterBindingLabels =
+        {
+            "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+            "A", "B", "C", "D", "E", "F", "G", "H", "I", "J",
+            "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T",
+            "U", "V", "W", "X", "Y", "Z"
+        };
+
         private HectonInputActions _generatedInputActions;
         private InputActionAsset _runtimeInputActionAsset;
         private bool _inputMapsInitialized;
@@ -964,6 +973,38 @@ namespace Hecton8.Input
             return display;
         }
 
+        /// <summary>
+        /// Writes the preferred binding display label into a caller-owned character buffer without creating a display string.
+        /// </summary>
+        /// <param name="actionName">Input action name.</param>
+        /// <param name="actionMap">Input action map name.</param>
+        /// <param name="bindingIndex">Binding index, or -1 to resolve the current display-style preferred binding.</param>
+        /// <param name="buffer">Caller-owned destination buffer.</param>
+        /// <param name="bufferOffset">Destination start offset.</param>
+        /// <param name="charsWritten">Number of characters written into <paramref name="buffer"/>.</param>
+        /// <returns>True when a display label was written.</returns>
+        public bool TryWriteBindingDisplayString(
+            string actionName,
+            string actionMap,
+            int bindingIndex,
+            char[] buffer,
+            int bufferOffset,
+            out int charsWritten)
+        {
+            charsWritten = 0;
+            if (buffer == null || bufferOffset < 0 || bufferOffset >= buffer.Length)
+                return false;
+
+            InputAction action = GetAction(actionName, actionMap);
+            if (action == null)
+                return false;
+
+            if (bindingIndex < 0 || bindingIndex >= action.bindings.Count)
+                bindingIndex = GetPreferredBindingIndex(action, CurrentDisplayStyle);
+
+            return TryWriteBindingDisplayStringSafe(action, bindingIndex, buffer, bufferOffset, out charsWritten);
+        }
+
         public int GetPreferredBindingIndex(string actionName, string actionMap = "Player")
         {
             InputAction action = GetAction(actionName, actionMap);
@@ -1071,6 +1112,49 @@ namespace Hecton8.Input
             return TryBuildBindingDisplayStringFromPath(path, out display);
         }
 
+        /// <summary>
+        /// Writes a binding display label from an input action into a caller-owned character buffer.
+        /// </summary>
+        /// <param name="action">Input action containing the binding.</param>
+        /// <param name="bindingIndex">Binding index to format.</param>
+        /// <param name="buffer">Caller-owned destination buffer.</param>
+        /// <param name="bufferOffset">Destination start offset.</param>
+        /// <param name="charsWritten">Number of characters written into <paramref name="buffer"/>.</param>
+        /// <returns>True when a display label was written.</returns>
+        public static bool TryWriteBindingDisplayStringSafe(
+            InputAction action,
+            int bindingIndex,
+            char[] buffer,
+            int bufferOffset,
+            out int charsWritten)
+        {
+            charsWritten = 0;
+            if (action == null || bindingIndex < 0 || buffer == null || bufferOffset < 0 || bufferOffset >= buffer.Length)
+                return false;
+
+            InputBinding binding;
+            try
+            {
+                if (bindingIndex >= action.bindings.Count)
+                    return false;
+
+                binding = action.bindings[bindingIndex];
+            }
+            catch
+            {
+                return false;
+            }
+
+            string path = binding.effectivePath;
+            if (string.IsNullOrWhiteSpace(path))
+                path = !string.IsNullOrWhiteSpace(binding.overridePath) ? binding.overridePath : binding.path;
+
+            if (string.IsNullOrWhiteSpace(path))
+                return false;
+
+            return TryWriteBindingDisplayStringFromPath(path, buffer, bufferOffset, out charsWritten);
+        }
+
         private static bool TryBuildBindingDisplayStringFromPath(string path, out string display)
         {
             display = string.Empty;
@@ -1095,6 +1179,30 @@ namespace Hecton8.Input
             return !string.IsNullOrWhiteSpace(display);
         }
 
+        private static bool TryWriteBindingDisplayStringFromPath(
+            string path,
+            char[] buffer,
+            int bufferOffset,
+            out int charsWritten)
+        {
+            charsWritten = 0;
+            if (string.IsNullOrWhiteSpace(path) || buffer == null || bufferOffset < 0 || bufferOffset >= buffer.Length)
+                return false;
+
+            ReadOnlySpan<char> pathSpan = path.AsSpan();
+            ReadOnlySpan<char> controlName = ExtractBindingControlName(pathSpan);
+            if (controlName.IsEmpty)
+                return TryWriteUpperTrimmed(pathSpan, buffer, bufferOffset, out charsWritten);
+
+            bool isKeyboard = PathContainsDeviceToken(pathSpan, "Keyboard");
+            bool isMouse = PathContainsDeviceToken(pathSpan, "Mouse");
+            bool isGamepad = PathContainsDeviceToken(pathSpan, "Gamepad");
+            if (TryWriteBindingAlias(controlName, isKeyboard, isMouse, isGamepad, buffer, bufferOffset, out charsWritten))
+                return true;
+
+            return TryWriteUpperTrimmed(controlName, buffer, bufferOffset, out charsWritten);
+        }
+
         private static ReadOnlySpan<char> ExtractBindingControlName(ReadOnlySpan<char> bindingPath)
         {
             int slashIndex = bindingPath.LastIndexOf('/');
@@ -1116,173 +1224,354 @@ namespace Hecton8.Input
             bool isGamepad,
             out string display)
         {
-            string normalized = controlName.ToString().Replace("-", string.Empty).Trim().ToLowerInvariant();
-            if (normalized.Length == 1 && char.IsLetterOrDigit(normalized[0]))
-            {
-                display = normalized.ToUpperInvariant();
+            if (TryResolveSingleCharacterBindingLabel(controlName, out display))
                 return true;
-            }
 
             if (isKeyboard)
             {
-                switch (normalized)
+                if (ControlNameEquals(controlName, "space"))
+                    return TryResolveLiteral("SPACE", out display);
+                if (ControlNameEquals(controlName, "escape"))
+                    return TryResolveLiteral("ESC", out display);
+                if (ControlNameEquals(controlName, "enter") || ControlNameEquals(controlName, "numenter"))
+                    return TryResolveLiteral("ENTER", out display);
+                if (ControlNameEquals(controlName, "tab"))
+                    return TryResolveLiteral("TAB", out display);
+                if (ControlNameEquals(controlName, "backspace"))
+                    return TryResolveLiteral("BACK", out display);
+                if (ControlNameEquals(controlName, "uparrow"))
+                    return TryResolveLiteral("UP", out display);
+                if (ControlNameEquals(controlName, "downarrow"))
+                    return TryResolveLiteral("DOWN", out display);
+                if (ControlNameEquals(controlName, "leftarrow"))
+                    return TryResolveLiteral("LEFT", out display);
+                if (ControlNameEquals(controlName, "rightarrow"))
+                    return TryResolveLiteral("RIGHT", out display);
+                if (ControlNameEquals(controlName, "leftshift") || ControlNameEquals(controlName, "rightshift"))
+                    return TryResolveLiteral("SHIFT", out display);
+                if (ControlNameEquals(controlName, "leftctrl") || ControlNameEquals(controlName, "rightctrl") ||
+                    ControlNameEquals(controlName, "leftcontrol") || ControlNameEquals(controlName, "rightcontrol"))
                 {
-                    case "space":
-                        display = "SPACE";
-                        return true;
-                    case "escape":
-                        display = "ESC";
-                        return true;
-                    case "enter":
-                    case "numenter":
-                        display = "ENTER";
-                        return true;
-                    case "tab":
-                        display = "TAB";
-                        return true;
-                    case "backspace":
-                        display = "BACK";
-                        return true;
-                    case "uparrow":
-                        display = "UP";
-                        return true;
-                    case "downarrow":
-                        display = "DOWN";
-                        return true;
-                    case "leftarrow":
-                        display = "LEFT";
-                        return true;
-                    case "rightarrow":
-                        display = "RIGHT";
-                        return true;
-                    case "leftshift":
-                    case "rightshift":
-                        display = "SHIFT";
-                        return true;
-                    case "leftctrl":
-                    case "rightctrl":
-                    case "leftcontrol":
-                    case "rightcontrol":
-                        display = "CTRL";
-                        return true;
-                    case "leftalt":
-                    case "rightalt":
-                        display = "ALT";
-                        return true;
-                    case "digit1":
-                    case "numpad1":
-                        display = "1";
-                        return true;
-                    case "digit2":
-                    case "numpad2":
-                        display = "2";
-                        return true;
-                    case "digit3":
-                    case "numpad3":
-                        display = "3";
-                        return true;
-                    case "digit4":
-                    case "numpad4":
-                        display = "4";
-                        return true;
-                    case "digit5":
-                    case "numpad5":
-                        display = "5";
-                        return true;
-                    case "digit6":
-                    case "numpad6":
-                        display = "6";
-                        return true;
-                    case "digit7":
-                    case "numpad7":
-                        display = "7";
-                        return true;
-                    case "digit8":
-                    case "numpad8":
-                        display = "8";
-                        return true;
-                    case "digit9":
-                    case "numpad9":
-                        display = "9";
-                        return true;
-                    case "digit0":
-                    case "numpad0":
-                        display = "0";
-                        return true;
+                    return TryResolveLiteral("CTRL", out display);
                 }
+
+                if (ControlNameEquals(controlName, "leftalt") || ControlNameEquals(controlName, "rightalt"))
+                    return TryResolveLiteral("ALT", out display);
+                if (TryResolveDigitAlias(controlName, out char digit))
+                    return TryResolveSingleCharacterLabel(digit, out display);
             }
 
             if (isMouse)
             {
-                switch (normalized)
-                {
-                    case "leftbutton":
-                        display = "LMB";
-                        return true;
-                    case "rightbutton":
-                        display = "RMB";
-                        return true;
-                    case "middlebutton":
-                        display = "MMB";
-                        return true;
-                    case "scroll":
-                    case "scrolly":
-                        display = "SCROLL";
-                        return true;
-                }
+                if (ControlNameEquals(controlName, "leftbutton"))
+                    return TryResolveLiteral("LMB", out display);
+                if (ControlNameEquals(controlName, "rightbutton"))
+                    return TryResolveLiteral("RMB", out display);
+                if (ControlNameEquals(controlName, "middlebutton"))
+                    return TryResolveLiteral("MMB", out display);
+                if (ControlNameEquals(controlName, "scroll") || ControlNameEquals(controlName, "scrolly"))
+                    return TryResolveLiteral("SCROLL", out display);
             }
 
             if (isGamepad)
             {
-                switch (normalized)
-                {
-                    case "buttonsouth":
-                        display = "A";
-                        return true;
-                    case "buttoneast":
-                        display = "B";
-                        return true;
-                    case "buttonwest":
-                        display = "X";
-                        return true;
-                    case "buttonnorth":
-                        display = "Y";
-                        return true;
-                    case "leftshoulder":
-                        display = "LB";
-                        return true;
-                    case "rightshoulder":
-                        display = "RB";
-                        return true;
-                    case "lefttrigger":
-                        display = "LT";
-                        return true;
-                    case "righttrigger":
-                        display = "RT";
-                        return true;
-                    case "start":
-                        display = "START";
-                        return true;
-                    case "select":
-                        display = "SELECT";
-                        return true;
-                    case "dpadup":
-                        display = "DPAD UP";
-                        return true;
-                    case "dpaddown":
-                        display = "DPAD DOWN";
-                        return true;
-                    case "dpadleft":
-                        display = "DPAD LEFT";
-                        return true;
-                    case "dpadright":
-                        display = "DPAD RIGHT";
-                        return true;
-                }
+                if (ControlNameEquals(controlName, "buttonsouth"))
+                    return TryResolveLiteral("A", out display);
+                if (ControlNameEquals(controlName, "buttoneast"))
+                    return TryResolveLiteral("B", out display);
+                if (ControlNameEquals(controlName, "buttonwest"))
+                    return TryResolveLiteral("X", out display);
+                if (ControlNameEquals(controlName, "buttonnorth"))
+                    return TryResolveLiteral("Y", out display);
+                if (ControlNameEquals(controlName, "leftshoulder"))
+                    return TryResolveLiteral("LB", out display);
+                if (ControlNameEquals(controlName, "rightshoulder"))
+                    return TryResolveLiteral("RB", out display);
+                if (ControlNameEquals(controlName, "lefttrigger"))
+                    return TryResolveLiteral("LT", out display);
+                if (ControlNameEquals(controlName, "righttrigger"))
+                    return TryResolveLiteral("RT", out display);
+                if (ControlNameEquals(controlName, "start"))
+                    return TryResolveLiteral("START", out display);
+                if (ControlNameEquals(controlName, "select"))
+                    return TryResolveLiteral("SELECT", out display);
+                if (ControlNameEquals(controlName, "dpadup"))
+                    return TryResolveLiteral("DPAD UP", out display);
+                if (ControlNameEquals(controlName, "dpaddown"))
+                    return TryResolveLiteral("DPAD DOWN", out display);
+                if (ControlNameEquals(controlName, "dpadleft"))
+                    return TryResolveLiteral("DPAD LEFT", out display);
+                if (ControlNameEquals(controlName, "dpadright"))
+                    return TryResolveLiteral("DPAD RIGHT", out display);
             }
 
             display = string.Empty;
             return false;
+        }
+
+        private static bool TryResolveLiteral(string value, out string display)
+        {
+            display = value;
+            return !string.IsNullOrEmpty(display);
+        }
+
+        private static bool TryResolveSingleCharacterBindingLabel(ReadOnlySpan<char> controlName, out string display)
+        {
+            display = string.Empty;
+            return TryResolveSingleNormalizedChar(controlName, out char single) &&
+                   TryResolveSingleCharacterLabel(single, out display);
+        }
+
+        private static bool TryResolveSingleCharacterLabel(char value, out string display)
+        {
+            display = string.Empty;
+            char upper = char.ToUpperInvariant(value);
+            if (upper >= '0' && upper <= '9')
+            {
+                display = SingleCharacterBindingLabels[upper - '0'];
+                return true;
+            }
+
+            if (upper >= 'A' && upper <= 'Z')
+            {
+                display = SingleCharacterBindingLabels[10 + upper - 'A'];
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryWriteBindingAlias(
+            ReadOnlySpan<char> controlName,
+            bool isKeyboard,
+            bool isMouse,
+            bool isGamepad,
+            char[] buffer,
+            int bufferOffset,
+            out int charsWritten)
+        {
+            charsWritten = 0;
+            if (TryResolveSingleNormalizedChar(controlName, out char single) && char.IsLetterOrDigit(single))
+                return TryWriteChar(char.ToUpperInvariant(single), buffer, bufferOffset, out charsWritten);
+
+            if (isKeyboard)
+            {
+                if (ControlNameEquals(controlName, "space"))
+                    return TryWriteLiteral("SPACE".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "escape"))
+                    return TryWriteLiteral("ESC".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "enter") || ControlNameEquals(controlName, "numenter"))
+                    return TryWriteLiteral("ENTER".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "tab"))
+                    return TryWriteLiteral("TAB".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "backspace"))
+                    return TryWriteLiteral("BACK".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "uparrow"))
+                    return TryWriteLiteral("UP".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "downarrow"))
+                    return TryWriteLiteral("DOWN".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "leftarrow"))
+                    return TryWriteLiteral("LEFT".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "rightarrow"))
+                    return TryWriteLiteral("RIGHT".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "leftshift") || ControlNameEquals(controlName, "rightshift"))
+                    return TryWriteLiteral("SHIFT".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "leftctrl") || ControlNameEquals(controlName, "rightctrl") ||
+                    ControlNameEquals(controlName, "leftcontrol") || ControlNameEquals(controlName, "rightcontrol"))
+                {
+                    return TryWriteLiteral("CTRL".AsSpan(), buffer, bufferOffset, out charsWritten);
+                }
+
+                if (ControlNameEquals(controlName, "leftalt") || ControlNameEquals(controlName, "rightalt"))
+                    return TryWriteLiteral("ALT".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (TryResolveDigitAlias(controlName, out char digit))
+                    return TryWriteChar(digit, buffer, bufferOffset, out charsWritten);
+            }
+
+            if (isMouse)
+            {
+                if (ControlNameEquals(controlName, "leftbutton"))
+                    return TryWriteLiteral("LMB".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "rightbutton"))
+                    return TryWriteLiteral("RMB".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "middlebutton"))
+                    return TryWriteLiteral("MMB".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "scroll") || ControlNameEquals(controlName, "scrolly"))
+                    return TryWriteLiteral("SCROLL".AsSpan(), buffer, bufferOffset, out charsWritten);
+            }
+
+            if (isGamepad)
+            {
+                if (ControlNameEquals(controlName, "buttonsouth"))
+                    return TryWriteLiteral("A".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "buttoneast"))
+                    return TryWriteLiteral("B".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "buttonwest"))
+                    return TryWriteLiteral("X".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "buttonnorth"))
+                    return TryWriteLiteral("Y".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "leftshoulder"))
+                    return TryWriteLiteral("LB".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "rightshoulder"))
+                    return TryWriteLiteral("RB".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "lefttrigger"))
+                    return TryWriteLiteral("LT".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "righttrigger"))
+                    return TryWriteLiteral("RT".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "start"))
+                    return TryWriteLiteral("START".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "select"))
+                    return TryWriteLiteral("SELECT".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "dpadup"))
+                    return TryWriteLiteral("DPAD UP".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "dpaddown"))
+                    return TryWriteLiteral("DPAD DOWN".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "dpadleft"))
+                    return TryWriteLiteral("DPAD LEFT".AsSpan(), buffer, bufferOffset, out charsWritten);
+                if (ControlNameEquals(controlName, "dpadright"))
+                    return TryWriteLiteral("DPAD RIGHT".AsSpan(), buffer, bufferOffset, out charsWritten);
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveSingleNormalizedChar(ReadOnlySpan<char> controlName, out char result)
+        {
+            result = '\0';
+            int count = 0;
+            for (int i = 0; i < controlName.Length; i++)
+            {
+                char c = controlName[i];
+                if (c == '-' || char.IsWhiteSpace(c))
+                    continue;
+
+                result = c;
+                count++;
+                if (count > 1)
+                    return false;
+            }
+
+            return count == 1;
+        }
+
+        private static bool TryResolveDigitAlias(ReadOnlySpan<char> controlName, out char digit)
+        {
+            digit = '\0';
+            for (char candidate = '0'; candidate <= '9'; candidate++)
+            {
+                if (ControlNameEqualsDigit(controlName, "digit", candidate) ||
+                    ControlNameEqualsDigit(controlName, "numpad", candidate))
+                {
+                    digit = candidate;
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ControlNameEqualsDigit(ReadOnlySpan<char> controlName, string prefix, char digit)
+        {
+            int prefixLength = prefix.Length;
+            int tokenIndex = 0;
+            for (int i = 0; i < controlName.Length; i++)
+            {
+                char c = controlName[i];
+                if (c == '-' || char.IsWhiteSpace(c))
+                    continue;
+
+                if (tokenIndex < prefixLength)
+                {
+                    if (char.ToLowerInvariant(c) != prefix[tokenIndex])
+                        return false;
+                }
+                else if (tokenIndex == prefixLength)
+                {
+                    if (c != digit)
+                        return false;
+                }
+                else
+                {
+                    return false;
+                }
+
+                tokenIndex++;
+            }
+
+            return tokenIndex == prefixLength + 1;
+        }
+
+        private static bool ControlNameEquals(ReadOnlySpan<char> controlName, string token)
+        {
+            int tokenIndex = 0;
+            for (int i = 0; i < controlName.Length; i++)
+            {
+                char c = controlName[i];
+                if (c == '-' || char.IsWhiteSpace(c))
+                    continue;
+
+                if (tokenIndex >= token.Length || char.ToLowerInvariant(c) != token[tokenIndex])
+                    return false;
+
+                tokenIndex++;
+            }
+
+            return tokenIndex == token.Length;
+        }
+
+        private static bool TryWriteChar(char value, char[] buffer, int bufferOffset, out int charsWritten)
+        {
+            charsWritten = 0;
+            if (buffer == null || bufferOffset < 0 || bufferOffset >= buffer.Length)
+                return false;
+
+            buffer[bufferOffset] = value;
+            charsWritten = 1;
+            return true;
+        }
+
+        private static bool TryWriteLiteral(ReadOnlySpan<char> value, char[] buffer, int bufferOffset, out int charsWritten)
+        {
+            charsWritten = 0;
+            if (value.IsEmpty || buffer == null || bufferOffset < 0 || bufferOffset > buffer.Length - value.Length)
+                return false;
+
+            for (int i = 0; i < value.Length; i++)
+                buffer[bufferOffset + i] = value[i];
+
+            charsWritten = value.Length;
+            return true;
+        }
+
+        private static bool TryWriteUpperTrimmed(
+            ReadOnlySpan<char> value,
+            char[] buffer,
+            int bufferOffset,
+            out int charsWritten)
+        {
+            charsWritten = 0;
+            if (value.IsEmpty || buffer == null || bufferOffset < 0 || bufferOffset >= buffer.Length)
+                return false;
+
+            int start = 0;
+            int end = value.Length - 1;
+            while (start <= end && char.IsWhiteSpace(value[start]))
+                start++;
+            while (end >= start && char.IsWhiteSpace(value[end]))
+                end--;
+
+            if (start > end)
+                return false;
+
+            int length = end - start + 1;
+            if (bufferOffset > buffer.Length - length)
+                return false;
+
+            for (int i = 0; i < length; i++)
+                buffer[bufferOffset + i] = char.ToUpperInvariant(value[start + i]);
+
+            charsWritten = length;
+            return true;
         }
 
         private static int GetFirstDisplayableBindingIndex(InputAction action)
@@ -1384,45 +1673,66 @@ namespace Hecton8.Input
 
         private static bool TryResolveTokenBinding(string token, out string actionName, out string actionMap)
         {
-            string normalized = token.Trim().ToLowerInvariant();
             actionName = string.Empty;
             actionMap = "Player";
 
-            switch (normalized)
+            if (TokenEquals(token, "interact"))
+                return TryResolveTokenAction("Interact", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "inventory"))
+                return TryResolveTokenAction("Inventory", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "pda"))
+                return TryResolveTokenAction("PDA", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "flashlight"))
+                return TryResolveTokenAction("Flashlight", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "primary"))
+                return TryResolveTokenAction("PrimaryAction", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "secondary"))
+                return TryResolveTokenAction("SecondaryAction", "Player", out actionName, out actionMap);
+            if (TokenEquals(token, "navigate"))
+                return TryResolveTokenAction("Navigate", "UI", out actionName, out actionMap);
+            if (TokenEquals(token, "submit"))
+                return TryResolveTokenAction("Submit", "UI", out actionName, out actionMap);
+            if (TokenEquals(token, "cancel"))
+                return TryResolveTokenAction("Cancel", "UI", out actionName, out actionMap);
+
+            return false;
+        }
+
+        private static bool TryResolveTokenAction(
+            string resolvedActionName,
+            string resolvedActionMap,
+            out string actionName,
+            out string actionMap)
+        {
+            actionName = resolvedActionName;
+            actionMap = resolvedActionMap;
+            return true;
+        }
+
+        private static bool TokenEquals(string token, string expected)
+        {
+            if (string.IsNullOrWhiteSpace(token))
+                return false;
+
+            ReadOnlySpan<char> tokenSpan = token.AsSpan();
+            int start = 0;
+            int end = tokenSpan.Length - 1;
+            while (start <= end && char.IsWhiteSpace(tokenSpan[start]))
+                start++;
+            while (end >= start && char.IsWhiteSpace(tokenSpan[end]))
+                end--;
+
+            int length = end - start + 1;
+            if (length != expected.Length)
+                return false;
+
+            for (int i = 0; i < length; i++)
             {
-                case "interact":
-                    actionName = "Interact";
-                    return true;
-                case "inventory":
-                    actionName = "Inventory";
-                    return true;
-                case "pda":
-                    actionName = "PDA";
-                    return true;
-                case "flashlight":
-                    actionName = "Flashlight";
-                    return true;
-                case "primary":
-                    actionName = "PrimaryAction";
-                    return true;
-                case "secondary":
-                    actionName = "SecondaryAction";
-                    return true;
-                case "navigate":
-                    actionName = "Navigate";
-                    actionMap = "UI";
-                    return true;
-                case "submit":
-                    actionName = "Submit";
-                    actionMap = "UI";
-                    return true;
-                case "cancel":
-                    actionName = "Cancel";
-                    actionMap = "UI";
-                    return true;
-                default:
+                if (char.ToLowerInvariant(tokenSpan[start + i]) != expected[i])
                     return false;
             }
+
+            return true;
         }
 
         private void CaptureInputDisplayStyle(InputAction.CallbackContext context)

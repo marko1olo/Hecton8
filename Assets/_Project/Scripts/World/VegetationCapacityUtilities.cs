@@ -225,10 +225,12 @@ namespace Hecton8.World
                 if (cache.Length > 0)
                     NativeArray<T>.Copy(cache, expanded, cache.Length);
 
+                NativeMemorySentinel.UnregisterNativeArray(cache);
                 cache.Dispose();
             }
 
             cache = expanded;
+            RegisterTrackedNativeArray(cache, nameof(EnsureNativeCapacity));
         }
 
         private static void EnsureInactiveNativeCapacity<T>(ref NativeArray<T> cache, int requiredCount)
@@ -244,9 +246,13 @@ namespace Hecton8.World
             // COLD ALLOC: NativeArray<T>[nextCapacity] - inactive back-buffer growth for streamed vegetation data - owner: HectonMapMagicVegetationBridge
             NativeArray<T> expanded = new NativeArray<T>(nextCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             if (cache.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(cache);
                 cache.Dispose();
+            }
 
             cache = expanded;
+            RegisterTrackedNativeArray(cache, nameof(EnsureInactiveNativeCapacity));
         }
 
         private static void CopyNativeToManaged<T>(NativeArray<T> source, int sourceIndex, T[] destination, int destinationIndex, int copyCount)

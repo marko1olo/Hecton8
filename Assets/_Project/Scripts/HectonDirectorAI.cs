@@ -56,12 +56,15 @@ namespace Hecton8.Systems.AI
 
         private static readonly RegistryBucket<IDirectorAIEventListener> _listeners = new RegistryBucket<IDirectorAIEventListener>(ListenerCapacity);
         private static NativeQueue<DirectorAIEventPayload> _pendingEvents;
+        private static NativeQueue<DirectorAIEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
         /// <summary>
         /// Number of queued director events awaiting LateUpdate dispatch.
         /// </summary>
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -73,8 +76,17 @@ namespace Hecton8.Systems.AI
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(DirectorAIEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         /// <summary>
@@ -129,15 +141,14 @@ namespace Hecton8.Systems.AI
         public static void RaisePredatorPressureChanged(bool pressureEnabled)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= ExpectedPendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
                 return;
 
-            _pendingEvents.Enqueue(new DirectorAIEventPayload
+            Enqueue(new DirectorAIEventPayload
             {
                 EventType = PredatorPressureEventType,
                 BoolValue = pressureEnabled ? (byte)1 : (byte)0
             });
-            _pendingEventCount++;
         }
 
         /// <summary>
@@ -149,50 +160,84 @@ namespace Hecton8.Systems.AI
                 return;
 
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : ExpectedPendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            _isDispatching = true;
+            try
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
+                while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+                {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
 
-                if (!_pendingEvents.TryDequeue(out DirectorAIEventPayload payload))
-                    break;
+                    if (!_pendingEvents.TryDequeue(out DirectorAIEventPayload payload))
+                        break;
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
+                    if (_pendingEventCount > 0)
+                        _pendingEventCount--;
 
-                Dispatch(in payload);
+                    Dispatch(in payload);
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (!_pendingEvents.IsEmpty())
+                return;
+
+            _pendingEventCount = 0;
+            PromoteNextFrameEvents();
         }
 
         private static void EnqueuePosition(byte eventType, Vector3 position)
         {
-            EnsureInitialized();
-            if (_pendingEventCount >= ExpectedPendingEventCapacity)
-                return;
-
-            _pendingEvents.Enqueue(new DirectorAIEventPayload
+            Enqueue(new DirectorAIEventPayload
             {
                 EventType = eventType,
                 Position = position
             });
-            _pendingEventCount++;
         }
 
         private static void EnqueueValue(byte eventType, float value)
         {
-            EnsureInitialized();
-            if (_pendingEventCount >= ExpectedPendingEventCapacity)
-                return;
-
-            _pendingEvents.Enqueue(new DirectorAIEventPayload
+            Enqueue(new DirectorAIEventPayload
             {
                 EventType = eventType,
                 Value = value
             });
-            _pendingEventCount++;
+        }
+
+        private static bool Enqueue(in DirectorAIEventPayload payload)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
+                return false;
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+            }
+            else
+            {
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+            }
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            if (!_nextFrameEvents.IsCreated || _nextFrameEventCount <= 0)
+                return;
+
+            while (_nextFrameEventCount > 0 && _nextFrameEvents.TryDequeue(out DirectorAIEventPayload payload))
+            {
+                _nextFrameEventCount--;
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+            }
         }
 
         private static void Dispatch(in DirectorAIEventPayload payload)
@@ -231,16 +276,27 @@ namespace Hecton8.Systems.AI
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<DirectorAIEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DirectorAIEventPayload>[16] - deferred DirectorAI event lane flushed by SystemDispatcher - owner: DirectorAIEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    ExpectedPendingEventCapacity,
+                    nameof(DirectorAIEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<DirectorAIEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DirectorAIEventPayload>[16] - deferred DirectorAI event lane flushed by SystemDispatcher - owner: DirectorAIEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                ExpectedPendingEventCapacity,
-                nameof(DirectorAIEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<DirectorAIEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DirectorAIEventPayload>[16] - next-frame DirectorAI events raised by listeners - owner: DirectorAIEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    ExpectedPendingEventCapacity,
+                    nameof(DirectorAIEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
     }
 
@@ -357,7 +413,7 @@ namespace Hecton8.Systems.AI
             if (!_encounterDirectorServiceRegistered)
             {
                 GlobalRegistry.RegisterEncounterDirectorService(this);
-                _encounterDirectorServiceRegistered = true;
+                _encounterDirectorServiceRegistered = ReferenceEquals(GlobalRegistry.EncounterDirector, this);
             }
 
             if (GlobalRegistry.Dispatcher == null)
@@ -366,7 +422,7 @@ namespace Hecton8.Systems.AI
             if (!_dispatcherRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                _dispatcherRegistered = true;
+                _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this);
             }
 
             _encounterDirector.Reset();
@@ -413,7 +469,12 @@ namespace Hecton8.Systems.AI
         private void OnDestroy()
         {
             SpectrumEvents.UnregisterSonarPingListener(this);
-            GlobalRegistry.UnregisterEncounterDirectorService(this);
+
+            if (_encounterDirectorServiceRegistered && ReferenceEquals(GlobalRegistry.EncounterDirector, this))
+            {
+                GlobalRegistry.UnregisterEncounterDirectorService(this);
+                _encounterDirectorServiceRegistered = false;
+            }
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;

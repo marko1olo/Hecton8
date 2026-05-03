@@ -6,6 +6,7 @@
 
 namespace Hecton8.Inventory
 {
+    using Hecton8.Core;
     using Unity.Collections;
     using Unity.Jobs;
     using UnityEngine;
@@ -58,6 +59,8 @@ namespace Hecton8.Inventory
         private NativeArray<byte> _anchorRarityIds;
         private NativeArray<byte> _anchorFlags;
         private int _occupiedCells;
+        private const string NativeMemoryOwner = nameof(InventoryGrid);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         public int Columns => _columns;
         public int Rows => _rows;
@@ -90,65 +93,45 @@ namespace Hecton8.Inventory
             _anchorCategoryIds = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _anchorRarityIds = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _anchorFlags = new NativeArray<byte>(totalCells, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeMemorySentinel();
             _occupiedCells = 0;
         }
 
         public void Dispose(JobHandle dependency)
         {
-            if (_cellAnchorIndices.IsCreated)
-            {
-                _cellAnchorIndices.Dispose(dependency);
-                _cellAnchorIndices = default;
-            }
-
-            if (_anchorHashIds.IsCreated)
-            {
-                _anchorHashIds.Dispose(dependency);
-                _anchorHashIds = default;
-            }
-
-            if (_anchorWidths.IsCreated)
-            {
-                _anchorWidths.Dispose(dependency);
-                _anchorWidths = default;
-            }
-
-            if (_anchorHeights.IsCreated)
-            {
-                _anchorHeights.Dispose(dependency);
-                _anchorHeights = default;
-            }
-
-            if (_anchorMaxStacks.IsCreated)
-            {
-                _anchorMaxStacks.Dispose(dependency);
-                _anchorMaxStacks = default;
-            }
-
-            if (_anchorWeights.IsCreated)
-            {
-                _anchorWeights.Dispose(dependency);
-                _anchorWeights = default;
-            }
-
-            if (_anchorCategoryIds.IsCreated)
-            {
-                _anchorCategoryIds.Dispose(dependency);
-                _anchorCategoryIds = default;
-            }
-
-            if (_anchorRarityIds.IsCreated)
-            {
-                _anchorRarityIds.Dispose(dependency);
-                _anchorRarityIds = default;
-            }
-
-            if (_anchorFlags.IsCreated)
-            {
-                _anchorFlags.Dispose(dependency);
-                _anchorFlags = default;
-            }
+            DisposeNativeArray(ref _cellAnchorIndices, dependency);
+            DisposeNativeArray(ref _anchorHashIds, dependency);
+            DisposeNativeArray(ref _anchorWidths, dependency);
+            DisposeNativeArray(ref _anchorHeights, dependency);
+            DisposeNativeArray(ref _anchorMaxStacks, dependency);
+            DisposeNativeArray(ref _anchorWeights, dependency);
+            DisposeNativeArray(ref _anchorCategoryIds, dependency);
+            DisposeNativeArray(ref _anchorRarityIds, dependency);
+            DisposeNativeArray(ref _anchorFlags, dependency);
             _occupiedCells = 0;
+        }
+
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_cellAnchorIndices, NativeMemoryOwner, nameof(_cellAnchorIndices), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorHashIds, NativeMemoryOwner, nameof(_anchorHashIds), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorWidths, NativeMemoryOwner, nameof(_anchorWidths), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorHeights, NativeMemoryOwner, nameof(_anchorHeights), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorMaxStacks, NativeMemoryOwner, nameof(_anchorMaxStacks), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorWeights, NativeMemoryOwner, nameof(_anchorWeights), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorCategoryIds, NativeMemoryOwner, nameof(_anchorCategoryIds), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorRarityIds, NativeMemoryOwner, nameof(_anchorRarityIds), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorFlags, NativeMemoryOwner, nameof(_anchorFlags), NativeMemoryLifetime);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose(dependency);
+            array = default;
         }
 
         public bool HasAnchor(int anchorIndex)

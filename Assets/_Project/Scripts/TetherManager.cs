@@ -105,7 +105,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
-            _registeredFixedTick = true;
+            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
         }
 
         private void TryUnregisterFixedTickable()
@@ -126,7 +126,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrameTick = true;
+            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
         }
 
         private void TryUnregisterLateFrameTickable()

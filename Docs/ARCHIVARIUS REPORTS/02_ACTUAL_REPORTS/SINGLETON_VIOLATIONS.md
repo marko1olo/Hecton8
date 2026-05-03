@@ -9,7 +9,9 @@
 
 ## EXECUTIVE SUMMARY
 
-**Violation Count:** 101 listed rows in this document expose `public static Instance` (or equivalent) instead of routing through `GlobalRegistry`.
+**Violation Count:** 101 listed rows in this historical document expose `public static Instance` (or equivalent) instead of routing through `GlobalRegistry`.
+
+**2026-05-03 Source Delta:** This file is not a live count. Current source scan for `Assets/_Project/Scripts/Optimization` reports no `_instance`, `Instance =>`, `public static .*Instance`, `internal static .*Instance`, `DontDestroyOnLoad(`, or `SINGLETON` matches. Rows for `CameraRTManager`, `PostFXRTManager`, `RenderTextureLifecycleTracker`, `RenderTexturePool`, `UIRTManager`, `VRAMMonitor`, and `VisorRTManager` are superseded by `Docs/Reports/2026-05-03_OPTIMIZATION_REGISTRY_OWNERSHIP.md`.
 
 **Categories:**
 - Core infrastructure (tick, physics, dispatcher)

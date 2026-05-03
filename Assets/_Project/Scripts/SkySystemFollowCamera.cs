@@ -90,7 +90,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
             return;
 
         GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-        _registeredForTick = true;
+        _registeredForTick = GlobalRegistry.Updatables.Contains(this);
     }
 
     private void TryUnregisterFromTick()

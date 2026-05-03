@@ -120,6 +120,7 @@ public static class MCTables
             };
             _edgeTable = new NativeArray<int>(256, Allocator.Persistent);
             _edgeTable.CopyFrom(et);
+            NativeMemorySentinel.RegisterNativeArray(_edgeTable, nameof(MCTables), nameof(_edgeTable), NativeAllocationLifetime.Permanent);
 
             var tt = new int[4096]
             {
@@ -382,6 +383,7 @@ public static class MCTables
             };
             _triTable = new NativeArray<int>(4096, Allocator.Persistent);
             _triTable.CopyFrom(tt);
+            NativeMemorySentinel.RegisterNativeArray(_triTable, nameof(MCTables), nameof(_triTable), NativeAllocationLifetime.Permanent);
 
             Volatile.Write(ref _ready, 1);
         }
@@ -394,8 +396,18 @@ public static class MCTables
 #if UNITY_EDITOR
             ReleaseEditorHooks();
 #endif
-            if (_edgeTable.IsCreated) _edgeTable.Dispose();
-            if (_triTable.IsCreated)  _triTable.Dispose();
+            if (_edgeTable.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_edgeTable);
+                _edgeTable.Dispose();
+            }
+
+            if (_triTable.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_triTable);
+                _triTable.Dispose();
+            }
+
             Volatile.Write(ref _ready, 0);
         }
     }
@@ -2364,6 +2376,9 @@ public class HectonVoxelEngine : MonoBehaviour
     private const string RuntimeCaveMeshName = "CaveMesh";
     private const int StreamingScratchLeaseTimeoutFrames = 1200;
     private const int VoxelJobWaitWatchdogFrames = 1200;
+    private const string NativeMemoryOwner = nameof(HectonVoxelEngine);
+    private const string ModifiedCellsNativeMemoryLabelPrefix = "VoxelPipelineData.ModifiedCells.";
+    private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
     // ╔═══════════════════════════════════════════════╗
     // ║           INSPECTOR SETTINGS                  ║
@@ -2457,12 +2472,12 @@ public class HectonVoxelEngine : MonoBehaviour
 
         public void Dispose()
         {
-            if (TerrainHeights.IsCreated) TerrainHeights.Dispose();
-            if (GridBiome.IsCreated) GridBiome.Dispose();
-            if (DensityField.IsCreated) DensityField.Dispose();
-            if (SmoothDensityField.IsCreated) SmoothDensityField.Dispose();
-            if (CellVertexCounts.IsCreated) CellVertexCounts.Dispose();
-            if (CellVertexOffsets.IsCreated) CellVertexOffsets.Dispose();
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref TerrainHeights);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref GridBiome);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref DensityField);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref SmoothDensityField);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref CellVertexCounts);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref CellVertexOffsets);
             InUse = false;
         }
     }
@@ -2544,6 +2559,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<CaveStructure> Structures;
         public NativeArray<VoxelCraterStamp> CraterStamps;
         public NativeParallelHashMap<int3, VoxelModifiedCell> ModifiedCells;
+        public string ModifiedCellsNativeMemoryLabel;
         public NativeArray<MCRawVertex> RawVertices;
         public NativeArray<float3> WeldedPositions;
         public NativeArray<int> TriangleIndices;
@@ -2570,22 +2586,31 @@ public class HectonVoxelEngine : MonoBehaviour
         public void Dispose()
         {
             ScratchLease.Dispose();
-            if (ModifiedCells.IsCreated) ModifiedCells.Dispose();
-            if (RawVertices.IsCreated) RawVertices.Dispose();
-            if (WeldedPositions.IsCreated) WeldedPositions.Dispose();
-            if (TriangleIndices.IsCreated) TriangleIndices.Dispose();
-            if (EdgeVertexX.IsCreated) EdgeVertexX.Dispose();
-            if (EdgeVertexY.IsCreated) EdgeVertexY.Dispose();
-            if (EdgeVertexZ.IsCreated) EdgeVertexZ.Dispose();
-            if (Normals.IsCreated) Normals.Dispose();
-            if (CurvatureValues.IsCreated) CurvatureValues.Dispose();
-            if (BiomeValues.IsCreated) BiomeValues.Dispose();
-            if (Colors.IsCreated) Colors.Dispose();
+            if (ModifiedCells.IsCreated)
+            {
+                if (!string.IsNullOrEmpty(ModifiedCellsNativeMemoryLabel))
+                    NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, ModifiedCellsNativeMemoryLabel);
+
+                ModifiedCells.Dispose();
+                ModifiedCells = default;
+                ModifiedCellsNativeMemoryLabel = null;
+            }
+
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref RawVertices);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref WeldedPositions);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref TriangleIndices);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref EdgeVertexX);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref EdgeVertexY);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref EdgeVertexZ);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref Normals);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref CurvatureValues);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref BiomeValues);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref Colors);
             if (SpawnPointList.IsCreated) SpawnPointList.Dispose();
-            if (NodeBucketOffsets.IsCreated) NodeBucketOffsets.Dispose();
-            if (NodeBucketIndices.IsCreated) NodeBucketIndices.Dispose();
-            if (TunnelBucketOffsets.IsCreated) TunnelBucketOffsets.Dispose();
-            if (TunnelBucketIndices.IsCreated) TunnelBucketIndices.Dispose();
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref NodeBucketOffsets);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref NodeBucketIndices);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref TunnelBucketOffsets);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref TunnelBucketIndices);
         }
     }
 
@@ -2741,6 +2766,10 @@ public class HectonVoxelEngine : MonoBehaviour
                 out caveEntrances,
                 out caveStructures,
                 Allocator.Persistent);
+            RegisterTrackedNativeArray(caveNodes, nameof(caveNodes));
+            RegisterTrackedNativeArray(caveTunnels, nameof(caveTunnels));
+            RegisterTrackedNativeArray(caveEntrances, nameof(caveEntrances));
+            RegisterTrackedNativeArray(caveStructures, nameof(caveStructures));
 
 #if UNITY_EDITOR
             CaveGraphGenerator.Validate(caveNodes, caveTunnels, caveEntrances, worldCenter, volumeHalfExtent);
@@ -2819,10 +2848,10 @@ public class HectonVoxelEngine : MonoBehaviour
         finally
         {
             pipelineData?.Dispose();
-            if (caveNodes.IsCreated) caveNodes.Dispose();
-            if (caveTunnels.IsCreated) caveTunnels.Dispose();
-            if (caveEntrances.IsCreated) caveEntrances.Dispose();
-            if (caveStructures.IsCreated) caveStructures.Dispose();
+            DisposeTrackedNativeArray(ref caveNodes);
+            DisposeTrackedNativeArray(ref caveTunnels);
+            DisposeTrackedNativeArray(ref caveEntrances);
+            DisposeTrackedNativeArray(ref caveStructures);
             EndGenerationOperation();
         }
     }
@@ -3057,6 +3086,11 @@ public class HectonVoxelEngine : MonoBehaviour
             entrances = new NativeArray<CaveEntrance>(entranceSnapshot.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             structures = new NativeArray<CaveStructure>(structureSnapshot.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             craterStamps = new NativeArray<VoxelCraterStamp>(craterCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(nodes, nameof(nodes));
+            RegisterTrackedNativeArray(tunnels, nameof(tunnels));
+            RegisterTrackedNativeArray(entrances, nameof(entrances));
+            RegisterTrackedNativeArray(structures, nameof(structures));
+            RegisterTrackedNativeArray(craterStamps, nameof(craterStamps));
 
             for (int i = 0; i < nodeSnapshot.Length; i++)
             {
@@ -3106,8 +3140,19 @@ public class HectonVoxelEngine : MonoBehaviour
                 terrainHeightCenter = sampledHeight;
 
             NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells = default;
+            string modifiedCellsNativeMemoryLabel = null;
             if (_deltaProcessor != null)
                 _deltaProcessor.TryBuildDeltaMapForVolume(volume, out modifiedCells);
+
+            if (modifiedCells.IsCreated)
+            {
+                modifiedCellsNativeMemoryLabel = BuildModifiedCellsNativeMemoryLabel(volume, expectedRuntimeStamp);
+                NativeMemorySentinel.RegisterNativeParallelHashMap(
+                    modifiedCells,
+                    NativeMemoryOwner,
+                    modifiedCellsNativeMemoryLabel,
+                    NativeMemoryLifetime);
+            }
 
             pipelineData = new VoxelPipelineData
             {
@@ -3139,7 +3184,8 @@ public class HectonVoxelEngine : MonoBehaviour
                 Entrances = entrances,
                 Structures = structures,
                 CraterStamps = craterStamps,
-                ModifiedCells = modifiedCells
+                ModifiedCells = modifiedCells,
+                ModifiedCellsNativeMemoryLabel = modifiedCellsNativeMemoryLabel
             };
 
             if (!await ExecuteVoxelPipelineAsync(pipelineData, ct))
@@ -3155,11 +3201,11 @@ public class HectonVoxelEngine : MonoBehaviour
         finally
         {
             pipelineData?.Dispose();
-            if (nodes.IsCreated) nodes.Dispose();
-            if (tunnels.IsCreated) tunnels.Dispose();
-            if (entrances.IsCreated) entrances.Dispose();
-            if (structures.IsCreated) structures.Dispose();
-            if (craterStamps.IsCreated) craterStamps.Dispose();
+            DisposeTrackedNativeArray(ref nodes);
+            DisposeTrackedNativeArray(ref tunnels);
+            DisposeTrackedNativeArray(ref entrances);
+            DisposeTrackedNativeArray(ref structures);
+            DisposeTrackedNativeArray(ref craterStamps);
             EndGenerationOperation();
         }
     }
@@ -3662,6 +3708,12 @@ public class HectonVoxelEngine : MonoBehaviour
         data.EdgeVertexY = new NativeArray<int>(edgeVertexCountY, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         // COLD ALLOC: NativeArray<int>[edgeVertexCountZ] - deterministic Z-edge weld ownership registry - owner: HectonVoxelEngine
         data.EdgeVertexZ = new NativeArray<int>(edgeVertexCountZ, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        RegisterTrackedNativeArray(data.RawVertices, nameof(data.RawVertices));
+        RegisterTrackedNativeArray(data.WeldedPositions, nameof(data.WeldedPositions));
+        RegisterTrackedNativeArray(data.TriangleIndices, nameof(data.TriangleIndices));
+        RegisterTrackedNativeArray(data.EdgeVertexX, nameof(data.EdgeVertexX));
+        RegisterTrackedNativeArray(data.EdgeVertexY, nameof(data.EdgeVertexY));
+        RegisterTrackedNativeArray(data.EdgeVertexZ, nameof(data.EdgeVertexZ));
 
         for (int edgeIndex = 0; edgeIndex < data.EdgeVertexX.Length; edgeIndex++)
             data.EdgeVertexX[edgeIndex] = -1;
@@ -3696,6 +3748,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
         // COLD ALLOC: NativeArray<int>[1] - exact welded vertex counter for current voxel build only - owner: HectonVoxelEngine
         NativeArray<int> weldedCounter = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        RegisterTrackedNativeArray(weldedCounter, nameof(weldedCounter));
 
         try
         {
@@ -3720,8 +3773,7 @@ public class HectonVoxelEngine : MonoBehaviour
         }
         finally
         {
-            if (weldedCounter.IsCreated)
-                weldedCounter.Dispose();
+            DisposeTrackedNativeArray(ref weldedCounter);
         }
 
         if (data.WeldedCount < 3)
@@ -3733,6 +3785,10 @@ public class HectonVoxelEngine : MonoBehaviour
         data.CurvatureValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         data.BiomeValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         data.Colors = new NativeArray<Color>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        RegisterTrackedNativeArray(data.Normals, nameof(data.Normals));
+        RegisterTrackedNativeArray(data.CurvatureValues, nameof(data.CurvatureValues));
+        RegisterTrackedNativeArray(data.BiomeValues, nameof(data.BiomeValues));
+        RegisterTrackedNativeArray(data.Colors, nameof(data.Colors));
         if (data.ExtractSpawnPoints)
         {
             int maxSpawnPoints = math.max(data.WeldedCount / 20, 64);
@@ -3997,15 +4053,15 @@ public class HectonVoxelEngine : MonoBehaviour
         int totalPointCount,
         int totalCellCount)
     {
-        EnsureNativeArrayCapacity(ref slot.TerrainHeights, heightCount);
-        EnsureNativeArrayCapacity(ref slot.GridBiome, heightCount);
-        EnsureNativeArrayCapacity(ref slot.DensityField, totalPointCount);
-        EnsureNativeArrayCapacity(ref slot.SmoothDensityField, totalPointCount);
-        EnsureNativeArrayCapacity(ref slot.CellVertexCounts, totalCellCount);
-        EnsureNativeArrayCapacity(ref slot.CellVertexOffsets, totalCellCount);
+        EnsureNativeArrayCapacity(ref slot.TerrainHeights, heightCount, nameof(VoxelStreamingScratchSlot.TerrainHeights));
+        EnsureNativeArrayCapacity(ref slot.GridBiome, heightCount, nameof(VoxelStreamingScratchSlot.GridBiome));
+        EnsureNativeArrayCapacity(ref slot.DensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.DensityField));
+        EnsureNativeArrayCapacity(ref slot.SmoothDensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.SmoothDensityField));
+        EnsureNativeArrayCapacity(ref slot.CellVertexCounts, totalCellCount, nameof(VoxelStreamingScratchSlot.CellVertexCounts));
+        EnsureNativeArrayCapacity(ref slot.CellVertexOffsets, totalCellCount, nameof(VoxelStreamingScratchSlot.CellVertexOffsets));
     }
 
-    static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredLength, bool clear = false)
+    static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredLength, string label, bool clear = false)
         where T : struct
     {
         if (requiredLength <= 0)
@@ -4020,11 +4076,36 @@ public class HectonVoxelEngine : MonoBehaviour
         }
 
         if (array.IsCreated)
+        {
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
+        }
 
         NativeArrayOptions options = clear ? NativeArrayOptions.ClearMemory : NativeArrayOptions.UninitializedMemory;
         // COLD ALLOC: NativeArray<T>[requiredLength] - reusable voxel streaming scratch slot growth - owner: HectonVoxelEngine
         array = new NativeArray<T>(requiredLength, Allocator.Persistent, options);
+        RegisterTrackedNativeArray(array, label);
+    }
+
+    static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+    {
+        NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+    }
+
+    static string BuildModifiedCellsNativeMemoryLabel(HectonVoxelVolume volume, int runtimeStamp)
+    {
+        int volumeId = volume != null ? volume.GetInstanceID() : 0;
+        return ModifiedCellsNativeMemoryLabelPrefix + volumeId + ":" + runtimeStamp;
+    }
+
+    static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+    {
+        if (!array.IsCreated)
+            return;
+
+        NativeMemorySentinel.UnregisterNativeArray(array);
+        array.Dispose();
+        array = default;
     }
 
     void BuildSpatialPartitions(VoxelPipelineData data)
@@ -4071,6 +4152,7 @@ public class HectonVoxelEngine : MonoBehaviour
             }
 
             data.NodeBucketOffsets = new NativeArray<int>(bucketCount + 1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(data.NodeBucketOffsets, nameof(data.NodeBucketOffsets));
             int totalReferences = 0;
             for (int bucketIndex = 0; bucketIndex < bucketCount; bucketIndex++)
             {
@@ -4083,6 +4165,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 return;
 
             data.NodeBucketIndices = new NativeArray<int>(totalReferences, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(data.NodeBucketIndices, nameof(data.NodeBucketIndices));
             writeHeads = new NativeArray<int>(bucketCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             for (int bucketIndex = 0; bucketIndex < bucketCount; bucketIndex++)
                 writeHeads[bucketIndex] = data.NodeBucketOffsets[bucketIndex];
@@ -4141,6 +4224,7 @@ public class HectonVoxelEngine : MonoBehaviour
             }
 
             data.TunnelBucketOffsets = new NativeArray<int>(bucketCount + 1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(data.TunnelBucketOffsets, nameof(data.TunnelBucketOffsets));
             int totalReferences = 0;
             for (int bucketIndex = 0; bucketIndex < bucketCount; bucketIndex++)
             {
@@ -4153,6 +4237,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 return;
 
             data.TunnelBucketIndices = new NativeArray<int>(totalReferences, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(data.TunnelBucketIndices, nameof(data.TunnelBucketIndices));
             writeHeads = new NativeArray<int>(bucketCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
             for (int bucketIndex = 0; bucketIndex < bucketCount; bucketIndex++)
                 writeHeads[bucketIndex] = data.TunnelBucketOffsets[bucketIndex];
@@ -4324,6 +4409,7 @@ public class HectonVoxelEngine : MonoBehaviour
             // This keeps async mesh/collider finalize in sync with the latest committed floating-origin shift.
             // COLD ALLOC: NativeArray<float3>[data.WeldedCount] - shift-aware voxel local-space projection buffer for async finalize - owner: HectonVoxelEngine
             NativeArray<float3> projectedPositions = new NativeArray<float3>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(projectedPositions, nameof(projectedPositions));
             JobHandle projectionHandle = new VoxelShiftAwareProjectionJob
             {
                 rebaseDelta = (float3)(data.AbsoluteUniverseOffsetAtStart - projectionState.StableShift.NewTotalOffset),
@@ -4554,7 +4640,7 @@ public class HectonVoxelEngine : MonoBehaviour
             finally
             {
                 if (projectedLocalPositions.IsCreated)
-                    projectedLocalPositions.Dispose();
+                    DisposeTrackedNativeArray(ref projectedLocalPositions);
             }
         }
     }
@@ -4602,6 +4688,11 @@ public class HectonVoxelEngine : MonoBehaviour
             bucketOffsets = new NativeArray<int>(colliderChunkCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             bucketWriteHeads = new NativeArray<int>(colliderChunkCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             chunkTriangleIndices = new NativeArray<int>(triangleIndexCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(triangleBuckets, nameof(triangleBuckets));
+            RegisterTrackedNativeArray(bucketCounts, nameof(bucketCounts));
+            RegisterTrackedNativeArray(bucketOffsets, nameof(bucketOffsets));
+            RegisterTrackedNativeArray(bucketWriteHeads, nameof(bucketWriteHeads));
+            RegisterTrackedNativeArray(chunkTriangleIndices, nameof(chunkTriangleIndices));
 
             float3 boundsMin = localVolumeOrigin;
             float3 boundsSize = new float3(data.GridDimension, data.GridDimension, data.GridDimension) * data.VoxelStep;
@@ -4717,11 +4808,11 @@ public class HectonVoxelEngine : MonoBehaviour
             if (!completed)
                 volume.ClearColliderChunkBakeMeshes();
 
-            if (triangleBuckets.IsCreated) triangleBuckets.Dispose();
-            if (bucketCounts.IsCreated) bucketCounts.Dispose();
-            if (bucketOffsets.IsCreated) bucketOffsets.Dispose();
-            if (bucketWriteHeads.IsCreated) bucketWriteHeads.Dispose();
-            if (chunkTriangleIndices.IsCreated) chunkTriangleIndices.Dispose();
+            DisposeTrackedNativeArray(ref triangleBuckets);
+            DisposeTrackedNativeArray(ref bucketCounts);
+            DisposeTrackedNativeArray(ref bucketOffsets);
+            DisposeTrackedNativeArray(ref bucketWriteHeads);
+            DisposeTrackedNativeArray(ref chunkTriangleIndices);
         }
     }
 

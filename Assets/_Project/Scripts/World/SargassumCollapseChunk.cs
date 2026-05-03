@@ -377,7 +377,7 @@ namespace Hecton8.World
             else
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (_registeredFixedTick)
@@ -387,7 +387,7 @@ namespace Hecton8.World
             }
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = true;
+            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
             HectonFloatingOrigin.RegisterListener(this);
         }
 

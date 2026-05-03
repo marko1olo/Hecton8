@@ -159,13 +159,13 @@ namespace Hecton8.Quest
             if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_registeredUpdatable)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registeredUpdatable = true;
+                _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredRenderable)
             {
                 GlobalRegistry.Renderables.Register(this);
-                _registeredRenderable = true;
+                _registeredRenderable = GlobalRegistry.Renderables.Contains(this);
             }
         }
 

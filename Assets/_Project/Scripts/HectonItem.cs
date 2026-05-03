@@ -211,7 +211,7 @@ namespace Hecton8.Items
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isTickRegistered = true;
+            _isTickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void StopTicking()

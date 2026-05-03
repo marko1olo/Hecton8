@@ -20,8 +20,6 @@ namespace Hecton8.Optimization
         private const long MinimumHardwareHeadroomBytes = 200L * 1024L * 1024L;
         private const int WorldPrefabEvictionIdleFrames = 180;
 
-        private static VRAMPressureMonitor _instance;
-
         [Header("VRAM Pressure Thresholds")]
         [Tooltip("Preventive mip downgrade threshold against the 1.8 GB MX350 ceiling.")]
         [SerializeField, Range(0.5f, 1f)] private float warningVramFraction = 0.85f;
@@ -44,7 +42,6 @@ namespace Hecton8.Optimization
         private int _baselineMipLimit;
         private int _activeMipLimit;
 
-        internal static VRAMPressureMonitor Instance => _instance;
         internal bool HasSample { get; private set; }
         internal float VramPressureFactor { get; private set; }
         internal float RamPressureFactor { get; private set; }
@@ -54,13 +51,6 @@ namespace Hecton8.Optimization
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             _baselineMipLimit = QualitySettings.globalTextureMipmapLimit;
             _activeMipLimit = _baselineMipLimit;
             _framesUntilSample = Mathf.Max(1, sampleIntervalFrames);
@@ -68,8 +58,8 @@ namespace Hecton8.Optimization
 
         private void OnEnable()
         {
-            TryRegisterService();
-            TryRegister();
+            if (TryRegisterService())
+                TryRegister();
         }
 
         private void Start()
@@ -87,9 +77,6 @@ namespace Hecton8.Optimization
         {
             TryUnregister();
             TryUnregisterService();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <inheritdoc />
@@ -113,18 +100,30 @@ namespace Hecton8.Optimization
         {
             if (_registeredTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredTick = true;
-        }
-
-        private void TryRegisterService()
-        {
-            if (_registeredService || !Application.isPlaying)
+            if (!ReferenceEquals(GlobalRegistry.VRAMPressure, this))
                 return;
 
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_registeredService)
+                return true;
+            if (!Application.isPlaying)
+                return false;
+
+            VRAMPressureMonitor registered = GlobalRegistry.VRAMPressure;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
             GlobalRegistry.RegisterVRAMPressureRuntime(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.VRAMPressure, this);
+            return _registeredService;
         }
 
         private void TryUnregister()

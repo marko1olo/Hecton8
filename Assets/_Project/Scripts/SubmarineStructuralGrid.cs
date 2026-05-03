@@ -65,6 +65,8 @@ namespace Hecton8.Physics
         private const int HullDentInterleavedNormalOffsetBytes = 12;
         private const int HullDentInterleavedUvOffsetBytes = 24;
         private const float Epsilon = 0.0001f;
+        private const string NativeMemoryOwner = nameof(SubmarineStructuralGrid);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct HullDamageDiffusionJob : IJob
@@ -647,6 +649,7 @@ namespace Hecton8.Physics
             _queuedDentCommands = new NativeArray<HullDentCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<HullDentCommand>[16] - scheduled hull dent snapshot buffer - owner: SubmarineStructuralGrid
             _scheduledDentCommands = new NativeArray<HullDentCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeStateMemorySentinel();
 
             _nativeStateReady = true;
             _queuedImpactCount = 0;
@@ -748,6 +751,7 @@ namespace Hecton8.Physics
             _hullDentUvs = new NativeArray<float2>(vertexCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<uint>[indexCount] - immutable hull triangle index buffer - owner: SubmarineStructuralGrid
             _hullDentIndices = new NativeArray<uint>(totalIndexCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterHullDentMemorySentinel();
             _hullDentSubMeshes = new SubMeshDescriptor[subMeshCount]; // COLD ALLOC: SubMeshDescriptor[subMeshCount] - runtime hull submesh descriptors - owner: SubmarineStructuralGrid
 
             if (layout.Interleaved)
@@ -1154,7 +1158,7 @@ namespace Hecton8.Physics
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregister()
@@ -1276,8 +1280,34 @@ namespace Hecton8.Physics
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             dependency = array.Dispose(dependency);
             array = default;
+        }
+
+        private void RegisterNativeStateMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_cellIntegrityFront, NativeMemoryOwner, nameof(_cellIntegrityFront), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_cellIntegrityBack, NativeMemoryOwner, nameof(_cellIntegrityBack), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_cellFatigue, NativeMemoryOwner, nameof(_cellFatigue), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_cellCompartmentIndices, NativeMemoryOwner, nameof(_cellCompartmentIndices), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_hullBreachMaskFront, NativeMemoryOwner, nameof(_hullBreachMaskFront), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_hullBreachMaskBack, NativeMemoryOwner, nameof(_hullBreachMaskBack), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_compartmentBreachAreasFront, NativeMemoryOwner, nameof(_compartmentBreachAreasFront), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_compartmentBreachAreasBack, NativeMemoryOwner, nameof(_compartmentBreachAreasBack), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_queuedImpacts, NativeMemoryOwner, nameof(_queuedImpacts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_scheduledImpacts, NativeMemoryOwner, nameof(_scheduledImpacts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_queuedDentCommands, NativeMemoryOwner, nameof(_queuedDentCommands), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_scheduledDentCommands, NativeMemoryOwner, nameof(_scheduledDentCommands), NativeMemoryLifetime);
+        }
+
+        private void RegisterHullDentMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_hullDentVerticesFront, NativeMemoryOwner, nameof(_hullDentVerticesFront), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_hullDentVerticesBack, NativeMemoryOwner, nameof(_hullDentVerticesBack), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_hullDentNormals, NativeMemoryOwner, nameof(_hullDentNormals), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_hullDentUvs, NativeMemoryOwner, nameof(_hullDentUvs), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_hullDentIndices, NativeMemoryOwner, nameof(_hullDentIndices), NativeMemoryLifetime);
         }
     }
 }

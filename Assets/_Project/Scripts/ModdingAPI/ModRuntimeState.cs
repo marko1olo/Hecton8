@@ -69,6 +69,7 @@ namespace Hecton8.Modding
         {
             public string Key;
             public string Value;
+            public string SerializedKey;
             public uint KeyHash;
             public uint ModHash;
             public uint CompoundHash;
@@ -76,6 +77,11 @@ namespace Hecton8.Modding
 
         private static readonly List<ModSaveEntry> _customModData = new List<ModSaveEntry>(64);
         private static readonly Dictionary<uint, int> _customModIndexByHash = new Dictionary<uint, int>(64);
+        // COLD ALLOC: char[ModPayloadMaxBytes/2] - reusable UTF-16 decode scratch for mod save payload load - owner: ModSaveStateStore
+        private static readonly char[] _decodeCharScratch =
+            new char[SaveBinaryStorage.ModPayloadMaxBytes / sizeof(char)];
+        // COLD ALLOC: ModPayloadReadHandler[1] - cached batch MMF payload visitor - owner: ModSaveStateStore
+        private static readonly SaveBinaryStorage.ModPayloadReadHandler _modPayloadReadHandler = LoadMmfPayload;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -102,6 +108,7 @@ namespace Hecton8.Modding
                 {
                     entry.Key = key;
                     entry.Value = value ?? string.Empty;
+                    entry.SerializedKey = BuildSerializedStorageKey(modHash, keyHash);
                     entry.KeyHash = keyHash;
                     entry.ModHash = modHash;
                     entry.CompoundHash = compoundHash;
@@ -121,6 +128,7 @@ namespace Hecton8.Modding
 
                 entry.Key = key;
                 entry.Value = value ?? string.Empty;
+                entry.SerializedKey = BuildSerializedStorageKey(modHash, keyHash);
                 entry.KeyHash = keyHash;
                 entry.ModHash = modHash;
                 entry.CompoundHash = compoundHash;
@@ -134,6 +142,7 @@ namespace Hecton8.Modding
             {
                 Key = key,
                 Value = value ?? string.Empty,
+                SerializedKey = BuildSerializedStorageKey(modHash, keyHash),
                 KeyHash = keyHash,
                 ModHash = modHash,
                 CompoundHash = compoundHash
@@ -180,14 +189,25 @@ namespace Hecton8.Modding
                 data.CustomModData.Clear();
             }
 
-            List<ModSaveEntry>.Enumerator enumerator = _customModData.GetEnumerator();
-            while (enumerator.MoveNext())
+            for (int i = 0; i < _customModData.Count; i++)
             {
-                ModSaveEntry entry = enumerator.Current;
+                ModSaveEntry entry = _customModData[i];
                 if (entry.ModHash != 0u && entry.KeyHash != 0u)
-                    data.CustomModData[BuildSerializedStorageKey(entry.ModHash, entry.KeyHash)] = entry.Value ?? string.Empty;
+                {
+                    string storageKey = entry.SerializedKey;
+                    if (string.IsNullOrEmpty(storageKey))
+                    {
+                        storageKey = BuildSerializedStorageKey(entry.ModHash, entry.KeyHash);
+                        entry.SerializedKey = storageKey;
+                        _customModData[i] = entry;
+                    }
+
+                    data.CustomModData[storageKey] = entry.Value ?? string.Empty;
+                }
                 else if (!string.IsNullOrWhiteSpace(entry.Key))
+                {
                     data.CustomModData[entry.Key] = entry.Value ?? string.Empty;
+                }
             }
         }
 
@@ -215,6 +235,7 @@ namespace Hecton8.Modding
                 {
                     Key = isNamespaced ? string.Empty : key,
                     Value = enumerator.Current.Value ?? string.Empty,
+                    SerializedKey = isNamespaced ? key : string.Empty,
                     KeyHash = keyHash,
                     ModHash = modHash,
                     CompoundHash = compoundHash
@@ -228,27 +249,27 @@ namespace Hecton8.Modding
             if (string.IsNullOrEmpty(absoluteSavePath) || _customModData.Count == 0)
                 return true;
 
-            for (int i = 0; i < _customModData.Count; i++)
+            NativeArray<byte> payloadBytes = default;
+            try
             {
-                ModSaveEntry entry = _customModData[i];
-                if (entry.ModHash == 0u || entry.KeyHash == 0u)
-                    continue;
+                payloadBytes = new NativeArray<byte>(
+                    math.max(1, SaveBinaryStorage.ModPayloadMaxBytes),
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
 
-                string value = entry.Value ?? string.Empty;
-                int payloadLength = value.Length * sizeof(char);
-                if (payloadLength > SaveBinaryStorage.ModPayloadMaxBytes)
+                for (int i = 0; i < _customModData.Count; i++)
                 {
-                    error = "Mod payload exceeds isolated sub-sector budget.";
-                    continue;
-                }
+                    ModSaveEntry entry = _customModData[i];
+                    if (entry.ModHash == 0u || entry.KeyHash == 0u)
+                        continue;
 
-                NativeArray<byte> payloadBytes = default;
-                try
-                {
-                    payloadBytes = new NativeArray<byte>(
-                        math.max(1, payloadLength),
-                        Allocator.Temp,
-                        NativeArrayOptions.UninitializedMemory);
+                    string value = entry.Value ?? string.Empty;
+                    int payloadLength = value.Length * sizeof(char);
+                    if (payloadLength > SaveBinaryStorage.ModPayloadMaxBytes)
+                    {
+                        error = "Mod payload exceeds isolated sub-sector budget.";
+                        continue;
+                    }
 
                     for (int charIndex = 0; charIndex < value.Length; charIndex++)
                     {
@@ -277,11 +298,11 @@ namespace Hecton8.Modding
                         error = commitError;
                     }
                 }
-                finally
-                {
-                    if (payloadBytes.IsCreated)
-                        payloadBytes.Dispose();
-                }
+            }
+            finally
+            {
+                if (payloadBytes.IsCreated)
+                    payloadBytes.Dispose();
             }
 
             return string.IsNullOrEmpty(error);
@@ -293,70 +314,73 @@ namespace Hecton8.Modding
             if (string.IsNullOrEmpty(absoluteSavePath))
                 return true;
 
-            List<SaveBinaryStorage.ModPayloadSectorInfo> sectors = new List<SaveBinaryStorage.ModPayloadSectorInfo>(32);
-            if (!SaveBinaryStorage.TryReadIndexedModPayloadDirectory(absoluteSavePath, sectors, out error))
-                return false;
-
-            for (int i = 0; i < sectors.Count; i++)
+            NativeArray<byte> payloadBytes = default;
+            try
             {
-                SaveBinaryStorage.ModPayloadSectorInfo sector = sectors[i];
-                if (sector.ModHash == 0u || sector.PagedSectorHash == 0L || sector.PayloadLength < 0)
-                    continue;
+                payloadBytes = new NativeArray<byte>(
+                    math.max(1, SaveBinaryStorage.ModPayloadMaxBytes),
+                    Allocator.Temp,
+                    NativeArrayOptions.UninitializedMemory);
 
-                NativeArray<byte> payloadBytes = default;
-                try
-                {
-                    payloadBytes = new NativeArray<byte>(
-                        math.max(1, sector.PayloadLength),
-                        Allocator.Temp,
-                        NativeArrayOptions.UninitializedMemory);
+                return SaveBinaryStorage.TryReadIndexedModPayloads(
+                    absoluteSavePath,
+                    null,
+                    payloadBytes,
+                    _modPayloadReadHandler,
+                    out error);
+            }
+            finally
+            {
+                if (payloadBytes.IsCreated)
+                    payloadBytes.Dispose();
+            }
+        }
 
-                    if (!SaveBinaryStorage.TryReadModPayloadSubSector(
-                            absoluteSavePath,
-                            sector.ModHash,
-                            sector.PagedSectorHash,
-                            payloadBytes,
-                            out int payloadLength,
-                            out string readError))
-                    {
-                        error = readError;
-                        continue;
-                    }
+        private static bool LoadMmfPayload(
+            in SaveBinaryStorage.ModPayloadSectorInfo sector,
+            NativeArray<byte> payloadBytes,
+            int payloadLength,
+            out string error)
+        {
+            error = string.Empty;
+            if (sector.ModHash == 0u || sector.PagedSectorHash == 0L || payloadLength < 0)
+                return true;
 
-                    string value = DecodeUtf16Payload(payloadBytes, payloadLength);
-                    uint keyHash = unchecked((uint)sector.PagedSectorHash);
-                    uint compoundHash = ComputeCompoundPersistenceHash(sector.ModHash, keyHash);
-                    if (_customModIndexByHash.TryGetValue(compoundHash, out int existingIndex) &&
-                        existingIndex >= 0 &&
-                        existingIndex < _customModData.Count)
-                    {
-                        ModSaveEntry existing = _customModData[existingIndex];
-                        existing.Value = value;
-                        existing.KeyHash = keyHash;
-                        existing.ModHash = sector.ModHash;
-                        existing.CompoundHash = compoundHash;
-                        _customModData[existingIndex] = existing;
-                        continue;
-                    }
-
-                    _customModIndexByHash[compoundHash] = _customModData.Count;
-                    _customModData.Add(new ModSaveEntry
-                    {
-                        Key = string.Empty,
-                        Value = value,
-                        KeyHash = keyHash,
-                        ModHash = sector.ModHash,
-                        CompoundHash = compoundHash
-                    });
-                }
-                finally
-                {
-                    if (payloadBytes.IsCreated)
-                        payloadBytes.Dispose();
-                }
+            if ((payloadLength & 1) != 0)
+            {
+                error = "Mod payload UTF-16 byte length is invalid.";
+                return false;
             }
 
-            return string.IsNullOrEmpty(error);
+            string value = DecodeUtf16Payload(payloadBytes, payloadLength);
+            uint keyHash = unchecked((uint)sector.PagedSectorHash);
+            uint compoundHash = ComputeCompoundPersistenceHash(sector.ModHash, keyHash);
+            if (_customModIndexByHash.TryGetValue(compoundHash, out int existingIndex) &&
+                existingIndex >= 0 &&
+                existingIndex < _customModData.Count)
+            {
+                ModSaveEntry existing = _customModData[existingIndex];
+                existing.Value = value;
+                existing.SerializedKey = BuildSerializedStorageKey(sector.ModHash, keyHash);
+                existing.KeyHash = keyHash;
+                existing.ModHash = sector.ModHash;
+                existing.CompoundHash = compoundHash;
+                _customModData[existingIndex] = existing;
+                return true;
+            }
+
+            _customModIndexByHash[compoundHash] = _customModData.Count;
+            _customModData.Add(new ModSaveEntry
+            {
+                Key = string.Empty,
+                Value = value,
+                SerializedKey = BuildSerializedStorageKey(sector.ModHash, keyHash),
+                KeyHash = keyHash,
+                ModHash = sector.ModHash,
+                CompoundHash = compoundHash
+            });
+
+            return true;
         }
 
         private static uint ResolvePersistenceOwnerHash(string key)
@@ -476,14 +500,13 @@ namespace Hecton8.Modding
                 return string.Empty;
 
             int charCount = payloadLength / sizeof(char);
-            char[] characters = new char[charCount]; // COLD ALLOC: char[payload chars] - save payload UTF-16 decode on load - owner: ModSaveStateStore
             for (int i = 0; i < charCount; i++)
             {
                 int byteIndex = i * sizeof(char);
-                characters[i] = (char)(payloadBytes[byteIndex] | (payloadBytes[byteIndex + 1] << 8));
+                _decodeCharScratch[i] = (char)(payloadBytes[byteIndex] | (payloadBytes[byteIndex + 1] << 8));
             }
 
-            return new string(characters);
+            return new string(_decodeCharScratch, 0, charCount);
         }
     }
 

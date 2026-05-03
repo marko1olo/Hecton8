@@ -772,7 +772,7 @@ namespace Hecton8.SaveSystem
             {
                 dispatcher.CancelByAssetKey(runtimeRecord.DispatchAssetKey);
                 if (runtimeRecord.DispatchRequestId != 0)
-                    dispatcher.Complete(runtimeRecord.DispatchRequestId, false);
+                    dispatcher.AcknowledgeDispatchRequest(runtimeRecord.DispatchRequestId, false);
             }
 
             runtimeRecord.DispatchRequestId = 0;
@@ -786,7 +786,7 @@ namespace Hecton8.SaveSystem
 
             AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
             if (dispatcher != null)
-                dispatcher.Complete(runtimeRecord.DispatchRequestId, success);
+                dispatcher.AcknowledgeDispatchRequest(runtimeRecord.DispatchRequestId, success);
 
             runtimeRecord.DispatchRequestId = 0;
         }

@@ -334,7 +334,7 @@ namespace Hecton8.Interaction
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToSlowTick = true;
+            _registeredToSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryRegisterFixedTick()
@@ -346,7 +346,7 @@ namespace Hecton8.Interaction
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredToFixedTick = true;
+            _registeredToFixedTick = GlobalRegistry.FixedTickables.Contains(this);
         }
 
         private void TryUnregisterSlowTick()

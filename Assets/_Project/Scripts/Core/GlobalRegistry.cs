@@ -158,6 +158,7 @@ namespace Hecton8.Core
         private static CameraRTManager _cameraRTRuntime;
         private static PostFXRTManager _postFXRTRuntime;
         private static UIRTManager _uiRTRuntime;
+        private static SettingsManager _settingsRuntime;
         private static GameTickManager _tickManager;
         private static SystemDispatcher _dispatcher;
         private static RenderDispatcher _renderDispatcher;
@@ -167,9 +168,13 @@ namespace Hecton8.Core
         private static bool _dispatcherRegistrationErrorLogged;
         private static bool _inputFallbackWarningPublished;
         private static NativeQueue<RegistryEventPayload> _pendingServiceRebounds;
+        private static NativeQueue<RegistryEventPayload> _nextFrameServiceRebounds;
+        private static int _pendingServiceReboundCount;
+        private static int _nextFrameServiceReboundCount;
         private static int _serviceReboundReferenceWriteIndex;
         private static int _serviceReboundReferencePendingCount;
         private static bool _serviceReboundOverflowLogged;
+        private static bool _isDispatchingServiceRebounds;
 
         /// <summary>
         /// Registered input service slot.
@@ -191,6 +196,20 @@ namespace Hecton8.Core
         /// Callers outside service initialization should use <see cref="Input"/>.
         /// </summary>
         internal static IInputService RegisteredInput => _input;
+
+        /// <summary>
+        /// Bootstrap-owned native input action owner for UI/Input-System bridge code that still requires concrete actions.
+        /// </summary>
+        public static InputManager NativeInputManager
+        {
+            get
+            {
+                if (_input is InputDispatcher dispatcher)
+                    return dispatcher.NativeInputManager;
+
+                return _input as InputManager;
+            }
+        }
 
         /// <summary>
         /// Registered input binding service slot.
@@ -679,6 +698,11 @@ namespace Hecton8.Core
         public static UIRTManager UIRT => _uiRTRuntime;
 
         /// <summary>
+        /// Registered user settings runtime owner.
+        /// </summary>
+        public static SettingsManager Settings => _settingsRuntime;
+
+        /// <summary>
         /// Registered tick-manager owner.
         /// </summary>
         public static GameTickManager TickManager => _tickManager;
@@ -753,7 +777,7 @@ namespace Hecton8.Core
         /// </summary>
         public static RegistryBucket<IRegistryEventListener> RegistryEventListeners => _registryEventListeners;
 
-        public static int PendingServiceReboundCount => _pendingServiceRebounds.IsCreated ? _serviceReboundReferencePendingCount : 0;
+        public static int PendingServiceReboundCount => _pendingServiceReboundCount + _nextFrameServiceReboundCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -851,6 +875,7 @@ namespace Hecton8.Core
             _cameraRTRuntime = null;
             _postFXRTRuntime = null;
             _uiRTRuntime = null;
+            _settingsRuntime = null;
             _tickManager = null;
             _dispatcher = null;
             _renderDispatcher = null;
@@ -866,10 +891,20 @@ namespace Hecton8.Core
                 _pendingServiceRebounds = default;
             }
 
+            if (_nextFrameServiceRebounds.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(GlobalRegistry), nameof(_nextFrameServiceRebounds));
+                _nextFrameServiceRebounds.Dispose();
+                _nextFrameServiceRebounds = default;
+            }
+
             ClearServiceReboundReferenceSlots();
+            _pendingServiceReboundCount = 0;
+            _nextFrameServiceReboundCount = 0;
             _serviceReboundReferenceWriteIndex = 0;
             _serviceReboundReferencePendingCount = 0;
             _serviceReboundOverflowLogged = false;
+            _isDispatchingServiceRebounds = false;
             _updatables.Clear();
             _fixedTickables.Clear();
             _slowTickables.Clear();
@@ -1720,6 +1755,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative user settings runtime owner.
+        /// </summary>
+        public static void RegisterSettingsRuntime(SettingsManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _settingsRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current input service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -2505,6 +2548,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current user settings runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterSettingsRuntime(SettingsManager instance)
+        {
+            UnregisterService(ref _settingsRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current tick-manager owner if the owner matches.
         /// </summary>
         /// <param name="instance">Tick-manager owner requesting unregistration.</param>
@@ -2904,31 +2955,53 @@ namespace Hecton8.Core
             if (!_pendingServiceRebounds.IsCreated)
                 return;
 
-            int scanBudget = _serviceReboundReferencePendingCount > 0
-                ? _serviceReboundReferencePendingCount
-                : MaxPendingServiceRebounds;
-            while (scanBudget-- > 0 && !_pendingServiceRebounds.IsEmpty())
+            bool completed = false;
+            _isDispatchingServiceRebounds = true;
+            try
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
-
-                if (!_pendingServiceRebounds.TryDequeue(out RegistryEventPayload payload))
-                    break;
-
-                RegistryReboundReferenceSlot referenceSlot = default;
-                if ((uint)payload.ReferenceSlot < MaxPendingServiceRebounds &&
-                    _serviceReboundReferenceSlotOccupied[payload.ReferenceSlot])
+                int scanBudget = _pendingServiceReboundCount > 0
+                    ? _pendingServiceReboundCount
+                    : MaxPendingServiceRebounds;
+                while (scanBudget-- > 0 && !_pendingServiceRebounds.IsEmpty())
                 {
-                    referenceSlot = _serviceReboundReferenceSlots[payload.ReferenceSlot];
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
+
+                    if (!_pendingServiceRebounds.TryDequeue(out RegistryEventPayload payload))
+                        break;
+
+                    if (_pendingServiceReboundCount > 0)
+                        _pendingServiceReboundCount--;
+
+                    RegistryReboundReferenceSlot referenceSlot = default;
+                    if ((uint)payload.ReferenceSlot < MaxPendingServiceRebounds &&
+                        _serviceReboundReferenceSlotOccupied[payload.ReferenceSlot])
+                    {
+                        referenceSlot = _serviceReboundReferenceSlots[payload.ReferenceSlot];
+                    }
+
+                    DispatchRegistryEvent(in payload);
+                    NotifyHotSwapListeners(
+                        (GlobalRegistryServiceSlot)payload.ServiceSlot,
+                        referenceSlot.PreviousService,
+                        referenceSlot.CurrentService);
+                    ReleaseServiceReboundReferenceSlot(payload.ReferenceSlot);
                 }
 
-                DispatchRegistryEvent(in payload);
-                NotifyHotSwapListeners(
-                    (GlobalRegistryServiceSlot)payload.ServiceSlot,
-                    referenceSlot.PreviousService,
-                    referenceSlot.CurrentService);
-                ReleaseServiceReboundReferenceSlot(payload.ReferenceSlot);
+                if (_pendingServiceRebounds.IsEmpty())
+                    _pendingServiceReboundCount = 0;
+
+                completed = true;
             }
+            finally
+            {
+                _isDispatchingServiceRebounds = false;
+            }
+
+            if (!completed || !_pendingServiceRebounds.IsEmpty())
+                return;
+
+            PromoteNextFrameServiceRebounds();
         }
 
         private static void QueueServiceRebound(
@@ -2940,6 +3013,18 @@ namespace Hecton8.Core
                 return;
 
             EnsureServiceReboundQueue();
+            if (_pendingServiceReboundCount + _nextFrameServiceReboundCount >= MaxPendingServiceRebounds)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (!_serviceReboundOverflowLogged)
+                {
+                    _serviceReboundOverflowLogged = true;
+                    Debug.LogError("[GlobalRegistry] Service rebound queue overflow. Increase MaxPendingServiceRebounds.");
+                }
+#endif
+                return;
+            }
+
             int referenceSlot = ReserveServiceReboundReferenceSlot(previousService, currentService);
             if (referenceSlot < 0)
             {
@@ -2953,7 +3038,7 @@ namespace Hecton8.Core
                 return;
             }
 
-            _pendingServiceRebounds.Enqueue(new RegistryEventPayload
+            RegistryEventPayload payload = new RegistryEventPayload
             {
                 PreviousServiceHash = ComputeObjectHash(previousService),
                 CurrentServiceHash = ComputeObjectHash(currentService),
@@ -2961,7 +3046,18 @@ namespace Hecton8.Core
                 FrameIndex = unchecked((uint)Time.frameCount),
                 ServiceSlot = (ushort)serviceSlot,
                 EventType = (ushort)RegistryEventType.ServiceRebound
-            });
+            };
+
+            if (_isDispatchingServiceRebounds)
+            {
+                _nextFrameServiceRebounds.Enqueue(payload);
+                _nextFrameServiceReboundCount++;
+            }
+            else
+            {
+                _pendingServiceRebounds.Enqueue(payload);
+                _pendingServiceReboundCount++;
+            }
         }
 
         private static void EnsureServiceReboundQueue()
@@ -2970,6 +3066,26 @@ namespace Hecton8.Core
             {
                 _pendingServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
                 NativeMemorySentinel.RegisterNativeQueue(_pendingServiceRebounds, MaxPendingServiceRebounds, nameof(GlobalRegistry), nameof(_pendingServiceRebounds), NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameServiceRebounds.IsCreated)
+            {
+                _nextFrameServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - next-frame service rebound event lane - owner: GlobalRegistry
+                NativeMemorySentinel.RegisterNativeQueue(_nextFrameServiceRebounds, MaxPendingServiceRebounds, nameof(GlobalRegistry), nameof(_nextFrameServiceRebounds), NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PromoteNextFrameServiceRebounds()
+        {
+            if (!_nextFrameServiceRebounds.IsCreated || _nextFrameServiceReboundCount <= 0)
+                return;
+
+            while (_nextFrameServiceReboundCount > 0 &&
+                   _nextFrameServiceRebounds.TryDequeue(out RegistryEventPayload payload))
+            {
+                _nextFrameServiceReboundCount--;
+                _pendingServiceRebounds.Enqueue(payload);
+                _pendingServiceReboundCount++;
             }
         }
 
@@ -3146,6 +3262,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(CameraRTManager)) return GlobalRegistryServiceSlot.CameraRTRuntime;
             if (serviceType == typeof(PostFXRTManager)) return GlobalRegistryServiceSlot.PostFXRTRuntime;
             if (serviceType == typeof(UIRTManager)) return GlobalRegistryServiceSlot.UIRTRuntime;
+            if (serviceType == typeof(SettingsManager)) return GlobalRegistryServiceSlot.SettingsRuntime;
             if (serviceType == typeof(GameTickManager)) return GlobalRegistryServiceSlot.TickManager;
             if (serviceType == typeof(SystemDispatcher)) return GlobalRegistryServiceSlot.Dispatcher;
             if (serviceType == typeof(RenderDispatcher)) return GlobalRegistryServiceSlot.RenderDispatcher;

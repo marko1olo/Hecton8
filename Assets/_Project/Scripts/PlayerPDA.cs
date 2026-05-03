@@ -103,11 +103,14 @@ namespace Hecton8.UI
         private const int PendingEventCapacity = 32;
         private const int EventDedupCapacity = 128;
         private static NativeQueue<PDAEventPayload> _pendingEvents;
+        private static NativeQueue<PDAEventPayload> _nextFrameEvents;
         private static NativeParallelHashSet<ulong> _queuedEventKeys;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
         private static int _dedupFrame = -1;
+        private static bool _isDispatching;
 
-        public static int PendingCount => _pendingEventCount;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         public static void Register(IPDAEventListener listener)
         {
@@ -168,28 +171,43 @@ namespace Hecton8.UI
 
             int processedCount = 0;
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget > 0 && !_pendingEvents.IsEmpty() && processedCount < maxEventsPerFrame)
+            _isDispatching = true;
+            try
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
+                while (scanBudget > 0 && !_pendingEvents.IsEmpty() && processedCount < maxEventsPerFrame)
+                {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
 
-                if (!_pendingEvents.TryDequeue(out PDAEventPayload payload))
-                    return;
+                    if (!_pendingEvents.TryDequeue(out PDAEventPayload payload))
+                        return;
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
-                scanBudget--;
-                ApplySimulationSideEffects(in payload);
-                IPDAEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnPDAEvent(in payload);
+                    if (_pendingEventCount > 0)
+                        _pendingEventCount--;
+                    scanBudget--;
+                    ApplySimulationSideEffects(in payload);
+                    IPDAEventListener[] rawArray = _listeners.RawArray;
+                    int count = _listeners.Count;
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IPDAEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnPDAEvent(in payload);
+                    }
 
-                processedCount++;
+                    processedCount++;
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (!_pendingEvents.IsEmpty())
+                return;
+
+            _pendingEventCount = 0;
+            PromoteNextFrameEvents();
         }
 
         internal static void RaiseOpened(int tab)
@@ -318,6 +336,13 @@ namespace Hecton8.UI
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             if (_queuedEventKeys.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeParallelHashSet(nameof(PDAEvents), nameof(_queuedEventKeys));
@@ -327,7 +352,9 @@ namespace Hecton8.UI
 
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
             _dedupFrame = -1;
+            _isDispatching = false;
         }
 
         private static void EnsureInitialized()
@@ -340,6 +367,17 @@ namespace Hecton8.UI
                     PendingEventCapacity,
                     nameof(PDAEvents),
                     nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<PDAEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] - next-frame PDA events raised by listeners - owner: PDAEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(PDAEvents),
+                    nameof(_nextFrameEvents),
                     NativeAllocationLifetime.Session);
             }
 
@@ -357,7 +395,7 @@ namespace Hecton8.UI
         private static void Enqueue(in PDAEventPayload payload)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
             PrepareDedupFrame();
@@ -367,8 +405,16 @@ namespace Hecton8.UI
             if (dedupKey != 0UL && !TryRegisterDedupKey(dedupKey))
                 return;
 
-            _pendingEvents.Enqueue(resolvedPayload);
-            _pendingEventCount++;
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(resolvedPayload);
+                _nextFrameEventCount++;
+            }
+            else
+            {
+                _pendingEvents.Enqueue(resolvedPayload);
+                _pendingEventCount++;
+            }
         }
 
         private static void DrainWithoutDispatch(int maxEventsPerFrame)
@@ -396,8 +442,24 @@ namespace Hecton8.UI
                 processedCount++;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (!_pendingEvents.IsEmpty())
+                return;
+
+            _pendingEventCount = 0;
+            PromoteNextFrameEvents();
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            if (!_nextFrameEvents.IsCreated || _nextFrameEventCount <= 0)
+                return;
+
+            while (_nextFrameEventCount > 0 && _nextFrameEvents.TryDequeue(out PDAEventPayload payload))
+            {
+                _nextFrameEventCount--;
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+            }
         }
 
         private static void ApplySimulationSideEffects(in PDAEventPayload payload)
@@ -687,10 +749,10 @@ namespace Hecton8.UI
                     "[PlayerPDA] PDA dispatcher registration failed at Start(). PDA tick loop will not run.");
             }
 
-            if (GlobalRegistry.Input == null)
+            if (!GlobalRegistry.Input.IsInitialized)
             {
                 Debug.LogError(
-                    "[PlayerPDA] GlobalRegistry.Input is null at Start(). " +
+                    "[PlayerPDA] GlobalRegistry.Input is not initialized at Start(). " +
                     "PDA will not function.");
             }
         }
@@ -933,7 +995,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()
@@ -1021,7 +1083,7 @@ namespace Hecton8.UI
             _lowBatteryWarningPlayed = false;
 
             // Switch to UI input map
-            GlobalRegistry.Input?.SwitchToUIInput();
+            GlobalRegistry.Input.SwitchToUIInput();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -1052,7 +1114,7 @@ namespace Hecton8.UI
             IsOpen = false;
 
             // Switch back to Player input map
-            GlobalRegistry.Input?.SwitchToPlayerInput();
+            GlobalRegistry.Input.SwitchToPlayerInput();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
@@ -1117,7 +1179,7 @@ namespace Hecton8.UI
             }
 
             // Switch back to Player input map on force close
-            GlobalRegistry.Input?.SwitchToPlayerInput();
+            GlobalRegistry.Input.SwitchToPlayerInput();
 
             PDAEvents.RaiseClosed(duration);
             ClearTabHistory();
@@ -1655,7 +1717,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

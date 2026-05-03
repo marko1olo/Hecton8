@@ -124,14 +124,14 @@ namespace Hecton8.World
             if (!_registeredUpdatable)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredUpdatable = true;
+                _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (_registeredSlowTickable)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredSlowTickable = true;
+            _registeredSlowTickable = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()

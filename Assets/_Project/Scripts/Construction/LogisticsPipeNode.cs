@@ -289,8 +289,11 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            if (!GlobalRegistry.SlowTickables.Contains(this))
+                return;
+
             LogisticsPipeTransportScheduler.Register(this);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -298,7 +301,9 @@ namespace Hecton8.Construction
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            if (GlobalRegistry.SlowTickables.Contains(this))
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+
             LogisticsPipeTransportScheduler.Unregister(this);
             _registered = false;
         }

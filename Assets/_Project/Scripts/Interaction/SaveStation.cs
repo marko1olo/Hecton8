@@ -77,7 +77,9 @@ namespace Hecton8.Interaction
             {
                 ResolveHudNotification();
                 _hudNotification?.ShowWarning(ResolveLocalized(LocalizationKeys.SAVE_STATION_SLOT_NOT_CONFIGURED, "SAVE SLOT NOT CONFIGURED"));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[SaveStation] Save slot is not configured.", this);
+#endif
                 return;
             }
 
@@ -85,7 +87,9 @@ namespace Hecton8.Interaction
             {
                 ResolveHudNotification();
                 _hudNotification?.ShowInfo(ResolveLocalized(LocalizationKeys.SAVE_STATION_BUSY, "SAVE ALREADY IN PROGRESS"));
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning($"[SaveStation] Save skipped for '{_saveSlot}' because another save/load is already running.", this);
+#endif
                 return;
             }
 

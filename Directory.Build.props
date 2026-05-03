@@ -1,5 +1,10 @@
 <Project>
-  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Assembly-CSharp' Or '$(MSBuildProjectName)' == 'Assembly-CSharp-firstpass'">
+  <PropertyGroup>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <GenerateRuntimeConfigurationFiles>false</GenerateRuntimeConfigurationFiles>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="('$(MSBuildProjectName)' == 'Assembly-CSharp' Or '$(MSBuildProjectName)' == 'Assembly-CSharp-firstpass') And '$(HectonSkipAssemblyProjectReferences)' == 'true'">
     <BuildProjectReferences>false</BuildProjectReferences>
   </PropertyGroup>
 </Project>

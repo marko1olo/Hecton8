@@ -345,7 +345,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToUpdateLoop = true;
+            _registeredToUpdateLoop = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregisterTick()

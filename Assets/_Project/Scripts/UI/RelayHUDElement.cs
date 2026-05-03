@@ -60,17 +60,24 @@ namespace Hecton8.UI
         private EmergencyServiceRelay _trackedRelay;
         private bool _registered;
         private bool _isVisible;
+        private bool _hasLabelState;
         private bool _hasVisibilityState;
         private bool _hasColorState;
         private bool _lastColorUsedEdgeState;
         private int _lastDistanceMeters = int.MinValue;
-        private string _lastLabel = string.Empty;
+        private int _lastLabelLength;
+        private uint _lastLabelHash = LabelHashSeed;
         private RelayMarkerVisibilityState _lastVisibilityState = RelayMarkerVisibilityState.Hidden_NoRouteTarget;
         private float _lastObservedDistance;
         private float _cameraRetryTime;
         // COLD ALLOC: char[16] - relay HUD distance text staging buffer - owner: RelayHUDElement
         private readonly char[] _distanceBuffer = new char[16];
+        // COLD ALLOC: char[96] - relay HUD label text staging buffer - owner: RelayHUDElement
+        private readonly char[] _labelBuffer = new char[LabelTextCapacity];
         private const float CameraRetryInterval = 2f;
+        private const int LabelTextCapacity = 96;
+        private const uint LabelHashSeed = 2166136261u;
+        private const uint LabelHashPrime = 16777619u;
 
         private void Awake()
         {
@@ -86,7 +93,7 @@ namespace Hecton8.UI
             if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registered = true;
+                _registered = GlobalRegistry.Updatables.Contains(this);
             }
         }
 
@@ -100,7 +107,9 @@ namespace Hecton8.UI
 
             _trackedRelay = null;
             _lastDistanceMeters = int.MinValue;
-            _lastLabel = string.Empty;
+            _lastLabelLength = 0;
+            _lastLabelHash = LabelHashSeed;
+            _hasLabelState = false;
             _hasColorState = false;
             _lastColorUsedEdgeState = false;
             _hasVisibilityState = false;
@@ -255,12 +264,23 @@ namespace Hecton8.UI
             if (labelText == null)
                 return;
 
-            relayLabel ??= string.Empty;
-            if (string.Equals(_lastLabel, relayLabel))
+            int displayLength = ResolveLabelDisplayLength(relayLabel, _labelBuffer);
+            bool truncated = IsLabelTruncated(relayLabel, displayLength, _labelBuffer);
+            uint displayHash = ComputeLabelDisplayHash(relayLabel, displayLength, truncated);
+            if (_hasLabelState &&
+                _lastLabelLength == displayLength &&
+                _lastLabelHash == displayHash &&
+                LabelBufferMatches(relayLabel, displayLength, truncated))
+            {
                 return;
+            }
 
-            _lastLabel = relayLabel;
-            labelText.SetText(relayLabel);
+            WriteLabelToBuffer(relayLabel, _labelBuffer, displayLength, truncated);
+            labelText.SetCharArray(_labelBuffer, 0, displayLength);
+            labelText.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+            _lastLabelLength = displayLength;
+            _lastLabelHash = displayHash;
+            _hasLabelState = true;
         }
 
         private void UpdateDistance(float distance)
@@ -284,6 +304,59 @@ namespace Hecton8.UI
 
             distanceText.SetCharArray(_distanceBuffer, 0, length);
             distanceText.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+        }
+
+        private bool LabelBufferMatches(string relayLabel, int displayLength, bool truncated)
+        {
+            for (int i = 0; i < displayLength; i++)
+            {
+                if (_labelBuffer[i] != ResolveLabelDisplayChar(relayLabel, i, displayLength, truncated))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static int ResolveLabelDisplayLength(string relayLabel, char[] destination)
+        {
+            if (string.IsNullOrEmpty(relayLabel) || destination == null || destination.Length == 0)
+                return 0;
+
+            return Mathf.Min(relayLabel.Length, destination.Length);
+        }
+
+        private static bool IsLabelTruncated(string relayLabel, int displayLength, char[] destination)
+        {
+            return relayLabel != null &&
+                   destination != null &&
+                   relayLabel.Length > destination.Length &&
+                   displayLength >= 3;
+        }
+
+        private static void WriteLabelToBuffer(string relayLabel, char[] destination, int displayLength, bool truncated)
+        {
+            for (int i = 0; i < displayLength; i++)
+                destination[i] = ResolveLabelDisplayChar(relayLabel, i, displayLength, truncated);
+        }
+
+        private static uint ComputeLabelDisplayHash(string relayLabel, int displayLength, bool truncated)
+        {
+            uint hash = LabelHashSeed;
+            for (int i = 0; i < displayLength; i++)
+            {
+                hash ^= ResolveLabelDisplayChar(relayLabel, i, displayLength, truncated);
+                hash *= LabelHashPrime;
+            }
+
+            return hash;
+        }
+
+        private static char ResolveLabelDisplayChar(string relayLabel, int index, int displayLength, bool truncated)
+        {
+            if (truncated && index >= displayLength - 3)
+                return '.';
+
+            return relayLabel[index];
         }
 
         private void UpdateColor(bool clampedToEdge)

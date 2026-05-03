@@ -65,7 +65,17 @@ namespace Hecton8.Construction
         internal const int MaxSiegeTargetCount = 64;
         private const float SiegeVulnerableIntegrityThreshold01 = 0.72f;
         private const uint ParasiteRootNodeIdSalt = 0x8F3A5C7Du;
+        private const string NativeMemoryOwner = nameof(HabitatGraphManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticSiegeTargets()
+        {
+            s_latestSiegeTargets = default;
+            s_latestSiegeTargetOwner = null;
+            s_latestSiegeTargetCount = 0;
+        }
 
         private readonly List<ModuleSocket> _socketBuffer;
         private readonly List<ModuleRecord> _moduleBuffer;
@@ -81,9 +91,11 @@ namespace Hecton8.Construction
         private NativeArray<float> _edgeResistance;
         private NativeArray<int> _edgeWriteCursor;
         private NativeArray<byte> _anchorReachability;
+        private NativeArray<byte> _traversalVisited;
         private NativeArray<int> _anchorTraversalQueue;
         private NativeArray<HabitatSiegeTargetSnapshot> _siegeTargets;
         private static NativeArray<HabitatSiegeTargetSnapshot> s_latestSiegeTargets;
+        private static HabitatGraphManager s_latestSiegeTargetOwner;
         private static int s_latestSiegeTargetCount;
 
         private readonly LogisticsNetworkGraph _graph;
@@ -125,7 +137,7 @@ namespace Hecton8.Construction
         {
             targets = s_latestSiegeTargets;
             count = s_latestSiegeTargetCount;
-            return targets.IsCreated && count > 0;
+            return s_latestSiegeTargetOwner != null && targets.IsCreated && count > 0;
         }
 
         public void Dispose()
@@ -259,6 +271,7 @@ namespace Hecton8.Construction
             if (deltaTime <= 0f ||
                 _nodeCount <= 0 ||
                 !_anchorReachability.IsCreated ||
+                !_traversalVisited.IsCreated ||
                 !_anchorTraversalQueue.IsCreated ||
                 !_edgeOffsets.IsCreated ||
                 !_edgeDestinations.IsCreated)
@@ -267,17 +280,17 @@ namespace Hecton8.Construction
             }
 
             for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
-                _anchorReachability[nodeIndex] = 0;
+                _traversalVisited[nodeIndex] = 0;
 
             for (int seedIndex = 0; seedIndex < _nodeCount; seedIndex++)
             {
-                if (_anchorReachability[seedIndex] != 0)
+                if (_traversalVisited[seedIndex] != 0)
                     continue;
 
                 int islandStart = 0;
                 int queueHead = 0;
                 int queueTail = 0;
-                _anchorReachability[seedIndex] = 1;
+                _traversalVisited[seedIndex] = 1;
                 _anchorTraversalQueue[queueTail++] = seedIndex;
 
                 float totalFloodMassKilograms = 0f;
@@ -307,12 +320,12 @@ namespace Hecton8.Construction
                         int neighborNodeIndex = _edgeDestinations[edgeIndex];
                         if (neighborNodeIndex < 0 ||
                             neighborNodeIndex >= _nodeCount ||
-                            _anchorReachability[neighborNodeIndex] != 0)
+                            _traversalVisited[neighborNodeIndex] != 0)
                         {
                             continue;
                         }
 
-                        _anchorReachability[neighborNodeIndex] = 1;
+                        _traversalVisited[neighborNodeIndex] = 1;
                         _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
                     }
                 }
@@ -434,7 +447,7 @@ namespace Hecton8.Construction
                 _nodeCount <= 0 ||
                 !_edgeOffsets.IsCreated ||
                 !_edgeDestinations.IsCreated ||
-                !_anchorReachability.IsCreated ||
+                !_traversalVisited.IsCreated ||
                 !_anchorTraversalQueue.IsCreated)
             {
                 return false;
@@ -450,11 +463,11 @@ namespace Hecton8.Construction
             }
 
             for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
-                _anchorReachability[nodeIndex] = 0;
+                _traversalVisited[nodeIndex] = 0;
 
             int queueHead = 0;
             int queueTail = 0;
-            _anchorReachability[startNodeIndex] = 1;
+            _traversalVisited[startNodeIndex] = 1;
             _anchorTraversalQueue[queueTail++] = startNodeIndex;
 
             float bestScore = 0f;
@@ -463,7 +476,7 @@ namespace Hecton8.Construction
             while (queueHead < queueTail)
             {
                 int currentNodeIndex = _anchorTraversalQueue[queueHead++];
-                byte currentDepth = _anchorReachability[currentNodeIndex];
+                byte currentDepth = _traversalVisited[currentNodeIndex];
                 ModuleRecord currentRecord = _moduleBuffer[currentNodeIndex];
                 if (currentNodeIndex != startNodeIndex && !currentRecord.IsSyntheticParasiteRoot)
                 {
@@ -489,13 +502,13 @@ namespace Hecton8.Construction
                     int neighborNodeIndex = _edgeDestinations[edgeIndex];
                     if (neighborNodeIndex < 0 ||
                         neighborNodeIndex >= _nodeCount ||
-                        _anchorReachability[neighborNodeIndex] != 0 ||
+                        _traversalVisited[neighborNodeIndex] != 0 ||
                         _moduleBuffer[neighborNodeIndex].IsSyntheticParasiteRoot)
                     {
                         continue;
                     }
 
-                    _anchorReachability[neighborNodeIndex] = (byte)math.min(255, currentDepth + 1);
+                    _traversalVisited[neighborNodeIndex] = (byte)math.min(255, currentDepth + 1);
                     _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
                 }
             }
@@ -1033,20 +1046,20 @@ namespace Hecton8.Construction
 
         private void PublishComponentPowerState()
         {
-            if (_nodeCount <= 0)
+            if (_nodeCount <= 0 || !_traversalVisited.IsCreated || !_anchorTraversalQueue.IsCreated)
                 return;
 
             for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
-                _anchorReachability[nodeIndex] = 0;
+                _traversalVisited[nodeIndex] = 0;
 
             for (int startNodeIndex = 0; startNodeIndex < _nodeCount; startNodeIndex++)
             {
-                if (_anchorReachability[startNodeIndex] != 0)
+                if (_traversalVisited[startNodeIndex] != 0)
                     continue;
 
                 int queueHead = 0;
                 int queueTail = 0;
-                _anchorReachability[startNodeIndex] = 1;
+                _traversalVisited[startNodeIndex] = 1;
                 _anchorTraversalQueue[queueTail++] = startNodeIndex;
 
                 float componentSupply = 0f;
@@ -1066,10 +1079,10 @@ namespace Hecton8.Construction
                     for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                     {
                         int neighborNodeIndex = _edgeDestinations[edgeIndex];
-                        if (_anchorReachability[neighborNodeIndex] != 0)
+                        if (_traversalVisited[neighborNodeIndex] != 0)
                             continue;
 
-                        _anchorReachability[neighborNodeIndex] = 1;
+                        _traversalVisited[neighborNodeIndex] = 1;
                         _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
                     }
                 }
@@ -1190,6 +1203,7 @@ namespace Hecton8.Construction
 
             _siegeTargetCount = writeCount;
             s_latestSiegeTargets = _siegeTargets;
+            s_latestSiegeTargetOwner = this;
             s_latestSiegeTargetCount = writeCount;
         }
 
@@ -1202,8 +1216,12 @@ namespace Hecton8.Construction
             }
 
             _siegeTargetCount = 0;
-            s_latestSiegeTargets = default;
-            s_latestSiegeTargetCount = 0;
+            if (ReferenceEquals(s_latestSiegeTargetOwner, this))
+            {
+                s_latestSiegeTargets = default;
+                s_latestSiegeTargetOwner = null;
+                s_latestSiegeTargetCount = 0;
+            }
         }
 
         private void PublishGraphKernel()
@@ -1618,10 +1636,15 @@ namespace Hecton8.Construction
             _edgeResistance = new NativeArray<float>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Int32>[64] — CSR write-cursor scratch buffer — owner: HabitatGraphManager
             _edgeWriteCursor = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<Byte>[64] — authoritative anchor reachability state for habitat graph consumers — owner: HabitatGraphManager
             _anchorReachability = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<Byte>[64] — graph traversal visited scratch, separate from anchor-state truth — owner: HabitatGraphManager
+            _traversalVisited = new NativeArray<byte>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<Int32>[64] — reusable BFS traversal queue for graph component walks — owner: HabitatGraphManager
             _anchorTraversalQueue = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<HabitatSiegeTargetSnapshot>[64] — capped habitat weak-point snapshot for headless predator siege jobs — owner: HabitatGraphManager
             _siegeTargets = new NativeArray<HabitatSiegeTargetSnapshot>(MaxSiegeTargetCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeMemorySentinel();
         }
 
         private void EnsureNodeCapacity(int requiredLength)
@@ -1632,6 +1655,8 @@ namespace Hecton8.Construction
                 _edgeOffsets.Length >= safeLength + 1 &&
                 _edgeWriteCursor.Length >= safeLength &&
                 _anchorReachability.Length >= safeLength &&
+                _traversalVisited.IsCreated &&
+                _traversalVisited.Length >= safeLength &&
                 _anchorTraversalQueue.Length >= safeLength &&
                 _siegeTargets.IsCreated &&
                 _siegeTargets.Length >= MaxSiegeTargetCount)
@@ -1649,46 +1674,54 @@ namespace Hecton8.Construction
             if (_edgeDestinations.IsCreated && _edgeDestinations.Length >= safeLength && _edgeResistance.Length >= safeLength)
                 return;
 
-            if (_edgeDestinations.IsCreated)
-                _edgeDestinations.Dispose();
-
-            if (_edgeResistance.IsCreated)
-                _edgeResistance.Dispose();
+            DisposeNativeArray(ref _edgeDestinations);
+            DisposeNativeArray(ref _edgeResistance);
 
             int edgeCapacity = NextPowerOfTwo(math.max(safeLength, InitialEdgeCapacity));
             // COLD ALLOC: NativeArray<Int32>[edgeCapacity] - expanded habitat CSR destination buffer - owner: HabitatGraphManager
             _edgeDestinations = new NativeArray<int>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<Single>[edgeCapacity] - expanded habitat CSR edge-resistance buffer - owner: HabitatGraphManager
             _edgeResistance = new NativeArray<float>(edgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_edgeDestinations, NativeMemoryOwner, nameof(_edgeDestinations), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_edgeResistance, NativeMemoryOwner, nameof(_edgeResistance), NativeMemoryLifetime);
         }
 
         private void DisposeNativeBuffers()
         {
             ClearSiegeTargetSnapshot();
 
-            if (_nodes.IsCreated)
-                _nodes.Dispose();
+            DisposeNativeArray(ref _nodes);
+            DisposeNativeArray(ref _edgeOffsets);
+            DisposeNativeArray(ref _edgeDestinations);
+            DisposeNativeArray(ref _edgeResistance);
+            DisposeNativeArray(ref _edgeWriteCursor);
+            DisposeNativeArray(ref _anchorReachability);
+            DisposeNativeArray(ref _traversalVisited);
+            DisposeNativeArray(ref _anchorTraversalQueue);
+            DisposeNativeArray(ref _siegeTargets);
+        }
 
-            if (_edgeOffsets.IsCreated)
-                _edgeOffsets.Dispose();
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_nodes, NativeMemoryOwner, nameof(_nodes), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_edgeOffsets, NativeMemoryOwner, nameof(_edgeOffsets), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_edgeDestinations, NativeMemoryOwner, nameof(_edgeDestinations), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_edgeResistance, NativeMemoryOwner, nameof(_edgeResistance), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_edgeWriteCursor, NativeMemoryOwner, nameof(_edgeWriteCursor), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorReachability, NativeMemoryOwner, nameof(_anchorReachability), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_traversalVisited, NativeMemoryOwner, nameof(_traversalVisited), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_anchorTraversalQueue, NativeMemoryOwner, nameof(_anchorTraversalQueue), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_siegeTargets, NativeMemoryOwner, nameof(_siegeTargets), NativeMemoryLifetime);
+        }
 
-            if (_edgeDestinations.IsCreated)
-                _edgeDestinations.Dispose();
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
 
-            if (_edgeResistance.IsCreated)
-                _edgeResistance.Dispose();
-
-            if (_edgeWriteCursor.IsCreated)
-                _edgeWriteCursor.Dispose();
-
-            if (_anchorReachability.IsCreated)
-                _anchorReachability.Dispose();
-
-            if (_anchorTraversalQueue.IsCreated)
-                _anchorTraversalQueue.Dispose();
-
-            if (_siegeTargets.IsCreated)
-                _siegeTargets.Dispose();
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private static int NextPowerOfTwo(int value)

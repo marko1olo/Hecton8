@@ -294,7 +294,7 @@ namespace Hecton8.Core
             if (!_registeredToSlowTickManager && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToSlowTickManager = true;
+                _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
             }
 
             if (_playerTransform == null)

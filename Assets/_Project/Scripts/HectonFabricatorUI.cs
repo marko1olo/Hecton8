@@ -21,7 +21,7 @@ using UnityEditor;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICraftingEventListener
+    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICraftingEventListener, IGlobalRegistryHotSwapListener
     {
         private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const int MaxVisibleHologramInstances = 16;
@@ -92,9 +92,11 @@ namespace Hecton8.UI
         private readonly Matrix4x4[] _hologramMatrixBuffer = new Matrix4x4[MaxVisibleHologramInstances];
         // COLD ALLOC: Matrix4x4[1] — selected recipe hologram draw buffer — owner: HectonFabricatorUI
         private readonly Matrix4x4[] _selectedRecipeHologramBuffer = new Matrix4x4[1];
+        // COLD ALLOC: RecipeListEntry[12] — fixed diegetic recipe row cache — owner: HectonFabricatorUI
         private readonly RecipeListEntry[] _recipeEntries = new RecipeListEntry[MaxVisibleRecipeEntries];
+        // COLD ALLOC: char[96] — reusable diegetic recipe label buffer — owner: HectonFabricatorUI
         private readonly char[] _recipeLabelBuffer = new char[RecipeLabelBufferCapacity];
-        // COLD ALLOC: char[64] - CharBufferPool failure fallback for scarcity inflation labels - owner: HectonFabricatorUI
+        // COLD ALLOC: char[64] — CharBufferPool failure fallback for scarcity inflation labels — owner: HectonFabricatorUI
         private readonly char[] _fallbackBuffer = new char[FallbackBufferCapacity];
 
         private NativeArray<Matrix4x4> _hologramMatrices;
@@ -116,6 +118,8 @@ namespace Hecton8.UI
         private bool _tickRegistered;
         private bool _lateFrameRegistered;
         private bool _recipePointerScheduled;
+        private bool _hotSwapListenerRegistered;
+        private InputManager _subscribedInputManager;
         private float _hologramAnimationTime;
         private JobHandle _recipePointerHandle;
 
@@ -139,27 +143,23 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegisterUiService();
-            InputManager inputManager = InputManager.Instance;
-            if (inputManager != null)
-            {
-                inputManager.OnNavigate += HandleNavigateInput;
-                inputManager.OnSubmit += HandleSubmitInput;
-                inputManager.OnCancel += HandleCancelInput;
-            }
+            TryRegisterHotSwapListener();
+            SubscribeInputManagerIfAvailable();
 
             CraftingEvents.Register(this);
+        }
+
+        private void Start()
+        {
+            TryRegisterHotSwapListener();
+            SubscribeInputManagerIfAvailable();
         }
 
         private void OnDisable()
         {
             UnregisterUiService();
-            InputManager inputManager = InputManager.Instance;
-            if (inputManager != null)
-            {
-                inputManager.OnNavigate -= HandleNavigateInput;
-                inputManager.OnSubmit -= HandleSubmitInput;
-                inputManager.OnCancel -= HandleCancelInput;
-            }
+            UnsubscribeInputManager();
+            TryUnregisterHotSwapListener();
 
             CraftingEvents.Unregister(this);
 
@@ -172,6 +172,9 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             UnregisterUiService();
+            UnsubscribeInputManager();
+            TryUnregisterHotSwapListener();
+
             if (_hologramMatrices.IsCreated)
             {
                 _hologramMatrices.Dispose();
@@ -304,9 +307,7 @@ namespace Hecton8.UI
             SetRecipeListVisible(true);
             RegisterTick();
 
-            InputManager inputManager = InputManager.Instance;
-            if (inputManager != null)
-                inputManager.SwitchToUIInput();
+            GlobalRegistry.Input.SwitchToUIInput();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = false;
@@ -429,9 +430,7 @@ namespace Hecton8.UI
 
             UnregisterTick();
 
-            InputManager inputManager = InputManager.Instance;
-            if (inputManager != null)
-                inputManager.SwitchToPlayerInput();
+            GlobalRegistry.Input.SwitchToPlayerInput();
 
             Cursor.lockState = CursorLockMode.Locked;
             Cursor.visible = false;
@@ -447,9 +446,9 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _lateFrameRegistered = true;
+            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
         }
 
         private void UnregisterTick()
@@ -465,6 +464,69 @@ namespace Hecton8.UI
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
                 _tickRegistered = false;
             }
+        }
+
+        private void SubscribeInputManagerIfAvailable()
+        {
+            if (_subscribedInputManager != null)
+                return;
+
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            if (inputManager == null)
+                return;
+
+            _subscribedInputManager = inputManager;
+            _subscribedInputManager.OnNavigate += HandleNavigateInput;
+            _subscribedInputManager.OnSubmit += HandleSubmitInput;
+            _subscribedInputManager.OnCancel += HandleCancelInput;
+        }
+
+        private void UnsubscribeInputManager()
+        {
+            if (_subscribedInputManager == null)
+                return;
+
+            _subscribedInputManager.OnNavigate -= HandleNavigateInput;
+            _subscribedInputManager.OnSubmit -= HandleSubmitInput;
+            _subscribedInputManager.OnCancel -= HandleCancelInput;
+            _subscribedInputManager = null;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input)
+                return;
+
+            UnsubscribeInputManager();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            SubscribeInputManagerIfAvailable();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
         }
 
         public void LateFrameTick()

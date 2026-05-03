@@ -72,7 +72,8 @@ namespace Hecton8.SaveSystem
                 return;
 
             EnsureInitialized();
-            _listeners.Register(listener);
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
         }
 
         public static void Unregister(ISaveEventListener listener)
@@ -80,7 +81,8 @@ namespace Hecton8.SaveSystem
             if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
         }
 
         public static void FlushPending()
@@ -110,7 +112,11 @@ namespace Hecton8.SaveSystem
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnSaveEvent(in payload);
+                    {
+                        ISaveEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnSaveEvent(in payload);
+                    }
                 }
                 finally
                 {

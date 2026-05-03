@@ -52,9 +52,12 @@ namespace Hecton8.UI
         // COLD ALLOC: RegistryBucket<IPDAIntrusionEventListener>[8] - PDA intrusion listeners drained by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
         private static readonly RegistryBucket<IPDAIntrusionEventListener> _listeners = new RegistryBucket<IPDAIntrusionEventListener>(8);
         private static NativeQueue<PDAIntrusionEventPayload> _pendingEvents;
+        private static NativeQueue<PDAIntrusionEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -66,8 +69,17 @@ namespace Hecton8.UI
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAIntrusionEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         public static void Register(IPDAIntrusionEventListener listener)
@@ -102,16 +114,25 @@ namespace Hecton8.UI
         internal static void RaiseRebootCompleted(uint sourceId)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
-            _pendingEvents.Enqueue(new PDAIntrusionEventPayload
+            PDAIntrusionEventPayload payload = new PDAIntrusionEventPayload
             {
                 SourceID = sourceId,
                 EventHashID = _RebootCompletedEventHash,
                 EventType = (ushort)PDAIntrusionEventType.RebootCompleted,
                 Reserved = 0
-            });
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
         }
 
@@ -123,6 +144,7 @@ namespace Hecton8.UI
                 return;
             }
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -137,26 +159,52 @@ namespace Hecton8.UI
 
                 IPDAIntrusionEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnPDAIntrusionEvent(in payload);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IPDAIntrusionEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnPDAIntrusionEvent(in payload);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<PDAIntrusionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - deferred PDA intrusion lane flushed by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(PDAIntrusionEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<PDAIntrusionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - deferred PDA intrusion lane flushed by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(PDAIntrusionEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<PDAIntrusionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - next-frame PDA intrusion lane prevents same-frame reentrant dispatch - owner: PDAIntrusionEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(PDAIntrusionEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void DrainWithoutDispatch()
@@ -164,21 +212,60 @@ namespace Hecton8.UI
             if (!_pendingEvents.IsCreated)
                 return;
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
-            {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
-
-                if (!_pendingEvents.TryDequeue(out _))
-                    break;
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
-            }
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                return;
 
             if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+
+            if (_pendingEventCount > 0 &&
+                !DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+            {
+                return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<PDAIntrusionEventPayload> queue,
+            ref int pendingCount)
+        {
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<PDAIntrusionEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 
@@ -187,7 +274,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Intrusion Manager")]
-    public sealed class PDAIntrusionManager : MonoBehaviour, ITickable, IUpdatable, IDirectorAIEventListener
+    public sealed class PDAIntrusionManager : MonoBehaviour, ITickable, IUpdatable, IDirectorAIEventListener, IGlobalRegistryHotSwapListener
     {
         private enum IntrusionVisualPhase : byte
         {
@@ -256,6 +343,7 @@ namespace Hecton8.UI
         private HectonMapMagicVegetationBridge _vegetationBridge;
         private GameObject _driftPanelRoot;
         private bool _registeredToTick;
+        private bool _hotSwapListenerRegistered;
         private bool _isHacked;
         private float _leviathanScanTimer;
         private float _visualPhaseTimer;
@@ -292,18 +380,24 @@ namespace Hecton8.UI
             }
 
             _instance = this;
-            ResolveOwners();
+            ResolveRuntimeOwners();
+            ResolveInputActionOwner();
         }
 
         private void OnEnable()
         {
-            ResolveOwners();
+            ResolveRuntimeOwners();
+            ResolveInputActionOwner();
+            TryRegisterHotSwapListener();
             RegisterToTickManager();
             DirectorAIEvents.Register(this);
         }
 
         private void Start()
         {
+            ResolveRuntimeOwners();
+            ResolveInputActionOwner();
+            TryRegisterHotSwapListener();
             RegisterToTickManager();
         }
 
@@ -311,6 +405,8 @@ namespace Hecton8.UI
         {
             DirectorAIEvents.Unregister(this);
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
+            ClearInputActionOwner();
             ClearVisualOverride();
             ResetTransientState();
         }
@@ -319,6 +415,8 @@ namespace Hecton8.UI
         {
             DirectorAIEvents.Unregister(this);
             UnregisterFromTickManager();
+            TryUnregisterHotSwapListener();
+            ClearInputActionOwner();
 
             if (_instance == this)
                 _instance = null;
@@ -327,7 +425,7 @@ namespace Hecton8.UI
         /// <inheritdoc />
         public void Tick(float dt)
         {
-            ResolveOwners();
+            ResolveRuntimeOwners();
 
             if (!_isHacked)
             {
@@ -631,7 +729,7 @@ namespace Hecton8.UI
             return _submitAction != null && _submitAction.IsPressed();
         }
 
-        private void ResolveOwners()
+        private void ResolveRuntimeOwners()
         {
             if (_playerPda == null)
             {
@@ -644,8 +742,20 @@ namespace Hecton8.UI
 
             if (_vegetationBridge == null)
                 _vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+        }
 
-            InputManager inputManager = InputManager.Instance;
+        private void ResolveInputActionOwner()
+        {
+            ResolveInputActionOwner(ResolveNativeInputManager());
+        }
+
+        private static InputManager ResolveNativeInputManager()
+        {
+            return GlobalRegistry.NativeInputManager;
+        }
+
+        private void ResolveInputActionOwner(InputManager inputManager)
+        {
             if (ReferenceEquals(_inputManager, inputManager) &&
                 (_inputManager == null || _submitAction != null))
                 return;
@@ -654,6 +764,50 @@ namespace Hecton8.UI
             _submitAction = _inputManager != null
                 ? _inputManager.GetAction("Submit", "UI")
                 : null;
+        }
+
+        private void ClearInputActionOwner()
+        {
+            _inputManager = null;
+            _submitAction = null;
+            _rebootHoldTimer = 0f;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input)
+                return;
+
+            ClearInputActionOwner();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            ResolveInputActionOwner(ResolveNativeInputManager());
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
         }
 
         private void RegisterToTickManager()
@@ -665,7 +819,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = true;
+            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

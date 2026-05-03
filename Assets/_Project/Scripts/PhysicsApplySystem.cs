@@ -285,11 +285,14 @@ namespace Hecton8.Physics
         // COLD ALLOC: RegistryBucket<IAcousticPingEventListener>[32] - acoustic ping listeners drained by SystemDispatcher LateUpdate - owner: PhysicsEventBus
         private static readonly RegistryBucket<IAcousticPingEventListener> _acousticListeners = new RegistryBucket<IAcousticPingEventListener>(ListenerCapacity);
         private static NativeQueue<PhysicsEventPayload> _pendingEvents;
+        private static NativeQueue<PhysicsEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
         private static int _lastOverflowWarningFrame = -1;
+        private static bool _isDispatching;
 
         /// <summary>Number of deferred physics event payloads waiting for late-frame dispatch.</summary>
-        public static int PendingCount => _pendingEventCount;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -301,11 +304,20 @@ namespace Hecton8.Physics
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsEventBus), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _pressureListeners.Clear();
             _empListeners.Clear();
             _acousticListeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
             _lastOverflowWarningFrame = -1;
+            _isDispatching = false;
         }
 
         /// <summary>Registers a pressure impulse listener.</summary>
@@ -378,22 +390,33 @@ namespace Hecton8.Physics
                 return;
 
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            _isDispatching = true;
+            try
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
+                while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+                {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
 
-                if (!_pendingEvents.TryDequeue(out PhysicsEventPayload payload))
-                    break;
+                    if (!_pendingEvents.TryDequeue(out PhysicsEventPayload payload))
+                        break;
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
+                    if (_pendingEventCount > 0)
+                        _pendingEventCount--;
 
-                Dispatch(in payload);
+                    Dispatch(in payload);
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (!_pendingEvents.IsEmpty())
+                return;
+
+            _pendingEventCount = 0;
+            PromoteNextFrameEvents();
         }
 
         /// <summary>Broadcasts one pressure-impulse payload.</summary>
@@ -461,30 +484,63 @@ namespace Hecton8.Physics
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<PhysicsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PhysicsEventPayload>[128] - deferred physics signal event lane flushed by SystemDispatcher LateUpdate - owner: PhysicsEventBus
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(PhysicsEventBus),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<PhysicsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PhysicsEventPayload>[128] - deferred physics signal event lane flushed by SystemDispatcher LateUpdate - owner: PhysicsEventBus
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(PhysicsEventBus),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<PhysicsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PhysicsEventPayload>[128] - next-frame physics events raised by listeners - owner: PhysicsEventBus
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(PhysicsEventBus),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static bool Enqueue(in PhysicsEventPayload payload)
         {
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportOverflowOncePerFrame();
                 return false;
             }
 
             EnsureInitialized();
-            _pendingEvents.Enqueue(payload);
-            _pendingEventCount++;
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+            }
+            else
+            {
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+            }
+
             return true;
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            if (!_nextFrameEvents.IsCreated || _nextFrameEventCount <= 0)
+                return;
+
+            while (_nextFrameEventCount > 0 && _nextFrameEvents.TryDequeue(out PhysicsEventPayload payload))
+            {
+                _nextFrameEventCount--;
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+            }
         }
 
         private static void Dispatch(in PhysicsEventPayload payload)
@@ -522,7 +578,11 @@ namespace Hecton8.Physics
 
             IPressureImpulseEventListener[] rawArray = _pressureListeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnPressureImpulse(in pressureEvent);
+            {
+                IPressureImpulseEventListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnPressureImpulse(in pressureEvent);
+            }
         }
 
         private static void DispatchElectromagneticPulse(in PhysicsEventPayload payload)
@@ -541,7 +601,11 @@ namespace Hecton8.Physics
 
             IElectromagneticPulseEventListener[] rawArray = _empListeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnElectromagneticPulse(in pulseEvent);
+            {
+                IElectromagneticPulseEventListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnElectromagneticPulse(in pulseEvent);
+            }
         }
 
         private static void DispatchAcousticPing(in PhysicsEventPayload payload)
@@ -560,7 +624,11 @@ namespace Hecton8.Physics
 
             IAcousticPingEventListener[] rawArray = _acousticListeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnAcousticPing(in pingEvent);
+            {
+                IAcousticPingEventListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnAcousticPing(in pingEvent);
+            }
         }
 
         private static void ReportOverflowOncePerFrame()
@@ -732,7 +800,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterPhysicsService(this);
-            _isInitialized = true;
+            _isInitialized = ReferenceEquals(GlobalRegistry.Physics, this);
         }
 
         /// <summary>
@@ -1112,20 +1180,20 @@ namespace Hecton8.Physics
             {
                 // Flush the previous validated packet snapshot before producers write this fixed step.
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.UI);
-                _fixedTickRegistered = true;
+                _fixedTickRegistered = GlobalRegistry.FixedTickables.Contains(this);
             }
 
             if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_postFixedTickRegistered)
             {
                 // Swap native packet queues only after all fixed-step producers have written to the back queue.
                 GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.UI);
-                _postFixedTickRegistered = true;
+                _postFixedTickRegistered = SystemDispatcher.GetPostFixedLane(PriorityLayer.UI).Contains(this);
             }
 
             if (Application.isPlaying && GlobalRegistry.Dispatcher != null && !_lateFrameTickRegistered)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-                _lateFrameTickRegistered = true;
+                _lateFrameTickRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
             }
 
             if (!_contactModifySubscribed)
@@ -1184,9 +1252,13 @@ namespace Hecton8.Physics
                 _lateFrameTickRegistered = false;
             }
 
-            if (_isInitialized)
+            if (_isInitialized && ReferenceEquals(GlobalRegistry.Physics, this))
             {
                 GlobalRegistry.UnregisterPhysicsService(this);
+                _isInitialized = false;
+            }
+            else
+            {
                 _isInitialized = false;
             }
 

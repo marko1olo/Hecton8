@@ -319,7 +319,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterSceneService(this);
-            _registeredSceneService = true;
+            _registeredSceneService = ReferenceEquals(GlobalRegistry.Scene, this);
         }
 
         private void TryUnregisterSceneService()

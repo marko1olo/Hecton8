@@ -37,7 +37,7 @@ namespace Hecton8.Construction
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
-    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService
+    public sealed class ConstructionManager : MonoBehaviour, IUpdatable, ILateFrameTickable, ISaveable, ISlowTickable, ILogisticsService, IGlobalRegistryHotSwapListener
     {
         private const float SlowTickDeltaTime = 0.5f;
 
@@ -98,7 +98,8 @@ namespace Hecton8.Construction
         private bool _tickRegistered;
         private bool _lateFrameTickRegistered;
         private bool _logisticsServiceRegistered;
-        private bool _saveRegistered;
+        private bool _hotSwapListenerRegistered;
+        private ISaveService _registeredSaveService;
         private bool _isInitialized;
         private bool _habitatGraphDirty;
         private float _slowTickAccumulator;
@@ -156,6 +157,7 @@ namespace Hecton8.Construction
             TryRegisterLogisticsService();
             TryRegisterTick();
             TryRegisterLateFrameTick();
+            TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
         }
 
@@ -184,6 +186,16 @@ namespace Hecton8.Construction
             TryRegisterLogisticsService();
             TryRegisterTick();
             TryRegisterLateFrameTick();
+            TryRegisterHotSwapListener();
+            TryRegisterSaveParticipant();
+        }
+
+        private void Start()
+        {
+            if (!_isInitialized)
+                return;
+
+            TryRegisterHotSwapListener();
             TryRegisterSaveParticipant();
         }
 
@@ -197,6 +209,7 @@ namespace Hecton8.Construction
             TryUnregisterLogisticsService();
             _slowTickAccumulator = 0f;
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
@@ -208,6 +221,7 @@ namespace Hecton8.Construction
             TryUnregisterLateFrameTick();
             TryUnregisterLogisticsService();
             TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             _isInitialized = false;
             if (_habitatGraphManager != null)
             {
@@ -945,7 +959,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.RegisterLogisticsService(this);
-            _logisticsServiceRegistered = true;
+            _logisticsServiceRegistered = ReferenceEquals(GlobalRegistry.Logistics, this);
         }
 
         private void TryRegisterTick()
@@ -957,7 +971,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryRegisterLateFrameTick()
@@ -969,7 +983,7 @@ namespace Hecton8.Construction
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _lateFrameTickRegistered = true;
+            _lateFrameTickRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregisterTick()
@@ -990,29 +1004,65 @@ namespace Hecton8.Construction
             _lateFrameTickRegistered = false;
         }
 
-        private void TryRegisterSaveParticipant()
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
         {
-            if (_saveRegistered)
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
                 return;
 
-            ISaveService saveService = GlobalRegistry.Save;
-            if (saveService == null)
+            if (_registeredSaveService != null)
+                TryUnregisterSaveParticipant();
+
+            if (!_isInitialized || !isActiveAndEnabled)
+                return;
+
+            TryRegisterSaveParticipant(currentService as ISaveService);
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            TryRegisterSaveParticipant(GlobalRegistry.Save);
+        }
+
+        private void TryRegisterSaveParticipant(ISaveService saveService)
+        {
+            if (!_isInitialized || !Application.isPlaying || _registeredSaveService != null || saveService == null)
                 return;
 
             saveService.Register(this);
-            _saveRegistered = true;
+            _registeredSaveService = saveService;
         }
 
         private void TryUnregisterSaveParticipant()
         {
-            if (!_saveRegistered)
+            if (_registeredSaveService == null)
                 return;
 
-            ISaveService saveService = GlobalRegistry.Save;
-            if (saveService != null)
-                saveService.Unregister(this);
+            _registeredSaveService.Unregister(this);
+            _registeredSaveService = null;
+        }
 
-            _saveRegistered = false;
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
         }
 
         private void TryUnregisterLogisticsService()

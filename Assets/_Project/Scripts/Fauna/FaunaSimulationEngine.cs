@@ -103,7 +103,8 @@ namespace Hecton8.AI
                 StarvationHealthDrainPerSecond = math.max(0f, starvationHealthDrainPerSecond)
             };
 
-            job.Run(safeCount);
+            for (int i = 0; i < safeCount; i++)
+                job.Execute(i);
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

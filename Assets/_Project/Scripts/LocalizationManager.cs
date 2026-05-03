@@ -348,6 +348,34 @@ namespace Hecton.Localization
         }
 
         /// <summary>
+        /// Applies suit-stress corrosion into a caller-owned buffer without allocating a composed string.
+        /// </summary>
+        public bool TryApplyHullStressCorruptionIfNeeded(ReadOnlySpan<char> text, char[] destination, out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            if (text.Length == 0)
+                return true;
+
+            if (TryResolveMadnessOverride("hull_stress", out string madnessText))
+            {
+                length = CopyStringToBuffer(madnessText, destination);
+                return true;
+            }
+
+            float intensity = GetHullStressCorruptionIntensity();
+            if (intensity <= 0f)
+            {
+                length = CopySpanToBuffer(text, destination);
+                return true;
+            }
+
+            return TryCorruptVisibleText(text, intensity, CurrentLanguage, destination, out length);
+        }
+
+        /// <summary>
         /// Force visible HUD consumers to refresh against the latest hull-stress corruption state.
         /// </summary>
         internal void RefreshHullStressHudCorruptionVisuals()
@@ -687,7 +715,7 @@ namespace Hecton.Localization
                 return string.Empty;
 
             string token = match.Groups["token"].Value;
-            InputManager input = InputManager.Instance;
+            InputManager input = GlobalRegistry.NativeInputManager;
             if (input != null && input.TryGetBindingMarkupForToken(token, out string markup))
                 return markup;
 
@@ -1157,6 +1185,92 @@ namespace Hecton.Localization
             return corrupted;
         }
 
+        private static bool TryCorruptVisibleText(
+            ReadOnlySpan<char> text,
+            float intensity,
+            GameLanguage language,
+            char[] destination,
+            out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            if (text.Length == 0 || intensity <= 0f)
+            {
+                length = CopySpanToBuffer(text, destination);
+                return true;
+            }
+
+            string alphabet = GetCorruptionAlphabet(language);
+            if (string.IsNullOrEmpty(alphabet))
+            {
+                length = CopySpanToBuffer(text, destination);
+                return true;
+            }
+
+            int threshold = Mathf.RoundToInt(Mathf.Lerp(0f, 700f, Mathf.Clamp01(intensity)));
+            if (threshold <= 0)
+            {
+                length = CopySpanToBuffer(text, destination);
+                return true;
+            }
+
+            bool insideRichTag = false;
+            bool previousCorrupted = false;
+            int visibleIndex = 0;
+            int seed = ComputeCorruptionSeed(text);
+
+            for (int i = 0; i < text.Length; i++)
+            {
+                char current = text[i];
+
+                if (current == '<')
+                {
+                    insideRichTag = true;
+                    previousCorrupted = false;
+                    AppendCharToBuffer(current, destination, ref length);
+                    continue;
+                }
+
+                if (insideRichTag)
+                {
+                    AppendCharToBuffer(current, destination, ref length);
+                    if (current == '>')
+                        insideRichTag = false;
+                    continue;
+                }
+
+                if (current == '[' && TryAppendBracketedMarker(text, ref i, destination, ref length))
+                {
+                    previousCorrupted = false;
+                    continue;
+                }
+
+                if (!ShouldCorruptCharacter(current))
+                {
+                    previousCorrupted = false;
+                    AppendCharToBuffer(current, destination, ref length);
+                    continue;
+                }
+
+                int hash = seed ^ (visibleIndex * 486187739);
+                visibleIndex++;
+                bool shouldCorrupt = !previousCorrupted && (hash & 1023) < threshold;
+                if (!shouldCorrupt)
+                {
+                    AppendCharToBuffer(current, destination, ref length);
+                    previousCorrupted = false;
+                    continue;
+                }
+
+                AppendCharToBuffer(ResolveCorruptionGlyph(hash, alphabet, !IsRightToLeftLanguage(language)), destination, ref length);
+                previousCorrupted = true;
+            }
+
+            return true;
+        }
+
         private static bool TryAppendBracketedMarker(string text, ref int index, System.Text.StringBuilder builder)
         {
             int markerStart = index;
@@ -1197,6 +1311,46 @@ namespace Hecton.Localization
             return true;
         }
 
+        private static bool TryAppendBracketedMarker(ReadOnlySpan<char> text, ref int index, char[] destination, ref int length)
+        {
+            int markerStart = index;
+            int current = markerStart + 1;
+            bool sawDigit = false;
+            bool sawDot = false;
+
+            while (current < text.Length)
+            {
+                char markerChar = text[current];
+                if (markerChar >= '0' && markerChar <= '9')
+                {
+                    sawDigit = true;
+                    current++;
+                    continue;
+                }
+
+                if (markerChar == '.' && !sawDot)
+                {
+                    sawDot = true;
+                    current++;
+                    continue;
+                }
+
+                break;
+            }
+
+            if (!sawDigit || current >= text.Length || text[current] != ']')
+            {
+                AppendCharToBuffer(text[markerStart], destination, ref length);
+                return false;
+            }
+
+            for (int i = markerStart; i <= current; i++)
+                AppendCharToBuffer(text[i], destination, ref length);
+
+            index = current;
+            return true;
+        }
+
         private static bool ShouldCorruptCharacter(char value)
         {
             return char.IsLetter(value);
@@ -1211,6 +1365,42 @@ namespace Hecton.Localization
                     seed = (seed * 31) + text[i];
                 return seed;
             }
+        }
+
+        private static int ComputeCorruptionSeed(ReadOnlySpan<char> text)
+        {
+            unchecked
+            {
+                int seed = 17 ^ Mathf.RoundToInt(Time.unscaledTime * 12f);
+                for (int i = 0; i < text.Length; i++)
+                    seed = (seed * 31) + text[i];
+                return seed;
+            }
+        }
+
+        private static int CopyStringToBuffer(string source, char[] destination)
+        {
+            return CopySpanToBuffer(string.IsNullOrEmpty(source) ? ReadOnlySpan<char>.Empty : source.AsSpan(), destination);
+        }
+
+        private static int CopySpanToBuffer(ReadOnlySpan<char> source, char[] destination)
+        {
+            if (destination == null || destination.Length == 0 || source.Length == 0)
+                return 0;
+
+            int length = source.Length <= destination.Length ? source.Length : destination.Length;
+            for (int i = 0; i < length; i++)
+                destination[i] = source[i];
+
+            return length;
+        }
+
+        private static void AppendCharToBuffer(char value, char[] destination, ref int length)
+        {
+            if (destination == null || length >= destination.Length)
+                return;
+
+            destination[length++] = value;
         }
 
         private static char ResolveCorruptionGlyph(int hash, string alphabet, bool allowNeutralBlocks)

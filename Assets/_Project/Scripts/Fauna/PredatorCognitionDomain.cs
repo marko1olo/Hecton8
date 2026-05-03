@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Construction;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -311,6 +312,8 @@ namespace Hecton8.AI
         private const float BaseSiegeUtilityBias = 0.35f;
         private const int SpatialMemoryRecallCount = 5;
         private const int MaxPackRoleCasAttempts = 3;
+        private const string NativeMemoryOwner = nameof(PredatorCognitionDomain);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 
         private static NativeArray<CognitionCore> _cores;
         private static NativeArray<CognitionControl> _controls;
@@ -829,70 +832,38 @@ namespace Hecton8.AI
         internal static void Dispose()
         {
             JobHandle disposeDependency = _evaluationScheduled ? _scheduledEvaluationHandle : default;
-            if (_cores.IsCreated)
-                _cores.Dispose(disposeDependency);
-            if (_controls.IsCreated)
-                _controls.Dispose(disposeDependency);
-            if (_inputs.IsCreated)
-                _inputs.Dispose(disposeDependency);
-            if (_outputs.IsCreated)
-                _outputs.Dispose(disposeDependency);
-            if (_memoryBank.IsCreated)
-                _memoryBank.Dispose(disposeDependency);
-            if (_acousticMemoryBank.IsCreated)
-                _acousticMemoryBank.Dispose(disposeDependency);
-            if (_slotUsed.IsCreated)
-                _slotUsed.Dispose(disposeDependency);
-            if (_activeSlots.IsCreated)
-                _activeSlots.Dispose(disposeDependency);
-            if (_ambientThreats.IsCreated)
-                _ambientThreats.Dispose(disposeDependency);
-            if (_swarmCenters.IsCreated)
-                _swarmCenters.Dispose(disposeDependency);
-            if (_swarmDirections.IsCreated)
-                _swarmDirections.Dispose(disposeDependency);
-            if (_swarmAvoidances.IsCreated)
-                _swarmAvoidances.Dispose(disposeDependency);
-            if (_swarmCounts.IsCreated)
-                _swarmCounts.Dispose(disposeDependency);
-            if (_claimedBoidIndices.IsCreated)
-                _claimedBoidIndices.Dispose(disposeDependency);
-            if (_claimedBoidPositions.IsCreated)
-                _claimedBoidPositions.Dispose(disposeDependency);
-            if (_chosenStates.IsCreated)
-                _chosenStates.Dispose(disposeDependency);
-            if (_predatorPackTargets.IsCreated)
-                _predatorPackTargets.Dispose(disposeDependency);
-            if (_predatorPackWeights.IsCreated)
-                _predatorPackWeights.Dispose(disposeDependency);
-            if (_predatorPackBaitPositions.IsCreated)
-                _predatorPackBaitPositions.Dispose(disposeDependency);
-            if (_predatorPackSharedPlayerPositions.IsCreated)
-                _predatorPackSharedPlayerPositions.Dispose(disposeDependency);
-            if (_predatorPackRoles.IsCreated)
-                _predatorPackRoles.Dispose(disposeDependency);
-            if (_boidClaimTable.IsCreated)
-                _boidClaimTable.Dispose(disposeDependency);
-            if (_packBaitClaimTable.IsCreated)
-                _packBaitClaimTable.Dispose(disposeDependency);
-            if (_packFlankerClaimTable.IsCreated)
-                _packFlankerClaimTable.Dispose(disposeDependency);
-            if (_habitatSiegeTargets.IsCreated)
-                _habitatSiegeTargets.Dispose(disposeDependency);
-            if (_baseSiegeRammerClaimTable.IsCreated)
-                _baseSiegeRammerClaimTable.Dispose(disposeDependency);
-            if (_baseSiegeDistractorClaimTable.IsCreated)
-                _baseSiegeDistractorClaimTable.Dispose(disposeDependency);
-            if (_baseSiegeLoitererClaimTable.IsCreated)
-                _baseSiegeLoitererClaimTable.Dispose(disposeDependency);
-            if (_evaluationDueFlags.IsCreated)
-                _evaluationDueFlags.Dispose(disposeDependency);
-            if (_nextEvaluationTimes.IsCreated)
-                _nextEvaluationTimes.Dispose(disposeDependency);
-            if (_evaluationIntervals.IsCreated)
-                _evaluationIntervals.Dispose(disposeDependency);
-            if (_speciesTuningById.IsCreated)
-                _speciesTuningById.Dispose();
+            DisposeNativeArray(ref _cores, disposeDependency);
+            DisposeNativeArray(ref _controls, disposeDependency);
+            DisposeNativeArray(ref _inputs, disposeDependency);
+            DisposeNativeArray(ref _outputs, disposeDependency);
+            DisposeNativeArray(ref _memoryBank, disposeDependency);
+            DisposeNativeArray(ref _acousticMemoryBank, disposeDependency);
+            DisposeNativeArray(ref _slotUsed, disposeDependency);
+            DisposeNativeList(ref _activeSlots, disposeDependency, nameof(_activeSlots));
+            DisposeNativeArray(ref _ambientThreats, disposeDependency);
+            DisposeNativeArray(ref _swarmCenters, disposeDependency);
+            DisposeNativeArray(ref _swarmDirections, disposeDependency);
+            DisposeNativeArray(ref _swarmAvoidances, disposeDependency);
+            DisposeNativeArray(ref _swarmCounts, disposeDependency);
+            DisposeNativeArray(ref _claimedBoidIndices, disposeDependency);
+            DisposeNativeArray(ref _claimedBoidPositions, disposeDependency);
+            DisposeNativeArray(ref _chosenStates, disposeDependency);
+            DisposeNativeArray(ref _predatorPackTargets, disposeDependency);
+            DisposeNativeArray(ref _predatorPackWeights, disposeDependency);
+            DisposeNativeArray(ref _predatorPackBaitPositions, disposeDependency);
+            DisposeNativeArray(ref _predatorPackSharedPlayerPositions, disposeDependency);
+            DisposeNativeArray(ref _predatorPackRoles, disposeDependency);
+            DisposeNativeArray(ref _boidClaimTable, disposeDependency);
+            DisposeNativeArray(ref _packBaitClaimTable, disposeDependency);
+            DisposeNativeArray(ref _packFlankerClaimTable, disposeDependency);
+            DisposeNativeArray(ref _habitatSiegeTargets, disposeDependency);
+            DisposeNativeArray(ref _baseSiegeRammerClaimTable, disposeDependency);
+            DisposeNativeArray(ref _baseSiegeDistractorClaimTable, disposeDependency);
+            DisposeNativeArray(ref _baseSiegeLoitererClaimTable, disposeDependency);
+            DisposeNativeArray(ref _evaluationDueFlags, disposeDependency);
+            DisposeNativeArray(ref _nextEvaluationTimes, disposeDependency);
+            DisposeNativeArray(ref _evaluationIntervals, disposeDependency);
+            DisposeNativeParallelHashMap(ref _speciesTuningById, nameof(_speciesTuningById));
 
             _cores = default;
             _controls = default;
@@ -1016,7 +987,76 @@ namespace Hecton8.AI
             _evaluationIntervals = new NativeArray<float>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeParallelHashMap<int,SpeciesCognitionTuning>[Capacity] - species cognition tuning table keyed by stable species id - owner: PredatorCognitionDomain
             _speciesTuningById = new NativeParallelHashMap<int, SpeciesCognitionTuning>(Capacity, Allocator.Persistent);
+            RegisterNativeMemorySentinel();
             ClearBoidClaims();
+        }
+
+        private static void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_cores, NativeMemoryOwner, nameof(_cores), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_controls, NativeMemoryOwner, nameof(_controls), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_inputs, NativeMemoryOwner, nameof(_inputs), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_outputs, NativeMemoryOwner, nameof(_outputs), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_memoryBank, NativeMemoryOwner, nameof(_memoryBank), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_acousticMemoryBank, NativeMemoryOwner, nameof(_acousticMemoryBank), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_slotUsed, NativeMemoryOwner, nameof(_slotUsed), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_activeSlots, NativeMemoryOwner, nameof(_activeSlots), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_ambientThreats, NativeMemoryOwner, nameof(_ambientThreats), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_swarmCenters, NativeMemoryOwner, nameof(_swarmCenters), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_swarmDirections, NativeMemoryOwner, nameof(_swarmDirections), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_swarmAvoidances, NativeMemoryOwner, nameof(_swarmAvoidances), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_swarmCounts, NativeMemoryOwner, nameof(_swarmCounts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_claimedBoidIndices, NativeMemoryOwner, nameof(_claimedBoidIndices), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_claimedBoidPositions, NativeMemoryOwner, nameof(_claimedBoidPositions), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_chosenStates, NativeMemoryOwner, nameof(_chosenStates), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_predatorPackTargets, NativeMemoryOwner, nameof(_predatorPackTargets), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_predatorPackWeights, NativeMemoryOwner, nameof(_predatorPackWeights), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_predatorPackBaitPositions, NativeMemoryOwner, nameof(_predatorPackBaitPositions), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_predatorPackSharedPlayerPositions, NativeMemoryOwner, nameof(_predatorPackSharedPlayerPositions), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_predatorPackRoles, NativeMemoryOwner, nameof(_predatorPackRoles), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_boidClaimTable, NativeMemoryOwner, nameof(_boidClaimTable), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_packBaitClaimTable, NativeMemoryOwner, nameof(_packBaitClaimTable), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_packFlankerClaimTable, NativeMemoryOwner, nameof(_packFlankerClaimTable), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_habitatSiegeTargets, NativeMemoryOwner, nameof(_habitatSiegeTargets), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_baseSiegeRammerClaimTable, NativeMemoryOwner, nameof(_baseSiegeRammerClaimTable), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_baseSiegeDistractorClaimTable, NativeMemoryOwner, nameof(_baseSiegeDistractorClaimTable), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_baseSiegeLoitererClaimTable, NativeMemoryOwner, nameof(_baseSiegeLoitererClaimTable), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_evaluationDueFlags, NativeMemoryOwner, nameof(_evaluationDueFlags), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_nextEvaluationTimes, NativeMemoryOwner, nameof(_nextEvaluationTimes), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_evaluationIntervals, NativeMemoryOwner, nameof(_evaluationIntervals), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeParallelHashMap(_speciesTuningById, NativeMemoryOwner, nameof(_speciesTuningById), NativeMemoryLifetime);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle disposeDependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose(disposeDependency);
+            array = default;
+        }
+
+        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle disposeDependency, string label) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+            list.Dispose(disposeDependency);
+            list = default;
+        }
+
+        private static void DisposeNativeParallelHashMap<TKey, TValue>(ref NativeParallelHashMap<TKey, TValue> map, string label)
+            where TKey : unmanaged, System.IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, label);
+            map.Dispose();
+            map = default;
         }
 
         private static bool PrepareEvaluationDueFlags()

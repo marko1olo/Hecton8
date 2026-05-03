@@ -18,7 +18,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30990)]
-    public sealed class SettingsManager : MonoBehaviour
+    public sealed class SettingsManager : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         // ══════════════════════════════════════════════════════════
         // CONSTANTS
@@ -49,7 +49,7 @@ namespace Hecton8.UI
         private const float DefaultFOV = 75f;
 
         // ══════════════════════════════════════════════════════════
-        // SINGLETON
+        // REGISTRY CACHE
         // ══════════════════════════════════════════════════════════
 
         private static SettingsManager _instance;
@@ -62,26 +62,33 @@ namespace Hecton8.UI
             _isShuttingDown = false;
         }
 
-        public static SettingsManager Instance
+        /// <summary>
+        /// Returns the registered settings service, creating a bootstrap-owned runtime owner only after the bootstrapper exists.
+        /// </summary>
+        public static SettingsManager EnsureRuntimeInstance()
         {
-            get
-            {
-                if (_isShuttingDown || !Application.isPlaying)
-                    return _instance;
+            SettingsManager registered = GlobalRegistry.Settings;
+            if (registered != null)
+                return registered;
 
-                if (_instance != null)
-                    return _instance;
-
-                GameObject go = new GameObject("[SettingsManager]");
-                _instance = go.AddComponent<SettingsManager>();
-                GameBootstrapper.PersistRuntimeService(_instance);
+            if (_isShuttingDown || !Application.isPlaying)
                 return _instance;
-            }
+
+            if (_instance != null)
+                return _instance;
+
+            if (!GameBootstrapper.HasRuntimeInstance)
+                return null;
+
+            GameObject root = new GameObject("[SettingsManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned settings runtime owner - owner: SettingsManager
+            SettingsManager manager = root.AddComponent<SettingsManager>();
+            GameBootstrapper.PersistRuntimeService(manager);
+            return manager;
         }
 
         public static bool TryGetInstance(out SettingsManager instance)
         {
-            instance = _instance;
+            instance = GlobalRegistry.Settings != null ? GlobalRegistry.Settings : _instance;
             return instance != null;
         }
 
@@ -100,6 +107,8 @@ namespace Hecton8.UI
         private Volume urpVolume;
 
         private UserOptionsPersistence _persistence;
+        private bool _serviceRegistered;
+        private bool _hotSwapListenerRegistered;
         private Camera _cachedMainCamera; // Cache resolved gameplay camera
         private VolumeProfile _cachedVolumeProfile; // Cache Volume profile lookup
         private bool _pendingFieldOfViewApply;
@@ -140,7 +149,7 @@ namespace Hecton8.UI
             if (Application.isPlaying)
                 GameBootstrapper.PersistRuntimeService(this);
 
-            _persistence = Hecton8.Core.GlobalRegistry.UserOptions;
+            TryRefreshPersistenceReference(out _);
 
             TryResolveMainCameraReference();
             TryResolveVolumeProfileReference();
@@ -149,16 +158,55 @@ namespace Hecton8.UI
             ApplyAllSettings();
         }
 
+        private void OnEnable()
+        {
+            TryRegisterToGlobalRegistry();
+            TryRegisterHotSwapListener();
+            TryRefreshPersistenceReference(out _);
+        }
+
+        private void Start()
+        {
+            RefreshPersistenceFromRegistry();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterHotSwapListener();
+            UnregisterFromGlobalRegistry();
+        }
+
         private void OnDestroy()
         {
+            TryUnregisterHotSwapListener();
+            UnregisterFromGlobalRegistry();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
 
             if (_instance == this)
             {
                 _instance = null;
+                _isShuttingDown = true;
+            }
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.UserOptionsRuntime)
+                return;
+
+            if (!TryAssignPersistence(currentService as UserOptionsPersistence, out bool changed) ||
+                !changed ||
+                !isActiveAndEnabled)
+            {
+                return;
             }
 
-            _isShuttingDown = true;
+            LoadAllSettings();
+            ApplyAllSettings();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -305,7 +353,7 @@ namespace Hecton8.UI
                     return;
 
                 _cachedShadowDistance = clamped;
-                QualitySettings.shadowDistance = clamped;
+                TryApplyShadowDistance(clamped);
                 SaveFloat(ShadowDistanceKey, clamped);
             }
         }
@@ -881,7 +929,7 @@ namespace Hecton8.UI
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[SettingsManager] Failed to apply quality level {level}: {ex.Message}");
+                LogApplyQualityLevelFailed(level, ex);
                 return false;
             }
         }
@@ -895,7 +943,7 @@ namespace Hecton8.UI
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[SettingsManager] Failed to apply VSync: {ex.Message}");
+                LogApplyVSyncFailed(ex);
                 return false;
             }
         }
@@ -909,7 +957,7 @@ namespace Hecton8.UI
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[SettingsManager] Failed to apply fullscreen: {ex.Message}");
+                LogApplyFullscreenFailed(ex);
                 return false;
             }
         }
@@ -923,7 +971,7 @@ namespace Hecton8.UI
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[SettingsManager] Failed to apply resolution {width}x{height}: {ex.Message}");
+                LogApplyResolutionFailed(width, height, ex);
                 return false;
             }
         }
@@ -932,14 +980,31 @@ namespace Hecton8.UI
         {
             try
             {
-                QualitySettings.shadowDistance = distance;
+                UniversalRenderPipelineAsset urpAsset = ResolveActiveUrpAsset();
+                if (urpAsset == null)
+                    return false;
+
+                if (!Mathf.Approximately(urpAsset.shadowDistance, distance))
+                    urpAsset.shadowDistance = distance;
+
                 return true;
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[SettingsManager] Failed to apply shadow distance: {ex.Message}");
+                LogApplyShadowDistanceFailed(ex);
                 return false;
             }
+        }
+
+        private static UniversalRenderPipelineAsset ResolveActiveUrpAsset()
+        {
+            if (GraphicsSettings.currentRenderPipeline is UniversalRenderPipelineAsset currentUrpAsset)
+                return currentUrpAsset;
+
+            if (GraphicsSettings.defaultRenderPipeline is UniversalRenderPipelineAsset defaultUrpAsset)
+                return defaultUrpAsset;
+
+            return UniversalRenderPipeline.asset;
         }
 
         private static bool TryApplyTextureQuality(int quality)
@@ -951,7 +1016,7 @@ namespace Hecton8.UI
             }
             catch (System.Exception ex)
             {
-                Debug.LogError($"[SettingsManager] Failed to apply texture quality: {ex.Message}");
+                LogApplyTextureQualityFailed(ex);
                 return false;
             }
         }
@@ -963,6 +1028,111 @@ namespace Hecton8.UI
 
             _cachedMainCamera.fieldOfView = fov;
             return true;
+        }
+
+        private void TryRegisterToGlobalRegistry()
+        {
+            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+                return;
+
+            GlobalRegistry.RegisterSettingsRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Settings, this);
+        }
+
+        private void UnregisterFromGlobalRegistry()
+        {
+            if (!_serviceRegistered && !ReferenceEquals(GlobalRegistry.Settings, this))
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.Settings, this))
+                GlobalRegistry.UnregisterSettingsRuntime(this);
+
+            _serviceRegistered = false;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
+        }
+
+        internal void RefreshPersistenceFromRegistry()
+        {
+            if (!TryRefreshPersistenceReference(out bool changed) || !changed)
+                return;
+
+            LoadAllSettings();
+            ApplyAllSettings();
+        }
+
+        private bool TryRefreshPersistenceReference(out bool changed)
+        {
+            return TryAssignPersistence(GlobalRegistry.UserOptions, out changed);
+        }
+
+        private bool TryAssignPersistence(UserOptionsPersistence persistence, out bool changed)
+        {
+            changed = !ReferenceEquals(_persistence, persistence);
+            if (changed)
+                _persistence = persistence;
+
+            return _persistence != null;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogApplyQualityLevelFailed(int level, System.Exception exception)
+        {
+            Debug.LogError($"[SettingsManager] Failed to apply quality level {level}: {exception.Message}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogApplyVSyncFailed(System.Exception exception)
+        {
+            Debug.LogError($"[SettingsManager] Failed to apply VSync: {exception.Message}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogApplyFullscreenFailed(System.Exception exception)
+        {
+            Debug.LogError($"[SettingsManager] Failed to apply fullscreen: {exception.Message}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogApplyResolutionFailed(int width, int height, System.Exception exception)
+        {
+            Debug.LogError($"[SettingsManager] Failed to apply resolution {width}x{height}: {exception.Message}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogApplyShadowDistanceFailed(System.Exception exception)
+        {
+            Debug.LogError($"[SettingsManager] Failed to apply shadow distance: {exception.Message}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogApplyTextureQualityFailed(System.Exception exception)
+        {
+            Debug.LogError($"[SettingsManager] Failed to apply texture quality: {exception.Message}");
         }
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
@@ -1186,7 +1356,7 @@ namespace Hecton8.UI
 
         private int LoadInt(string key, int defaultValue)
         {
-            if (_persistence == null)
+            if (!TryRefreshPersistenceReference(out _))
                 return defaultValue;
 
             return _persistence.GetInt(key, defaultValue);
@@ -1194,7 +1364,7 @@ namespace Hecton8.UI
 
         private float LoadFloat(string key, float defaultValue)
         {
-            if (_persistence == null)
+            if (!TryRefreshPersistenceReference(out _))
                 return defaultValue;
 
             return _persistence.GetFloat(key, defaultValue);
@@ -1202,7 +1372,7 @@ namespace Hecton8.UI
 
         private bool LoadBool(string key, bool defaultValue)
         {
-            if (_persistence == null)
+            if (!TryRefreshPersistenceReference(out _))
                 return defaultValue;
 
             return _persistence.GetBool(key, defaultValue);
@@ -1210,7 +1380,7 @@ namespace Hecton8.UI
 
         private void SaveInt(string key, int value)
         {
-            if (_persistence == null)
+            if (!TryRefreshPersistenceReference(out _))
                 return;
 
             _persistence.SetInt(key, value);
@@ -1219,7 +1389,7 @@ namespace Hecton8.UI
 
         private void SaveFloat(string key, float value)
         {
-            if (_persistence == null)
+            if (!TryRefreshPersistenceReference(out _))
                 return;
 
             _persistence.SetFloat(key, value);
@@ -1228,7 +1398,7 @@ namespace Hecton8.UI
 
         private void SaveBool(string key, bool value)
         {
-            if (_persistence == null)
+            if (!TryRefreshPersistenceReference(out _))
                 return;
 
             _persistence.SetBool(key, value);

@@ -111,7 +111,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterDebrisService(this);
-            _isInitialized = true;
+            _isInitialized = ReferenceEquals(GlobalRegistry.Debris, this);
         }
 
         private void Awake()
@@ -128,12 +128,22 @@ namespace Hecton8.Gameplay
             {
                 // COLD ALLOC: NativeArray<DebrisChunkState>[192] - front debris simulation state buffer - owner: DebrisManager
                 _frontStates = new NativeArray<DebrisChunkState>(MaxActiveChunks, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _frontStates,
+                    nameof(DebrisManager),
+                    nameof(_frontStates),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (!_backStates.IsCreated)
             {
                 // COLD ALLOC: NativeArray<DebrisChunkState>[192] - back debris simulation state buffer - owner: DebrisManager
                 _backStates = new NativeArray<DebrisChunkState>(MaxActiveChunks, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _backStates,
+                    nameof(DebrisManager),
+                    nameof(_backStates),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (_matrixBuffer == null)
@@ -152,13 +162,13 @@ namespace Hecton8.Gameplay
             if (!_dispatcherRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _dispatcherRegistered = true;
+                _dispatcherRegistered = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_lateFrameRegistered)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = true;
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
 
             if (!_originShiftRegistered)
@@ -196,9 +206,13 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
-            if (_isInitialized)
+            if (_isInitialized && ReferenceEquals(GlobalRegistry.Debris, this))
             {
                 GlobalRegistry.UnregisterDebrisService(this);
+                _isInitialized = false;
+            }
+            else
+            {
                 _isInitialized = false;
             }
 
@@ -663,6 +677,7 @@ namespace Hecton8.Gameplay
         {
             if (_frontStates.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_frontStates);
                 if (_simulationScheduled)
                     _frontStates.Dispose(_simulationHandle);
                 else
@@ -673,6 +688,7 @@ namespace Hecton8.Gameplay
 
             if (_backStates.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_backStates);
                 if (_simulationScheduled)
                     _backStates.Dispose(_simulationHandle);
                 else

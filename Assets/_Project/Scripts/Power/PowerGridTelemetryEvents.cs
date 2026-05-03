@@ -155,7 +155,11 @@ namespace Hecton8.Power
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnPowerGridTelemetryUpdated(in snapshot);
+                    {
+                        IPowerGridTelemetryListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnPowerGridTelemetryUpdated(in snapshot);
+                    }
                 }
                 finally
                 {

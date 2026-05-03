@@ -94,6 +94,8 @@ namespace Hecton8.World
         private const int MaxHeapRebalanceIterations = 4096;
         private const int MaxThreatDdaSteps = 4096;
         private const int MaxPathCompactionIterations = 4096;
+        private const string NativeMemoryOwner = nameof(HectonMapMagicVegetationBridge);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly int _ShaderVegetationAudioDensityId = Shader.PropertyToID("_HectonVegetationAudioDensity");
         private static readonly int _ShaderVegetationAudioAcousticTypeId = Shader.PropertyToID("_HectonVegetationAudioAcousticType");
         private const float PlayerVisibilityDenseCoverThreshold = 0.32f;
@@ -1471,6 +1473,7 @@ namespace Hecton8.World
         private int _cacheValidationChunkCursor;
         private bool _isRegistered;
         private bool _eventsSubscribed;
+        private bool _originShiftListenerRegistered;
         private bool _activeSetDirty = true;
         private bool _insideLateFrameJobSwap;
 
@@ -3172,6 +3175,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemThreatGridCurrentNative);
                 // COLD ALLOC: NativeArray<float>[_ecosystemThreatGridCellCount] - ecosystem threat-grid front buffer for read-only sampling - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemThreatGridCurrentNative = new NativeArray<float>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_nativeMemory.EcosystemThreatGridCurrentNative, nameof(_nativeMemory.EcosystemThreatGridCurrentNative));
                 _threatGridInitialized = false;
             }
 
@@ -3180,6 +3184,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemThreatGridNextNative);
                 // COLD ALLOC: NativeArray<float>[_ecosystemThreatGridCellCount] - ecosystem threat-grid back buffer for diffusion writes - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemThreatGridNextNative = new NativeArray<float>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_nativeMemory.EcosystemThreatGridNextNative, nameof(_nativeMemory.EcosystemThreatGridNextNative));
             }
 
             if (!_nativeMemory.EcosystemThreatGridCompressedCurrentNative.IsCreated || _nativeMemory.EcosystemThreatGridCompressedCurrentNative.Length != _ecosystemThreatGridCellCount)
@@ -3187,6 +3192,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemThreatGridCompressedCurrentNative);
                 // COLD ALLOC: NativeArray<byte>[_ecosystemThreatGridCellCount] - compressed threat-grid front mirror for low-cost consumers - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemThreatGridCompressedCurrentNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_nativeMemory.EcosystemThreatGridCompressedCurrentNative, nameof(_nativeMemory.EcosystemThreatGridCompressedCurrentNative));
             }
 
             if (!_nativeMemory.EcosystemThreatGridCompressedNextNative.IsCreated || _nativeMemory.EcosystemThreatGridCompressedNextNative.Length != _ecosystemThreatGridCellCount)
@@ -3194,6 +3200,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemThreatGridCompressedNextNative);
                 // COLD ALLOC: NativeArray<byte>[_ecosystemThreatGridCellCount] - compressed threat-grid back mirror for diffusion writes - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemThreatGridCompressedNextNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_nativeMemory.EcosystemThreatGridCompressedNextNative, nameof(_nativeMemory.EcosystemThreatGridCompressedNextNative));
             }
 
             if (!_nativeMemory.EcosystemThreatVoxelCurrentNative.IsCreated || _nativeMemory.EcosystemThreatVoxelCurrentNative.Length != _ecosystemThreatVoxelCellCount)
@@ -3201,6 +3208,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemThreatVoxelCurrentNative);
                 // COLD ALLOC: NativeArray<byte>[_ecosystemThreatVoxelCellCount] - 3D byte voxel threat snapshot front buffer used by AI DDA line-of-sight - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemThreatVoxelCurrentNative = new NativeArray<byte>(_ecosystemThreatVoxelCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_nativeMemory.EcosystemThreatVoxelCurrentNative, nameof(_nativeMemory.EcosystemThreatVoxelCurrentNative));
             }
 
             if (!_nativeMemory.EcosystemThreatVoxelNextNative.IsCreated || _nativeMemory.EcosystemThreatVoxelNextNative.Length != _ecosystemThreatVoxelCellCount)
@@ -3208,6 +3216,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemThreatVoxelNextNative);
                 // COLD ALLOC: NativeArray<byte>[_ecosystemThreatVoxelCellCount] - 3D byte voxel threat snapshot back buffer written by Burst voxelization - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemThreatVoxelNextNative = new NativeArray<byte>(_ecosystemThreatVoxelCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_nativeMemory.EcosystemThreatVoxelNextNative, nameof(_nativeMemory.EcosystemThreatVoxelNextNative));
             }
 
             if (!_nativeMemory.EcosystemThreatEchoCurrentNative.IsCreated || _nativeMemory.EcosystemThreatEchoCurrentNative.Length != _ecosystemThreatGridCellCount)
@@ -3215,6 +3224,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemThreatEchoCurrentNative);
                 // COLD ALLOC: NativeArray<byte>[_ecosystemThreatGridCellCount] - permanent threat-echo flags aligned to the active threat grid - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemThreatEchoCurrentNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_nativeMemory.EcosystemThreatEchoCurrentNative, nameof(_nativeMemory.EcosystemThreatEchoCurrentNative));
             }
 
             if (!_nativeMemory.EcosystemThreatEchoNextNative.IsCreated || _nativeMemory.EcosystemThreatEchoNextNative.Length != _ecosystemThreatGridCellCount)
@@ -3222,6 +3232,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.EcosystemThreatEchoNextNative);
                 // COLD ALLOC: NativeArray<byte>[_ecosystemThreatGridCellCount] - back buffer for threat-echo propagation/shift - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.EcosystemThreatEchoNextNative = new NativeArray<byte>(_ecosystemThreatGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_nativeMemory.EcosystemThreatEchoNextNative, nameof(_nativeMemory.EcosystemThreatEchoNextNative));
             }
         }
 
@@ -3245,6 +3256,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref _nativeMemory.CanopyHeightGridNative);
                 // COLD ALLOC: NativeArray<float>[_canopyGridCellCount] - global canopy-height mask for audio/light roof queries - owner: HectonMapMagicVegetationBridge
                 _nativeMemory.CanopyHeightGridNative = new NativeArray<float>(_canopyGridCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_nativeMemory.CanopyHeightGridNative, nameof(_nativeMemory.CanopyHeightGridNative));
                 _canopyGridInitialized = false;
             }
         }
@@ -4012,7 +4024,9 @@ namespace Hecton8.World
             if (count <= 0)
                 return default;
 
-            return new NativeArray<JobInstanceRecord>(count, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeArray<JobInstanceRecord> records = new NativeArray<JobInstanceRecord>(count, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterTrackedNativeArray(records, nameof(JobInstanceRecord));
+            return records;
         }
 
         private static Matrix4x4[] AllocateMatrixArray(int count)
@@ -4080,6 +4094,7 @@ namespace Hecton8.World
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
         }
@@ -4090,6 +4105,7 @@ namespace Hecton8.World
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             if (dependency.IsCompleted)
                 array.Dispose();
             else
@@ -4110,6 +4126,12 @@ namespace Hecton8.World
                 list.Dispose(dependency);
 
             list = default;
+        }
+
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label)
+            where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
         private static void DisposeNativeParallelMultiHashMap<TKey, TValue>(
@@ -5768,24 +5790,34 @@ namespace Hecton8.World
 
         private void TrySubscribeEvents()
         {
-            if (_eventsSubscribed)
-                return;
+            if (!_eventsSubscribed)
+            {
+                TerrainTile.OnTileApplied += HandleTileApplied;
+                TerrainTile.OnTileMoved += HandleTileMoved;
+                _eventsSubscribed = true;
+            }
 
-            TerrainTile.OnTileApplied += HandleTileApplied;
-            TerrainTile.OnTileMoved += HandleTileMoved;
-            HectonFloatingOrigin.RegisterListener(this);
-            _eventsSubscribed = true;
+            if (!_originShiftListenerRegistered)
+            {
+                HectonFloatingOrigin.RegisterListener(this);
+                _originShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
+            }
         }
 
         private void TryUnsubscribeEvents()
         {
-            if (!_eventsSubscribed)
-                return;
+            if (_eventsSubscribed)
+            {
+                TerrainTile.OnTileApplied -= HandleTileApplied;
+                TerrainTile.OnTileMoved -= HandleTileMoved;
+                _eventsSubscribed = false;
+            }
 
-            TerrainTile.OnTileApplied -= HandleTileApplied;
-            TerrainTile.OnTileMoved -= HandleTileMoved;
-            HectonFloatingOrigin.UnregisterListener(this);
-            _eventsSubscribed = false;
+            if (_originShiftListenerRegistered)
+            {
+                HectonFloatingOrigin.UnregisterListener(this);
+                _originShiftListenerRegistered = false;
+            }
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -5949,6 +5981,14 @@ namespace Hecton8.World
             pool.EdgeDistances = new NativeArray<float>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             pool.FlowDirections = new NativeArray<Vector2>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             pool.FlowVectors = new NativeArray<Vector3>(capacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(pool.Matrices, nameof(pool.Matrices));
+            RegisterTrackedNativeArray(pool.Metadata, nameof(pool.Metadata));
+            RegisterTrackedNativeArray(pool.Types, nameof(pool.Types));
+            RegisterTrackedNativeArray(pool.SemanticTypes, nameof(pool.SemanticTypes));
+            RegisterTrackedNativeArray(pool.BiomeLayers, nameof(pool.BiomeLayers));
+            RegisterTrackedNativeArray(pool.EdgeDistances, nameof(pool.EdgeDistances));
+            RegisterTrackedNativeArray(pool.FlowDirections, nameof(pool.FlowDirections));
+            RegisterTrackedNativeArray(pool.FlowVectors, nameof(pool.FlowVectors));
             pool.Capacity = capacity;
             EnsurePoolBlockCapacity(ref freeBlocks, 1);
             freeBlocks[0] = new PoolBlock { Offset = 0, Length = capacity };

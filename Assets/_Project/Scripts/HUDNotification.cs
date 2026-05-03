@@ -37,6 +37,8 @@ namespace Hecton8.UI
 
         private const int InventoryFullMessageCacheSize = 16;
         private const int MaxNotificationQueueCapacity = 8;
+        private const int FixedBufferMessageCacheSize = MaxNotificationQueueCapacity + 1;
+        private const int FixedBufferMessageCharCapacity = 512;
         private const string InventoryFullMessagePrefix = "INVENTORY FULL \u2014 CANNOT STORE ";
         private const string FallbackInventoryItemName = "ITEM";
 
@@ -44,6 +46,13 @@ namespace Hecton8.UI
         {
             public uint MessageHash;
             public byte Severity;
+        }
+
+        private struct FixedBufferMessageCacheEntry
+        {
+            public uint MessageHash;
+            public int Length;
+            public bool IsValid;
         }
 
         [Header("â”€â”€ Settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -62,6 +71,14 @@ namespace Hecton8.UI
         private static readonly string[] _inventoryFullItemNameCache = new string[InventoryFullMessageCacheSize];
         private static readonly string[] _inventoryFullMessageCache = new string[InventoryFullMessageCacheSize];
 
+        // COLD ALLOC: FixedBufferMessageCacheEntry[9] - active plus queued fixed-buffer HUD messages - owner: HUDNotification
+        private readonly FixedBufferMessageCacheEntry[] _fixedBufferMessageCache =
+            new FixedBufferMessageCacheEntry[FixedBufferMessageCacheSize];
+
+        // COLD ALLOC: char[4608] - fixed-buffer HUD message cache backing store - owner: HUDNotification
+        private readonly char[] _fixedBufferMessageCharacters =
+            new char[FixedBufferMessageCacheSize * FixedBufferMessageCharCapacity];
+
         private RectTransform _notifRoot;
         private Image _notifBg;
         private TextMeshProUGUI _notifText;
@@ -77,6 +94,7 @@ namespace Hecton8.UI
         private uint _lastEnqueuedMessageHash;
         private NotificationSeverity _lastEnqueuedSeverity;
         private float _lastEnqueueTime = -999f;
+        private int _fixedBufferMessageCacheCursor;
         private bool _registeredToTickManager;
         private int _lastStressCorruptionBucket = int.MinValue;
 
@@ -121,6 +139,7 @@ namespace Hecton8.UI
             NotificationEvents.Unregister(this);
             _queueCount = 0;
             _currentMessageHash = 0u;
+            ClearFixedBufferMessageCache();
         }
 
         private void OnDestroy()
@@ -183,7 +202,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()
@@ -200,9 +219,25 @@ namespace Hecton8.UI
             Enqueue(message, NotificationSeverity.Warning);
         }
 
+        /// <summary>
+        /// Queues a warning notification from a caller-owned fixed character buffer.
+        /// </summary>
+        public void ShowWarning(in FixedCharBuffer messageBuffer)
+        {
+            Enqueue(in messageBuffer, NotificationSeverity.Warning);
+        }
+
         public void ShowCritical(string message)
         {
             Enqueue(message, NotificationSeverity.Critical);
+        }
+
+        /// <summary>
+        /// Queues a critical notification from a caller-owned fixed character buffer.
+        /// </summary>
+        public void ShowCritical(in FixedCharBuffer messageBuffer)
+        {
+            Enqueue(in messageBuffer, NotificationSeverity.Critical);
         }
 
         public void ShowInfo(string message)
@@ -210,11 +245,33 @@ namespace Hecton8.UI
             Enqueue(message, NotificationSeverity.Info);
         }
 
+        /// <summary>
+        /// Queues an informational notification from a caller-owned fixed character buffer.
+        /// </summary>
+        public void ShowInfo(in FixedCharBuffer messageBuffer)
+        {
+            Enqueue(in messageBuffer, NotificationSeverity.Info);
+        }
+
         private void Enqueue(string message, NotificationSeverity severity)
         {
             EnsureBuilt();
 
             uint messageHash = NotificationEvents.RegisterMessage(message);
+            if (messageHash == 0u)
+                return;
+
+            Enqueue(messageHash, severity);
+        }
+
+        private void Enqueue(in FixedCharBuffer messageBuffer, NotificationSeverity severity)
+        {
+            if (messageBuffer.Length <= 0)
+                return;
+
+            EnsureBuilt();
+
+            uint messageHash = RegisterFixedBufferMessage(in messageBuffer);
             if (messageHash == 0u)
                 return;
 
@@ -374,7 +431,7 @@ namespace Hecton8.UI
 
             try
             {
-                if (!TryWriteDisplayMessage(messageHash, lease.Buffer.AsSpan(), out int length))
+                if (!TryWriteDisplayMessage(messageHash, lease.Buffer, out int length))
                     return;
 
                 _notifText.SetCharArray(lease.Buffer, 0, length);
@@ -385,23 +442,107 @@ namespace Hecton8.UI
             }
         }
 
-        private static bool TryWriteDisplayMessage(uint messageHash, Span<char> target, out int length)
+        private bool TryWriteDisplayMessage(uint messageHash, char[] target, out int length)
         {
             length = 0;
+            if (TryWriteFixedBufferMessage(messageHash, target, out length))
+                return true;
+
             if (messageHash == 0u || !NotificationEvents.TryResolveMessage(messageHash, out string message) || string.IsNullOrEmpty(message))
                 return false;
 
+            return TryWriteDisplaySpan(message.AsSpan(), target, out length);
+        }
+
+        private bool TryWriteFixedBufferMessage(uint messageHash, char[] target, out int length)
+        {
+            length = 0;
+            if (messageHash == 0u || target == null || target.Length == 0)
+                return false;
+
+            for (int i = 0; i < _fixedBufferMessageCache.Length; i++)
+            {
+                FixedBufferMessageCacheEntry entry = _fixedBufferMessageCache[i];
+                if (!entry.IsValid || entry.MessageHash != messageHash || entry.Length <= 0)
+                    continue;
+
+                int sourceOffset = i * FixedBufferMessageCharCapacity;
+                ReadOnlySpan<char> source = _fixedBufferMessageCharacters.AsSpan(sourceOffset, entry.Length);
+                return TryWriteDisplaySpan(source, target, out length);
+            }
+
+            return false;
+        }
+
+        private static bool TryWriteDisplaySpan(ReadOnlySpan<char> message, char[] target, out int length)
+        {
+            length = 0;
+            if (message.Length <= 0 || target == null || target.Length == 0)
+                return false;
+
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            string displayMessage = manager != null
-                ? manager.ApplyHullStressCorruptionIfNeeded(message)
-                : message;
-            ReadOnlySpan<char> source = displayMessage.AsSpan();
-            length = Mathf.Min(source.Length, target.Length);
+            if (manager != null)
+                return manager.TryApplyHullStressCorruptionIfNeeded(message, target, out length) && length > 0;
+
+            length = Mathf.Min(message.Length, target.Length);
             if (length <= 0)
                 return false;
 
-            source.Slice(0, length).CopyTo(target);
+            message.Slice(0, length).CopyTo(target.AsSpan());
             return true;
+        }
+
+        private uint RegisterFixedBufferMessage(in FixedCharBuffer messageBuffer)
+        {
+            ReadOnlySpan<char> source = messageBuffer.AsSpan();
+            if (source.Length <= 0)
+                return 0u;
+
+            uint messageHash = unchecked((uint)LocHash.Compute(source));
+            if (messageHash == 0u)
+                return 0u;
+
+            int storedLength = Mathf.Min(source.Length, FixedBufferMessageCharCapacity);
+            for (int i = 0; i < _fixedBufferMessageCache.Length; i++)
+            {
+                if (IsFixedBufferMessageMatch(i, messageHash, source, storedLength))
+                    return messageHash;
+            }
+
+            int cacheIndex = _fixedBufferMessageCacheCursor;
+            _fixedBufferMessageCacheCursor = (_fixedBufferMessageCacheCursor + 1) % _fixedBufferMessageCache.Length;
+            int targetOffset = cacheIndex * FixedBufferMessageCharCapacity;
+            source.Slice(0, storedLength).CopyTo(_fixedBufferMessageCharacters.AsSpan(targetOffset, storedLength));
+            _fixedBufferMessageCache[cacheIndex] = new FixedBufferMessageCacheEntry
+            {
+                MessageHash = messageHash,
+                Length = storedLength,
+                IsValid = true
+            };
+
+            return messageHash;
+        }
+
+        private bool IsFixedBufferMessageMatch(int cacheIndex, uint messageHash, ReadOnlySpan<char> source, int storedLength)
+        {
+            if ((uint)cacheIndex >= (uint)_fixedBufferMessageCache.Length)
+                return false;
+
+            FixedBufferMessageCacheEntry entry = _fixedBufferMessageCache[cacheIndex];
+            if (!entry.IsValid || entry.MessageHash != messageHash || entry.Length != storedLength)
+                return false;
+
+            int sourceOffset = cacheIndex * FixedBufferMessageCharCapacity;
+            ReadOnlySpan<char> cached = _fixedBufferMessageCharacters.AsSpan(sourceOffset, storedLength);
+            return cached.SequenceEqual(source.Slice(0, storedLength));
+        }
+
+        private void ClearFixedBufferMessageCache()
+        {
+            for (int i = 0; i < _fixedBufferMessageCache.Length; i++)
+                _fixedBufferMessageCache[i] = default;
+
+            _fixedBufferMessageCacheCursor = 0;
         }
 
         private int ResolveQueueCapacity()

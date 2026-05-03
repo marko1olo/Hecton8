@@ -582,6 +582,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [SerializeField] private float polarRotationMultiplier = 0.4f;
         [SerializeField] private float backlitIntensity = 0.08f;
         [SerializeField] private float stormEmissionIntensity = 1.0f;
+        [SerializeField] private float starMapSeed = 99173f;
 
         [Header("═══ TRANSITION CURVES ═══")]
         [SerializeField] private float twilightStartAngle = 5f;
@@ -605,6 +606,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private float _currentSunAngle;
         private float _currentBlend;
         private float _currentStarIntensity;
+        private float _resolvedStarMapSeed = 99173f;
         private float _currentPhase;
         private bool _isEclipseActive;
         private float _eclipseAngularRadius;
@@ -728,6 +730,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private static readonly int _ID_StormEmission      = Shader.PropertyToID("_StormEmission");
         private static readonly int _ID_Blend              = Shader.PropertyToID("_Blend");
         private static readonly int _ID_StarIntensity      = Shader.PropertyToID("_StarIntensity");
+        private static readonly int _ID_StarSeed           = Shader.PropertyToID("_StarSeed");
         private static readonly int _ID_FresnelSunDir      = Shader.PropertyToID("_FresnelSunDir");
         private static readonly int _ID_SunBacklitFactor   = Shader.PropertyToID("_SunBacklitFactor");
         private static readonly int _ID_GlobalRotation     = Shader.PropertyToID("_GlobalRotation");
@@ -1015,7 +1018,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregisterFromTickManager()
@@ -1143,6 +1146,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
             UpdateSkyboxBlend(sunElevation);
             UpdateStarIntensity(sunElevation);
+            _resolvedStarMapSeed = ResolveStarMapSeed();
             ResolveSkyColors(out _resolvedSkyZenith, out _resolvedSkyHorizon, out _resolvedSkyNadir);
             UpdateDynamicCelestialAtmosphere(sunElevation, false);
             UpdateGlobalShaderData();
@@ -1184,6 +1188,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         {
             InvalidateCelestialAtmosphereLutCache();
             EnsureCelestialAtmosphereLutReady();
+            _resolvedStarMapSeed = ResolveStarMapSeed();
             UpdateGlobalShaderData();
             UpdateSkyMaterial();
             UpdateAegirMaterial();
@@ -1220,8 +1225,9 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 }
             }
 
-            if (blendedSkyboxMaterial == null && IsBlendSkyboxMaterial(RenderSettings.skybox))
-                blendedSkyboxMaterial = RenderSettings.skybox;
+            Material activeSkybox = AtmosphereDirector.Skybox;
+            if (blendedSkyboxMaterial == null && IsBlendSkyboxMaterial(activeSkybox))
+                blendedSkyboxMaterial = activeSkybox;
 
             if (_skyMaterial == null)
                 Debug.LogWarning("[HectonCelestialEngine] Sky Material is not assigned!", this);
@@ -2518,6 +2524,49 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             return Mathf.Clamp01(_surfaceWeatherStarVisibilityMultiplier);
         }
 
+        private float ResolveStarMapSeed()
+        {
+            int seed = Mathf.RoundToInt(starMapSeed);
+            global::HectonWorldGenerator generator = global::HectonWorldGenerator.ActiveRuntimeInstance;
+            if (generator == null)
+                return seed & 0x00FFFFFF;
+
+            unchecked
+            {
+                if (generator.spine != null)
+                {
+                    seed = FoldStarSeed(seed, generator.spine.warpNoise);
+                    seed = FoldStarSeed(seed, generator.spine.islandNoise);
+                }
+
+                if (generator.biomes != null)
+                {
+                    seed = FoldStarSeed(seed, generator.biomes.biomeNoise);
+                    seed = FoldStarSeed(seed, generator.biomes.flatSurfaceNoise);
+                    seed = FoldStarSeed(seed, generator.biomes.aggressiveSurfaceNoise);
+                }
+
+                if (generator.displacement != null)
+                    seed = FoldStarSeed(seed, generator.displacement.noise);
+
+                if (generator.caves != null)
+                    seed = FoldStarSeed(seed, generator.caves.noise);
+            }
+
+            return seed & 0x00FFFFFF;
+        }
+
+        private static int FoldStarSeed(int seed, global::HectonNoiseLayer layer)
+        {
+            if (layer == null)
+                return seed;
+
+            unchecked
+            {
+                return (seed * 397) ^ layer.seed;
+            }
+        }
+
         private float ResolveStormEmissionMultiplier()
         {
             if (!_surfaceWeatherOverrideActive)
@@ -2645,11 +2694,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             if (targetSkyboxMaterial == null)
                 return;
 
+            Material activeSkybox = AtmosphereDirector.Skybox;
             if (forceAssignment ||
-                !ReferenceEquals(RenderSettings.skybox, targetSkyboxMaterial) ||
-                ReferenceEquals(RenderSettings.skybox, _skyMaterial))
+                !ReferenceEquals(activeSkybox, targetSkyboxMaterial) ||
+                ReferenceEquals(activeSkybox, _skyMaterial))
             {
-                RenderSettings.skybox = targetSkyboxMaterial;
+                AtmosphereDirector.SetSkybox(targetSkyboxMaterial);
             }
         }
 
@@ -2662,14 +2712,14 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 {
                     _skyMaterial = underwaterSkyMaterial;
                 }
-                else if (IsMandatedSkyMaterial(RenderSettings.skybox))
+                else if (IsMandatedSkyMaterial(AtmosphereDirector.Skybox))
                 {
-                    _skyMaterial = RenderSettings.skybox;
+                    _skyMaterial = AtmosphereDirector.Skybox;
                 }
             }
 
-            if (_skyMaterial != null && !ReferenceEquals(RenderSettings.skybox, _skyMaterial))
-                RenderSettings.skybox = _skyMaterial;
+            if (_skyMaterial != null && !ReferenceEquals(AtmosphereDirector.Skybox, _skyMaterial))
+                AtmosphereDirector.SetSkybox(_skyMaterial);
         }
 
         private Material ResolvePreferredSkyboxMaterial()
@@ -2709,6 +2759,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             targetMaterial.SetFloat(_ID_GameTime, _gameTime);
             targetMaterial.SetFloat(_ID_NightBlend, _currentBlend);
             targetMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
+            targetMaterial.SetFloat(_ID_StarSeed, _resolvedStarMapSeed);
             targetMaterial.SetFloat(_ID_SunElevation, sunElevationNormalized);
             targetMaterial.SetFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
             targetMaterial.SetFloat(_ID_AtmosphereTransmittanceWeight, _atmosphereTransmittanceWeight);
@@ -3106,6 +3157,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             Shader.SetGlobalFloat(_ID_AtmosphereInscatterWeight, _atmosphereInscatterWeight);
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereLutReady, _celestialAtmosphereLutTexture != null ? 1f : 0f);
             Shader.SetGlobalFloat(_ID_AtmosphereExposure, _currentAtmosphereExposure);
+            Shader.SetGlobalFloat(_ID_StarSeed, _resolvedStarMapSeed);
             Shader.SetGlobalFloat(_ID_CelestialHorizonDensity, horizonDensity);
             Shader.SetGlobalFloat(_ID_CelestialZenithTransparency, zenithTransparency);
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereBlendPower, atmosphereBlendPower);
@@ -3254,32 +3306,79 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
         private void DetectEclipse()
         {
-            if (!TryResolveAegirSkyDirection(out float3 toAegir))
+            if (!TryResolveSunOcclusion(out bool sunOccluded, out bool insideExitBand))
                 return;
-
-            float3 toSun = _resolvedSunDirection;
-
-            float dotSunAegir = math.dot(toSun, toAegir);
-            float angleDeg = math.degrees(
-                math.acos(math.clamp(dotSunAegir, -1f, 1f)));
-
-            float dynamicAngularRadius = GetAegirAngularRadiusDegrees();
-
-            float enterThreshold = dynamicAngularRadius;
-            float exitThreshold  = dynamicAngularRadius + eclipseHysteresisMargin;
-
-            bool sunOccluded = angleDeg < enterThreshold;
 
             if (sunOccluded && !_isEclipseActive)
             {
                 _isEclipseActive = true;
                 CelestialEvents.RaiseEclipseStarted();
             }
-            else if (!sunOccluded && _isEclipseActive && angleDeg > exitThreshold)
+            else if (!insideExitBand && _isEclipseActive)
             {
                 _isEclipseActive = false;
                 CelestialEvents.RaiseEclipseEnded();
             }
+        }
+
+        private bool TryResolveSunOcclusion(out bool sunOccluded, out bool insideExitBand)
+        {
+            sunOccluded = false;
+            insideExitBand = false;
+            bool hasOccluder = false;
+            float3 toSun = _resolvedSunDirection;
+
+            if (TryResolveAegirSkyDirection(out float3 toAegir))
+            {
+                hasOccluder = true;
+                EvaluateSunOccluder(
+                    toSun,
+                    toAegir,
+                    GetAegirAngularRadiusDegrees(),
+                    ref sunOccluded,
+                    ref insideExitBand);
+            }
+
+            for (int i = 0; i < _observerBodyCache.Count; i++)
+            {
+                ObserverRelativeCelestialBody body = _observerBodyCache[i];
+                if (body == null || body == aegirObserverRelativeBody)
+                    continue;
+
+                Vector3 bodyDirectionManaged = body.CurrentDirection;
+                if (bodyDirectionManaged.sqrMagnitude <= 0.0001f)
+                    continue;
+
+                hasOccluder = true;
+                float3 bodyDirection = math.normalize((float3)bodyDirectionManaged);
+                float angularRadius = math.max(body.AngularDiameterDegrees * 0.5f, 0.01f);
+                EvaluateSunOccluder(
+                    toSun,
+                    bodyDirection,
+                    angularRadius,
+                    ref sunOccluded,
+                    ref insideExitBand);
+            }
+
+            return hasOccluder;
+        }
+
+        private void EvaluateSunOccluder(
+            float3 toSun,
+            float3 toOccluder,
+            float angularRadius,
+            ref bool sunOccluded,
+            ref bool insideExitBand)
+        {
+            float dotSunOccluder = math.dot(toSun, toOccluder);
+            float angleDeg = math.degrees(
+                math.acos(math.clamp(dotSunOccluder, -1f, 1f)));
+
+            if (angleDeg < angularRadius)
+                sunOccluded = true;
+
+            if (angleDeg < angularRadius + eclipseHysteresisMargin)
+                insideExitBand = true;
         }
 
         // ─────────────────────────────────────────────
@@ -3367,6 +3466,16 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         public float SunOcclusionFactor => _smoothedOcclusionFactor;
         public float RotationTimer => _rotationTimer;
         public float GameTime => _gameTime;
+
+        public bool TryGetAegirSkyDirection(out Vector3 direction)
+        {
+            direction = Vector3.zero;
+            if (!TryResolveAegirSkyDirection(out float3 resolvedDirection))
+                return false;
+
+            direction = new Vector3(resolvedDirection.x, resolvedDirection.y, resolvedDirection.z);
+            return true;
+        }
 
         public void SetOrbitalAngle(float angleDegrees)
         {

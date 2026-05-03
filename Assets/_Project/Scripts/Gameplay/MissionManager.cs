@@ -72,7 +72,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterMissionRuntime(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Missions, this);
         }
 
         private void TryUnregisterService()

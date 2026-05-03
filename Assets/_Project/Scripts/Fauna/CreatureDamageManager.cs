@@ -128,7 +128,7 @@ namespace Hecton8.AI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = true;
+            _registeredTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void RefreshBounds()

@@ -438,7 +438,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = true;
+            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
         }
 
         private void TryUnregister()

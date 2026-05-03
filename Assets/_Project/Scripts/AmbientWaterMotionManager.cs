@@ -336,7 +336,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()
@@ -354,7 +354,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterAmbientWaterMotionRuntime(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.AmbientWaterMotion, this);
         }
 
         private void TryUnregisterService()

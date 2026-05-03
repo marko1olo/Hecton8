@@ -60,6 +60,28 @@ using UnityEditor;
 namespace Hecton8.Atmosphere
 {
     /// <summary>
+    /// Single write facade for global atmosphere render settings owned by runtime visual systems.
+    /// </summary>
+    public static class AtmosphereDirector
+    {
+        public static Material Skybox => RenderSettings.skybox;
+
+        public static bool IsSkybox(Material material)
+        {
+            return ReferenceEquals(RenderSettings.skybox, material);
+        }
+
+        public static bool SetSkybox(Material material)
+        {
+            if (ReferenceEquals(RenderSettings.skybox, material))
+                return false;
+
+            RenderSettings.skybox = material;
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Main-thread listener for deferred atmosphere state changes.
     /// </summary>
     public interface IAtmosphereStateEventListener
@@ -622,7 +644,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

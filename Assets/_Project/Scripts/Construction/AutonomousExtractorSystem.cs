@@ -164,13 +164,13 @@ namespace Hecton8.Construction
             if (!_slowTickRegistered)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = true;
+                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
             }
 
             if (!_lateFrameRegistered)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = true;
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
         }
 
@@ -563,7 +563,10 @@ namespace Hecton8.Construction
         private const string DefaultPlacementBlockedReason = "INFINITE VEIN REQUIRED";
         private const string DefaultClaimBlockedReason = "VEIN ALREADY CLAIMED";
         private const string DefaultNodeScaleBlockedReason = "VEIN TOO SMALL";
-        private static readonly Collider[] PlacementOverlapBuffer = new Collider[24];
+        private const int PlacementOverlapCapacity = 24;
+        private const int ResourceNodeLookupCacheCapacity = PlacementOverlapCapacity;
+        // COLD ALLOC: Collider[24] — placement/resource-node overlap buffer — owner: AutonomousExtractorModule
+        private static readonly Collider[] PlacementOverlapBuffer = new Collider[PlacementOverlapCapacity];
 
         [Header("Placement")]
         [SerializeField, Range(0.5f, 6f)]
@@ -601,6 +604,12 @@ namespace Hecton8.Construction
         private bool _hasPower = true;
         private bool _isOperating;
         private int _runtimeIndex = -1;
+        // COLD ALLOC: ulong[24] — overlap collider id cache for resource-node discovery — owner: AutonomousExtractorModule
+        private readonly ulong[] _resourceNodeLookupColliderIds = new ulong[ResourceNodeLookupCacheCapacity];
+        // COLD ALLOC: ResourceNode[24] — overlap collider resolved resource cache — owner: AutonomousExtractorModule
+        private readonly ResourceNode[] _resourceNodeLookupNodes = new ResourceNode[ResourceNodeLookupCacheCapacity];
+        private int _resourceNodeLookupCount;
+        private int _resourceNodeLookupWriteCursor;
 
         /// <summary>True while the module is currently drawing grid power for extraction.</summary>
         public bool IsOperating => _isOperating;
@@ -627,17 +636,20 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            ClearResourceNodeLookupCache();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            ClearResourceNodeLookupCache();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            ClearResourceNodeLookupCache();
         }
 
         /// <inheritdoc />
@@ -647,6 +659,7 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             SetBoundNode(null);
             ApplyRuntimeTelemetry(0, 0, 0, false);
+            ClearResourceNodeLookupCache();
             TryRegister();
         }
 
@@ -658,6 +671,7 @@ namespace Hecton8.Construction
             _debugHasPower = true;
             SetBoundNode(null);
             ApplyRuntimeTelemetry(0, 0, 0, false);
+            ClearResourceNodeLookupCache();
         }
 
         /// <inheritdoc />
@@ -801,7 +815,9 @@ namespace Hecton8.Construction
                 if (collider == null)
                     continue;
 
-                ResourceNode candidate = collider.GetComponent<ResourceNode>() ?? collider.GetComponentInParent<ResourceNode>();
+                if (!TryResolveResourceNode(collider, out ResourceNode candidate))
+                    continue;
+
                 if (candidate == null ||
                     candidate.IsDepleted ||
                     !candidate.gameObject.activeInHierarchy ||
@@ -822,6 +838,78 @@ namespace Hecton8.Construction
             }
 
             return node != null;
+        }
+
+        private bool TryResolveResourceNode(Collider collider, out ResourceNode node)
+        {
+            node = null;
+            if (collider == null)
+                return false;
+
+            ulong colliderId = ResolveColliderRuntimeId(collider);
+            if (colliderId != 0UL)
+            {
+                for (int i = 0; i < _resourceNodeLookupCount; i++)
+                {
+                    if (_resourceNodeLookupColliderIds[i] != colliderId)
+                        continue;
+
+                    node = _resourceNodeLookupNodes[i];
+                    if (node != null)
+                        return node.gameObject.activeInHierarchy;
+
+                    _resourceNodeLookupColliderIds[i] = 0UL;
+                    break;
+                }
+            }
+
+            if (!collider.TryGetComponent(out node))
+                node = collider.GetComponentInParent<ResourceNode>();
+
+            if (colliderId != 0UL && node != null)
+                CacheResourceNodeLookup(colliderId, node);
+
+            return node != null;
+        }
+
+        private void CacheResourceNodeLookup(ulong colliderId, ResourceNode node)
+        {
+            if (colliderId == 0UL || node == null)
+                return;
+
+            int slot;
+            if (_resourceNodeLookupCount < _resourceNodeLookupColliderIds.Length)
+            {
+                slot = _resourceNodeLookupCount;
+                _resourceNodeLookupCount++;
+            }
+            else
+            {
+                slot = _resourceNodeLookupWriteCursor;
+            }
+
+            _resourceNodeLookupColliderIds[slot] = colliderId;
+            _resourceNodeLookupNodes[slot] = node;
+            _resourceNodeLookupWriteCursor = (_resourceNodeLookupWriteCursor + 1) % _resourceNodeLookupColliderIds.Length;
+        }
+
+        private void ClearResourceNodeLookupCache()
+        {
+            for (int i = 0; i < _resourceNodeLookupCount; i++)
+            {
+                _resourceNodeLookupColliderIds[i] = 0UL;
+                _resourceNodeLookupNodes[i] = null;
+            }
+
+            _resourceNodeLookupCount = 0;
+            _resourceNodeLookupWriteCursor = 0;
+        }
+
+        private static ulong ResolveColliderRuntimeId(Collider collider)
+        {
+            return collider != null
+                ? EntityId.ToULong(collider.GetEntityId())
+                : 0UL;
         }
 
         private bool MeetsSizeThreshold(ResourceNode node)

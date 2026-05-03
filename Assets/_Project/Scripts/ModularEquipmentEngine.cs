@@ -548,7 +548,7 @@ namespace Hecton8.Tools
                 return;
 
             GlobalRegistry.RegisterModularEquipmentService(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.ModularEquipment, this);
         }
 
         internal bool TryGetWirelessBrownoutFeedback(uint toolId, out float flickerScalar)

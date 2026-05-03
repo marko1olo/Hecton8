@@ -1374,7 +1374,7 @@ private int AcquireSourceIndex()
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredUpdatable = true;
+            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
         }
 
         void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
@@ -1715,7 +1715,8 @@ private int AcquireSourceIndex()
             if (_arrivalTimes == null || _haasReleaseTimes == null)
                 return;
 
-            for (int i = 0; i < _poolSize; i++)
+            int resetCount = math.min(_poolSize, math.min(_arrivalTimes.Length, _haasReleaseTimes.Length));
+            for (int i = 0; i < resetCount; i++)
                 ResetHaasState(i);
         }
 
@@ -1724,7 +1725,8 @@ private int AcquireSourceIndex()
             if (_pool == null)
                 return;
 
-            for (int i = 0; i < _poolSize; i++)
+            int resetCount = math.min(_poolSize, _pool.Length);
+            for (int i = 0; i < resetCount; i++)
                 ResetWorldSourceState(i, false);
         }
 
@@ -1747,7 +1749,11 @@ private int AcquireSourceIndex()
 
         private void ResetHaasState(int sourceIndex)
         {
-            if (_arrivalTimes == null || _haasReleaseTimes == null || sourceIndex < 0 || sourceIndex >= _poolSize)
+            if (_arrivalTimes == null || _haasReleaseTimes == null || sourceIndex < 0)
+                return;
+
+            int resetCount = math.min(_poolSize, math.min(_arrivalTimes.Length, _haasReleaseTimes.Length));
+            if (sourceIndex >= resetCount)
                 return;
 
             _arrivalTimes[sourceIndex] = -1f;
@@ -1756,7 +1762,7 @@ private int AcquireSourceIndex()
 
         private void ResetWorldSourceState(int sourceIndex, bool clearClip)
         {
-            if (_pool == null || sourceIndex < 0 || sourceIndex >= _poolSize)
+            if (_pool == null || sourceIndex < 0 || sourceIndex >= _pool.Length)
                 return;
 
             RemoveWorldSourceActive(sourceIndex);
@@ -2984,13 +2990,16 @@ private int AcquireSourceIndex()
         // COLD ALLOC: bool[32] - caption sidecar occupancy map prevents wrap overwrite before deferred flush - owner: AudioCaptionEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<AudioCaptionPayload> _pendingEvents;
+        private static NativeQueue<AudioCaptionPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _lastOverflowWarningFrame = -1;
+        private static bool _isDispatching;
 
         /// <summary>Number of caption payloads waiting for late-frame dispatch.</summary>
-        public static int PendingCount => _pendingEventCount;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -3002,12 +3011,21 @@ private int AcquireSourceIndex()
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(AudioCaptionEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             ClearReferenceSlots();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
             _referenceWriteIndex = 0;
             _referencePendingCount = 0;
             _lastOverflowWarningFrame = -1;
+            _isDispatching = false;
         }
 
         /// <summary>Registers one audio caption listener.</summary>
@@ -3037,23 +3055,34 @@ private int AcquireSourceIndex()
                 return;
 
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            _isDispatching = true;
+            try
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
+                while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+                {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
 
-                if (!_pendingEvents.TryDequeue(out AudioCaptionPayload payload))
-                    break;
+                    if (!_pendingEvents.TryDequeue(out AudioCaptionPayload payload))
+                        break;
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
+                    if (_pendingEventCount > 0)
+                        _pendingEventCount--;
 
-                Dispatch(in payload);
-                ReleaseReferenceSlot(payload.ReferenceSlot);
+                    Dispatch(in payload);
+                    ReleaseReferenceSlot(payload.ReferenceSlot);
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (!_pendingEvents.IsEmpty())
+                return;
+
+            _pendingEventCount = 0;
+            PromoteNextFrameEvents();
         }
 
         /// <summary>
@@ -3085,21 +3114,32 @@ private int AcquireSourceIndex()
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<AudioCaptionPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioCaptionPayload>[32] - deferred spatial audio caption lane flushed by SystemDispatcher LateUpdate - owner: AudioCaptionEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(AudioCaptionEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<AudioCaptionPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioCaptionPayload>[32] - deferred spatial audio caption lane flushed by SystemDispatcher LateUpdate - owner: AudioCaptionEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(AudioCaptionEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<AudioCaptionPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioCaptionPayload>[32] - next-frame spatial audio captions raised by caption listeners - owner: AudioCaptionEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(AudioCaptionEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static bool Enqueue(in AudioCaptionPayload payload)
         {
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReleaseReferenceSlot(payload.ReferenceSlot);
                 ReportOverflowOncePerFrame();
@@ -3107,9 +3147,31 @@ private int AcquireSourceIndex()
             }
 
             EnsureInitialized();
-            _pendingEvents.Enqueue(payload);
-            _pendingEventCount++;
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+            }
+            else
+            {
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+            }
+
             return true;
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            if (!_nextFrameEvents.IsCreated || _nextFrameEventCount <= 0)
+                return;
+
+            while (_nextFrameEventCount > 0 && _nextFrameEvents.TryDequeue(out AudioCaptionPayload payload))
+            {
+                _nextFrameEventCount--;
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+            }
         }
 
         private static void Dispatch(in AudioCaptionPayload payload)
@@ -3133,7 +3195,11 @@ private int AcquireSourceIndex()
             IAudioCaptionEventListener[] rawArray = _listeners.RawArray;
             int count = _listeners.Count;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnAudioCaptionRequested(request);
+            {
+                IAudioCaptionEventListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnAudioCaptionRequested(request);
+            }
         }
 
         private static bool TryReserveReferenceSlot(out int referenceSlot)

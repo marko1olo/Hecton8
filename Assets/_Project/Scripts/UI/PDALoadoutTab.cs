@@ -235,6 +235,7 @@ namespace Hecton8.UI
             numericFont = LocalizedFontResolver.ResolveNumericFont(numericFont, labelFont);
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void AutoResolveTabIndex()
         {
             if (gameObject.name.Contains("Loadout", System.StringComparison.OrdinalIgnoreCase))
@@ -1421,7 +1422,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToDispatcher = true;
+            _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

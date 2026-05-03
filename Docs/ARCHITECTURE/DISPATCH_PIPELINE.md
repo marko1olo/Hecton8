@@ -79,6 +79,32 @@ In editor/development builds, non-forced `DispatcherJobSwap.TryComplete(...)` ca
 
 `HectonWorldGenerator.StopStreaming()` is a teardown-only exception: pending chunk generation jobs are completed before LUT/native buffer disposal, and pending PhysX bake jobs are completed before chunk collider destruction. These call sites must stay annotated as `[BLOCKING_SYNC_POINT]` and must not be used as a normal residency-retirement path.
 
+## Foundation Guard Inventory
+May 3 source guard:
+
+- Tool: `Tools/ReloadAudit/Scan-FoundationGuards.ps1`
+- Output: `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`
+- Global registry self-registration inventory: `493`
+- Blind registry flag drift: `0`
+- Origin shift listener blind flag drift: `0`
+- Synchronous `.Run(` sites: `0`
+- Hot-path synchronous `.Run(` review sites: `0`
+- Completion `.Complete(` text hits: `1`
+- Direct raw-array listener dispatch: `0`
+- `GlobalRegistry.Input` nullable misuse: `0`
+- Direct `InputManager.Instance` sites: `28`
+- Hot-path direct `InputManager.Instance` review sites: `0`
+- Optimization singleton residue: `0`
+- Unauthorized Unity loop methods: `0`
+- Legacy coroutine sites: `0`
+- Forbidden runtime asset API sites: `0`
+- Broad physics layer masks outside Editor: `0`
+- Runtime Find API text hits outside Editor folder: `0`
+
+`.Run(` sites are not automatic violations. Treat them as migration candidates only after the owner has a front/back buffer, a late-frame or post-fixed publication window, and profiler evidence that synchronous execution is a real frame-time problem.
+
+`.Complete(` text hits are not all `JobHandle.Complete()`. Current source inventory still separates `dispatcher.Complete(...)` request callbacks from the explicit `handle.Complete()` inside `DispatcherJobSwap.TryComplete(...)`.
+
 ## ThreadSafeCommandQueue
 `ThreadSafeCommandQueue` exists for structural intent only.
 
@@ -98,7 +124,7 @@ Current supported commands:
 If a future system needs another structural mutation, add a new opcode and keep the payload blittable.
 
 ## NativeQueue Event Generations
-`BootstrapEvents`, `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `SaveEvents`, `InventoryEvents`, `WeatherEvents`, `QuestEvents`, `PowerGridTelemetryEvents`, `NarrativeEvents`, `NotificationEvents`, `FirstHourEvents`, `EndingEvents`, `AtmosphereEvents`, `EclipseGameplayEvents`, `AcousticZoneEvents`, `CelestialEvents`, `MapMagicBiomeEvents`, and `BiomeMatrixEvents` are the current source-level references for generation-split queue flushing.
+`ModRegistryEvents`, `BootstrapEvents`, `LocalizationEvents`, `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `SaveEvents`, `InventoryEvents`, `WeatherEvents`, `QuestEvents`, `PowerGridTelemetryEvents`, `NarrativeEvents`, `NotificationEvents`, `FirstHourEvents`, `EndingEvents`, `AudioLogEvents`, `AtmosphereEvents`, `EclipseGameplayEvents`, `AcousticZoneEvents`, `PhysicsEventBus`, `CelestialEvents`, `FluidFeedbackEvents`, `RepairDroneTorchAcousticEvents`, `ElectrolysisAcousticEvents`, `AudioCaptionEvents`, `SpectrumEvents`, `ProceduralAudioEvents`, `HectonSubmarineOsEvents`, `LaserCutterEvents`, `MapMagicBiomeEvents`, `BiomeMatrixEvents`, `DirectorAIEvents`, `HectonDroneFleetEvents`, `FlashlightEvents`, `PlayerSignalEvents`, `HighPressureEvents`, `FatalPressureImplosionEvents`, `ModuleStatusEvents`, `DepthZoneEvents`, `SoundscapeEvents`, `EmergencyServiceRelayEvents`, `SargassumGlobalDragManager`, `AtlasSignalEvents`, `PlayerExpressionEvents`, `BaseIntegrityEvents`, `PDAIntrusionEvents`, `PDAEvents`, `SceneBootstrap`, `ObjectPoolDiagnostics`, `PerformanceEvents`, `RandomEventEvents`, `Atlas6Events`, and `GlobalRegistry` service rebound events are the current source-level references for generation-split queue flushing.
 
 - Front queue: current generation drained by `SystemDispatcher.LateUpdate()`.
 - Back queue: payloads raised by listeners during dispatch.

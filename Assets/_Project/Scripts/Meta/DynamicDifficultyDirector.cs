@@ -335,7 +335,7 @@ namespace Hecton8.Meta
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredToTick = true;
+            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

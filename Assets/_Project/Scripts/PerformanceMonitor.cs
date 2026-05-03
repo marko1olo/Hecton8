@@ -89,12 +89,15 @@ namespace Hecton8.Core
         // COLD ALLOC: RegistryBucket<IPerformanceEventListener>[8] - performance threshold listeners drained by SystemDispatcher LateUpdate - owner: PerformanceEvents
         private static readonly RegistryBucket<IPerformanceEventListener> _listeners = new RegistryBucket<IPerformanceEventListener>(8);
         private static NativeQueue<PerformanceEventPayload> _pendingEvents;
+        private static NativeQueue<PerformanceEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
         /// <summary>
         /// Pending payload count in the performance threshold lane.
         /// </summary>
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         /// <summary>
         /// Registers a performance threshold listener.
@@ -133,39 +136,65 @@ namespace Hecton8.Core
             }
 
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            _isDispatching = true;
+            try
             {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
+                while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+                {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
 
-                if (!_pendingEvents.TryDequeue(out PerformanceEventPayload payload))
-                    break;
+                    if (!_pendingEvents.TryDequeue(out PerformanceEventPayload payload))
+                        break;
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
+                    if (_pendingEventCount > 0)
+                        _pendingEventCount--;
 
-                IPerformanceEventListener[] rawArray = _listeners.RawArray;
-                int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnPerformanceEvent(in payload);
+                    IPerformanceEventListener[] rawArray = _listeners.RawArray;
+                    int count = _listeners.Count;
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IPerformanceEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnPerformanceEvent(in payload);
+                    }
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (!_pendingEvents.IsEmpty())
+                return;
+
+            _pendingEventCount = 0;
+            PromoteNextFrameEvents();
         }
 
         internal static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<PerformanceEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - deferred performance threshold lane flushed by SystemDispatcher LateUpdate - owner: PerformanceEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(PerformanceEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<PerformanceEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - deferred performance threshold lane flushed by SystemDispatcher LateUpdate - owner: PerformanceEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(PerformanceEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<PerformanceEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - next-frame performance events raised by listeners - owner: PerformanceEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(PerformanceEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         internal static void RaiseFrameTimeSpike(float frameTimeMs, float thresholdMs, int frameCount)
@@ -220,18 +249,35 @@ namespace Hecton8.Core
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PerformanceEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         private static void Enqueue(in PerformanceEventPayload payload)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
-            _pendingEvents.Enqueue(payload);
-            _pendingEventCount++;
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+            }
+            else
+            {
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+            }
         }
 
         private static void DrainWithoutDispatch()
@@ -252,8 +298,24 @@ namespace Hecton8.Core
                     _pendingEventCount--;
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (!_pendingEvents.IsEmpty())
+                return;
+
+            _pendingEventCount = 0;
+            PromoteNextFrameEvents();
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            if (!_nextFrameEvents.IsCreated || _nextFrameEventCount <= 0)
+                return;
+
+            while (_nextFrameEventCount > 0 && _nextFrameEvents.TryDequeue(out PerformanceEventPayload payload))
+            {
+                _nextFrameEventCount--;
+                _pendingEvents.Enqueue(payload);
+                _pendingEventCount++;
+            }
         }
     }
 
@@ -462,7 +524,7 @@ namespace Hecton8.Core
 
             PerformanceEvents.EnsureInitialized();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _isRegisteredToTickManager = true;
+            _isRegisteredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void OnDisable()

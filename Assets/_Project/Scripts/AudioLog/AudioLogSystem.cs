@@ -269,7 +269,7 @@ namespace Hecton8.Narrative
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()

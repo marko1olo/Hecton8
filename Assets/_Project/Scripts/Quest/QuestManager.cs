@@ -78,7 +78,7 @@ namespace Hecton8.Quest
 
             ActiveRuntimeInstance = this;
             GlobalRegistry.RegisterQuestRuntime(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Quest, this);
 
             _registeredSaveService = GlobalRegistry.Save;
             _registeredSaveService?.Register(this);

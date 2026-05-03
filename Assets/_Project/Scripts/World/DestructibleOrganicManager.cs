@@ -62,6 +62,8 @@ namespace Hecton8.World
         private const int DefaultCorpseNodeCapacity = 96;
         private const float DefaultCorpseBloodIntensity = 6f;
         private const int MaterialClassCount = 5;
+        private const string NativeMemoryOwner = nameof(DestructibleOrganicManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         private enum HarvestState : byte
         {
@@ -557,6 +559,7 @@ namespace Hecton8.World
             _dropBuffer = new DropBuffer(DefaultDropBufferCapacity, Allocator.Persistent);
             // COLD ALLOC: Vector3[1] - bounded debug scratch for future runtime diagnostics - owner: DestructibleOrganicManager
             _dropDebugScratch = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeMemorySentinel();
             // COLD ALLOC: CorpseResourceNodeRecord[96] - bounded ecological corpse-resource nodes used by scavenger AI and blood-scent routing - owner: DestructibleOrganicManager
             _corpseResourceNodes = new CorpseResourceNodeRecord[DefaultCorpseNodeCapacity];
             _corpseResourceNodeCount = 0;
@@ -638,65 +641,26 @@ namespace Hecton8.World
             if (_dropBuffer.IsCreated)
                 _dropBuffer.Dispose();
 
-            if (_healthByInstanceUid.IsCreated)
-                _healthByInstanceUid.Dispose();
-
-            if (_destroyedByInstanceUid.IsCreated)
-                _destroyedByInstanceUid.Dispose();
-
-            if (_persistedHealth01ByInstanceUid.IsCreated)
-                _persistedHealth01ByInstanceUid.Dispose();
-
-            if (_persistedHeightScale01ByInstanceUid.IsCreated)
-                _persistedHeightScale01ByInstanceUid.Dispose();
-
-            if (_pendingWiltEndTimeByInstanceUid.IsCreated)
-                _pendingWiltEndTimeByInstanceUid.Dispose();
-
-            if (_damageVisualProgressByInstanceUid.IsCreated)
-                _damageVisualProgressByInstanceUid.Dispose();
-
-            if (_maturationScaleByInstanceUid.IsCreated)
-                _maturationScaleByInstanceUid.Dispose();
-
-            if (_maturationYieldByInstanceUid.IsCreated)
-                _maturationYieldByInstanceUid.Dispose();
-
-            if (_nextSporeAcousticTimeByInstanceUid.IsCreated)
-                _nextSporeAcousticTimeByInstanceUid.Dispose();
-
-            if (_decompositionStartTimeByInstanceUid.IsCreated)
-                _decompositionStartTimeByInstanceUid.Dispose();
-
-            if (_regrowthProgressByInstanceUid.IsCreated)
-                _regrowthProgressByInstanceUid.Dispose();
-
-            if (_regrowthPositionByInstanceUid.IsCreated)
-                _regrowthPositionByInstanceUid.Dispose();
-
-            if (_baseScaleByInstanceUid.IsCreated)
-                _baseScaleByInstanceUid.Dispose();
-
-            if (_runtimeFlagsByInstanceUid.IsCreated)
-                _runtimeFlagsByInstanceUid.Dispose();
-
-            if (_lastOrganicTouchTimeByInstanceUid.IsCreated)
-                _lastOrganicTouchTimeByInstanceUid.Dispose();
-
-            if (_overgrownByInstanceUid.IsCreated)
-                _overgrownByInstanceUid.Dispose();
-
-            if (_rootMoundAppliedByInstanceUid.IsCreated)
-                _rootMoundAppliedByInstanceUid.Dispose();
-
-            if (_destroyedFloraScratch.IsCreated)
-                _destroyedFloraScratch.Dispose();
-
-            if (_floraStateOverrideScratch.IsCreated)
-                _floraStateOverrideScratch.Dispose();
-
-            if (_pendingYieldEvents.IsCreated)
-                _pendingYieldEvents.Dispose();
+            DisposeNativeHashMap(ref _healthByInstanceUid, nameof(_healthByInstanceUid));
+            DisposeNativeHashMap(ref _destroyedByInstanceUid, nameof(_destroyedByInstanceUid));
+            DisposeNativeHashMap(ref _persistedHealth01ByInstanceUid, nameof(_persistedHealth01ByInstanceUid));
+            DisposeNativeHashMap(ref _persistedHeightScale01ByInstanceUid, nameof(_persistedHeightScale01ByInstanceUid));
+            DisposeNativeHashMap(ref _pendingWiltEndTimeByInstanceUid, nameof(_pendingWiltEndTimeByInstanceUid));
+            DisposeNativeHashMap(ref _damageVisualProgressByInstanceUid, nameof(_damageVisualProgressByInstanceUid));
+            DisposeNativeHashMap(ref _maturationScaleByInstanceUid, nameof(_maturationScaleByInstanceUid));
+            DisposeNativeHashMap(ref _maturationYieldByInstanceUid, nameof(_maturationYieldByInstanceUid));
+            DisposeNativeHashMap(ref _nextSporeAcousticTimeByInstanceUid, nameof(_nextSporeAcousticTimeByInstanceUid));
+            DisposeNativeHashMap(ref _decompositionStartTimeByInstanceUid, nameof(_decompositionStartTimeByInstanceUid));
+            DisposeNativeHashMap(ref _regrowthProgressByInstanceUid, nameof(_regrowthProgressByInstanceUid));
+            DisposeNativeHashMap(ref _regrowthPositionByInstanceUid, nameof(_regrowthPositionByInstanceUid));
+            DisposeNativeHashMap(ref _baseScaleByInstanceUid, nameof(_baseScaleByInstanceUid));
+            DisposeNativeHashMap(ref _runtimeFlagsByInstanceUid, nameof(_runtimeFlagsByInstanceUid));
+            DisposeNativeHashMap(ref _lastOrganicTouchTimeByInstanceUid, nameof(_lastOrganicTouchTimeByInstanceUid));
+            DisposeNativeHashMap(ref _overgrownByInstanceUid, nameof(_overgrownByInstanceUid));
+            DisposeNativeHashMap(ref _rootMoundAppliedByInstanceUid, nameof(_rootMoundAppliedByInstanceUid));
+            DisposeNativeList(ref _destroyedFloraScratch, nameof(_destroyedFloraScratch));
+            DisposeNativeList(ref _floraStateOverrideScratch, nameof(_floraStateOverrideScratch));
+            DisposeNativeList(ref _pendingYieldEvents, nameof(_pendingYieldEvents));
         }
 
         /// <summary>
@@ -1038,6 +1002,8 @@ namespace Hecton8.World
                 math.max(1, totalLootEntries),
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: LootRuntimeEntry[totalLootEntries] - flattened harvest loot runtime table - owner: DestructibleOrganicManager
+            NativeMemorySentinel.RegisterNativeArray(_templateDescriptors, NativeMemoryOwner, nameof(_templateDescriptors), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_lootEntries, NativeMemoryOwner, nameof(_lootEntries), NativeMemoryLifetime);
             _descriptorHarvestTemplates = new HarvestableTemplate[math.max(1, validTemplateCount)]; // COLD ALLOC: HarvestableTemplate[templateCount] - descriptor-to-authoring lookup for flora template harvest routing - owner: DestructibleOrganicManager
             _floraCategoryByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - flora-category cache used by harvest-state thresholds - owner: DestructibleOrganicManager
             _audioMaterialByDescriptorIndex = new byte[math.max(1, validTemplateCount)]; // COLD ALLOC: byte[templateCount] - flora audio-material routing cache used by harvest-state audio dispatch - owner: DestructibleOrganicManager
@@ -1321,6 +1287,7 @@ namespace Hecton8.World
                 math.max(1, MaterialClassCount),
                 Allocator.Persistent,
                 NativeArrayOptions.ClearMemory); // COLD ALLOC: EntropyYieldMaterialLutEntry[MaterialClassCount] - deterministic density/unit-mass lookup for burst flora yield - owner: DestructibleOrganicManager
+            NativeMemorySentinel.RegisterNativeArray(_yieldMaterialLut, NativeMemoryOwner, nameof(_yieldMaterialLut), NativeMemoryLifetime);
 
             WriteYieldMaterialLut(HarvestableTemplate.MaterialClass.None, 1000f, 1f, 0.5f, 0f);
             WriteYieldMaterialLut(HarvestableTemplate.MaterialClass.Kelp, 460f, 1.2f, 0.58f, 0.08f);
@@ -1427,9 +1394,15 @@ namespace Hecton8.World
                 return;
             }
 
-            NativeArray<uint> instanceUids = underwater ? EnsureLaneCapacity(ref _underwaterInstanceUids, count) : EnsureLaneCapacity(ref _surfaceInstanceUids, count);
-            NativeArray<byte> materialClasses = underwater ? EnsureLaneCapacity(ref _underwaterMaterialClasses, count) : EnsureLaneCapacity(ref _surfaceMaterialClasses, count);
-            NativeArray<Unity.Mathematics.half> health = underwater ? EnsureLaneCapacity(ref _underwaterHealth, count) : EnsureLaneCapacity(ref _surfaceHealth, count);
+            NativeArray<uint> instanceUids = underwater
+                ? EnsureLaneCapacity(ref _underwaterInstanceUids, count, nameof(_underwaterInstanceUids))
+                : EnsureLaneCapacity(ref _surfaceInstanceUids, count, nameof(_surfaceInstanceUids));
+            NativeArray<byte> materialClasses = underwater
+                ? EnsureLaneCapacity(ref _underwaterMaterialClasses, count, nameof(_underwaterMaterialClasses))
+                : EnsureLaneCapacity(ref _surfaceMaterialClasses, count, nameof(_surfaceMaterialClasses));
+            NativeArray<Unity.Mathematics.half> health = underwater
+                ? EnsureLaneCapacity(ref _underwaterHealth, count, nameof(_underwaterHealth))
+                : EnsureLaneCapacity(ref _surfaceHealth, count, nameof(_surfaceHealth));
             float currentTime = Time.time;
 
             for (int i = 0; i < count; i++)
@@ -1631,7 +1604,7 @@ namespace Hecton8.World
                 return;
 
             int eventCount = math.min(_pendingYieldEvents.Length, _dropBuffer.Capacity);
-            EnsureNativeCapacity(ref _yieldJobInput, eventCount);
+            EnsureNativeCapacity(ref _yieldJobInput, eventCount, nameof(_yieldJobInput));
             for (int i = 0; i < eventCount; i++)
             {
                 _yieldJobInput[i] = _pendingYieldEvents[i];
@@ -4188,13 +4161,13 @@ namespace Hecton8.World
             return mixed == 0u ? 1u : mixed;
         }
 
-        private static NativeArray<T> EnsureLaneCapacity<T>(ref NativeArray<T> array, int requiredCount) where T : unmanaged
+        private static NativeArray<T> EnsureLaneCapacity<T>(ref NativeArray<T> array, int requiredCount, string label) where T : unmanaged
         {
-            EnsureNativeCapacity(ref array, requiredCount);
+            EnsureNativeCapacity(ref array, requiredCount, label);
             return array;
         }
 
-        private static void EnsureNativeCapacity<T>(ref NativeArray<T> array, int requiredCount) where T : unmanaged
+        private static void EnsureNativeCapacity<T>(ref NativeArray<T> array, int requiredCount, string label) where T : unmanaged
         {
             if (requiredCount <= 0)
                 return;
@@ -4203,9 +4176,38 @@ namespace Hecton8.World
                 return;
 
             if (array.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
+            }
 
             array = new NativeArray<T>(requiredCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<T>[requiredCount] - resized persistent entropy runtime lane - owner: DestructibleOrganicManager
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeHashMap(_healthByInstanceUid, NativeMemoryOwner, nameof(_healthByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_destroyedByInstanceUid, NativeMemoryOwner, nameof(_destroyedByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_pendingWiltEndTimeByInstanceUid, NativeMemoryOwner, nameof(_pendingWiltEndTimeByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_damageVisualProgressByInstanceUid, NativeMemoryOwner, nameof(_damageVisualProgressByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_decompositionStartTimeByInstanceUid, NativeMemoryOwner, nameof(_decompositionStartTimeByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_regrowthProgressByInstanceUid, NativeMemoryOwner, nameof(_regrowthProgressByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_regrowthPositionByInstanceUid, NativeMemoryOwner, nameof(_regrowthPositionByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_maturationScaleByInstanceUid, NativeMemoryOwner, nameof(_maturationScaleByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_maturationYieldByInstanceUid, NativeMemoryOwner, nameof(_maturationYieldByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_nextSporeAcousticTimeByInstanceUid, NativeMemoryOwner, nameof(_nextSporeAcousticTimeByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_baseScaleByInstanceUid, NativeMemoryOwner, nameof(_baseScaleByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_runtimeFlagsByInstanceUid, NativeMemoryOwner, nameof(_runtimeFlagsByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_lastOrganicTouchTimeByInstanceUid, NativeMemoryOwner, nameof(_lastOrganicTouchTimeByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_overgrownByInstanceUid, NativeMemoryOwner, nameof(_overgrownByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_rootMoundAppliedByInstanceUid, NativeMemoryOwner, nameof(_rootMoundAppliedByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_destroyedFloraScratch, NativeMemoryOwner, nameof(_destroyedFloraScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_floraStateOverrideScratch, NativeMemoryOwner, nameof(_floraStateOverrideScratch), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_persistedHealth01ByInstanceUid, NativeMemoryOwner, nameof(_persistedHealth01ByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_persistedHeightScale01ByInstanceUid, NativeMemoryOwner, nameof(_persistedHeightScale01ByInstanceUid), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_pendingYieldEvents, NativeMemoryOwner, nameof(_pendingYieldEvents), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_dropDebugScratch, NativeMemoryOwner, nameof(_dropDebugScratch), NativeMemoryLifetime);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
@@ -4213,8 +4215,31 @@ namespace Hecton8.World
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
+        }
+
+        private static void DisposeNativeList<T>(ref NativeList<T> list, string label) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+            list.Dispose();
+            list = default;
+        }
+
+        private static void DisposeNativeHashMap<TKey, TValue>(ref NativeHashMap<TKey, TValue> map, string label)
+            where TKey : unmanaged, System.IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeHashMap(NativeMemoryOwner, label);
+            map.Dispose();
+            map = default;
         }
     }
 }

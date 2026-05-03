@@ -47,6 +47,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         [HDR] _StarColor ("Star Tint", Color) = (1.0, 1.0, 1.0, 1)
         _StarIntensity ("Star Brightness", Range(0, 10)) = 2.0
         _StarTwinkleSpeed ("Twinkle Speed", Range(0.5, 8.0)) = 2.5
+        _StarSeed ("Star Seed", Float) = 99173
 
         [Header(Sky Colors HDR)]
         [HDR] _SkyColorZenith ("Zenith Color", Color) = (0.05, 0.08, 0.25, 1)
@@ -177,6 +178,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half4  _StarColor;
                 half   _StarIntensity;
                 half   _StarTwinkleSpeed;
+                float  _StarSeed;
 
                 half4  _SkyColorZenith;
                 half4  _SkyColorHorizon;
@@ -295,6 +297,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
             float hash(float2 p)
             {
+                p += float2(_StarSeed * 0.071, _StarSeed * 0.113);
                 float3 p3 = frac(float3(p.xyx) * 0.1031);
                 p3 += dot(p3, p3.yzx + 33.33);
                 return frac((p3.x + p3.y) * p3.z);
@@ -490,11 +493,18 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     starUV.y = asin(Vf.y) * (1.0 / 3.14159265) + 0.5;
                     starUV *= _StarTiling.xy;
 
-                    half4 starSample = SAMPLE_TEXTURE2D(
-                        _StarTex, sampler_StarTex, starUV);
-
-                    float2 starCell = floor(starUV * 64.0);
-                    float starPhase = hash(starCell) * 6.28318;
+                    float2 starGrid = starUV * 128.0;
+                    float2 starCell = floor(starGrid);
+                    float2 starLocal = frac(starGrid) - 0.5;
+                    float densityHash = hash(starCell);
+                    float2 starOffset = float2(hash(starCell + 17.0), hash(starCell + 43.0)) - 0.5;
+                    float starDistance = length(starLocal - starOffset * 0.65);
+                    half starCore = (half)(step(0.985, densityHash) * smoothstep(0.055, 0.0, starDistance));
+                    half3 proceduralStarColor = lerp(
+                        half3(0.72h, 0.82h, 1.0h),
+                        half3(1.0h, 0.92h, 0.78h),
+                        (half)hash(starCell + 91.0));
+                    float starPhase = hash(starCell + 131.0) * 6.28318;
 
                     half starDayFade = saturate(-sunElevation * 10.0h);
                     half starVisibility = max(nightFactor * starDayFade,
@@ -503,9 +513,10 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     half flicker = 0.8h + 0.2h * (half)sin(
                         _GameTime * (float)_StarTwinkleSpeed + starPhase);
 
-                    starContrib = starSample.rgb
+                    starContrib = proceduralStarColor
                                 * _StarColor.rgb
                                 * _StarIntensity
+                                * starCore
                                 * flicker
                                 * starVisibility
                                 * zenithMask;

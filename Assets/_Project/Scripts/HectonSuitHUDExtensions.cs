@@ -99,7 +99,7 @@ public sealed class HectonSuitHUDExtensions : MonoBehaviour, ITickable, IUpdatab
             return;
 
         GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-        _tickRegistered = true;
+        _tickRegistered = GlobalRegistry.Updatables.Contains(this);
     }
 
     private void UnregisterTick()

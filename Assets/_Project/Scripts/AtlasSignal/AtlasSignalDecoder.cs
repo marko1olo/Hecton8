@@ -185,7 +185,7 @@ namespace Hecton8.AtlasSignal
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()

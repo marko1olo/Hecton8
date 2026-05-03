@@ -5,10 +5,10 @@ Status: `PENDING VERIFICATION`
 
 Purpose: canonical architecture contract for habitat logistics links, Bishop-frame pipe rendering, rupture buckling, and CSR adjacency rebuilds.
 
-2026-05-02 current-state boundary:
+2026-05-03 current-state boundary:
 
 - This is the habitat logistics architecture contract, not construction stress-test proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md`, `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - `HabitatGraphManager`, `BaseModule`, `BaseAirlock`, `ConstructionManager`, and pipe rendering remain active review surfaces for native lifetime, save/load restoration, graph rebuild storms, and authority boundaries.
 
 Supersedes: transient construction notes spread across dated audit bundles. Older one-shot construction writeups remain historical material, not architecture authority.
@@ -87,10 +87,18 @@ Rebuild sequence:
 4. Build node records.
 5. Build edge records, evaluate unsupported spans, and mark ruptures.
 6. Traverse anchor reachability from all explicit anchor modules.
-7. Publish unmoored state and emergency bulkhead lockdown state back into `BaseModule`.
-8. Publish degradation state.
-9. Publish the logical `LogisticsNetworkGraph`.
-10. Publish visual spline links.
+7. Publish unmoored state back into `BaseModule`.
+8. Evaluate connected-component power state using traversal scratch, not anchor-state truth.
+9. Publish emergency bulkhead lockdown state back into `BaseModule`.
+10. Publish degradation state.
+11. Publish the logical `LogisticsNetworkGraph`.
+12. Publish visual spline links.
+
+State separation rule:
+
+- `_anchorReachability` is authoritative anchor/isolated-state truth after step 6.
+- `_traversalVisited` is generic BFS scratch for component power, flood center-of-mass, and fungal target traversal.
+- traversal scratch must never be read as anchored-state truth.
 
 Unsupported span rule:
 

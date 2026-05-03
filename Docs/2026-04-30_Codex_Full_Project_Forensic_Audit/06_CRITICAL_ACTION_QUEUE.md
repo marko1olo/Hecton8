@@ -194,6 +194,50 @@ Queue corrections:
 
 STATUS: PENDING VERIFICATION
 
+## 2026-05-03 Input Controls Lifecycle Delta
+
+Follow-up evidence file: `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`.
+
+Queue correction:
+
+- Priority 0 item 3 is reduced for pause/PDA controls event lifecycle ownership: `PDAControlsRebindUI` and `PauseControlsPanel` now unsubscribe from the exact `InputManager` and `IInputBindingService` owners captured during subscribe.
+- `PauseControlsPanel` saves binding overrides before clearing its cached rebinding owner, avoiding save calls against a replaced registry slot during disable.
+- `PDAControlsRebindUI` now fails closed when input is absent during action lookup instead of dereferencing `InputManager.Instance`.
+- Controls selection indicator visibility now uses cached `CanvasGroup` references instead of resolving/adding `CanvasGroup` components during navigation-time selection refresh.
+- `BeaconHUDElement.ApplyDisplayVisible()` no longer performs `GetComponent<CanvasGroup>()` / `AddComponent<CanvasGroup>()` from the `Tick()` call chain; malformed icon records now fail closed.
+- `NotificationEvents` now guards duplicate listener registration, absent unregistration, and null listener dispatch slots.
+- Central event lanes `SaveEvents`, `ScanEvents`, `CraftingEvents`, `InteractionEvents`, `InventoryEvents`, `QuestEvents`, and `NarrativeEvents` now skip null listener slots during dispatch where needed; save/scan/quest/narrative also guard duplicate register and absent unregister.
+- Remaining direct raw-array listener invocations under `Assets/_Project/Scripts` were removed from bootstrap, weather, flashlight, ending, first-hour, storage-reservation commit, physics-impact, tool-effect, power telemetry, and pressure/implosion lanes. Dispatch now reads the slot to a local listener and skips null without allocation.
+
+Evidence:
+
+- Fresh local Core build after this patch: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false -clp:ErrorsOnly`
+- Result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`
+- Warning cleanup: removed dead `UIAudioFeedback` pitch-variation inspector fields because `IAudioService.PlayStatic2D` has no pitch parameter.
+- Follow-up source-slice build after selection-indicator caching while another build chain was contending for project references: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -clp:ErrorsOnly`
+- Follow-up result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`
+- Follow-up source-slice build after beacon HUD hot-path cache hardening: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -clp:ErrorsOnly`
+- Follow-up result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`
+- Follow-up source-slice build after notification listener hardening: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -clp:ErrorsOnly`
+- Follow-up result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`
+- Follow-up source-slice build after save/scan/crafting/interaction event-lane hardening: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -clp:ErrorsOnly`
+- Follow-up result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`
+- Follow-up source-slice build after inventory/quest/narrative event-lane hardening: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -clp:ErrorsOnly`
+- Follow-up result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`
+- Source grep after raw listener dispatch purge: `rg -n "rawArray\\[i\\]\\.On" Assets/_Project/Scripts`
+- Grep result: no matches.
+- Follow-up source-slice build after raw listener dispatch purge: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -clp:ErrorsOnly`
+- Follow-up result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`, elapsed `00:00:50.77`
+
+Still open:
+
+- Broader `InputManager.Instance` authority drift remains. This patch did not change public input contracts or migrate binding-query API surface.
+- No Unity Play Mode input-service replacement test.
+- No MCP console proof.
+- No GCMonitor proof.
+
+STATUS: PENDING VERIFICATION
+
 ## 2026-05-03 Foundation Hardening Delta
 
 Follow-up evidence file: `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`.
@@ -209,13 +253,101 @@ Fresh Unity batchmode evidence after the deferred PhysX-bake teardown and watchd
 Queue correction:
 
 - Priority 0 item 2 is source-patched for `HectonWorldGenerator`: runtime chunk retirement now defers active PhysX-bake teardown instead of force-completing bake handles during cancellation/eviction.
+- Priority 0 item 5 now has active Editor self-test coverage for `HectonSpatialHash`: stale handles are rejected, recycled handles advance generation, moved entries do not leave source-cell ghost occupancy, and AUP-scale queries pass at the tested range. Evidence: `Temp/CodexArtifacts/editmode-results-2026-05-03-spatialhash-selftest-after-beacon.xml`, result `Passed`, `3/3`.
 - Priority 1 item 2 is partially addressed for `ProceduralWreckGenerator` and `HectonFloatingOrigin`: mesh-build yield waits now have a watchdog, and floating-origin shift stability now reports within `1200` frames instead of `50000`.
 
 Still open:
 
 - Play Mode eviction stress is absent.
+- Spatial-hash live runtime churn under register/unregister pressure is absent.
 - GCMonitor proof is absent.
 - MCP runtime console is absent.
 - Memory-retention soak is absent.
+
+STATUS: PENDING VERIFICATION
+
+## 2026-05-03 Registry Service/Renderable / Job Barrier Guard Delta
+
+Follow-up evidence files:
+
+- `Docs/Reports/2026-05-03_REGISTRY_RENDERABLE_AND_JOB_BARRIER_GUARD.md`
+- `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`
+
+Source corrections:
+
+- `HectonUnderwaterVisuals`, `HectonSubmarineOS`, and `MissionMarkerSystem` now set `_registeredRenderable` from `GlobalRegistry.Renderables.Contains(this)` after `GlobalRegistry.Renderables.Register(this)`.
+- `DebrisManager` and `PhysicsApplySystem` now set `_isInitialized` from authoritative `GlobalRegistry.Debris` / `GlobalRegistry.Physics` slot ownership after service registration, and their teardown unregister paths verify slot ownership before unregister.
+- `HectonMapMagicVegetationBridge` now tracks TerrainTile static event subscription separately from `HectonFloatingOrigin` listener ownership, and reads `_originShiftListenerRegistered` from `HectonFloatingOrigin.IsListenerRegistered(this)` after registration.
+- `Tools/ReloadAudit/Scan-FoundationGuards.ps1` now source-scans first-party scripts for broad `GlobalRegistry.Register*(...this...)`, renderable self-registration, `HectonFloatingOrigin.RegisterListener(this)` followed by blind `_registered* = true` / `_isInitialized = true` / listener state flags, and direct `rawArray[i].On*` listener dispatch.
+- `RebindingManager` now uses the bootstrap-bound native input manager for rebind operations, binding override save/load/clear, and conflict detection instead of querying `InputManager.Instance` directly.
+
+Fresh source guard results:
+
+- `Global registry self-registration sites`: `493`
+- `Blind registry flag drift`: `0`
+- `Origin shift listener blind flag drift`: `0`
+- Synchronous job `.Run(` sites: `0`
+- Hot-path synchronous job `.Run(` review sites: `0`
+- Completion `.Complete(` text hits: `1`
+- Direct raw-array listener dispatch: `0`
+- `GlobalRegistry.Input` nullable misuse: `0`
+- Direct `InputManager.Instance` sites: `21`
+- Hot-path direct `InputManager.Instance` review sites: `0`
+- Optimization singleton residue: `0`
+- Unauthorized Unity loop methods: `0`
+- Legacy coroutine sites: `0`
+- Forbidden runtime asset API sites: `0`
+- Broad physics layer masks outside Editor: `0`
+- Runtime Find API text hits outside Editor folder: `0`
+
+Queue correction:
+
+- Priority 0 item 3 is reduced for the scanned broad registry/renderable self-registration flag pattern. It is not closed because singleton/DDOL residue and service sovereignty conflicts still exist.
+- Priority 1 item 1 remains open. `.Complete(` text hits are still dispatcher request callbacks plus `DispatcherJobSwap`; runtime stall proof is absent.
+- Priority 1 item 3 remains open. `.Run(` sites are inventoried and classified in the report, but not migrated without profiler data.
+
+Verification:
+
+- `dotnet build Hecton8.Core.csproj -v:minimal -nr:false -m:1 -p:UseSharedCompilation=false`
+- Result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`
+- Warning cleanup: removed dead `UIAudioFeedback` pitch-variation inspector fields because `IAudioService.PlayStatic2D` has no pitch parameter.
+- Latest source-slice rerun after raw listener-dispatch purge and guard regeneration: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -clp:ErrorsOnly`
+- Latest source-slice result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`, elapsed `00:00:10.39`
+- Latest source-slice rerun after rebinding native-owner binding: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:BuildProjectReferences=false -p:UseSharedCompilation=false -clp:ErrorsOnly`
+- Latest source-slice result: `Build succeeded.`, `0 Warning(s)`, `0 Error(s)`, elapsed `00:00:03.95`
+- Log: `.codex-artifacts/dotnet-Hecton8.Core-2026-05-03-foundation-guard-physicsmask.log`
+
+Still open:
+
+- Unity Play Mode proof is absent.
+- MCP runtime console proof is absent.
+- GCMonitor/profiler proof is absent.
+- Renderable bucket pressure and scene registration behavior are untested.
+- Job `.Run(` sites need measured frame-time attribution before dispatcher-window migration.
+
+STATUS: PENDING VERIFICATION
+
+## 2026-05-03 Habitat Graph Anchor-State Delta
+
+Follow-up evidence file: `Docs/Reports/2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md`.
+
+Queue correction:
+
+- `HabitatGraphManager` no longer uses `_anchorReachability` as generic BFS scratch in component power, flood center-of-mass, and fungal target traversal paths.
+- Authoritative anchor/isolated truth is now separated from traversal scratch through a persistent `_traversalVisited` native buffer.
+- This addresses a concrete source-level risk where later graph publish stages could read traversal visited state as anchored-state truth.
+
+Evidence:
+
+- Fresh full local Core build after this patch: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false`
+- Result: `0 Error(s)`, `1 Warning(s)`
+- Warning: `MSB3026` file-copy retry on `Temp\obj\Hecton8.Core\Hecton8.Core.dll`; not a C# compiler warning
+
+Still open:
+
+- No Play Mode base graph test.
+- No scene/prefab readback for module anchor roles.
+- No GCMonitor proof.
+- No construction graph teardown soak.
 
 STATUS: PENDING VERIFICATION

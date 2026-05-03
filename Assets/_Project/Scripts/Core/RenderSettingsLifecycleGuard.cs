@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Atmosphere;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -44,7 +45,7 @@ namespace Hecton8.Core
                     AmbientGroundColor = RenderSettings.ambientGroundColor,
                     AmbientIntensity = RenderSettings.ambientIntensity,
                     ReflectionIntensity = RenderSettings.reflectionIntensity,
-                    Skybox = RenderSettings.skybox,
+                    Skybox = AtmosphereDirector.Skybox,
                     Sun = RenderSettings.sun
                 };
             }
@@ -62,7 +63,7 @@ namespace Hecton8.Core
                 RenderSettings.ambientGroundColor = AmbientGroundColor;
                 RenderSettings.ambientIntensity = AmbientIntensity;
                 RenderSettings.reflectionIntensity = ReflectionIntensity;
-                RenderSettings.skybox = Skybox;
+                AtmosphereDirector.SetSkybox(Skybox);
                 RenderSettings.sun = Sun;
                 DynamicGI.UpdateEnvironment();
             }

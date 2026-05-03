@@ -1028,6 +1028,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref buffer.SandMaskNative);
                 // COLD ALLOC: NativeArray<byte>[sampleCount] - tile-cache sand mask imported from terrain splat data - owner: HectonMapMagicVegetationBridge
                 buffer.SandMaskNative = new NativeArray<byte>(sampleCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                RegisterTrackedNativeArray(buffer.SandMaskNative, nameof(buffer.SandMaskNative));
             }
 
             if (!buffer.RockMaskNative.IsCreated || buffer.RockMaskNative.Length != sampleCount)
@@ -1035,6 +1036,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref buffer.RockMaskNative);
                 // COLD ALLOC: NativeArray<byte>[sampleCount] - tile-cache rock mask imported from terrain splat data - owner: HectonMapMagicVegetationBridge
                 buffer.RockMaskNative = new NativeArray<byte>(sampleCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                RegisterTrackedNativeArray(buffer.RockMaskNative, nameof(buffer.RockMaskNative));
             }
 
             if (!buffer.HeightSamplesNative.IsCreated || buffer.HeightSamplesNative.Length != heightSampleCount)
@@ -1042,6 +1044,7 @@ namespace Hecton8.World
                 DisposeNativeArray(ref buffer.HeightSamplesNative);
                 // COLD ALLOC: NativeArray<ushort>[heightSampleCount] - tile-cache height samples for zero-GC vegetation placement queries - owner: HectonMapMagicVegetationBridge
                 buffer.HeightSamplesNative = new NativeArray<ushort>(heightSampleCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                RegisterTrackedNativeArray(buffer.HeightSamplesNative, nameof(buffer.HeightSamplesNative));
             }
 
             if (bufferIndex == 0)

@@ -80,7 +80,8 @@ namespace Hecton8.Core
                 return;
 
             EnsureInitialized();
-            _listeners.Register(listener);
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
         }
 
         public static void Unregister(INarrativeEventListener listener)
@@ -88,7 +89,8 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
         }
 
         public static void RegisterPointOfInterestListener(INarrativePointOfInterestListener listener)
@@ -96,7 +98,8 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            _pointOfInterestListeners.Register(listener);
+            if (!_pointOfInterestListeners.Contains(listener))
+                _pointOfInterestListeners.Register(listener);
         }
 
         public static void UnregisterPointOfInterestListener(INarrativePointOfInterestListener listener)
@@ -104,7 +107,8 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            _pointOfInterestListeners.Unregister(listener);
+            if (_pointOfInterestListeners.Contains(listener))
+                _pointOfInterestListeners.Unregister(listener);
         }
 
         public static void FlushPending()
@@ -134,7 +138,11 @@ namespace Hecton8.Core
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnNarrativeEvent(in payload);
+                    {
+                        INarrativeEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnNarrativeEvent(in payload);
+                    }
                 }
                 finally
                 {
@@ -169,7 +177,11 @@ namespace Hecton8.Core
             INarrativePointOfInterestListener[] rawArray = _pointOfInterestListeners.RawArray;
             int count = _pointOfInterestListeners.Count;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnNarrativePointOfInterestRegistered(poi);
+            {
+                INarrativePointOfInterestListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnNarrativePointOfInterestRegistered(poi);
+            }
         }
 
         public static void RaiseNarrativePOIDisposed(NarrativeDiscovery poi)
@@ -180,7 +192,11 @@ namespace Hecton8.Core
             INarrativePointOfInterestListener[] rawArray = _pointOfInterestListeners.RawArray;
             int count = _pointOfInterestListeners.Count;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnNarrativePointOfInterestDisposed(poi);
+            {
+                INarrativePointOfInterestListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnNarrativePointOfInterestDisposed(poi);
+            }
         }
 
         public static void RaiseDiscoveryMade(string discoveryId)

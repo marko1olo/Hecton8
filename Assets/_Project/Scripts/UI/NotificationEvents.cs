@@ -72,7 +72,8 @@ namespace Hecton8.UI
                 return;
 
             EnsureInitialized();
-            _listeners.Register(listener);
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
         }
 
         public static void Unregister(INotificationEventListener listener)
@@ -80,7 +81,8 @@ namespace Hecton8.UI
             if (listener == null)
                 return;
 
-            _listeners.Unregister(listener);
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
         }
 
         public static void FlushPending()
@@ -110,7 +112,11 @@ namespace Hecton8.UI
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnNotificationEvent(in payload);
+                    {
+                        INotificationEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnNotificationEvent(in payload);
+                    }
                 }
                 finally
                 {
@@ -164,6 +170,21 @@ namespace Hecton8.UI
             Publish(message, NotificationEventSeverity.Critical);
         }
 
+        internal static void PushRegisteredInfo(uint messageHash)
+        {
+            PublishRegistered(messageHash, NotificationEventSeverity.Info);
+        }
+
+        internal static void PushRegisteredWarning(uint messageHash)
+        {
+            PublishRegistered(messageHash, NotificationEventSeverity.Warning);
+        }
+
+        internal static void PushRegisteredCritical(uint messageHash)
+        {
+            PublishRegistered(messageHash, NotificationEventSeverity.Critical);
+        }
+
         private static void Publish(string message, NotificationEventSeverity severity)
         {
             uint messageHash = ComputeMessageHash(message);
@@ -176,6 +197,33 @@ namespace Hecton8.UI
 
             if (!_messagesByHash.ContainsKey(messageHash))
                 _messagesByHash.Add(messageHash, message);
+
+            NotificationEventPayload payload = new NotificationEventPayload
+            {
+                MessageHash = messageHash,
+                Severity = (ushort)severity,
+                Reserved = 0
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+        }
+
+        private static void PublishRegistered(uint messageHash, NotificationEventSeverity severity)
+        {
+            if (messageHash == 0u || !_messagesByHash.ContainsKey(messageHash))
+                return;
+
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return;
 
             NotificationEventPayload payload = new NotificationEventPayload
             {

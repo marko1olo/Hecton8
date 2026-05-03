@@ -218,7 +218,7 @@ namespace Hecton8.Gameplay
             if (s_notification != null)
                 s_notification.ShowInfo(message);
             else
-                Debug.Log($"[ToolInfo] {message}");
+                LogToolInfo(message);
         }
 
         public static void ShowInfo(in FixedCharBuffer messageBuffer)
@@ -226,7 +226,13 @@ namespace Hecton8.Gameplay
             if (messageBuffer.Length <= 0)
                 return;
 
-            ShowInfo(messageBuffer.ToString());
+            if (s_notification == null)
+                HUDNotification.TryGetActive(out s_notification);
+
+            if (s_notification != null)
+                s_notification.ShowInfo(in messageBuffer);
+            else
+                LogToolInfo(in messageBuffer);
         }
 
         public static void ShowWarning(string message)
@@ -240,7 +246,7 @@ namespace Hecton8.Gameplay
             if (s_notification != null)
                 s_notification.ShowWarning(message);
             else
-                Debug.LogWarning($"[ToolWarning] {message}");
+                LogToolWarning(message);
         }
 
         public static void ShowWarning(in FixedCharBuffer messageBuffer)
@@ -248,7 +254,41 @@ namespace Hecton8.Gameplay
             if (messageBuffer.Length <= 0)
                 return;
 
-            ShowWarning(messageBuffer.ToString());
+            if (s_notification == null)
+                HUDNotification.TryGetActive(out s_notification);
+
+            if (s_notification != null)
+                s_notification.ShowWarning(in messageBuffer);
+            else
+                LogToolWarning(in messageBuffer);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogToolInfo(string message)
+        {
+            Debug.Log($"[ToolInfo] {message}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogToolInfo(in FixedCharBuffer messageBuffer)
+        {
+            Debug.Log($"[ToolInfo] {messageBuffer.ToString()}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogToolWarning(string message)
+        {
+            Debug.LogWarning($"[ToolWarning] {message}");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogToolWarning(in FixedCharBuffer messageBuffer)
+        {
+            Debug.LogWarning($"[ToolWarning] {messageBuffer.ToString()}");
         }
     }
 }

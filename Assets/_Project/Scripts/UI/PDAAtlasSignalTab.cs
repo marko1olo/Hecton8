@@ -17,7 +17,7 @@
 //   • Dirty-flag обновление.
 // ============================================================================
 
-using System.Text;
+using System;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
@@ -97,7 +97,12 @@ namespace Hecton8.UI
         private int _lastStrengthPercent = int.MinValue;
         private UnityEngine.Camera _mainCamera;
         private float _mainCameraResolveRetryTimer;
-        private readonly StringBuilder _directionBuilder = new StringBuilder(64); // COLD ALLOC: StringBuilder[64] — atlas direction label formatting — owner: PDAAtlasSignalTab
+        // COLD ALLOC: char[192] — atlas direction label formatting buffer — owner: PDAAtlasSignalTab
+        private readonly char[] _directionBuffer = new char[192];
+        // COLD ALLOC: char[16] — atlas strength percent formatting buffer — owner: PDAAtlasSignalTab
+        private readonly char[] _strengthNumericBuffer = new char[16];
+        // COLD ALLOC: char[16] — atlas pulse timer formatting buffer — owner: PDAAtlasSignalTab
+        private readonly char[] _pulseTimerBuffer = new char[16];
 
         // Pre-cached strings — zero GC
         private static readonly string[] PhaseNames =
@@ -272,7 +277,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()
@@ -314,7 +319,7 @@ namespace Hecton8.UI
             hBg.color = new Color(0.04f, 0.08f, 0.06f, 1f);
 
             _titleLabel = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            _titleLabel.text = "ATLAS SIGNAL — МОНИТОРИНГ";
+            _titleLabel.SetText("ATLAS SIGNAL — МОНИТОРИНГ");
             _titleLabel.fontStyle = FontStyles.Bold;
             Anchor(_titleLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 1),
                 new Vector2(12, 0), new Vector2(-12, 0));
@@ -328,7 +333,7 @@ namespace Hecton8.UI
                 new Vector2(0, -48), new Vector2(0, -8));
 
             _strengthLabel = CreateText("Label", section, 10f, colorDim, TextAlignmentOptions.TopLeft);
-            _strengthLabel.text = "СИЛА СИГНАЛА";
+            _strengthLabel.SetText("СИЛА СИГНАЛА");
             Anchor(_strengthLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(12, -8), new Vector2(0, 0));
 
@@ -360,7 +365,7 @@ namespace Hecton8.UI
                 new Vector2(0, 0), new Vector2(0, 0));
 
             _phaseLabel = CreateText("Label", section, 10f, colorDim, TextAlignmentOptions.TopLeft);
-            _phaseLabel.text = "ФАЗА ДЕКОДИРОВАНИЯ";
+            _phaseLabel.SetText("ФАЗА ДЕКОДИРОВАНИЯ");
             Anchor(_phaseLabel.rectTransform, new Vector2(0, 1), new Vector2(1, 1),
                 new Vector2(12, -8), new Vector2(0, 0));
 
@@ -428,7 +433,7 @@ namespace Hecton8.UI
                 new Vector2(0, 0), new Vector2(-12, 0));
 
             TextMeshProUGUI label = CreateText("Label", section, 9f, colorDim, TextAlignmentOptions.MidlineLeft);
-            label.text = "СЛЕДУЮЩИЙ ПУЛЬС:";
+            label.SetText("СЛЕДУЮЩИЙ ПУЛЬС:");
             Anchor(label.rectTransform, new Vector2(0, 0), new Vector2(0.5f, 1),
                 new Vector2(12, 0), new Vector2(0, 0));
         }
@@ -510,7 +515,7 @@ namespace Hecton8.UI
                     {
                         _lastStrengthDisplayMode = displayMode;
                         _lastStrengthPercent = roundedPercent;
-                        SetNumericText(_strengthValue, StrengthPercentTemplate, LocNumericArg.Int(roundedPercent));
+                        SetNumericText(_strengthValue, _strengthNumericBuffer, StrengthPercentTemplateChars, LocNumericArg.Int(roundedPercent));
                     }
                 }
             }
@@ -584,11 +589,11 @@ namespace Hecton8.UI
 
             // Convert direction to compass
             int directionIndex = GetCompassDirectionIndex(dir);
-            _directionBuilder.Clear();
-            _directionBuilder.Append(DirectionDistancePrefixes[directionIndex]);
-            _directionBuilder.Append(Mathf.RoundToInt(dist));
-            _directionBuilder.Append('М');
-            _directionLabel.SetText(_directionBuilder);
+            int directionLength = 0;
+            directionLength = Append(_directionBuffer, directionLength, DirectionDistancePrefixes[directionIndex]);
+            directionLength = AppendInt(_directionBuffer, directionLength, Mathf.RoundToInt(dist));
+            directionLength = Append(_directionBuffer, directionLength, 'М');
+            SetBufferText(_directionLabel, _directionBuffer, directionLength);
             SetLabelColor(_directionLabel, colorAccent);
         }
 
@@ -614,7 +619,7 @@ namespace Hecton8.UI
             _lastCountdownSeconds = totalSecs;
             int mins = totalSecs / 60;
             int secs = totalSecs % 60;
-            SetNumericText(_pulseTimerLabel, PulseTimerTemplate, LocNumericArg.Int(mins), LocNumericArg.Int(secs));
+            SetNumericText(_pulseTimerLabel, _pulseTimerBuffer, PulseTimerTemplateChars, LocNumericArg.Int(mins), LocNumericArg.Int(secs));
         }
 
         private bool CanRevealAtlasTelemetry(AtlasSignalSystem sys)
@@ -718,32 +723,83 @@ namespace Hecton8.UI
 
         private static void SetLabelText(TextMeshProUGUI label, string value)
         {
-            if (label != null && label.text != value)
-            {
-                label.text = value;
-            }
+            if (label != null)
+                label.SetText(value);
         }
 
-        private static void SetNumericText(TextMeshProUGUI label, string template, LocNumericArg value0)
+        private static void SetNumericText(TextMeshProUGUI label, char[] destination, char[] template, LocNumericArg value0)
         {
-            if (label == null)
+            if (label == null || destination == null || template == null)
                 return;
 
-            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(StrengthPercentTemplateChars), value0, out char[] buffer, out int length);
-            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
+            if (!LocNumericBuffer.TryWrite(new ReadOnlySpan<char>(template), destination.AsSpan(), value0, out int length))
+                length = 0;
+
+            SetBufferText(label, destination, length);
+        }
+
+        private static void SetNumericText(TextMeshProUGUI label, char[] destination, char[] template, LocNumericArg value0, LocNumericArg value1)
+        {
+            if (label == null || destination == null || template == null)
+                return;
+
+            if (!LocNumericBuffer.TryWrite(new ReadOnlySpan<char>(template), destination.AsSpan(), value0, value1, out int length))
+                length = 0;
+
+            SetBufferText(label, destination, length);
+        }
+
+        private static void SetBufferText(TextMeshProUGUI label, char[] buffer, int length)
+        {
+            if (label == null || buffer == null)
+                return;
+
+            int safeLength = Mathf.Clamp(length, 0, buffer.Length);
             label.SetCharArray(buffer, 0, safeLength);
             label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
         }
 
-        private static void SetNumericText(TextMeshProUGUI label, string template, LocNumericArg value0, LocNumericArg value1)
+        private static int Append(char[] buffer, int index, string value)
         {
-            if (label == null)
-                return;
+            if (buffer == null || string.IsNullOrEmpty(value) || index >= buffer.Length)
+                return Mathf.Clamp(index, 0, buffer != null ? buffer.Length : 0);
 
-            LocNumericBuffer.Write(new System.ReadOnlySpan<char>(PulseTimerTemplateChars), value0, value1, out char[] buffer, out int length);
-            int safeLength = Mathf.Clamp(length, 0, buffer != null ? buffer.Length : 0);
-            label.SetCharArray(buffer, 0, safeLength);
-            label.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
+            if (index < 0)
+                index = 0;
+
+            int length = Mathf.Min(value.Length, buffer.Length - index);
+            value.AsSpan(0, length).CopyTo(buffer.AsSpan(index));
+            return index + length;
+        }
+
+        private static int Append(char[] buffer, int index, char value)
+        {
+            if (buffer == null)
+                return 0;
+
+            if (index < 0)
+                index = 0;
+            if (index >= buffer.Length)
+                return buffer.Length;
+
+            buffer[index] = value;
+            return index + 1;
+        }
+
+        private static int AppendInt(char[] buffer, int index, int value)
+        {
+            if (buffer == null)
+                return 0;
+
+            if (index < 0)
+                index = 0;
+            if (index >= buffer.Length)
+                return buffer.Length;
+
+            if (!value.TryFormat(buffer.AsSpan(index), out int written))
+                return index;
+
+            return index + written;
         }
 
         private static void SetLabelColor(TextMeshProUGUI label, Color value)

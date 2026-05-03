@@ -111,9 +111,6 @@ namespace Hecton8.Core
             if (urpAsset.shadowDistance != MaxShadowDistanceMeters)
                 urpAsset.shadowDistance = MaxShadowDistanceMeters;
 
-            if (QualitySettings.shadowDistance != MaxShadowDistanceMeters)
-                QualitySettings.shadowDistance = MaxShadowDistanceMeters;
-
             if (urpAsset.shadowCascadeCount != cascadeCount)
                 urpAsset.shadowCascadeCount = cascadeCount;
 

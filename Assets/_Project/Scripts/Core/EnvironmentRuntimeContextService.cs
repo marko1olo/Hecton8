@@ -199,7 +199,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterEnvironmentRuntimeContext(this);
-            _registeredContext = true;
+            _registeredContext = ReferenceEquals(GlobalRegistry.Environment, this);
         }
 
         private void TryUnregisterContext()

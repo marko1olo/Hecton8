@@ -28,8 +28,6 @@ namespace Hecton8.Optimization
         private const uint UiTextureContextHash = 0x71C0A11Du;
         private const int AddressableGroupMapCapacity = 512;
 
-        private static AssetLoadDispatcher _instance;
-
         [Header("Dispatch Budget")]
         [Tooltip("Main-thread dispatch budget in milliseconds per frame.")]
         [SerializeField] private float dispatchBudgetMilliseconds = 2f;
@@ -56,42 +54,49 @@ namespace Hecton8.Optimization
         private bool _mipGateInitialized;
         private bool _uiMipBiasGateActive;
 
-        internal static AssetLoadDispatcher Instance => _instance;
+        internal static bool IsUiMipBiasGateActive
+        {
+            get
+            {
+                AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+                return dispatcher != null && dispatcher._uiMipBiasGateActive;
+            }
+        }
 
-        internal static bool IsUiMipBiasGateActive => _instance != null && _instance._uiMipBiasGateActive;
-
-        internal static long LastObservedVramBytes => _instance != null ? _instance._lastObservedVramBytes : 0L;
+        internal static long LastObservedVramBytes
+        {
+            get
+            {
+                AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+                return dispatcher != null ? dispatcher._lastObservedVramBytes : 0L;
+            }
+        }
 
         internal static void ForceEvaluateUiMipBiasGate()
         {
-            if (_instance != null)
-                _instance.EvaluateUiMipBiasGate();
+            AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+            if (dispatcher != null)
+                dispatcher.EvaluateUiMipBiasGate();
         }
 
         internal static void RegisterAddressableGroup(uint assetKey, AddressableAssetGroupKind group)
         {
-            if (_instance == null || assetKey == 0u)
+            AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
+            if (dispatcher == null || assetKey == 0u)
                 return;
 
-            _instance.RegisterAddressableGroupInternal(assetKey, group);
+            dispatcher.RegisterAddressableGroupInternal(assetKey, group);
         }
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             CaptureMipBiasBaseline();
         }
 
         private void OnEnable()
         {
-            TryRegisterService();
-            TryRegister();
+            if (TryRegisterService())
+                TryRegister();
         }
 
         private void Start()
@@ -120,9 +125,6 @@ namespace Hecton8.Optimization
 
             for (int i = 0; i < _inflightCounts.Length; i++)
                 _inflightCounts[i] = 0;
-
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <inheritdoc />
@@ -202,7 +204,7 @@ namespace Hecton8.Optimization
             return false;
         }
 
-        internal bool Complete(int requestId, bool success)
+        internal bool AcknowledgeDispatchRequest(int requestId, bool success)
         {
             for (int i = 0; i < _inflightRequests.Count; i++)
             {
@@ -352,18 +354,30 @@ namespace Hecton8.Optimization
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredTick = true;
-        }
-
-        private void TryRegisterService()
-        {
-            if (_registeredService || !Application.isPlaying)
+            if (!ReferenceEquals(GlobalRegistry.AssetLoadDispatcher, this))
                 return;
 
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_registeredService)
+                return true;
+            if (!Application.isPlaying)
+                return false;
+
+            AssetLoadDispatcher registered = GlobalRegistry.AssetLoadDispatcher;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
             GlobalRegistry.RegisterAssetLoadDispatcherRuntime(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.AssetLoadDispatcher, this);
+            return _registeredService;
         }
 
         private void TryUnregister()

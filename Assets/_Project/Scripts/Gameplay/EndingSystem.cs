@@ -199,7 +199,11 @@ namespace Hecton8.Gameplay
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnEndingEvent(in payload);
+                    {
+                        IEndingEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnEndingEvent(in payload);
+                    }
                 }
                 finally
                 {
@@ -466,7 +470,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -484,7 +488,7 @@ namespace Hecton8.Gameplay
                 return;
 
             Hecton8.Core.GlobalRegistry.RegisterEndingRuntime(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.Ending, this);
         }
 
         private void TryUnregisterService()

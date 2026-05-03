@@ -68,14 +68,17 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: bool[8] - reference slot occupancy map prevents overwrite before deferred flush - owner: PlayerExpressionEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<PlayerExpressionEventPayload> _pendingEvents;
+        private static NativeQueue<PlayerExpressionEventPayload> _nextFrameEvents;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
         /// <summary>
         /// Number of queued player-expression events awaiting LateUpdate dispatch.
         /// </summary>
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         /// <summary>
         /// Registers a listener for deferred player-expression events.
@@ -116,6 +119,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -130,14 +134,29 @@ namespace Hecton8.Gameplay
 
                 IPlayerExpressionEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnPlayerExpressionEvent(in payload);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IPlayerExpressionEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnPlayerExpressionEvent(in payload);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
 
                 ReleaseReferenceSlot(payload.ReferenceSlot);
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         /// <summary>
@@ -184,11 +203,20 @@ namespace Hecton8.Gameplay
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerExpressionEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             ClearReferenceSlots();
             _referenceWriteIndex = 0;
             _referencePendingCount = 0;
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         private static void EnsureInitialized()
@@ -203,14 +231,32 @@ namespace Hecton8.Gameplay
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
             }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<PlayerExpressionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - next-frame player-expression lane prevents same-frame reentrant dispatch - owner: PlayerExpressionEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(PlayerExpressionEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void Enqueue(in PlayerExpressionEventPayload payload)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReleaseReferenceSlot(payload.ReferenceSlot);
+                return;
+            }
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
                 return;
             }
 
@@ -264,26 +310,63 @@ namespace Hecton8.Gameplay
 
         private static void DrainWithoutDispatch()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                 return;
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            if (_pendingEventCount <= 0)
+            {
+                PromoteNextFrameEventsIfFrontEmpty();
+                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                    return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<PlayerExpressionEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
+                return true;
+
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
+                    return false;
 
-                if (!_pendingEvents.TryDequeue(out PlayerExpressionEventPayload payload))
+                if (!queue.TryDequeue(out PlayerExpressionEventPayload payload))
                     break;
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
+                if (pendingCount > 0)
+                    pendingCount--;
 
                 ReleaseReferenceSlot(payload.ReferenceSlot);
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<PlayerExpressionEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
 
         private static void ClearReferenceSlots()

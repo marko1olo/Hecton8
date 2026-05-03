@@ -169,7 +169,8 @@ namespace Hecton8.Core
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
-                _registeredToDispatcher = true;
+                _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this) ||
+                                          GlobalRegistry.FixedTickables.Contains(this);
             }
         }
 
@@ -185,8 +186,12 @@ namespace Hecton8.Core
 #endif
             if (_registeredToDispatcher)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+                if (GlobalRegistry.Updatables.Contains(this))
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+
+                if (GlobalRegistry.FixedTickables.Contains(this))
+                    GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+
                 _registeredToDispatcher = false;
             }
             ResetSlowTickState();
@@ -207,8 +212,12 @@ namespace Hecton8.Core
 #endif
             if (_registeredToDispatcher)
             {
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+                if (GlobalRegistry.Updatables.Contains(this))
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
+
+                if (GlobalRegistry.FixedTickables.Contains(this))
+                    GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
+
                 _registeredToDispatcher = false;
             }
 
@@ -225,7 +234,7 @@ namespace Hecton8.Core
             if (!_serviceRegistered)
             {
                 GlobalRegistry.RegisterTickManager(this);
-                _serviceRegistered = true;
+                _serviceRegistered = ReferenceEquals(GlobalRegistry.TickManager, this);
             }
 
             if (isActiveAndEnabled &&
@@ -235,7 +244,8 @@ namespace Hecton8.Core
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
-                _registeredToDispatcher = true;
+                _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this) ||
+                                          GlobalRegistry.FixedTickables.Contains(this);
             }
         }
 
@@ -392,8 +402,13 @@ namespace Hecton8.Core
                     this);
             }
 #endif
-            long loopStartTimestamp = enableSlowTickProfiling ? Stopwatch.GetTimestamp() : 0L;
-            if (enableSlowTickProfiling)
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            bool profileSlowTick = enableSlowTickProfiling;
+#else
+            const bool profileSlowTick = false;
+#endif
+            long loopStartTimestamp = profileSlowTick ? Stopwatch.GetTimestamp() : 0L;
+            if (profileSlowTick)
                 ResetSlowTickProfilerFrame();
 
             for (int i = 0; i < count; i++)
@@ -412,9 +427,9 @@ namespace Hecton8.Core
                     continue;
                 }
 
-                long itemStartTimestamp = enableSlowTickProfiling ? Stopwatch.GetTimestamp() : 0L;
+                long itemStartTimestamp = profileSlowTick ? Stopwatch.GetTimestamp() : 0L;
                 item.SlowTick();
-                if (enableSlowTickProfiling)
+                if (profileSlowTick)
                 {
                     long itemEndTimestamp = Stopwatch.GetTimestamp();
                     RecordSlowTickSample(item, itemEndTimestamp - itemStartTimestamp);
@@ -423,7 +438,7 @@ namespace Hecton8.Core
 
             _slowTickables.EndIteration();
 
-            if (enableSlowTickProfiling)
+            if (profileSlowTick)
             {
                 long loopEndTimestamp = Stopwatch.GetTimestamp();
                 CommitSlowTickProfilerFrame(loopEndTimestamp - loopStartTimestamp, count);

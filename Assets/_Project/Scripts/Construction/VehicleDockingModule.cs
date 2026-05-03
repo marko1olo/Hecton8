@@ -17,6 +17,8 @@ namespace Hecton8.Construction
     [AddComponentMenu("Hecton8/Construction/Vehicle Docking Module")]
     public sealed class VehicleDockingModule : MonoBehaviour, ITickable, IFixedTickable, IUpdatable, IPowerComponent, IPoolable
     {
+        private const int TransportLookupCacheCapacity = 16;
+
         [Header("── Docking ──────────────────")]
         [Tooltip("Optional snap anchor applied when a rigidbody transport is docked. Falls back to this transform.")]
         [SerializeField] private Transform dockAnchor;
@@ -67,6 +69,12 @@ namespace Hecton8.Construction
         private readonly List<StorageCrate> _connectedCargoCrates = new List<StorageCrate>(4);
         // COLD ALLOC: List<StorageCrate>[4] — component query buffer for docked transport cargo discovery — owner: VehicleDockingModule
         private readonly List<StorageCrate> _cargoDiscoveryBuffer = new List<StorageCrate>(4);
+        // COLD ALLOC: ulong[16] — trigger collider id cache for transport lifecycle owner discovery — owner: VehicleDockingModule
+        private readonly ulong[] _transportLookupColliderIds = new ulong[TransportLookupCacheCapacity];
+        // COLD ALLOC: IPlayerTransportLifecycleOwner[16] — resolved transport owner cache for trigger contacts — owner: VehicleDockingModule
+        private readonly IPlayerTransportLifecycleOwner[] _transportLookupOwners = new IPlayerTransportLifecycleOwner[TransportLookupCacheCapacity];
+        // COLD ALLOC: MonoBehaviour[16] — resolved transport owner component cache for trigger contacts — owner: VehicleDockingModule
+        private readonly MonoBehaviour[] _transportLookupBehaviours = new MonoBehaviour[TransportLookupCacheCapacity];
 
         private Transform _cachedTransform;
         private Collider _triggerCollider;
@@ -89,7 +97,9 @@ namespace Hecton8.Construction
         private Vector3 _dockingAngularVelocityRadians;
         private float _dockingElapsedSeconds;
         private MountablePlayerTransport _mountedTransportLockOwner;
-        private int _lastRejectedDockColliderId;
+        private ulong _lastRejectedDockColliderId;
+        private int _transportLookupCount;
+        private int _transportLookupWriteCursor;
 
         /// <summary>Continuous draw while charge is actually transferred to a docked transport.</summary>
         public float PowerRating => _activelyCharging ? -chargingPowerDraw : 0f;
@@ -111,18 +121,21 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            ClearTransportLookupCache();
             TryRegister();
         }
 
         private void OnDisable()
         {
             ReleaseDockedTransport();
+            ClearTransportLookupCache();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
             ReleaseDockedTransport();
+            ClearTransportLookupCache();
             TryUnregister();
         }
 
@@ -136,7 +149,8 @@ namespace Hecton8.Construction
             _dockingElapsedSeconds = 0f;
             _dockingLinearVelocity = Vector3.zero;
             _dockingAngularVelocityRadians = Vector3.zero;
-            _lastRejectedDockColliderId = 0;
+            _lastRejectedDockColliderId = 0UL;
+            ClearTransportLookupCache();
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryRegister();
@@ -153,7 +167,8 @@ namespace Hecton8.Construction
             _dockingElapsedSeconds = 0f;
             _dockingLinearVelocity = Vector3.zero;
             _dockingAngularVelocityRadians = Vector3.zero;
-            _lastRejectedDockColliderId = 0;
+            _lastRejectedDockColliderId = 0UL;
+            ClearTransportLookupCache();
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryUnregister();
@@ -203,7 +218,7 @@ namespace Hecton8.Construction
             if (other == null)
                 return;
 
-            _lastRejectedDockColliderId = 0;
+            _lastRejectedDockColliderId = 0UL;
             TryDockFromCollider(other);
         }
 
@@ -212,11 +227,11 @@ namespace Hecton8.Construction
             if (other == null || _dockedTransport != null)
                 return;
 
-            int colliderId = ResolveColliderRuntimeId(other);
-            if (colliderId != 0 && colliderId == _lastRejectedDockColliderId)
+            ulong colliderId = ResolveColliderRuntimeId(other);
+            if (colliderId != 0UL && colliderId == _lastRejectedDockColliderId)
                 return;
 
-            if (!TryDockFromCollider(other) && colliderId != 0)
+            if (!TryDockFromCollider(other) && colliderId != 0UL)
                 _lastRejectedDockColliderId = colliderId;
         }
 
@@ -225,9 +240,9 @@ namespace Hecton8.Construction
             if (other == null || _dockedBehaviour == null)
                 return;
 
-            int colliderId = ResolveColliderRuntimeId(other);
-            if (colliderId != 0 && colliderId == _lastRejectedDockColliderId)
-                _lastRejectedDockColliderId = 0;
+            ulong colliderId = ResolveColliderRuntimeId(other);
+            if (colliderId != 0UL && colliderId == _lastRejectedDockColliderId)
+                _lastRejectedDockColliderId = 0UL;
 
             MonoBehaviour ownerBehaviour;
             IPlayerTransportLifecycleOwner owner;
@@ -250,7 +265,8 @@ namespace Hecton8.Construction
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this) ||
+                          GlobalRegistry.FixedTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -258,8 +274,12 @@ namespace Hecton8.Construction
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+            if (GlobalRegistry.Updatables.Contains(this))
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+
+            if (GlobalRegistry.FixedTickables.Contains(this))
+                GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
+
             _registered = false;
         }
 
@@ -325,7 +345,7 @@ namespace Hecton8.Construction
             _dockingElapsedSeconds = 0f;
             _dockingLinearVelocity = Vector3.zero;
             _dockingAngularVelocityRadians = Vector3.zero;
-            _lastRejectedDockColliderId = 0;
+            _lastRejectedDockColliderId = 0UL;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
         }
@@ -561,21 +581,51 @@ namespace Hecton8.Construction
             _cargoDiscoveryBuffer.Clear();
         }
 
-        private static bool TryResolveTransportLifecycleOwner(
+        private bool TryResolveTransportLifecycleOwner(
             Collider other,
             out IPlayerTransportLifecycleOwner lifecycleOwner,
             out MonoBehaviour lifecycleBehaviour)
         {
+            lifecycleOwner = null;
+            lifecycleBehaviour = null;
+            if (other == null)
+                return false;
+
+            ulong colliderId = ResolveColliderRuntimeId(other);
+            if (colliderId != 0UL)
+            {
+                for (int i = 0; i < _transportLookupCount; i++)
+                {
+                    if (_transportLookupColliderIds[i] != colliderId)
+                        continue;
+
+                    lifecycleOwner = _transportLookupOwners[i];
+                    lifecycleBehaviour = _transportLookupBehaviours[i];
+                    if (lifecycleOwner != null && lifecycleBehaviour != null)
+                        return lifecycleBehaviour.gameObject.activeInHierarchy;
+
+                    _transportLookupColliderIds[i] = 0UL;
+                    break;
+                }
+            }
+
             lifecycleOwner = other.GetComponentInParent<IPlayerTransportLifecycleOwner>();
             lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
             if (lifecycleOwner != null && lifecycleBehaviour != null)
+            {
+                CacheTransportLifecycleOwner(colliderId, lifecycleOwner, lifecycleBehaviour);
                 return true;
+            }
 
             PlayerTransportCoordinator transportCoordinator = other.GetComponentInParent<PlayerTransportCoordinator>();
             if (transportCoordinator != null && transportCoordinator.TryResolveTransportLifecycleOwner(out lifecycleOwner))
             {
                 lifecycleBehaviour = lifecycleOwner as MonoBehaviour;
-                return lifecycleBehaviour != null;
+                if (lifecycleBehaviour != null)
+                {
+                    CacheTransportLifecycleOwner(colliderId, lifecycleOwner, lifecycleBehaviour);
+                    return true;
+                }
             }
 
             lifecycleOwner = null;
@@ -583,11 +633,49 @@ namespace Hecton8.Construction
             return false;
         }
 
-        private static int ResolveColliderRuntimeId(Collider collider)
+        private void CacheTransportLifecycleOwner(
+            ulong colliderId,
+            IPlayerTransportLifecycleOwner lifecycleOwner,
+            MonoBehaviour lifecycleBehaviour)
+        {
+            if (colliderId == 0UL || lifecycleOwner == null || lifecycleBehaviour == null)
+                return;
+
+            int slot;
+            if (_transportLookupCount < _transportLookupColliderIds.Length)
+            {
+                slot = _transportLookupCount;
+                _transportLookupCount++;
+            }
+            else
+            {
+                slot = _transportLookupWriteCursor;
+            }
+
+            _transportLookupColliderIds[slot] = colliderId;
+            _transportLookupOwners[slot] = lifecycleOwner;
+            _transportLookupBehaviours[slot] = lifecycleBehaviour;
+            _transportLookupWriteCursor = (_transportLookupWriteCursor + 1) % _transportLookupColliderIds.Length;
+        }
+
+        private void ClearTransportLookupCache()
+        {
+            for (int i = 0; i < _transportLookupCount; i++)
+            {
+                _transportLookupColliderIds[i] = 0UL;
+                _transportLookupOwners[i] = null;
+                _transportLookupBehaviours[i] = null;
+            }
+
+            _transportLookupCount = 0;
+            _transportLookupWriteCursor = 0;
+        }
+
+        private static ulong ResolveColliderRuntimeId(Collider collider)
         {
             return collider != null
-                ? unchecked((int)EntityId.ToULong(collider.GetEntityId()))
-                : 0;
+                ? EntityId.ToULong(collider.GetEntityId())
+                : 0UL;
         }
     }
 }

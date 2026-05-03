@@ -1248,7 +1248,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterEcosystemDirectorService(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.EcosystemDirector, this);
         }
 
         private void TryUnregisterService()
@@ -1269,7 +1269,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registeredSlowTickable = true;
+            _registeredSlowTickable = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterSlowTickable()
@@ -1290,7 +1290,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
-            _registeredLateFrameTickable = true;
+            _registeredLateFrameTickable = SystemDispatcher.GetLateFrameLane(PriorityLayer.UI).Contains(this);
         }
 
         private void TryUnregisterLateFrameTickable()

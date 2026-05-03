@@ -169,7 +169,11 @@ namespace Hecton8.Bootstrap
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnBootstrapEvent(in payload);
+                    {
+                        IBootstrapEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnBootstrapEvent(in payload);
+                    }
                 }
                 finally
                 {

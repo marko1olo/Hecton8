@@ -27,14 +27,8 @@ namespace Hecton8.Optimization
             Critical = 2
         }
 
-        // ── SINGLETON ──────────────────────────────────────────────────────────────
+        // ── REGISTRY CACHE ─────────────────────────────────────────────────────────
         
-        private static VRAMMonitor _instance;
-        
-        /// <summary>
-        /// Singleton instance. Null-check required in OnDestroy.
-        /// </summary>
-        public static VRAMMonitor Instance => _instance;
         
         // ── INSPECTOR SETTINGS ─────────────────────────────────────────────────────
         
@@ -130,21 +124,13 @@ namespace Hecton8.Optimization
         
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            
-            _instance = this;
-            
             StartRecorders();
         }
         
         private void OnEnable()
         {
-            TryRegisterService();
-            TryRegister();
+            if (TryRegisterService())
+                TryRegister();
         }
         
         private void OnDisable()
@@ -159,9 +145,6 @@ namespace Hecton8.Optimization
             TryUnregisterService();
             _textureMemoryRecorder.Dispose();
             _renderTextureMemoryRecorder.Dispose();
-            
-            if (_instance == this)
-                _instance = null;
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -203,18 +186,30 @@ namespace Hecton8.Optimization
         {
             if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
-            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = true;
-        }
-
-        private void TryRegisterService()
-        {
-            if (_registeredService || !Application.isPlaying)
+            if (!ReferenceEquals(GlobalRegistry.VRAMMonitor, this))
                 return;
 
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_registeredService)
+                return true;
+            if (!Application.isPlaying)
+                return false;
+
+            VRAMMonitor registered = GlobalRegistry.VRAMMonitor;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
             GlobalRegistry.RegisterVRAMMonitorRuntime(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.VRAMMonitor, this);
+            return _registeredService;
         }
 
         private void TryUnregister()

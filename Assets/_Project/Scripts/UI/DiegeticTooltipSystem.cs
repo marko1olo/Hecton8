@@ -19,14 +19,16 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Diegetic Tooltip System")]
-    public sealed class DiegeticTooltipSystem : MonoBehaviour, ITickable, IUpdatable, IInteractionEventListener
+    public sealed class DiegeticTooltipSystem : MonoBehaviour, ITickable, IUpdatable, IInteractionEventListener, IGlobalRegistryHotSwapListener
     {
         private const int MaxGlyphCount = 96;
         private const int MaxIconCount = 1;
+        private const int BindingPrefixCapacity = 32;
         private const float MinimumGlyphScale = 0.0001f;
         private const float IconScaleMultiplier = 1.06f;
         private const float IconVerticalBias = -0.002f;
         private const float IconGapMultiplier = 0.42f;
+        private const float CameraResolveRetryIntervalSeconds = 0.5f;
 #if UNITY_EDITOR
         private const string DefaultGlyphShaderPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticTooltipGlyph.shader";
 #endif
@@ -87,6 +89,8 @@ namespace Hecton8.UI
         private readonly Vector2[] _iconLocalCenters = new Vector2[MaxIconCount];
         // COLD ALLOC: Vector2[1] — per-icon world-space quad scales — owner: DiegeticTooltipSystem
         private readonly Vector2[] _iconLocalScales = new Vector2[MaxIconCount];
+        // COLD ALLOC: char[32] — cached interact binding prefix glyph text — owner: DiegeticTooltipSystem
+        private readonly char[] _bindingPrefixBuffer = new char[BindingPrefixCapacity];
 
         private MaterialPropertyBlock _mpb; // COLD ALLOC: MaterialPropertyBlock[1] — tooltip instancing payload — owner: DiegeticTooltipSystem
         private Material _runtimeGlyphMaterial;
@@ -99,9 +103,13 @@ namespace Hecton8.UI
         private string _activePrompt;
         private int _textGlyphCount;
         private int _iconCount;
+        private int _bindingPrefixLength;
         private float _visibleAlpha;
+        private float _nextCameraResolveTime;
         private bool _diagnosticActive;
         private bool _registeredToDispatcher;
+        private InputManager _subscribedInputManager;
+        private bool _hotSwapListenerRegistered;
 
         /// <summary>
         /// Active runtime tooltip owner used by diegetic diagnostic systems.
@@ -117,8 +125,9 @@ namespace Hecton8.UI
         {
             EnsureResources();
             InteractionEvents.Register(this);
-            if (InputManager.Instance != null)
-                InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+            TryRegisterHotSwapListener();
+            SubscribeInputManagerIfAvailable();
+            RefreshBindingPrefixCache();
             ActiveRuntimeInstance = this;
 
             if (_registeredToDispatcher || !Application.isPlaying)
@@ -128,18 +137,28 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToDispatcher = true;
+            _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void Start()
+        {
+            TryRegisterHotSwapListener();
+            SubscribeInputManagerIfAvailable();
+            RefreshBindingPrefixCache();
+            if (_activeAnchor != null && !string.IsNullOrEmpty(_activePrompt))
+                RebuildActiveTooltipLayout();
         }
 
         private void OnDisable()
         {
             InteractionEvents.Unregister(this);
-            if (InputManager.Instance != null)
-                InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
+            UnsubscribeInputManager();
+            TryUnregisterHotSwapListener();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
 
             ClearTooltip();
+            _bindingPrefixLength = 0;
 
             if (!_registeredToDispatcher)
                 return;
@@ -150,6 +169,9 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            UnsubscribeInputManager();
+            TryUnregisterHotSwapListener();
+
             if (_runtimeGlyphMaterial != null)
             {
                 Destroy(_runtimeGlyphMaterial);
@@ -257,6 +279,7 @@ namespace Hecton8.UI
 
         private void HandleInputDisplayStyleChanged(InputDisplayStyle _)
         {
+            RefreshBindingPrefixCache();
             if (_diagnosticActive || _activeTarget == null || string.IsNullOrEmpty(_activePrompt))
                 return;
 
@@ -335,8 +358,17 @@ namespace Hecton8.UI
             int atlasWidth = Mathf.Max(1, font.atlasWidth);
             int atlasHeight = Mathf.Max(1, font.atlasHeight);
             float glyphScale = glyphWorldHeight / Mathf.Max(1f, font.faceInfo.pointSize);
-            string bindingPrefix = includeBindingPrefix ? BuildBindingPrefix() : string.Empty;
-            float prefixAdvance = MeasureAdvance(font, bindingPrefix.AsSpan(), glyphScale);
+            if (includeBindingPrefix)
+            {
+                SubscribeInputManagerIfAvailable();
+                RefreshBindingPrefixCache();
+            }
+
+            ReadOnlySpan<char> bindingPrefix = ReadOnlySpan<char>.Empty;
+            if (includeBindingPrefix && _bindingPrefixLength > 0)
+                bindingPrefix = new ReadOnlySpan<char>(_bindingPrefixBuffer, 0, _bindingPrefixLength);
+
+            float prefixAdvance = MeasureAdvance(font, bindingPrefix, glyphScale);
             float promptAdvance = MeasureAdvance(font, prompt, glyphScale);
 
             float iconWidth = 0f;
@@ -362,7 +394,7 @@ namespace Hecton8.UI
 
             float baselineOffset = font.faceInfo.ascentLine * glyphScale * 0.36f;
             _textGlyphCount = 0;
-            penX = BuildTextRun(font, atlasWidth, atlasHeight, glyphScale, baselineOffset, penX, bindingPrefix.AsSpan());
+            penX = BuildTextRun(font, atlasWidth, atlasHeight, glyphScale, baselineOffset, penX, bindingPrefix);
             BuildTextRun(font, atlasWidth, atlasHeight, glyphScale, baselineOffset, penX, prompt);
         }
 
@@ -443,7 +475,7 @@ namespace Hecton8.UI
             if (spriteAsset == null || spriteAsset.spriteSheet == null)
                 return false;
 
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = _subscribedInputManager;
             if (inputManager == null || !inputManager.TryGetPreferredBindingPath("Interact", "Player", out string bindingPath))
                 return false;
 
@@ -471,18 +503,95 @@ namespace Hecton8.UI
             return true;
         }
 
-        private string BuildBindingPrefix()
+        private void SubscribeInputManagerIfAvailable()
         {
-            InputManager inputManager = InputManager.Instance;
+            if (_subscribedInputManager != null)
+                return;
+
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
             if (inputManager == null)
-                return string.Empty;
+                return;
 
-            string bindingDisplay = inputManager.GetBindingDisplayString("Interact", "Player", -1);
-            if (string.IsNullOrWhiteSpace(bindingDisplay))
-                return string.Empty;
+            _subscribedInputManager = inputManager;
+            _subscribedInputManager.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
+        }
 
-            bindingDisplay = bindingDisplay.Trim().ToUpperInvariant();
-            return string.Concat("[", bindingDisplay, "] ");
+        private void UnsubscribeInputManager()
+        {
+            if (_subscribedInputManager == null)
+                return;
+
+            _subscribedInputManager.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
+            _subscribedInputManager = null;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input)
+                return;
+
+            UnsubscribeInputManager();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            SubscribeInputManagerIfAvailable();
+            RefreshBindingPrefixCache();
+            if (_activeAnchor != null && !string.IsNullOrEmpty(_activePrompt))
+                RebuildActiveTooltipLayout();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
+        }
+
+        private void RefreshBindingPrefixCache()
+        {
+            _bindingPrefixLength = 0;
+
+            InputManager inputManager = _subscribedInputManager;
+            if (inputManager == null)
+                return;
+
+            int length = 0;
+            _bindingPrefixBuffer[length++] = '[';
+            if (!inputManager.TryWriteBindingDisplayString(
+                    "Interact",
+                    "Player",
+                    -1,
+                    _bindingPrefixBuffer,
+                    length,
+                    out int displayLength) ||
+                displayLength <= 0 ||
+                length + displayLength > BindingPrefixCapacity - 2)
+            {
+                return;
+            }
+
+            length += displayLength;
+            _bindingPrefixBuffer[length++] = ']';
+            _bindingPrefixBuffer[length++] = ' ';
+            _bindingPrefixLength = length;
         }
 
         private void EnsureResources()
@@ -591,6 +700,12 @@ namespace Hecton8.UI
         {
             if (interactionCamera != null)
                 return interactionCamera;
+
+            float now = Time.unscaledTime;
+            if (now < _nextCameraResolveTime)
+                return null;
+
+            _nextCameraResolveTime = now + CameraResolveRetryIntervalSeconds;
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (playerContext != null && playerContext.PlayerCamera != null)

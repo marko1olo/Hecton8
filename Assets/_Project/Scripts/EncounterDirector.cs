@@ -1,5 +1,6 @@
 using System;
 using Hecton8.AI;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -182,6 +183,7 @@ namespace Hecton8.Systems.AI
             _jobOutput = new NativeArray<EncounterJobOutput>(1, Allocator.Persistent);
             _debugEventRing = new NativeArray<EncounterDebugEvent>(DebugEventRingCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _debugEventHead = new NativeArray<int>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeMemorySentinel();
             _trackedTransforms = new Transform[MaxActiveEnemies];
             _trackedEntityIds = new int[MaxActiveEnemies];
             _trackedThreatClasses = new EncounterThreatClass[MaxActiveEnemies];
@@ -366,6 +368,18 @@ namespace Hecton8.Systems.AI
             DisposeNativeArray(ref _jobOutput, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _debugEventRing, ref disposeHandle, ref hasDependency);
             DisposeNativeArray(ref _debugEventHead, ref disposeHandle, ref hasDependency);
+        }
+
+        private void RegisterNativeMemorySentinel()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_frontState, nameof(EncounterDirector), nameof(_frontState), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_backState, nameof(EncounterDirector), nameof(_backState), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_enemyTokens, nameof(EncounterDirector), nameof(_enemyTokens), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_frustumPlanes, nameof(EncounterDirector), nameof(_frustumPlanes), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_candidateDirections, nameof(EncounterDirector), nameof(_candidateDirections), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_jobOutput, nameof(EncounterDirector), nameof(_jobOutput), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_debugEventRing, nameof(EncounterDirector), nameof(_debugEventRing), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_debugEventHead, nameof(EncounterDirector), nameof(_debugEventHead), NativeAllocationLifetime.Scene);
         }
 
         private void RefreshTrackedEnemies(float3 playerPosition)
@@ -744,6 +758,7 @@ namespace Hecton8.Systems.AI
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             if (hasDependency)
             {
                 handle = array.Dispose(handle);

@@ -167,7 +167,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredForTick = true;
+            _registeredForTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregisterFromTick()

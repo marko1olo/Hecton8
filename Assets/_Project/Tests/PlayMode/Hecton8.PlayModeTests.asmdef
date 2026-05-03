@@ -3,7 +3,8 @@
     "rootNamespace":  "Hecton8.Tests.PlayMode",
     "references":  [
                        "UnityEngine.TestRunner",
-                       "UnityEditor.TestRunner"
+                       "UnityEditor.TestRunner",
+                       "Hecton8.Core"
                    ],
     "includePlatforms":  [
                              "Editor"

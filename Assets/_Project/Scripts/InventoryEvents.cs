@@ -208,7 +208,11 @@ namespace Hecton8.Inventory
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnInventoryEvent(in payload);
+                    {
+                        IInventoryEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnInventoryEvent(in payload);
+                    }
                 }
                 finally
                 {

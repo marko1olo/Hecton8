@@ -605,6 +605,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     #region Internal State
 
+    private const string NativeMemoryOwner = nameof(HectonWorldGenerator);
+    private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+
     private struct PendingChunk
     {
         public int2 coord;
@@ -622,28 +625,39 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         public JobHandle combinedHandle;
         public bool cancelRequested;
 
+        public void RegisterArrays()
+        {
+            RegisterTrackedNativeArray(verts, nameof(verts));
+            RegisterTrackedNativeArray(norms, nameof(norms));
+            RegisterTrackedNativeArray(uvs, nameof(uvs));
+            RegisterTrackedNativeArray(cols, nameof(cols));
+            RegisterTrackedNativeArray(caveV, nameof(caveV));
+            RegisterTrackedNativeArray(caveB, nameof(caveB));
+            RegisterTrackedNativeArray(biomeV, nameof(biomeV));
+        }
+
         public void DisposeArrays()
         {
-            if (verts.IsCreated)  verts.Dispose();
-            if (norms.IsCreated)  norms.Dispose();
-            if (uvs.IsCreated)    uvs.Dispose();
-            if (cols.IsCreated)   cols.Dispose();
-            if (caveV.IsCreated)  caveV.Dispose();
-            if (caveB.IsCreated)  caveB.Dispose();
-            if (biomeV.IsCreated) biomeV.Dispose();
+            DisposeTrackedNativeArray(ref verts);
+            DisposeTrackedNativeArray(ref norms);
+            DisposeTrackedNativeArray(ref uvs);
+            DisposeTrackedNativeArray(ref cols);
+            DisposeTrackedNativeArray(ref caveV);
+            DisposeTrackedNativeArray(ref caveB);
+            DisposeTrackedNativeArray(ref biomeV);
         }
 
         public JobHandle DisposeArrays(JobHandle dependency)
         {
             bool scheduledDisposal = false;
             JobHandle disposeHandle = dependency;
-            if (verts.IsCreated) { disposeHandle = verts.Dispose(disposeHandle); scheduledDisposal = true; }
-            if (norms.IsCreated) { disposeHandle = norms.Dispose(disposeHandle); scheduledDisposal = true; }
-            if (uvs.IsCreated) { disposeHandle = uvs.Dispose(disposeHandle); scheduledDisposal = true; }
-            if (cols.IsCreated) { disposeHandle = cols.Dispose(disposeHandle); scheduledDisposal = true; }
-            if (caveV.IsCreated) { disposeHandle = caveV.Dispose(disposeHandle); scheduledDisposal = true; }
-            if (caveB.IsCreated) { disposeHandle = caveB.Dispose(disposeHandle); scheduledDisposal = true; }
-            if (biomeV.IsCreated) { disposeHandle = biomeV.Dispose(disposeHandle); scheduledDisposal = true; }
+            DisposeTrackedNativeArray(ref verts, ref disposeHandle, ref scheduledDisposal);
+            DisposeTrackedNativeArray(ref norms, ref disposeHandle, ref scheduledDisposal);
+            DisposeTrackedNativeArray(ref uvs, ref disposeHandle, ref scheduledDisposal);
+            DisposeTrackedNativeArray(ref cols, ref disposeHandle, ref scheduledDisposal);
+            DisposeTrackedNativeArray(ref caveV, ref disposeHandle, ref scheduledDisposal);
+            DisposeTrackedNativeArray(ref caveB, ref disposeHandle, ref scheduledDisposal);
+            DisposeTrackedNativeArray(ref biomeV, ref disposeHandle, ref scheduledDisposal);
             return scheduledDisposal ? disposeHandle : dependency;
         }
     }
@@ -702,6 +716,42 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     const int DefaultTriangleScratchCapacity = 393216; // 256m chunk at 1m spacing: 256 * 256 * 6 indices.
     // COLD ALLOC: List<int>[393216] (~1536 KB) - reused terrain triangle index scratch, prevents per-chunk managed int[] allocations during streaming finalization - owner: HectonWorldGenerator
     readonly List<int> _triangleScratch = new List<int>(DefaultTriangleScratchCapacity);
+
+    private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+    {
+        if (!array.IsCreated)
+            return;
+
+        NativeMemorySentinel.RegisterNativeArray(
+            array,
+            NativeMemoryOwner,
+            label,
+            NativeMemoryLifetime);
+    }
+
+    private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+    {
+        if (!array.IsCreated)
+            return;
+
+        NativeMemorySentinel.UnregisterNativeArray(array);
+        array.Dispose();
+        array = default;
+    }
+
+    private static void DisposeTrackedNativeArray<T>(
+        ref NativeArray<T> array,
+        ref JobHandle dependency,
+        ref bool scheduledDisposal) where T : struct
+    {
+        if (!array.IsCreated)
+            return;
+
+        NativeMemorySentinel.UnregisterNativeArray(array);
+        dependency = array.Dispose(dependency);
+        array = default;
+        scheduledDisposal = true;
+    }
 
     #endregion
 
@@ -894,18 +944,18 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         _westLUT  = BakeLUT(slopes.westCurve);
         _eastLUT  = BakeLUT(slopes.eastCurve);
         _biomeLUT = BakeLUT(biomes.biomeRemapCurve);
+        RegisterTrackedNativeArray(_westLUT, nameof(_westLUT));
+        RegisterTrackedNativeArray(_eastLUT, nameof(_eastLUT));
+        RegisterTrackedNativeArray(_biomeLUT, nameof(_biomeLUT));
         _lutsReady = true;
     }
 
     void DisposeLUTs()
     {
         if (!_lutsReady) return;
-        if (_westLUT.IsCreated)  _westLUT.Dispose();
-        if (_eastLUT.IsCreated)  _eastLUT.Dispose();
-        if (_biomeLUT.IsCreated) _biomeLUT.Dispose();
-        _westLUT = default;
-        _eastLUT = default;
-        _biomeLUT = default;
+        DisposeTrackedNativeArray(ref _westLUT);
+        DisposeTrackedNativeArray(ref _eastLUT);
+        DisposeTrackedNativeArray(ref _biomeLUT);
         _lutsReady = false;
     }
 
@@ -914,12 +964,9 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         if (!_lutsReady) return;
         bool scheduledDisposal = false;
         JobHandle disposeHandle = dependency;
-        if (_westLUT.IsCreated) { disposeHandle = _westLUT.Dispose(disposeHandle); scheduledDisposal = true; }
-        if (_eastLUT.IsCreated) { disposeHandle = _eastLUT.Dispose(disposeHandle); scheduledDisposal = true; }
-        if (_biomeLUT.IsCreated) { disposeHandle = _biomeLUT.Dispose(disposeHandle); scheduledDisposal = true; }
-        _westLUT = default;
-        _eastLUT = default;
-        _biomeLUT = default;
+        DisposeTrackedNativeArray(ref _westLUT, ref disposeHandle, ref scheduledDisposal);
+        DisposeTrackedNativeArray(ref _eastLUT, ref disposeHandle, ref scheduledDisposal);
+        DisposeTrackedNativeArray(ref _biomeLUT, ref disposeHandle, ref scheduledDisposal);
         _lutsReady = false;
         if (scheduledDisposal)
             JobHandle.ScheduleBatchedJobs();
@@ -1286,6 +1333,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
             cancelRequested = false
         };
 
+        pc.RegisterArrays();
         _pendingChunks.Add(pc);
     }
 

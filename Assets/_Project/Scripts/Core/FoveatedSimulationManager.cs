@@ -122,7 +122,8 @@ namespace Hecton8.Core
         private const int ImportanceScoreBatchSize = 32;
         private const int MaxTargets = 512;
         private const int MaxDeferredRaycastCommandsPerTarget = 4;
-        private const int MaxDeferredRaycastCommands = MaxTargets * MaxDeferredRaycastCommandsPerTarget;
+        private const int MaxDeferredRaycastCommands = 256;
+        private const int MaxDeferredRaycastCommandsPerFrame = 16;
         private const int MinimumCommandsPerJob = 1;
         private const float CenterTickIntervalSeconds = 1.0f / 60.0f;
         private const float FocusTickIntervalSeconds = 1.0f / 30.0f;
@@ -461,7 +462,7 @@ namespace Hecton8.Core
 
         public void CompleteFrameJobs()
         {
-            CompleteFrameJobsInternal(false);
+            CompleteFrameJobsInternal(true);
         }
 
         private void CompleteFrameJobsInternal(bool includeDeferredRaycasts)
@@ -803,27 +804,27 @@ namespace Hecton8.Core
 
             if (!_pendingDeferredRaycastCommands.IsCreated)
             {
-                _pendingDeferredRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[2048] - next-frame deferred fauna sight-line requests - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastCommands = new NativeQueue<RaycastCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RaycastCommand>[256] - next-frame deferred fauna sight-line requests - owner: FoveatedSimulationManager
             }
 
             if (!_pendingDeferredRaycastOwnerIndices.IsCreated)
             {
-                _pendingDeferredRaycastOwnerIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[2048] - deferred fauna sight-line owner indices aligned to queued commands - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastOwnerIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[256] - deferred fauna sight-line owner indices aligned to queued commands - owner: FoveatedSimulationManager
             }
 
             if (!_pendingDeferredRaycastCommandIndices.IsCreated)
             {
-                _pendingDeferredRaycastCommandIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[2048] - deferred fauna sight-line command slot indices aligned to queued commands - owner: FoveatedSimulationManager
+                _pendingDeferredRaycastCommandIndices = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[256] - deferred fauna sight-line command slot indices aligned to queued commands - owner: FoveatedSimulationManager
             }
 
             if (!_deferredRaycastCommands.IsCreated)
             {
-                _deferredRaycastCommands = new NativeList<RaycastCommand>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[512] — deferred throttled-entity physics commands — owner: FoveatedSimulationManager
+                _deferredRaycastCommands = new NativeList<RaycastCommand>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeList<RaycastCommand>[256] — deferred throttled-entity physics commands — owner: FoveatedSimulationManager
             }
 
             if (!_deferredRaycastResults.IsCreated)
             {
-                _deferredRaycastResults = new NativeArray<RaycastHit>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeArray<RaycastHit>[512] — deferred throttled-entity raycast hits — owner: FoveatedSimulationManager
+                _deferredRaycastResults = new NativeArray<RaycastHit>(MaxDeferredRaycastCommands, Allocator.Persistent); // COLD ALLOC: NativeArray<RaycastHit>[256] — deferred throttled-entity raycast hits — owner: FoveatedSimulationManager
             }
 
             if (!_nativeMemorySentinelRegistered)
@@ -920,17 +921,13 @@ namespace Hecton8.Core
                 return;
 
             _deferredRaycastCommands.Clear();
-            Array.Clear(_deferredRaycastOwners, 0, _deferredRaycastOwners.Length);
-            Array.Clear(_deferredRaycastCommandIndices, 0, _deferredRaycastCommandIndices.Length);
 
             int commandIndex = 0;
-            while (commandIndex < MaxDeferredRaycastCommands &&
-                   _pendingDeferredRaycastCommands.IsCreated &&
-                   _pendingDeferredRaycastOwnerIndices.IsCreated &&
-                   _pendingDeferredRaycastCommandIndices.IsCreated &&
-                   _pendingDeferredRaycastCommands.TryDequeue(out RaycastCommand command) &&
-                   _pendingDeferredRaycastOwnerIndices.TryDequeue(out int ownerIndex) &&
-                   _pendingDeferredRaycastCommandIndices.TryDequeue(out int ownerCommandIndex))
+            while (commandIndex < MaxDeferredRaycastCommandsPerFrame &&
+                   TryDequeueDeferredRaycastCommand(
+                       out RaycastCommand command,
+                       out int ownerIndex,
+                       out int ownerCommandIndex))
             {
                 _deferredRaycastCommands.AddNoResize(command);
                 _deferredRaycastOwners[commandIndex] = ownerIndex >= 0 && ownerIndex < _targetCount ? _targets[ownerIndex] : null;
@@ -938,6 +935,45 @@ namespace Hecton8.Core
                 commandIndex++;
             }
 
+            if (commandIndex > 0)
+                _queuedDeferredRaycastCount = math.max(0, _queuedDeferredRaycastCount - commandIndex);
+        }
+
+        private bool TryDequeueDeferredRaycastCommand(
+            out RaycastCommand command,
+            out int ownerIndex,
+            out int ownerCommandIndex)
+        {
+            command = default;
+            ownerIndex = 0;
+            ownerCommandIndex = 0;
+
+            if (!_pendingDeferredRaycastCommands.IsCreated ||
+                !_pendingDeferredRaycastOwnerIndices.IsCreated ||
+                !_pendingDeferredRaycastCommandIndices.IsCreated)
+            {
+                return false;
+            }
+
+            if (!_pendingDeferredRaycastCommands.TryDequeue(out command))
+                return false;
+
+            if (_pendingDeferredRaycastOwnerIndices.TryDequeue(out ownerIndex) &&
+                _pendingDeferredRaycastCommandIndices.TryDequeue(out ownerCommandIndex))
+            {
+                return true;
+            }
+
+            DrainDeferredRaycastQueueResidue();
+            _queuedDeferredRaycastCount = 0;
+            command = default;
+            ownerIndex = 0;
+            ownerCommandIndex = 0;
+            return false;
+        }
+
+        private void DrainDeferredRaycastQueueResidue()
+        {
             if (_pendingDeferredRaycastCommands.IsCreated)
             {
                 while (_pendingDeferredRaycastCommands.TryDequeue(out _))
@@ -958,8 +994,6 @@ namespace Hecton8.Core
                 {
                 }
             }
-
-            _queuedDeferredRaycastCount = 0;
         }
 
         private void RegisterNativeMemoryBudget()

@@ -1405,6 +1405,7 @@ namespace Hecton8.Core
         CameraRTRuntime = 95,
         PostFXRTRuntime = 96,
         UIRTRuntime = 97,
+        SettingsRuntime = 98,
         Unknown = 255
     }
 

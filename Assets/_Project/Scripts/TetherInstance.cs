@@ -1,9 +1,7 @@
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -22,69 +20,6 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     public sealed class TetherInstance : MonoBehaviour
     {
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildVisualCatenaryJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<float3> AnchorPositions;
-            [ReadOnly] public NativeArray<float> SegmentLengths;
-            public NativeArray<float3> VisualSegmentPositions;
-
-            public int AnchorCount;
-            public float CurrentLength;
-            public float BlendT;
-            public float SagScale;
-
-            public void Execute(int index)
-            {
-                int pointCount = VisualSegmentPositions.Length;
-                if (AnchorCount < 2 || pointCount <= 0)
-                    return;
-
-                float pathLength = math.max(CurrentLength, MinDistance);
-                float step = pointCount > 1 ? pathLength / (pointCount - 1) : pathLength;
-                float travelDistance = step * index;
-                float3 targetPoint = SamplePathPoint(AnchorCount, travelDistance, AnchorPositions, SegmentLengths, SagScale);
-                if (index == 0 || index == pointCount - 1)
-                {
-                    VisualSegmentPositions[index] = targetPoint;
-                    return;
-                }
-
-                float3 currentPoint = VisualSegmentPositions[index];
-                VisualSegmentPositions[index] = math.lerp(currentPoint, targetPoint, BlendT);
-            }
-
-            private static float3 SamplePathPoint(
-                int anchorCount,
-                float travelDistance,
-                NativeArray<float3> anchorPositions,
-                NativeArray<float> segmentLengths,
-                float sagScale)
-            {
-                int segmentCount = anchorCount - 1;
-                float remaining = math.max(0f, travelDistance);
-                for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++)
-                {
-                    float segmentLength = math.max(segmentLengths[segmentIndex], MinDistance);
-                    if (remaining > segmentLength && segmentIndex < segmentCount - 1)
-                    {
-                        remaining -= segmentLength;
-                        continue;
-                    }
-
-                    float segmentT = math.saturate(remaining / segmentLength);
-                    float3 start = anchorPositions[segmentIndex];
-                    float3 end = anchorPositions[segmentIndex + 1];
-                    float3 basePoint = math.lerp(start, end, segmentT);
-                    float sag = segmentLength * sagScale;
-                    float sagWeight = 4f * segmentT * (1f - segmentT);
-                    return basePoint + new float3(0f, -(sag * sagWeight), 0f);
-                }
-
-                return anchorPositions[anchorCount - 1];
-            }
-        }
-
         private const int MaxSupportedBendPoints = 4;
         private const int MaxSegments = MaxSupportedBendPoints + 1;
         private const int MaxAnchors = MaxSegments + 1;
@@ -445,17 +380,14 @@ namespace Hecton8.Physics
             float safeDeltaTime = math.max(deltaTime, 0f);
             float blendT = ResolveBlendFactor(_visualSegmentSmoothSpeed, safeDeltaTime);
             CopyVisualSolverState(anchorCount);
-            BuildVisualCatenaryJob catenaryJob = new BuildVisualCatenaryJob
-            {
-                AnchorPositions = _visualAnchorPositions,
-                SegmentLengths = _visualSegmentLengths,
-                VisualSegmentPositions = _visualSegmentPositions,
-                AnchorCount = anchorCount,
-                CurrentLength = _currentLength,
-                BlendT = blendT,
-                SagScale = VisualSagScale
-            };
-            catenaryJob.Run(_visualSegmentPositions.Length);
+            BuildVisualCatenaryImmediate(
+                anchorCount,
+                _currentLength,
+                blendT,
+                VisualSagScale,
+                _visualAnchorPositions,
+                _visualSegmentLengths,
+                _visualSegmentPositions);
 
             Vector3 minBounds = anchorPosition;
             Vector3 maxBounds = anchorPosition;
@@ -469,6 +401,66 @@ namespace Hecton8.Physics
 
             _visualBounds.SetMinMax(minBounds, maxBounds);
             VisualSegmentBuffer.SetData(_visualSegmentPositions);
+        }
+
+        private static void BuildVisualCatenaryImmediate(
+            int anchorCount,
+            float currentLength,
+            float blendT,
+            float sagScale,
+            NativeArray<float3> anchorPositions,
+            NativeArray<float> segmentLengths,
+            NativeArray<float3> visualSegmentPositions)
+        {
+            int pointCount = visualSegmentPositions.Length;
+            if (anchorCount < 2 || pointCount <= 0)
+                return;
+
+            float pathLength = math.max(currentLength, MinDistance);
+            float step = pointCount > 1 ? pathLength / (pointCount - 1) : pathLength;
+            for (int index = 0; index < pointCount; index++)
+            {
+                float travelDistance = step * index;
+                float3 targetPoint = SampleVisualPathPoint(anchorCount, travelDistance, anchorPositions, segmentLengths, sagScale);
+                if (index == 0 || index == pointCount - 1)
+                {
+                    visualSegmentPositions[index] = targetPoint;
+                    continue;
+                }
+
+                float3 currentPoint = visualSegmentPositions[index];
+                visualSegmentPositions[index] = math.lerp(currentPoint, targetPoint, blendT);
+            }
+        }
+
+        private static float3 SampleVisualPathPoint(
+            int anchorCount,
+            float travelDistance,
+            NativeArray<float3> anchorPositions,
+            NativeArray<float> segmentLengths,
+            float sagScale)
+        {
+            int segmentCount = anchorCount - 1;
+            float remaining = math.max(0f, travelDistance);
+            for (int segmentIndex = 0; segmentIndex < segmentCount; segmentIndex++)
+            {
+                float segmentLength = math.max(segmentLengths[segmentIndex], MinDistance);
+                if (remaining > segmentLength && segmentIndex < segmentCount - 1)
+                {
+                    remaining -= segmentLength;
+                    continue;
+                }
+
+                float segmentT = math.saturate(remaining / segmentLength);
+                float3 start = anchorPositions[segmentIndex];
+                float3 end = anchorPositions[segmentIndex + 1];
+                float3 basePoint = math.lerp(start, end, segmentT);
+                float sag = segmentLength * sagScale;
+                float sagWeight = 4f * segmentT * (1f - segmentT);
+                return basePoint + new float3(0f, -(sag * sagWeight), 0f);
+            }
+
+            return anchorPositions[anchorCount - 1];
         }
 
         /// <summary>

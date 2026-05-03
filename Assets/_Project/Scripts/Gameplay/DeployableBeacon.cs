@@ -419,13 +419,13 @@ namespace Hecton8.Gameplay
             if (!_registered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registered = true;
+                _registered = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredFixed)
             {
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-                _registeredFixed = true;
+                _registeredFixed = GlobalRegistry.FixedTickables.Contains(this);
             }
         }
 

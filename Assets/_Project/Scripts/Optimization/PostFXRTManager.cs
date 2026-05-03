@@ -13,14 +13,8 @@ namespace Hecton8.Optimization
     [DefaultExecutionOrder(-7995)]
     public sealed class PostFXRTManager : MonoBehaviour, ISlowTickable
     {
-        // ── SINGLETON ──────────────────────────────────────────────────────────────
+        // ── REGISTRY SLOT ──────────────────────────────────────────────────────────
         
-        private static PostFXRTManager _instance;
-        
-        /// <summary>
-        /// Singleton instance. Null-check required in OnDestroy.
-        /// </summary>
-        public static PostFXRTManager Instance => _instance;
         
         // ── CONSTANTS ──────────────────────────────────────────────────────────────
         
@@ -56,21 +50,10 @@ namespace Hecton8.Optimization
         
         // ── LIFECYCLE ──────────────────────────────────────────────────────────────
         
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            
-            _instance = this;
-        }
-        
         private void OnEnable()
         {
-            TryRegisterService();
-            TryRegister();
+            if (TryRegisterService())
+                TryRegister();
         }
         
         private void OnDisable()
@@ -83,9 +66,6 @@ namespace Hecton8.Optimization
         {
             TryUnregister();
             TryUnregisterService();
-
-            if (_instance == this)
-                _instance = null;
         }
         
         // ── ISLOWTICABLE ───────────────────────────────────────────────────────────
@@ -143,9 +123,11 @@ namespace Hecton8.Optimization
         {
             if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
+            if (!ReferenceEquals(GlobalRegistry.PostFXRT, this))
+                return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTick = true;
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -157,13 +139,23 @@ namespace Hecton8.Optimization
             _registeredSlowTick = false;
         }
 
-        private void TryRegisterService()
+        private bool TryRegisterService()
         {
-            if (_serviceRegistered || !Application.isPlaying || _instance != this)
-                return;
+            if (_serviceRegistered)
+                return true;
+            if (!Application.isPlaying)
+                return false;
+
+            PostFXRTManager registered = GlobalRegistry.PostFXRT;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
 
             GlobalRegistry.RegisterPostFXRTRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.PostFXRT, this);
+            return _serviceRegistered;
         }
 
         private void TryUnregisterService()

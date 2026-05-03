@@ -1,9 +1,9 @@
 # Docs Index
 
-Date: `2026-05-02`
+Date: `2026-05-03`
 Status: `PENDING VERIFICATION`
 
-Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, and `2026-05-02` documentation actuality sweep.
+Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, `2026-05-02` documentation actuality sweep, and `2026-05-03` foundation-hardening continuation.
 
 ## Read First
 
@@ -13,14 +13,20 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 - `SYSTEMS_CONTRACTS.md` - non-asset system contracts.
 - `DOC_GOVERNANCE.md` - placement rules for active/reference/archive docs.
 - `ROOT_DOCS_REFERENCE.md` - root/doc boundary and relocation map.
+- `Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md` - latest foundation-hardening evidence and runtime-risk boundary.
+- `Reports/2026-05-03_SETTINGS_PERSISTENCE_REGISTRY_REBIND.md` - latest settings/UserOptions registry rebind and persistence-order hardening.
+- `Reports/2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md` - habitat graph anchor-state correction and verification boundary.
 - `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` - latest documentation sweep and current local build-evidence addendum.
-- `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` - stable current-state anchor, updated with May 2 evidence.
+- `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` - stable current-state anchor, updated with May 3 evidence.
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` - current workspace atlas.
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOC_AUTHORITY_CLASSIFICATION.md` - current importance sorting for active, reference, archive, and deprecated docs.
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` - current concept-level classification of load-bearing, transitional, presentation, experimental, and historical systems.
 
 ## Current Audit Outputs
 
+- `Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`
+- `Reports/2026-05-03_SETTINGS_PERSISTENCE_REGISTRY_REBIND.md`
+- `Reports/2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md`
 - `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
 - `Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
@@ -40,16 +46,27 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 
 Current-state rule:
 
-- use `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` as the conceptual entry point for system ownership and active risks; the filename is retained as a stable anchor and now includes May 2 evidence
-- use `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` as the latest documentation-sweep and local build-evidence addendum
+- use `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` as the conceptual entry point for system ownership and active risks; the filename is retained as a stable anchor and now includes May 3 evidence
+- use `Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md` as the latest foundation-hardening and runtime-risk addendum
+- use `Reports/2026-05-03_SETTINGS_PERSISTENCE_REGISTRY_REBIND.md` for the latest settings/UserOptions registry rebind and persistence-order hardening
+- use `Reports/2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md` for the latest habitat graph anchor-state scratch-buffer correction
+- use `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` as the latest broad documentation-sweep and May 2 local build-evidence addendum
 - use older dated reports as evidence only after checking their latest delta sections
 - do not treat archive/deprecated bundles as active authority unless a current index links them explicitly
 
 Current verification boundary:
 
-- fresh local `dotnet build .\Hecton8.Core.csproj` on May 2 returned `0 Error(s)` and `136 Warning(s)`; latest post-restore `--no-restore` rerun returned `0 Error(s)` and `73 Warning(s)`
-- Play Mode, GCMonitor, profiler, memory retention, scene/prefab readback, and MCP console proof were not captured in the May 2 documentation sweep
-- conflicting older Unity batch artifacts remain historical evidence, not current truth, unless re-run cleanly
+- fresh May 3 Unity batchmode evidence exists in `Temp/CodexArtifacts/unity-batch-2026-05-03-foundation-hardening-after-watchdogs.log`: batchmode exited successfully, Tundra build succeeded, Mono reloaded, and the strict compiler-failure scan found `0` matches
+- fresh May 3 full local Core build `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false` returned `0 Error(s)` and `0 Warning(s)` after stale generated Entities package references were pruned through source-backed Editor/MSBuild guards
+- fresh May 3 foundation guard scan reports synchronous job `.Run(` sites `0` as a hard gate, hot-path synchronous job `.Run(` review sites `0`, blind registry flag drift `0`, origin-shift listener blind flag drift `0`, direct `InputManager.Instance` sites `0`, release-reachable direct/one-hop hot-path `Debug.Log` sites `0`, broad physics masks `0`, and runtime Find API hits outside Editor folders `0`
+- fresh May 3 optional DOTS and Editor project checks returned `0 Error(s)` and `0 Warning(s)` for `Hecton8.World.Dots.csproj` and `Hecton8.Editor.csproj`; this is command-line compile evidence only
+- fresh May 3 scoped PlayMode test compile returned `0 Error(s)` and `0 Warning(s)` after `Hecton8.PlayModeTests.asmdef`/MSBuild project-reference wiring to `Hecton8.Core`, generated `Temp\bin\Debug` missing-reference pruning, and stale `LogAssertion` calls were replaced with Unity Test Framework `LogAssert`
+- Unity-generated command-line projects share `Temp\obj`; build evidence must be collected serially, because parallel local `dotnet build` runs can create false `CS2012` file-lock failures
+- earlier post-anchor-state full local Core build returned `0 Error(s)` and `1 Warning(s)` from `MSB3026` file-copy retry on `Temp\obj\Hecton8.Core\Hecton8.Core.dll`; latest full Core, Editor, and warning-gate reruns did not reproduce it
+- earlier full verbose ProjectReferences builds reported third-party/package warnings from URP, GPUInstancer, Crest, Den.Tools, WaveHarmonic.Crest, and ShaderGraph; those were not patched under the third-party asset integrity rule
+- fresh May 3 Unity EditMode spatial-hash self-test evidence passed `3/3` in `Temp/CodexArtifacts/editmode-results-2026-05-03-spatialhash-selftest-after-collections.xml`
+- Play Mode, GCMonitor, profiler, memory retention, scene/prefab readback, and MCP runtime-console proof were not captured in the May 3 foundation-hardening report
+- May 2 dotnet evidence remains historical compile evidence: restore build `0 Error(s)`, `136 Warning(s)`; latest post-restore `--no-restore` rerun `0 Error(s)`, `73 Warning(s)`
 
 ## Active Architecture
 

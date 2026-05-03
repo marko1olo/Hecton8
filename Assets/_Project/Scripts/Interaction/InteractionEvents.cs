@@ -166,7 +166,11 @@ namespace Hecton8.Interaction
                 try
                 {
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnInteractionEvent(in payload);
+                    {
+                        IInteractionEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnInteractionEvent(in payload);
+                    }
                 }
                 finally
                 {

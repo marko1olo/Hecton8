@@ -106,7 +106,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTick = true;
+            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterFromTick()

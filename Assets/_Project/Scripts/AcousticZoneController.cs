@@ -1021,7 +1021,7 @@ namespace Hecton8.Audio
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()
@@ -1332,7 +1332,7 @@ namespace Hecton8.Audio
         /// Принудительный переход в указанную зону.
         /// Используется из внешних систем (скриптовые сцены, читы, тесты).
         ///
-        /// Пример: AcousticZoneController.Instance.ForceZone(true); // Interior
+        /// Пример: GlobalRegistry.AcousticZone?.ForceZone(true); // Interior
         /// </summary>
         /// <param name="isInterior">true = интерьер, false = подводная.</param>
         public void ForceZone(bool isInterior)

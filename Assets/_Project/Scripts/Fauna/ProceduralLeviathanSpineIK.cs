@@ -440,7 +440,8 @@ namespace Hecton8.AI
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this) ||
+                          SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregister()
@@ -448,8 +449,12 @@ namespace Hecton8.AI
             if (!_registered)
                 return;
 
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            if (SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this))
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
+            if (GlobalRegistry.Updatables.Contains(this))
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+
             _registered = false;
         }
 

@@ -633,7 +633,7 @@ namespace Hecton8.Economy
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredSlowTickable = true;
+            _registeredSlowTickable = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterSlowTickable()

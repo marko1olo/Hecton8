@@ -1,0 +1,34 @@
+<Project>
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Hecton8.PlayModeTests' And !$([System.String]::Copy('@(ProjectReference)').Contains('Hecton8.Core.csproj'))">
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Hecton8.Core.csproj"
+                      ReferenceOutputAssembly="true"
+                      Private="False" />
+  </ItemGroup>
+
+  <Target Name="HectonEnsureGeneratedBuildDirectories" BeforeTargets="CoreCompile;GenerateBuildDependencyFile">
+    <MakeDir Directories="$(OutputPath)"
+             Condition="'$(OutputPath)' != '' And !Exists('$(OutputPath)')" />
+    <MakeDir Directories="$(IntermediateOutputPath)"
+             Condition="'$(IntermediateOutputPath)' != '' And !Exists('$(IntermediateOutputPath)')" />
+  </Target>
+
+  <Target Name="HectonPruneMissingGeneratedPackageReferences" BeforeTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <_HectonMissingGeneratedReference Include="@(Reference)"
+                                        Condition="'%(Reference.Identity)' == 'Unity.Cecil.Awesome' And '%(Reference.HintPath)' != '' And !Exists('%(Reference.HintPath)')" />
+      <_HectonMissingGeneratedReference Include="@(Reference)"
+                                        Condition="'%(Reference.Identity)' == 'Unity.Entities' And '%(Reference.HintPath)' != '' And !Exists('%(Reference.HintPath)')" />
+      <_HectonMissingGeneratedReference Include="@(Reference)"
+                                        Condition="'%(Reference.HintPath)' != '' And !Exists('%(Reference.HintPath)') And ($([System.String]::Copy('%(Reference.HintPath)').Contains('Library\ScriptAssemblies')) Or $([System.String]::Copy('%(Reference.HintPath)').Contains('Library/ScriptAssemblies')) Or $([System.String]::Copy('%(Reference.HintPath)').Contains('Library\PackageCache')) Or $([System.String]::Copy('%(Reference.HintPath)').Contains('Library/PackageCache')))" />
+      <_HectonMissingGeneratedReference Include="@(Reference)"
+                                        Condition="'%(Reference.HintPath)' != '' And !Exists('%(Reference.HintPath)') And ($([System.String]::Copy('%(Reference.HintPath)').Contains('Temp\bin\Debug')) Or $([System.String]::Copy('%(Reference.HintPath)').Contains('Temp/bin/Debug')))" />
+      <Reference Remove="@(_HectonMissingGeneratedReference)" />
+      <_HectonMissingGeneratedReference Remove="@(_HectonMissingGeneratedReference)" />
+
+      <_HectonMissingGeneratedAnalyzer Include="@(Analyzer)"
+                                       Condition="$([System.String]::Copy('%(Analyzer.Identity)').Contains('com.unity.entities@')) And !Exists('%(Analyzer.Identity)')" />
+      <Analyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
+      <_HectonMissingGeneratedAnalyzer Remove="@(_HectonMissingGeneratedAnalyzer)" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -739,13 +739,13 @@ namespace Hecton8.Core
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredFixedTick)
             {
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
-                _registeredFixedTick = true;
+                _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
             }
         }
 

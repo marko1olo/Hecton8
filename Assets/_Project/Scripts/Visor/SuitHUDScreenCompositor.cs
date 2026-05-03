@@ -375,7 +375,7 @@ namespace NASAPunk.Visor
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterRuntimeTick()

@@ -66,7 +66,15 @@ namespace Hecton8.Audio
             if (!Application.isPlaying || _instance != null)
                 return;
 
-            TryInstantiateConfiguredRuntimeDirector();
+            TryInstantiateConfiguredRuntimeDirector(SceneManager.GetActiveScene(), false);
+        }
+
+        internal static void EnsureRuntimeInstanceForScene(Scene scene)
+        {
+            if (!Application.isPlaying || _instance != null)
+                return;
+
+            TryInstantiateConfiguredRuntimeDirector(scene, true);
         }
 
         [Header("References")]
@@ -682,13 +690,13 @@ namespace Hecton8.Audio
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = true;
+                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
             }
         }
 
@@ -725,9 +733,8 @@ namespace Hecton8.Audio
             _serviceRegistered = false;
         }
 
-        private static bool TryInstantiateConfiguredRuntimeDirector()
+        private static bool TryInstantiateConfiguredRuntimeDirector(Scene activeScene, bool reportMissingConfig)
         {
-            Scene activeScene = SceneManager.GetActiveScene();
             HectonMusicDirectorConfig sceneConfig;
             if (!HectonMusicDirectorAnchor.TryResolveConfigForScene(activeScene, out sceneConfig))
             {
@@ -735,7 +742,19 @@ namespace Hecton8.Audio
                 sceneConfig = anchor != null ? anchor.Config : null;
             }
 
-            if (sceneConfig == null || sceneConfig.RuntimeDirectorPrefab == null)
+            if (sceneConfig == null)
+            {
+                if (reportMissingConfig)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogError("[HectonMusicDirector] Missing authored HectonMusicDirectorConfig for active scene.");
+#endif
+                }
+
+                return false;
+            }
+
+            if (sceneConfig.RuntimeDirectorPrefab == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[HectonMusicDirector] Missing authored RuntimeDirectorPrefab on active HectonMusicDirectorConfig.");

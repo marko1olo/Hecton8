@@ -16,8 +16,6 @@ namespace Hecton8.Optimization
         private const float NativeHeapOverheadFactor = 1.15f;
         private static readonly float[] _retryBackoffSeconds = { 5f, 15f, 60f };
 
-        private static AssetLifecycleGovernor _instance;
-
         [Header("Asset Registry")]
         [Tooltip("Pre-sized residency registry capacity. This is cold-path storage only.")]
         [SerializeField] private int maxRegistryCapacity = 512;
@@ -44,7 +42,6 @@ namespace Hecton8.Optimization
         private readonly StringBuilder _logBuilder = new StringBuilder(512);
 #endif
 
-        internal static AssetLifecycleGovernor Instance => _instance;
         internal long TrackedResidentBytes { get; private set; }
         internal long NativeHeapEstimateBytes => (long)(TrackedResidentBytes * NativeHeapOverheadFactor);
         internal int PendingReleaseCount => _pendingRelease.Count;
@@ -52,21 +49,14 @@ namespace Hecton8.Optimization
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             _registry.EnsureCapacity(Mathf.Max(1, maxRegistryCapacity));
             EnsureFallbackAssets();
         }
 
         private void OnEnable()
         {
-            TryRegisterService();
-            TryRegister();
+            if (TryRegisterService())
+                TryRegister();
         }
 
         private void Start()
@@ -90,9 +80,6 @@ namespace Hecton8.Optimization
             _evictionCandidates.Clear();
             _retryCandidates.Clear();
             TrackedResidentBytes = 0L;
-
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <inheritdoc />
@@ -180,7 +167,7 @@ namespace Hecton8.Optimization
             {
                 AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
                 if (dispatcher != null)
-                    dispatcher.Complete(record.ActiveRequestId, true);
+                    dispatcher.AcknowledgeDispatchRequest(record.ActiveRequestId, true);
 
                 record.ActiveRequestId = 0;
             }
@@ -276,7 +263,7 @@ namespace Hecton8.Optimization
             {
                 AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
                 if (dispatcher != null)
-                    dispatcher.Complete(record.ActiveRequestId, false);
+                    dispatcher.AcknowledgeDispatchRequest(record.ActiveRequestId, false);
 
                 record.ActiveRequestId = 0;
             }
@@ -311,18 +298,30 @@ namespace Hecton8.Optimization
                 return;
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
-
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredTick = true;
-        }
-
-        private void TryRegisterService()
-        {
-            if (_registeredService || !Application.isPlaying)
+            if (!ReferenceEquals(GlobalRegistry.AssetLifecycle, this))
                 return;
 
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private bool TryRegisterService()
+        {
+            if (_registeredService)
+                return true;
+            if (!Application.isPlaying)
+                return false;
+
+            AssetLifecycleGovernor registered = GlobalRegistry.AssetLifecycle;
+            if (registered != null && !ReferenceEquals(registered, this))
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
             GlobalRegistry.RegisterAssetLifecycleRuntime(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.AssetLifecycle, this);
+            return _registeredService;
         }
 
         private void TryUnregister()
@@ -425,7 +424,7 @@ namespace Hecton8.Optimization
             {
                 dispatcher.CancelByAssetKey(key);
                 if (record.ActiveRequestId != 0)
-                    dispatcher.Complete(record.ActiveRequestId, false);
+                    dispatcher.AcknowledgeDispatchRequest(record.ActiveRequestId, false);
             }
 
             DisableOwnerPresentation(record.Owner);

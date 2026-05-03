@@ -1319,7 +1319,7 @@ namespace Hecton8.Scavenging
                     return;
 
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredToDispatcher = true;
+                _registeredToDispatcher = GlobalRegistry.Updatables.Contains(this);
             }
 
             private void TryUnregisterFromDispatcher()

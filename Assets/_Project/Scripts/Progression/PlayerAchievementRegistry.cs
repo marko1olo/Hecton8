@@ -316,7 +316,7 @@ namespace Hecton8.Progression
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredToTick = true;
+            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

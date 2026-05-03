@@ -319,7 +319,7 @@ namespace Hecton8.Interaction
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _isTicking = true;
+            _isTicking = GlobalRegistry.Updatables.Contains(this);
         }
 
         /// <summary>

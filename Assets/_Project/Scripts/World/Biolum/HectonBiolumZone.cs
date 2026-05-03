@@ -126,7 +126,7 @@ namespace Hecton8.Biolum
             if (!_isRegistered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _isRegistered = true;
+                _isRegistered = GlobalRegistry.Updatables.Contains(this);
             }
             HectonBiolumManager manager = GlobalRegistry.BiolumManager;
             if (manager != null)
@@ -263,7 +263,7 @@ namespace Hecton8.Biolum
             }
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = true;
+            _isRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

@@ -80,9 +80,12 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: RegistryBucket<IFlashlightEventListener>[16] - flashlight deferred listeners - owner: FlashlightEvents
         private static readonly RegistryBucket<IFlashlightEventListener> _listeners = new RegistryBucket<IFlashlightEventListener>(ListenerCapacity);
         private static NativeQueue<FlashlightEventPayload> _pendingEvents;
+        private static NativeQueue<FlashlightEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -94,8 +97,17 @@ namespace Hecton8.Gameplay
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(FlashlightEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         public static void Register(IFlashlightEventListener listener)
@@ -128,6 +140,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -140,11 +153,22 @@ namespace Hecton8.Gameplay
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                DispatchRegisteredListeners(in payload);
+                _isDispatching = true;
+                try
+                {
+                    DispatchRegisteredListeners(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         internal static void RaiseToggled(bool isOn, float batteryPercent, float heat01)
@@ -179,21 +203,41 @@ namespace Hecton8.Gameplay
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
             }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<FlashlightEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FlashlightEventPayload>[16] - next-frame flashlight event lane prevents same-frame reentrant dispatch - owner: FlashlightEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(FlashlightEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void Enqueue(FlashlightEventType eventType, bool isOn, float batteryPercent, float heat01)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
-            _pendingEvents.Enqueue(new FlashlightEventPayload
+            FlashlightEventPayload payload = new FlashlightEventPayload
             {
                 BatteryPercent = batteryPercent,
                 Heat01 = heat01,
                 EventType = (ushort)eventType,
                 StateBits = isOn ? (ushort)1 : (ushort)0
-            });
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
         }
 
@@ -205,7 +249,11 @@ namespace Hecton8.Gameplay
 
             IFlashlightEventListener[] rawArray = _listeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnFlashlightEvent(in payload);
+            {
+                IFlashlightEventListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnFlashlightEvent(in payload);
+            }
         }
 
         private static void DrainWithoutDispatch()
@@ -213,27 +261,66 @@ namespace Hecton8.Gameplay
             if (!_pendingEvents.IsCreated)
                 return;
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
-            {
-                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
-
-                if (!_pendingEvents.TryDequeue(out _))
-                    break;
-
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
-            }
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                return;
 
             if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+
+            if (_pendingEventCount > 0 &&
+                !DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+            {
+                return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<FlashlightEventPayload> queue,
+            ref int pendingCount)
+        {
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<FlashlightEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Flashlight")]
-    public sealed class PlayerFlashlight : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PlayerFlashlight : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         public enum BeamMode
         {
@@ -403,6 +490,7 @@ namespace Hecton8.Gameplay
         private float _currentIntensity;
         private bool _registered;
         private bool _inputSubscribed;
+        private bool _hotSwapListenerRegistered;
         private InputManager _subscribedInputManager;
         private BeamMode _beamMode;
         private Camera _cachedMainCamera;
@@ -486,7 +574,8 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegister();
-            SubscribeToInputManager();
+            TryRegisterHotSwapListener();
+            SubscribeFlashlightInputManagerIfAvailable(ResolveNativeFlashlightInputManager());
         }
 
         private void Start()
@@ -503,13 +592,15 @@ namespace Hecton8.Gameplay
                     "Flashlight will not function.");
             }
 
-            SubscribeToInputManager();
+            SubscribeFlashlightInputManagerIfAvailable(ResolveNativeFlashlightInputManager());
+            TryRegisterHotSwapListener();
         }
 
         private void OnDisable()
         {
             TryUnregister();
             UnsubscribeFromInputManager();
+            TryUnregisterHotSwapListener();
             _externalInterferenceIntensity = 0f;
             _externalInterferenceHoldTimer = 0f;
         }
@@ -518,6 +609,7 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             UnsubscribeFromInputManager();
+            TryUnregisterHotSwapListener();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -534,7 +626,6 @@ namespace Hecton8.Gameplay
 
         public void Tick(float deltaTime)
         {
-            SubscribeToInputManager();
             if (_playerMovement == null || flashlightLight == null || volumetricBeam == null)
                 ResolveReferences();
 
@@ -710,9 +801,13 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private void SubscribeToInputManager()
+        private static InputManager ResolveNativeFlashlightInputManager()
         {
-            InputManager inputManager = InputManager.Instance;
+            return GlobalRegistry.NativeInputManager;
+        }
+
+        private void SubscribeFlashlightInputManagerIfAvailable(InputManager inputManager)
+        {
             if (inputManager == null)
                 return;
 
@@ -736,6 +831,43 @@ namespace Hecton8.Gameplay
 
             _subscribedInputManager = null;
             _inputSubscribed = false;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input)
+                return;
+
+            UnsubscribeFromInputManager();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            SubscribeFlashlightInputManagerIfAvailable(ResolveNativeFlashlightInputManager());
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
         }
 
         private void ResolveReferences()
@@ -771,7 +903,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

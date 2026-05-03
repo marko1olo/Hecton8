@@ -645,7 +645,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredTick = true;
+            _registeredTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void RegisterToSlowTickManager()
@@ -657,7 +657,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _registeredSlowTick = true;
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

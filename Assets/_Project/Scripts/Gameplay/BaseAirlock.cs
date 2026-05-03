@@ -6,7 +6,8 @@
 //   • IInteractable for player interaction
 //   • State machine via ITickable (no coroutines)
 //   • MaterialPropertyBlock for status light (zero GC)
-//   • UnityEvent for environment handoff (designer-configurable)
+//   • BaseAirlockEvents NativeQueue for runtime listeners
+//   • Legacy UnityEvent hooks for existing scene/prefab designer wiring
 //
 // STATES:
 //   Ready → Cycling (enter/exit) → Ready
@@ -49,6 +50,10 @@ namespace Hecton8.Gameplay
         private const float MaxSignalWeldDeltaSeconds = 0.25f;
         private const int OverrideRaycastHitCapacity = 4;
         private const float MinOverrideRaycastDirectionSqr = 0.000001f;
+        private const string MissingInteriorSpawnPointMessage = "[BaseAirlock] Interior spawn point not set.";
+        private const string MissingExteriorSpawnPointMessage = "[BaseAirlock] Exterior spawn point not set.";
+        private const string InvalidInteriorSpawnPointPoseMessage = "[BaseAirlock] Interior spawn point pose is invalid.";
+        private const string InvalidExteriorSpawnPointPoseMessage = "[BaseAirlock] Exterior spawn point pose is invalid.";
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -116,6 +121,11 @@ namespace Hecton8.Gameplay
         private bool _lockdownOverrideBlockedByFloodedNeighbor;
         private float _weldOverrideProgressSeconds;
         private int _emissionPropertyId;
+        private Transform _cycleInteractor;
+        private Transform _cachedInteractorTransform;
+        private Rigidbody _cachedInteractorBody;
+        private BuoyancyObject _cachedInteractorBuoyancy;
+        private bool _cachedInteractorComponentCacheValid;
 
         // Cached references
         private Transform _cachedTransform;
@@ -191,10 +201,16 @@ namespace Hecton8.Gameplay
             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
         }
 
+        private void Start()
+        {
+            TryRegister();
+        }
+
         private void OnDisable()
         {
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
+            ClearInteractorComponentCache();
         }
 
         private void OnDestroy()
@@ -211,7 +227,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()
@@ -345,11 +361,20 @@ namespace Hecton8.Gameplay
 
         private void StartCycle(Transform player)
         {
+            if (player == null)
+                return;
+
+            if (!TryResolveTeleportDestination(out Vector3 destinationPosition, out Quaternion destinationRotation))
+                return;
+
             _state = AirlockState.Cycling;
             _cycleTimer = cycleDuration;
+            _cycleInteractor = player;
 
             // Update status light to red
             UpdateStatusLight(cyclingColor);
+
+            BaseAirlockEvents.RaiseCycleStarted(this, player);
 
             // Play cycle start sound
             if (cycleStartSound != null && Hecton8.Core.GlobalRegistry.Audio is Hecton8.Core.IAudioService audio)
@@ -362,7 +387,7 @@ namespace Hecton8.Gameplay
 
             // Teleport player to spawn point immediately
             // (The "cycle" is the animation/sound, teleport happens at start)
-            TeleportPlayer(player);
+            TeleportPlayer(player, destinationPosition, destinationRotation);
         }
 
         private void CompleteCycle()
@@ -378,37 +403,78 @@ namespace Hecton8.Gameplay
                 audio.PlayAtPoint(cycleEndSound, _cachedTransform.position);
             }
 
+            BaseAirlockEvents.RaiseCycleCompleted(this, _cycleInteractor);
+            _cycleInteractor = null;
+
             // Fire event
             OnCycleCompleted?.Invoke();
         }
 
-        private void TeleportPlayer(Transform player)
+        private bool TryResolveTeleportDestination(out Vector3 destinationPosition, out Quaternion destinationRotation)
         {
+            destinationPosition = default;
+            destinationRotation = Quaternion.identity;
+
             // Determine destination based on current state
             Transform destination = _isPlayerInside ? exteriorSpawnPoint : interiorSpawnPoint;
 
             if (destination == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                UnityEngine.Debug.LogError($"[BaseAirlock] {( _isPlayerInside ? "Exterior" : "Interior" )} spawn point not set on {gameObject.name}");
+                UnityEngine.Debug.LogError(
+                    _isPlayerInside ? MissingExteriorSpawnPointMessage : MissingInteriorSpawnPointMessage,
+                    this);
 #endif
-                return;
+                return false;
             }
 
-            if (player.TryGetComponent(out Rigidbody playerBody))
-                TeleportBody(playerBody, destination.position, destination.rotation);
-            else
-                player.SetPositionAndRotation(destination.position, destination.rotation);
+            destinationPosition = destination.position;
+            destinationRotation = destination.rotation;
+            if (!IsFinite(destinationPosition) || !IsFinite(destinationRotation))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                UnityEngine.Debug.LogError(
+                    _isPlayerInside ? InvalidExteriorSpawnPointPoseMessage : InvalidInteriorSpawnPointPoseMessage,
+                    this);
+#endif
+                return false;
+            }
+
+            return true;
+        }
+
+        private void TeleportPlayer(Transform player, Vector3 destinationPosition, Quaternion destinationRotation)
+        {
+            ResolveInteractorComponents(player, out Rigidbody playerBody, out BuoyancyObject buoyancy);
+
+            bool useSafeTeleportProtocol = Application.isPlaying;
+            if (useSafeTeleportProtocol)
+                HectonFloatingOrigin.BeginSafeTeleportProtocol();
+
+            try
+            {
+                if (playerBody != null)
+                    TeleportBody(playerBody, destinationPosition, destinationRotation);
+                else
+                    player.SetPositionAndRotation(destinationPosition, destinationRotation);
+            }
+            finally
+            {
+                if (useSafeTeleportProtocol)
+                    HectonFloatingOrigin.EndSafeTeleportProtocol();
+            }
 
             // Toggle environment state
             _isPlayerInside = !_isPlayerInside;
+
+            BaseAirlockEvents.RaiseEnvironmentChanged(this, player);
 
             // Notify environment change
             // True = Dry (inside base), False = Wet (outside)
             OnEnvironmentChanged?.Invoke(_isPlayerInside);
 
             // Update player's BuoyancyObject if present
-            if (player.TryGetComponent(out BuoyancyObject buoyancy))
+            if (buoyancy != null)
             {
                 if (_isPlayerInside)
                     buoyancy.EnterDryZone();
@@ -417,14 +483,46 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void ResolveInteractorComponents(Transform player, out Rigidbody body, out BuoyancyObject buoyancy)
+        {
+            body = null;
+            buoyancy = null;
+            if (player == null)
+                return;
+
+            if (!ReferenceEquals(_cachedInteractorTransform, player) || !_cachedInteractorComponentCacheValid)
+            {
+                _cachedInteractorTransform = player;
+                player.TryGetComponent(out _cachedInteractorBody);
+                player.TryGetComponent(out _cachedInteractorBuoyancy);
+                _cachedInteractorComponentCacheValid = true;
+            }
+
+            body = _cachedInteractorBody;
+            buoyancy = _cachedInteractorBuoyancy;
+        }
+
+        private void ClearInteractorComponentCache()
+        {
+            _cycleInteractor = null;
+            _cachedInteractorTransform = null;
+            _cachedInteractorBody = null;
+            _cachedInteractorBuoyancy = null;
+            _cachedInteractorComponentCacheValid = false;
+        }
+
         private static void TeleportBody(Rigidbody body, Vector3 position, Quaternion rotation)
         {
             bool wasKinematic = body.isKinematic;
             bool wasDetectingCollisions = body.detectCollisions;
+            bool wasSleeping = body.IsSleeping();
 
             body.isKinematic = true;
             body.detectCollisions = false;
+            body.ResetCenterOfMass();
             body.transform.SetPositionAndRotation(position, rotation);
+            body.PublishTransform();
+            body.isKinematic = false;
             body.isKinematic = wasKinematic;
             body.detectCollisions = wasDetectingCollisions;
 
@@ -432,7 +530,14 @@ namespace Hecton8.Gameplay
             {
                 body.linearVelocity = Vector3.zero;
                 body.angularVelocity = Vector3.zero;
-                body.WakeUp();
+                if (wasSleeping)
+                    body.Sleep();
+                else
+                    body.WakeUp();
+            }
+            else if (wasSleeping)
+            {
+                body.Sleep();
             }
         }
 
@@ -531,6 +636,21 @@ namespace Hecton8.Gameplay
                    _cachedTransform.IsChildOf(hitTransform);
         }
 
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) &&
+                   float.IsFinite(value.w);
+        }
+
         private void ForceEmergencyOverride()
         {
             _weldOverrideProgressSeconds = 0f;
@@ -541,10 +661,12 @@ namespace Hecton8.Gameplay
                 owningModule.SetEmergencyBulkheadLockdown(false);
                 if (!owningModule.IsFlooded)
                     owningModule.ForceFloodFromBulkheadOverride(_cachedTransform.position);
+                BaseAirlockEvents.RaiseManualOverrideCompleted(this);
                 return;
             }
 
             SetEmergencyLockdown(false);
+            BaseAirlockEvents.RaiseManualOverrideCompleted(this);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -630,6 +752,8 @@ namespace Hecton8.Gameplay
             _weldOverrideProgressSeconds = 0f;
             if (_state == AirlockState.Ready)
                 UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
+
+            BaseAirlockEvents.RaiseEmergencyLockdownChanged(this);
         }
 
         /// <summary>
@@ -643,6 +767,8 @@ namespace Hecton8.Gameplay
             _lockdownOverrideBlockedByFloodedNeighbor = blocked;
             if (blocked)
                 _weldOverrideProgressSeconds = 0f;
+
+            BaseAirlockEvents.RaiseManualOverrideBlockedChanged(this);
         }
     }
 }

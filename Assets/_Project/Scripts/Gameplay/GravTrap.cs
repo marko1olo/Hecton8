@@ -299,7 +299,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegisteredTick = true;
+            _isRegisteredTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTick()
@@ -316,7 +316,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _isRegisteredSlowTick = true;
+            _isRegisteredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterFromSlowTick()

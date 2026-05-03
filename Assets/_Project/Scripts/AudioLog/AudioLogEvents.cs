@@ -49,11 +49,14 @@ namespace Hecton8.Narrative
         // COLD ALLOC: bool[128] - audio-log sidecar occupancy map - owner: AudioLogEvents
         private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
         private static NativeQueue<AudioLogEventPayload> _pendingEvents;
+        private static NativeQueue<AudioLogEventPayload> _nextFrameEvents;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(
             UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -66,11 +69,20 @@ namespace Hecton8.Narrative
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(AudioLogEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             ClearReferenceSlots();
             _referenceWriteIndex = 0;
             _referencePendingCount = 0;
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         public static void Register(IAudioLogEventListener listener)
@@ -98,6 +110,7 @@ namespace Hecton8.Narrative
                 return;
             }
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -112,14 +125,29 @@ namespace Hecton8.Narrative
 
                 IAudioLogEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnAudioLogEvent(in payload);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IAudioLogEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnAudioLogEvent(in payload);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
 
                 ReleaseReferenceSlot(payload.ReferenceSlot);
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         public static bool TryResolveLogData(in AudioLogEventPayload payload, out AudioLogData data)
@@ -164,12 +192,23 @@ namespace Hecton8.Narrative
                     nameof(_pendingEvents),
                     NativeAllocationLifetime.Session);
             }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<AudioLogEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioLogEventPayload>[16] - next-frame audio-log event lane prevents same-frame reentrant dispatch - owner: AudioLogEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(AudioLogEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void Enqueue(AudioLogEventType type, uint logHash, float durationSeconds, AudioLogData data)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
                 return;
 
             int referenceSlot = -1;
@@ -181,39 +220,85 @@ namespace Hecton8.Narrative
                 _referenceSlots[referenceSlot].LogData = data;
             }
 
-            _pendingEvents.Enqueue(new AudioLogEventPayload
+            AudioLogEventPayload payload = new AudioLogEventPayload
             {
                 Type = type,
                 TimestampTicks = unchecked((ulong)Stopwatch.GetTimestamp()),
                 LogHash = logHash,
                 ReferenceSlot = referenceSlot,
                 DurationSeconds = durationSeconds
-            });
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
         }
 
         private static void DrainWithoutDispatch()
         {
-            if (!_pendingEvents.IsCreated)
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
                 return;
 
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            if (_pendingEventCount <= 0)
+            {
+                PromoteNextFrameEventsIfFrontEmpty();
+                if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                    return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<AudioLogEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
+                return true;
+
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                    return;
+                    return false;
 
-                if (!_pendingEvents.TryDequeue(out AudioLogEventPayload payload))
+                if (!queue.TryDequeue(out AudioLogEventPayload payload))
                     break;
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
+                if (pendingCount > 0)
+                    pendingCount--;
 
                 ReleaseReferenceSlot(payload.ReferenceSlot);
             }
 
-            if (_pendingEvents.IsEmpty())
-                _pendingEventCount = 0;
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<AudioLogEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
 
         private static bool TryReserveReferenceSlot(out int slot)

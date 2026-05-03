@@ -27,7 +27,7 @@
 //   • OnTriggerEnter: если модуль не затоплен → BuoyancyObject.EnterDryZone()
 //   • OnTriggerExit: BuoyancyObject.ExitDryZone()
 //   • При смене isFlooded: синхронизация всех отслеживаемых объектов.
-//   • Кэширование через Dictionary<int, BuoyancyObject> по InstanceID —
+//   • Кэширование через Dictionary<ulong, BuoyancyObject> по EntityId —
 //     zero GetComponent в OnTriggerStay (Stay не используется вовсе).
 //
 // СОХРАНЕНИЕ:
@@ -524,15 +524,15 @@ namespace Hecton8.Gameplay
         /// Key: Collider.GetEntityId() (не GameObject — т.к. триггер видит Collider).
         /// Value: кэшированный BuoyancyObject.
         /// </summary>
-        private readonly Dictionary<int, BuoyancyObject> _trackedObjects
-            = new Dictionary<int, BuoyancyObject>(TRACKED_INITIAL_CAPACITY);
+        private readonly Dictionary<ulong, BuoyancyObject> _trackedObjects
+            = new Dictionary<ulong, BuoyancyObject>(TRACKED_INITIAL_CAPACITY);
 
         /// <summary>
         /// Временный список InstanceID для безопасного удаления из словаря
         /// во время итерации (при синхронизации состояния затопления).
         /// Pre-allocated, zero GC.
         /// </summary>
-        private readonly List<int> _keysToRemove = new List<int>(TRACKED_INITIAL_CAPACITY);
+        private readonly List<ulong> _keysToRemove = new List<ulong>(TRACKED_INITIAL_CAPACITY);
         // COLD ALLOC: List<BaseAirlock>[2] — cached owned airlock controllers for emergency lockdown fan-out — owner: BaseModule
         private readonly List<BaseAirlock> _airlockBuffer = new List<BaseAirlock>(2);
         // COLD ALLOC: List<SealedDoor>[2] — cached owned sealed bulkhead doors for quarantine locking — owner: BaseModule
@@ -1041,7 +1041,7 @@ namespace Hecton8.Gameplay
             if (trackedPlayerExited)
                 _trackedPlayerSurvival = null;
             // ── Interior Zone: BuoyancyObject tracking ──
-            int key = unchecked((int)EntityId.ToULong(other.GetEntityId()));
+            ulong key = ResolveColliderRuntimeId(other);
 
             if (_trackedObjects.TryGetValue(key, out BuoyancyObject buoyancy))
             {
@@ -2129,10 +2129,10 @@ namespace Hecton8.Gameplay
 
             _keysToRemove.Clear();
 
-            Dictionary<int, BuoyancyObject>.Enumerator enumerator = _trackedObjects.GetEnumerator();
+            Dictionary<ulong, BuoyancyObject>.Enumerator enumerator = _trackedObjects.GetEnumerator();
             while (enumerator.MoveNext())
             {
-                KeyValuePair<int, BuoyancyObject> kvp = enumerator.Current;
+                KeyValuePair<ulong, BuoyancyObject> kvp = enumerator.Current;
                 BuoyancyObject buoyancy = kvp.Value;
 
                 if (buoyancy == null)
@@ -2161,10 +2161,10 @@ namespace Hecton8.Gameplay
             if (_trackedObjects.Count == 0)
                 return;
 
-            Dictionary<int, BuoyancyObject>.Enumerator enumerator = _trackedObjects.GetEnumerator();
+            Dictionary<ulong, BuoyancyObject>.Enumerator enumerator = _trackedObjects.GetEnumerator();
             while (enumerator.MoveNext())
             {
-                KeyValuePair<int, BuoyancyObject> kvp = enumerator.Current;
+                KeyValuePair<ulong, BuoyancyObject> kvp = enumerator.Current;
                 BuoyancyObject buoyancy = kvp.Value;
 
                 if (buoyancy != null && !_integrityComponent.IsFlooded)
@@ -2888,7 +2888,7 @@ namespace Hecton8.Gameplay
 
         private void TrackBuoyancyObject(Collider other, BuoyancyObject buoyancy)
         {
-            int key = unchecked((int)EntityId.ToULong(other.GetEntityId()));
+            ulong key = ResolveColliderRuntimeId(other);
 
             if (_trackedObjects.ContainsKey(key))
                 return;
@@ -2898,6 +2898,13 @@ namespace Hecton8.Gameplay
 
             if (!_integrityComponent.IsFlooded)
                 buoyancy.EnterDryZone();
+        }
+
+        private static ulong ResolveColliderRuntimeId(Collider collider)
+        {
+            return collider != null
+                ? EntityId.ToULong(collider.GetEntityId())
+                : 0UL;
         }
 
         private void NotifyModuleExitIfNeeded()
@@ -3088,7 +3095,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -3108,7 +3115,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _fixedTickRegistered = true;
+            _fixedTickRegistered = GlobalRegistry.FixedTickables.Contains(this);
         }
 
         private void TryUnregisterFixedTick()

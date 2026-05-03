@@ -405,7 +405,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _isRegistered = true;
+            _isRegistered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterFromSlowTick()

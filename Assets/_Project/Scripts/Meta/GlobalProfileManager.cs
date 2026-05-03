@@ -870,7 +870,7 @@ namespace Hecton8.Meta
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
-            _registeredToTick = true;
+            _registeredToTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void UnregisterFromTickManager()
@@ -889,7 +889,7 @@ namespace Hecton8.Meta
                 return;
 
             GlobalRegistry.RegisterProfileService(this);
-            _registeredProfileService = true;
+            _registeredProfileService = ReferenceEquals(GlobalRegistry.Profile, this);
         }
 
         private void TryUnregisterProfileService()

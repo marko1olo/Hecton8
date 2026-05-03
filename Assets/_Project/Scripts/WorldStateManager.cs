@@ -355,7 +355,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterWorldStateRuntime(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.WorldState, this);
         }
 
         private void TryUnregisterService()

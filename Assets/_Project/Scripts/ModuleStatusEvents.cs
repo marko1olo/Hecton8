@@ -88,14 +88,17 @@ public static class ModuleStatusEvents
     // COLD ALLOC: bool[128] - sidecar occupancy map prevents overwrite before deferred dispatch - owner: ModuleStatusEvents
     private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
     private static NativeQueue<ModuleStatusEventPayload> _pendingEvents;
+    private static NativeQueue<ModuleStatusEventPayload> _nextFrameEvents;
     private static int _referenceWriteIndex;
     private static int _referencePendingCount;
     private static int _pendingEventCount;
+    private static int _nextFrameEventCount;
+    private static bool _isDispatching;
 
     /// <summary>
     /// Pending payload count in the native event lane.
     /// </summary>
-    public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+    public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStaticState()
@@ -107,11 +110,20 @@ public static class ModuleStatusEvents
             _pendingEvents = default;
         }
 
+        if (_nextFrameEvents.IsCreated)
+        {
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(ModuleStatusEvents), nameof(_nextFrameEvents));
+            _nextFrameEvents.Dispose();
+            _nextFrameEvents = default;
+        }
+
         _listeners.Clear();
         ClearReferenceSlots();
         _referenceWriteIndex = 0;
         _referencePendingCount = 0;
         _pendingEventCount = 0;
+        _nextFrameEventCount = 0;
+        _isDispatching = false;
     }
 
     /// <summary>
@@ -153,6 +165,7 @@ public static class ModuleStatusEvents
             return;
         }
 
+        PromoteNextFrameEventsIfFrontEmpty();
         int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
         while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
         {
@@ -167,14 +180,29 @@ public static class ModuleStatusEvents
 
             IModuleStatusEventListener[] rawArray = _listeners.RawArray;
             int count = _listeners.Count;
-            for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnModuleStatusEvent(in payload);
+            _isDispatching = true;
+            try
+            {
+                for (int i = count - 1; i >= 0; i--)
+                {
+                    IModuleStatusEventListener listener = rawArray[i];
+                    if (listener != null)
+                        listener.OnModuleStatusEvent(in payload);
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
+            }
 
             ReleaseReferenceSlot(payload.ReferenceSlot);
         }
 
         if (_pendingEvents.IsEmpty())
+        {
             _pendingEventCount = 0;
+            PromoteNextFrameEventsIfFrontEmpty();
+        }
     }
 
     /// <summary>
@@ -244,14 +272,32 @@ public static class ModuleStatusEvents
                 nameof(_pendingEvents),
                 NativeAllocationLifetime.Session);
         }
+
+        if (!_nextFrameEvents.IsCreated)
+        {
+            _nextFrameEvents = new NativeQueue<ModuleStatusEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] - next-frame module status lane prevents same-frame reentrant dispatch - owner: ModuleStatusEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _nextFrameEvents,
+                PendingEventCapacity,
+                nameof(ModuleStatusEvents),
+                nameof(_nextFrameEvents),
+                NativeAllocationLifetime.Session);
+        }
     }
 
     private static void Enqueue(in ModuleStatusEventPayload payload)
     {
         EnsureInitialized();
-        if (_pendingEventCount >= PendingEventCapacity)
+        if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
         {
             ReleaseReferenceSlot(payload.ReferenceSlot);
+            return;
+        }
+
+        if (_isDispatching)
+        {
+            _nextFrameEvents.Enqueue(payload);
+            _nextFrameEventCount++;
             return;
         }
 
@@ -305,26 +351,63 @@ public static class ModuleStatusEvents
 
     private static void DrainWithoutDispatch()
     {
-        if (!_pendingEvents.IsCreated)
+        if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
             return;
 
-        int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-        while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+        if (_pendingEventCount <= 0)
+        {
+            PromoteNextFrameEventsIfFrontEmpty();
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                return;
+        }
+
+        if (_nextFrameEvents.IsCreated)
+            DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+    }
+
+    private static bool DrainQueueWithoutDispatch(
+        ref NativeQueue<ModuleStatusEventPayload> queue,
+        ref int pendingCount)
+    {
+        if (!queue.IsCreated)
+            return true;
+
+        int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+        while (scanBudget-- > 0 && !queue.IsEmpty())
         {
             if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                return;
+                return false;
 
-            if (!_pendingEvents.TryDequeue(out ModuleStatusEventPayload payload))
+            if (!queue.TryDequeue(out ModuleStatusEventPayload payload))
                 break;
 
-            if (_pendingEventCount > 0)
-                _pendingEventCount--;
+            if (pendingCount > 0)
+                pendingCount--;
 
             ReleaseReferenceSlot(payload.ReferenceSlot);
         }
 
-        if (_pendingEvents.IsEmpty())
-            _pendingEventCount = 0;
+        if (queue.IsEmpty())
+            pendingCount = 0;
+
+        return true;
+    }
+
+    private static void PromoteNextFrameEventsIfFrontEmpty()
+    {
+        if (!_pendingEvents.IsCreated ||
+            !_nextFrameEvents.IsCreated ||
+            _pendingEventCount > 0 ||
+            _nextFrameEventCount <= 0)
+        {
+            return;
+        }
+
+        NativeQueue<ModuleStatusEventPayload> swap = _pendingEvents;
+        _pendingEvents = _nextFrameEvents;
+        _nextFrameEvents = swap;
+        _pendingEventCount = _nextFrameEventCount;
+        _nextFrameEventCount = 0;
     }
 
     private static void ClearReferenceSlots()

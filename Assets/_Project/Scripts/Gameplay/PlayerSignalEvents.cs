@@ -97,11 +97,18 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: RegistryBucket<IPlayerSignalEventListener>[16] - deferred player-signal listeners - owner: PlayerSignalEvents
         private static readonly RegistryBucket<IPlayerSignalEventListener> _listeners = new RegistryBucket<IPlayerSignalEventListener>(ListenerCapacity);
         private static NativeQueue<TraumaHudSignal> _pendingTraumaHudSignals;
+        private static NativeQueue<TraumaHudSignal> _nextFrameTraumaHudSignals;
         private static NativeQueue<InteractionSignal> _pendingInteractionSignals;
+        private static NativeQueue<InteractionSignal> _nextFrameInteractionSignals;
         private static NativeQueue<ToolDepletedSignal> _pendingToolDepletedSignals;
+        private static NativeQueue<ToolDepletedSignal> _nextFrameToolDepletedSignals;
         private static int _pendingTraumaHudSignalCount;
+        private static int _nextFrameTraumaHudSignalCount;
         private static int _pendingInteractionSignalCount;
+        private static int _nextFrameInteractionSignalCount;
         private static int _pendingToolDepletedSignalCount;
+        private static int _nextFrameToolDepletedSignalCount;
+        private static bool _isDispatching;
 
         /// <summary>
         /// Number of player signal payloads waiting for the LateUpdate flush lane.
@@ -110,7 +117,12 @@ namespace Hecton8.Gameplay
         {
             get
             {
-                return _pendingTraumaHudSignalCount + _pendingInteractionSignalCount + _pendingToolDepletedSignalCount;
+                return _pendingTraumaHudSignalCount
+                    + _nextFrameTraumaHudSignalCount
+                    + _pendingInteractionSignalCount
+                    + _nextFrameInteractionSignalCount
+                    + _pendingToolDepletedSignalCount
+                    + _nextFrameToolDepletedSignalCount;
             }
         }
 
@@ -124,11 +136,25 @@ namespace Hecton8.Gameplay
                 _pendingTraumaHudSignals = default;
             }
 
+            if (_nextFrameTraumaHudSignals.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_nextFrameTraumaHudSignals));
+                _nextFrameTraumaHudSignals.Dispose();
+                _nextFrameTraumaHudSignals = default;
+            }
+
             if (_pendingInteractionSignals.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_pendingInteractionSignals));
                 _pendingInteractionSignals.Dispose();
                 _pendingInteractionSignals = default;
+            }
+
+            if (_nextFrameInteractionSignals.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_nextFrameInteractionSignals));
+                _nextFrameInteractionSignals.Dispose();
+                _nextFrameInteractionSignals = default;
             }
 
             if (_pendingToolDepletedSignals.IsCreated)
@@ -138,9 +164,20 @@ namespace Hecton8.Gameplay
                 _pendingToolDepletedSignals = default;
             }
 
+            if (_nextFrameToolDepletedSignals.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerSignalEvents), nameof(_nextFrameToolDepletedSignals));
+                _nextFrameToolDepletedSignals.Dispose();
+                _nextFrameToolDepletedSignals = default;
+            }
+
             _pendingTraumaHudSignalCount = 0;
+            _nextFrameTraumaHudSignalCount = 0;
             _pendingInteractionSignalCount = 0;
+            _nextFrameInteractionSignalCount = 0;
             _pendingToolDepletedSignalCount = 0;
+            _nextFrameToolDepletedSignalCount = 0;
+            _isDispatching = false;
             _listeners.Clear();
         }
 
@@ -176,17 +213,32 @@ namespace Hecton8.Gameplay
         /// </summary>
         public static void FlushPending()
         {
-            if (_listeners.Count <= 0)
+            bool completed = false;
+            _isDispatching = true;
+            try
             {
-                DrainWithoutDispatch();
-                return;
+                if (_listeners.Count <= 0)
+                {
+                    completed = DrainWithoutDispatch();
+                }
+                else
+                {
+                    completed = FlushTraumaSignals();
+                    if (completed)
+                        completed = FlushInteractionSignals();
+                    if (completed)
+                        completed = FlushToolDepletedSignals();
+                }
+            }
+            finally
+            {
+                _isDispatching = false;
             }
 
-            if (!FlushTraumaSignals())
+            if (!completed || HasPendingFrontEvents())
                 return;
-            if (!FlushInteractionSignals())
-                return;
-            FlushToolDepletedSignals();
+
+            PromoteNextFrameEvents();
         }
 
         /// <summary>
@@ -196,11 +248,19 @@ namespace Hecton8.Gameplay
         public static void RaiseTraumaHudSignal(in TraumaHudSignal signal)
         {
             EnsureInitialized();
-            if (_pendingTraumaHudSignalCount >= PendingTraumaHudCapacity)
+            if (_pendingTraumaHudSignalCount + _nextFrameTraumaHudSignalCount >= PendingTraumaHudCapacity)
                 return;
 
-            _pendingTraumaHudSignals.Enqueue(signal);
-            _pendingTraumaHudSignalCount++;
+            if (_isDispatching)
+            {
+                _nextFrameTraumaHudSignals.Enqueue(signal);
+                _nextFrameTraumaHudSignalCount++;
+            }
+            else
+            {
+                _pendingTraumaHudSignals.Enqueue(signal);
+                _pendingTraumaHudSignalCount++;
+            }
         }
 
         /// <summary>
@@ -210,11 +270,19 @@ namespace Hecton8.Gameplay
         public static void RaiseInteractionSignal(in InteractionSignal signal)
         {
             EnsureInitialized();
-            if (_pendingInteractionSignalCount >= PendingInteractionSignalCapacity)
+            if (_pendingInteractionSignalCount + _nextFrameInteractionSignalCount >= PendingInteractionSignalCapacity)
                 return;
 
-            _pendingInteractionSignals.Enqueue(signal);
-            _pendingInteractionSignalCount++;
+            if (_isDispatching)
+            {
+                _nextFrameInteractionSignals.Enqueue(signal);
+                _nextFrameInteractionSignalCount++;
+            }
+            else
+            {
+                _pendingInteractionSignals.Enqueue(signal);
+                _pendingInteractionSignalCount++;
+            }
         }
 
         /// <summary>
@@ -224,11 +292,19 @@ namespace Hecton8.Gameplay
         public static void RaiseToolDepletedSignal(in ToolDepletedSignal signal)
         {
             EnsureInitialized();
-            if (_pendingToolDepletedSignalCount >= PendingToolDepletedCapacity)
+            if (_pendingToolDepletedSignalCount + _nextFrameToolDepletedSignalCount >= PendingToolDepletedCapacity)
                 return;
 
-            _pendingToolDepletedSignals.Enqueue(signal);
-            _pendingToolDepletedSignalCount++;
+            if (_isDispatching)
+            {
+                _nextFrameToolDepletedSignals.Enqueue(signal);
+                _nextFrameToolDepletedSignalCount++;
+            }
+            else
+            {
+                _pendingToolDepletedSignals.Enqueue(signal);
+                _pendingToolDepletedSignalCount++;
+            }
         }
 
         private static void EnsureInitialized()
@@ -243,6 +319,16 @@ namespace Hecton8.Gameplay
                     nameof(_pendingTraumaHudSignals),
                     NativeAllocationLifetime.Session);
             }
+            if (!_nextFrameTraumaHudSignals.IsCreated)
+            {
+                _nextFrameTraumaHudSignals = new NativeQueue<TraumaHudSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<TraumaHudSignal>[16] - next-frame trauma HUD lane - owner: PlayerSignalEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameTraumaHudSignals,
+                    PendingTraumaHudCapacity,
+                    nameof(PlayerSignalEvents),
+                    nameof(_nextFrameTraumaHudSignals),
+                    NativeAllocationLifetime.Session);
+            }
             if (!_pendingInteractionSignals.IsCreated)
             {
                 _pendingInteractionSignals = new NativeQueue<InteractionSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InteractionSignal>[16] - deferred interaction stress lane - owner: PlayerSignalEvents
@@ -253,6 +339,16 @@ namespace Hecton8.Gameplay
                     nameof(_pendingInteractionSignals),
                     NativeAllocationLifetime.Session);
             }
+            if (!_nextFrameInteractionSignals.IsCreated)
+            {
+                _nextFrameInteractionSignals = new NativeQueue<InteractionSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InteractionSignal>[16] - next-frame interaction stress lane - owner: PlayerSignalEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameInteractionSignals,
+                    PendingInteractionSignalCapacity,
+                    nameof(PlayerSignalEvents),
+                    nameof(_nextFrameInteractionSignals),
+                    NativeAllocationLifetime.Session);
+            }
             if (!_pendingToolDepletedSignals.IsCreated)
             {
                 _pendingToolDepletedSignals = new NativeQueue<ToolDepletedSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ToolDepletedSignal>[16] - deferred tool depletion lane - owner: PlayerSignalEvents
@@ -261,6 +357,16 @@ namespace Hecton8.Gameplay
                     PendingToolDepletedCapacity,
                     nameof(PlayerSignalEvents),
                     nameof(_pendingToolDepletedSignals),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_nextFrameToolDepletedSignals.IsCreated)
+            {
+                _nextFrameToolDepletedSignals = new NativeQueue<ToolDepletedSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ToolDepletedSignal>[16] - next-frame tool depletion lane - owner: PlayerSignalEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameToolDepletedSignals,
+                    PendingToolDepletedCapacity,
+                    nameof(PlayerSignalEvents),
+                    nameof(_nextFrameToolDepletedSignals),
                     NativeAllocationLifetime.Session);
             }
         }
@@ -284,7 +390,13 @@ namespace Hecton8.Gameplay
                 IPlayerSignalEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnTraumaHudSignal(in signal);
+                {
+                    IPlayerSignalEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnTraumaHudSignal(in signal);
+                }
             }
 
             if (_pendingTraumaHudSignals.IsEmpty())
@@ -312,7 +424,13 @@ namespace Hecton8.Gameplay
                 IPlayerSignalEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnInteractionSignal(in signal);
+                {
+                    IPlayerSignalEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnInteractionSignal(in signal);
+                }
             }
 
             if (_pendingInteractionSignals.IsEmpty())
@@ -340,7 +458,13 @@ namespace Hecton8.Gameplay
                 IPlayerSignalEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnToolDepletedSignal(in signal);
+                {
+                    IPlayerSignalEventListener listener = rawArray[i];
+                    if (listener == null)
+                        continue;
+
+                    listener.OnToolDepletedSignal(in signal);
+                }
             }
 
             if (_pendingToolDepletedSignals.IsEmpty())
@@ -349,7 +473,7 @@ namespace Hecton8.Gameplay
             return true;
         }
 
-        private static void DrainWithoutDispatch()
+        private static bool DrainWithoutDispatch()
         {
             if (_pendingTraumaHudSignals.IsCreated)
             {
@@ -357,10 +481,10 @@ namespace Hecton8.Gameplay
                 while (scanBudget > 0 && !_pendingTraumaHudSignals.IsEmpty())
                 {
                     if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
+                        return false;
 
                     if (!_pendingTraumaHudSignals.TryDequeue(out _))
-                        return;
+                        return true;
 
                     _pendingTraumaHudSignalCount--;
                     scanBudget--;
@@ -376,10 +500,10 @@ namespace Hecton8.Gameplay
                 while (scanBudget > 0 && !_pendingInteractionSignals.IsEmpty())
                 {
                     if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
+                        return false;
 
                     if (!_pendingInteractionSignals.TryDequeue(out _))
-                        return;
+                        return true;
 
                     _pendingInteractionSignalCount--;
                     scanBudget--;
@@ -395,10 +519,10 @@ namespace Hecton8.Gameplay
                 while (scanBudget > 0 && !_pendingToolDepletedSignals.IsEmpty())
                 {
                     if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
-                        return;
+                        return false;
 
                     if (!_pendingToolDepletedSignals.TryDequeue(out _))
-                        return;
+                        return true;
 
                     _pendingToolDepletedSignalCount--;
                     scanBudget--;
@@ -406,6 +530,48 @@ namespace Hecton8.Gameplay
 
                 if (_pendingToolDepletedSignals.IsEmpty())
                     _pendingToolDepletedSignalCount = 0;
+            }
+
+            return true;
+        }
+
+        private static bool HasPendingFrontEvents()
+        {
+            return (_pendingTraumaHudSignals.IsCreated && !_pendingTraumaHudSignals.IsEmpty())
+                || (_pendingInteractionSignals.IsCreated && !_pendingInteractionSignals.IsEmpty())
+                || (_pendingToolDepletedSignals.IsCreated && !_pendingToolDepletedSignals.IsEmpty());
+        }
+
+        private static void PromoteNextFrameEvents()
+        {
+            if (_nextFrameTraumaHudSignals.IsCreated)
+            {
+                while (_nextFrameTraumaHudSignalCount > 0 && _nextFrameTraumaHudSignals.TryDequeue(out TraumaHudSignal signal))
+                {
+                    _nextFrameTraumaHudSignalCount--;
+                    _pendingTraumaHudSignals.Enqueue(signal);
+                    _pendingTraumaHudSignalCount++;
+                }
+            }
+
+            if (_nextFrameInteractionSignals.IsCreated)
+            {
+                while (_nextFrameInteractionSignalCount > 0 && _nextFrameInteractionSignals.TryDequeue(out InteractionSignal signal))
+                {
+                    _nextFrameInteractionSignalCount--;
+                    _pendingInteractionSignals.Enqueue(signal);
+                    _pendingInteractionSignalCount++;
+                }
+            }
+
+            if (_nextFrameToolDepletedSignals.IsCreated)
+            {
+                while (_nextFrameToolDepletedSignalCount > 0 && _nextFrameToolDepletedSignals.TryDequeue(out ToolDepletedSignal signal))
+                {
+                    _nextFrameToolDepletedSignalCount--;
+                    _pendingToolDepletedSignals.Enqueue(signal);
+                    _pendingToolDepletedSignalCount++;
+                }
             }
         }
     }

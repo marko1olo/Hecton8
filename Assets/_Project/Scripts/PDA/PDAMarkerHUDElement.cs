@@ -323,7 +323,7 @@ namespace Hecton8.PDA
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = true;
+            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()

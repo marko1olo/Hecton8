@@ -351,14 +351,14 @@ namespace Hecton8.Caves
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (_registeredFixedTick)
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredFixedTick = true;
+            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
         }
 
         private void TryUnregister()

@@ -1,7 +1,7 @@
 # PROJECT ATLAS
 
-Version: 1.4.4
-Date: 2026-05-02
+Version: 1.4.8
+Date: 2026-05-03
 Status: PENDING VERIFICATION
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`
@@ -307,6 +307,8 @@ Current source-backed audit outputs now include:
 - `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
 - `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
 - `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
+- `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`
+- `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`
 - `Docs/ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
 
 Current evidence-backed deltas from this pass:
@@ -364,6 +366,41 @@ None. Markdown-only change.
 
 Kept because it is source-backed and narrower than the older narrative-heavy version.
 Rejected content: stale counts, ghost-interface claims contradicted by source, and unsupported event-bus descriptions.
+
+STATUS: PENDING VERIFICATION
+
+## 2026-05-03 Guard Scanner Delta
+
+Mandates followed for this update:
+
+- `OPT_Zero_GC_Policy_AllocFree_Mandate`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol`
+- `ARCH_Global_Registry_ServiceLocator_DI_Init`
+- `ARCH_Project_Bootstrap_Sequence_Init_Safety`
+- `DBG_Telemetry_Crash_Reporting_PostMortem`
+
+Current source-only guard artifact:
+
+- `Tools/ReloadAudit/Scan-FoundationGuards.ps1`
+- `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`
+
+Current guard result from the May 3 scan:
+
+- Scanner exit code: `0`.
+- Global registry self-registration inventory: `496` informational sites from the broad `GlobalRegistry.Register*(this)` scan.
+- Blind registry flag drift: `0`.
+- `UnsafeUtility.MemCpy` outside `UnsafeMemoryCopyGuard`: `0`.
+- Legacy `PlayerSignalEvents.On*` subscriptions: `0`.
+- Runtime `Find*`/`GameObject.Find*` hits outside Editor folders: `0`.
+- Synchronous job `.Run(` inventory: `0`.
+- Hot-path synchronous `.Run(` review queue: `0`.
+- Guarded dispatcher completion inventory: `1`, `DispatcherJobSwap.TryComplete` with the source-level `IsCompleted`/swap-window contract.
+- Direct `InputManager.Instance` inventory: `0`; hot-path direct input singleton review sites remain `0`.
+- `GlobalRegistry.NativeInputManager` now exposes the bootstrap-bound native input owner from the registered `InputDispatcher` for cold UI/Input-System bridge code that still requires concrete `InputAction` APIs.
+- Release-reachable one-hop `Debug.Log` review inventory: `0` after dev-build-only guards were added to hot-path-adjacent diagnostics.
+- `PlayerInventory` SlowTick now has static profiler markers for the SlowTick envelope, radioactive half-life inline kernel, and reactive-chemistry inline kernel.
+
+This is a source scan and CI candidate, not Unity Play Mode proof. Do not claim zero GC, frame-time compliance, memory retention stability, or MCP verification from this artifact alone.
 
 STATUS: PENDING VERIFICATION
 

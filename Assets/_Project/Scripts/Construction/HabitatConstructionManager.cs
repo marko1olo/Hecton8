@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Building;
+using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.World;
@@ -33,6 +34,8 @@ namespace Hecton8.Construction
         private const int InitialAdjacencyCapacity = 384;
         private const int InitialInventoryPlacementCapacity = 64;
         private const int InitialCostCapacity = 8;
+        private const string NativeMemoryOwner = nameof(HabitatConstructionManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         private readonly List<ModuleSocket> _moduleSocketBuffer;
         private readonly List<int2> _connectionBuffer;
@@ -544,6 +547,8 @@ namespace Hecton8.Construction
             _depthBuffer = new NativeArray<int>(nodeCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             // COLD ALLOC: NativeArray<IntegrityValidationResult>[1] — placement validation result slot — owner: HabitatConstructionManager
             _resultBuffer = new NativeArray<IntegrityValidationResult>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+
+            RegisterNativeBuffers();
         }
 
         private void EnsureNodeCapacity(int required)
@@ -574,9 +579,13 @@ namespace Hecton8.Construction
             NativeArray<int> previousAdjacency = _adjacency;
             int newCapacity = NextPowerOfTwo(math.max(required, InitialAdjacencyCapacity));
             _adjacency = new NativeArray<int>(newCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(_adjacency, nameof(_adjacency));
 
             if (previousAdjacency.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(previousAdjacency);
                 previousAdjacency.Dispose();
+            }
         }
 
         private void DisposeNativeBuffers()
@@ -590,41 +599,69 @@ namespace Hecton8.Construction
 
             if (_nodeBuffer.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_nodeBuffer);
                 disposeHandle = _nodeBuffer.Dispose(disposeHandle);
                 _nodeBuffer = default;
             }
 
             if (_adjacencyRanges.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_adjacencyRanges);
                 disposeHandle = _adjacencyRanges.Dispose(disposeHandle);
                 _adjacencyRanges = default;
             }
 
             if (_adjacency.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_adjacency);
                 disposeHandle = _adjacency.Dispose(disposeHandle);
                 _adjacency = default;
             }
 
             if (_queueBuffer.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_queueBuffer);
                 disposeHandle = _queueBuffer.Dispose(disposeHandle);
                 _queueBuffer = default;
             }
 
             if (_depthBuffer.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_depthBuffer);
                 disposeHandle = _depthBuffer.Dispose(disposeHandle);
                 _depthBuffer = default;
             }
 
             if (_resultBuffer.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_resultBuffer);
                 disposeHandle = _resultBuffer.Dispose(disposeHandle);
                 _resultBuffer = default;
             }
 
             return disposeHandle;
+        }
+
+        private void RegisterNativeBuffers()
+        {
+            RegisterTrackedNativeArray(_nodeBuffer, nameof(_nodeBuffer));
+            RegisterTrackedNativeArray(_adjacencyRanges, nameof(_adjacencyRanges));
+            RegisterTrackedNativeArray(_adjacency, nameof(_adjacency));
+            RegisterTrackedNativeArray(_queueBuffer, nameof(_queueBuffer));
+            RegisterTrackedNativeArray(_depthBuffer, nameof(_depthBuffer));
+            RegisterTrackedNativeArray(_resultBuffer, nameof(_resultBuffer));
+        }
+
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                NativeMemoryOwner,
+                label,
+                NativeMemoryLifetime);
         }
 
         private void CompletePendingValidation()

@@ -99,6 +99,7 @@ namespace Hecton8.Core
         private static readonly uint _RandomEventEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("RandomEventEvents"));
         private static readonly uint _PowerGridTelemetryEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PowerGridTelemetryEvents"));
         private static readonly uint _ModuleStatusEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ModuleStatusEvents"));
+        private static readonly uint _BaseAirlockEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("BaseAirlockEvents"));
         private static readonly uint _DepthZoneEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DepthZoneEvents"));
         private static readonly uint _SoundscapeEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SoundscapeEvents"));
         private static readonly uint _EmergencyRelayEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EmergencyRelayEvents"));
@@ -523,8 +524,9 @@ namespace Hecton8.Core
 
             ThreadSafeCommandQueue.Initialize();
             UIStateStore.EnsureInitialized();
+            BaseAirlockEvents.Prewarm();
             GlobalRegistry.RegisterSystemDispatcher(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Dispatcher, this);
         }
 
         private void Update()
@@ -744,6 +746,9 @@ namespace Hecton8.Core
             SetActiveLateFrameEventLane(_ModuleStatusEventsQueueHash);
             ReportLateFrameQueueDepth(_ModuleStatusEventsQueueHash, ModuleStatusEvents.PendingCount);
             ModuleStatusEvents.FlushPending();
+            SetActiveLateFrameEventLane(_BaseAirlockEventsQueueHash);
+            ReportLateFrameQueueDepth(_BaseAirlockEventsQueueHash, BaseAirlockEvents.PendingCount);
+            BaseAirlockEvents.FlushPending();
             SetActiveLateFrameEventLane(_DepthZoneEventsQueueHash);
             ReportLateFrameQueueDepth(_DepthZoneEventsQueueHash, DepthZoneEvents.PendingCount);
             DepthZoneEvents.FlushPending();
@@ -1139,8 +1144,9 @@ namespace Hecton8.Core
             using (_dispatcherRaycastScheduleProfilerMarker.Auto())
             {
                 _scheduledDispatcherRaycastCommands.Clear();
+                int pendingCount = _pendingDispatcherRaycastCount;
                 int scheduledCount = 0;
-                while (scheduledCount < _pendingDispatcherRaycastCount &&
+                while (scheduledCount < pendingCount &&
                        _pendingDispatcherRaycastCommands.TryDequeue(out RaycastCommand command))
                 {
                     _scheduledDispatcherRaycastCommands.AddNoResize(command);
@@ -1149,6 +1155,12 @@ namespace Hecton8.Core
                     _pendingDispatcherRaycastReceivers[scheduledCount] = null;
                     _pendingDispatcherRaycastRequestIds[scheduledCount] = 0;
                     scheduledCount++;
+                }
+
+                for (int clearIndex = scheduledCount; clearIndex < pendingCount; clearIndex++)
+                {
+                    _pendingDispatcherRaycastReceivers[clearIndex] = null;
+                    _pendingDispatcherRaycastRequestIds[clearIndex] = 0;
                 }
 
                 _pendingDispatcherRaycastCount = 0;
@@ -1431,7 +1443,7 @@ namespace Hecton8.Core
                     FogMode = RenderSettings.fogMode,
                     FogColor = RenderSettings.fogColor,
                     FogDensity = RenderSettings.fogDensity,
-                    Skybox = RenderSettings.skybox,
+                    Skybox = AtmosphereDirector.Skybox,
                     AmbientMode = RenderSettings.ambientMode,
                     AmbientLight = RenderSettings.ambientLight,
                     AmbientSkyColor = RenderSettings.ambientSkyColor,
@@ -1448,7 +1460,7 @@ namespace Hecton8.Core
                 RenderSettings.fogMode = FogMode;
                 RenderSettings.fogColor = FogColor;
                 RenderSettings.fogDensity = FogDensity;
-                RenderSettings.skybox = Skybox;
+                AtmosphereDirector.SetSkybox(Skybox);
                 RenderSettings.ambientMode = AmbientMode;
                 RenderSettings.ambientLight = AmbientLight;
                 RenderSettings.ambientSkyColor = AmbientSkyColor;
@@ -1489,7 +1501,7 @@ namespace Hecton8.Core
             }
 
             GlobalRegistry.RegisterRenderDispatcher(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.RenderDispatcher, this);
 
         }
 

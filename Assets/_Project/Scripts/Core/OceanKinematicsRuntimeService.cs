@@ -225,7 +225,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterOceanKinematicsService(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.OceanKinematics, this);
         }
 
         private void TryUnregisterService()

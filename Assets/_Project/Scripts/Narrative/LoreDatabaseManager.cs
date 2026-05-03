@@ -81,7 +81,7 @@ namespace Hecton8.Narrative
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-139)]
-    public sealed class LoreDatabaseManager : MonoBehaviour, ISaveable
+    public sealed class LoreDatabaseManager : MonoBehaviour, ISaveable, IGlobalRegistryHotSwapListener
     {
         private readonly struct LoreSeed
         {
@@ -222,7 +222,9 @@ namespace Hecton8.Narrative
         private NativeArray<uint> _unlockedWords;
         private JobHandle _disposeHandle;
         private HectonEventSubscription _loreAcquiredSubscription;
+        private ISaveService _registeredSaveService;
         private bool _serviceRegistered;
+        private bool _hotSwapListenerRegistered;
         private bool _recordLookupBuilt;
         private bool _recordLookupCollisionLogged;
 
@@ -288,21 +290,30 @@ namespace Hecton8.Narrative
             TryRegisterService();
             BuildLookupIfNeeded();
             EnsureUnlockStorage();
-            Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
+            TryRegisterHotSwapListener();
+            TryRegisterSaveParticipant();
             if (_loreAcquiredSubscription == null)
                 _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, "narrative.lore-db");
+        }
+
+        private void Start()
+        {
+            TryRegisterSaveParticipant();
         }
 
         private void OnDisable()
         {
             _loreAcquiredSubscription?.Dispose();
             _loreAcquiredSubscription = null;
-            Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterSaveParticipant();
+            TryUnregisterHotSwapListener();
             TryUnregisterService();
 
             if (_instance == this)
@@ -315,6 +326,7 @@ namespace Hecton8.Narrative
             {
                 _disposeHandle = _unlockedWords.Dispose(_disposeHandle);
                 _unlockedWords = default;
+                JobHandle.ScheduleBatchedJobs();
             }
         }
 
@@ -336,6 +348,67 @@ namespace Hecton8.Narrative
                 GlobalRegistry.UnregisterLoreDatabaseRuntime(this);
 
             _serviceRegistered = false;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Save)
+                return;
+
+            if (_registeredSaveService != null)
+                TryUnregisterSaveParticipant();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            TryRegisterSaveParticipant(currentService as ISaveService);
+        }
+
+        private void TryRegisterSaveParticipant()
+        {
+            TryRegisterSaveParticipant(GlobalRegistry.Save);
+        }
+
+        private void TryRegisterSaveParticipant(ISaveService saveService)
+        {
+            if (!Application.isPlaying || _registeredSaveService != null || saveService == null)
+                return;
+
+            saveService.Register(this);
+            _registeredSaveService = saveService;
+        }
+
+        private void TryUnregisterSaveParticipant()
+        {
+            if (_registeredSaveService == null)
+                return;
+
+            _registeredSaveService.Unregister(this);
+            _registeredSaveService = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
         }
 
         /// <summary>

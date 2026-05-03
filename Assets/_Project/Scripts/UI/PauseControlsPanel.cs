@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Input;
 using TMPro;
@@ -12,7 +11,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Pause Controls Panel")]
-    public sealed class PauseControlsPanel : MonoBehaviour
+    public sealed class PauseControlsPanel : MonoBehaviour, IGlobalRegistryHotSwapListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.8f);
         private static readonly Color RuleColor = new Color(0.46f, 0.98f, 0.94f, 0.18f);
@@ -49,12 +48,16 @@ namespace Hecton8.UI
         private RebindRow[] _rows = Array.Empty<RebindRow>();
         private bool _built;
         private bool _subscribed;
+        private InputManager _subscribedInput;
+        private IInputBindingService _subscribedRebindingService;
+        private bool _hotSwapListenerRegistered;
         private int _selectedIndex;
         private TextMeshProUGUI _statusText;
         private Image _statusBackground;
         private Image[] _rowBackgrounds = Array.Empty<Image>();
         private Image[] _rowAccentBars = Array.Empty<Image>();
         private Image[] _bindingBackgrounds = Array.Empty<Image>();
+        private CanvasGroup[] _selectedIndicatorGroups = Array.Empty<CanvasGroup>();
         private UnityAction _applyClickAction;
         private UnityAction _cancelClickAction;
         private UnityAction _resetClickAction;
@@ -95,8 +98,10 @@ namespace Hecton8.UI
         private static readonly Color AccentSelected = new Color(0.46f, 0.98f, 0.94f, 0.96f);
         private static readonly Color BindingBgSelected = new Color(0.1f, 0.24f, 0.28f, 0.86f);
         
-        // ZERO-GC: String builder for dynamic messages (reused)
-        private readonly System.Text.StringBuilder _statusBuilder = new System.Text.StringBuilder(256); // COLD ALLOC: StringBuilder[256] — status message building — owner: PauseControlsPanel
+        // COLD ALLOC: StringBuilder[256] — modal conflict message builder for ModalWindow string API — owner: PauseControlsPanel
+        private readonly System.Text.StringBuilder _modalMessageBuilder = new System.Text.StringBuilder(256);
+        private readonly char[] _statusBuffer = new char[256]; // COLD ALLOC: char[256] — status message staging buffer — owner: PauseControlsPanel
+        private readonly char[] _bindingDisplayBuffer = new char[64]; // COLD ALLOC: char[64] — binding display text buffer — owner: PauseControlsPanel
         
         // ZERO-GC: Cached previous selection for optimized refresh
         private int _previousSelectedIndex = -1;
@@ -146,24 +151,36 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            TryRegisterHotSwapListener();
+            Subscribe();
+            RefreshAllBindingsNow();
+        }
+
+        private void Start()
+        {
+            TryRegisterHotSwapListener();
             Subscribe();
             RefreshAllBindingsNow();
         }
 
         private void OnDisable()
         {
-            Unsubscribe();
-
             // TASK 17: Save overrides when closing Settings section
-            IInputBindingService rebinding = ResolveRebindingService();
+            IInputBindingService rebinding = _subscribedRebindingService ?? ResolveRebindingService();
             if (rebinding != null)
             {
                 rebinding.SaveOverrides();
             }
+
+            Unsubscribe();
+            TryUnregisterHotSwapListener();
         }
 
         private void OnDestroy()
         {
+            Unsubscribe();
+            TryUnregisterHotSwapListener();
+
             if (applyButton != null)
                 applyButton.onClick.RemoveListener(_applyClickAction);
 
@@ -208,7 +225,7 @@ namespace Hecton8.UI
             if (_subscribed)
                 return;
 
-            InputManager input = InputManager.Instance;
+            InputManager input = ResolveInputManager();
             IInputBindingService rebinding = ResolveRebindingService();
             if (input == null || rebinding == null)
                 return;
@@ -224,6 +241,8 @@ namespace Hecton8.UI
             rebinding.OnRebindCanceled += HandleRebindCanceled;
             rebinding.OnConflictDetected += HandleConflictDetected; // TASK 16
 
+            _subscribedInput = input;
+            _subscribedRebindingService = rebinding;
             _subscribed = true;
         }
 
@@ -232,7 +251,7 @@ namespace Hecton8.UI
             if (!_subscribed)
                 return;
 
-            InputManager input = InputManager.Instance;
+            InputManager input = _subscribedInput;
             if (input != null)
             {
                 input.OnNavigate -= HandleNavigate;
@@ -242,7 +261,7 @@ namespace Hecton8.UI
                 input.OnTabPrevious -= HandleTabPrevious;
             }
 
-            IInputBindingService rebinding = ResolveRebindingService();
+            IInputBindingService rebinding = _subscribedRebindingService;
             if (rebinding != null)
             {
                 rebinding.OnRebindStarted -= HandleRebindStarted;
@@ -251,7 +270,50 @@ namespace Hecton8.UI
                 rebinding.OnConflictDetected -= HandleConflictDetected; // TASK 16
             }
 
+            _subscribedInput = null;
+            _subscribedRebindingService = null;
             _subscribed = false;
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input &&
+                serviceSlot != GlobalRegistryServiceSlot.InputBinding)
+            {
+                return;
+            }
+
+            Unsubscribe();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            Subscribe();
+            RefreshAllBindingsNow();
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
         }
 
         private void HandleNavigate(Vector2 direction)
@@ -285,7 +347,7 @@ namespace Hecton8.UI
             if (rebinding.IsRebinding) return;
 
             RebindRow row = _rows[_selectedIndex];
-            InputManager input = InputManager.Instance;
+            InputManager input = ResolveInputManager();
             if (!TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
                 SetStatus(resolutionMessage);
@@ -302,11 +364,10 @@ namespace Hecton8.UI
 
             if (!started)
             {
-                // ZERO-GC: Build message without allocation
-                _statusBuilder.Clear();
-                _statusBuilder.Append(StatusFailedToStartPrefix);
-                _statusBuilder.Append(row.label);
-                SetStatus(_statusBuilder);
+                int statusLength = 0;
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusFailedToStartPrefix);
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, row.label);
+                SetStatus(_statusBuffer, statusLength);
             }
         }
 
@@ -368,15 +429,14 @@ namespace Hecton8.UI
         {
             if (!IsActive) return;
             
-            // ZERO-GC: Build message without allocation
-            _statusBuilder.Clear();
-            _statusBuilder.Append(StatusPressAKeyPrefix);
-            _statusBuilder.Append(actionMap);
-            _statusBuilder.Append('/');
-            _statusBuilder.Append(actionName);
-            _statusBuilder.Append(']');
+            int statusLength = 0;
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusPressAKeyPrefix);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, actionMap);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, '/');
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, actionName);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, ']');
             
-            SetStatus(_statusBuilder, StatusColorPressKey, StatusBgPressKey);
+            SetStatus(_statusBuffer, statusLength, StatusColorPressKey, StatusBgPressKey);
         }
 
         private void HandleRebindCompleted(string actionName, string actionMap, int bindingIndex, string display)
@@ -384,13 +444,12 @@ namespace Hecton8.UI
             RefreshAllBindingsNow();
             if (!IsActive) return;
             
-            // ZERO-GC: Build message without allocation
-            _statusBuilder.Clear();
-            _statusBuilder.Append(actionName);
-            _statusBuilder.Append(": ");
-            _statusBuilder.Append(display);
+            int statusLength = 0;
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, actionName);
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, ": ");
+            statusLength = AppendToBuffer(_statusBuffer, statusLength, display);
             
-            SetStatus(_statusBuilder, StatusColorComplete, StatusBgComplete);
+            SetStatus(_statusBuffer, statusLength, StatusColorComplete, StatusBgComplete);
         }
 
         private void HandleRebindCanceled(string actionName, string actionMap, int bindingIndex)
@@ -403,7 +462,7 @@ namespace Hecton8.UI
         /// <summary>
         /// TASK 16: Handles conflict detection during rebinding.
         /// Displays modal window with conflict warning and confirm/cancel options.
-        /// ZERO-GC: Uses StringBuilder for message construction.
+        /// ModalWindow currently requires a managed string payload; status output stays char-buffered.
         /// SAFETY: Validates ModalWindow availability before showing dialog.
         /// EXCEPTION-SAFE: StringBuilder cleared at method start to prevent stale data.
         /// </summary>
@@ -411,20 +470,20 @@ namespace Hecton8.UI
         {
             if (!IsActive) return;
 
-            // SAFETY: Clear StringBuilder at method start (exception-safe pattern)
-            _statusBuilder.Clear();
+            // SAFETY: Clear modal builder at method start (exception-safe pattern).
+            _modalMessageBuilder.Clear();
 
             try
             {
                 // ModalWindow currently requires a managed string payload.
-                _statusBuilder.Append("The binding '");
-                _statusBuilder.Append(newBinding);
-                _statusBuilder.Append("' is already assigned to '");
-                _statusBuilder.Append(conflictingAction);
-                _statusBuilder.Append("'.\n\nDo you want to reassign it to '");
-                _statusBuilder.Append(actionName);
-                _statusBuilder.Append("'?");
-                string message = _statusBuilder.ToString();
+                _modalMessageBuilder.Append("The binding '");
+                _modalMessageBuilder.Append(newBinding);
+                _modalMessageBuilder.Append("' is already assigned to '");
+                _modalMessageBuilder.Append(conflictingAction);
+                _modalMessageBuilder.Append("'.\n\nDo you want to reassign it to '");
+                _modalMessageBuilder.Append(actionName);
+                _modalMessageBuilder.Append("'?");
+                string message = _modalMessageBuilder.ToString();
 
                 // SAFETY: Check if ModalWindow is available (may not exist in all scenes)
                 try
@@ -447,19 +506,18 @@ namespace Hecton8.UI
                     return;
                 }
 
-                // ZERO-GC: Build status message without allocation
-                _statusBuilder.Clear();
-                _statusBuilder.Append(StatusConflictPrefix);
-                _statusBuilder.Append(newBinding);
-                _statusBuilder.Append(StatusConflictMiddle);
-                _statusBuilder.Append(conflictingAction);
+                int statusLength = 0;
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusConflictPrefix);
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, newBinding);
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusConflictMiddle);
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, conflictingAction);
                 
-                SetStatus(_statusBuilder, StatusColorConflict, StatusBgConflict);
+                SetStatus(_statusBuffer, statusLength, StatusColorConflict, StatusBgConflict);
             }
             finally
             {
-                // SAFETY: Always clear StringBuilder on exit (prevents stale data)
-                _statusBuilder.Clear();
+                // SAFETY: Always clear modal builder on exit (prevents stale data)
+                _modalMessageBuilder.Clear();
             }
         }
 
@@ -518,7 +576,7 @@ namespace Hecton8.UI
             if (_rows.Length == 0)
                 return;
 
-            InputManager input = InputManager.Instance;
+            InputManager input = ResolveInputManager();
             if (input == null)
                 return;
 
@@ -577,6 +635,7 @@ namespace Hecton8.UI
             _rowBackgrounds = new Image[_rows.Length]; // COLD ALLOC: Image[15] — row backgrounds — owner: PauseControlsPanel
             _rowAccentBars = new Image[_rows.Length]; // COLD ALLOC: Image[15] — row accent bars — owner: PauseControlsPanel
             _bindingBackgrounds = new Image[_rows.Length]; // COLD ALLOC: Image[15] — binding backgrounds — owner: PauseControlsPanel
+            _selectedIndicatorGroups = new CanvasGroup[_rows.Length]; // COLD ALLOC: CanvasGroup[15] — selection indicator cache — owner: PauseControlsPanel
 
             const float rowHeight = 28f;
             const float rowGap = 5f;
@@ -627,6 +686,7 @@ namespace Hecton8.UI
                 row.labelText = label;
                 row.bindingText = binding;
                 row.selectedIndicator = selected.gameObject;
+                _selectedIndicatorGroups[i] = EnsureCanvasGroup(selected.gameObject);
             }
 
             RectTransform statusRoot = CreateRect(self, "Status");
@@ -663,14 +723,21 @@ namespace Hecton8.UI
             if (row == null || row.bindingText == null)
                 return;
 
-            InputManager input = InputManager.Instance;
+            InputManager input = ResolveInputManager();
             if (!TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
                 row.bindingText.SetText(resolutionMessage);
                 return;
             }
 
-            row.bindingText.SetText(GetBindingDisplaySafe(action, bindingIndex));
+            if (InputManager.TryWriteBindingDisplayStringSafe(action, bindingIndex, _bindingDisplayBuffer, 0, out int charsWritten) &&
+                charsWritten > 0)
+            {
+                row.bindingText.SetCharArray(_bindingDisplayBuffer, 0, charsWritten);
+                return;
+            }
+
+            row.bindingText.SetText("--");
         }
 
         /// <summary>
@@ -686,8 +753,10 @@ namespace Hecton8.UI
             if (_previousSelectedIndex >= 0 && _previousSelectedIndex < _rows.Length)
             {
                 // Deselect previous
-                if (_rows[_previousSelectedIndex].selectedIndicator != null)
-                    SetIndicatorVisible(_rows[_previousSelectedIndex].selectedIndicator, false);
+                if (_selectedIndicatorGroups != null &&
+                    _previousSelectedIndex < _selectedIndicatorGroups.Length &&
+                    _selectedIndicatorGroups[_previousSelectedIndex] != null)
+                    SetIndicatorVisible(_selectedIndicatorGroups[_previousSelectedIndex], false);
 
                 if (_rowBackgrounds[_previousSelectedIndex] != null)
                     _rowBackgrounds[_previousSelectedIndex].color = RowBg;
@@ -702,8 +771,10 @@ namespace Hecton8.UI
             if (_selectedIndex >= 0 && _selectedIndex < _rows.Length)
             {
                 // Select current
-                if (_rows[_selectedIndex].selectedIndicator != null)
-                    SetIndicatorVisible(_rows[_selectedIndex].selectedIndicator, true);
+                if (_selectedIndicatorGroups != null &&
+                    _selectedIndex < _selectedIndicatorGroups.Length &&
+                    _selectedIndicatorGroups[_selectedIndex] != null)
+                    SetIndicatorVisible(_selectedIndicatorGroups[_selectedIndex], true);
 
                 if (_rowBackgrounds[_selectedIndex] != null)
                     _rowBackgrounds[_selectedIndex].color = RowBgSelected; // FIXED: cached color
@@ -718,18 +789,30 @@ namespace Hecton8.UI
             _previousSelectedIndex = _selectedIndex;
         }
 
-        private static void SetIndicatorVisible(GameObject indicator, bool visible)
+        private static void SetIndicatorVisible(CanvasGroup canvasGroup, bool visible)
         {
-            if (indicator == null)
-                return;
-
-            CanvasGroup canvasGroup = indicator.GetComponent<CanvasGroup>();
             if (canvasGroup == null)
-                canvasGroup = indicator.AddComponent<CanvasGroup>();
+                return;
 
             canvasGroup.alpha = visible ? 1f : 0f;
             canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
+        }
+
+        private static CanvasGroup EnsureCanvasGroup(GameObject owner)
+        {
+            if (owner == null)
+                return null;
+
+            if (!owner.TryGetComponent(out CanvasGroup canvasGroup))
+            {
+                // COLD ALLOC: CanvasGroup[1] — missing selection indicator visibility proxy — owner: PauseControlsPanel
+                canvasGroup = owner.AddComponent<CanvasGroup>();
+            }
+
+            canvasGroup.interactable = false;
+            canvasGroup.blocksRaycasts = false;
+            return canvasGroup;
         }
 
         private void UpdateStatusForSelected()
@@ -741,18 +824,28 @@ namespace Hecton8.UI
             }
 
             RebindRow row = _rows[_selectedIndex];
-            InputManager input = InputManager.Instance;
+            InputManager input = ResolveInputManager();
             if (TryResolveRowBinding(input, row, out InputAction action, out int bindingIndex, out string resolutionMessage))
             {
-                // ZERO-GC: Build message without allocation
-                _statusBuilder.Clear();
-                _statusBuilder.Append(StatusRebindPrefix);
-                _statusBuilder.Append(row.label);
-                _statusBuilder.Append(" [");
-                _statusBuilder.Append(resolutionMessage);
-                _statusBuilder.Append(']');
-                _statusBuilder.Append(StatusRebindSuffix);
-                SetStatus(_statusBuilder);
+                bool hasBindingDisplay = InputManager.TryWriteBindingDisplayStringSafe(
+                    action,
+                    bindingIndex,
+                    _bindingDisplayBuffer,
+                    0,
+                    out int bindingCharsWritten) &&
+                    bindingCharsWritten > 0;
+
+                int statusLength = 0;
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusRebindPrefix);
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, row.label);
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, " [");
+                if (hasBindingDisplay)
+                    statusLength = AppendToBuffer(_statusBuffer, statusLength, _bindingDisplayBuffer, bindingCharsWritten);
+                else
+                    statusLength = AppendToBuffer(_statusBuffer, statusLength, "--");
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, ']');
+                statusLength = AppendToBuffer(_statusBuffer, statusLength, StatusRebindSuffix);
+                SetStatus(_statusBuffer, statusLength);
                 return;
             }
 
@@ -761,19 +854,20 @@ namespace Hecton8.UI
 
         private void SetStatus(string value)
         {
-            SetStatus(value, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
+            SetStatus(value.AsSpan(), HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
         }
 
-        private void SetStatus(System.Text.StringBuilder value)
+        private void SetStatus(char[] value, int length)
         {
-            SetStatus(value, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
+            SetStatus(value, length, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
         }
 
-        private void SetStatus(string value, Color textColor, Color backgroundColor)
+        private void SetStatus(ReadOnlySpan<char> value, Color textColor, Color backgroundColor)
         {
             if (_statusText != null)
             {
-                _statusText.SetText(value);
+                int length = CopyToBuffer(_statusBuffer, value);
+                _statusText.SetCharArray(_statusBuffer, 0, length);
                 _statusText.color = textColor;
             }
 
@@ -781,16 +875,60 @@ namespace Hecton8.UI
                 _statusBackground.color = backgroundColor;
         }
 
-        private void SetStatus(System.Text.StringBuilder value, Color textColor, Color backgroundColor)
+        private void SetStatus(char[] value, int length, Color textColor, Color backgroundColor)
         {
             if (_statusText != null)
             {
-                _statusText.SetText(value);
+                int safeLength = value != null ? Mathf.Clamp(length, 0, value.Length) : 0;
+                _statusText.SetCharArray(value ?? _statusBuffer, 0, safeLength);
                 _statusText.color = textColor;
             }
 
             if (_statusBackground != null)
                 _statusBackground.color = backgroundColor;
+        }
+
+        private static int CopyToBuffer(char[] buffer, ReadOnlySpan<char> value)
+        {
+            if (buffer == null || value.IsEmpty)
+                return 0;
+
+            int length = Mathf.Min(buffer.Length, value.Length);
+            value.Slice(0, length).CopyTo(buffer);
+            return length;
+        }
+
+        private static int AppendToBuffer(char[] buffer, int index, string value)
+        {
+            return AppendToBuffer(buffer, index, value.AsSpan());
+        }
+
+        private static int AppendToBuffer(char[] buffer, int index, char value)
+        {
+            if (buffer == null || index < 0 || index >= buffer.Length)
+                return index;
+
+            buffer[index] = value;
+            return index + 1;
+        }
+
+        private static int AppendToBuffer(char[] buffer, int index, char[] value, int valueLength)
+        {
+            if (value == null || valueLength <= 0)
+                return index;
+
+            int safeLength = Mathf.Min(valueLength, value.Length);
+            return AppendToBuffer(buffer, index, new ReadOnlySpan<char>(value, 0, safeLength));
+        }
+
+        private static int AppendToBuffer(char[] buffer, int index, ReadOnlySpan<char> value)
+        {
+            if (buffer == null || value.IsEmpty || index < 0 || index >= buffer.Length)
+                return index;
+
+            int length = Mathf.Min(value.Length, buffer.Length - index);
+            value.Slice(0, length).CopyTo(buffer.AsSpan(index, length));
+            return index + length;
         }
 
         private static int ResolveBindingIndex(InputAction action, int preferredIndex)
@@ -842,17 +980,6 @@ namespace Hecton8.UI
             return -1;
         }
 
-        private static string GetBindingDisplaySafe(InputAction action, int bindingIndex)
-        {
-            if (action == null || bindingIndex < 0)
-                return "--";
-
-            return InputManager.TryGetBindingDisplayStringSafe(action, bindingIndex, out string binding) &&
-                   !string.IsNullOrEmpty(binding)
-                ? binding
-                : "--";
-        }
-
         private static int WrapIndex(int value, int max)
         {
             if (max <= 0) return 0;
@@ -866,40 +993,33 @@ namespace Hecton8.UI
             return GlobalRegistry.InputBinding;
         }
 
-        private static RebindRow[] BuildDefaultRows()
+        private InputManager ResolveInputManager()
         {
-            List<RebindRow> rows = new List<RebindRow>(15);
-            AddRow(rows, "LOOK", "Player", "Look", 0);
-            AddRow(rows, "JUMP", "Player", "Jump", 0);
-            AddRow(rows, "SPRINT", "Player", "Sprint", 0);
-            AddRow(rows, "INTERACT", "Player", "Interact", 0);
-            AddRow(rows, "FLASHLIGHT", "Player", "Flashlight", 0);
-            AddRow(rows, "PDA", "Player", "PDA", 0);
-            AddRow(rows, "TOOL SLOT 1", "Player", "ToolSlot1", 0);
-            AddRow(rows, "TOOL SLOT 2", "Player", "ToolSlot2", 0);
-            AddRow(rows, "TOOL SLOT 3", "Player", "ToolSlot3", 0);
-            AddRow(rows, "TOOL SLOT 4", "Player", "ToolSlot4", 0);
-            AddRow(rows, "PRIMARY ACTION", "Player", "PrimaryAction", 0);
-            AddRow(rows, "SECONDARY ACTION", "Player", "SecondaryAction", 0);
-            AddRow(rows, "INVENTORY", "Player", "Inventory", 0);
-            AddRow(rows, "UI SUBMIT", "UI", "Submit", 0);
-            AddRow(rows, "UI CANCEL", "UI", "Cancel", 0);
-            return rows.ToArray();
+            return _subscribedInput != null
+                ? _subscribedInput
+                : GlobalRegistry.NativeInputManager;
         }
 
-        private static void AddRow(List<RebindRow> rows, string label, string map, string action, int bindingIndex)
+        private static RebindRow[] BuildDefaultRows()
         {
-            if (rows == null)
-                return;
-
-            if (string.IsNullOrWhiteSpace(label) ||
-                string.IsNullOrWhiteSpace(map) ||
-                string.IsNullOrWhiteSpace(action))
+            return new[]
             {
-                return;
-            }
-
-            rows.Add(MakeRow(label.Trim(), map.Trim(), action.Trim(), bindingIndex));
+                MakeRow("LOOK", "Player", "Look", 0),
+                MakeRow("JUMP", "Player", "Jump", 0),
+                MakeRow("SPRINT", "Player", "Sprint", 0),
+                MakeRow("INTERACT", "Player", "Interact", 0),
+                MakeRow("FLASHLIGHT", "Player", "Flashlight", 0),
+                MakeRow("PDA", "Player", "PDA", 0),
+                MakeRow("TOOL SLOT 1", "Player", "ToolSlot1", 0),
+                MakeRow("TOOL SLOT 2", "Player", "ToolSlot2", 0),
+                MakeRow("TOOL SLOT 3", "Player", "ToolSlot3", 0),
+                MakeRow("TOOL SLOT 4", "Player", "ToolSlot4", 0),
+                MakeRow("PRIMARY ACTION", "Player", "PrimaryAction", 0),
+                MakeRow("SECONDARY ACTION", "Player", "SecondaryAction", 0),
+                MakeRow("INVENTORY", "Player", "Inventory", 0),
+                MakeRow("UI SUBMIT", "UI", "Submit", 0),
+                MakeRow("UI CANCEL", "UI", "Cancel", 0)
+            };
         }
 
         private static bool TryResolveRowBinding(
@@ -936,7 +1056,7 @@ namespace Hecton8.UI
                 return false;
             }
 
-            resolutionMessage = GetBindingDisplaySafe(action, bindingIndex);
+            resolutionMessage = string.Empty;
             return true;
         }
 

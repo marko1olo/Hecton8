@@ -54,11 +54,14 @@ namespace Hecton8.World
         private const int DefaultDepthCacheResolution = 512;
         private const int DefaultCaptureLayerMask = 0;
         private const int RuntimeCameraBufferSize = 8;
+        private const int RuntimeTerrainBufferSize = 64;
         private const string DepthDebugOutputPath = "C:/hades/Hecton8/Temp/depth_debug.png";
         private static int TerrainLayer = int.MinValue;
         private static int TerrainLayerWithTrailingSpace = int.MinValue;
         // COLD ALLOC: Camera[8] - reusable runtime-camera resolve scratch for Crest viewpoint ownership - owner: HectonCrestOceanDepthCacheBootstrap
         private static readonly Camera[] RuntimeCameraBuffer = new Camera[RuntimeCameraBufferSize];
+        // COLD ALLOC: Terrain[64] - reusable MapMagic terrain coverage scratch; populated by MapMagicBridge tile registry - owner: HectonCrestOceanDepthCacheBootstrap
+        private static readonly Terrain[] RuntimeTerrainBuffer = new Terrain[RuntimeTerrainBufferSize];
 
         [Header("-- References ----------------")]
         [Tooltip("Explicit Crest ocean owner. Auto-resolved from the prefab root when left empty.")]
@@ -118,7 +121,7 @@ namespace Hecton8.World
         private readonly List<ShapeGerstnerBatched> _gerstnerScratch = new List<ShapeGerstnerBatched>(16);
         // COLD ALLOC: List<GameObject>[16] - scene-root scratch used to sweep distributed Crest shapes during rare origin shifts - owner: HectonCrestOceanDepthCacheBootstrap
         private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(16);
-        private bool _loggedMissingActiveTerrains;
+        private bool _loggedMissingResolvedTerrains;
 
         private void Awake()
         {
@@ -255,7 +258,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToSlowTickManager = true;
+            _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -515,19 +518,25 @@ namespace Hecton8.World
         {
             terrainCoverage = default;
 
-            Terrain[] terrains = Terrain.activeTerrains;
-            if (terrains == null || terrains.Length == 0)
+            if (mapMagicBridge == null)
+                WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
+
+            int terrainCount = mapMagicBridge != null
+                ? mapMagicBridge.CopyResolvedTerrainsTo(RuntimeTerrainBuffer)
+                : 0;
+
+            if (terrainCount <= 0)
             {
-                ReportMissingActiveTerrains();
+                ReportMissingResolvedTerrains();
                 return false;
             }
 
-            _loggedMissingActiveTerrains = false;
+            _loggedMissingResolvedTerrains = false;
 
             bool initialized = false;
-            for (int terrainIndex = 0; terrainIndex < terrains.Length; terrainIndex++)
+            for (int terrainIndex = 0; terrainIndex < terrainCount; terrainIndex++)
             {
-                Terrain terrain = terrains[terrainIndex];
+                Terrain terrain = RuntimeTerrainBuffer[terrainIndex];
                 if (terrain == null || terrain.terrainData == null)
                     continue;
 
@@ -569,14 +578,14 @@ namespace Hecton8.World
             return initialized;
         }
 
-        private void ReportMissingActiveTerrains()
+        private void ReportMissingResolvedTerrains()
         {
-            if (_loggedMissingActiveTerrains)
+            if (_loggedMissingResolvedTerrains)
                 return;
 
-            _loggedMissingActiveTerrains = true;
+            _loggedMissingResolvedTerrains = true;
             UnityEngine.Debug.LogError(
-                "[HectonCrestOceanDepthCacheBootstrap] Terrain.activeTerrains is empty. Crest depth-cache bootstrap requires explicitly active terrain ownership; runtime fallback search is forbidden.",
+                "[HectonCrestOceanDepthCacheBootstrap] MapMagicBridge resolved no terrain tiles. Crest depth-cache bootstrap requires registry-owned MapMagic terrain coverage.",
                 this);
         }
 

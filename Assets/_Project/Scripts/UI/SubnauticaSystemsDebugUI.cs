@@ -247,14 +247,14 @@ namespace Hecton8.UI
             if (!_registered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-                _registered = true;
+                _registered = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (_slowTickRegistered)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.UI);
-            _slowTickRegistered = true;
+            _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -748,7 +748,7 @@ namespace Hecton8.UI
         private TextMeshProUGUI CreateLabel(string name, string text, Vector2 anchoredPos, Vector2 size, float fontSize, FontStyles fontStyle)
         {
             TextMeshProUGUI label = CreateText(name, anchoredPos, size, fontSize, fontStyle);
-            label.text = text;
+            label.SetText(text);
             label.color = new Color(0.50f, 0.86f, 0.92f, 0.82f);
             return label;
         }

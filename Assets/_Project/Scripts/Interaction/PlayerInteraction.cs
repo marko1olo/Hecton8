@@ -54,7 +54,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player Interaction")]
-    public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PlayerInteraction : MonoBehaviour, ITickable, IUpdatable, IGlobalRegistryHotSwapListener
     {
         // ====================================================================
         // SERIALIZED CONFIGURATION
@@ -119,10 +119,13 @@ namespace Hecton8.Interaction
         private float         _raycastTimer;
         private Transform     _cameraTransform;
         private Hecton8.Interaction.PhysicalInteractionHandler _physicalInteractionHandler;
+        private IInputService _subscribedInputService;
         private Ray           _ray;
         private RaycastHit    _hitInfo;
-        private readonly RaycastHit[] _raycastHits = new RaycastHit[1]; // COLD ALLOC: single-hit interaction probe buffer.
+        // COLD ALLOC: RaycastHit[1] — single-hit interaction probe buffer — owner: PlayerInteraction
+        private readonly RaycastHit[] _raycastHits = new RaycastHit[1];
         private static readonly int _DefaultInteractableLayerMask = HectonLayerMasks.InteractableLayerMask;
+        private static string _activeInteractKey = "E";
 
         /// <summary>
         /// Tracks whether this component successfully registered
@@ -130,6 +133,7 @@ namespace Hecton8.Interaction
         /// Start both succeeding) and orphan unregister.
         /// </summary>
         private bool          _registeredToTickManager;
+        private bool          _hotSwapListenerRegistered;
 
         // ====================================================================
         // PUBLIC ACCESSORS
@@ -143,12 +147,7 @@ namespace Hecton8.Interaction
         /// </summary>
         public static string ActiveInteractKey
         {
-            get
-            {
-                if (InputManager.Instance != null)
-                    return InputManager.Instance.GetBindingDisplayString("Interact");
-                return "E";
-            }
+            get { return _activeInteractKey; }
         }
 
         // ====================================================================
@@ -179,7 +178,9 @@ namespace Hecton8.Interaction
             _cameraTransform = playerCamera.transform;
             _raycastTimer    = 0f;
             _registeredToTickManager = false;
+            _hotSwapListenerRegistered = false;
             TryGetComponent(out _physicalInteractionHandler);
+            RefreshActiveInteractKeyCache();
 
             // ────────────────────────────────────────────────────
             // Layer mask validation — catch misconfiguration early.
@@ -222,26 +223,28 @@ namespace Hecton8.Interaction
             if (!_registeredToTickManager && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-                _registeredToTickManager = true;
+                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
             }
 
-            // Subscribe to InputManager
-            if (InputManager.Instance != null)
-            {
-                InputManager.Instance.OnInteract += HandleInteractInput;
-            }
+            TryRegisterHotSwapListener();
+            SubscribeInputServiceIfAvailable();
+            RefreshActiveInteractKeyCache();
         }
 
         private void Start()
         {
-            if (_registeredToTickManager || !Application.isPlaying)
+            if (!Application.isPlaying)
                 return;
 
-            if (GlobalRegistry.Dispatcher == null)
-                return;
+            if (!_registeredToTickManager && GlobalRegistry.Dispatcher != null)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
+                _registeredToTickManager = GlobalRegistry.Updatables.Contains(this);
+            }
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredToTickManager = true;
+            TryRegisterHotSwapListener();
+            SubscribeInputServiceIfAvailable();
+            RefreshActiveInteractKeyCache();
         }
 
         private void OnDisable()
@@ -252,14 +255,29 @@ namespace Hecton8.Interaction
                 _registeredToTickManager = false;
             }
 
-            // Unsubscribe from InputManager
-            if (InputManager.Instance != null)
-            {
-                InputManager.Instance.OnInteract -= HandleInteractInput;
-            }
+            TryUnregisterHotSwapListener();
+            UnsubscribeInputService();
 
             // Clean up hover state if disabled mid-hover.
             ClearHover();
+        }
+
+        /// <inheritdoc />
+        public void OnGlobalRegistryServiceReplaced(
+            GlobalRegistryServiceSlot serviceSlot,
+            object previousService,
+            object currentService)
+        {
+            if (serviceSlot != GlobalRegistryServiceSlot.Input)
+                return;
+
+            UnsubscribeInputService();
+
+            if (!isActiveAndEnabled)
+                return;
+
+            SubscribeInputServiceIfAvailable(currentService as IInputService);
+            RefreshActiveInteractKeyCache();
         }
 
         private void HandleInteractInput()
@@ -271,6 +289,65 @@ namespace Hecton8.Interaction
                 return;
 
             ExecuteInteraction();
+        }
+
+        private void SubscribeInputServiceIfAvailable()
+        {
+            SubscribeInputServiceIfAvailable(GlobalRegistry.Input);
+        }
+
+        private void SubscribeInputServiceIfAvailable(IInputService inputService)
+        {
+            if (_subscribedInputService != null)
+                return;
+
+            if (inputService == null || !inputService.IsInitialized)
+                return;
+
+            _subscribedInputService = inputService;
+            _subscribedInputService.OnInteract += HandleInteractInput;
+        }
+
+        private void UnsubscribeInputService()
+        {
+            if (_subscribedInputService == null)
+                return;
+
+            _subscribedInputService.OnInteract -= HandleInteractInput;
+            _subscribedInputService = null;
+        }
+
+        private void TryRegisterHotSwapListener()
+        {
+            if (_hotSwapListenerRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterHotSwapListener(this);
+            _hotSwapListenerRegistered = GlobalRegistry.HotSwapListeners.Contains(this);
+        }
+
+        private void TryUnregisterHotSwapListener()
+        {
+            if (!_hotSwapListenerRegistered)
+                return;
+
+            if (GlobalRegistry.HotSwapListeners.Contains(this))
+                GlobalRegistry.UnregisterHotSwapListener(this);
+
+            _hotSwapListenerRegistered = false;
+        }
+
+        private static void RefreshActiveInteractKeyCache()
+        {
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            if (inputManager == null)
+            {
+                _activeInteractKey = "E";
+                return;
+            }
+
+            string display = inputManager.GetBindingDisplayString("Interact");
+            _activeInteractKey = string.IsNullOrEmpty(display) ? "E" : display;
         }
 
         // ====================================================================

@@ -64,13 +64,6 @@ namespace Hecton8.UI
         [SerializeField]
         private bool enableHoverSounds = true;
 
-        [Header("=== PITCH VARIATION ===")]
-        [SerializeField, Tooltip("Enable pitch randomization for variety")]
-        private bool enablePitchVariation = true;
-
-        [SerializeField, Range(0f, 0.2f), Tooltip("Pitch variation range (±)")]
-        private float pitchVariation = 0.05f;
-
         [Header("=== DEBUG ===")]
         [SerializeField, Tooltip("Log audio playback events")]
         private bool debugLog = false;
@@ -106,12 +99,12 @@ namespace Hecton8.UI
         private void Awake()
         {
             _instance = this;
-            _primaryButtonClickAction = OnPrimaryButtonClicked; // COLD ALLOC: UnityAction[1] - cached primary button audio listener - owner: UIAudioFeedback
-            _secondaryButtonClickAction = OnSecondaryButtonClicked; // COLD ALLOC: UnityAction[1] - cached secondary button audio listener - owner: UIAudioFeedback
-            _destructiveButtonClickAction = OnDestructiveButtonClicked; // COLD ALLOC: UnityAction[1] - cached destructive button audio listener - owner: UIAudioFeedback
-            _sliderChangedAction = OnSliderChanged; // COLD ALLOC: UnityAction<float>[1] - cached slider audio listener - owner: UIAudioFeedback
-            _toggleChangedAction = OnToggleChanged; // COLD ALLOC: UnityAction<bool>[1] - cached toggle audio listener - owner: UIAudioFeedback
-            _buttonHoverAction = OnButtonHoverEvent; // COLD ALLOC: UnityAction<BaseEventData>[1] - cached button hover audio listener - owner: UIAudioFeedback
+            _primaryButtonClickAction = OnPrimaryButtonClicked; // COLD ALLOC: UnityAction[1] — cached primary button audio listener — owner: UIAudioFeedback
+            _secondaryButtonClickAction = OnSecondaryButtonClicked; // COLD ALLOC: UnityAction[1] — cached secondary button audio listener — owner: UIAudioFeedback
+            _destructiveButtonClickAction = OnDestructiveButtonClicked; // COLD ALLOC: UnityAction[1] — cached destructive button audio listener — owner: UIAudioFeedback
+            _sliderChangedAction = OnSliderChanged; // COLD ALLOC: UnityAction<float>[1] — cached slider audio listener — owner: UIAudioFeedback
+            _toggleChangedAction = OnToggleChanged; // COLD ALLOC: UnityAction<bool>[1] — cached toggle audio listener — owner: UIAudioFeedback
+            _buttonHoverAction = OnButtonHoverEvent; // COLD ALLOC: UnityAction<BaseEventData>[1] — cached button hover audio listener — owner: UIAudioFeedback
         }
 
         private void Start()
@@ -209,8 +202,8 @@ namespace Hecton8.UI
                 if (button == null)
                     continue;
 
-                // Determine button type by name
-                ButtonType type = GetButtonType(button.gameObject.name);
+                // Classification is cold, but avoid allocating a lowercase copy of the button name.
+                ButtonType type = GetButtonType(button.name);
                 RegisterButton(button, type);
             }
 
@@ -330,35 +323,65 @@ namespace Hecton8.UI
             // Add hover listener if enabled
             if (enableHoverSounds)
             {
-                EventTrigger trigger = button.gameObject.GetComponent<EventTrigger>();
-                if (trigger == null)
+                if (!button.TryGetComponent(out EventTrigger trigger))
                     trigger = button.gameObject.AddComponent<EventTrigger>();
 
-                EventTrigger.Entry entry = new EventTrigger.Entry
-                {
-                    eventID = EventTriggerType.PointerEnter
-                };
+                EventTrigger.Entry entry = GetOrCreatePointerEnterEntry(trigger);
+                entry.callback.RemoveListener(_buttonHoverAction);
                 entry.callback.AddListener(_buttonHoverAction);
-                trigger.triggers.Add(entry);
             }
         }
 
-        private ButtonType GetButtonType(string buttonName)
+        private static EventTrigger.Entry GetOrCreatePointerEnterEntry(EventTrigger trigger)
         {
-            string lower = buttonName.ToLowerInvariant();
+            List<EventTrigger.Entry> entries = trigger.triggers;
+            for (int i = 0; i < entries.Count; i++)
+            {
+                EventTrigger.Entry entry = entries[i];
+                if (entry != null && entry.eventID == EventTriggerType.PointerEnter)
+                    return entry;
+            }
 
-            // Destructive
-            if (lower.Contains("quit") || lower.Contains("exit") || lower.Contains("delete") || lower.Contains("abort"))
+            // COLD ALLOC: EventTrigger.Entry[1] — shared pointer-enter hover callback entry — owner: UIAudioFeedback
+            EventTrigger.Entry newEntry = new EventTrigger.Entry
+            {
+                eventID = EventTriggerType.PointerEnter
+            };
+            entries.Add(newEntry);
+            return newEntry;
+        }
+
+        private static ButtonType GetButtonType(string buttonName)
+        {
+            if (string.IsNullOrEmpty(buttonName))
+                return ButtonType.Secondary;
+
+            if (ContainsOrdinalIgnoreCase(buttonName, "quit") ||
+                ContainsOrdinalIgnoreCase(buttonName, "exit") ||
+                ContainsOrdinalIgnoreCase(buttonName, "delete") ||
+                ContainsOrdinalIgnoreCase(buttonName, "abort"))
+            {
                 return ButtonType.Destructive;
+            }
 
-            // Primary
-            if (lower.Contains("new") || lower.Contains("start") || lower.Contains("resume") ||
-                lower.Contains("save") || lower.Contains("load") || lower.Contains("apply") ||
-                lower.Contains("confirm") || lower.Contains("ok"))
+            if (ContainsOrdinalIgnoreCase(buttonName, "new") ||
+                ContainsOrdinalIgnoreCase(buttonName, "start") ||
+                ContainsOrdinalIgnoreCase(buttonName, "resume") ||
+                ContainsOrdinalIgnoreCase(buttonName, "save") ||
+                ContainsOrdinalIgnoreCase(buttonName, "load") ||
+                ContainsOrdinalIgnoreCase(buttonName, "apply") ||
+                ContainsOrdinalIgnoreCase(buttonName, "confirm") ||
+                ContainsOrdinalIgnoreCase(buttonName, "ok"))
+            {
                 return ButtonType.Primary;
+            }
 
-            // Secondary (default)
             return ButtonType.Secondary;
+        }
+
+        private static bool ContainsOrdinalIgnoreCase(string source, string token)
+        {
+            return source.IndexOf(token, System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -439,20 +462,13 @@ namespace Hecton8.UI
                     return;
             }
 
-            // Pitch variation for variety
-            float pitch = 1f;
-            if (enablePitchVariation)
-            {
-                pitch = 1f + Random.Range(-pitchVariation, pitchVariation);
-            }
-
             _audioManager.PlayStatic2D(clip, vol, _audioManager.InterfaceGroup);
             _totalSoundsPlayed++;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (debugLog)
             {
-                Debug.Log($"[UIAudioFeedback] Played: {clip.name} | Volume: {vol:F2} | Pitch: {pitch:F2} | Total: {_totalSoundsPlayed} | Throttled: {_throttledSounds}");
+                Debug.Log($"[UIAudioFeedback] Played: {clip.name} | Volume: {vol:F2} | Total: {_totalSoundsPlayed} | Throttled: {_throttledSounds}");
             }
 #endif
         }

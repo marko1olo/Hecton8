@@ -472,7 +472,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _registeredToFixedTick = true;
+            _registeredToFixedTick = GlobalRegistry.FixedTickables.Contains(this);
         }
 
         private void TryUnregisterFromFixedTick()

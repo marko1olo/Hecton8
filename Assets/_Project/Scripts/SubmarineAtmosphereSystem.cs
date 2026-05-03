@@ -92,11 +92,14 @@ namespace Hecton8.Atmosphere
         // COLD ALLOC: RegistryBucket<IHighPressureEventListener>[16] - high-pressure listeners drained by SystemDispatcher LateUpdate - owner: HighPressureEvents
         private static readonly RegistryBucket<IHighPressureEventListener> _listeners = new RegistryBucket<IHighPressureEventListener>(ListenerCapacity);
         private static NativeQueue<HighPressureEventPayload> _pendingEvents;
+        private static NativeQueue<HighPressureEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
         private static int _lastOverflowWarningFrame = -1;
 
         /// <summary>Number of high-pressure payloads waiting for late-frame dispatch.</summary>
-        public static int PendingCount => _pendingEventCount;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -108,8 +111,17 @@ namespace Hecton8.Atmosphere
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(HighPressureEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
             _lastOverflowWarningFrame = -1;
         }
 
@@ -139,6 +151,7 @@ namespace Hecton8.Atmosphere
             if (!_pendingEvents.IsCreated)
                 return;
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -151,11 +164,22 @@ namespace Hecton8.Atmosphere
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                Dispatch(in payload);
+                _isDispatching = true;
+                try
+                {
+                    Dispatch(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         /// <summary>Emits a high-pressure warning payload.</summary>
@@ -174,27 +198,45 @@ namespace Hecton8.Atmosphere
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<HighPressureEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - deferred submarine high-pressure warning lane flushed by SystemDispatcher LateUpdate - owner: HighPressureEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(HighPressureEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<HighPressureEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - deferred submarine high-pressure warning lane flushed by SystemDispatcher LateUpdate - owner: HighPressureEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(HighPressureEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<HighPressureEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - next-frame high-pressure warning lane prevents same-frame reentrant dispatch - owner: HighPressureEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(HighPressureEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static bool Enqueue(in HighPressureEventPayload payload)
         {
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportOverflowOncePerFrame();
                 return false;
             }
 
             EnsureInitialized();
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return true;
+            }
+
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
@@ -216,7 +258,11 @@ namespace Hecton8.Atmosphere
 
             IHighPressureEventListener[] rawArray = _listeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnHighPressure(in pressureEvent);
+            {
+                IHighPressureEventListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnHighPressure(in pressureEvent);
+            }
         }
 
         private static void ReportOverflowOncePerFrame()
@@ -227,6 +273,23 @@ namespace Hecton8.Atmosphere
 
             _lastOverflowWarningFrame = frame;
             GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<HighPressureEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 
@@ -282,11 +345,14 @@ namespace Hecton8.Atmosphere
         // COLD ALLOC: RegistryBucket<IFatalPressureImplosionEventListener>[16] - fatal implosion listeners drained by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
         private static readonly RegistryBucket<IFatalPressureImplosionEventListener> _listeners = new RegistryBucket<IFatalPressureImplosionEventListener>(ListenerCapacity);
         private static NativeQueue<FatalPressureImplosionEventPayload> _pendingEvents;
+        private static NativeQueue<FatalPressureImplosionEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
         private static int _lastOverflowWarningFrame = -1;
 
         /// <summary>Number of fatal implosion payloads waiting for late-frame dispatch.</summary>
-        public static int PendingCount => _pendingEventCount;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -298,8 +364,17 @@ namespace Hecton8.Atmosphere
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(FatalPressureImplosionEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
             _lastOverflowWarningFrame = -1;
         }
 
@@ -329,6 +404,7 @@ namespace Hecton8.Atmosphere
             if (!_pendingEvents.IsCreated)
                 return;
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -341,11 +417,22 @@ namespace Hecton8.Atmosphere
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                Dispatch(in payload);
+                _isDispatching = true;
+                try
+                {
+                    Dispatch(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
+            {
                 _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         public static void Notify(in FatalPressureImplosionEvent implosionEvent)
@@ -361,27 +448,45 @@ namespace Hecton8.Atmosphere
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
-                return;
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<FatalPressureImplosionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - deferred fatal pressure implosion lane flushed by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(FatalPressureImplosionEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
-            _pendingEvents = new NativeQueue<FatalPressureImplosionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - deferred fatal pressure implosion lane flushed by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(FatalPressureImplosionEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<FatalPressureImplosionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - next-frame fatal pressure implosion lane prevents same-frame reentrant dispatch - owner: FatalPressureImplosionEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(FatalPressureImplosionEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static bool Enqueue(in FatalPressureImplosionEventPayload payload)
         {
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 ReportOverflowOncePerFrame();
                 return false;
             }
 
             EnsureInitialized();
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return true;
+            }
+
             _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
             return true;
@@ -401,7 +506,11 @@ namespace Hecton8.Atmosphere
 
             IFatalPressureImplosionEventListener[] rawArray = _listeners.RawArray;
             for (int i = count - 1; i >= 0; i--)
-                rawArray[i].OnFatalPressureImplosion(in implosionEvent);
+            {
+                IFatalPressureImplosionEventListener listener = rawArray[i];
+                if (listener != null)
+                    listener.OnFatalPressureImplosion(in implosionEvent);
+            }
         }
 
         private static void ReportOverflowOncePerFrame()
@@ -412,6 +521,23 @@ namespace Hecton8.Atmosphere
 
             _lastOverflowWarningFrame = frame;
             GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<FatalPressureImplosionEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 
@@ -1810,7 +1936,7 @@ namespace Hecton8.Atmosphere
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = SystemDispatcher.GetPostFixedLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregister()

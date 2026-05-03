@@ -151,7 +151,7 @@ namespace Hecton8.UI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()
@@ -832,7 +832,7 @@ namespace Hecton8.UI
             }
             catch (Exception ex)
             {
-                Debug.LogError($"[PauseMenuController] Save failed for '{slotName}': {ex.Message}");
+                LogSaveSlotFailed(slotName, ex);
                 if (_saveStatus != null)
                     ApplySaveStatusText(string.Empty, upperSlotName, _cachedFailedTerminal);
 
@@ -853,6 +853,13 @@ namespace Hecton8.UI
                     ResolveLocalized(LocalizationKeys.UI_RETRY, "Retry"),
                     "Cancel");
             }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSaveSlotFailed(string slotName, Exception exception)
+        {
+            Debug.LogError($"[PauseMenuController] Save failed for '{slotName}': {exception.Message}");
         }
 
         private void TryAcquireSaveStatusBuffer()
@@ -1659,14 +1666,14 @@ namespace Hecton8.UI
                 inputSystemModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
             }
 
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
             if (inputManager != null)
                 inputManager.TryConfigureUiInputModule(inputSystemModule);
         }
 
         private void BindInputActions()
         {
-            InputManager inputManager = InputManager.Instance;
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
             if (ReferenceEquals(_inputManager, inputManager))
                 return;
 

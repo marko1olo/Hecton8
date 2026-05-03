@@ -161,8 +161,8 @@ namespace Hecton8.UI
             TMP_Text labelText = CreateText(markerRoot.transform, "Label", new Vector2(200f, 28f), new Vector2(16f, 12f), 20f, new Color(0.72f, 0.92f, 1f, 0.96f));
             TMP_Text distanceText = CreateText(markerRoot.transform, "Distance", new Vector2(160f, 24f), new Vector2(16f, -14f), 16f, new Color(0.52f, 0.82f, 0.96f, 0.9f));
 
-            labelText.text = "EMERGENCY SERVICE RELAY";
-            distanceText.text = "0M";
+            labelText.SetText("EMERGENCY SERVICE RELAY");
+            distanceText.SetText("0M");
 
             RelayHUDElement marker = markerRoot.GetComponent<RelayHUDElement>();
             marker.ConfigureRuntimeBindings(markerIcon, distanceText, labelText);

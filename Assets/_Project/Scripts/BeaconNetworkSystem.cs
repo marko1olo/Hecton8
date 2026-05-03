@@ -451,8 +451,12 @@ namespace Hecton8.Gameplay
                 Destroy(bodyCollider);
 
             Renderer renderer = body.GetComponent<Renderer>();
+            Material fallbackMaterial = null;
             if (renderer != null)
-                renderer.sharedMaterial = BeaconRuntime.GetFallbackBeaconMaterial(color);
+            {
+                fallbackMaterial = BeaconRuntime.GetFallbackBeaconMaterial(color);
+                renderer.sharedMaterial = fallbackMaterial;
+            }
 
             Light lightComp = beaconRoot.AddComponent<Light>();
             lightComp.type = LightType.Point;
@@ -460,7 +464,9 @@ namespace Hecton8.Gameplay
             lightComp.intensity = 1.6f;
             lightComp.color = color;
 
-            return beaconRoot.AddComponent<BeaconRuntime>();
+            BeaconRuntime runtime = beaconRoot.AddComponent<BeaconRuntime>();
+            runtime.SetOwnedFallbackMaterial(fallbackMaterial);
+            return runtime;
         }
 
         private void UnregisterRuntime(BeaconRuntime beacon)

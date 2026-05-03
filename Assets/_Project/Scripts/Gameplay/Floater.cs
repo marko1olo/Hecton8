@@ -511,7 +511,7 @@ namespace Hecton8.Gameplay
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null) return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-            _isRegistered = true;
+            _isRegistered = GlobalRegistry.FixedTickables.Contains(this);
         }
 
 #if UNITY_EDITOR

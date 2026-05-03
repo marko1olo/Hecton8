@@ -241,6 +241,7 @@ namespace Hecton8.World
             _farUnloadHandleScratch.Clear();
             if (_queryHandles.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeList(nameof(WorldSpatialHashGrid), nameof(_queryHandles));
                 _queryHandles.Dispose();
                 _queryHandles = default;
             }
@@ -864,7 +865,14 @@ namespace Hecton8.World
                 _nativeHash = new HectonSpatialHash(DefaultEntryCapacity, DefaultEntryCapacity * 4, CellSizeMeters);
 
             if (!_queryHandles.IsCreated)
+            {
                 _queryHandles = new NativeList<int>(DefaultQueryCapacity, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeList(
+                    _queryHandles,
+                    nameof(WorldSpatialHashGrid),
+                    nameof(_queryHandles),
+                    NativeAllocationLifetime.Scene);
+            }
         }
 
         private static int Register(
@@ -1163,6 +1171,21 @@ namespace Hecton8.World
             _validationAbsolutePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _validationRuntimePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _validationInvalidMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _validationAbsolutePositions,
+                nameof(WorldSpatialHashGrid),
+                nameof(_validationAbsolutePositions),
+                NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(
+                _validationRuntimePositions,
+                nameof(WorldSpatialHashGrid),
+                nameof(_validationRuntimePositions),
+                NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(
+                _validationInvalidMask,
+                nameof(WorldSpatialHashGrid),
+                nameof(_validationInvalidMask),
+                NativeAllocationLifetime.Scene);
         }
 
         private static void EnsureOriginShiftCapacity(int requiredCapacity)
@@ -1175,6 +1198,21 @@ namespace Hecton8.World
             _originShiftHandles = new NativeArray<int>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _originShiftRuntimePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _originShiftAbsolutePositions = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _originShiftHandles,
+                nameof(WorldSpatialHashGrid),
+                nameof(_originShiftHandles),
+                NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(
+                _originShiftRuntimePositions,
+                nameof(WorldSpatialHashGrid),
+                nameof(_originShiftRuntimePositions),
+                NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(
+                _originShiftAbsolutePositions,
+                nameof(WorldSpatialHashGrid),
+                nameof(_originShiftAbsolutePositions),
+                NativeAllocationLifetime.Scene);
         }
 
         private static void DisposeValidationBuffers()
@@ -1187,18 +1225,21 @@ namespace Hecton8.World
 
             if (_validationAbsolutePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_validationAbsolutePositions);
                 _validationAbsolutePositions.Dispose();
                 _validationAbsolutePositions = default;
             }
 
             if (_validationRuntimePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_validationRuntimePositions);
                 _validationRuntimePositions.Dispose();
                 _validationRuntimePositions = default;
             }
 
             if (_validationInvalidMask.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_validationInvalidMask);
                 _validationInvalidMask.Dispose();
                 _validationInvalidMask = default;
             }
@@ -1224,18 +1265,21 @@ namespace Hecton8.World
 
             if (_validationAbsolutePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_validationAbsolutePositions);
                 disposeHandle = _validationAbsolutePositions.Dispose(disposeHandle);
                 _validationAbsolutePositions = default;
             }
 
             if (_validationRuntimePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_validationRuntimePositions);
                 disposeHandle = _validationRuntimePositions.Dispose(disposeHandle);
                 _validationRuntimePositions = default;
             }
 
             if (_validationInvalidMask.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_validationInvalidMask);
                 disposeHandle = _validationInvalidMask.Dispose(disposeHandle);
                 _validationInvalidMask = default;
             }
@@ -1254,18 +1298,21 @@ namespace Hecton8.World
 
             if (_originShiftHandles.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_originShiftHandles);
                 _originShiftHandles.Dispose();
                 _originShiftHandles = default;
             }
 
             if (_originShiftRuntimePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_originShiftRuntimePositions);
                 _originShiftRuntimePositions.Dispose();
                 _originShiftRuntimePositions = default;
             }
 
             if (_originShiftAbsolutePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_originShiftAbsolutePositions);
                 _originShiftAbsolutePositions.Dispose();
                 _originShiftAbsolutePositions = default;
             }
@@ -1291,18 +1338,21 @@ namespace Hecton8.World
 
             if (_originShiftHandles.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_originShiftHandles);
                 disposeHandle = _originShiftHandles.Dispose(disposeHandle);
                 _originShiftHandles = default;
             }
 
             if (_originShiftRuntimePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_originShiftRuntimePositions);
                 disposeHandle = _originShiftRuntimePositions.Dispose(disposeHandle);
                 _originShiftRuntimePositions = default;
             }
 
             if (_originShiftAbsolutePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_originShiftAbsolutePositions);
                 disposeHandle = _originShiftAbsolutePositions.Dispose(disposeHandle);
                 _originShiftAbsolutePositions = default;
             }
@@ -1322,6 +1372,26 @@ namespace Hecton8.World
             _farUnloadAbsolutePositions = new NativeArray<double3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _farUnloadEligibilityMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _farUnloadResultMask = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _farUnloadHandles,
+                nameof(WorldSpatialHashGrid),
+                nameof(_farUnloadHandles),
+                NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(
+                _farUnloadAbsolutePositions,
+                nameof(WorldSpatialHashGrid),
+                nameof(_farUnloadAbsolutePositions),
+                NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(
+                _farUnloadEligibilityMask,
+                nameof(WorldSpatialHashGrid),
+                nameof(_farUnloadEligibilityMask),
+                NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(
+                _farUnloadResultMask,
+                nameof(WorldSpatialHashGrid),
+                nameof(_farUnloadResultMask),
+                NativeAllocationLifetime.Scene);
         }
 
         private static void DisposeFarUnloadBuffers()
@@ -1334,24 +1404,28 @@ namespace Hecton8.World
 
             if (_farUnloadHandles.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_farUnloadHandles);
                 _farUnloadHandles.Dispose();
                 _farUnloadHandles = default;
             }
 
             if (_farUnloadAbsolutePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_farUnloadAbsolutePositions);
                 _farUnloadAbsolutePositions.Dispose();
                 _farUnloadAbsolutePositions = default;
             }
 
             if (_farUnloadEligibilityMask.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_farUnloadEligibilityMask);
                 _farUnloadEligibilityMask.Dispose();
                 _farUnloadEligibilityMask = default;
             }
 
             if (_farUnloadResultMask.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_farUnloadResultMask);
                 _farUnloadResultMask.Dispose();
                 _farUnloadResultMask = default;
             }
@@ -1377,24 +1451,28 @@ namespace Hecton8.World
 
             if (_farUnloadHandles.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_farUnloadHandles);
                 disposeHandle = _farUnloadHandles.Dispose(disposeHandle);
                 _farUnloadHandles = default;
             }
 
             if (_farUnloadAbsolutePositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_farUnloadAbsolutePositions);
                 disposeHandle = _farUnloadAbsolutePositions.Dispose(disposeHandle);
                 _farUnloadAbsolutePositions = default;
             }
 
             if (_farUnloadEligibilityMask.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_farUnloadEligibilityMask);
                 disposeHandle = _farUnloadEligibilityMask.Dispose(disposeHandle);
                 _farUnloadEligibilityMask = default;
             }
 
             if (_farUnloadResultMask.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_farUnloadResultMask);
                 disposeHandle = _farUnloadResultMask.Dispose(disposeHandle);
                 _farUnloadResultMask = default;
             }
@@ -1411,12 +1489,18 @@ namespace Hecton8.World
             DisposeAcousticDensityMap();
             // COLD ALLOC: NativeArray<float>[512] - 8x8x8 transient acoustic density payload - owner: WorldSpatialHashGrid
             _acousticDensityMap = new NativeArray<float>(AcousticDensityMapCellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _acousticDensityMap,
+                nameof(WorldSpatialHashGrid),
+                nameof(_acousticDensityMap),
+                NativeAllocationLifetime.Scene);
         }
 
         private static void DisposeAcousticDensityMap()
         {
             if (_acousticDensityMap.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticDensityMap);
                 _acousticDensityMap.Dispose();
                 _acousticDensityMap = default;
             }

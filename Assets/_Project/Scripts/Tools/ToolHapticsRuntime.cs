@@ -358,7 +358,7 @@ namespace Hecton8.Tools
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredUpdate = true;
+            _registeredUpdate = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregisterUpdate()
@@ -379,7 +379,7 @@ namespace Hecton8.Tools
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrame = true;
+            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
         }
 
         private void TryUnregisterLateFrame()

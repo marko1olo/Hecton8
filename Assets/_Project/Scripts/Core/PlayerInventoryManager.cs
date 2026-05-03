@@ -22,6 +22,7 @@ namespace Hecton8.Core
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
+        private GameObject _playerObject;
         private PlayerToolManager _toolManager;
         private PlayerInventory _inventory;
         private PlayerBuilder _playerBuilder;
@@ -161,11 +162,33 @@ namespace Hecton8.Core
 
         private void SyncInventoryContext()
         {
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            _toolManager = playerContext != null ? playerContext.ToolManager : null;
-            _inventory = playerContext != null ? playerContext.Inventory : null;
-            _playerBuilder = playerContext != null ? playerContext.PlayerBuilder : null;
-            _handAnchor = playerContext != null ? playerContext.HandAnchor : null;
+            GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject;
+            if (!ReferenceEquals(_playerObject, currentPlayerObject))
+            {
+                _playerObject = currentPlayerObject;
+                _toolManager = null;
+                _inventory = null;
+                _playerBuilder = null;
+                _handAnchor = null;
+            }
+
+            if (_playerObject == null)
+                return;
+
+            if (_toolManager == null)
+                _playerObject.TryGetComponent(out _toolManager);
+
+            if (_inventory == null)
+                _playerObject.TryGetComponent(out _inventory);
+
+            if (_toolManager == null)
+                return;
+
+            if (_inventory == null)
+                _inventory = _toolManager.Inventory;
+
+            _handAnchor = _toolManager.HandAnchor;
+            _playerBuilder = _toolManager.CurrentTool as PlayerBuilder;
         }
 
         private void TryRegisterUpdatable()
@@ -195,7 +218,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterPlayerInventoryService(this);
-            _registeredService = true;
+            _registeredService = ReferenceEquals(GlobalRegistry.PlayerInventory, this);
         }
 
         private void TryUnregisterService()

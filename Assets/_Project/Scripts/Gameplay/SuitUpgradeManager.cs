@@ -163,7 +163,7 @@ namespace Hecton8.Gameplay
                 return;
 
             Hecton8.Core.GlobalRegistry.RegisterSuitUpgradeRuntime(this);
-            _serviceRegistered = true;
+            _serviceRegistered = ReferenceEquals(Hecton8.Core.GlobalRegistry.SuitUpgrades, this);
         }
 
         private void TryUnregisterService()

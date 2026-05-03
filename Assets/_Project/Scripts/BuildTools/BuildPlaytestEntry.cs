@@ -23,7 +23,7 @@
 //     mainContentGap: "Underwater flora density too low",
 //     isBlocker: true
 //   );
-//   BuildPlaytestLog.Instance.RecordEntry(entry);
+//   BuildPlaytestLog.RecordEntry(entry);
 //
 // ЗОЛОТОЙ СТАНДАРТ:
 //   • Каждый build = одна запись

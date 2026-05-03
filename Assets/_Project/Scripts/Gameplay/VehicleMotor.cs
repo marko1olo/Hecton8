@@ -1009,7 +1009,7 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrameTick = true;
+            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
         }
 
         private void TryUnregisterLateFrameTickable()

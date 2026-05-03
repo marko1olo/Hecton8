@@ -343,7 +343,8 @@ namespace Hecton8.VFX
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-                _registered = true;
+                _registered = GlobalRegistry.Updatables.Contains(this) ||
+                              GlobalRegistry.SlowTickables.Contains(this);
             }
             TryRegisterLateFrame();
 
@@ -409,8 +410,12 @@ namespace Hecton8.VFX
 
             if (_registered)
             {
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                if (GlobalRegistry.SlowTickables.Contains(this))
+                    GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+
+                if (GlobalRegistry.Updatables.Contains(this))
+                    GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+
                 _registered = false;
             }
         }
@@ -439,7 +444,7 @@ namespace Hecton8.VFX
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrame = true;
+            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
         }
 
         private void TryUnregisterLateFrame()

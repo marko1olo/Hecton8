@@ -66,13 +66,16 @@ namespace Hecton.Localization
         // COLD ALLOC: RegistryBucket<ILocalizationCorruptionVisualStateListener>[64] - corruption visual listeners drained by SystemDispatcher - owner: LocalizationEvents
         private static readonly RegistryBucket<ILocalizationCorruptionVisualStateListener> _corruptionListeners = new RegistryBucket<ILocalizationCorruptionVisualStateListener>(CorruptionListenerCapacity);
         private static NativeQueue<LocalizationEventPayload> _pendingEvents;
+        private static NativeQueue<LocalizationEventPayload> _nextFrameEvents;
         private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
         private static bool _overflowWarningQueued;
 
         /// <summary>
         /// Pending payload count in the localization event lane.
         /// </summary>
-        public static int PendingCount => _pendingEventCount;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -84,9 +87,18 @@ namespace Hecton.Localization
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(LocalizationEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _languageListeners.Clear();
             _corruptionListeners.Clear();
             _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
             _overflowWarningQueued = false;
         }
 
@@ -180,6 +192,7 @@ namespace Hecton.Localization
                 return;
             }
 
+            PromoteNextFrameEventsIfFrontEmpty();
             int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
             while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
@@ -192,31 +205,43 @@ namespace Hecton.Localization
                 if (_pendingEventCount > 0)
                     _pendingEventCount--;
 
-                Dispatch(in payload);
+                _isDispatching = true;
+                try
+                {
+                    Dispatch(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
             }
 
             if (_pendingEvents.IsEmpty())
             {
                 _pendingEventCount = 0;
-                _overflowWarningQueued = false;
+                PromoteNextFrameEventsIfFrontEmpty();
+                if (_pendingEventCount + _nextFrameEventCount <= 0)
+                    _overflowWarningQueued = false;
             }
         }
 
         private static void DrainPendingEventsWithoutDispatch()
         {
-            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
-            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
-            {
-                if (!_pendingEvents.TryDequeue(out _))
-                    break;
+            DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount);
 
-                if (_pendingEventCount > 0)
-                    _pendingEventCount--;
+            if (_pendingEventCount <= 0)
+            {
+                PromoteNextFrameEventsIfFrontEmpty();
+                DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount);
             }
 
-            if (_pendingEvents.IsEmpty())
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+
+            if (_pendingEventCount + _nextFrameEventCount <= 0)
             {
                 _pendingEventCount = 0;
+                _nextFrameEventCount = 0;
                 _overflowWarningQueued = false;
             }
         }
@@ -224,24 +249,33 @@ namespace Hecton.Localization
         private static void Enqueue(LocalizationEventType eventType, GameLanguage language, ushort visualBucket, ushort statusBits)
         {
             EnsureInitialized();
-            if (_pendingEventCount >= PendingEventCapacity)
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
             {
                 if (!_overflowWarningQueued)
                 {
                     _overflowWarningQueued = true;
-                    GlobalTelemetryBus.PublishPerformanceWarning(_OverflowWarningHash, (uint)eventType, _pendingEventCount);
+                    GlobalTelemetryBus.PublishPerformanceWarning(_OverflowWarningHash, (uint)eventType, PendingCount);
                 }
                 return;
             }
 
-            _pendingEvents.Enqueue(new LocalizationEventPayload
+            LocalizationEventPayload payload = new LocalizationEventPayload
             {
                 Frame = unchecked((uint)Mathf.Max(0, Time.frameCount)),
                 EventType = (ushort)eventType,
                 Language = (ushort)language,
                 VisualBucket = visualBucket,
                 StatusBits = statusBits
-            });
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
             _pendingEventCount++;
         }
 
@@ -254,7 +288,11 @@ namespace Hecton.Localization
                     ILocalizationLanguageChangedListener[] rawArray = _languageListeners.RawArray;
                     int count = _languageListeners.Count;
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnLocalizationLanguageChanged(in payload);
+                    {
+                        ILocalizationLanguageChangedListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnLocalizationLanguageChanged(in payload);
+                    }
                     break;
                 }
 
@@ -263,7 +301,11 @@ namespace Hecton.Localization
                     ILocalizationCorruptionVisualStateListener[] rawArray = _corruptionListeners.RawArray;
                     int count = _corruptionListeners.Count;
                     for (int i = count - 1; i >= 0; i--)
-                        rawArray[i].OnLocalizationCorruptionVisualStateChanged(in payload);
+                    {
+                        ILocalizationCorruptionVisualStateListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnLocalizationCorruptionVisualStateChanged(in payload);
+                    }
                     break;
                 }
             }
@@ -271,16 +313,65 @@ namespace Hecton.Localization
 
         private static void EnsureInitialized()
         {
-            if (_pendingEvents.IsCreated)
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<LocalizationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LocalizationEventPayload>[128] - deferred localization event lane flushed by SystemDispatcher LateUpdate - owner: LocalizationEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(LocalizationEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<LocalizationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LocalizationEventPayload>[128] - next-frame localization lane prevents same-frame reentrant dispatch - owner: LocalizationEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(LocalizationEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void DrainQueueWithoutDispatch(
+            ref NativeQueue<LocalizationEventPayload> queue,
+            ref int pendingCount)
+        {
+            if (!queue.IsCreated)
                 return;
 
-            _pendingEvents = new NativeQueue<LocalizationEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LocalizationEventPayload>[128] - deferred localization event lane flushed by SystemDispatcher LateUpdate - owner: LocalizationEvents
-            NativeMemorySentinel.RegisterNativeQueue(
-                _pendingEvents,
-                PendingEventCapacity,
-                nameof(LocalizationEvents),
-                nameof(_pendingEvents),
-                NativeAllocationLifetime.Session);
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                _pendingEventCount > 0 ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<LocalizationEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 }
