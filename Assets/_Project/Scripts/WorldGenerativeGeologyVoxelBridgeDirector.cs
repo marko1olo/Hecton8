@@ -14,12 +14,17 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldGenerativeGeologyVoxelRuntime : MonoBehaviour
     {
+        private const int MaxActiveVoxelRuntimeRegistry = 64;
+
+        // COLD ALLOC: RegistryBucket<WorldGenerativeGeologyVoxelRuntime>[64] - active geology voxel runtimes for validation without scene scans - owner: WorldGenerativeGeologyVoxelRuntime
+        private static readonly RegistryBucket<WorldGenerativeGeologyVoxelRuntime> _activeVoxelRuntimes = new RegistryBucket<WorldGenerativeGeologyVoxelRuntime>(MaxActiveVoxelRuntimeRegistry);
         private static int _activeRuntimeCount;
         private static int _activeColliderCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            _activeVoxelRuntimes.Clear();
             _activeRuntimeCount = 0;
             _activeColliderCount = 0;
         }
@@ -44,6 +49,33 @@ namespace Hecton8.World
         public static int ActiveRuntimeCount => Mathf.Max(0, _activeRuntimeCount);
         public static int ActiveColliderCount => Mathf.Max(0, _activeColliderCount);
 
+        /// <summary>
+        /// Resolves an active voxel runtime by runtime key without a scene scan.
+        /// </summary>
+        /// <param name="targetRuntimeKey">Stable procedural runtime key.</param>
+        /// <param name="runtime">Matching active voxel runtime, when present.</param>
+        /// <returns>True when an active runtime was found.</returns>
+        public static bool TryGetActiveRuntime(long targetRuntimeKey, out WorldGenerativeGeologyVoxelRuntime runtime)
+        {
+            runtime = null;
+            if (targetRuntimeKey == 0L)
+                return false;
+
+            WorldGenerativeGeologyVoxelRuntime[] rawArray = _activeVoxelRuntimes.RawArray;
+            int count = _activeVoxelRuntimes.Count;
+            for (int i = 0; i < count; i++)
+            {
+                WorldGenerativeGeologyVoxelRuntime candidate = rawArray[i];
+                if (candidate == null || !candidate.isActiveAndEnabled || candidate.runtimeKey != targetRuntimeKey)
+                    continue;
+
+                runtime = candidate;
+                return true;
+            }
+
+            return false;
+        }
+
         private void OnEnable()
         {
             if (!Application.isPlaying)
@@ -52,7 +84,10 @@ namespace Hecton8.World
             if (_registeredInActiveSet)
                 return;
 
-            _registeredInActiveSet = true;
+            _registeredInActiveSet = _activeVoxelRuntimes.TryRegister(this);
+            if (!_registeredInActiveSet)
+                return;
+
             _activeRuntimeCount++;
             if (colliderEnabled)
                 _activeColliderCount++;
@@ -64,6 +99,7 @@ namespace Hecton8.World
                 return;
 
             _registeredInActiveSet = false;
+            _activeVoxelRuntimes.Unregister(this);
             _activeRuntimeCount = Mathf.Max(0, _activeRuntimeCount - 1);
             if (colliderEnabled)
                 _activeColliderCount = Mathf.Max(0, _activeColliderCount - 1);
@@ -97,7 +133,7 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4028)]
-    public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable, IUpdatable
+    public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable, IUpdatable, IRandomEventListener
     {
         internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance { get; private set; }
 
@@ -221,13 +257,13 @@ namespace Hecton8.World
             if (!_registeredToFrameTickManager)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredToFrameTickManager = true;
+                _registeredToFrameTickManager = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredToSlowTickManager)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToSlowTickManager = true;
+                _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
             }
         }
 
@@ -244,13 +280,13 @@ namespace Hecton8.World
             if (!_registeredToFrameTickManager)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredToFrameTickManager = true;
+                _registeredToFrameTickManager = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredToSlowTickManager)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredToSlowTickManager = true;
+                _registeredToSlowTickManager = GlobalRegistry.SlowTickables.Contains(this);
             }
         }
 
@@ -318,7 +354,7 @@ namespace Hecton8.World
             if (_randomEventHooksRegistered)
                 return;
 
-            RandomEventEvents.OnSeismicShockwave += HandleSeismicShockwave;
+            RandomEventEvents.Register(this);
             _randomEventHooksRegistered = true;
         }
 
@@ -327,11 +363,24 @@ namespace Hecton8.World
             if (!_randomEventHooksRegistered)
                 return;
 
-            RandomEventEvents.OnSeismicShockwave -= HandleSeismicShockwave;
+            RandomEventEvents.Unregister(this);
             _randomEventHooksRegistered = false;
         }
 
-        private void HandleSeismicShockwave(SeismicShockwaveEvent payload)
+        void IRandomEventListener.OnRandomEventStarted(RandomEventType type, float intensity)
+        {
+        }
+
+        void IRandomEventListener.OnRandomEventEnded(RandomEventType type)
+        {
+        }
+
+        void IRandomEventListener.OnSeismicShockwave(in SeismicShockwaveEvent payload)
+        {
+            HandleSeismicShockwave(in payload);
+        }
+
+        private void HandleSeismicShockwave(in SeismicShockwaveEvent payload)
         {
             ResolveReferences();
             TryApplySeismicTrench(in payload);
@@ -1166,7 +1215,7 @@ namespace Hecton8.World
             if (!ShouldRegisterHydrothermalVent(request))
                 return;
 
-            AbyssalThermalManager thermalManager = AbyssalThermalManager.Instance;
+            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
             if (thermalManager == null)
                 return;
 
@@ -1384,7 +1433,7 @@ namespace Hecton8.World
 
         private void RemoveVolume(long runtimeKey, bool despawnOwnedVolume)
         {
-            AbyssalThermalManager thermalManager = AbyssalThermalManager.Instance;
+            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
             if (thermalManager != null)
                 thermalManager.UnregisterRuntimeVent(runtimeKey);
 
@@ -1541,7 +1590,7 @@ namespace Hecton8.World
                 return;
             }
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
             {
                 _debugWarmedPoolTarget = _estimatedWarmedPoolCount;

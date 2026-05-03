@@ -136,6 +136,7 @@ namespace Hecton8.Gameplay
     public static class HectonSubmarineOsEvents
     {
         private const int ListenerCapacity = 16;
+        private const int PendingEventCapacity = 16;
         private const uint GlobalSubmarineOsModuleId = 0x48534F53u; // "HSOS"
         private const uint LowPowerModeStatusBit = 1u << 8;
         private const uint LifeSupportCriticalStatusBit = 1u << 9;
@@ -144,19 +145,22 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: RegistryBucket<ISubmarineOsEventListener>[16] - submarine OS deferred listeners - owner: HectonSubmarineOsEvents
         private static readonly RegistryBucket<ISubmarineOsEventListener> _listeners = new RegistryBucket<ISubmarineOsEventListener>(ListenerCapacity);
         private static NativeQueue<SubmarineOsEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(HectonSubmarineOsEvents), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
 
             _listeners.Clear();
+            _pendingEventCount = 0;
         }
 
         /// <summary>
@@ -198,16 +202,23 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            while (!_pendingEvents.IsEmpty())
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
                 if (!_pendingEvents.TryDequeue(out SubmarineOsEventPayload payload))
-                    return;
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
 
                 DispatchRegisteredListeners(in payload);
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         public static void RaiseSnapshotUpdated(in HectonSubmarineOsSnapshot snapshot)
@@ -283,13 +294,25 @@ namespace Hecton8.Gameplay
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
+            {
                 _pendingEvents = new NativeQueue<SubmarineOsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SubmarineOsEventPayload>[16] - deferred submarine OS event lane - owner: HectonSubmarineOsEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(HectonSubmarineOsEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void Enqueue(in SubmarineOsEventPayload payload)
         {
             EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+                return;
+
             _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
         }
 
         private static void DispatchRegisteredListeners(in SubmarineOsEventPayload payload)
@@ -308,9 +331,21 @@ namespace Hecton8.Gameplay
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out _))
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out _))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
     }
 
@@ -320,7 +355,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineCoreDirector))]
     [AddComponentMenu("Hecton8/Gameplay/Submarine/Hecton Submarine OS")]
-    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable
+    public sealed class HectonSubmarineOS : MonoBehaviour, IUpdatable, ISlowTickable, IRenderable, IPowerGridTelemetryListener, IHighPressureEventListener, IFatalPressureImplosionEventListener, IDroneFleetSnapshotEventListener
     {
         private const float DefaultReferencePressureKPa = 101.325f;
         private const float LowPowerThreshold01 = 0.20f;
@@ -335,6 +370,11 @@ namespace Hecton8.Gameplay
         private const float PressureReleaseThresholdKPa = 140f;
         private const float BrownoutLightIntensityScale = 0.15f;
         private const float BrownoutBlinkFrequency = 8f;
+        private const int BrownoutLightBindingCapacity = 256;
+        private const int BrownoutMaterialBindingCapacity = 384;
+        private const int BrownoutLightResolveCapacity = 32;
+        private const int BrownoutRendererResolveCapacity = 48;
+        private const int BrownoutSharedMaterialResolveCapacity = 8;
         private const byte LogPriorityNormal = 1;
         private const byte LogPriorityWarning = 2;
         private const byte LogPriorityCritical = 3;
@@ -379,8 +419,18 @@ namespace Hecton8.Gameplay
         private SubmarineCoreDirector _submarineCore;
         private SubmarineAtmosphereSystem _atmosphereSystem;
         private SubmarineStationKeepingController _stationKeepingController;
-        private BrownoutLightBinding[] _brownoutLights;
-        private BrownoutMaterialBinding[] _brownoutMaterials;
+        // COLD ALLOC: BrownoutLightBinding[256] - fixed brownout point-light cache, no runtime ToArray - owner: HectonSubmarineOS
+        private readonly BrownoutLightBinding[] _brownoutLights = new BrownoutLightBinding[BrownoutLightBindingCapacity];
+        // COLD ALLOC: BrownoutMaterialBinding[384] - fixed brownout emissive-material cache, no runtime ToArray - owner: HectonSubmarineOS
+        private readonly BrownoutMaterialBinding[] _brownoutMaterials = new BrownoutMaterialBinding[BrownoutMaterialBindingCapacity];
+        // COLD ALLOC: List<Light>[32] - reusable module light resolve buffer for brownout cache rebuild - owner: HectonSubmarineOS
+        private readonly List<Light> _brownoutLightResolveBuffer = new List<Light>(BrownoutLightResolveCapacity);
+        // COLD ALLOC: List<Renderer>[48] - reusable module renderer resolve buffer for brownout cache rebuild - owner: HectonSubmarineOS
+        private readonly List<Renderer> _brownoutRendererResolveBuffer = new List<Renderer>(BrownoutRendererResolveCapacity);
+        // COLD ALLOC: List<Material>[8] - reusable renderer shared-material resolve buffer for brownout cache rebuild - owner: HectonSubmarineOS
+        private readonly List<Material> _brownoutSharedMaterialResolveBuffer = new List<Material>(BrownoutSharedMaterialResolveCapacity);
+        private int _brownoutLightCount;
+        private int _brownoutMaterialCount;
         private HectonSubmarineOsSnapshot _lastPublishedSnapshot;
         private SubsystemStatus _subsystemStatus;
         private SubmarineEmergencyLevel _emergencyLevel;
@@ -397,6 +447,10 @@ namespace Hecton8.Gameplay
         private bool _multiSystemFailureLatched;
         private bool _brownoutCachesBuilt;
         private bool _brownoutVisualStateApplied;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool _brownoutLightCapacityWarningIssued;
+        private bool _brownoutMaterialCapacityWarningIssued;
+#endif
         private bool _registeredUpdatable;
         private bool _registeredRenderable;
         private bool _registeredSlowTick;
@@ -408,13 +462,10 @@ namespace Hecton8.Gameplay
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstalled()
         {
-            SubmarineCoreDirector[] submarineRoots = Object.FindObjectsByType<SubmarineCoreDirector>(FindObjectsInactive.Exclude);
-            if (submarineRoots == null)
-                return;
-
-            for (int i = 0; i < submarineRoots.Length; i++)
+            int submarineRootCount = SubmarineCoreDirector.RegisteredRootCount;
+            for (int i = 0; i < submarineRootCount; i++)
             {
-                SubmarineCoreDirector submarineRoot = submarineRoots[i];
+                SubmarineCoreDirector submarineRoot = SubmarineCoreDirector.GetRegisteredRootAt(i);
                 if (submarineRoot == null)
                     continue;
 
@@ -562,22 +613,25 @@ namespace Hecton8.Gameplay
 
         private void Subscribe()
         {
-            PowerGridTelemetryEvents.OnTelemetryUpdated -= HandlePowerTelemetryUpdated;
-            PowerGridTelemetryEvents.OnTelemetryUpdated += HandlePowerTelemetryUpdated;
-            HighPressureEvents.OnHighPressure -= HandleHighPressure;
-            HighPressureEvents.OnHighPressure += HandleHighPressure;
-            FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
-            FatalPressureImplosionEvents.OnFatalPressureImplosion += HandleFatalPressureImplosion;
-            HectonDroneFleetEvents.OnSnapshotUpdated -= HandleFleetSnapshotUpdated;
-            HectonDroneFleetEvents.OnSnapshotUpdated += HandleFleetSnapshotUpdated;
+            PowerGridTelemetryEvents.Register(this);
+            HighPressureEvents.Register(this);
+            FatalPressureImplosionEvents.Register(this);
+            HectonDroneFleetEvents.Unregister(this);
+            HectonDroneFleetEvents.Register(this);
         }
 
         private void Unsubscribe()
         {
-            PowerGridTelemetryEvents.OnTelemetryUpdated -= HandlePowerTelemetryUpdated;
-            HighPressureEvents.OnHighPressure -= HandleHighPressure;
-            FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
-            HectonDroneFleetEvents.OnSnapshotUpdated -= HandleFleetSnapshotUpdated;
+            PowerGridTelemetryEvents.Unregister(this);
+            HighPressureEvents.Unregister(this);
+            FatalPressureImplosionEvents.Unregister(this);
+            HectonDroneFleetEvents.Unregister(this);
+        }
+
+        /// <inheritdoc />
+        public void OnDroneFleetSnapshotUpdated(in HectonDroneFleetSnapshot snapshot)
+        {
+            HandleFleetSnapshotUpdated(in snapshot);
         }
 
         private void HandleFleetSnapshotUpdated(in HectonDroneFleetSnapshot snapshot)
@@ -708,7 +762,7 @@ namespace Hecton8.Gameplay
             if (!_lowPowerModeActive)
                 subsystemStatus |= SubsystemStatus.Lights;
 
-            SpectrumSystem spectrumSystem = SpectrumSystem.Instance;
+            SpectrumSystem spectrumSystem = GlobalRegistry.Spectrum;
             if (spectrumSystem != null && spectrumSystem.isActiveAndEnabled)
                 subsystemStatus |= SubsystemStatus.Sonar;
 
@@ -828,13 +882,13 @@ namespace Hecton8.Gameplay
 
         private void ApplyAmbientLightPolicy(bool forceBrownout)
         {
-            BaseModule[] modules = Object.FindObjectsByType<BaseModule>(FindObjectsInactive.Exclude);
-            if (modules == null)
+            int moduleCount = BaseModule.ActiveModuleCount;
+            if (moduleCount <= 0)
                 return;
 
-            for (int i = 0; i < modules.Length; i++)
+            for (int i = 0; i < moduleCount; i++)
             {
-                BaseModule module = modules[i];
+                BaseModule module = BaseModule.GetActiveModuleAt(i);
                 if (module == null)
                     continue;
 
@@ -852,12 +906,32 @@ namespace Hecton8.Gameplay
             return grid.BrownoutTier != LogisticsBrownoutTier.None || grid.IsBatteryEmergencyReserveActive;
         }
 
-        private void HandlePowerTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot)
+        /// <summary>
+        /// Receives deferred aggregate power telemetry snapshots.
+        /// </summary>
+        /// <param name="snapshot">Aggregate power telemetry snapshot.</param>
+        public void OnPowerGridTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot)
         {
             _powerNormalized = math.saturate(snapshot.AvailablePowerNormalized);
             _powerSupplyRatio = math.saturate(snapshot.SupplyRatio);
             _highestBrownoutTier = snapshot.HighestBrownoutTier;
             SetCascadingBrownout(ResolveCascadingBrownoutActive());
+        }
+
+        /// <summary>
+        /// Receives deferred high-pressure warnings from the submarine atmosphere event lane.
+        /// </summary>
+        public void OnHighPressure(in HighPressureEvent pressureEvent)
+        {
+            HandleHighPressure(in pressureEvent);
+        }
+
+        /// <summary>
+        /// Receives deferred fatal pressure implosion notifications from the submarine atmosphere event lane.
+        /// </summary>
+        public void OnFatalPressureImplosion(in FatalPressureImplosionEvent implosionEvent)
+        {
+            HandleFatalPressureImplosion(in implosionEvent);
         }
 
         private void HandleHighPressure(in HighPressureEvent pressureEvent)
@@ -918,32 +992,36 @@ namespace Hecton8.Gameplay
 
         private void RebuildBrownoutCaches()
         {
-            BaseModule[] modules = Object.FindObjectsByType<BaseModule>(FindObjectsInactive.Exclude);
-            if (modules == null || modules.Length == 0)
+            System.Array.Clear(_brownoutLights, 0, _brownoutLights.Length);
+            System.Array.Clear(_brownoutMaterials, 0, _brownoutMaterials.Length);
+            _brownoutLightCount = 0;
+            _brownoutMaterialCount = 0;
+            _brownoutLightResolveBuffer.Clear();
+            _brownoutRendererResolveBuffer.Clear();
+            _brownoutSharedMaterialResolveBuffer.Clear();
+
+            int moduleCount = BaseModule.ActiveModuleCount;
+            if (moduleCount <= 0)
             {
-                _brownoutLights = System.Array.Empty<BrownoutLightBinding>();
-                _brownoutMaterials = System.Array.Empty<BrownoutMaterialBinding>();
                 _brownoutCachesBuilt = true;
                 return;
             }
 
-            List<BrownoutLightBinding> lightBindings = new List<BrownoutLightBinding>(32); // COLD ALLOC: List<BrownoutLightBinding>[32] — brownout light cache staging — owner: HectonSubmarineOS
-            List<BrownoutMaterialBinding> materialBindings = new List<BrownoutMaterialBinding>(48); // COLD ALLOC: List<BrownoutMaterialBinding>[48] — brownout emissive cache staging — owner: HectonSubmarineOS
-
-            for (int moduleIndex = 0; moduleIndex < modules.Length; moduleIndex++)
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
             {
-                BaseModule module = modules[moduleIndex];
+                BaseModule module = BaseModule.GetActiveModuleAt(moduleIndex);
                 if (module == null)
                     continue;
 
-                Light[] lights = module.GetComponentsInChildren<Light>(true); // COLD ALLOC: Light[][module child count] — module light scan for brownout cache — owner: HectonSubmarineOS
-                for (int lightIndex = 0; lightIndex < lights.Length; lightIndex++)
+                _brownoutLightResolveBuffer.Clear();
+                module.GetComponentsInChildren(true, _brownoutLightResolveBuffer);
+                for (int lightIndex = 0; lightIndex < _brownoutLightResolveBuffer.Count; lightIndex++)
                 {
-                    Light light = lights[lightIndex];
+                    Light light = _brownoutLightResolveBuffer[lightIndex];
                     if (light == null || light.type != LightType.Point)
                         continue;
 
-                    lightBindings.Add(new BrownoutLightBinding
+                    AddBrownoutLightBinding(new BrownoutLightBinding
                     {
                         Light = light,
                         BaseIntensity = light.intensity,
@@ -951,21 +1029,23 @@ namespace Hecton8.Gameplay
                     });
                 }
 
-                Renderer[] renderers = module.GetComponentsInChildren<Renderer>(true); // COLD ALLOC: Renderer[][module child count] — module renderer scan for brownout cache — owner: HectonSubmarineOS
-                for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+                _brownoutRendererResolveBuffer.Clear();
+                module.GetComponentsInChildren(true, _brownoutRendererResolveBuffer);
+                for (int rendererIndex = 0; rendererIndex < _brownoutRendererResolveBuffer.Count; rendererIndex++)
                 {
-                    Renderer renderer = renderers[rendererIndex];
+                    Renderer renderer = _brownoutRendererResolveBuffer[rendererIndex];
                     if (renderer == null)
                         continue;
 
-                    Material[] sharedMaterials = renderer.sharedMaterials; // COLD ALLOC: Material[][renderer material count] — emissive material discovery — owner: HectonSubmarineOS
-                    for (int materialIndex = 0; materialIndex < sharedMaterials.Length; materialIndex++)
+                    _brownoutSharedMaterialResolveBuffer.Clear();
+                    renderer.GetSharedMaterials(_brownoutSharedMaterialResolveBuffer);
+                    for (int materialIndex = 0; materialIndex < _brownoutSharedMaterialResolveBuffer.Count; materialIndex++)
                     {
-                        Material material = sharedMaterials[materialIndex];
-                        if (material == null || !material.HasProperty(_EmissionColorId) || ContainsMaterial(materialBindings, material))
+                        Material material = _brownoutSharedMaterialResolveBuffer[materialIndex];
+                        if (material == null || !material.HasProperty(_EmissionColorId) || ContainsMaterial(material))
                             continue;
 
-                        materialBindings.Add(new BrownoutMaterialBinding
+                        AddBrownoutMaterialBinding(new BrownoutMaterialBinding
                         {
                             Material = material,
                             BaseEmissionColor = material.GetColor(_EmissionColorId)
@@ -974,16 +1054,51 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            _brownoutLights = lightBindings.ToArray(); // COLD ALLOC: BrownoutLightBinding[][#lights] — persistent point-light brownout cache — owner: HectonSubmarineOS
-            _brownoutMaterials = materialBindings.ToArray(); // COLD ALLOC: BrownoutMaterialBinding[][#materials] — persistent emissive brownout cache — owner: HectonSubmarineOS
+            _brownoutLightResolveBuffer.Clear();
+            _brownoutRendererResolveBuffer.Clear();
+            _brownoutSharedMaterialResolveBuffer.Clear();
             _brownoutCachesBuilt = true;
         }
 
-        private static bool ContainsMaterial(List<BrownoutMaterialBinding> bindings, Material material)
+        private void AddBrownoutLightBinding(BrownoutLightBinding binding)
         {
-            for (int i = 0; i < bindings.Count; i++)
+            if (_brownoutLightCount >= _brownoutLights.Length)
             {
-                if (ReferenceEquals(bindings[i].Material, material))
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (!_brownoutLightCapacityWarningIssued)
+                {
+                    _brownoutLightCapacityWarningIssued = true;
+                    Debug.LogWarning("[HectonSubmarineOS] Brownout light cache capacity exceeded.");
+                }
+#endif
+                return;
+            }
+
+            _brownoutLights[_brownoutLightCount++] = binding;
+        }
+
+        private void AddBrownoutMaterialBinding(BrownoutMaterialBinding binding)
+        {
+            if (_brownoutMaterialCount >= _brownoutMaterials.Length)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (!_brownoutMaterialCapacityWarningIssued)
+                {
+                    _brownoutMaterialCapacityWarningIssued = true;
+                    Debug.LogWarning("[HectonSubmarineOS] Brownout material cache capacity exceeded.");
+                }
+#endif
+                return;
+            }
+
+            _brownoutMaterials[_brownoutMaterialCount++] = binding;
+        }
+
+        private bool ContainsMaterial(Material material)
+        {
+            for (int i = 0; i < _brownoutMaterialCount; i++)
+            {
+                if (ReferenceEquals(_brownoutMaterials[i].Material, material))
                     return true;
             }
 
@@ -992,9 +1107,9 @@ namespace Hecton8.Gameplay
 
         private void ApplyBrownoutVisuals(float pulse)
         {
-            if (_brownoutLights != null)
+            if (_brownoutLightCount > 0)
             {
-                for (int i = 0; i < _brownoutLights.Length; i++)
+                for (int i = 0; i < _brownoutLightCount; i++)
                 {
                     BrownoutLightBinding binding = _brownoutLights[i];
                     if (binding.Light == null)
@@ -1005,9 +1120,9 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            if (_brownoutMaterials != null)
+            if (_brownoutMaterialCount > 0)
             {
-                for (int i = 0; i < _brownoutMaterials.Length; i++)
+                for (int i = 0; i < _brownoutMaterialCount; i++)
                 {
                     BrownoutMaterialBinding binding = _brownoutMaterials[i];
                     if (binding.Material == null)
@@ -1027,9 +1142,9 @@ namespace Hecton8.Gameplay
             if (!_brownoutVisualStateApplied)
                 return;
 
-            if (_brownoutLights != null)
+            if (_brownoutLightCount > 0)
             {
-                for (int i = 0; i < _brownoutLights.Length; i++)
+                for (int i = 0; i < _brownoutLightCount; i++)
                 {
                     BrownoutLightBinding binding = _brownoutLights[i];
                     if (binding.Light == null)
@@ -1040,9 +1155,9 @@ namespace Hecton8.Gameplay
                 }
             }
 
-            if (_brownoutMaterials != null)
+            if (_brownoutMaterialCount > 0)
             {
-                for (int i = 0; i < _brownoutMaterials.Length; i++)
+                for (int i = 0; i < _brownoutMaterialCount; i++)
                 {
                     BrownoutMaterialBinding binding = _brownoutMaterials[i];
                     if (binding.Material == null)

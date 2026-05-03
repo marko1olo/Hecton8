@@ -1,9 +1,9 @@
 # Docs Index
 
-Date: `2026-05-01`
+Date: `2026-05-02`
 Status: `PENDING VERIFICATION`
 
-Purpose: active documentation entry point after the `2026-04-29` forensic audit and stale-doc archive pass.
+Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, and `2026-05-02` documentation actuality sweep.
 
 ## Read First
 
@@ -13,18 +13,22 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit 
 - `SYSTEMS_CONTRACTS.md` - non-asset system contracts.
 - `DOC_GOVERNANCE.md` - placement rules for active/reference/archive docs.
 - `ROOT_DOCS_REFERENCE.md` - root/doc boundary and relocation map.
+- `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` - latest documentation sweep and current local build-evidence addendum.
+- `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` - stable current-state anchor, updated with May 2 evidence.
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` - current workspace atlas.
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOC_AUTHORITY_CLASSIFICATION.md` - current importance sorting for active, reference, archive, and deprecated docs.
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` - current concept-level classification of load-bearing, transitional, presentation, experimental, and historical systems.
 
 ## Current Audit Outputs
 
+- `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
 - `Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
 - `Reports/2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`
 - `Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
 - `Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
 - `Reports/2026-05-01_EVENT_CASCADE_RECHECK.md`
+- `Reports/2026-05-01_ZERO_GC_JOBS_CONTINUATION_DELTA.md`
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOC_AUTHORITY_CLASSIFICATION.md`
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
 - `2026-04-30_Codex_Full_Project_Forensic_Audit/README.md`
@@ -36,9 +40,16 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit 
 
 Current-state rule:
 
-- use `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` as the conceptual entry point for system ownership and active risks
+- use `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` as the conceptual entry point for system ownership and active risks; the filename is retained as a stable anchor and now includes May 2 evidence
+- use `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` as the latest documentation-sweep and local build-evidence addendum
 - use older dated reports as evidence only after checking their latest delta sections
 - do not treat archive/deprecated bundles as active authority unless a current index links them explicitly
+
+Current verification boundary:
+
+- fresh local `dotnet build .\Hecton8.Core.csproj` on May 2 returned `0 Error(s)` and `136 Warning(s)`; latest post-restore `--no-restore` rerun returned `0 Error(s)` and `73 Warning(s)`
+- Play Mode, GCMonitor, profiler, memory retention, scene/prefab readback, and MCP console proof were not captured in the May 2 documentation sweep
+- conflicting older Unity batch artifacts remain historical evidence, not current truth, unless re-run cleanly
 
 ## Active Architecture
 

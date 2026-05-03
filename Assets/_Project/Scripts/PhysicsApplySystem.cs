@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
@@ -213,44 +214,363 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
-    /// Static physics-domain event surface for transient pressure impulses.
+    /// Physics event discriminator for <see cref="PhysicsEventPayload"/>.
+    /// </summary>
+    public enum PhysicsEventType : ushort
+    {
+        PressureImpulse = 1,
+        ElectromagneticPulse = 2,
+        AcousticPing = 3
+    }
+
+    /// <summary>
+    /// Unmanaged event payload carried by the deferred physics event lane.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PhysicsEventPayload
+    {
+        public Vector3 RuntimePosition;
+        public Vector3 Direction;
+        public Vector3 ForceVector;
+        public Vector3 ImpulseVector;
+        public float RadiusMeters;
+        public float Scalar0;
+        public float Scalar1;
+        public float Scalar2;
+        public int PrimaryId;
+        public uint DataHash;
+        public uint StatusBits;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    /// <summary>
+    /// Listener for deferred pressure impulse events.
+    /// </summary>
+    public interface IPressureImpulseEventListener
+    {
+        void OnPressureImpulse(in PressureImpulseEvent pressureEvent);
+    }
+
+    /// <summary>
+    /// Listener for deferred electromagnetic pulse events.
+    /// </summary>
+    public interface IElectromagneticPulseEventListener
+    {
+        void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent);
+    }
+
+    /// <summary>
+    /// Listener for deferred acoustic ping events.
+    /// </summary>
+    public interface IAcousticPingEventListener
+    {
+        void OnAcousticPing(in AcousticPingEvent pingEvent);
+    }
+
+    /// <summary>
+    /// NativeQueue-backed physics-domain event surface for transient physics signals.
     /// </summary>
     public static class PhysicsEventBus
     {
-        /// <summary>Delegate used by pressure-impulse subscribers.</summary>
-        public delegate void PressureImpulseEventHandler(in PressureImpulseEvent pressureEvent);
+        private const int ListenerCapacity = 32;
+        private const int PendingEventCapacity = 128;
+        private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("PhysicsEventBus.Overflow"));
+        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("PhysicsEventBus"));
 
-        /// <summary>Delegate used by EMP subscribers.</summary>
-        public delegate void ElectromagneticPulseEventHandler(in ElectromagneticPulseEvent pulseEvent);
+        // COLD ALLOC: RegistryBucket<IPressureImpulseEventListener>[32] - pressure impulse listeners drained by SystemDispatcher LateUpdate - owner: PhysicsEventBus
+        private static readonly RegistryBucket<IPressureImpulseEventListener> _pressureListeners = new RegistryBucket<IPressureImpulseEventListener>(ListenerCapacity);
+        // COLD ALLOC: RegistryBucket<IElectromagneticPulseEventListener>[32] - EMP listeners drained by SystemDispatcher LateUpdate - owner: PhysicsEventBus
+        private static readonly RegistryBucket<IElectromagneticPulseEventListener> _empListeners = new RegistryBucket<IElectromagneticPulseEventListener>(ListenerCapacity);
+        // COLD ALLOC: RegistryBucket<IAcousticPingEventListener>[32] - acoustic ping listeners drained by SystemDispatcher LateUpdate - owner: PhysicsEventBus
+        private static readonly RegistryBucket<IAcousticPingEventListener> _acousticListeners = new RegistryBucket<IAcousticPingEventListener>(ListenerCapacity);
+        private static NativeQueue<PhysicsEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
+        private static int _lastOverflowWarningFrame = -1;
 
-        /// <summary>Delegate used by acoustic-ping subscribers.</summary>
-        public delegate void AcousticPingEventHandler(in AcousticPingEvent pingEvent);
+        /// <summary>Number of deferred physics event payloads waiting for late-frame dispatch.</summary>
+        public static int PendingCount => _pendingEventCount;
 
-        /// <summary>Fired when a bulkhead blowout impulse is emitted.</summary>
-        public static event PressureImpulseEventHandler OnPressureImpulse;
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsEventBus), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
 
-        /// <summary>Fired when an EMP pulse is emitted.</summary>
-        public static event ElectromagneticPulseEventHandler OnElectromagneticPulse;
+            _pressureListeners.Clear();
+            _empListeners.Clear();
+            _acousticListeners.Clear();
+            _pendingEventCount = 0;
+            _lastOverflowWarningFrame = -1;
+        }
 
-        /// <summary>Fired when an acoustic ping is emitted by fauna or environment systems.</summary>
-        public static event AcousticPingEventHandler OnAcousticPing;
+        /// <summary>Registers a pressure impulse listener.</summary>
+        public static void Register(IPressureImpulseEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_pressureListeners.Contains(listener))
+                _pressureListeners.Register(listener);
+        }
+
+        /// <summary>Unregisters a pressure impulse listener.</summary>
+        public static void Unregister(IPressureImpulseEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_pressureListeners.Contains(listener))
+                _pressureListeners.Unregister(listener);
+        }
+
+        /// <summary>Registers an electromagnetic pulse listener.</summary>
+        public static void Register(IElectromagneticPulseEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_empListeners.Contains(listener))
+                _empListeners.Register(listener);
+        }
+
+        /// <summary>Unregisters an electromagnetic pulse listener.</summary>
+        public static void Unregister(IElectromagneticPulseEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_empListeners.Contains(listener))
+                _empListeners.Unregister(listener);
+        }
+
+        /// <summary>Registers an acoustic ping listener.</summary>
+        public static void Register(IAcousticPingEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_acousticListeners.Contains(listener))
+                _acousticListeners.Register(listener);
+        }
+
+        /// <summary>Unregisters an acoustic ping listener.</summary>
+        public static void Unregister(IAcousticPingEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_acousticListeners.Contains(listener))
+                _acousticListeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Flushes queued physics events to registered listeners.
+        /// Called by <see cref="SystemDispatcher"/> from LateUpdate.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out PhysicsEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                Dispatch(in payload);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
 
         /// <summary>Broadcasts one pressure-impulse payload.</summary>
         public static void NotifyPressureImpulse(in PressureImpulseEvent pressureEvent)
         {
-            OnPressureImpulse?.Invoke(pressureEvent);
+            Enqueue(new PhysicsEventPayload
+            {
+                RuntimePosition = pressureEvent.RuntimePosition,
+                Direction = pressureEvent.Direction,
+                ForceVector = pressureEvent.ForceVectorNewtons,
+                ImpulseVector = pressureEvent.ImpulseVectorNewtonSeconds,
+                RadiusMeters = pressureEvent.InfluenceRadiusMeters,
+                Scalar0 = pressureEvent.DoorAreaSquareMeters,
+                Scalar1 = pressureEvent.HighPressureKPa,
+                Scalar2 = pressureEvent.LowPressureKPa,
+                PrimaryId = pressureEvent.DoorIndex,
+                DataHash = 0u,
+                StatusBits = 0u,
+                EventType = (ushort)PhysicsEventType.PressureImpulse,
+                Reserved = 0
+            });
         }
 
         /// <summary>Broadcasts one EMP payload.</summary>
         public static void NotifyElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
         {
-            OnElectromagneticPulse?.Invoke(pulseEvent);
+            Enqueue(new PhysicsEventPayload
+            {
+                RuntimePosition = pulseEvent.RuntimePosition,
+                Direction = default,
+                ForceVector = default,
+                ImpulseVector = default,
+                RadiusMeters = pulseEvent.RadiusMeters,
+                Scalar0 = pulseEvent.DurationSeconds,
+                Scalar1 = pulseEvent.ClaritySuppression01,
+                Scalar2 = 0f,
+                PrimaryId = 0,
+                DataHash = pulseEvent.DamageType,
+                StatusBits = pulseEvent.SourceId,
+                EventType = (ushort)PhysicsEventType.ElectromagneticPulse,
+                Reserved = 0
+            });
         }
 
         /// <summary>Broadcasts one acoustic-ping payload.</summary>
         public static void NotifyAcousticPing(in AcousticPingEvent pingEvent)
         {
-            OnAcousticPing?.Invoke(pingEvent);
+            Enqueue(new PhysicsEventPayload
+            {
+                RuntimePosition = pingEvent.RuntimePosition,
+                Direction = default,
+                ForceVector = default,
+                ImpulseVector = default,
+                RadiusMeters = pingEvent.RadiusMeters,
+                Scalar0 = pingEvent.Intensity01,
+                Scalar1 = pingEvent.LifetimeSeconds,
+                Scalar2 = 0f,
+                PrimaryId = pingEvent.SourceSpeciesId,
+                DataHash = 0u,
+                StatusBits = unchecked((uint)pingEvent.SignalRole),
+                EventType = (ushort)PhysicsEventType.AcousticPing,
+                Reserved = 0
+            });
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<PhysicsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PhysicsEventPayload>[128] - deferred physics signal event lane flushed by SystemDispatcher LateUpdate - owner: PhysicsEventBus
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(PhysicsEventBus),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        private static bool Enqueue(in PhysicsEventPayload payload)
+        {
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                ReportOverflowOncePerFrame();
+                return false;
+            }
+
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
+        }
+
+        private static void Dispatch(in PhysicsEventPayload payload)
+        {
+            switch ((PhysicsEventType)payload.EventType)
+            {
+                case PhysicsEventType.PressureImpulse:
+                    DispatchPressureImpulse(in payload);
+                    break;
+                case PhysicsEventType.ElectromagneticPulse:
+                    DispatchElectromagneticPulse(in payload);
+                    break;
+                case PhysicsEventType.AcousticPing:
+                    DispatchAcousticPing(in payload);
+                    break;
+            }
+        }
+
+        private static void DispatchPressureImpulse(in PhysicsEventPayload payload)
+        {
+            int count = _pressureListeners.Count;
+            if (count <= 0)
+                return;
+
+            PressureImpulseEvent pressureEvent = new PressureImpulseEvent(
+                payload.PrimaryId,
+                payload.RuntimePosition,
+                payload.Direction,
+                payload.Scalar0,
+                payload.Scalar1,
+                payload.Scalar2,
+                payload.ForceVector,
+                payload.ImpulseVector,
+                payload.RadiusMeters);
+
+            IPressureImpulseEventListener[] rawArray = _pressureListeners.RawArray;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnPressureImpulse(in pressureEvent);
+        }
+
+        private static void DispatchElectromagneticPulse(in PhysicsEventPayload payload)
+        {
+            int count = _empListeners.Count;
+            if (count <= 0)
+                return;
+
+            ElectromagneticPulseEvent pulseEvent = new ElectromagneticPulseEvent(
+                payload.RuntimePosition,
+                payload.RadiusMeters,
+                payload.Scalar0,
+                payload.Scalar1,
+                payload.DataHash,
+                unchecked((ushort)payload.StatusBits));
+
+            IElectromagneticPulseEventListener[] rawArray = _empListeners.RawArray;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnElectromagneticPulse(in pulseEvent);
+        }
+
+        private static void DispatchAcousticPing(in PhysicsEventPayload payload)
+        {
+            int count = _acousticListeners.Count;
+            if (count <= 0)
+                return;
+
+            AcousticPingEvent pingEvent = new AcousticPingEvent(
+                payload.RuntimePosition,
+                payload.RadiusMeters,
+                payload.Scalar0,
+                payload.Scalar1,
+                (FieldTargetRole)payload.StatusBits,
+                payload.PrimaryId);
+
+            IAcousticPingEventListener[] rawArray = _acousticListeners.RawArray;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnAcousticPing(in pingEvent);
+        }
+
+        private static void ReportOverflowOncePerFrame()
+        {
+            int frame = Time.frameCount;
+            if (_lastOverflowWarningFrame == frame)
+                return;
+
+            _lastOverflowWarningFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
         }
     }
 
@@ -364,6 +684,7 @@ namespace Hecton8.Physics
         private NativeQueue<ForcePacket> _frontPacketQueue;
         private NativeQueue<ForcePacket> _backPacketQueue;
         private NativeQueue<DeferredSubmarineImpactSignal> _submarineImpactSignals;
+        private int _submarineImpactSignalCount;
 
         private int _frontCount;
         private bool _isInitialized;
@@ -747,8 +1068,7 @@ namespace Hecton8.Physics
         {
             if (_packetValidationScheduled)
             {
-                _packetValidationHandle.Complete();
-                _packetValidationHandle = default;
+                JobHandle.ScheduleBatchedJobs();
             }
 
             System.Array.Clear(_frontPackets, 0, _frontCount);
@@ -759,8 +1079,6 @@ namespace Hecton8.Physics
             DrainForcePacketQueue(ref _backPacketQueue);
             _frontCount = 0;
             _frontBufferValidationReady = false;
-            _packetValidationScheduled = false;
-            _packetValidationHandle = default;
         }
 
         private void Awake()
@@ -778,15 +1096,14 @@ namespace Hecton8.Physics
             {
                 // COLD ALLOC: NativeQueue<DeferredSubmarineImpactSignal>(Persistent) â€” deferred submarine trauma queue flushed after contact modification â€” owner: PhysicsApplySystem
                 _submarineImpactSignals = new NativeQueue<DeferredSubmarineImpactSignal>(Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _submarineImpactSignals,
+                    MaxQueuedSubmarineImpactSignals,
+                    nameof(PhysicsApplySystem),
+                    nameof(_submarineImpactSignals),
+                    NativeAllocationLifetime.Session);
             }
 
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
         }
 
         private void OnEnable()
@@ -877,7 +1194,11 @@ namespace Hecton8.Physics
             DisposeForcePacketQueues();
 
             if (_submarineImpactSignals.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsApplySystem), nameof(_submarineImpactSignals));
                 _submarineImpactSignals.Dispose();
+                _submarineImpactSignalCount = 0;
+            }
 
             if (_instance == this)
                 _instance = null;
@@ -1163,7 +1484,11 @@ namespace Hecton8.Physics
                 roomCenter,
                 radiusMeters,
                 s_implosionOverlapBuffer,
-                HectonLayerMasks.DefaultRaycastLayerMask,
+                HectonLayerMasks.BaseModuleLayerMask |
+                HectonLayerMasks.DroppedItemLayerMask |
+                HectonLayerMasks.CreatureLayerMask |
+                HectonLayerMasks.VehicleLayerMask |
+                HectonLayerMasks.DebrisLayerMask,
                 QueryTriggerInteraction.Ignore);
             int uniqueBodyCount = 0;
 
@@ -1293,12 +1618,24 @@ namespace Hecton8.Physics
             {
                 // COLD ALLOC: NativeQueue<ForcePacket>(Persistent) - read-side force packet buffer drained only after post-fixed swap - owner: PhysicsApplySystem
                 _frontPacketQueue = new NativeQueue<ForcePacket>(Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _frontPacketQueue,
+                    MaxQueuedPackets,
+                    nameof(PhysicsApplySystem),
+                    nameof(_frontPacketQueue),
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_backPacketQueue.IsCreated)
             {
                 // COLD ALLOC: NativeQueue<ForcePacket>(Persistent) - write-side force packet buffer used by fixed-step producers - owner: PhysicsApplySystem
                 _backPacketQueue = new NativeQueue<ForcePacket>(Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _backPacketQueue,
+                    MaxQueuedPackets,
+                    nameof(PhysicsApplySystem),
+                    nameof(_backPacketQueue),
+                    NativeAllocationLifetime.Session);
             }
         }
 
@@ -1318,12 +1655,22 @@ namespace Hecton8.Physics
             {
                 // COLD ALLOC: NativeArray<ForcePacket>[512] â€” Burst packet validation staging buffer â€” owner: PhysicsApplySystem
                 _validationPackets = new NativeArray<ForcePacket>(MaxQueuedPackets, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _validationPackets,
+                    nameof(PhysicsApplySystem),
+                    nameof(_validationPackets),
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_validationMask.IsCreated)
             {
                 // COLD ALLOC: NativeArray<byte>[512] â€” Burst packet validation mask â€” owner: PhysicsApplySystem
                 _validationMask = new NativeArray<byte>(MaxQueuedPackets, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _validationMask,
+                    nameof(PhysicsApplySystem),
+                    nameof(_validationMask),
+                    NativeAllocationLifetime.Session);
             }
         }
 
@@ -1436,7 +1783,7 @@ namespace Hecton8.Physics
             byte integrityDelta,
             float depthMeters)
         {
-            if (!_submarineImpactSignals.IsCreated || _submarineImpactSignals.Count >= MaxQueuedSubmarineImpactSignals)
+            if (!_submarineImpactSignals.IsCreated || _submarineImpactSignalCount >= MaxQueuedSubmarineImpactSignals)
                 return;
 
             DamageSignal signal = default;
@@ -1454,6 +1801,7 @@ namespace Hecton8.Physics
                 Signal = signal,
                 TraumaLevel = ResolveSubmarineTraumaLevel(severity01)
             });
+            _submarineImpactSignalCount++;
         }
 
         private void FlushDeferredSubmarineImpactSignals()
@@ -1469,14 +1817,27 @@ namespace Hecton8.Physics
             if (traumaDispatcher == null)
                 return;
 
-            while (_submarineImpactSignals.TryDequeue(out DeferredSubmarineImpactSignal queuedSignal))
+            int scanBudget = _submarineImpactSignalCount > 0 ? _submarineImpactSignalCount : MaxQueuedSubmarineImpactSignals;
+            while (scanBudget > 0 && !_submarineImpactSignals.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_submarineImpactSignals.TryDequeue(out DeferredSubmarineImpactSignal queuedSignal))
+                    break;
+
+                if (_submarineImpactSignalCount > 0)
+                    _submarineImpactSignalCount--;
+                scanBudget--;
                 traumaDispatcher.OnIntegrityChanged(
                     queuedSignal.PreviousIntegrityNormalized,
                     queuedSignal.NextIntegrityNormalized,
                     queuedSignal.Signal);
                 traumaDispatcher.OnTraumaThresholdCrossed(queuedSignal.TraumaLevel);
             }
+
+            if (_submarineImpactSignals.IsEmpty())
+                _submarineImpactSignalCount = 0;
         }
 
         private static TraumaLevel ResolveSubmarineTraumaLevel(float severity01)
@@ -1524,8 +1885,9 @@ namespace Hecton8.Physics
 
             using (_packetValidationProfilerMarker.Auto())
             {
-                _packetValidationHandle.Complete();
-                _packetValidationHandle = default;
+                if (!DispatcherJobSwap.TryComplete(ref _packetValidationHandle, forceComplete: false))
+                    return;
+
                 _packetValidationScheduled = false;
                 _frontBufferValidationReady = _frontCount > 0;
             }
@@ -1592,12 +1954,14 @@ namespace Hecton8.Physics
             JobHandle dependency = _packetValidationScheduled ? _packetValidationHandle : default;
             if (_validationPackets.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_validationPackets);
                 dependency = _validationPackets.Dispose(dependency);
                 _validationPackets = default;
             }
 
             if (_validationMask.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_validationMask);
                 dependency = _validationMask.Dispose(dependency);
                 _validationMask = default;
             }
@@ -1610,12 +1974,14 @@ namespace Hecton8.Physics
         {
             if (_frontPacketQueue.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsApplySystem), nameof(_frontPacketQueue));
                 _frontPacketQueue.Dispose();
                 _frontPacketQueue = default;
             }
 
             if (_backPacketQueue.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PhysicsApplySystem), nameof(_backPacketQueue));
                 _backPacketQueue.Dispose();
                 _backPacketQueue = default;
             }

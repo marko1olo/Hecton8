@@ -13,7 +13,9 @@
 //
 // ============================================================================
 
+using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
 using UnityEngine;
@@ -35,12 +37,12 @@ namespace Hecton8.Physics
 
     /// <summary>
     /// Zero-GC asynchronous raycast batch executor using Unity Jobs.
-    /// Results are synchronized at the end of ExecuteBatch for immediate use,
-    /// but the actual work is distributed across worker threads.
+    /// Results are published from the dispatcher late-frame window to avoid
+    /// mid-frame stalls in gameplay lanes.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-10000)] // Run BEFORE all gameplay systems
-    public sealed class RaycastBatchHelper : MonoBehaviour
+    public sealed class RaycastBatchHelper : MonoBehaviour, ILateFrameTickable
     {
         public static int TotalRaycastsProcessed;
         private const int MaxQueries = 512;
@@ -56,8 +58,12 @@ namespace Hecton8.Physics
         private Collider[] _excludeColliders;
         
         private int _queryCount;
+        private int _scheduledQueryCount;
+        private int _completedQueryCount;
         private int _lastFramePrepared = -1;
         private bool _batchExecuted;
+        private bool _jobScheduled;
+        private bool _registeredLateFrame;
         private JobHandle _lastJobHandle;
 
         private static RaycastBatchHelper _instance;
@@ -79,7 +85,7 @@ namespace Hecton8.Physics
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
+            GameBootstrapper.PersistRuntimeService(this);
 
             EnsureBuffersAllocated();
             _queryCount = 0;
@@ -90,10 +96,12 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             EnsureBuffersAllocated();
+            TryRegisterLateFrame();
         }
 
         private void OnDisable()
         {
+            TryUnregisterLateFrame();
             ReleaseBuffers();
         }
 
@@ -111,11 +119,14 @@ namespace Hecton8.Physics
                            QueryTriggerInteraction triggerInteraction = QueryTriggerInteraction.Ignore,
                            Collider excludeCollider = null)
         {
-            EnsureFrameState();
+            if (!PrepareForQueryWrite())
+                return -1;
 
             if (_queryCount >= MaxQueries)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[RaycastBatchHelper] Query buffer overflow!");
+#endif
                 return -1;
             }
 
@@ -139,21 +150,30 @@ namespace Hecton8.Physics
         /// </summary>
         public void ClearQueries()
         {
+            if (_jobScheduled)
+                return;
+
             _queryCount = 0;
+            _scheduledQueryCount = 0;
+            _completedQueryCount = 0;
             _batchExecuted = false;
         }
 
         /// <summary>
         /// Orchestrates the batch execution on worker threads.
-        /// Synchronizes at the end of call to provide same-frame results.
+        /// Results are published in the late-frame swap window.
         /// </summary>
         public void ExecuteBatch()
         {
-            EnsureFrameState();
+            TryRegisterLateFrame();
+
+            if (!PrepareForQueryWrite())
+                return;
 
             if (_queryCount <= 0)
             {
                 _batchExecuted = true;
+                _completedQueryCount = 0;
                 return;
             }
             TotalRaycastsProcessed += _queryCount;
@@ -162,18 +182,33 @@ namespace Hecton8.Physics
             {
                 ResolveSingleQuery();
                 _batchExecuted = true;
+                _completedQueryCount = 1;
                 return;
             }
 
             // Schedule asynchronous batch on Unity's job threads
             _lastJobHandle = RaycastCommand.ScheduleBatch(_commands, _hits, 16, default);
-            
-            // Ensure results are ready for immediate use this frame.
-            // In AA systems, we synchronize here to simplify API, but work was parallelized.
-            _lastJobHandle.Complete();
+            _scheduledQueryCount = _queryCount;
+            _completedQueryCount = 0;
+            _batchExecuted = false;
+            _jobScheduled = true;
+        }
+
+        public void LateFrameTick()
+        {
+            TryConsumeScheduledBatch(false);
+        }
+
+        private bool TryConsumeScheduledBatch(bool forceComplete)
+        {
+            if (!_jobScheduled)
+                return true;
+
+            if (!DispatcherJobSwap.TryComplete(ref _lastJobHandle, forceComplete))
+                return false;
 
             // Resolve and Filter
-            for (int i = 0; i < _queryCount; i++)
+            for (int i = 0; i < _scheduledQueryCount; i++)
             {
                 RaycastHit hit = _hits[i];
                 bool hasHit = hit.collider != null;
@@ -192,7 +227,12 @@ namespace Hecton8.Physics
                 };
             }
 
+            _queryCount = _scheduledQueryCount;
+            _completedQueryCount = _scheduledQueryCount;
+            _scheduledQueryCount = 0;
             _batchExecuted = true;
+            _jobScheduled = false;
+            return true;
         }
 
         private void ResolveSingleQuery()
@@ -244,9 +284,7 @@ namespace Hecton8.Physics
 
         public QueryResult GetResult(int index)
         {
-            EnsureFrameState();
-
-            if (index < 0 || index >= _queryCount) return default;
+            if (index < 0 || index >= _completedQueryCount) return default;
             return _results[index];
         }
 
@@ -254,7 +292,6 @@ namespace Hecton8.Physics
         {
             get
             {
-                EnsureFrameState();
                 return _queryCount;
             }
         }
@@ -263,19 +300,44 @@ namespace Hecton8.Physics
         {
             get
             {
-                EnsureFrameState();
                 return _batchExecuted;
             }
         }
 
-        private void EnsureFrameState()
+        private bool PrepareForQueryWrite()
         {
             int currentFrame = Time.frameCount;
             if (_lastFramePrepared == currentFrame)
-                return;
+                return !_jobScheduled;
+
+            if (_jobScheduled)
+            {
+                TryConsumeScheduledBatch(false);
+                if (_jobScheduled)
+                    return false;
+            }
 
             _lastFramePrepared = currentFrame;
             ClearQueries();
+            return true;
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = true;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = false;
         }
 
         private void EnsureBuffersAllocated()
@@ -284,12 +346,22 @@ namespace Hecton8.Physics
             {
                 // COLD ALLOC: NativeArray<RaycastCommand>[512] — persistent batched raycast commands — owner: RaycastBatchHelper
                 _commands = new NativeArray<RaycastCommand>(MaxQueries, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _commands,
+                    nameof(RaycastBatchHelper),
+                    nameof(_commands),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (!_hits.IsCreated)
             {
                 // COLD ALLOC: NativeArray<RaycastHit>[512] — persistent batched raycast hits — owner: RaycastBatchHelper
                 _hits = new NativeArray<RaycastHit>(MaxQueries, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _hits,
+                    nameof(RaycastBatchHelper),
+                    nameof(_hits),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (_results == null || _results.Length != MaxQueries)
@@ -307,18 +379,31 @@ namespace Hecton8.Physics
 
         private void ReleaseBuffers()
         {
-            if (_lastJobHandle.IsCompleted == false)
-                _lastJobHandle.Complete();
+            if (_jobScheduled)
+            {
+                TryConsumeScheduledBatch(true);
+            }
 
             if (_commands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_commands);
                 _commands.Dispose();
+                _commands = default;
+            }
 
             if (_hits.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_hits);
                 _hits.Dispose();
+                _hits = default;
+            }
 
             _queryCount = 0;
+            _scheduledQueryCount = 0;
+            _completedQueryCount = 0;
             _lastFramePrepared = -1;
             _batchExecuted = false;
+            _jobScheduled = false;
         }
 
 #if UNITY_EDITOR

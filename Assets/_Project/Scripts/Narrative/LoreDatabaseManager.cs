@@ -6,6 +6,7 @@ using System.Text;
 using UnityEditor;
 #endif
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Unity.Collections;
@@ -28,7 +29,7 @@ namespace Hecton8.Narrative
     /// <summary>
     /// Typed lore acquisition event routed through the global modding event bus.
     /// </summary>
-    internal sealed class LoreAcquiredEvent : HectonEvent
+    internal readonly struct LoreAcquiredEvent
     {
         /// <summary>
         /// Create one hashed lore acquisition payload.
@@ -221,6 +222,7 @@ namespace Hecton8.Narrative
         private NativeArray<uint> _unlockedWords;
         private JobHandle _disposeHandle;
         private HectonEventSubscription _loreAcquiredSubscription;
+        private bool _serviceRegistered;
         private bool _recordLookupBuilt;
         private bool _recordLookupCollisionLogged;
 
@@ -283,6 +285,7 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
+            TryRegisterService();
             BuildLookupIfNeeded();
             EnsureUnlockStorage();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
@@ -295,10 +298,13 @@ namespace Hecton8.Narrative
             _loreAcquiredSubscription?.Dispose();
             _loreAcquiredSubscription = null;
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterService();
+
             if (_instance == this)
                 _instance = null;
 
@@ -310,6 +316,26 @@ namespace Hecton8.Narrative
                 _disposeHandle = _unlockedWords.Dispose(_disposeHandle);
                 _unlockedWords = default;
             }
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterLoreDatabaseRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.LoreDatabase, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.LoreDatabase, this))
+                GlobalRegistry.UnregisterLoreDatabaseRuntime(this);
+
+            _serviceRegistered = false;
         }
 
         /// <summary>
@@ -572,7 +598,42 @@ namespace Hecton8.Narrative
 
         private static int ComputeLocalizedFieldHash(string logId, string suffix)
         {
-            return LocHash.Compute(string.Concat("LORE_", logId.ToUpperInvariant(), suffix));
+            unchecked
+            {
+                uint hash = LocHash.FnvOffsetBasis;
+                AppendHashChar(ref hash, 'L');
+                AppendHashChar(ref hash, 'O');
+                AppendHashChar(ref hash, 'R');
+                AppendHashChar(ref hash, 'E');
+                AppendHashChar(ref hash, '_');
+
+                if (!string.IsNullOrEmpty(logId))
+                {
+                    for (int i = 0; i < logId.Length; i++)
+                        AppendHashChar(ref hash, ToAsciiUpper(logId[i]));
+                }
+
+                if (!string.IsNullOrEmpty(suffix))
+                {
+                    for (int i = 0; i < suffix.Length; i++)
+                        AppendHashChar(ref hash, suffix[i]);
+                }
+
+                return (int)hash;
+            }
+        }
+
+        private static void AppendHashChar(ref uint hash, char value)
+        {
+            hash ^= (byte)value;
+            hash *= LocHash.FnvPrime;
+            hash ^= (byte)(value >> 8);
+            hash *= LocHash.FnvPrime;
+        }
+
+        private static char ToAsciiUpper(char value)
+        {
+            return value >= 'a' && value <= 'z' ? (char)(value - 32) : value;
         }
 
         private static bool TryResolveLocalizedOrFallback(
@@ -582,7 +643,7 @@ namespace Hecton8.Narrative
             out int length,
             out bool rtl)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
             rtl = manager != null && LocalizationManager.IsRightToLeftLanguage(language);
 
@@ -624,11 +685,8 @@ namespace Hecton8.Narrative
             }
         }
 
-        private void HandleLoreAcquired(LoreAcquiredEvent evt)
+        private void HandleLoreAcquired(in LoreAcquiredEvent evt)
         {
-            if (evt == null)
-                return;
-
             UnlockByHashInternal(evt.LoreHash);
         }
 

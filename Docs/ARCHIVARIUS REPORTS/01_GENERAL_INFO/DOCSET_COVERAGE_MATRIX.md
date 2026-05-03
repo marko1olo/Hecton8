@@ -1,6 +1,6 @@
 # HECTON-8 DOCSET COVERAGE MATRIX
 
-Date: 2026-05-01
+Date: 2026-05-02
 Status: PENDING VERIFICATION
 Scope: coverage map for active doc folders `01_GENERAL_INFO` and `02_ACTUAL_REPORTS`
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
@@ -28,7 +28,7 @@ Authority levels used below:
 
 ## Coverage Inventory Snapshot
 
-Filesystem snapshot: 2026-05-01.
+Filesystem snapshot: 2026-05-02.
 
 | Bucket | Current count |
 |---|---:|
@@ -43,14 +43,15 @@ Correction:
 - Earlier `19` / `43` folder-count claims are stale against the current filesystem.
 - The current source-backed coverage map includes `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, and `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`.
 - Patch artifacts are evidence files, not independent current-state authority.
-- `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is now the first conceptual current-state entry point outside this Archivarius folder.
+- `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is still the first conceptual current-state entry point outside this Archivarius folder.
+- `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest docset/source-count synchronization pass.
 
 ## Domain Coverage
 
 | Domain | Current coverage | Primary files | Secondary files | Authority | Current gap |
 |---|---|---|---|---|---|
-| Workspace orientation | strong | `PROJECT_ATLAS.md`, `MASTER_INDEX.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `DOC_AUTHORITY_CLASSIFICATION.md`, `STRUCTURAL_NARRATIVE.md` | PRIMARY | none beyond drift risk |
-| Docset health / trust boundaries | strong | `DOC_AUTHORITY_CLASSIFICATION.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `PROJECT_ATLAS.md`, `MASTER_INDEX.md` | `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`, this file | PRIMARY | older active bundles still need periodic downgrade checks |
+| Workspace orientation | strong | `PROJECT_ATLAS.md`, `MASTER_INDEX.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`, `DOC_AUTHORITY_CLASSIFICATION.md`, `STRUCTURAL_NARRATIVE.md` | PRIMARY | none beyond drift risk |
+| Docset health / trust boundaries | strong | `DOC_AUTHORITY_CLASSIFICATION.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`, `PROJECT_ATLAS.md`, `MASTER_INDEX.md` | `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`, this file | PRIMARY | older active bundles still need periodic downgrade checks |
 | Bootstrap / init order | strong | `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`, `BUILD_DEPENDENCY_GRAPH.md` | `DEPENDENCY_GRAPH.md`, `FRAME_TIMELINE.md` | PRIMARY | no live bootstrap branch traversal proof |
 | Scene / prefab service-owner truth | medium | `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` | `PROJECT_ATLAS.md`, `BUILD_DEPENDENCY_GRAPH.md` | PRIMARY | scan is bounded to current first-party scenes/prefabs, not all runtime states |
 | GlobalRegistry / service ownership | strong | `INTERFACE_CONTRACT_TABLE.md`, `INTERFACE_HEALTH_DASHBOARD.md` | `INTERFACE_STRATEGY.md`, `DEPENDENCY_GRAPH.md`, `PROJECT_ATLAS.md` | PRIMARY | prefab/scene wiring proof still absent |
@@ -98,7 +99,7 @@ Correction:
 
 | Task | Recommended read path |
 |---|---|
-| Need repo orientation fast | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` -> `PROJECT_ATLAS.md` -> `MASTER_INDEX.md` -> this file |
+| Need repo orientation fast | `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` -> `PROJECT_ATLAS.md` -> `MASTER_INDEX.md` -> this file |
 | Need blunt project-level verdict | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` -> `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` -> source |
 | Need broad gameplay ownership | `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md` -> `PLAYER_GAMEPLAY_CORE_MAP.md` -> `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md` |
 | Need survival / damage / hazard ownership | `SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md` -> `PLAYER_GAMEPLAY_CORE_MAP.md` -> `WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md` -> `2026-04-30_SAVE_PARTICIPANT_LEDGER.md` |
@@ -127,15 +128,16 @@ Correction:
 
 For current-source truth, prefer in this order:
 
-1. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-2. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
-3. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
-4. `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
-5. `PROJECT_ATLAS.md`
-6. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
-7. current-source summaries in `01_GENERAL_INFO`
-8. current-source rewrites in `02_ACTUAL_REPORTS`
-9. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
+1. `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
+2. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+3. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+4. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
+5. `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
+6. `PROJECT_ATLAS.md`
+7. `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
+8. current-source summaries in `01_GENERAL_INFO`
+9. current-source rewrites in `02_ACTUAL_REPORTS`
+10. dated `2026-04-28_*` bundles only after checking whether they were reframed as historical snapshots
 
 Do not treat dated bundles as current runtime proof.
 
@@ -157,13 +159,13 @@ They are still weaker on measured runtime proof and graph-level exhaustive owner
 
 STATUS: PENDING VERIFICATION
 
-## 2026-05-01 Coverage Delta
+## 2026-05-02 Coverage Delta
 
 Current doc counts:
 
 | Scope | Current Count |
 |---|---:|
-| `Docs` non-meta files | 584 |
+| `Docs` non-meta files | 595 |
 | `Docs/ARCHIVARIUS REPORTS` non-meta files | 119 |
 | `01_GENERAL_INFO` direct files | 24 |
 | `02_ACTUAL_REPORTS` direct non-meta files | 56 |
@@ -183,23 +185,24 @@ New high-authority May 1 report inputs:
 | `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md` | PRIMARY | current coroutine migration and object-pool exhaustion state |
 | `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md` | PRIMARY WITH CAUTION | Burst/loop/static scan state, but explicit refusal to claim clean MCP verification |
 | `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md` | SECONDARY | validator implementation notes; some compile-state notes are superseded by later reports |
-| `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md` | PRIMARY | updated reality matrix with May 1 delta |
+| `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md` | PRIMARY | updated reality matrix with May 2 delta |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | PRIMARY | updated current remediation queue |
 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY | current conceptual system-ownership entry point |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY | current blunt project-level verdict; source/doc-backed, not runtime proof |
+| `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | PRIMARY DOCSET ACTUALITY | latest full root/`Docs` markdown read-pass, source-count sync, and link-integrity update |
 | `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | PRIMARY COMPILE DELTA | current editor compile/MCP console evidence for event-bus listener migration and spatial-hash repair |
-| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | PRIMARY COMPILE DELTA | current editor compile/reload evidence after `VegetationJobRecovery.cs.meta` restoration; keeps MCP console caveat active |
+| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | PRIMARY COMPILE DELTA | current editor compile/reload evidence after `VegetationJobRecovery.cs.meta` restoration and Bee/backend recovery |
 
 Coverage corrections:
 
-- The older trust boundary remains valid only as a read-order policy. For current runtime risk, read the May 1 reports first.
-- `EVENT_FLOW_MAP.md` remains current on late-frame dispatch budgeting, but `DOOMSDAY_FLAW_REPORT.md` adds the missing risk statement: no proven hard max-depth/generation split for all event cascade paths.
+- The older trust boundary remains valid only as a read-order policy. For current runtime risk, read the May 2 sweep and May 1 reports first.
+- `EVENT_FLOW_MAP.md` remains current on late-frame dispatch budgeting, but current risk is no proven same-frame generation split for all event cascade paths. `HectonEventBus.MaxDispatchDepth = 4` exists by May 2 source grep.
 - `PROJECT_CONTENT_LEDGER.md` remains the content ledger, but validator execution proof is still not a live runtime proof.
 - `DEAD_CODE_GRAVEYARD.md` remains the deletion ledger. Its conclusions must be cross-checked before deleting additional code because the worktree is currently heavily modified by multiple agents.
-- `INTERFACE_HEALTH_DASHBOARD.md` now records the current `GlobalRegistryContracts.cs` count as `31` interfaces and marks `IGlobalRegistryHotSwapListener` as an empty seam.
+- `INTERFACE_HEALTH_DASHBOARD.md` interface counts must be rechecked before use. May 2 source grep counts `33` direct public interfaces in `GlobalRegistryContracts.cs`.
 - `PROJECT_CONTENT_LEDGER.md` now includes the current hadal carbon / pressure diamond / void-glass meteorite assets found in the workspace.
 - `DEAD_CODE_GRAVEYARD.md` now corrects the stale `SaveSystemRuntimeSmokeTester` removal claim; the file exists and is Awaitable-based, but has no YAML attachment evidence.
-- `2026-04-30_EDITOR_RUNTIME_FORENSICS.md` now narrows the coroutine verification finding to the five files that still contain strict `StartCoroutine(` hits.
+- `2026-04-30_EDITOR_RUNTIME_FORENSICS.md` contains older coroutine findings. May 2 strict grep found `0` `StartCoroutine(` hits under `Assets/_Project/Scripts`.
 - Early loose static reports `ILLEGAL_SINGLETONS.md`, `GC_HOTPATH_VIOLATIONS.md`, `BOOT_ORDER_VIOLATIONS.md`, and `NATIVE_ALLOCATION_AUDIT.md` were moved to `Docs/Reports/DEPRECATED/2026-04-29_Static_Audit_Snapshots/`.
 - External prompt/log/source-material bundles were moved under `Docs/DEPRECATED/External_And_Log_Bundles/`; they are historical inputs, not active project-state authority.
 - Old flat Flora/Scatter redirect stubs were moved under `Docs/DEPRECATED/Root_Redirect_Stubs_2026-05-01/`; canonical bundle entry points remain `Docs/Flora_Pipeline/README.md` and `Docs/Scatter_Runtime/README.md`.

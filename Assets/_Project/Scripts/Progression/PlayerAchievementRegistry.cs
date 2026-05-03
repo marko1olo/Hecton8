@@ -261,7 +261,7 @@ namespace Hecton8.Progression
                 TryGetComponent(out _survivalSystem);
 
             if (_discoveryManager == null)
-                _discoveryManager = HectonDiscoveryManager.Instance;
+                _discoveryManager = GlobalRegistry.Discovery;
 
             return _survivalSystem != null;
         }

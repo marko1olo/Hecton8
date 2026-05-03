@@ -25,8 +25,15 @@ namespace Hecton8.Gameplay
         private readonly Dictionary<uint, MissionInstance> _activeMissions = new Dictionary<uint, MissionInstance>(32);
         // COLD ALLOC: HashSet<uint>[32] - compatibility facade completed mission cache keyed by FNV quest hash - owner: MissionManager
         private readonly HashSet<uint> _completedMissions = new HashSet<uint>();
+        private bool _serviceRegistered;
 
         public static MissionManager Instance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            Instance = null;
+        }
 
         private void Awake()
         {
@@ -41,18 +48,40 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryRegisterService();
             QuestEvents.Register(this);
         }
 
         private void OnDisable()
         {
             QuestEvents.Unregister(this);
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterService();
+
             if (Instance == this)
                 Instance = null;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+                return;
+
+            GlobalRegistry.RegisterMissionRuntime(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterMissionRuntime(this);
+            _serviceRegistered = false;
         }
 
         public void StartMission(string missionId)

@@ -142,8 +142,12 @@ namespace Hecton8.Construction
         /// </summary>
         public int CopyBufferSnapshot(ItemData[] items, int[] quantities)
         {
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
             if (_cultivationManager != null)
-                return _cultivationManager.CopyBufferSnapshot(items, quantities, PlayerInventory.Instance != null ? PlayerInventory.Instance.ItemCatalog : null);
+                return _cultivationManager.CopyBufferSnapshot(items, quantities, inventory != null ? inventory.ItemCatalog : null);
 
             if (items == null || quantities == null)
                 return 0;

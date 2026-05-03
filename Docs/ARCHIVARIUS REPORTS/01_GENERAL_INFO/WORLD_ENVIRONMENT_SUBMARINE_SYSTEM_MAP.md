@@ -7,7 +7,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 2026-05-01 trust note:
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
 - This file remains useful as a domain ownership map, but it is not a runtime verification report.
 - Current unresolved risks for this domain include editor/Play Mode deadlock proof, local job completion ownership, scene/prefab wiring, and measured world/runtime performance.
 

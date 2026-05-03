@@ -4,6 +4,7 @@
 // Updated by AmbientWaterMotionManager with distance LOD.
 // ============================================================================
 
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Physics
@@ -59,14 +60,14 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            AmbientWaterMotionManager manager = AmbientWaterMotionManager.Instance;
+            AmbientWaterMotionManager manager = GlobalRegistry.AmbientWaterMotion;
             if (manager != null)
                 manager.Register(this);
         }
 
         private void OnDisable()
         {
-            AmbientWaterMotionManager manager = AmbientWaterMotionManager.Instance;
+            AmbientWaterMotionManager manager = GlobalRegistry.AmbientWaterMotion;
             if (manager != null)
                 manager.Unregister(this);
         }

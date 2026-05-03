@@ -1,4 +1,6 @@
 using System;
+using Hecton8.Core;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -1013,6 +1015,8 @@ namespace Hecton8.Power
         private NativeArray<ushort> _publishedNodeStates;
         private NativeParallelHashMap<uint, ushort> _publishedNodeStateMap;
         private NativeQueue<int> _bfsQueue;
+        private static int _nextSentinelInstanceId;
+        private readonly string _bfsQueueSentinelLabel;
         private JobHandle _evaluateGraphJobHandle;
         private bool _evaluateGraphPending;
         private JobHandle _publishNodeStatesJobHandle;
@@ -1023,6 +1027,7 @@ namespace Hecton8.Power
             int safeNodeCapacity = math.max(1, nodeCapacity);
             int safeEdgeCapacity = math.max(1, edgeCapacity);
             int safeConsumerCapacity = math.max(1, consumerCapacity);
+            _bfsQueueSentinelLabel = string.Concat(nameof(_bfsQueue), "_", ++_nextSentinelInstanceId);
 
             // COLD ALLOC: LogisticsNode[nodeCapacity] — runtime node buffer — owner: LogisticsNetworkGraph
             _nodeBuffer = new NativeArray<LogisticsNode>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -1050,6 +1055,12 @@ namespace Hecton8.Power
             _publishedNodeStateMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeQueue<int>[nodeCapacity] — iterative BFS frontier — owner: LogisticsNetworkGraph
             _bfsQueue = new NativeQueue<int>(Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeQueue(
+                _bfsQueue,
+                safeNodeCapacity,
+                nameof(LogisticsNetworkGraph),
+                _bfsQueueSentinelLabel,
+                NativeAllocationLifetime.Session);
         }
 
         public int NodeCount => _nodeCount;
@@ -1059,113 +1070,97 @@ namespace Hecton8.Power
 
         public void Dispose()
         {
-            CompleteEvaluation();
-            CompleteNodeStatePublish();
+            JobHandle disposeDependency = CancelPendingJobsForDispose();
 
-            if (_nodeBuffer.IsCreated)
-                _nodeBuffer.Dispose();
-
-            if (_edgeOffsets.IsCreated)
-                _edgeOffsets.Dispose();
-
-            if (_edgeDestinations.IsCreated)
-                _edgeDestinations.Dispose();
-
-            if (_edgeResistance.IsCreated)
-                _edgeResistance.Dispose();
-
-            if (_edgeWriteCursor.IsCreated)
-                _edgeWriteCursor.Dispose();
-
-            if (_topologyEdgeList.IsCreated)
-                _topologyEdgeList.Dispose();
-
-            if (_producers.IsCreated)
-                _producers.Dispose();
-
-            if (_consumers.IsCreated)
-                _consumers.Dispose();
-
-            if (_producerMap.IsCreated)
-                _producerMap.Dispose();
-
-            if (_consumerMap.IsCreated)
-                _consumerMap.Dispose();
-
-            if (_parents.IsCreated)
-                _parents.Dispose();
-
-            if (_ranks.IsCreated)
-                _ranks.Dispose();
-
-            if (_componentIds.IsCreated)
-                _componentIds.Dispose();
-
-            if (_componentSizes.IsCreated)
-                _componentSizes.Dispose();
-
-            if (_rootToComponent.IsCreated)
-                _rootToComponent.Dispose();
-
-            if (_traversalQueue.IsCreated)
-                _traversalQueue.Dispose();
-
-            if (_visited.IsCreated)
-                _visited.Dispose();
-
-            if (_consumerStates.IsCreated)
-                _consumerStates.Dispose();
-
-            if (_nodeNetInjection.IsCreated)
-                _nodeNetInjection.Dispose();
-
-            if (_nodePotentialFront.IsCreated)
-                _nodePotentialFront.Dispose();
-
-            if (_nodePotentialBack.IsCreated)
-                _nodePotentialBack.Dispose();
-
-            if (_nodeServedDemand.IsCreated)
-                _nodeServedDemand.Dispose();
-
-            if (_componentGeneration.IsCreated)
-                _componentGeneration.Dispose();
-
-            if (_componentDemand.IsCreated)
-                _componentDemand.Dispose();
-
-            if (_componentServedDemand.IsCreated)
-                _componentServedDemand.Dispose();
-
-            if (_componentRemainingSupply.IsCreated)
-                _componentRemainingSupply.Dispose();
-
-            if (_componentSupplyRatio.IsCreated)
-                _componentSupplyRatio.Dispose();
-
-            if (_componentResidualInjection.IsCreated)
-                _componentResidualInjection.Dispose();
-
-            if (_componentAnchorNode.IsCreated)
-                _componentAnchorNode.Dispose();
-
-            if (_componentBrownoutTier.IsCreated)
-                _componentBrownoutTier.Dispose();
-
-            if (_scheduledTopologySummary.IsCreated)
-                _scheduledTopologySummary.Dispose();
-
-            if (_scheduledDistributionSummary.IsCreated)
-                _scheduledDistributionSummary.Dispose();
-
-            if (_publishedNodeStates.IsCreated)
-                _publishedNodeStates.Dispose();
-
-            if (_publishedNodeStateMap.IsCreated)
-                _publishedNodeStateMap.Dispose();
+            DisposeNativeArray(ref _nodeBuffer, disposeDependency);
+            DisposeNativeArray(ref _edgeOffsets, disposeDependency);
+            DisposeNativeArray(ref _edgeDestinations, disposeDependency);
+            DisposeNativeArray(ref _edgeResistance, disposeDependency);
+            DisposeNativeArray(ref _edgeWriteCursor, disposeDependency);
+            DisposeNativeList(ref _topologyEdgeList, disposeDependency);
+            DisposeNativeList(ref _producers, disposeDependency);
+            DisposeNativeList(ref _consumers, disposeDependency);
+            DisposeNativeParallelHashMap(ref _producerMap, disposeDependency);
+            DisposeNativeParallelHashMap(ref _consumerMap, disposeDependency);
+            DisposeNativeArray(ref _parents, disposeDependency);
+            DisposeNativeArray(ref _ranks, disposeDependency);
+            DisposeNativeArray(ref _componentIds, disposeDependency);
+            DisposeNativeArray(ref _componentSizes, disposeDependency);
+            DisposeNativeArray(ref _rootToComponent, disposeDependency);
+            DisposeNativeArray(ref _traversalQueue, disposeDependency);
+            DisposeNativeArray(ref _visited, disposeDependency);
+            DisposeNativeArray(ref _consumerStates, disposeDependency);
+            DisposeNativeArray(ref _nodeNetInjection, disposeDependency);
+            DisposeNativeArray(ref _nodePotentialFront, disposeDependency);
+            DisposeNativeArray(ref _nodePotentialBack, disposeDependency);
+            DisposeNativeArray(ref _nodeServedDemand, disposeDependency);
+            DisposeNativeArray(ref _componentGeneration, disposeDependency);
+            DisposeNativeArray(ref _componentDemand, disposeDependency);
+            DisposeNativeArray(ref _componentServedDemand, disposeDependency);
+            DisposeNativeArray(ref _componentRemainingSupply, disposeDependency);
+            DisposeNativeArray(ref _componentSupplyRatio, disposeDependency);
+            DisposeNativeArray(ref _componentResidualInjection, disposeDependency);
+            DisposeNativeArray(ref _componentAnchorNode, disposeDependency);
+            DisposeNativeArray(ref _componentBrownoutTier, disposeDependency);
+            DisposeNativeArray(ref _scheduledTopologySummary, disposeDependency);
+            DisposeNativeArray(ref _scheduledDistributionSummary, disposeDependency);
+            DisposeNativeArray(ref _publishedNodeStates, disposeDependency);
+            DisposeNativeParallelHashMap(ref _publishedNodeStateMap, disposeDependency);
 
             if (_bfsQueue.IsCreated)
-                _bfsQueue.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(LogisticsNetworkGraph), _bfsQueueSentinelLabel);
+                _bfsQueue.Dispose(disposeDependency);
+                _bfsQueue = default;
+            }
+
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private JobHandle CancelPendingJobsForDispose()
+        {
+            JobHandle evaluationHandle = _evaluateGraphPending ? _evaluateGraphJobHandle : default;
+            JobHandle publishHandle = _publishNodeStatesPending ? _publishNodeStatesJobHandle : default;
+
+            _evaluateGraphJobHandle = default;
+            _publishNodeStatesJobHandle = default;
+            _evaluateGraphPending = false;
+            _publishNodeStatesPending = false;
+
+            return JobHandle.CombineDependencies(evaluationHandle, publishHandle);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            array.Dispose(dependency);
+            array = default;
+        }
+
+        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle dependency)
+            where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            list.Dispose(dependency);
+            list = default;
+        }
+
+        private static void DisposeNativeParallelHashMap<TKey, TValue>(
+            ref NativeParallelHashMap<TKey, TValue> map,
+            JobHandle dependency)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            map.Dispose(dependency);
+            map = default;
         }
 
         public void BeginBuild(LogisticsNetworkType networkType, int nodeCapacity, int edgeCapacity, int consumerCapacity)
@@ -1589,9 +1584,26 @@ namespace Hecton8.Power
             if (!_evaluateGraphPending)
                 return;
 
-            _evaluateGraphJobHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _evaluateGraphJobHandle, forceComplete: true);
             _evaluateGraphJobHandle = default;
             _evaluateGraphPending = false;
+        }
+
+        /// <summary>
+        /// Completes the scheduled graph evaluation only when the job is already finished.
+        /// </summary>
+        /// <returns>True when no evaluation is pending or the pending evaluation was completed.</returns>
+        public bool TryCompleteEvaluation()
+        {
+            if (!_evaluateGraphPending)
+                return true;
+
+            if (!DispatcherJobSwap.TryComplete(ref _evaluateGraphJobHandle, forceComplete: false))
+                return false;
+
+            _evaluateGraphJobHandle = default;
+            _evaluateGraphPending = false;
+            return true;
         }
 
         public TopologySummary GetScheduledTopologySummary()
@@ -1620,9 +1632,26 @@ namespace Hecton8.Power
             if (!_publishNodeStatesPending)
                 return;
 
-            _publishNodeStatesJobHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _publishNodeStatesJobHandle, forceComplete: true);
             _publishNodeStatesJobHandle = default;
             _publishNodeStatesPending = false;
+        }
+
+        /// <summary>
+        /// Completes the node-state publish job only when the job is already finished.
+        /// </summary>
+        /// <returns>True when no publish job is pending or the pending publish job was completed.</returns>
+        public bool TryCompleteNodeStatePublish()
+        {
+            if (!_publishNodeStatesPending)
+                return true;
+
+            if (!DispatcherJobSwap.TryComplete(ref _publishNodeStatesJobHandle, forceComplete: false))
+                return false;
+
+            _publishNodeStatesJobHandle = default;
+            _publishNodeStatesPending = false;
+            return true;
         }
 
         public void PublishNodeStateSynchronously()

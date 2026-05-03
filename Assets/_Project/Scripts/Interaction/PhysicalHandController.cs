@@ -8,6 +8,7 @@ namespace Hecton8.Interaction
     using System.Runtime.InteropServices;
     using Hecton8.Gameplay;
     using Hecton8.Physics;
+    using Hecton8.World;
     using Unity.Burst;
     using Unity.Collections;
     using Unity.Jobs;
@@ -138,6 +139,7 @@ namespace Hecton8.Interaction
         private bool _fingerSegmentsResolved;
         private bool _hasPreviousControllerPose;
         private bool _fingerPoseScheduled;
+        private float _lastFingerPoseDeltaTime = MinimumDeltaTime;
         private JobHandle _fingerPoseHandle;
 
         private NativeArray<SpherecastCommand> _fingerCommands;
@@ -287,7 +289,7 @@ namespace Hecton8.Interaction
         public void StepFixed(float fixedDeltaTime, Vector3 controllerPosition, Quaternion controllerRotation)
         {
             float dt = math.clamp(fixedDeltaTime, MinimumDeltaTime, MaximumSafeDeltaTime);
-            CompleteScheduledFingerPose(dt);
+            _lastFingerPoseDeltaTime = dt;
 
             if (!IsGrabbing)
             {
@@ -322,6 +324,11 @@ namespace Hecton8.Interaction
                 ScheduleFingerPoseBatch();
                 FinalizeControllerPoseState(controllerPosition, controllerRotation);
             }
+        }
+
+        internal void LateFrameTick()
+        {
+            CompleteScheduledFingerPose(_lastFingerPoseDeltaTime);
         }
 
         private void Awake()
@@ -499,9 +506,12 @@ namespace Hecton8.Interaction
             if (!_fingerPoseScheduled)
                 return;
 
-            _fingerPoseHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _fingerPoseHandle, forceComplete: false))
+                return;
+
             _fingerPoseScheduled = false;
-            ApplyFingerPose(dt);
+            if (IsGrabbing)
+                ApplyFingerPose(dt);
         }
 
         private void ApplyOpenHandPose(float dt)
@@ -551,7 +561,7 @@ namespace Hecton8.Interaction
             if (segment == null)
                 return;
 
-            Quaternion targetRotation = _baseFingerLocalRotations[segmentIndex] * Quaternion.Euler(-targetCurlDegrees, 0f, 0f);
+            Quaternion targetRotation = _baseFingerLocalRotations[segmentIndex] * Quaternion.AngleAxis(-targetCurlDegrees, Vector3.right);
             segment.localRotation = Quaternion.Slerp(segment.localRotation, targetRotation, blendT);
         }
 
@@ -751,6 +761,9 @@ namespace Hecton8.Interaction
 
         private void ScheduleFingerPoseBatch()
         {
+            if (_fingerPoseScheduled)
+                return;
+
             if (_runtimeGripPoint == null || _activeBody == null)
                 return;
 

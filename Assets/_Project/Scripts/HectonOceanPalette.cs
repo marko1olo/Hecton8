@@ -5,7 +5,7 @@
 // Массив профилей индексирован по MapMagic splat layer index.
 // Элемент [0] = первый выход Biomes Set ноды MapMagic.
 //
-// HectonUnderwaterVisuals получает biomeIndex от MapMagicBridge.OnBiomeChanged
+// HectonUnderwaterVisuals получает biomeIndex через MapMagicBiomeEvents.
 // и выбирает целевой профиль из этого массива.
 //
 // ЛОРНЫЙ ПОРЯДОК:

@@ -67,6 +67,7 @@ namespace Hecton8.Narrative
         private float _playbackTimer;
         private bool _isPlaying;
         private bool _registered;
+        private bool _serviceRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  ISaveable
@@ -99,6 +100,7 @@ namespace Hecton8.Narrative
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
@@ -108,6 +110,7 @@ namespace Hecton8.Narrative
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
@@ -119,6 +122,7 @@ namespace Hecton8.Narrative
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (Instance == this)
                 Instance = null;
@@ -148,7 +152,6 @@ namespace Hecton8.Narrative
             _playbackTimer = 0f;
 
             AudioLogEvents.RaisePlaybackCompleted(completedHash, completedLog);
-            SubtitleEventBus.RaisePlaybackCompleted(completedHash);
 
             LogPlaybackCompleted(completedId);
         }
@@ -173,14 +176,15 @@ namespace Hecton8.Narrative
             _discoveredLogs.Add(data.logId);
             if (discoveredHash != 0u)
                 AudioLogEvents.RaiseLogDiscovered(discoveredHash, data);
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             NotificationEvents.PushInfo(localization != null
                 ? localization.GetFormatted(LocalizationKeys.AUDIOLOG_DISCOVERED, displayTitle)
                 : "LOG DISCOVERED: " + displayTitle);
 
             // Также регистрируем в NarrativeDirector
             NarrativeEvents.RaiseDiscoveryMade(data.logId);
-            HectonEventBus.Publish(new LoreAcquiredEvent(discoveredHash));
+            LoreAcquiredEvent loreAcquiredEvent = new LoreAcquiredEvent(discoveredHash);
+            HectonEventBus.Publish(in loreAcquiredEvent);
 
             LogDiscovered(data.logId, displayTitle);
         }
@@ -216,7 +220,6 @@ namespace Hecton8.Narrative
             _isPlaying = true;
 
             AudioLogEvents.RaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
-            SubtitleEventBus.RaisePlaybackStarted(_currentLogHash, _playbackTimer);
 
             LogPlaying(data.logId, data.Duration);
         }
@@ -237,7 +240,6 @@ namespace Hecton8.Narrative
             _playbackTimer = 0f;
 
             AudioLogEvents.RaisePlaybackStopped(stoppedHash, stoppedLog);
-            SubtitleEventBus.RaisePlaybackStopped(stoppedHash);
         }
 
         /// <summary>
@@ -277,6 +279,26 @@ namespace Hecton8.Narrative
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterAudioLogRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.AudioLogs, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.AudioLogs, this))
+                GlobalRegistry.UnregisterAudioLogRuntime(this);
+
+            _serviceRegistered = false;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]

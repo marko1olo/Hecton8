@@ -3,10 +3,10 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-2026-05-01 current-state boundary:
+2026-05-02 current-state boundary:
 
 - This is the AUP/floating-origin standards contract, not proof that every current system obeys it.
-- Current project-state orientation starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - Known risk classes remain raw `Vector3` caches across origin shifts, presentation-derived gameplay state, and async/job ownership around voxel/physics publication.
 
 Mandates followed:

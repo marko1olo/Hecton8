@@ -53,7 +53,7 @@ namespace Hecton8.Crafting
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class Fabricator : MonoBehaviour, IInteractable, ITickable, IUpdatable, IPowerComponent, IFabricator
+    public sealed class Fabricator : MonoBehaviour, IInteractable, ITickable, IUpdatable, IPowerComponent, IFabricator, IModRegistryEventListener, ILocalizationLanguageChangedListener
     {
         // COLD ALLOC: List<Fabricator>[8] - active fabricator registry for cold-path recipe lookups - owner: Fabricator
         private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(8);
@@ -327,8 +327,8 @@ namespace Hecton8.Crafting
         {
             RegisterActiveFabricator(this);
             BaseLogisticsNetwork.RegisterFabricator(this, _powerNode);
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
-            ModRecipeRegistry.RegistryChanged += HandleModRecipeRegistryChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
+            ModRegistryEvents.Register(this);
             RebuildInteractText();
             TryRegister();
             EnsureScanLogSystem();
@@ -341,8 +341,8 @@ namespace Hecton8.Crafting
         {
             UnregisterActiveFabricator(this);
             BaseLogisticsNetwork.UnregisterFabricator(this);
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
-            ModRecipeRegistry.RegistryChanged -= HandleModRecipeRegistryChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
+            ModRegistryEvents.Unregister(this);
             UnsubscribeFromScanLog();
 
             if (_isCrafting)
@@ -441,7 +441,7 @@ namespace Hecton8.Crafting
                 return 0;
 
             int itemHashId = ComputeItemHash(cost.item);
-            ResourceScarcityDirector scarcityDirector = ResourceScarcityDirector.Instance;
+            ResourceScarcityDirector scarcityDirector = GlobalRegistry.ResourceScarcity;
             return scarcityDirector != null
                 ? scarcityDirector.ResolveInflatedIngredientAmount(itemHashId, cost.amount, transform.position, CountAccessibleItem(cost.item))
                 : cost.amount;
@@ -822,7 +822,7 @@ namespace Hecton8.Crafting
             if (recipe == null || result == null)
                 return false;
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return false;
 
@@ -885,7 +885,7 @@ namespace Hecton8.Crafting
                 return false;
             }
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             ResolveDeconstructionOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange);
             bool emittedAny = false;
 
@@ -1115,7 +1115,7 @@ namespace Hecton8.Crafting
         private void EnsureScanLogSystem()
         {
             if (_scanLogSystem == null)
-                _scanLogSystem = ScanLogSystem.Instance;
+                _scanLogSystem = Hecton8.Core.GlobalRegistry.ScanLog;
         }
 
         private void SubscribeToScanLog()
@@ -1201,8 +1201,15 @@ namespace Hecton8.Crafting
             return false;
         }
 
-        private void HandleModRecipeRegistryChanged()
+        /// <summary>
+        /// Handles deferred mod registry events that affect available recipes.
+        /// </summary>
+        /// <param name="payload">Unmanaged mod registry payload.</param>
+        public void OnModRegistryEvent(in ModRegistryEventPayload payload)
         {
+            if ((ModRegistryEventType)payload.EventType != ModRegistryEventType.RecipeRegistryChanged)
+                return;
+
             MarkRecipeCacheDirty();
             EnsureRecipeCache();
         }
@@ -1243,6 +1250,26 @@ namespace Hecton8.Crafting
                 ? itemCatalog.FindByHash(resultHashId)
                 : null;
             return TryResolveRecipeForResultItem(resultItem, out recipe);
+        }
+
+        internal static bool TryGetActiveFabricator(string targetName, out Fabricator fabricator)
+        {
+            bool matchAny = string.IsNullOrWhiteSpace(targetName);
+            for (int i = 0; i < _activeFabricators.Count; i++)
+            {
+                Fabricator candidate = _activeFabricators[i];
+                if (candidate == null)
+                    continue;
+
+                if (matchAny || candidate.name == targetName)
+                {
+                    fabricator = candidate;
+                    return true;
+                }
+            }
+
+            fabricator = null;
+            return false;
         }
 
         private static int ResolveScrapMetalHashId(ItemCatalog itemCatalog)
@@ -1362,6 +1389,15 @@ namespace Hecton8.Crafting
             _interactText = string.Format(pattern, fallbackName);
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildInteractText();
@@ -1369,7 +1405,7 @@ namespace Hecton8.Crafting
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return fallback;
 

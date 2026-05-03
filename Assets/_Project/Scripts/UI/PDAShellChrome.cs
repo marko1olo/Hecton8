@@ -14,7 +14,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Shell Chrome")]
-    public sealed class PDAShellChrome : MonoBehaviour, ITickable, IPDAEventListener
+    public sealed class PDAShellChrome : MonoBehaviour, ITickable, IPDAEventListener, ILocalizationLanguageChangedListener
     {
         private const string TitleTextValue = "HECTON-8 PERSONAL DATA ASSISTANT";
         private const string ActiveTabInventory = "ACTIVE TAB // INVENTORY";
@@ -156,7 +156,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             Unsubscribe();
             UnregisterFromTickManager();
         }
@@ -253,7 +253,7 @@ namespace Hecton8.UI
         private void Subscribe()
         {
             PDAEvents.Register(this);
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
 
             SubscribeInventory(playerInventory);
             SubscribeToolManager(toolManager);
@@ -263,7 +263,7 @@ namespace Hecton8.UI
         private void Unsubscribe()
         {
             PDAEvents.Unregister(this);
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
 
             UnsubscribeInventory(_subscribedInventory);
             UnsubscribeToolManager(_subscribedToolManager);
@@ -375,7 +375,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (_intrusionManager == null)
                 _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
@@ -509,6 +509,15 @@ namespace Hecton8.UI
                 RefreshChrome();
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RefreshLocalizedTextCache();
@@ -538,7 +547,7 @@ namespace Hecton8.UI
             if (_intrusionManager == null)
                 _intrusionManager = PDAIntrusionManager.ActiveRuntimeInstance;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             bool rtl = manager != null && LocalizationManager.IsRightToLeftLanguage(manager.CurrentLanguage);
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             bool useStressReactiveStrings = stressBucket > 0;
@@ -816,7 +825,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return fallback;
 

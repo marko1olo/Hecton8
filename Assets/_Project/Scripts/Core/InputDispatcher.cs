@@ -38,6 +38,14 @@ namespace Hecton8.Core
         private float _appliedHighMotorSpeed;
         private PlayerInputState _currentState;
 
+        internal static InputDispatcher ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         // COLD ALLOC: BufferedActionEntry[15] - fixed player action buffering ring for pre-commit intent capture - owner: InputDispatcher
         private readonly BufferedActionEntry[] _bufferedActions = new BufferedActionEntry[BufferedActionCapacity];
 
@@ -124,12 +132,17 @@ namespace Hecton8.Core
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
         }
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
+
             EnsureInputBinding();
             EnsureHapticDeviceBinding();
 
@@ -143,6 +156,9 @@ namespace Hecton8.Core
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             UnsubscribeFromNativeInput();
             ResetGamepadHaptics();
             UnsubscribeFromDeviceChanges();
@@ -155,6 +171,9 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             UnsubscribeFromNativeInput();
             ResetGamepadHaptics();
             UnsubscribeFromDeviceChanges();

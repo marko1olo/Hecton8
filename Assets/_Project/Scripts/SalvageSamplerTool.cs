@@ -188,7 +188,7 @@ namespace Hecton8.Gameplay
 
         private static void ArchiveRecoveredItem(ItemData item)
         {
-            if (item == null || ScanLogSystem.Instance == null)
+            if (item == null || Hecton8.Core.GlobalRegistry.ScanLog == null)
                 return;
 
             string itemId = item.PersistentId;
@@ -205,7 +205,7 @@ namespace Hecton8.Gameplay
                     LocalizationKeys.SAMPLER_ARCHIVE_RECOVERY_SUMMARY,
                     "Recovered field salvage package containing {0}. Archive updated from sampler retrieval."),
                 item.itemName);
-            ScanLogSystem.Instance.ArchiveEntry(entryId, title, category, summary);
+            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(entryId, title, category, summary);
         }
 
         private bool TryReadDiagnosis(out SamplerDiagnosis diagnosis)
@@ -415,8 +415,8 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            return LocalizationManager.Instance != null
-                ? LocalizationManager.Instance.GetOrFallback(LocalizationManager.Instance.CurrentLanguage, key, fallback)
+            return Hecton8.Core.GlobalRegistry.Localization != null
+                ? Hecton8.Core.GlobalRegistry.Localization.GetOrFallback(Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage, key, fallback)
                 : fallback;
         }
 

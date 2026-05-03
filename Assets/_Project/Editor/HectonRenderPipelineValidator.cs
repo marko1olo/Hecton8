@@ -68,6 +68,9 @@ namespace Hecton8.Editor
         [InitializeOnLoadMethod]
         private static void QueueInitialRepair()
         {
+            if (Application.isBatchMode)
+                return;
+
             if (s_InitialRepairQueued ||
                 SessionState.GetBool(InitialRepairCompletedSessionKey, false))
             {
@@ -107,6 +110,9 @@ namespace Hecton8.Editor
         private static void RunInitialRepair()
         {
             s_InitialRepairQueued = false;
+
+            if (Application.isBatchMode)
+                return;
 
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
             {

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Hecton8.Environment;
 using Unity.Collections;
@@ -353,13 +353,13 @@ namespace Hecton8.World
                 return;
 
             if (_surfaceDefragMoveCount > 0 &&
-                !VegetationLateFrameJobSwap.TryComplete(ref _surfacePoolDefragHandle, forceComplete))
+                !DispatcherJobSwap.TryComplete(ref _surfacePoolDefragHandle, forceComplete))
             {
                 return;
             }
 
             if (_underwaterDefragMoveCount > 0 &&
-                !VegetationLateFrameJobSwap.TryComplete(ref _underwaterPoolDefragHandle, forceComplete))
+                !DispatcherJobSwap.TryComplete(ref _underwaterPoolDefragHandle, forceComplete))
             {
                 return;
             }

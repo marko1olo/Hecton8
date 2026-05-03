@@ -31,7 +31,7 @@ namespace Hecton8.Items
     [RequireComponent(typeof(Collider))]
     [RequireComponent(typeof(InteractionHighlighter))]
     [DisallowMultipleComponent]
-    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInventoryPickupSource, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider
+    public class HectonItem : MonoBehaviour, IInteractable, ITickable, IUpdatable, IInventoryPickupSource, IInteractionVulnerabilitySource, IPhysicsImpactMaterialProvider, ILocalizationLanguageChangedListener
     {
         private const float OverflowScatterImpulse = 2.5f;
         private const float OverflowScatterLiftImpulse = 1.2f;
@@ -104,7 +104,7 @@ namespace Hecton8.Items
         // ─────────────────────── Pool-Safe Settle (v3.1) ─────────
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RebuildInteractTextCache();
 
             if (_rb != null)
@@ -119,7 +119,7 @@ namespace Hecton8.Items
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
 
             // Гарантированная отписка при деактивации (пулинг).
             // Сбрасываем фазу — при следующем OnEnable начнём заново.
@@ -360,7 +360,7 @@ namespace Hecton8.Items
 
         public void Interact(Transform interactor)
         {
-            TryHandleInventoryPickup(PlayerInventory.Instance, interactor);
+            TryHandleInventoryPickup(Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime, interactor);
         }
 
         public bool TryHandleInventoryPickup(PlayerInventory inventory, Transform interactor)
@@ -382,7 +382,16 @@ namespace Hecton8.Items
             }
 
             InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
-            HectonEventBus.Publish(new ItemCollectedEvent(itemData, _cachedItemHashId, attempt.AddedQuantity, interactor));
+            bool hasInteractorPosition = interactor != null;
+            ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(interactor.GetEntityId()) : 0ul;
+            Vector3 interactorPosition = hasInteractorPosition ? interactor.position : Vector3.zero;
+            HectonEventBus.Publish(new ItemCollectedEvent(
+                itemData,
+                _cachedItemHashId,
+                attempt.AddedQuantity,
+                interactorEntityId,
+                interactorPosition,
+                hasInteractorPosition));
 
             quantity = attempt.RejectedQuantity;
             if (quantity > 0)
@@ -428,6 +437,15 @@ namespace Hecton8.Items
             _cachedInteractText = baseText;
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildInteractTextCache();
@@ -438,9 +456,10 @@ namespace Hecton8.Items
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
 
-            if (ObjectPoolManager.Instance != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
-                ObjectPoolManager.Instance.Despawn(gameObject);
+                pool.Despawn(gameObject);
                 return;
             }
 

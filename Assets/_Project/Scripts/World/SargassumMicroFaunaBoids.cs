@@ -23,7 +23,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-101)]
-    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener
+    public sealed class SargassumMicroFaunaBoids : MonoBehaviour, ITickable, IFixedTickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, Hecton8.Gameplay.IFlashlightEventListener, ISargassumGlobalDragEventListener, ISonarPingEventListener
     {
         private const int MaxLeviathanNodePathIterations = 4096;
         private const int WhileLoopWatchdogLimit = 10000;
@@ -1229,6 +1229,7 @@ namespace Hecton8.World
         private bool _registeredTick;
         private bool _registeredFixedTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
         private bool _hasSpawnData;
         private bool _computeKernelBindingsValid;
         private bool _computeDispatchDisabled;
@@ -1344,7 +1345,7 @@ namespace Hecton8.World
             PrimeFoveatedSimulationDecision(0f, ResolveCameraDistanceSq());
             SargassumGlobalDragManager.Register(this);
             FlashlightEvents.Register(this);
-            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            SpectrumEvents.RegisterSonarPingListener(this);
             HectonFloatingOrigin.RegisterListener(this);
             TryRegister();
         }
@@ -1356,7 +1357,7 @@ namespace Hecton8.World
 
             SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            SpectrumEvents.UnregisterSonarPingListener(this);
             HectonFloatingOrigin.UnregisterListener(this);
             _headlightPanicTimer = 0f;
             _debugHeadlightPanic01 = 0f;
@@ -1416,7 +1417,7 @@ namespace Hecton8.World
 
             SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            SpectrumEvents.UnregisterSonarPingListener(this);
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregister();
             CompletePendingReadbackAndReleaseBuffers();
@@ -1487,7 +1488,6 @@ namespace Hecton8.World
 
             _simulationTime += deltaTime;
             WrapSimulationPhase();
-            CompletePendingLeviathanNodeBuild(forceComplete: false);
             UpdateMassiveThreats();
             UpdateParasiteLatchReadback(deltaTime);
             float hibernation01 = 0f;
@@ -1557,6 +1557,15 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Publishes completed CPU-side simulation decision jobs in the dispatcher-owned late-frame window.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            CompletePendingLeviathanNodeBuild(forceComplete: false);
+            CompletePendingFoveatedSimulationDecision(forceComplete: false);
+        }
+
+        /// <summary>
         /// Applies fixed-step leviathan strikes and shockwave pushes using the cached head pose resolved during Tick.
         /// </summary>
         /// <param name="fixedDeltaTime">Fixed delta supplied by GameTickManager.</param>
@@ -1591,13 +1600,13 @@ namespace Hecton8.World
         {
             IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
             if (biolumManager == null)
-                biolumManager = HectonBiolumManager.Instance;
+                biolumManager = Hecton8.Core.GlobalRegistry.BiolumManager;
 
             if (dragManager == null)
-                dragManager = SargassumGlobalDragManager.Instance;
+                dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
 
             if (cutManager == null)
-                cutManager = SargassumCutManager.Instance;
+                cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
@@ -2287,7 +2296,7 @@ namespace Hecton8.World
             if (!_deepModeActive || playerTransform == null)
                 return;
 
-            BeaconNetworkSystem beaconNetwork = BeaconNetworkSystem.Instance;
+            BeaconNetworkSystem beaconNetwork = Hecton8.Core.GlobalRegistry.BeaconNetwork;
             if (beaconNetwork == null || _formationBeaconSnapshots == null)
                 return;
 
@@ -2440,7 +2449,6 @@ namespace Hecton8.World
             if (safePathCount < 2 || !_leviathanNodeBackNative.IsCreated || _leviathanNodeBackNative.Length <= 0)
                 return;
 
-            CompletePendingLeviathanNodeBuild(forceComplete: false);
             if (_leviathanNodeBuildScheduled)
                 return;
 
@@ -3185,10 +3193,11 @@ namespace Hecton8.World
             if (_massiveThreatBuffer != null)
                 GraphicsBufferUploadUtility.UploadArray(_massiveThreatBuffer, _massiveThreats, _activeMassiveThreatCount);
 
-            if ((_deepModeActive || _parasiteModeActive || _formationModeActive || _leviathanModeActive) && AbyssalFluidDecalManager.Instance != null)
+            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            if ((_deepModeActive || _parasiteModeActive || _formationModeActive || _leviathanModeActive) && fluidDecals != null)
             {
                 float ruptureScale = Mathf.Clamp01(signal.RadiusWS / Mathf.Max(1f, deepBaitBallRadius * 2f));
-                AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(signal.PositionWS, ruptureScale);
+                fluidDecals.RegisterRuptureFluid(signal.PositionWS, ruptureScale);
             }
 
             Vector3 displacementDirection = _leviathanHeadVelocityWS.sqrMagnitude > 0.0001f
@@ -3448,6 +3457,11 @@ namespace Hecton8.World
             _sonarScatterStrength01 = clampedIntensity;
             _sonarScatterExpireTime = GetAbsoluteSimulationTime() + (travelDistance / safeWaveSpeed);
             _debugSonarScatter01 = clampedIntensity;
+        }
+
+        void ISonarPingEventListener.OnSonarPingSent(float intensity)
+        {
+            HandleSonarPingSent(intensity);
         }
 
         private float ResolveHeadlightPanic01()
@@ -3900,8 +3914,6 @@ namespace Hecton8.World
             out float hibernation01,
             out SimulationLodTier simulationLodTier)
         {
-            CompletePendingFoveatedSimulationDecision(forceComplete: false);
-
             FoveatedSimulationDecision decision = default;
             if (_foveatedSimulationFrontNative.IsCreated && _foveatedSimulationFrontNative.Length > 0)
                 decision = _foveatedSimulationFrontNative[0];
@@ -3997,19 +4009,25 @@ namespace Hecton8.World
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredFixedTick)
             {
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
-                _registeredFixedTick = true;
+                _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
             }
 
             if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = true;
+                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            }
+
+            if (!_registeredLateFrameTick)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
         }
 
@@ -4033,6 +4051,12 @@ namespace Hecton8.World
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
             }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
+            }
         }
 
         private void ReleaseBuffers()
@@ -4055,7 +4079,7 @@ namespace Hecton8.World
 
         private void CompletePendingReadbackAndReleaseBuffers()
         {
-            CompletePendingLeviathanNodeBuild(forceComplete: true);
+            JobHandle disposeDependency = CancelPendingLeviathanNodeBuildForDispose();
             if (_parasiteLatchReadbackPending)
             {
                 _parasiteLatchReadbackPending = false;
@@ -4066,17 +4090,30 @@ namespace Hecton8.World
             ReleaseBuffers();
             ResetComputeKernelBindings();
             _boundBoidCompute = null;
-            DisposeNativeArray(ref _staticObstacleCache);
-            DisposeNativeArray(ref _leviathanPathScratchNative);
-            DisposeNativeArray(ref _leviathanNodeFrontNative);
-            DisposeNativeArray(ref _leviathanNodeBackNative);
-            DisposeNativeArray(ref _leviathanNodeCountNative);
-            DisposeFoveatedSimulationBuffers();
-            DisposeNativeArray(ref _threatGridUploadNative);
-            DisposeNativeArray(ref _threatVoxelUploadNative);
+            DisposeNativeArrayDeferred(ref _staticObstacleCache, disposeDependency);
+            DisposeNativeArrayDeferred(ref _leviathanPathScratchNative, disposeDependency);
+            DisposeNativeArrayDeferred(ref _leviathanNodeFrontNative, disposeDependency);
+            DisposeNativeArrayDeferred(ref _leviathanNodeBackNative, disposeDependency);
+            DisposeNativeArrayDeferred(ref _leviathanNodeCountNative, disposeDependency);
+            DisposeFoveatedSimulationBuffers(disposeDependency);
+            DisposeNativeArrayDeferred(ref _threatGridUploadNative, disposeDependency);
+            DisposeNativeArrayDeferred(ref _threatVoxelUploadNative, disposeDependency);
             ResetThreatGridSnapshot();
             ResetThreatVoxelSnapshot();
-            DisposeNativeArray(ref _simulationFrameNative);
+            DisposeNativeArrayDeferred(ref _simulationFrameNative, disposeDependency);
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private JobHandle CancelPendingLeviathanNodeBuildForDispose()
+        {
+            if (!_leviathanNodeBuildScheduled)
+                return default;
+
+            JobHandle disposeDependency = _leviathanNodeBuildHandle;
+            _leviathanNodeBuildHandle = default;
+            _leviathanNodeBuildScheduled = false;
+            ClearLeviathanSnapshot();
+            return disposeDependency;
         }
 
         private void PrimeFoveatedSimulationDecision(float frameDeltaTime, float cameraDistanceSq)
@@ -4092,8 +4129,7 @@ namespace Hecton8.World
             };
 
             // COLD SYNC JOB: prime the foveated LOD front buffer before the first runtime Tick so tier selection stays Burst-authored from frame 0.
-            JobHandle primeHandle = primeJob.Schedule();
-            primeHandle.Complete();
+            primeJob.Run();
             (_foveatedSimulationFrontNative, _foveatedSimulationBackNative) = (_foveatedSimulationBackNative, _foveatedSimulationFrontNative);
             _foveatedSimulationScheduled = false;
         }
@@ -4144,28 +4180,29 @@ namespace Hecton8.World
             if (!_foveatedSimulationScheduled)
                 return;
 
-            if (!forceComplete && !_foveatedSimulationHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _foveatedSimulationHandle, forceComplete))
                 return;
 
-            _foveatedSimulationHandle.Complete();
             _foveatedSimulationScheduled = false;
             (_foveatedSimulationFrontNative, _foveatedSimulationBackNative) = (_foveatedSimulationBackNative, _foveatedSimulationFrontNative);
         }
 
-        private void DisposeFoveatedSimulationBuffers()
+        private void DisposeFoveatedSimulationBuffers(JobHandle externalDependency)
         {
             if (_foveatedSimulationScheduled)
             {
-                DisposeNativeArrayDeferred(ref _foveatedSimulationInputNative, _foveatedSimulationHandle);
-                DisposeNativeArrayDeferred(ref _foveatedSimulationFrontNative, _foveatedSimulationHandle);
-                DisposeNativeArrayDeferred(ref _foveatedSimulationBackNative, _foveatedSimulationHandle);
+                JobHandle disposeDependency = JobHandle.CombineDependencies(externalDependency, _foveatedSimulationHandle);
+                DisposeNativeArrayDeferred(ref _foveatedSimulationInputNative, disposeDependency);
+                DisposeNativeArrayDeferred(ref _foveatedSimulationFrontNative, disposeDependency);
+                DisposeNativeArrayDeferred(ref _foveatedSimulationBackNative, disposeDependency);
+                _foveatedSimulationHandle = default;
                 _foveatedSimulationScheduled = false;
                 return;
             }
 
-            DisposeNativeArray(ref _foveatedSimulationInputNative);
-            DisposeNativeArray(ref _foveatedSimulationFrontNative);
-            DisposeNativeArray(ref _foveatedSimulationBackNative);
+            DisposeNativeArrayDeferred(ref _foveatedSimulationInputNative, externalDependency);
+            DisposeNativeArrayDeferred(ref _foveatedSimulationFrontNative, externalDependency);
+            DisposeNativeArrayDeferred(ref _foveatedSimulationBackNative, externalDependency);
         }
 
         private static void ReleaseBuffer(ref GraphicsBuffer buffer)
@@ -4216,10 +4253,9 @@ namespace Hecton8.World
             if (!_leviathanNodeBuildScheduled)
                 return;
 
-            if (!forceComplete && !_leviathanNodeBuildHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _leviathanNodeBuildHandle, forceComplete))
                 return;
 
-            _leviathanNodeBuildHandle.Complete();
             _leviathanNodeBuildScheduled = false;
 
             int safeCount = (_leviathanNodeCountNative.IsCreated && _leviathanNodeCountNative.Length > 0)

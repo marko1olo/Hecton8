@@ -82,6 +82,7 @@ namespace Hecton8.PDA
         // COLD ALLOC: Dictionary<uint,int>[32] - hash lookup for native PDA marker events - owner: PDAMarkerRegistry
         private readonly Dictionary<uint, int> _markerIndexByHash = new Dictionary<uint, int>(32);
         private bool _registeredToSave;
+        private bool _serviceRegistered;
         private int _nextSequence = 1;
 
         /// <summary>Live singleton instance for PDA marker consumers.</summary>
@@ -119,6 +120,7 @@ namespace Hecton8.PDA
         private void OnEnable()
         {
             TryRegisterWithSaveManager();
+            TryRegisterService();
             HectonFloatingOrigin.RegisterListener(this);
         }
 
@@ -130,6 +132,7 @@ namespace Hecton8.PDA
         private void OnDisable()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterService();
             UnregisterFromSaveManager();
 
             if (Instance == this)
@@ -139,6 +142,7 @@ namespace Hecton8.PDA
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterService();
             UnregisterFromSaveManager();
 
             if (Instance == this)
@@ -423,6 +427,24 @@ namespace Hecton8.PDA
                 saveManager.Unregister(this);
 
             _registeredToSave = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+                return;
+
+            Hecton8.Core.GlobalRegistry.RegisterPDAMarkerRuntime(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            Hecton8.Core.GlobalRegistry.UnregisterPDAMarkerRuntime(this);
+            _serviceRegistered = false;
         }
 
         private string BuildNextMarkerId()

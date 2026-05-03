@@ -5,18 +5,189 @@ using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.Systems.AI;
 using Hecton8.World;
+using System.Runtime.InteropServices;
 using TMPro;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace Hecton8.UI
 {
     /// <summary>
+    /// PDA intrusion event identifiers queued by <see cref="PDAIntrusionEvents"/>.
+    /// </summary>
+    public enum PDAIntrusionEventType : byte
+    {
+        RebootCompleted = 0
+    }
+
+    /// <summary>
+    /// Blittable PDA intrusion payload flushed during dispatcher LateUpdate.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PDAIntrusionEventPayload
+    {
+        public uint SourceID;
+        public uint EventHashID;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    /// <summary>
+    /// Listener contract for PDA intrusion lifecycle events.
+    /// </summary>
+    public interface IPDAIntrusionEventListener
+    {
+        void OnPDAIntrusionEvent(in PDAIntrusionEventPayload payload);
+    }
+
+    /// <summary>
+    /// Queue-backed PDA intrusion event lane flushed from <see cref="SystemDispatcher.LateUpdate"/>.
+    /// </summary>
+    public static class PDAIntrusionEvents
+    {
+        private const int PendingEventCapacity = 4;
+        private static readonly uint _RebootCompletedEventHash = unchecked((uint)LocHash.Compute("PDAIntrusion.RebootCompleted"));
+
+        // COLD ALLOC: RegistryBucket<IPDAIntrusionEventListener>[8] - PDA intrusion listeners drained by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
+        private static readonly RegistryBucket<IPDAIntrusionEventListener> _listeners = new RegistryBucket<IPDAIntrusionEventListener>(8);
+        private static NativeQueue<PDAIntrusionEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
+
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAIntrusionEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+        }
+
+        public static void Register(IPDAIntrusionEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        public static void Unregister(IPDAIntrusionEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        public static void AssertUnregistered(IPDAIntrusionEventListener listener, string ownerName)
+        {
+            if (listener == null || !_listeners.Contains(listener))
+                return;
+
+            Debug.LogError($"[PDAIntrusionEvents] {ownerName} was destroyed while still registered as an IPDAIntrusionEventListener.");
+        }
+
+        internal static void RaiseRebootCompleted(uint sourceId)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+                return;
+
+            _pendingEvents.Enqueue(new PDAIntrusionEventPayload
+            {
+                SourceID = sourceId,
+                EventHashID = _RebootCompletedEventHash,
+                EventType = (ushort)PDAIntrusionEventType.RebootCompleted,
+                Reserved = 0
+            });
+            _pendingEventCount++;
+        }
+
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out PDAIntrusionEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                IPDAIntrusionEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnPDAIntrusionEvent(in payload);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<PDAIntrusionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAIntrusionEventPayload>[4] - deferred PDA intrusion lane flushed by SystemDispatcher LateUpdate - owner: PDAIntrusionEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(PDAIntrusionEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out _))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+    }
+
+    /// <summary>
     /// Player-owned runtime owner for diegetic PDA intrusion, language hijack cadence, and manual reboot recovery.
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Intrusion Manager")]
-    public sealed class PDAIntrusionManager : MonoBehaviour, ITickable, IUpdatable
+    public sealed class PDAIntrusionManager : MonoBehaviour, ITickable, IUpdatable, IDirectorAIEventListener
     {
         private enum IntrusionVisualPhase : byte
         {
@@ -47,7 +218,6 @@ namespace Hecton8.UI
         private static void ResetStaticState()
         {
             _instance = null;
-            OnRebootCompleted = null;
         }
 
         [Header("── Intrusion Thresholds ──────────────────")]
@@ -101,11 +271,6 @@ namespace Hecton8.UI
         public static PDAIntrusionManager ActiveRuntimeInstance => _instance;
 
         /// <summary>
-        /// Fired once when the hacked PDA completes a manual reboot and clears intrusion state.
-        /// </summary>
-        public static event System.Action OnRebootCompleted;
-
-        /// <summary>
         /// True when the PDA is currently hijacked and the player must manually reboot it.
         /// </summary>
         public bool IsHacked => _isHacked;
@@ -134,7 +299,7 @@ namespace Hecton8.UI
         {
             ResolveOwners();
             RegisterToTickManager();
-            HectonDirectorAI.OnRequestEquipmentGlitch += HandleEquipmentGlitchRequested;
+            DirectorAIEvents.Register(this);
         }
 
         private void Start()
@@ -144,7 +309,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            HectonDirectorAI.OnRequestEquipmentGlitch -= HandleEquipmentGlitchRequested;
+            DirectorAIEvents.Unregister(this);
             UnregisterFromTickManager();
             ClearVisualOverride();
             ResetTransientState();
@@ -152,7 +317,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            HectonDirectorAI.OnRequestEquipmentGlitch -= HandleEquipmentGlitchRequested;
+            DirectorAIEvents.Unregister(this);
             UnregisterFromTickManager();
 
             if (_instance == this)
@@ -182,6 +347,31 @@ namespace Hecton8.UI
                 return;
 
             TriggerHack();
+        }
+
+        void IDirectorAIEventListener.OnDirectorSpawnHordeRequested(Vector3 position)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorEquipmentGlitchRequested(float intensity)
+        {
+            HandleEquipmentGlitchRequested(intensity);
+        }
+
+        void IDirectorAIEventListener.OnDirectorRareDiscoveryRequested(Vector3 position)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorWeatherShiftRequested(float intensity)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorMissionTriggerRequested(Vector3 position)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorPredatorPressureChanged(bool pressureEnabled)
+        {
         }
 
         private void TickAmbientIntrusionThreat(float dt)
@@ -380,12 +570,12 @@ namespace Hecton8.UI
             RestoreTextDriftPositions();
             ClearVisualOverride();
             ResetTransientState();
-            OnRebootCompleted?.Invoke();
+            PDAIntrusionEvents.RaiseRebootCompleted(unchecked((uint)EntityId.ToULong(GetEntityId())));
         }
 
         private void ApplyVisualPhase()
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return;
 
@@ -411,7 +601,7 @@ namespace Hecton8.UI
 
         private void ClearVisualOverride()
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager != null)
                 manager.ClearTransientLanguageOverride();
         }

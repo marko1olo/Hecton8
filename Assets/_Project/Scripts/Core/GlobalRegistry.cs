@@ -2,14 +2,27 @@ using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Hecton.Localization;
+using Hecton8.AtlasSignal;
+using Hecton8.Atmosphere;
+using Hecton8.Audio;
+using Hecton8.Biolum;
 using Hecton8.Construction;
+using Hecton8.Economy;
+using Hecton8.Ecosystem;
 using Hecton8.Quest;
 using Hecton8.Gameplay;
+using Hecton8.Input;
 using Hecton8.Interaction;
+using Hecton8.Narrative;
+using Hecton8.Optimization;
+using Hecton8.PDA;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.Tools;
+using Hecton8.UI;
+using Hecton8.Visor;
+using Hecton8.VFX;
 using Hecton8.World;
 using Unity.Collections;
 using UnityEngine;
@@ -81,12 +94,70 @@ namespace Hecton8.Core
         private static IEncounterDirectorService _encounterDirector;
         private static IQuestSystem _questSystem;
         private static PersistentWorldRegistry _persistentWorldRegistry;
+        private static WorldStateManager _worldStateRuntime;
         private static IPDALogbookService _pdaLogbook;
         private static IProfileService _profile;
         private static HectonFluidEngine _fluidRuntime;
         private static AbyssalThermalManager _thermodynamicsRuntime;
         private static HectonNarrativeDirector _narrativeDirectorRuntime;
         private static QuestManager _questRuntime;
+        private static CullingManager _cullingRuntime;
+        private static LODSystemManager _lodSystemRuntime;
+        private static DynamicResolutionScaler _dynamicResolutionRuntime;
+        private static ImpostorSystem _impostorRuntime;
+        private static DepthZoneDirector _depthZoneRuntime;
+        private static HectonBiolumManager _biolumManagerRuntime;
+        private static LocalizationManager _localizationRuntime;
+        private static AudioLogSystem _audioLogRuntime;
+        private static AcousticZoneController _acousticZoneRuntime;
+        private static HectonSurfaceWeatherDirector _surfaceWeatherRuntime;
+        private static AtlasSignalSystem _atlasSignalRuntime;
+        private static FirstHourDirector _firstHourRuntime;
+        private static EmergencyServiceRelayDirector _emergencyRelayRuntime;
+        private static HectonAtmosphereManager _atmosphereRuntime;
+        private static BeaconNetworkSystem _beaconNetworkRuntime;
+        private static ScanLogSystem _scanLogRuntime;
+        private static ToolDurabilitySystem _toolDurabilityRuntime;
+        private static LoreDatabaseManager _loreDatabaseRuntime;
+        private static PlayerExpressionManager _playerExpressionRuntime;
+        private static SpectrumSystem _spectrumRuntime;
+        private static UserOptionsPersistence _userOptionsRuntime;
+        private static AssetLifecycleGovernor _assetLifecycleRuntime;
+        private static AssetLoadDispatcher _assetLoadDispatcherRuntime;
+        private static VRAMMonitor _vramMonitorRuntime;
+        private static VRAMPressureMonitor _vramPressureRuntime;
+        private static RenderTextureLifecycleTracker _renderTextureLifecycleRuntime;
+        private static RenderTexturePool _renderTexturePoolRuntime;
+        private static AbyssalFluidDecalManager _abyssalFluidDecalRuntime;
+        private static SargassumGlobalDragManager _sargassumDragRuntime;
+        private static SargassumCutManager _sargassumCutRuntime;
+        private static SoundscapeSystem _soundscapeRuntime;
+        private static EnvironmentalStrainManager _environmentalStrainRuntime;
+        private static EcosystemHealthDirector _ecosystemHealthRuntime;
+        private static FaunaGeneticsManager _faunaGeneticsRuntime;
+        private static PlayerExplorationTracker _playerExplorationRuntime;
+        private static HectonDiscoveryManager _discoveryRuntime;
+        private static ResourceScarcityDirector _resourceScarcityRuntime;
+        private static PDAExchangeSystem _pdaExchangeRuntime;
+        private static PlayerActionController _playerActionRuntime;
+        private static PDAMarkerRegistry _pdaMarkerRuntime;
+        private static AmbientWaterMotionManager _ambientWaterMotionRuntime;
+        private static SuitUpgradeManager _suitUpgradeRuntime;
+        private static EndingSystem _endingRuntime;
+        private static Atlas6DirectiveSystem _atlas6DirectiveRuntime;
+        private static HazardZoneManager _hazardZoneRuntime;
+        private static MissionManager _missionRuntime;
+        private static HectonRockManager _rockManagerRuntime;
+        private static CameraJuiceSystem _cameraJuiceRuntime;
+        private static HectonMusicDirector _musicDirectorRuntime;
+        private static SubtitleManager _subtitleRuntime;
+        private static AtlasSignalDecoder _atlasSignalDecoderRuntime;
+        private static ScrapManager _scrapRuntime;
+        private static AutonomousExtractorSystem _autonomousExtractorRuntime;
+        private static VisorRTManager _visorRTRuntime;
+        private static CameraRTManager _cameraRTRuntime;
+        private static PostFXRTManager _postFXRTRuntime;
+        private static UIRTManager _uiRTRuntime;
         private static GameTickManager _tickManager;
         private static SystemDispatcher _dispatcher;
         private static RenderDispatcher _renderDispatcher;
@@ -125,6 +196,11 @@ namespace Hecton8.Core
         /// Registered input binding service slot.
         /// </summary>
         public static IInputBindingService InputBinding => _inputBinding;
+
+        /// <summary>
+        /// Registered input rebind service slot for mod/UI callers that should not know about Input System assets.
+        /// </summary>
+        public static IInputRebindService InputRebind => _inputBinding as IInputRebindService;
 
         /// <summary>
         /// Registered physics service slot.
@@ -175,6 +251,11 @@ namespace Hecton8.Core
         /// Registered player inventory/tooling service slot.
         /// </summary>
         public static IPlayerInventoryService PlayerInventory => _playerInventory;
+
+        /// <summary>
+        /// Registered concrete player inventory owner mirrored by <see cref="PlayerInventory"/>.
+        /// </summary>
+        public static Hecton8.Inventory.PlayerInventory PlayerInventoryRuntime => _playerInventory != null ? _playerInventory.Inventory : null;
 
         /// <summary>
         /// Registered modular-equipment runtime service slot.
@@ -278,6 +359,11 @@ namespace Hecton8.Core
         public static PersistentWorldRegistry PersistentWorldRegistry => _persistentWorldRegistry;
 
         /// <summary>
+        /// Registered world-state persistence runtime owner.
+        /// </summary>
+        public static WorldStateManager WorldState => _worldStateRuntime;
+
+        /// <summary>
         /// Registered PDA logbook append service.
         /// </summary>
         public static IPDALogbookService PDALogbook => _pdaLogbook;
@@ -306,6 +392,291 @@ namespace Hecton8.Core
         /// Registered quest runtime owner.
         /// </summary>
         public static QuestManager Quest => _questRuntime;
+
+        /// <summary>
+        /// Registered world-culling runtime owner.
+        /// </summary>
+        public static CullingManager Culling => _cullingRuntime;
+
+        /// <summary>
+        /// Registered world LOD runtime owner.
+        /// </summary>
+        public static LODSystemManager LODSystem => _lodSystemRuntime;
+
+        /// <summary>
+        /// Registered dynamic-resolution runtime owner.
+        /// </summary>
+        public static DynamicResolutionScaler DynamicResolution => _dynamicResolutionRuntime;
+
+        /// <summary>
+        /// Registered impostor runtime owner.
+        /// </summary>
+        public static ImpostorSystem Impostors => _impostorRuntime;
+
+        /// <summary>
+        /// Registered depth-zone runtime owner.
+        /// </summary>
+        public static DepthZoneDirector DepthZone => _depthZoneRuntime;
+
+        /// <summary>
+        /// Registered world bioluminescence runtime owner.
+        /// </summary>
+        public static HectonBiolumManager BiolumManager => _biolumManagerRuntime;
+
+        /// <summary>
+        /// Registered localization runtime owner.
+        /// </summary>
+        public static LocalizationManager Localization => _localizationRuntime;
+
+        /// <summary>
+        /// Registered audio-log runtime owner.
+        /// </summary>
+        public static AudioLogSystem AudioLogs => _audioLogRuntime;
+
+        /// <summary>
+        /// Registered acoustic-zone runtime owner.
+        /// </summary>
+        public static AcousticZoneController AcousticZone => _acousticZoneRuntime;
+
+        /// <summary>
+        /// Registered surface-weather runtime owner.
+        /// </summary>
+        public static HectonSurfaceWeatherDirector SurfaceWeather => _surfaceWeatherRuntime;
+
+        /// <summary>
+        /// Registered Atlas signal runtime owner.
+        /// </summary>
+        public static AtlasSignalSystem AtlasSignal => _atlasSignalRuntime;
+
+        /// <summary>
+        /// Registered first-hour pacing runtime owner.
+        /// </summary>
+        public static FirstHourDirector FirstHour => _firstHourRuntime;
+
+        /// <summary>
+        /// Registered emergency relay runtime owner.
+        /// </summary>
+        public static EmergencyServiceRelayDirector EmergencyRelay => _emergencyRelayRuntime;
+
+        /// <summary>
+        /// Registered atmosphere runtime owner.
+        /// </summary>
+        public static HectonAtmosphereManager Atmosphere => _atmosphereRuntime;
+
+        /// <summary>
+        /// Registered beacon-network runtime owner.
+        /// </summary>
+        public static BeaconNetworkSystem BeaconNetwork => _beaconNetworkRuntime;
+
+        /// <summary>
+        /// Registered scan-log runtime owner.
+        /// </summary>
+        public static ScanLogSystem ScanLog => _scanLogRuntime;
+
+        /// <summary>
+        /// Registered tool-durability runtime owner.
+        /// </summary>
+        public static ToolDurabilitySystem ToolDurability => _toolDurabilityRuntime;
+
+        /// <summary>
+        /// Registered lore database runtime owner.
+        /// </summary>
+        public static LoreDatabaseManager LoreDatabase => _loreDatabaseRuntime;
+
+        /// <summary>
+        /// Registered player expression/profile runtime owner.
+        /// </summary>
+        public static PlayerExpressionManager PlayerExpression => _playerExpressionRuntime;
+
+        /// <summary>
+        /// Registered visor spectrum runtime owner.
+        /// </summary>
+        public static SpectrumSystem Spectrum => _spectrumRuntime;
+
+        /// <summary>
+        /// Registered user-options persistence runtime owner.
+        /// </summary>
+        public static UserOptionsPersistence UserOptions => _userOptionsRuntime;
+
+        /// <summary>
+        /// Registered asset residency governor runtime owner.
+        /// </summary>
+        public static AssetLifecycleGovernor AssetLifecycle => _assetLifecycleRuntime;
+
+        /// <summary>
+        /// Registered asset load dispatcher runtime owner.
+        /// </summary>
+        public static AssetLoadDispatcher AssetLoadDispatcher => _assetLoadDispatcherRuntime;
+
+        /// <summary>
+        /// Registered VRAM monitor runtime owner.
+        /// </summary>
+        public static VRAMMonitor VRAMMonitor => _vramMonitorRuntime;
+
+        /// <summary>
+        /// Registered VRAM pressure response runtime owner.
+        /// </summary>
+        public static VRAMPressureMonitor VRAMPressure => _vramPressureRuntime;
+
+        /// <summary>
+        /// Registered RenderTexture lifecycle tracker runtime owner.
+        /// </summary>
+        public static RenderTextureLifecycleTracker RenderTextureLifecycle => _renderTextureLifecycleRuntime;
+
+        /// <summary>
+        /// Registered RenderTexture pool runtime owner.
+        /// </summary>
+        public static RenderTexturePool RenderTexturePool => _renderTexturePoolRuntime;
+
+        /// <summary>
+        /// Registered abyssal fluid aftermath decal runtime owner.
+        /// </summary>
+        public static AbyssalFluidDecalManager AbyssalFluidDecals => _abyssalFluidDecalRuntime;
+
+        /// <summary>
+        /// Registered sargassum global drag-field runtime owner.
+        /// </summary>
+        public static SargassumGlobalDragManager SargassumDrag => _sargassumDragRuntime;
+
+        /// <summary>
+        /// Registered sargassum cut-mask runtime owner.
+        /// </summary>
+        public static SargassumCutManager SargassumCut => _sargassumCutRuntime;
+
+        /// <summary>
+        /// Registered environmental soundscape runtime owner.
+        /// </summary>
+        public static SoundscapeSystem Soundscape => _soundscapeRuntime;
+
+        /// <summary>
+        /// Registered environmental strain runtime owner.
+        /// </summary>
+        public static EnvironmentalStrainManager EnvironmentalStrain => _environmentalStrainRuntime;
+
+        /// <summary>
+        /// Registered ecosystem health runtime owner.
+        /// </summary>
+        public static EcosystemHealthDirector EcosystemHealth => _ecosystemHealthRuntime;
+
+        /// <summary>
+        /// Registered fauna genetics runtime owner.
+        /// </summary>
+        public static FaunaGeneticsManager FaunaGenetics => _faunaGeneticsRuntime;
+
+        /// <summary>
+        /// Registered player exploration runtime owner.
+        /// </summary>
+        public static PlayerExplorationTracker PlayerExploration => _playerExplorationRuntime;
+
+        /// <summary>
+        /// Registered discovery runtime owner.
+        /// </summary>
+        public static HectonDiscoveryManager Discovery => _discoveryRuntime;
+
+        /// <summary>
+        /// Registered resource scarcity runtime owner.
+        /// </summary>
+        public static ResourceScarcityDirector ResourceScarcity => _resourceScarcityRuntime;
+
+        /// <summary>
+        /// Registered PDA exchange runtime owner.
+        /// </summary>
+        public static PDAExchangeSystem PDAExchange => _pdaExchangeRuntime;
+
+        /// <summary>
+        /// Registered player action runtime owner.
+        /// </summary>
+        public static PlayerActionController PlayerActions => _playerActionRuntime;
+
+        /// <summary>
+        /// Registered PDA marker registry runtime owner.
+        /// </summary>
+        public static PDAMarkerRegistry PDAMarkers => _pdaMarkerRuntime;
+
+        /// <summary>
+        /// Registered ambient water-motion runtime owner.
+        /// </summary>
+        public static AmbientWaterMotionManager AmbientWaterMotion => _ambientWaterMotionRuntime;
+
+        /// <summary>
+        /// Registered suit upgrade runtime owner.
+        /// </summary>
+        public static SuitUpgradeManager SuitUpgrades => _suitUpgradeRuntime;
+
+        /// <summary>
+        /// Registered ending runtime owner.
+        /// </summary>
+        public static EndingSystem Ending => _endingRuntime;
+
+        /// <summary>
+        /// Registered Atlas-6 directive runtime owner.
+        /// </summary>
+        public static Atlas6DirectiveSystem Atlas6Directive => _atlas6DirectiveRuntime;
+
+        /// <summary>
+        /// Registered hazard-zone runtime owner.
+        /// </summary>
+        public static HazardZoneManager HazardZones => _hazardZoneRuntime;
+
+        /// <summary>
+        /// Registered mission facade runtime owner.
+        /// </summary>
+        public static MissionManager Missions => _missionRuntime;
+
+        /// <summary>
+        /// Registered rock rendering/proximity runtime owner.
+        /// </summary>
+        public static HectonRockManager RockManager => _rockManagerRuntime;
+
+        /// <summary>
+        /// Registered camera presentation feedback runtime owner.
+        /// </summary>
+        public static CameraJuiceSystem CameraJuice => _cameraJuiceRuntime;
+
+        /// <summary>
+        /// Registered adaptive music director runtime owner.
+        /// </summary>
+        public static HectonMusicDirector MusicDirector => _musicDirectorRuntime;
+
+        /// <summary>
+        /// Registered subtitle presentation runtime owner.
+        /// </summary>
+        public static SubtitleManager Subtitles => _subtitleRuntime;
+
+        /// <summary>
+        /// Registered Atlas signal decoder runtime owner.
+        /// </summary>
+        public static AtlasSignalDecoder AtlasSignalDecoder => _atlasSignalDecoderRuntime;
+
+        /// <summary>
+        /// Registered recycling/scrap runtime owner.
+        /// </summary>
+        public static ScrapManager Scrap => _scrapRuntime;
+
+        /// <summary>
+        /// Registered autonomous extractor SOA runtime owner.
+        /// </summary>
+        public static AutonomousExtractorSystem AutonomousExtractors => _autonomousExtractorRuntime;
+
+        /// <summary>
+        /// Registered visor RenderTexture budget monitor runtime owner.
+        /// </summary>
+        public static VisorRTManager VisorRT => _visorRTRuntime;
+
+        /// <summary>
+        /// Registered camera RenderTexture budget monitor runtime owner.
+        /// </summary>
+        public static CameraRTManager CameraRT => _cameraRTRuntime;
+
+        /// <summary>
+        /// Registered post-processing RenderTexture budget monitor runtime owner.
+        /// </summary>
+        public static PostFXRTManager PostFXRT => _postFXRTRuntime;
+
+        /// <summary>
+        /// Registered UI RenderTexture budget monitor runtime owner.
+        /// </summary>
+        public static UIRTManager UIRT => _uiRTRuntime;
 
         /// <summary>
         /// Registered tick-manager owner.
@@ -382,7 +753,7 @@ namespace Hecton8.Core
         /// </summary>
         public static RegistryBucket<IRegistryEventListener> RegistryEventListeners => _registryEventListeners;
 
-        public static int PendingServiceReboundCount => _pendingServiceRebounds.IsCreated ? _pendingServiceRebounds.Count : 0;
+        public static int PendingServiceReboundCount => _pendingServiceRebounds.IsCreated ? _serviceReboundReferencePendingCount : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -416,12 +787,70 @@ namespace Hecton8.Core
             _encounterDirector = null;
             _questSystem = null;
             _persistentWorldRegistry = null;
+            _worldStateRuntime = null;
             _pdaLogbook = null;
             _profile = null;
             _fluidRuntime = null;
             _thermodynamicsRuntime = null;
             _narrativeDirectorRuntime = null;
             _questRuntime = null;
+            _cullingRuntime = null;
+            _lodSystemRuntime = null;
+            _dynamicResolutionRuntime = null;
+            _impostorRuntime = null;
+            _depthZoneRuntime = null;
+            _biolumManagerRuntime = null;
+            _localizationRuntime = null;
+            _audioLogRuntime = null;
+            _acousticZoneRuntime = null;
+            _surfaceWeatherRuntime = null;
+            _atlasSignalRuntime = null;
+            _firstHourRuntime = null;
+            _emergencyRelayRuntime = null;
+            _atmosphereRuntime = null;
+            _beaconNetworkRuntime = null;
+            _scanLogRuntime = null;
+            _toolDurabilityRuntime = null;
+            _loreDatabaseRuntime = null;
+            _playerExpressionRuntime = null;
+            _spectrumRuntime = null;
+            _userOptionsRuntime = null;
+            _assetLifecycleRuntime = null;
+            _assetLoadDispatcherRuntime = null;
+            _vramMonitorRuntime = null;
+            _vramPressureRuntime = null;
+            _renderTextureLifecycleRuntime = null;
+            _renderTexturePoolRuntime = null;
+            _abyssalFluidDecalRuntime = null;
+            _sargassumDragRuntime = null;
+            _sargassumCutRuntime = null;
+            _soundscapeRuntime = null;
+            _environmentalStrainRuntime = null;
+            _ecosystemHealthRuntime = null;
+            _faunaGeneticsRuntime = null;
+            _playerExplorationRuntime = null;
+            _discoveryRuntime = null;
+            _resourceScarcityRuntime = null;
+            _pdaExchangeRuntime = null;
+            _playerActionRuntime = null;
+            _pdaMarkerRuntime = null;
+            _ambientWaterMotionRuntime = null;
+            _suitUpgradeRuntime = null;
+            _endingRuntime = null;
+            _atlas6DirectiveRuntime = null;
+            _hazardZoneRuntime = null;
+            _missionRuntime = null;
+            _rockManagerRuntime = null;
+            _cameraJuiceRuntime = null;
+            _musicDirectorRuntime = null;
+            _subtitleRuntime = null;
+            _atlasSignalDecoderRuntime = null;
+            _scrapRuntime = null;
+            _autonomousExtractorRuntime = null;
+            _visorRTRuntime = null;
+            _cameraRTRuntime = null;
+            _postFXRTRuntime = null;
+            _uiRTRuntime = null;
             _tickManager = null;
             _dispatcher = null;
             _renderDispatcher = null;
@@ -432,6 +861,7 @@ namespace Hecton8.Core
             _inputFallbackWarningPublished = false;
             if (_pendingServiceRebounds.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(GlobalRegistry), nameof(_pendingServiceRebounds));
                 _pendingServiceRebounds.Dispose();
                 _pendingServiceRebounds = default;
             }
@@ -511,6 +941,14 @@ namespace Hecton8.Core
         public static void RegisterInputBindingService(IInputBindingService instance)
         {
             RegisterService(ref _inputBinding, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative input rebind service through the existing binding slot.
+        /// </summary>
+        public static void RegisterInputRebindService(IInputRebindService instance)
+        {
+            RegisterInputBindingService(instance);
         }
 
         /// <summary>
@@ -764,6 +1202,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative world-state persistence runtime owner.
+        /// </summary>
+        public static void RegisterWorldStateRuntime(WorldStateManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _worldStateRuntime, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative PDA logbook append service.
         /// </summary>
         public static void RegisterPDALogbookService(IPDALogbookService instance)
@@ -815,6 +1261,462 @@ namespace Hecton8.Core
 
             if (instance is IQuestSystem questSystem)
                 RegisterQuestSystem(questSystem);
+        }
+
+        /// <summary>
+        /// Registers the authoritative world-culling runtime owner.
+        /// </summary>
+        public static void RegisterCullingRuntime(CullingManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _cullingRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative world LOD runtime owner.
+        /// </summary>
+        public static void RegisterLODSystemRuntime(LODSystemManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _lodSystemRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative dynamic-resolution runtime owner.
+        /// </summary>
+        public static void RegisterDynamicResolutionRuntime(DynamicResolutionScaler instance)
+        {
+            RegisterServiceAllowSameInstance(ref _dynamicResolutionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative impostor runtime owner.
+        /// </summary>
+        public static void RegisterImpostorRuntime(ImpostorSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _impostorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative depth-zone runtime owner.
+        /// </summary>
+        public static void RegisterDepthZoneRuntime(DepthZoneDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _depthZoneRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative world bioluminescence runtime owner.
+        /// </summary>
+        public static void RegisterBiolumManagerRuntime(HectonBiolumManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _biolumManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative localization runtime owner.
+        /// </summary>
+        public static void RegisterLocalizationRuntime(LocalizationManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _localizationRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative audio-log runtime owner.
+        /// </summary>
+        public static void RegisterAudioLogRuntime(AudioLogSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _audioLogRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative acoustic-zone runtime owner.
+        /// </summary>
+        public static void RegisterAcousticZoneRuntime(AcousticZoneController instance)
+        {
+            RegisterServiceAllowSameInstance(ref _acousticZoneRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative surface-weather runtime owner.
+        /// </summary>
+        public static void RegisterSurfaceWeatherRuntime(HectonSurfaceWeatherDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _surfaceWeatherRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative Atlas signal runtime owner.
+        /// </summary>
+        public static void RegisterAtlasSignalRuntime(AtlasSignalSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _atlasSignalRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative first-hour pacing runtime owner.
+        /// </summary>
+        public static void RegisterFirstHourRuntime(FirstHourDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _firstHourRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative emergency relay runtime owner.
+        /// </summary>
+        public static void RegisterEmergencyRelayRuntime(EmergencyServiceRelayDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _emergencyRelayRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative atmosphere runtime owner.
+        /// </summary>
+        public static void RegisterAtmosphereRuntime(HectonAtmosphereManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _atmosphereRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative beacon-network runtime owner.
+        /// </summary>
+        public static void RegisterBeaconNetworkRuntime(BeaconNetworkSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _beaconNetworkRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative scan-log runtime owner.
+        /// </summary>
+        public static void RegisterScanLogRuntime(ScanLogSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _scanLogRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative tool-durability runtime owner.
+        /// </summary>
+        public static void RegisterToolDurabilityRuntime(ToolDurabilitySystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _toolDurabilityRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative lore database runtime owner.
+        /// </summary>
+        public static void RegisterLoreDatabaseRuntime(LoreDatabaseManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _loreDatabaseRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative player expression/profile runtime owner.
+        /// </summary>
+        public static void RegisterPlayerExpressionRuntime(PlayerExpressionManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _playerExpressionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative visor spectrum runtime owner.
+        /// </summary>
+        public static void RegisterSpectrumRuntime(SpectrumSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _spectrumRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative user-options persistence runtime owner.
+        /// </summary>
+        public static void RegisterUserOptionsRuntime(UserOptionsPersistence instance)
+        {
+            RegisterServiceAllowSameInstance(ref _userOptionsRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative asset residency governor runtime owner.
+        /// </summary>
+        public static void RegisterAssetLifecycleRuntime(AssetLifecycleGovernor instance)
+        {
+            RegisterServiceAllowSameInstance(ref _assetLifecycleRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative asset load dispatcher runtime owner.
+        /// </summary>
+        public static void RegisterAssetLoadDispatcherRuntime(AssetLoadDispatcher instance)
+        {
+            RegisterServiceAllowSameInstance(ref _assetLoadDispatcherRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative VRAM monitor runtime owner.
+        /// </summary>
+        public static void RegisterVRAMMonitorRuntime(VRAMMonitor instance)
+        {
+            RegisterServiceAllowSameInstance(ref _vramMonitorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative VRAM pressure response runtime owner.
+        /// </summary>
+        public static void RegisterVRAMPressureRuntime(VRAMPressureMonitor instance)
+        {
+            RegisterServiceAllowSameInstance(ref _vramPressureRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative RenderTexture lifecycle tracker runtime owner.
+        /// </summary>
+        public static void RegisterRenderTextureLifecycleRuntime(RenderTextureLifecycleTracker instance)
+        {
+            RegisterServiceAllowSameInstance(ref _renderTextureLifecycleRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative RenderTexture pool runtime owner.
+        /// </summary>
+        public static void RegisterRenderTexturePoolRuntime(RenderTexturePool instance)
+        {
+            RegisterServiceAllowSameInstance(ref _renderTexturePoolRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative abyssal fluid aftermath decal runtime owner.
+        /// </summary>
+        public static void RegisterAbyssalFluidDecalRuntime(AbyssalFluidDecalManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _abyssalFluidDecalRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative sargassum global drag-field runtime owner.
+        /// </summary>
+        public static void RegisterSargassumDragRuntime(SargassumGlobalDragManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _sargassumDragRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative sargassum cut-mask runtime owner.
+        /// </summary>
+        public static void RegisterSargassumCutRuntime(SargassumCutManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _sargassumCutRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative environmental soundscape runtime owner.
+        /// </summary>
+        public static void RegisterSoundscapeRuntime(SoundscapeSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _soundscapeRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative environmental strain runtime owner.
+        /// </summary>
+        public static void RegisterEnvironmentalStrainRuntime(EnvironmentalStrainManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _environmentalStrainRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative ecosystem health runtime owner.
+        /// </summary>
+        public static void RegisterEcosystemHealthRuntime(EcosystemHealthDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _ecosystemHealthRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative fauna genetics runtime owner.
+        /// </summary>
+        public static void RegisterFaunaGeneticsRuntime(FaunaGeneticsManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _faunaGeneticsRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative player exploration runtime owner.
+        /// </summary>
+        public static void RegisterPlayerExplorationRuntime(PlayerExplorationTracker instance)
+        {
+            RegisterServiceAllowSameInstance(ref _playerExplorationRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative discovery runtime owner.
+        /// </summary>
+        public static void RegisterDiscoveryRuntime(HectonDiscoveryManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _discoveryRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative resource scarcity runtime owner.
+        /// </summary>
+        public static void RegisterResourceScarcityRuntime(ResourceScarcityDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _resourceScarcityRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative PDA exchange runtime owner.
+        /// </summary>
+        public static void RegisterPDAExchangeRuntime(PDAExchangeSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _pdaExchangeRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative player action runtime owner.
+        /// </summary>
+        public static void RegisterPlayerActionRuntime(PlayerActionController instance)
+        {
+            RegisterServiceAllowSameInstance(ref _playerActionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative PDA marker registry runtime owner.
+        /// </summary>
+        public static void RegisterPDAMarkerRuntime(PDAMarkerRegistry instance)
+        {
+            RegisterServiceAllowSameInstance(ref _pdaMarkerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative ambient water-motion runtime owner.
+        /// </summary>
+        public static void RegisterAmbientWaterMotionRuntime(AmbientWaterMotionManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _ambientWaterMotionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative suit upgrade runtime owner.
+        /// </summary>
+        public static void RegisterSuitUpgradeRuntime(SuitUpgradeManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _suitUpgradeRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative ending runtime owner.
+        /// </summary>
+        public static void RegisterEndingRuntime(EndingSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _endingRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative Atlas-6 directive runtime owner.
+        /// </summary>
+        public static void RegisterAtlas6DirectiveRuntime(Atlas6DirectiveSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _atlas6DirectiveRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative hazard-zone runtime owner.
+        /// </summary>
+        public static void RegisterHazardZoneRuntime(HazardZoneManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _hazardZoneRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative mission facade runtime owner.
+        /// </summary>
+        public static void RegisterMissionRuntime(MissionManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _missionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative rock rendering/proximity runtime owner.
+        /// </summary>
+        public static void RegisterRockManagerRuntime(HectonRockManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _rockManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative camera presentation feedback runtime owner.
+        /// </summary>
+        public static void RegisterCameraJuiceRuntime(CameraJuiceSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _cameraJuiceRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative adaptive music director runtime owner.
+        /// </summary>
+        public static void RegisterMusicDirectorRuntime(HectonMusicDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _musicDirectorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative subtitle presentation runtime owner.
+        /// </summary>
+        public static void RegisterSubtitleRuntime(SubtitleManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _subtitleRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative Atlas signal decoder runtime owner.
+        /// </summary>
+        public static void RegisterAtlasSignalDecoderRuntime(AtlasSignalDecoder instance)
+        {
+            RegisterServiceAllowSameInstance(ref _atlasSignalDecoderRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative recycling/scrap runtime owner.
+        /// </summary>
+        public static void RegisterScrapRuntime(ScrapManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _scrapRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative autonomous extractor SOA runtime owner.
+        /// </summary>
+        public static void RegisterAutonomousExtractorRuntime(AutonomousExtractorSystem instance)
+        {
+            RegisterServiceAllowSameInstance(ref _autonomousExtractorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative visor RenderTexture budget monitor runtime owner.
+        /// </summary>
+        public static void RegisterVisorRTRuntime(VisorRTManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _visorRTRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative camera RenderTexture budget monitor runtime owner.
+        /// </summary>
+        public static void RegisterCameraRTRuntime(CameraRTManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _cameraRTRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative post-processing RenderTexture budget monitor runtime owner.
+        /// </summary>
+        public static void RegisterPostFXRTRuntime(PostFXRTManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _postFXRTRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative UI RenderTexture budget monitor runtime owner.
+        /// </summary>
+        public static void RegisterUIRTRuntime(UIRTManager instance)
+        {
+            RegisterServiceAllowSameInstance(ref _uiRTRuntime, instance);
         }
 
         /// <summary>
@@ -1085,6 +1987,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current world-state persistence runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterWorldStateRuntime(WorldStateManager instance)
+        {
+            UnregisterService(ref _worldStateRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current PDA logbook service if the owner matches.
         /// </summary>
         public static void UnregisterPDALogbookService(IPDALogbookService instance)
@@ -1139,6 +2049,462 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current world-culling runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterCullingRuntime(CullingManager instance)
+        {
+            UnregisterService(ref _cullingRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current world LOD runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterLODSystemRuntime(LODSystemManager instance)
+        {
+            UnregisterService(ref _lodSystemRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current dynamic-resolution runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterDynamicResolutionRuntime(DynamicResolutionScaler instance)
+        {
+            UnregisterService(ref _dynamicResolutionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current impostor runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterImpostorRuntime(ImpostorSystem instance)
+        {
+            UnregisterService(ref _impostorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current depth-zone runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterDepthZoneRuntime(DepthZoneDirector instance)
+        {
+            UnregisterService(ref _depthZoneRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current world bioluminescence runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterBiolumManagerRuntime(HectonBiolumManager instance)
+        {
+            UnregisterService(ref _biolumManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current localization runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterLocalizationRuntime(LocalizationManager instance)
+        {
+            UnregisterService(ref _localizationRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current audio-log runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAudioLogRuntime(AudioLogSystem instance)
+        {
+            UnregisterService(ref _audioLogRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current acoustic-zone runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAcousticZoneRuntime(AcousticZoneController instance)
+        {
+            UnregisterService(ref _acousticZoneRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current surface-weather runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterSurfaceWeatherRuntime(HectonSurfaceWeatherDirector instance)
+        {
+            UnregisterService(ref _surfaceWeatherRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current Atlas signal runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAtlasSignalRuntime(AtlasSignalSystem instance)
+        {
+            UnregisterService(ref _atlasSignalRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current first-hour pacing runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterFirstHourRuntime(FirstHourDirector instance)
+        {
+            UnregisterService(ref _firstHourRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current emergency relay runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterEmergencyRelayRuntime(EmergencyServiceRelayDirector instance)
+        {
+            UnregisterService(ref _emergencyRelayRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current atmosphere runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAtmosphereRuntime(HectonAtmosphereManager instance)
+        {
+            UnregisterService(ref _atmosphereRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current beacon-network runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterBeaconNetworkRuntime(BeaconNetworkSystem instance)
+        {
+            UnregisterService(ref _beaconNetworkRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current scan-log runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterScanLogRuntime(ScanLogSystem instance)
+        {
+            UnregisterService(ref _scanLogRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current tool-durability runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterToolDurabilityRuntime(ToolDurabilitySystem instance)
+        {
+            UnregisterService(ref _toolDurabilityRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current lore database runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterLoreDatabaseRuntime(LoreDatabaseManager instance)
+        {
+            UnregisterService(ref _loreDatabaseRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current player expression/profile runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterPlayerExpressionRuntime(PlayerExpressionManager instance)
+        {
+            UnregisterService(ref _playerExpressionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current visor spectrum runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterSpectrumRuntime(SpectrumSystem instance)
+        {
+            UnregisterService(ref _spectrumRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current user-options persistence runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterUserOptionsRuntime(UserOptionsPersistence instance)
+        {
+            UnregisterService(ref _userOptionsRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current asset residency governor runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAssetLifecycleRuntime(AssetLifecycleGovernor instance)
+        {
+            UnregisterService(ref _assetLifecycleRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current asset load dispatcher runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAssetLoadDispatcherRuntime(AssetLoadDispatcher instance)
+        {
+            UnregisterService(ref _assetLoadDispatcherRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current VRAM monitor runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterVRAMMonitorRuntime(VRAMMonitor instance)
+        {
+            UnregisterService(ref _vramMonitorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current VRAM pressure response runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterVRAMPressureRuntime(VRAMPressureMonitor instance)
+        {
+            UnregisterService(ref _vramPressureRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current RenderTexture lifecycle tracker runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterRenderTextureLifecycleRuntime(RenderTextureLifecycleTracker instance)
+        {
+            UnregisterService(ref _renderTextureLifecycleRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current RenderTexture pool runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterRenderTexturePoolRuntime(RenderTexturePool instance)
+        {
+            UnregisterService(ref _renderTexturePoolRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current abyssal fluid aftermath decal runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAbyssalFluidDecalRuntime(AbyssalFluidDecalManager instance)
+        {
+            UnregisterService(ref _abyssalFluidDecalRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current sargassum global drag-field runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterSargassumDragRuntime(SargassumGlobalDragManager instance)
+        {
+            UnregisterService(ref _sargassumDragRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current sargassum cut-mask runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterSargassumCutRuntime(SargassumCutManager instance)
+        {
+            UnregisterService(ref _sargassumCutRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current environmental soundscape runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterSoundscapeRuntime(SoundscapeSystem instance)
+        {
+            UnregisterService(ref _soundscapeRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current environmental strain runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterEnvironmentalStrainRuntime(EnvironmentalStrainManager instance)
+        {
+            UnregisterService(ref _environmentalStrainRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current ecosystem health runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterEcosystemHealthRuntime(EcosystemHealthDirector instance)
+        {
+            UnregisterService(ref _ecosystemHealthRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current fauna genetics runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterFaunaGeneticsRuntime(FaunaGeneticsManager instance)
+        {
+            UnregisterService(ref _faunaGeneticsRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current player exploration runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterPlayerExplorationRuntime(PlayerExplorationTracker instance)
+        {
+            UnregisterService(ref _playerExplorationRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current discovery runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterDiscoveryRuntime(HectonDiscoveryManager instance)
+        {
+            UnregisterService(ref _discoveryRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current resource scarcity runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterResourceScarcityRuntime(ResourceScarcityDirector instance)
+        {
+            UnregisterService(ref _resourceScarcityRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current PDA exchange runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterPDAExchangeRuntime(PDAExchangeSystem instance)
+        {
+            UnregisterService(ref _pdaExchangeRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current player action runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterPlayerActionRuntime(PlayerActionController instance)
+        {
+            UnregisterService(ref _playerActionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current PDA marker registry runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterPDAMarkerRuntime(PDAMarkerRegistry instance)
+        {
+            UnregisterService(ref _pdaMarkerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current ambient water-motion runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAmbientWaterMotionRuntime(AmbientWaterMotionManager instance)
+        {
+            UnregisterService(ref _ambientWaterMotionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current suit upgrade runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterSuitUpgradeRuntime(SuitUpgradeManager instance)
+        {
+            UnregisterService(ref _suitUpgradeRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current ending runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterEndingRuntime(EndingSystem instance)
+        {
+            UnregisterService(ref _endingRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current Atlas-6 directive runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAtlas6DirectiveRuntime(Atlas6DirectiveSystem instance)
+        {
+            UnregisterService(ref _atlas6DirectiveRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current hazard-zone runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterHazardZoneRuntime(HazardZoneManager instance)
+        {
+            UnregisterService(ref _hazardZoneRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current mission facade runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterMissionRuntime(MissionManager instance)
+        {
+            UnregisterService(ref _missionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current rock rendering/proximity runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterRockManagerRuntime(HectonRockManager instance)
+        {
+            UnregisterService(ref _rockManagerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current camera presentation feedback runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterCameraJuiceRuntime(CameraJuiceSystem instance)
+        {
+            UnregisterService(ref _cameraJuiceRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current adaptive music director runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterMusicDirectorRuntime(HectonMusicDirector instance)
+        {
+            UnregisterService(ref _musicDirectorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current subtitle presentation runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterSubtitleRuntime(SubtitleManager instance)
+        {
+            UnregisterService(ref _subtitleRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current Atlas signal decoder runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAtlasSignalDecoderRuntime(AtlasSignalDecoder instance)
+        {
+            UnregisterService(ref _atlasSignalDecoderRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current recycling/scrap runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterScrapRuntime(ScrapManager instance)
+        {
+            UnregisterService(ref _scrapRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current autonomous extractor SOA runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterAutonomousExtractorRuntime(AutonomousExtractorSystem instance)
+        {
+            UnregisterService(ref _autonomousExtractorRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current visor RenderTexture budget monitor runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterVisorRTRuntime(VisorRTManager instance)
+        {
+            UnregisterService(ref _visorRTRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current camera RenderTexture budget monitor runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterCameraRTRuntime(CameraRTManager instance)
+        {
+            UnregisterService(ref _cameraRTRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current post-processing RenderTexture budget monitor runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterPostFXRTRuntime(PostFXRTManager instance)
+        {
+            UnregisterService(ref _postFXRTRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current UI RenderTexture budget monitor runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterUIRTRuntime(UIRTManager instance)
+        {
+            UnregisterService(ref _uiRTRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current tick-manager owner if the owner matches.
         /// </summary>
         /// <param name="instance">Tick-manager owner requesting unregistration.</param>
@@ -1189,8 +2555,11 @@ namespace Hecton8.Core
 
             if (!TryEnsureDispatcherRegistration())
                 return;
-            _updatables.Register(item);
-            SystemDispatcher.Register(item, layer);
+            if (!_updatables.TryRegister(item))
+                return;
+
+            if (!SystemDispatcher.Register(item, layer))
+                _updatables.Unregister(item);
         }
 
         /// <summary>
@@ -1208,8 +2577,11 @@ namespace Hecton8.Core
 
             if (!TryEnsureDispatcherRegistration())
                 return;
-            _fixedTickables.Register(item);
-            SystemDispatcher.Register(item, layer);
+            if (!_fixedTickables.TryRegister(item))
+                return;
+
+            if (!SystemDispatcher.Register(item, layer))
+                _fixedTickables.Unregister(item);
         }
 
         /// <summary>
@@ -1227,8 +2599,11 @@ namespace Hecton8.Core
 
             if (!TryEnsureDispatcherRegistration())
                 return;
-            _slowTickables.Register(item);
-            SystemDispatcher.Register(item, layer);
+            if (!_slowTickables.TryRegister(item))
+                return;
+
+            if (!SystemDispatcher.Register(item, layer))
+                _slowTickables.Unregister(item);
         }
 
         /// <summary>
@@ -1278,7 +2653,8 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            _hotSwapListeners.Register(listener);
+            if (!_hotSwapListeners.Contains(listener))
+                _hotSwapListeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -1290,7 +2666,7 @@ namespace Hecton8.Core
                 return;
 
             if (!_registryEventListeners.Contains(listener))
-                _registryEventListeners.Register(listener);
+                _registryEventListeners.TryRegister(listener);
         }
 
         /// <summary>
@@ -1469,14 +2845,15 @@ namespace Hecton8.Core
 
         private static void RegisterService<T>(ref T slot, T instance) where T : class
         {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (instance == null)
             {
-                throw new ArgumentNullException(
-                    nameof(instance),
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError(
                     $"[GlobalRegistry] Cannot register null as {typeof(T).Name}.");
-            }
 #endif
+                return;
+            }
+
             T previousService = slot;
             if (ReferenceEquals(previousService, instance))
                 return;
@@ -1527,13 +2904,16 @@ namespace Hecton8.Core
             if (!_pendingServiceRebounds.IsCreated)
                 return;
 
-            while (!_pendingServiceRebounds.IsEmpty())
+            int scanBudget = _serviceReboundReferencePendingCount > 0
+                ? _serviceReboundReferencePendingCount
+                : MaxPendingServiceRebounds;
+            while (scanBudget-- > 0 && !_pendingServiceRebounds.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
                 if (!_pendingServiceRebounds.TryDequeue(out RegistryEventPayload payload))
-                    return;
+                    break;
 
                 RegistryReboundReferenceSlot referenceSlot = default;
                 if ((uint)payload.ReferenceSlot < MaxPendingServiceRebounds &&
@@ -1587,7 +2967,10 @@ namespace Hecton8.Core
         private static void EnsureServiceReboundQueue()
         {
             if (!_pendingServiceRebounds.IsCreated)
+            {
                 _pendingServiceRebounds = new NativeQueue<RegistryEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RegistryEventPayload>[64] - service rebound event lane - owner: GlobalRegistry
+                NativeMemorySentinel.RegisterNativeQueue(_pendingServiceRebounds, MaxPendingServiceRebounds, nameof(GlobalRegistry), nameof(_pendingServiceRebounds), NativeAllocationLifetime.Session);
+            }
         }
 
         private static int ReserveServiceReboundReferenceSlot(object previousService, object currentService)
@@ -1699,12 +3082,70 @@ namespace Hecton8.Core
             if (serviceType == typeof(IEncounterDirectorService)) return GlobalRegistryServiceSlot.EncounterDirector;
             if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
             if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
+            if (serviceType == typeof(WorldStateManager)) return GlobalRegistryServiceSlot.WorldStateRuntime;
             if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
             if (serviceType == typeof(IProfileService)) return GlobalRegistryServiceSlot.Profile;
             if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;
             if (serviceType == typeof(AbyssalThermalManager)) return GlobalRegistryServiceSlot.ThermodynamicsRuntime;
             if (serviceType == typeof(HectonNarrativeDirector)) return GlobalRegistryServiceSlot.NarrativeDirectorRuntime;
             if (serviceType == typeof(QuestManager)) return GlobalRegistryServiceSlot.QuestRuntime;
+            if (serviceType == typeof(CullingManager)) return GlobalRegistryServiceSlot.CullingRuntime;
+            if (serviceType == typeof(LODSystemManager)) return GlobalRegistryServiceSlot.LODSystemRuntime;
+            if (serviceType == typeof(DynamicResolutionScaler)) return GlobalRegistryServiceSlot.DynamicResolutionRuntime;
+            if (serviceType == typeof(ImpostorSystem)) return GlobalRegistryServiceSlot.ImpostorRuntime;
+            if (serviceType == typeof(DepthZoneDirector)) return GlobalRegistryServiceSlot.DepthZoneRuntime;
+            if (serviceType == typeof(HectonBiolumManager)) return GlobalRegistryServiceSlot.BiolumManagerRuntime;
+            if (serviceType == typeof(LocalizationManager)) return GlobalRegistryServiceSlot.LocalizationRuntime;
+            if (serviceType == typeof(AudioLogSystem)) return GlobalRegistryServiceSlot.AudioLogRuntime;
+            if (serviceType == typeof(AcousticZoneController)) return GlobalRegistryServiceSlot.AcousticZoneRuntime;
+            if (serviceType == typeof(HectonSurfaceWeatherDirector)) return GlobalRegistryServiceSlot.SurfaceWeatherRuntime;
+            if (serviceType == typeof(AtlasSignalSystem)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
+            if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
+            if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
+            if (serviceType == typeof(HectonAtmosphereManager)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
+            if (serviceType == typeof(BeaconNetworkSystem)) return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
+            if (serviceType == typeof(ScanLogSystem)) return GlobalRegistryServiceSlot.ScanLogRuntime;
+            if (serviceType == typeof(ToolDurabilitySystem)) return GlobalRegistryServiceSlot.ToolDurabilityRuntime;
+            if (serviceType == typeof(LoreDatabaseManager)) return GlobalRegistryServiceSlot.LoreDatabaseRuntime;
+            if (serviceType == typeof(PlayerExpressionManager)) return GlobalRegistryServiceSlot.PlayerExpressionRuntime;
+            if (serviceType == typeof(SpectrumSystem)) return GlobalRegistryServiceSlot.SpectrumRuntime;
+            if (serviceType == typeof(UserOptionsPersistence)) return GlobalRegistryServiceSlot.UserOptionsRuntime;
+            if (serviceType == typeof(AssetLifecycleGovernor)) return GlobalRegistryServiceSlot.AssetLifecycleRuntime;
+            if (serviceType == typeof(AssetLoadDispatcher)) return GlobalRegistryServiceSlot.AssetLoadDispatcherRuntime;
+            if (serviceType == typeof(VRAMMonitor)) return GlobalRegistryServiceSlot.VRAMMonitorRuntime;
+            if (serviceType == typeof(VRAMPressureMonitor)) return GlobalRegistryServiceSlot.VRAMPressureRuntime;
+            if (serviceType == typeof(RenderTextureLifecycleTracker)) return GlobalRegistryServiceSlot.RenderTextureLifecycleRuntime;
+            if (serviceType == typeof(RenderTexturePool)) return GlobalRegistryServiceSlot.RenderTexturePoolRuntime;
+            if (serviceType == typeof(AbyssalFluidDecalManager)) return GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime;
+            if (serviceType == typeof(SargassumGlobalDragManager)) return GlobalRegistryServiceSlot.SargassumDragRuntime;
+            if (serviceType == typeof(SargassumCutManager)) return GlobalRegistryServiceSlot.SargassumCutRuntime;
+            if (serviceType == typeof(SoundscapeSystem)) return GlobalRegistryServiceSlot.SoundscapeRuntime;
+            if (serviceType == typeof(EnvironmentalStrainManager)) return GlobalRegistryServiceSlot.EnvironmentalStrainRuntime;
+            if (serviceType == typeof(EcosystemHealthDirector)) return GlobalRegistryServiceSlot.EcosystemHealthRuntime;
+            if (serviceType == typeof(FaunaGeneticsManager)) return GlobalRegistryServiceSlot.FaunaGeneticsRuntime;
+            if (serviceType == typeof(PlayerExplorationTracker)) return GlobalRegistryServiceSlot.PlayerExplorationRuntime;
+            if (serviceType == typeof(HectonDiscoveryManager)) return GlobalRegistryServiceSlot.DiscoveryRuntime;
+            if (serviceType == typeof(ResourceScarcityDirector)) return GlobalRegistryServiceSlot.ResourceScarcityRuntime;
+            if (serviceType == typeof(PDAExchangeSystem)) return GlobalRegistryServiceSlot.PDAExchangeRuntime;
+            if (serviceType == typeof(PlayerActionController)) return GlobalRegistryServiceSlot.PlayerActionRuntime;
+            if (serviceType == typeof(PDAMarkerRegistry)) return GlobalRegistryServiceSlot.PDAMarkerRuntime;
+            if (serviceType == typeof(AmbientWaterMotionManager)) return GlobalRegistryServiceSlot.AmbientWaterMotionRuntime;
+            if (serviceType == typeof(SuitUpgradeManager)) return GlobalRegistryServiceSlot.SuitUpgradeRuntime;
+            if (serviceType == typeof(EndingSystem)) return GlobalRegistryServiceSlot.EndingRuntime;
+            if (serviceType == typeof(Atlas6DirectiveSystem)) return GlobalRegistryServiceSlot.Atlas6DirectiveRuntime;
+            if (serviceType == typeof(HazardZoneManager)) return GlobalRegistryServiceSlot.HazardZoneRuntime;
+            if (serviceType == typeof(MissionManager)) return GlobalRegistryServiceSlot.MissionRuntime;
+            if (serviceType == typeof(HectonRockManager)) return GlobalRegistryServiceSlot.RockManagerRuntime;
+            if (serviceType == typeof(CameraJuiceSystem)) return GlobalRegistryServiceSlot.CameraJuiceRuntime;
+            if (serviceType == typeof(HectonMusicDirector)) return GlobalRegistryServiceSlot.MusicDirectorRuntime;
+            if (serviceType == typeof(SubtitleManager)) return GlobalRegistryServiceSlot.SubtitleRuntime;
+            if (serviceType == typeof(AtlasSignalDecoder)) return GlobalRegistryServiceSlot.AtlasSignalDecoderRuntime;
+            if (serviceType == typeof(ScrapManager)) return GlobalRegistryServiceSlot.ScrapRuntime;
+            if (serviceType == typeof(AutonomousExtractorSystem)) return GlobalRegistryServiceSlot.AutonomousExtractorRuntime;
+            if (serviceType == typeof(VisorRTManager)) return GlobalRegistryServiceSlot.VisorRTRuntime;
+            if (serviceType == typeof(CameraRTManager)) return GlobalRegistryServiceSlot.CameraRTRuntime;
+            if (serviceType == typeof(PostFXRTManager)) return GlobalRegistryServiceSlot.PostFXRTRuntime;
+            if (serviceType == typeof(UIRTManager)) return GlobalRegistryServiceSlot.UIRTRuntime;
             if (serviceType == typeof(GameTickManager)) return GlobalRegistryServiceSlot.TickManager;
             if (serviceType == typeof(SystemDispatcher)) return GlobalRegistryServiceSlot.Dispatcher;
             if (serviceType == typeof(RenderDispatcher)) return GlobalRegistryServiceSlot.RenderDispatcher;

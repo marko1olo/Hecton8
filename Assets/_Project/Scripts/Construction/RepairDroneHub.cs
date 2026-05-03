@@ -114,7 +114,7 @@ namespace Hecton8.Construction
         /// <summary>Cached grid availability propagated by PowerGrid.UpdateBalance.</summary>
         public bool HasPower => _hasPower;
 
-        internal static List<RepairDroneHub> ActiveHubs => s_ActiveHubs;
+        internal static int ActiveHubCount => s_ActiveHubs.Count;
         internal int ActiveDroneCount => ActiveDroneCountInternal;
         internal int TotalLaunchCount => _launchCountTotal;
         internal Vector3 DockPosition => ResolvedDockSocketPosition;
@@ -122,6 +122,11 @@ namespace Hecton8.Construction
         internal PowerGrid CurrentGrid => _powerNode != null ? _powerNode.Grid : null;
         internal int ActiveSlotCapacity => _activeDroneIds != null ? _activeDroneIds.Length : Mathf.Max(1, maxConcurrentDrones);
         internal bool HasOperationalPower => _hasPower && _powerNode != null && _powerNode.Grid != null;
+
+        internal static RepairDroneHub GetActiveHubAt(int index)
+        {
+            return index >= 0 && index < s_ActiveHubs.Count ? s_ActiveHubs[index] : null;
+        }
 
         public void OnPowerStatusChanged(bool hasPower)
         {
@@ -249,7 +254,10 @@ namespace Hecton8.Construction
             if (repairSupplyItem != null)
                 return;
 
-            PlayerInventory inventory = PlayerInventory.Instance;
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
             ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;
             if (catalog != null)
             {

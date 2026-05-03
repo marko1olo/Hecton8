@@ -54,7 +54,7 @@ namespace Hecton8.Celestial
         [SerializeField] private CelestialPlacementMode placementMode = CelestialPlacementMode.FixedDirection;
         [Tooltip("Time owner for orbit and spin. AtmosphereCycle keeps celestial motion in the same cadence as the day-night system.")]
         [SerializeField] private CelestialTimeSourceMode timeSourceMode = CelestialTimeSourceMode.AtmosphereCycle;
-        [Tooltip("Optional atmosphere owner override. Falls back to HectonAtmosphereManager.Instance when left empty.")]
+        [Tooltip("Optional atmosphere owner override. Falls back to Hecton8.Core.GlobalRegistry.Atmosphere when left empty.")]
         [SerializeField] private HectonAtmosphereManager atmosphereManager;
         [Tooltip("Observer transform used to capture the initial sky direction from the current scene layout.")]
         [SerializeField] private Transform observerTransform;
@@ -504,7 +504,7 @@ namespace Hecton8.Celestial
         private void ResolveAtmosphereManager()
         {
             if (atmosphereManager == null)
-                atmosphereManager = HectonAtmosphereManager.Instance;
+                atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
         }
 
         private Vector3 ResolveObserverWorldPosition()

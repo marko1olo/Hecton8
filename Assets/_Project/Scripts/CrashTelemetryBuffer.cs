@@ -577,7 +577,7 @@ namespace Hecton8.Core
             DebugLogEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.EventBus;
-            entry.DeltaTime = Time.unscaledDeltaTime;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.FixedDeltaTime = _lastFixedDeltaTime;
             entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
@@ -607,7 +607,7 @@ namespace Hecton8.Core
             DebugLogEntry entry = default;
             entry.FrameIndex = frameIndex;
             entry.SystemMask = (uint)SystemBits.Physics;
-            entry.DeltaTime = Time.unscaledDeltaTime;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             entry.FixedDeltaTime = _lastFixedDeltaTime;
             entry.GpuFrameTime = math.max(0f, accelerationMetersPerSecondSq);
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
@@ -785,7 +785,7 @@ namespace Hecton8.Core
         private static uint SampleSystemMask()
         {
             uint systemMask = 0u;
-            if (HectonFluidEngine.Instance != null)
+            if (GlobalRegistry.Fluid != null)
             {
                 systemMask |= (uint)SystemBits.Physics;
                 systemMask |= (uint)SystemBits.Fluid;
@@ -968,7 +968,7 @@ namespace Hecton8.Core
             uint heat = QuantizeUnitToByte(heatSeverity);
             uint environment = QuantizeSignedTemperatureToByte(environmentTemperature);
             uint internalValue = QuantizeSignedTemperatureToByte(internalTemperature);
-            uint thermalRuntimePresent = AbyssalThermalManager.Instance != null ? 1u : 0u;
+            uint thermalRuntimePresent = GlobalRegistry.Thermodynamics != null ? 1u : 0u;
             return heat |
                    (environment << 8) |
                    (internalValue << 16) |

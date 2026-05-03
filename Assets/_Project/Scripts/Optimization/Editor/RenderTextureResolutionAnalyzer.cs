@@ -52,7 +52,7 @@ namespace Hecton8.Optimization.Editor
         {
             var recommendations = new List<ResolutionOptimizationRecommendation>();
             
-            if (RenderTextureLifecycleTracker.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
             {
                 Debug.LogWarning("[ResolutionAnalyzer] RenderTextureLifecycleTracker not available. Enter Play Mode first.");
                 return recommendations;
@@ -60,7 +60,7 @@ namespace Hecton8.Optimization.Editor
             
             // Query all tracked RTs
             var allRTs = new List<RenderTextureAllocationRecord>();
-            var tracker = RenderTextureLifecycleTracker.Instance;
+            var tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycle;
             
             // Get all allocations via categories
             var categories = new[] { "Visor", "Camera", "PostFX", "UI", "Other" };

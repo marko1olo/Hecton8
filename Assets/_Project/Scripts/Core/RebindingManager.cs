@@ -13,7 +13,7 @@ namespace Hecton8.Input
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30990)] // Keep scene-owned instance ahead of regular runtime consumers.
-    public sealed class RebindingManager : MonoBehaviour, IInputBindingService
+    public sealed class RebindingManager : MonoBehaviour, IInputRebindService
     {
         private const string DefaultOverridesKey = "Hecton8.Input.BindingOverrides.v1";
         private const string DefaultOverridesFileName = "controls.json";
@@ -33,6 +33,8 @@ namespace Hecton8.Input
         private InputActionRebindingExtensions.RebindingOperation _activeRebind;
         private bool _registeredService;
 
+        internal static RebindingManager ActiveRuntimeInstance { get; private set; }
+
         public bool IsRebinding => _activeRebind != null;
 
         public event Action<string, string, int> OnRebindStarted;
@@ -43,6 +45,12 @@ namespace Hecton8.Input
         public event Action OnOverridesSaved;
         public event Action OnOverridesCleared;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         private void Awake()
         {
             IInputBindingService registered = GlobalRegistry.InputBinding;
@@ -52,6 +60,7 @@ namespace Hecton8.Input
                 return;
             }
 
+            ActiveRuntimeInstance = this;
             TryRegisterService();
 
             if (!loadOverridesOnAwake) return;
@@ -60,16 +69,23 @@ namespace Hecton8.Input
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
             TryRegisterService();
         }
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             CancelRebind();
             TryUnregisterService();
         }
@@ -351,8 +367,8 @@ namespace Hecton8.Input
             if (string.IsNullOrWhiteSpace(overridesPlayerPrefsKey))
                 return false;
 
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
-            if (!options.HasKey(overridesPlayerPrefsKey))
+            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
+            if (options == null || !options.HasKey(overridesPlayerPrefsKey))
                 return false;
 
             string json = options.GetString(overridesPlayerPrefsKey, string.Empty);
@@ -455,7 +471,10 @@ namespace Hecton8.Input
             if (string.IsNullOrWhiteSpace(overridesPlayerPrefsKey))
                 return;
 
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
+            if (options == null)
+                return;
+
             options.DeleteKey(overridesPlayerPrefsKey);
             options.Save();
         }

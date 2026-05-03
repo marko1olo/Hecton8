@@ -3,9 +3,9 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this economy map as current runtime truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this economy map as current runtime truth.
 - This document is an economy/fabrication/system contract, not proof that scarcity, pressure degradation, deconstruction, or thermodynamics are runtime-verified.
 - Re-open inventory, fabrication, power, weather, and physics owners before surgery.
 

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.IO;
+using Hecton.Localization;
 using UnityEngine;
 
 namespace Hecton8.Modding
@@ -16,7 +17,12 @@ namespace Hecton8.Modding
         private static readonly Dictionary<uint, AssetBundle> _loadedBundles = new Dictionary<uint, AssetBundle>(32);
         // COLD ALLOC: Dictionary<uint,Texture2D>[32] - cached raw PNG textures by asset hash - owner: ModAssetManager
         private static readonly Dictionary<uint, Texture2D> _rawTextures = new Dictionary<uint, Texture2D>(32);
+        // COLD ALLOC: HashSet<uint>[128] - FNV-hashed MOD_COMPATIBLE ledger prefab references - owner: ModAssetManager
+        private static readonly HashSet<uint> _modCompatibleAssetHashes = new HashSet<uint>(128);
         private const string ModCompatibleLedgerTag = "MOD_COMPATIBLE";
+        private const long MaxRawTextureBytes = 8L * 1024L * 1024L;
+        private const int MaxRawTextureDimension = 2048;
+        private static bool _modCompatibleLedgerLoaded;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -24,6 +30,8 @@ namespace Hecton8.Modding
             UnloadAllBundles();
             _bundlePaths.Clear();
             _rawTextures.Clear();
+            _modCompatibleAssetHashes.Clear();
+            _modCompatibleLedgerLoaded = false;
         }
 
         /// <summary>
@@ -101,15 +109,13 @@ namespace Hecton8.Modding
             if (assetNames == null || assetNames.Length == 0)
                 return null;
 
-            string normalizedName = assetName.Replace('\\', '/').ToLowerInvariant();
             for (int i = 0; i < assetNames.Length; i++)
             {
                 string candidate = assetNames[i];
                 if (candidate == null)
                     continue;
 
-                string normalizedCandidate = candidate.ToLowerInvariant();
-                if (!normalizedCandidate.EndsWith(normalizedName))
+                if (!EndsWithAssetPath(candidate, assetName))
                     continue;
 
                 asset = bundle.LoadAsset<TAsset>(candidate);
@@ -153,9 +159,13 @@ namespace Hecton8.Modding
             if (!ModLoader.TryGetModDirectory(modId, out string modDirectory) || string.IsNullOrWhiteSpace(modDirectory))
                 return null;
 
-            string normalizedRelativePath = assetName.Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar);
-            string filePath = Path.Combine(modDirectory, normalizedRelativePath);
+            if (!TryBuildModRelativeFilePath(modDirectory, assetName, out string filePath))
+                return null;
+
             if (!File.Exists(filePath))
+                return null;
+
+            if (!TryValidateRawTextureFile(filePath))
                 return null;
 
             uint cacheKey = ComputeAssetCacheHash(modId, filePath);
@@ -185,8 +195,44 @@ namespace Hecton8.Modding
                 return null;
             }
 
+            if (texture.width > MaxRawTextureDimension || texture.height > MaxRawTextureDimension)
+            {
+                UnityEngine.Object.Destroy(texture);
+                Debug.LogWarning($"[ModAssetManager] Raw texture '{filePath}' exceeded {MaxRawTextureDimension}px dimension cap.");
+                return null;
+            }
+
             _rawTextures[cacheKey] = texture;
             return texture;
+        }
+
+        private static bool TryValidateRawTextureFile(string filePath)
+        {
+            try
+            {
+                // COLD ALLOC: FileInfo[1] — raw texture size gate — owner: ModAssetManager
+                var fileInfo = new FileInfo(filePath);
+                if (!fileInfo.Exists || fileInfo.Length <= 0L)
+                    return false;
+
+                if (fileInfo.Length > MaxRawTextureBytes)
+                {
+                    Debug.LogWarning($"[ModAssetManager] Raw texture '{filePath}' exceeded {MaxRawTextureBytes} byte cap.");
+                    return false;
+                }
+            }
+            catch (IOException exception)
+            {
+                Debug.LogWarning($"[ModAssetManager] Failed to inspect raw texture '{filePath}': {exception.Message}");
+                return false;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogWarning($"[ModAssetManager] Rejected invalid raw texture '{filePath}': {exception.Message}");
+                return false;
+            }
+
+            return true;
         }
 
         private static void UnloadAllBundles()
@@ -224,31 +270,218 @@ namespace Hecton8.Modding
 
         private static bool IsProjectPrefabReference(string assetName)
         {
-            string normalized = assetName.Replace('\\', '/');
-            return normalized.StartsWith("Assets/", System.StringComparison.OrdinalIgnoreCase) ||
-                   IsGuidLike(normalized);
+            return StartsWithAssetsPrefix(assetName) ||
+                   IsGuidLike(assetName);
         }
 
         private static bool IsLedgerModCompatible(string assetName)
         {
+            EnsureModCompatibleLedgerLoaded();
+
+            uint assetHash = ComputeNormalizedAssetReferenceHash(assetName);
+            return assetHash != 0u && _modCompatibleAssetHashes.Contains(assetHash);
+        }
+
+        private static void EnsureModCompatibleLedgerLoaded()
+        {
+            if (_modCompatibleLedgerLoaded)
+                return;
+
+            _modCompatibleLedgerLoaded = true;
             string ledgerPath = Path.Combine(Application.dataPath, "..", "Docs", "ARCHITECTURE", "PROJECT_CONTENT_LEDGER.md");
             if (!File.Exists(ledgerPath))
-                return false;
+                return;
 
-            string normalized = assetName.Replace('\\', '/');
-            foreach (string line in File.ReadLines(ledgerPath))
+            try
             {
-                if (line == null ||
-                    line.IndexOf(ModCompatibleLedgerTag, System.StringComparison.OrdinalIgnoreCase) < 0)
+                // COLD ALLOC: StreamReader[1] - sequential project content ledger scan for mod prefab allowlist - owner: ModAssetManager
+                using (StreamReader reader = new StreamReader(ledgerPath))
                 {
-                    continue;
+                    string line;
+                    while ((line = reader.ReadLine()) != null)
+                    {
+                        if (line.IndexOf(ModCompatibleLedgerTag, System.StringComparison.OrdinalIgnoreCase) < 0)
+                            continue;
+
+                        RegisterLedgerAssetReferences(line);
+                    }
+                }
+            }
+            catch (IOException exception)
+            {
+                Debug.LogWarning($"[ModAssetManager] Failed to scan project content ledger for mod allowlist: {exception.Message}");
+            }
+        }
+
+        private static void RegisterLedgerAssetReferences(string line)
+        {
+            int assetStart = line.IndexOf("Assets/", System.StringComparison.OrdinalIgnoreCase);
+            if (assetStart >= 0)
+            {
+                int assetEnd = assetStart;
+                while (assetEnd < line.Length)
+                {
+                    char c = line[assetEnd];
+                    if (char.IsWhiteSpace(c) || c == '|' || c == ')' || c == ']' || c == '`' || c == '"')
+                        break;
+
+                    assetEnd++;
                 }
 
-                if (line.IndexOf(normalized, System.StringComparison.OrdinalIgnoreCase) >= 0)
-                    return true;
+                if (assetEnd > assetStart)
+                    RegisterLedgerAssetReference(line, assetStart, assetEnd - assetStart);
             }
 
-            return false;
+            for (int i = 0; i <= line.Length - 32; i++)
+            {
+                if (IsGuidLike(line, i, 32))
+                    RegisterLedgerAssetReference(line, i, 32);
+            }
+        }
+
+        private static void RegisterLedgerAssetReference(string source, int start, int length)
+        {
+            uint assetHash = ComputeNormalizedAssetReferenceHash(source, start, length);
+            if (assetHash != 0u)
+                _modCompatibleAssetHashes.Add(assetHash);
+        }
+
+        private static uint ComputeNormalizedAssetReferenceHash(string assetName)
+        {
+            return string.IsNullOrWhiteSpace(assetName)
+                ? 0u
+                : ComputeNormalizedAssetReferenceHash(assetName, 0, assetName.Length);
+        }
+
+        private static uint ComputeNormalizedAssetReferenceHash(string source, int start, int length)
+        {
+            if (string.IsNullOrEmpty(source) || length <= 0 || start < 0 || start + length > source.Length)
+                return 0u;
+
+            unchecked
+            {
+                uint hash = LocHash.FnvOffsetBasis;
+                for (int i = 0; i < length; i++)
+                {
+                    char current = NormalizeAssetPathChar(source[start + i]);
+                    hash ^= (byte)current;
+                    hash *= LocHash.FnvPrime;
+                    hash ^= (byte)(current >> 8);
+                    hash *= LocHash.FnvPrime;
+                }
+
+                return hash;
+            }
+        }
+
+        private static bool EndsWithAssetPath(string candidate, string requested)
+        {
+            if (string.IsNullOrEmpty(candidate) ||
+                string.IsNullOrEmpty(requested) ||
+                candidate.Length < requested.Length)
+            {
+                return false;
+            }
+
+            int offset = candidate.Length - requested.Length;
+            for (int i = 0; i < requested.Length; i++)
+            {
+                if (NormalizeAssetPathChar(candidate[offset + i]) != NormalizeAssetPathChar(requested[i]))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool StartsWithAssetsPrefix(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.Length < 7)
+                return false;
+
+            return NormalizeAssetPathChar(value[0]) == 'a' &&
+                   NormalizeAssetPathChar(value[1]) == 's' &&
+                   NormalizeAssetPathChar(value[2]) == 's' &&
+                   NormalizeAssetPathChar(value[3]) == 'e' &&
+                   NormalizeAssetPathChar(value[4]) == 't' &&
+                   NormalizeAssetPathChar(value[5]) == 's' &&
+                   NormalizeAssetPathChar(value[6]) == '/';
+        }
+
+        private static char NormalizeAssetPathChar(char value)
+        {
+            if (value == '\\')
+                return '/';
+
+            return ToAsciiLower(value);
+        }
+
+        private static char ToAsciiLower(char value)
+        {
+            return value >= 'A' && value <= 'Z' ? (char)(value + 32) : value;
+        }
+
+        private static bool TryBuildModRelativeFilePath(string modDirectory, string relativePath, out string filePath)
+        {
+            filePath = null;
+            if (string.IsNullOrWhiteSpace(modDirectory) ||
+                string.IsNullOrWhiteSpace(relativePath) ||
+                Path.IsPathRooted(relativePath))
+            {
+                return false;
+            }
+
+            string fullDirectory;
+            string candidatePath;
+            try
+            {
+                fullDirectory = Path.GetFullPath(modDirectory);
+                candidatePath = Path.GetFullPath(Path.Combine(fullDirectory, relativePath));
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogWarning($"[ModAssetManager] Rejected invalid raw texture path '{relativePath}': {exception.Message}");
+                return false;
+            }
+
+            if (!IsSameOrChildPath(candidatePath, fullDirectory))
+                return false;
+
+            filePath = candidatePath;
+            return true;
+        }
+
+        private static bool IsSameOrChildPath(string candidatePath, string directoryPath)
+        {
+            if (string.IsNullOrEmpty(candidatePath) || string.IsNullOrEmpty(directoryPath))
+                return false;
+
+            int directoryLength = directoryPath.Length;
+            while (directoryLength > 0 && IsDirectorySeparator(directoryPath[directoryLength - 1]))
+                directoryLength--;
+
+            if (directoryLength <= 0 || candidatePath.Length < directoryLength)
+                return false;
+
+            for (int i = 0; i < directoryLength; i++)
+            {
+                if (NormalizeFileSystemPathChar(candidatePath[i]) != NormalizeFileSystemPathChar(directoryPath[i]))
+                    return false;
+            }
+
+            return candidatePath.Length == directoryLength || IsDirectorySeparator(candidatePath[directoryLength]);
+        }
+
+        private static char NormalizeFileSystemPathChar(char value)
+        {
+            if (value == '\\')
+                return '/';
+
+            return ToAsciiLower(value);
+        }
+
+        private static bool IsDirectorySeparator(char value)
+        {
+            return value == '/' || value == '\\';
         }
 
         private static bool IsGuidLike(string value)
@@ -259,6 +492,24 @@ namespace Hecton8.Modding
             for (int i = 0; i < value.Length; i++)
             {
                 char c = value[i];
+                bool isHex = (c >= '0' && c <= '9') ||
+                             (c >= 'a' && c <= 'f') ||
+                             (c >= 'A' && c <= 'F');
+                if (!isHex)
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static bool IsGuidLike(string value, int start, int length)
+        {
+            if (string.IsNullOrEmpty(value) || length != 32 || start < 0 || start + length > value.Length)
+                return false;
+
+            for (int i = 0; i < length; i++)
+            {
+                char c = value[start + i];
                 bool isHex = (c >= '0' && c <= '9') ||
                              (c >= 'a' && c <= 'f') ||
                              (c >= 'A' && c <= 'F');

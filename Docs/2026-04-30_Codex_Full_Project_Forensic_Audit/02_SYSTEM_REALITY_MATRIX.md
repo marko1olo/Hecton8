@@ -64,12 +64,12 @@ Criticism where required:
 Source-backed update after the May 1 audit pass:
 
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` now provides the conceptual system classification layer: load-bearing, active/transitional, presentation/support, experimental/seam, and historical/evidence.
-- Current first-party script surface under `Assets/_Project/Scripts`: `1020` C# files, `544728` lines by PowerShell line count.
+- Current first-party script surface under `Assets/_Project/Scripts`: `1047` C# files, `571562` lines by PowerShell line count.
 - `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` is now the current high-risk failure map. It supersedes softer claims that event, headless, AUP, and job-safety risks were only theoretical.
-- Event buses are no longer accurately described as having no breaker at all. `SystemDispatcher` contains `MaxLateFrameEventsPerFrame = 1000` and many static event lanes call `TryConsumeLateFrameEventDispatch()`. The remaining risk is narrower: no proven same-frame generation split across all event lanes, and `HectonEventBus` tracks dispatch depth without a hard max-depth cap.
+- Event buses are no longer accurately described as having no breaker at all. `SystemDispatcher` contains `MaxLateFrameEventsPerFrame = 1000` and many static event lanes call `TryConsumeLateFrameEventDispatch()`. `HectonEventBus` also contains `MaxDispatchDepth = 4`. The remaining risk is narrower: no proven same-frame generation split across all event lanes and no runtime cascade proof.
 - The original `FaunaBrain.UpdateBioluminescentHypnosis()` camera-specific headless violation is stale by current source recheck: the method now consumes `PlayerRuntimeContext.LookState`. Fauna headless proof is still absent because perception still uses player Transform/Rigidbody paths and no no-camera Play Mode test was run. `StorageCrate.OpenCrate()` remains source-patched but runtime-unverified.
-- The hot-lane job barrier finding is not "all Complete calls are equally bad." The currently documented Severity-High cases are `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick`.
-- Coroutine eradication is partial, not complete. `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md` reports 15 remaining `StartCoroutine(` call sites, concentrated in runtime smoke/verifier harnesses.
+- The hot-lane job barrier finding is not "all Complete calls are equally bad." The older documented Severity-High cases naming `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick` are stale by May 2 strict grep. Current `.Complete(` hits are dispatcher completion callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs` and one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`.
+- Coroutine eradication has improved since the older Awaitable report. May 2 strict grep found `0` `StartCoroutine(` call sites under `Assets/_Project/Scripts`.
 - Object pool exhaustion policy was tightened by code inspection: spawn exhaustion returns `null` and emits `GlobalTelemetryBus.PublishPoolExhausted(...)`; runtime expansion through `InstantiatePooled` is warmup-only by current source review.
 - Unity MCP console proof from the previous May 1 report pass: error query returned `0` entries. Current delta pass attempted `read_console` twice and MCP returned `no_unity_session`; therefore this update has no fresh console proof. Play Mode, GCMonitor, profiler, and runtime deadlock proof remain absent.
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is the current conceptual entry point for system ownership and active risks. It does not upgrade any readiness score and does not provide runtime proof.
@@ -90,5 +90,16 @@ Conceptual corrections:
 - Smoke testers and verifier scripts are QA support, not production gameplay ownership.
 - UI/audio/VFX are important presentation layers, but gameplay state must not depend on presentation availability or animation events.
 - World/scatter/voxel/fauna systems are load-bearing and high-risk; their problem is dependency gravity, not absence.
+
+## 2026-05-02 Reality Delta
+
+Source/log-backed update after the documentation actuality sweep:
+
+- Fresh local command `dotnet build .\Hecton8.Core.csproj` exited `0` with `136 Warning(s)` and `0 Error(s)` in `00:01:24.05`; latest post-restore `dotnet build .\Hecton8.Core.csproj --no-restore` rerun exited `0` with `73 Warning(s)` and `0 Error(s)` in `00:00:23.95`.
+- Current first-party source inventory: `1087` `.cs` files under `Assets/_Project`, `1047` under `Assets/_Project/Scripts`, `571562` static script lines, `317` scripts directly under `Assets/_Project/Scripts`, and `33` direct public interfaces in `GlobalRegistryContracts.cs`.
+- `Packages/manifest.json` still does not declare `com.unity.entities`; strict source grep found `0` active `Unity.Entities`, `IComponentData`, `SystemBase`, or `ISystem` references under `Assets/_Project/Scripts`.
+- `.codex-artifacts/dotnet-Hecton8.Core-2026-05-02-after-scatter-candidate-count-clamp.log` is not zero-byte evidence; it reports `Build succeeded`, `73 Warning(s)`, `0 Error(s)`.
+- `unity-batch-autonomous-registry-sweep-rerun.log` contains stale `VehicleDockingModule.ResolveColliderRuntimeId` errors, then later records `ExitCode: 0` and `Tundra build success`; do not use the stale errors alone as current compile truth.
+- Play Mode, GCMonitor, profiler, scene/prefab readback, and long-run memory retention remain unverified.
 
 STATUS: PENDING VERIFICATION

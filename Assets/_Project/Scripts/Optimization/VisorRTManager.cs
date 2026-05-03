@@ -30,6 +30,7 @@ namespace Hecton8.Optimization
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
         
         private bool _registeredSlowTick;
+        private bool _serviceRegistered;
         
         // COLD ALLOC: StringBuilder[1024] — zero-GC logging — owner: VisorRTManager
         private readonly StringBuilder _reportBuilder = new StringBuilder(1024);
@@ -68,17 +69,20 @@ namespace Hecton8.Optimization
         
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
         }
         
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
         }
         
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (_instance == this)
                 _instance = null;
@@ -100,7 +104,7 @@ namespace Hecton8.Optimization
         
         private void MeasureVisorRTMemory()
         {
-            if (RenderTextureLifecycleTracker.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
             {
                 VisorRTMemoryBytes = 0L;
                 return;
@@ -108,7 +112,7 @@ namespace Hecton8.Optimization
             
             // Query all Visor-owned RTs (zero-GC)
             _visorRTs.Clear();
-            RenderTextureLifecycleTracker.Instance.GetAllocationsByCategory("Visor", _visorRTs);
+            Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.GetAllocationsByCategory("Visor", _visorRTs);
             
             // Calculate total Visor RT memory (zero-GC loop)
             long totalBytes = 0L;
@@ -154,6 +158,24 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.UI);
             _registeredSlowTick = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+                return;
+
+            GlobalRegistry.RegisterVisorRTRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.VisorRT, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterVisorRTRuntime(this);
+            _serviceRegistered = false;
         }
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD

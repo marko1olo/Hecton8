@@ -15,7 +15,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
 {
     [Tooltip("Explicit runtime camera override. Falls back to the current player camera when empty.")]
     [SerializeField] private Camera runtimeCamera;
-    [Tooltip("Optional explicit atmosphere owner. When empty, the component falls back to HectonAtmosphereManager.Instance.")]
+    [Tooltip("Optional explicit atmosphere owner. When empty, the component falls back to Hecton8.Core.GlobalRegistry.Atmosphere.")]
     [SerializeField] private HectonAtmosphereManager atmosphereManager;
     [Tooltip("Optional explicit player movement owner. When empty, the component resolves the active player and uses its live water surface.")]
     [SerializeField] private HectonPlayerMovement playerMovement;
@@ -332,7 +332,7 @@ public sealed class SkySystemFollowCamera : MonoBehaviour, IUpdatable
         if (atmosphereManager != null)
             return atmosphereManager;
 
-        atmosphereManager = HectonAtmosphereManager.Instance;
+        atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
         return atmosphereManager;
     }
 

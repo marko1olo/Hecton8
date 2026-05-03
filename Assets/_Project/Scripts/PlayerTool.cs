@@ -84,7 +84,7 @@ namespace Hecton8.Gameplay
             get
             {
                 if (_toolMetadata == null) return 0f;
-                var system = ToolDurabilitySystem.Instance;
+                var system = Hecton8.Core.GlobalRegistry.ToolDurability;
                 if (system == null) return _toolMetadata.maxDurability;
                 return system.GetDurability(_toolMetadata.toolID, _toolMetadata.maxDurability);
             }
@@ -104,7 +104,7 @@ namespace Hecton8.Gameplay
             get
             {
                 if (_toolMetadata == null) return false;
-                var system = ToolDurabilitySystem.Instance;
+                var system = Hecton8.Core.GlobalRegistry.ToolDurability;
                 if (system == null) return false;
                 return system.IsBroken(_toolMetadata.toolID);
             }
@@ -214,7 +214,7 @@ namespace Hecton8.Gameplay
         {
             IsEquipped = true;
             _lowDurabilityWarningFired = false;
-            var system = ToolDurabilitySystem.Instance;
+            var system = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (system != null && _toolMetadata != null) system.OnToolBroken += HandleToolBroken;
             EnsureModularRuntimeRegistration();
             SyncModularHeat(ResolveModularHeatNormalized());
@@ -224,7 +224,7 @@ namespace Hecton8.Gameplay
         public virtual void OnUnequip()
         {
             IsEquipped = false;
-            var system = ToolDurabilitySystem.Instance;
+            var system = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (system != null && _toolMetadata != null) system.OnToolBroken -= HandleToolBroken;
         }
 
@@ -400,7 +400,7 @@ namespace Hecton8.Gameplay
 
         private void ApplyDurabilityDrain(float deltaTime, bool isPrimary)
         {
-            var system = ToolDurabilitySystem.Instance;
+            var system = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (system == null || _toolMetadata == null) return;
             float drainRate = isPrimary ? _toolMetadata.durabilityDrainRate : _toolMetadata.durabilityDrainRateSecondary;
             float multiplier = TryGetModularEquipment(out IModularEquipmentService service) && _runtimeToolRegistered
@@ -591,7 +591,7 @@ namespace Hecton8.Gameplay
             {
                 int toolHashId = LocHash.Compute(_toolData.PersistentId);
                 if (toolHashId != 0)
-                    PlayerInventory.Instance?.TryRemoveFirstMatchingItemByHash(toolHashId);
+                    Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime?.TryRemoveFirstMatchingItemByHash(toolHashId);
             }
 
             HectonPlayerHealth playerHealth = null;

@@ -127,18 +127,9 @@ namespace Hecton8.Debugging
 
         private Fabricator FindTargetFabricator()
         {
-            Fabricator[] all = FindObjectsByType<Fabricator>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < all.Length; i++)
-            {
-                Fabricator fabricator = all[i];
-                if (fabricator == null)
-                    continue;
-
-                if (string.IsNullOrWhiteSpace(targetFabricatorName) || fabricator.name == targetFabricatorName)
-                    return fabricator;
-            }
-
-            return null;
+            return Fabricator.TryGetActiveFabricator(targetFabricatorName, out Fabricator fabricator)
+                ? fabricator
+                : null;
         }
 
         private RecipeData FindTargetRecipe(Fabricator fabricator)

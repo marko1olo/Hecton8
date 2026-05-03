@@ -18,6 +18,7 @@
 //   - foreach on Dictionary
 //   - tag == "string" instead of CompareTag
 //   - Animator.Set* with string literal
+//   - Unauthorized DontDestroyOnLoad calls outside bootstrap/crash telemetry owners
 //
 // OWNERSHIP: Editor tooling only. No runtime code.
 // ============================================================================
@@ -107,7 +108,7 @@ namespace Hecton8.EditorTools
                 Name = "SendMessage/BroadcastMessage",
                 Regex = @"(SendMessage|BroadcastMessage|SendMessageUpwards)\s*\(",
                 Severity = "ERROR",
-                Fix = "Use interfaces, direct calls, or static events"
+                Fix = "Use interfaces, direct calls, or NativeQueue-backed event lanes"
             },
             // ── String concat in potential hot path ──────────────
             new ViolationPattern
@@ -180,6 +181,13 @@ namespace Hecton8.EditorTools
                 Regex = @"GameObject\.Find\s*\(",
                 Severity = "ERROR",
                 Fix = "Use GlobalRegistry, cached refs, or serialized references"
+            },
+            new ViolationPattern
+            {
+                Name = "Unauthorized DontDestroyOnLoad",
+                Regex = @"(?:Object\.)?DontDestroyOnLoad\s*\(",
+                Severity = "ERROR",
+                Fix = "Move lifecycle ownership to GameBootstrapper/GlobalRegistry, or document an explicit exception"
             },
         };
 
@@ -286,6 +294,13 @@ namespace Hecton8.EditorTools
                                 continue;
                         }
 
+                        // Special: DDOL is allowed only in the explicit bootstrap/crash owners.
+                        if (_patterns[p].Name.StartsWith("Unauthorized DontDestroyOnLoad"))
+                        {
+                            if (IsAllowedDontDestroyOnLoadOwner(relativePath))
+                                continue;
+                        }
+
                         string entry = $"  [{_patterns[p].Severity}] {relativePath}:{lineIdx + 1} — {_patterns[p].Name}";
                         results.Add(entry);
                         totalViolations++;
@@ -331,6 +346,17 @@ namespace Hecton8.EditorTools
         // ══════════════════════════════════════════════════════════
         //  CONTEXT ANALYSIS HELPERS
         // ══════════════════════════════════════════════════════════
+
+        /// <summary>
+        /// Allows the explicit persistent runtime owners.
+        /// </summary>
+        private static bool IsAllowedDontDestroyOnLoadOwner(string relativePath)
+        {
+            return relativePath.EndsWith("/Bootstrap/GameBootstrapper.cs", StringComparison.Ordinal) ||
+                   relativePath.EndsWith("\\Bootstrap\\GameBootstrapper.cs", StringComparison.Ordinal) ||
+                   relativePath.EndsWith("/CrashTelemetryBuffer.cs", StringComparison.Ordinal) ||
+                   relativePath.EndsWith("\\CrashTelemetryBuffer.cs", StringComparison.Ordinal);
+        }
 
         /// <summary>
         /// Checks if the given line index is within a #if UNITY_EDITOR block.

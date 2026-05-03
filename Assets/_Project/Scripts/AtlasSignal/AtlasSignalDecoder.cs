@@ -70,6 +70,7 @@ namespace Hecton8.AtlasSignal
         private int  _currentPhase = 0;
         private bool _fullyDecoded;
         private bool _registered;
+        private bool _serviceRegistered;
         private bool _decodeWindowOpen;
         private float _decodeErrorSum;
         private float _dialFrequency01 = 0.5f;
@@ -113,6 +114,7 @@ namespace Hecton8.AtlasSignal
 
         private void OnEnable()
         {
+            TryRegisterToGlobalRegistry();
             TryRegister();
 
             AtlasSignalEvents.Register(this);
@@ -122,6 +124,7 @@ namespace Hecton8.AtlasSignal
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterFromGlobalRegistry();
 
             AtlasSignalEvents.Unregister(this);
         }
@@ -129,6 +132,7 @@ namespace Hecton8.AtlasSignal
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterFromGlobalRegistry();
 
             if (Instance == this)
                 Instance = null;
@@ -142,7 +146,7 @@ namespace Hecton8.AtlasSignal
         {
             if (_fullyDecoded) return;
 
-            AtlasSignalSystem sys = AtlasSignalSystem.Instance;
+            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (sys == null) return;
             if (!CanDecodeSignal(sys)) return;
 
@@ -193,6 +197,24 @@ namespace Hecton8.AtlasSignal
             _registered = false;
         }
 
+        private void TryRegisterToGlobalRegistry()
+        {
+            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+                return;
+
+            GlobalRegistry.RegisterAtlasSignalDecoderRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.AtlasSignalDecoder, this);
+        }
+
+        private void TryUnregisterFromGlobalRegistry()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterAtlasSignalDecoderRuntime(this);
+            _serviceRegistered = false;
+        }
+
         private void OnPhaseAdvanced(int phase, float strength)
         {
             string msg = phase < PhaseMessages.Length ? PhaseMessages[phase] : string.Empty;
@@ -211,7 +233,7 @@ namespace Hecton8.AtlasSignal
             // Пульс усиливает расшифровку — проверяем фазу немедленно
             if (_fullyDecoded) return;
 
-            AtlasSignalSystem sys = AtlasSignalSystem.Instance;
+            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (sys == null) return;
             if (!CanDecodeSignal(sys)) return;
 
@@ -236,7 +258,7 @@ namespace Hecton8.AtlasSignal
             if (_fullyDecoded)
                 return;
 
-            AtlasSignalSystem sys = AtlasSignalSystem.Instance;
+            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (sys == null)
                 return;
 
@@ -262,7 +284,7 @@ namespace Hecton8.AtlasSignal
             if (sys == null || sys.CurrentRevealStage <= 0)
                 return false;
 
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector == null)
                 return true;
 

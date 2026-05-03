@@ -62,6 +62,7 @@ namespace WaveHarmonic.Crest
 
         // Caution - order here impact performance. Rearranging these to match order
         // they're read in the compute shader made it 50% slower..
+#pragma warning disable 0649
         struct GerstnerWaveComponent4
         {
             public Vector4 _TwoPiOverWavelength;
@@ -76,6 +77,7 @@ namespace WaveHarmonic.Crest
             public Vector4 _ChopAmplitude2;
             public Vector4 _Phase2;
         }
+#pragma warning restore 0649
         ComputeBuffer _BufferWaveData;
         readonly GerstnerWaveComponent4[] _WaveData = new GerstnerWaveComponent4[k_MaximumWaveComponents / 4];
 

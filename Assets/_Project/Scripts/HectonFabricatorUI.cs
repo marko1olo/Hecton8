@@ -7,6 +7,7 @@ using Hecton8.Crafting;
 using Hecton8.Input;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.World;
 using Hecton.Localization;
 using TMPro;
 using Unity.Collections;
@@ -20,7 +21,7 @@ using UnityEditor;
 namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
-    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ICraftingEventListener
+    public sealed class HectonFabricatorUI : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, ICraftingEventListener
     {
         private const string HologramShaderPath = "Assets/_Project/Art/Shaders/Hecton_FabricatorHologram.shader";
         private const int MaxVisibleHologramInstances = 16;
@@ -113,6 +114,7 @@ namespace Hecton8.UI
         private bool _isCrafting;
         private float _craftProgress;
         private bool _tickRegistered;
+        private bool _lateFrameRegistered;
         private bool _recipePointerScheduled;
         private float _hologramAnimationTime;
         private JobHandle _recipePointerHandle;
@@ -248,7 +250,6 @@ namespace Hecton8.UI
             }
 
             ResolveRuntimeReferences();
-            UpdateRecipePointerSelection();
             UpdateRecipeListPose();
             RefreshRecipeListIfDirty();
             RenderActiveRecipeHologram(deltaTime);
@@ -409,7 +410,7 @@ namespace Hecton8.UI
         {
             if (_recipePointerScheduled)
             {
-                _recipePointerHandle.Complete();
+                DispatcherJobSwap.TryComplete(ref _recipePointerHandle, true);
                 _recipePointerScheduled = false;
             }
 
@@ -447,15 +448,28 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _tickRegistered = true;
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
+            _lateFrameRegistered = true;
         }
 
         private void UnregisterTick()
         {
-            if (!_tickRegistered)
-                return;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _lateFrameRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _tickRegistered = false;
+            if (_tickRegistered)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _tickRegistered = false;
+            }
+        }
+
+        public void LateFrameTick()
+        {
+            UpdateRecipePointerSelection();
         }
 
         private void SetSelectedIndex(int nextIndex)
@@ -1025,10 +1039,9 @@ namespace Hecton8.UI
             if (!_recipePointerScheduled)
                 return;
 
-            if (!_recipePointerHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _recipePointerHandle, false))
                 return;
 
-            _recipePointerHandle.Complete();
             _recipePointerScheduled = false;
             _hoveredRecipeIndex = -1;
 

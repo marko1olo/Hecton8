@@ -30,6 +30,7 @@
 
 using Hecton8.Core;
 using Hecton8.Bootstrap;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -199,6 +200,9 @@ namespace Hecton8.Core
                                                    NativeArrayOptions.UninitializedMemory);
             _jobResults = new NativeArray<byte>(_pointCount, Allocator.Persistent,
                                                  NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<byte>[pointCount] - persistent previous proximity state mirror for async distance jobs - owner: ProximityColliderSystem
+            _prevStatusNative = new NativeArray<byte>(_pointCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterNativeBuffers();
 
             // ── Копируем позиции в NativeArray<float3> ──
             for (int i = 0; i < _pointCount; i++)
@@ -255,6 +259,9 @@ namespace Hecton8.Core
                                                    NativeArrayOptions.UninitializedMemory);
             _jobResults = new NativeArray<byte>(_pointCount, Allocator.Persistent,
                                                  NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<byte>[pointCount] - persistent previous proximity state mirror for async distance jobs - owner: ProximityColliderSystem
+            _prevStatusNative = new NativeArray<byte>(_pointCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterNativeBuffers();
 
             // ── NativeArray.CopyFrom — bulk memcpy, zero GC ──
             _positions.CopyFrom(worldPositions);
@@ -448,7 +455,7 @@ namespace Hecton8.Core
                     if (Time.unscaledTime >= _nextPlayerResolveWarningTime)
                     {
                         _nextPlayerResolveWarningTime = Time.unscaledTime + 5f;
-                        Debug.LogWarning("[ProximityColliderSystem] playerTransform still unresolved after runtime retry.");
+                        LogPlayerResolveRetryFailed();
                     }
 
                     return;
@@ -477,14 +484,19 @@ namespace Hecton8.Core
             if (!_initialized || !_jobScheduled)
                 return;
 
-            if (!_jobHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _jobHandle, false))
                 return;
 
-            _jobHandle.Complete();
             _jobScheduled = false;
             _jobPendingFrameCount = 0;
 
             ProcessJobResults();
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPlayerResolveRetryFailed()
+        {
+            Debug.LogWarning("[ProximityColliderSystem] playerTransform still unresolved after runtime retry.");
         }
 
         // ══════════════════════════════════════════════════════════
@@ -501,12 +513,11 @@ namespace Hecton8.Core
         {
             if (!_prevStatusNative.IsCreated || _prevStatusNative.Length != _pointCount)
             {
-                if (_prevStatusNative.IsCreated)
-                    _prevStatusNative.Dispose();
-
-                // COLD ALLOC: NativeArray<byte>[pointCount] - persistent previous proximity state mirror for async distance jobs - owner: ProximityColliderSystem
-                _prevStatusNative = new NativeArray<byte>(
-                    _pointCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[ProximityColliderSystem] Native previous-status buffer is invalid. Clearing runtime data.");
+#endif
+                ClearRuntimeData();
+                return;
             }
 
             // ── Копируем managed → native (memcpy, zero GC) ──
@@ -551,7 +562,7 @@ namespace Hecton8.Core
         /// </summary>
         private void ProcessJobResults()
         {
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null) return;
 
             int operationsThisTick = 0;
@@ -687,7 +698,7 @@ namespace Hecton8.Core
         {
             if (_activeColliders == null) return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
 
             for (int i = 0; i < _activeColliders.Length; i++)
             {
@@ -713,18 +724,21 @@ namespace Hecton8.Core
 
             if (_positions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_positions);
                 disposeDependency = _positions.Dispose(disposeDependency);
                 _positions = default;
             }
 
             if (_jobResults.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_jobResults);
                 disposeDependency = _jobResults.Dispose(disposeDependency);
                 _jobResults = default;
             }
 
             if (_prevStatusNative.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_prevStatusNative);
                 disposeDependency = _prevStatusNative.Dispose(disposeDependency);
                 _prevStatusNative = default;
             }
@@ -733,6 +747,13 @@ namespace Hecton8.Core
             _prevStatus      = null;
             _initialized     = false;
             _pointCount      = 0;
+        }
+
+        private void RegisterNativeBuffers()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_positions, nameof(ProximityColliderSystem), nameof(_positions), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_jobResults, nameof(ProximityColliderSystem), nameof(_jobResults), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_prevStatusNative, nameof(ProximityColliderSystem), nameof(_prevStatusNative), NativeAllocationLifetime.Scene);
         }
 
         // ══════════════════════════════════════════════════════════

@@ -179,7 +179,7 @@ namespace Hecton8.Crafting
 
         public string GetFabricationGroupLabel()
         {
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             switch (GetResolvedFabricationGroup())
             {
                 case FabricationGroup.Materials:

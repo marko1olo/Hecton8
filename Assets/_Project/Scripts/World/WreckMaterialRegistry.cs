@@ -19,6 +19,7 @@ namespace Hecton8.World
         private static readonly int _WreckMatricesId = Shader.PropertyToID("_HectonWreckMatrices");
 
         [System.Serializable]
+#pragma warning disable 0649 // Unity serializes module render contracts from authored registry data.
         private struct ModuleRenderContract
         {
             [Tooltip("Optional mesh override. When empty, the generator structural mesh for the same module slot is used.")]
@@ -36,6 +37,7 @@ namespace Hecton8.World
             [Tooltip("Receive-shadows flag used by the BRG draw.")]
             public bool ReceiveShadows;
         }
+#pragma warning restore 0649
 
         private sealed class ModuleBatch
         {
@@ -336,59 +338,18 @@ namespace Hecton8.World
                     return default;
                 }
 
-                NativeArray<byte> visibilityMask = new NativeArray<byte>(instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                int planeCount = cullingContext.cullingPlanes.IsCreated ? cullingContext.cullingPlanes.Length : 0;
-                NativeArray<float4> cullingPlanes = default;
-                if (planeCount > 0)
-                {
-                    cullingPlanes = new NativeArray<float4>(planeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
-                    {
-                        Plane plane = cullingContext.cullingPlanes[planeIndex];
-                        cullingPlanes[planeIndex] = new float4(plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
-                    }
-                }
-
-                unsafe
-                {
-                    BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(instanceCount, 1, 1);
-                    JobHandle visibilityHandle = new HectonBatchRendererGroupUtility.BuildMatrixVisibilityMaskJob
-                    {
-                        Matrices = _matrices.AsArray(),
-                        CullingPlanes = cullingPlanes,
-                        VisibilityMask = visibilityMask,
-                        InstanceCount = instanceCount,
-                        PlaneCount = planeCount,
-                        EnableCpuCulling = true,
-                        GlobalOffset = float3.zero,
-                        RadiusScale = 1.7321f,
-                        MinRadius = 0.5f
-                    }.Schedule(instanceCount, 64);
-
-                    JobHandle finalizeHandle = new HectonBatchRendererGroupUtility.FinalizeSingleDrawCommandOutputJob
-                    {
-                        VisibilityMask = visibilityMask,
-                        InstanceCount = instanceCount,
-                        BatchId = _batchId,
-                        MeshId = _batchMeshId,
-                        MaterialId = _batchMaterialId,
-                        Layer = _layer,
-                        SubMeshIndex = _subMeshIndex,
-                        ShadowCastingMode = _shadowCastingMode,
-                        ReceiveShadows = _receiveShadows,
-                        MotionMode = MotionVectorGenerationMode.Object,
-                        VisibleInstances = output.visibleInstances,
-                        DrawCommands = output.drawCommands,
-                        DrawRanges = output.drawRanges,
-                        OutputCommands = HectonBatchRendererGroupUtility.GetDirectDrawOutputPointer(cullingOutput)
-                    }.Schedule(visibilityHandle);
-
-                    JobHandle disposeHandle = visibilityMask.Dispose(finalizeHandle);
-                    if (cullingPlanes.IsCreated)
-                        disposeHandle = cullingPlanes.Dispose(disposeHandle);
-
-                    return disposeHandle;
-                }
+                HectonBatchRendererGroupUtility.WriteAllVisibleSingleDrawOutput(
+                    cullingOutput,
+                    instanceCount,
+                    _batchId,
+                    _batchMeshId,
+                    _batchMaterialId,
+                    _layer,
+                    _subMeshIndex,
+                    _shadowCastingMode,
+                    _receiveShadows,
+                    MotionVectorGenerationMode.Object);
+                return default;
             }
         }
 

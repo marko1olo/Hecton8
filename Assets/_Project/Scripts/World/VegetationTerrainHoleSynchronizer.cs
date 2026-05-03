@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -972,7 +972,7 @@ namespace Hecton8.World
                 if (!state.TerrainHolesJobHandle.IsCompleted)
                     continue;
 
-                VegetationLateFrameJobSwap.TryComplete(ref state.TerrainHolesJobHandle, forceComplete: false);
+                DispatcherJobSwap.TryComplete(ref state.TerrainHolesJobHandle, forceComplete: false);
                 state.TerrainHolesJobScheduled = false;
                 state.TerrainHolesJobHandle = default;
                 ApplyTerrainHoleMask(state);

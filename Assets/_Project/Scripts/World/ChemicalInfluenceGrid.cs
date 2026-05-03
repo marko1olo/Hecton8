@@ -1,4 +1,5 @@
 using Hecton8.AI;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Unity.Burst;
@@ -19,7 +20,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6440)]
     [AddComponentMenu("Hecton8/World/Chemical Influence Grid")]
-    public sealed class ChemicalInfluenceGrid : MonoBehaviour, ISlowTickable
+    public sealed class ChemicalInfluenceGrid : MonoBehaviour, ISlowTickable, ILateFrameTickable
     {
         internal enum ChemicalChannel : int
         {
@@ -130,6 +131,7 @@ namespace Hecton8.World
         private JobHandle _diffusionHandle;
         private bool _diffusionPending;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
         private bool _runtimeInitialized;
         private int _pendingWriteCount;
         private int _lastPublishedFrame = -1;
@@ -307,17 +309,20 @@ namespace Hecton8.World
         {
             InitializeRuntime();
             TryRegisterSlowTick();
+            TryRegisterLateFrameTick();
         }
 
         private void OnDisable()
         {
             TryUnregisterSlowTick();
+            TryUnregisterLateFrameTick();
             DisposeBuffers();
         }
 
         private void OnDestroy()
         {
             TryUnregisterSlowTick();
+            TryUnregisterLateFrameTick();
             DisposeBuffers();
 
             if (_activeRuntimeInstance == this)
@@ -357,12 +362,7 @@ namespace Hecton8.World
                 return;
 
             if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
+                GameBootstrapper.PersistRuntimeService(this);
 
             ResolveGridMetrics();
             InitializeBuffers();
@@ -388,7 +388,6 @@ namespace Hecton8.World
             if (_activeRuntimeInstance != this)
                 return;
 
-            FinalizeDiffusionIfReady();
             if (_lastPublishedFrame == frameId)
                 return;
 
@@ -582,11 +581,18 @@ namespace Hecton8.World
             if (!_diffusionPending || !_diffusionHandle.IsCompleted)
                 return;
 
-            _diffusionHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _diffusionHandle, forceComplete: false))
+                return;
+
             (_frontGrid, _backGrid) = (_backGrid, _frontGrid);
-            _diffusionHandle = default;
             _diffusionPending = false;
             _debugDiffusionPending = false;
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            FinalizeDiffusionIfReady();
         }
 
         private void DispatchGpuMirror()
@@ -831,7 +837,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredSlowTick = true;
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterSlowTick()
@@ -841,6 +847,24 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredSlowTick = false;
+        }
+
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_registeredLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrameTick = false;
         }
 
         private void DisposeBuffers()

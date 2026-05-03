@@ -294,7 +294,7 @@ namespace Hecton8.Gameplay
                 PublishRuntimeContextState();
 #if UNITY_EDITOR
                 _debugCurrentSlot = _currentSlotIndex;
-                _debugStateName   = _swapState.ToString();
+                _debugStateName   = GetSwapStateDebugName(_swapState);
 #endif
                 return;
             }
@@ -325,7 +325,7 @@ namespace Hecton8.Gameplay
 
 #if UNITY_EDITOR
             _debugCurrentSlot = _currentSlotIndex;
-            _debugStateName   = _swapState.ToString();
+            _debugStateName   = GetSwapStateDebugName(_swapState);
 #endif
         }
 
@@ -744,7 +744,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (ObjectPoolManager.Instance == null)
+            if (GlobalRegistry.ObjectPool == null)
                 return;
 
             for (int i = 0; i < toolPrefabs.Length; i++)
@@ -758,7 +758,7 @@ namespace Hecton8.Gameplay
             if (_constructionGhostPoolsWarmed || constructionGhostWarmupCount <= 0)
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             ConstructionManager constructionManager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
             ModuleCatalog catalog = constructionManager != null ? constructionManager.Catalog : null;
             if (pool == null || catalog == null || catalog.Count <= 0)
@@ -781,7 +781,7 @@ namespace Hecton8.Gameplay
             if (prefab == null || minimumReserve <= 0)
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return;
 
@@ -903,11 +903,10 @@ namespace Hecton8.Gameplay
             if (!allowSceneFallback)
                 return;
 
-            // COLD SEARCH: recover current submarine interior ownership after enable/load or overlapping-module exit.
-            BaseModule[] modules = UnityEngine.Object.FindObjectsByType<BaseModule>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < modules.Length; i++)
+            int moduleCount = BaseModule.ActiveModuleCount;
+            for (int i = 0; i < moduleCount; i++)
             {
-                BaseModule module = modules[i];
+                BaseModule module = BaseModule.GetActiveModuleAt(i);
                 if (module == null || !module.IsPlayerInsideInterior)
                     continue;
 
@@ -1006,8 +1005,10 @@ namespace Hecton8.Gameplay
                 if (prefab == null)
                 {
                     LogToolDebug($"RequestSwap abort: slot {newSlotIndex} prefab null");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning(
                         $"[PlayerToolManager] Slot {newSlotIndex + 1}: no prefab assigned.");
+#endif
                     return;
                 }
 
@@ -1015,9 +1016,11 @@ namespace Hecton8.Gameplay
                 if (!HasToolInInventory(prefab))
                 {
                     LogToolDebug($"RequestSwap abort: slot {newSlotIndex} missing in inventory ({prefab.name})");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.Log(
                         $"[PlayerToolManager] Slot {newSlotIndex + 1}: " +
                         "tool not found in inventory.");
+#endif
                     return;
                 }
             }
@@ -1171,10 +1174,12 @@ namespace Hecton8.Gameplay
             LogToolDebug($"SpawnNewTool begin slot={slotIndex} prefab={prefab.name}");
             EnsurePoolWarmup(prefab, toolPoolWarmupCount);
             WarmConstructionGhostPoolsIfNeeded();
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
             {
-                Debug.LogError("[PlayerToolManager] ObjectPoolManager.Instance is null!");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError("[PlayerToolManager] GlobalRegistry.ObjectPool is null!");
+#endif
                 return;
             }
 
@@ -1187,8 +1192,10 @@ namespace Hecton8.Gameplay
             if (_currentInstance == null)
             {
                 LogToolDebug($"SpawnNewTool failed: pool returned null for {prefab.name}");
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
                     $"[PlayerToolManager] Failed to spawn tool from slot {slotIndex + 1}.");
+#endif
                 return;
             }
 
@@ -1212,9 +1219,11 @@ namespace Hecton8.Gameplay
             }
             else
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError(
                     $"[PlayerToolManager] Prefab '{prefab.name}' " +
                     "has no PlayerTool component!");
+#endif
                 _currentTool = null;
             }
         }
@@ -1240,7 +1249,7 @@ namespace Hecton8.Gameplay
                 // Отцепляем от anchor перед деспавном
                 _currentInstance.transform.SetParent(null, false);
 
-                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
                 if (pool != null)
                 {
                     pool.Despawn(_currentInstance);
@@ -1269,7 +1278,9 @@ namespace Hecton8.Gameplay
         {
             if (playerInventory == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[PlayerToolManager] PlayerInventory reference is null!");
+#endif
                 return false;
             }
 
@@ -1332,7 +1343,7 @@ namespace Hecton8.Gameplay
 
                 if (playerInventory != null && playerInventory.TryFindFirstAnchorByHash(toolHashId, out _))
                 {
-                    ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+                    ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
                     if (durabilitySystem != null)
                         durabilitySystem.ResetDurability(metadata.toolID, metadata.maxDurability);
 
@@ -1437,7 +1448,7 @@ namespace Hecton8.Gameplay
             if (prefab == null || !prefab.TryGetComponent(out PlayerTool tool) || tool.Metadata == null)
                 return false;
 
-            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
             return durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID);
         }
 
@@ -1542,13 +1553,32 @@ namespace Hecton8.Gameplay
             return prefab.name;
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogToolDebug(string message)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!toolDebugLogging)
                 return;
 
             Debug.Log($"[ToolMgr] {message}");
+#endif
         }
+
+#if UNITY_EDITOR
+        private static string GetSwapStateDebugName(SwapState state)
+        {
+            switch (state)
+            {
+                case SwapState.Lowering:
+                    return "Lowering";
+                case SwapState.Raising:
+                    return "Raising";
+                default:
+                    return "Idle";
+            }
+        }
+#endif
 
 #if UNITY_EDITOR
         private void AutoResolveKnownToolPrefabs()

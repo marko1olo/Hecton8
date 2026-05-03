@@ -27,6 +27,8 @@ namespace Hecton8.Dev
         [SerializeField] private int offerIndex = 0;
         [SerializeField] private bool verboseLogging = false;
 
+        private const int BundleCountSnapshotCapacity = 32;
+
         // Inspector-only smoke diagnostics for manual runtime validation.
 #pragma warning disable CS0414
         [Header("Debug")]
@@ -38,6 +40,10 @@ namespace Hecton8.Dev
 
         private bool _isRunning;
         private PDAExchangeSystem.OfferSnapshot[] _snapshotBuffer;
+        // COLD ALLOC: int[32] - barter cost count snapshot reused by smoke validation - owner: BarterRuntimeSmokeTester
+        private readonly int[] _costCountSnapshot = new int[BundleCountSnapshotCapacity];
+        // COLD ALLOC: int[32] - barter reward count snapshot reused by smoke validation - owner: BarterRuntimeSmokeTester
+        private readonly int[] _rewardCountSnapshot = new int[BundleCountSnapshotCapacity];
 
         private void Awake()
         {
@@ -126,8 +132,13 @@ namespace Hecton8.Dev
 
                 _debugLastPhase = "SnapshotBefore";
                 int beforeExecutions = GetExecutionCountForOffer(offer.offerId);
-                int[] costBefore = CaptureBundleCounts(offer.costs);
-                int[] rewardBefore = CaptureBundleCounts(offer.rewards);
+                int costSnapshotLength = CaptureBundleCounts(offer.costs, _costCountSnapshot, "cost");
+                if (costSnapshotLength < 0)
+                    return;
+
+                int rewardSnapshotLength = CaptureBundleCounts(offer.rewards, _rewardCountSnapshot, "reward");
+                if (rewardSnapshotLength < 0)
+                    return;
 
                 if (!exchangeSystem.CanExecute(offer, out string beforeStatus))
                 {
@@ -156,10 +167,10 @@ namespace Hecton8.Dev
                     return;
                 }
 
-                if (!ValidateBundleDelta(offer.costs, costBefore, shouldIncrease: false, "cost"))
+                if (!ValidateBundleDelta(offer.costs, _costCountSnapshot, costSnapshotLength, shouldIncrease: false, "cost"))
                     return;
 
-                if (!ValidateBundleDelta(offer.rewards, rewardBefore, shouldIncrease: true, "reward"))
+                if (!ValidateBundleDelta(offer.rewards, _rewardCountSnapshot, rewardSnapshotLength, shouldIncrease: true, "reward"))
                     return;
 
                 _debugLastPhase = "Complete";
@@ -201,18 +212,23 @@ namespace Hecton8.Dev
             return 0;
         }
 
-        private int[] CaptureBundleCounts(BarterItemAmount[] bundle)
+        private int CaptureBundleCounts(BarterItemAmount[] bundle, int[] counts, string label)
         {
             if (bundle == null || bundle.Length == 0)
-                return System.Array.Empty<int>();
+                return 0;
 
-            int[] counts = new int[bundle.Length];
+            if (counts == null || bundle.Length > counts.Length)
+            {
+                Fail($"{label} bundle count {bundle.Length} exceeds smoke snapshot capacity {BundleCountSnapshotCapacity}.");
+                return -1;
+            }
+
             for (int i = 0; i < bundle.Length; i++)
             {
                 counts[i] = bundle[i].item != null ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(bundle[i].item.PersistentId)) : 0;
             }
 
-            return counts;
+            return bundle.Length;
         }
 
         private void EnsureBundleAvailable(BarterItemAmount[] bundle)
@@ -234,19 +250,19 @@ namespace Hecton8.Dev
             }
         }
 
-        private bool ValidateBundleDelta(BarterItemAmount[] bundle, int[] beforeCounts, bool shouldIncrease, string label)
+        private bool ValidateBundleDelta(BarterItemAmount[] bundle, int[] beforeCounts, int beforeCountLength, bool shouldIncrease, string label)
         {
             if (bundle == null || bundle.Length == 0)
                 return true;
 
-            for (int i = 0; i < bundle.Length; i++)
+            for (int i = 0; i < bundle.Length && i < beforeCountLength; i++)
             {
                 BarterItemAmount entry = bundle[i];
                 if (entry.item == null)
                     continue;
 
                 int expectedDelta = Mathf.Max(1, entry.amount);
-                int before = i < beforeCounts.Length ? beforeCounts[i] : 0;
+                int before = beforeCounts[i];
                 int after = playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(entry.item.PersistentId));
                 int actualDelta = after - before;
 
@@ -266,11 +282,11 @@ namespace Hecton8.Dev
         private void AutoResolve()
         {
             if (exchangeSystem == null)
-                exchangeSystem = PDAExchangeSystem.Instance;
+                exchangeSystem = Hecton8.Core.GlobalRegistry.PDAExchange;
             if (playerInventory == null)
                 playerInventory = (Hecton8.Core.GlobalRegistry.Player != null ? Hecton8.Core.GlobalRegistry.Player.Inventory : null);
             if (scanLogSystem == null)
-                scanLogSystem = ScanLogSystem.Instance;
+                scanLogSystem = Hecton8.Core.GlobalRegistry.ScanLog;
         }
 
         private void Fail(string issue)

@@ -38,9 +38,13 @@ namespace Hecton8.Input
 
                 GameObject go = new GameObject("[UserOptionsPersistence]");
                 _instance = go.AddComponent<UserOptionsPersistence>();
-                DontDestroyOnLoad(go);
                 return _instance;
             }
+        }
+
+        public static UserOptionsPersistence EnsureRuntimeInstance()
+        {
+            return Instance;
         }
 
         public static bool TryGetInstance(out UserOptionsPersistence instance)
@@ -59,7 +63,6 @@ namespace Hecton8.Input
 
             _instance = this;
             _isShuttingDown = false;
-            DontDestroyOnLoad(gameObject);
         }
 
         private void OnDestroy()

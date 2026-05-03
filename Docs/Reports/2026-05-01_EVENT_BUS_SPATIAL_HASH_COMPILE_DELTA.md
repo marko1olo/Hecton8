@@ -57,6 +57,8 @@ Concrete recheck of named queue items:
 - `SaveManager.Tick` checks `_integrityScanHandle.IsCompleted` before `Complete()`. `SaveManager.StageIntegrityPayload(...)` can still force-complete an active integrity scan when a new payload is staged.
 - `HectonWorldGenerator` has deferred retirement for chunks whose PhysX bake is still in flight. The remaining forced path is `StopStreaming()` -> `CompletePendingPhysicsBakes()`, which completes scheduled/canceled physics bake handles before clearing the bake queue.
 
+May 2 correction: the named `ProximityColliderSystem.Tick`, `HectonFluidEngine.PostFixedTick`, and `SaveManager.Tick` `.Complete()` statements above are stale by strict current source grep. Current `.Complete(` hits under `Assets/_Project/Scripts` are dispatcher request completion callbacks in `ItemCatalog.cs` / `Optimization/AssetLifecycleGovernor.cs` and one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`.
+
 Do not remove the `HectonWorldGenerator` teardown completion without adding a real deferred shutdown owner. The current forced complete can stall, but skipping it risks destroying or clearing mesh/collider state while `Physics.BakeMesh` is still running.
 
 ## Editor / MCP Evidence
@@ -88,11 +90,11 @@ strict lines after latest success: 0
 Latest superseding continuation scan:
 
 ```text
-time: 2026-05-01 17:38:12
-latest Tundra build success: line 91784
-latest Mono reload: line 91935
+time: 2026-05-01 17:52
+latest Tundra build success: line 103944
+latest Mono reload: line 104086
 strict lines after latest success: 0
-MCP console: one stale internal build system exception still visible after clear
+MCP console: 0 error/warning entries after Bee/backend recovery
 ```
 
 Strict line set:

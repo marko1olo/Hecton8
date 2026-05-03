@@ -39,6 +39,36 @@ namespace Hecton8.World
         private static readonly int _WakeDistortionId = Shader.PropertyToID("_WakeDistortion");
         private static readonly int _WakeTearStrengthId = Shader.PropertyToID("_WakeTearStrength");
         private static readonly int _WakeThresholdId = Shader.PropertyToID("_WakeThreshold");
+        // COLD ALLOC: Vector3[4] - shared abyssal fluid decal quad vertices - owner: AbyssalFluidDecalManager
+        private static readonly Vector3[] _quadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f)
+        };
+
+        // COLD ALLOC: Vector2[4] - shared abyssal fluid decal quad UVs - owner: AbyssalFluidDecalManager
+        private static readonly Vector2[] _quadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(1f, 0f),
+            new Vector2(1f, 1f),
+            new Vector2(0f, 1f)
+        };
+
+        // COLD ALLOC: int[6] - shared abyssal fluid decal quad indices - owner: AbyssalFluidDecalManager
+        private static readonly int[] _quadTriangles = { 0, 1, 2, 0, 2, 3 };
+
+        // COLD ALLOC: Vector3[4] - shared abyssal fluid decal quad normals - owner: AbyssalFluidDecalManager
+        private static readonly Vector3[] _quadNormals =
+        {
+            Vector3.forward,
+            Vector3.forward,
+            Vector3.forward,
+            Vector3.forward
+        };
+
         private static AbyssalFluidDecalManager _instance;
 
         [Header("── Runtime Wiring ──────────────────")]
@@ -112,6 +142,7 @@ namespace Hecton8.World
         private Material _runtimeMaterial;
         private MaterialPropertyBlock _drawPropertyBlock;
         private Vector3 _previousGlobalDriftOffset;
+        private bool _serviceRegistered;
         private bool _registeredTick;
         private bool _loggedMissingDecalMaterial;
 
@@ -143,18 +174,21 @@ namespace Hecton8.World
             EnsureRenderingResources(false);
             _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterService();
             TryRegister();
         }
 
         private void OnDisable()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterService();
             TryUnregister();
         }
 
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterService();
             TryUnregister();
             _runtimeMaterial = null;
             _drawPropertyBlock = null;
@@ -365,29 +399,17 @@ namespace Hecton8.World
             {
                 name = "AbyssalFluidDecalQuad"
             };
-            mesh.vertices = new[]
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3( 0.5f, -0.5f, 0f),
-                new Vector3( 0.5f,  0.5f, 0f),
-                new Vector3(-0.5f,  0.5f, 0f)
-            };
-            mesh.uv = new[]
-            {
-                new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(1f, 1f),
-                new Vector2(0f, 1f)
-            };
-            mesh.triangles = new[] { 0, 1, 2, 0, 2, 3 };
-            mesh.normals = new[] { Vector3.forward, Vector3.forward, Vector3.forward, Vector3.forward };
+            mesh.vertices = _quadVertices;
+            mesh.uv = _quadUvs;
+            mesh.triangles = _quadTriangles;
+            mesh.normals = _quadNormals;
             mesh.UploadMeshData(true);
             return mesh;
         }
 
         private Vector3 ResolveGlobalDriftOffset()
         {
-            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            SargassumGlobalDragManager dragManager = GlobalRegistry.SargassumDrag;
             return dragManager != null ? dragManager.GlobalDriftOffset : Vector3.zero;
         }
 
@@ -413,7 +435,25 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registeredTick = true;
+            _registeredTick = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterAbyssalFluidDecalRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.AbyssalFluidDecals, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterAbyssalFluidDecalRuntime(this);
+            _serviceRegistered = false;
         }
 
         private void TryUnregister()

@@ -66,7 +66,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Echolocation Translator")]
-    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable
+    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener
     {
         private enum ContactClassification : byte
         {
@@ -131,25 +131,25 @@ namespace Hecton8.UI
             ResolveOwners();
             EnsureUiBuilt();
             RefreshLocalizedCache();
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
-            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
-            SpectrumEvents.OnSonarSnapshotUpdated += HandleSonarSnapshotUpdated;
+            LocalizationEvents.RegisterLanguageListener(this);
+            SpectrumEvents.RegisterSonarPingListener(this);
+            SpectrumEvents.RegisterSonarSnapshotListener(this);
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
-            SpectrumEvents.OnSonarSnapshotUpdated -= HandleSonarSnapshotUpdated;
+            LocalizationEvents.UnregisterLanguageListener(this);
+            SpectrumEvents.UnregisterSonarPingListener(this);
+            SpectrumEvents.UnregisterSonarSnapshotListener(this);
             UnregisterFromTickManager();
             ApplyRootAlpha(0f);
         }
 
         private void OnDestroy()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
-            SpectrumEvents.OnSonarSnapshotUpdated -= HandleSonarSnapshotUpdated;
+            LocalizationEvents.UnregisterLanguageListener(this);
+            SpectrumEvents.UnregisterSonarPingListener(this);
+            SpectrumEvents.UnregisterSonarSnapshotListener(this);
             UnregisterFromTickManager();
         }
 
@@ -211,6 +211,25 @@ namespace Hecton8.UI
 
             ShowClassification(classification, distanceMeters);
         }
+
+        void ISonarPingEventListener.OnSonarPingSent(float intensity)
+        {
+            HandleSonarPingSent(intensity);
+        }
+
+        void ISonarSnapshotEventListener.OnSonarSnapshotUpdated(in SpatialSonarSnapshot snapshot)
+        {
+            HandleSonarSnapshotUpdated(snapshot);
+        }
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void HandleLanguageChanged(GameLanguage _)
         {
@@ -459,7 +478,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -470,7 +489,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.ApplyHullStressCorruptionIfNeeded(text)
                 : text;
@@ -537,7 +556,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Terminal Boot Sequence")]
-    public sealed class TerminalBootSequence : MonoBehaviour, ITickable, IUpdatable
+    public sealed class TerminalBootSequence : MonoBehaviour, ITickable, IUpdatable, ISonarPingEventListener
     {
         private enum SequenceState : byte
         {
@@ -572,25 +591,26 @@ namespace Hecton8.UI
         private float _visibleCharacterProgress;
         private int _visibleCharacterTarget;
         private HectonSurvivalSystem _survivalSystem;
+        private readonly StringBuilder _sequenceBuilder = new StringBuilder(192); // COLD ALLOC: StringBuilder[192] — sonar boot sequence formatting buffer — owner: TerminalBootSequence
 
         private void OnEnable()
         {
             font = LocalizedFontResolver.ResolveReadableFont(font);
             ResolveOwners();
             EnsureUiBuilt();
-            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            SpectrumEvents.RegisterSonarPingListener(this);
         }
 
         private void OnDisable()
         {
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            SpectrumEvents.UnregisterSonarPingListener(this);
             UnregisterFromTickManager();
             HideOverlay();
         }
 
         private void OnDestroy()
         {
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            SpectrumEvents.UnregisterSonarPingListener(this);
             UnregisterFromTickManager();
         }
 
@@ -642,7 +662,8 @@ namespace Hecton8.UI
             if (_consoleLabel == null || _overlayGroup == null)
                 return;
 
-            _consoleLabel.text = BuildSequenceText();
+            BuildSequenceText(_sequenceBuilder);
+            _consoleLabel.SetText(_sequenceBuilder);
             _consoleLabel.ForceMeshUpdate();
             _visibleCharacterTarget = _consoleLabel.textInfo.characterCount;
             _visibleCharacterProgress = 0f;
@@ -655,14 +676,21 @@ namespace Hecton8.UI
             RegisterToTickManager();
         }
 
+        void ISonarPingEventListener.OnSonarPingSent(float intensity)
+        {
+            HandleSonarPingSent(intensity);
+        }
+
         private void ResolveOwners()
         {
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
         }
 
-        private string BuildSequenceText()
+        private void BuildSequenceText(StringBuilder builder)
         {
+            builder.Clear();
+
             float integrity01 = _survivalSystem != null ? _survivalSystem.IntegrityNormalized : 0f;
             float energy01 = _survivalSystem != null ? _survivalSystem.EnergyNormalized : 0f;
             float hullStress01 = _survivalSystem != null ? Mathf.Clamp01(1f - integrity01) : 1f;
@@ -670,7 +698,6 @@ namespace Hecton8.UI
             string powerStatus = energy01 >= 0.25f ? DefaultStatusOk : DefaultStatusDegraded;
             string linkStatus = hullStress01 <= 0.18f ? DefaultStatusOk : DefaultStatusDegraded;
 
-            System.Text.StringBuilder builder = StringBuilderPool.Get();
             builder.Append(DefaultStatusOk).AppendLine(" MOUNTING SONAR_DRIVER...");
             builder.Append(DefaultStatusOk).AppendLine(" CALIBRATING LIDAR ARRAY...");
             builder.Append(linkStatus).Append(" ACOUSTIC BUS LINK... HULL ")
@@ -684,10 +711,6 @@ namespace Hecton8.UI
             builder.Append(hullStatus).Append(" NOISE FILTER... STRESS ")
                 .Append(_survivalSystem != null ? Mathf.RoundToInt(hullStress01 * 100f) : 100)
                 .Append('%');
-
-            string text = builder.ToString();
-            StringBuilderPool.Return(builder);
-            return text;
         }
 
         private static string ResolveIntegrityStatus(float integrity01)
@@ -838,7 +861,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Audio Caption Overlay")]
-    public sealed class AudioCaptionOverlay : MonoBehaviour, ITickable, IUpdatable
+    public sealed class AudioCaptionOverlay : MonoBehaviour, ITickable, IUpdatable, IAudioCaptionEventListener
     {
         private const int SlotCount = 8;
         private const float DefaultDuration = 1.65f;
@@ -863,6 +886,7 @@ namespace Hecton8.UI
             public float Duration;
             public float Intensity;
             public Vector3 WorldPosition;
+            public string LastCaptionText;
         }
 
         [Header("── Font ──────────────────")]
@@ -881,20 +905,20 @@ namespace Hecton8.UI
         {
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
             EnsureUiBuilt();
-            AudioCaptionEvents.OnCaptionRequested += HandleCaptionRequested;
+            AudioCaptionEvents.Register(this);
             RegisterToTickManager();
         }
 
         private void OnDisable()
         {
-            AudioCaptionEvents.OnCaptionRequested -= HandleCaptionRequested;
+            AudioCaptionEvents.Unregister(this);
             UnregisterFromTickManager();
             HideAllSlots();
         }
 
         private void OnDestroy()
         {
-            AudioCaptionEvents.OnCaptionRequested -= HandleCaptionRequested;
+            AudioCaptionEvents.Unregister(this);
             UnregisterFromTickManager();
         }
 
@@ -930,6 +954,14 @@ namespace Hecton8.UI
             }
         }
 
+        /// <summary>
+        /// Receives deferred spatial-audio caption requests.
+        /// </summary>
+        public void OnAudioCaptionRequested(AudioCaptionRequest request)
+        {
+            HandleCaptionRequested(request);
+        }
+
         private void HandleCaptionRequested(AudioCaptionRequest request)
         {
             EnsureUiBuilt();
@@ -943,8 +975,11 @@ namespace Hecton8.UI
             slot.Duration = Mathf.Max(MinDuration, request.DurationSeconds > 0f ? request.DurationSeconds : DefaultDuration);
             slot.Intensity = Mathf.Clamp01(request.Intensity);
             slot.WorldPosition = request.WorldPosition;
-            if (!string.Equals(slot.Label.text, request.CaptionText, System.StringComparison.Ordinal))
-                slot.Label.text = request.CaptionText;
+            if (!string.Equals(slot.LastCaptionText, request.CaptionText, System.StringComparison.Ordinal))
+            {
+                slot.Label.SetText(request.CaptionText);
+                slot.LastCaptionText = request.CaptionText;
+            }
 
             slot.Group.alpha = 1f;
             slot.Group.blocksRaycasts = false;
@@ -1031,7 +1066,7 @@ namespace Hecton8.UI
             text.color = CaptionColor;
             text.outlineColor = CaptionShadowColor;
             text.outlineWidth = 0.18f;
-            text.text = string.Empty;
+            text.SetText(string.Empty);
             text.raycastTarget = false;
 
             _slots[index] = new CaptionSlot
@@ -1043,7 +1078,8 @@ namespace Hecton8.UI
                 Age = 0f,
                 Duration = DefaultDuration,
                 Intensity = 0f,
-                WorldPosition = Vector3.zero
+                WorldPosition = Vector3.zero,
+                LastCaptionText = string.Empty
             };
         }
 

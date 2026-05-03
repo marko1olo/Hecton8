@@ -28,7 +28,7 @@ namespace Hecton8.Audio
     /// </remarks>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(AudioListener))]
-    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, IUpdatable
+    public sealed class PlayerCriticalProceduralAudioRenderer : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IUpdatable, IProceduralAudioEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAcousticEchoEventListener, ILaserCutterEventListener
     {
         private const float TwoPi = 6.28318530718f;
         private const float HullNoiseFloor = 0.0001f;
@@ -391,8 +391,10 @@ namespace Hecton8.Audio
         private bool _buffersInitialized;
         private bool _registered;
         private bool _slowTickRegistered;
+        private bool _lateFrameRegistered;
         private GameObject _boundPlayerObject;
         private Transform _boundPlayerTransform;
+        private int _boundPlayerRootEntityId;
         private Rigidbody _playerRigidbody;
         private HectonSurvivalSystem _playerSurvivalSystem;
         private ISubmarineHullBreachReadModel _structuralHullReadModel;
@@ -451,6 +453,7 @@ namespace Hecton8.Audio
         private float _smoothedReverbWetMix;
         private float _smoothedReverbOpenness = 1f;
         private int _audioProducerRunning;
+        private int _audioProducerRestartRequested;
         private int _resolvedAcousticOcclusionLayerMask;
         private bool _listenerReverbDefaultsCaptured;
         private bool _listenerReverbWasEnabled;
@@ -671,6 +674,7 @@ namespace Hecton8.Audio
             public float StressFmOversampleOutput2;
         }
 
+#pragma warning disable 0649 // DSP state fields are intentionally zero-initialized and written by the procedural audio integrator.
         private struct SonarSynthesisState
         {
             public int ActiveSequence;
@@ -688,6 +692,7 @@ namespace Hecton8.Audio
             public double EchoReadCursor;
             public int EchoWriteIndex;
         }
+#pragma warning restore 0649
 
         private struct AmbientCurrentSynthesisState
         {
@@ -798,12 +803,11 @@ namespace Hecton8.Audio
         {
             AcousticOcclusionUtility.AcquireRuntime();
             AudioSettings.OnAudioConfigurationChanged += HandleAudioConfigurationChanged;
-            PhysicsEvents.OnImpact += HandlePhysicsImpact;
-            ProceduralAudioEvents.OnStructuralStressTriggered += HandleStructuralStressTriggered;
-            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
-            SpectrumEvents.OnAcousticEchoReturned += HandleAcousticEchoReturned;
-            LaserCutter.OnHeatChanged += HandleCutterHeatChanged;
-            LaserCutter.OnBeamStateChanged += HandleCutterBeamStateChanged;
+            PhysicsEvents.Register(this);
+            ProceduralAudioEvents.Register(this);
+            SpectrumEvents.RegisterSonarPingListener(this);
+            SpectrumEvents.RegisterAcousticEchoListener(this);
+            LaserCutterEvents.Register(this);
             Volatile.Write(ref _managedFilterFallbackEnabled, 1);
             TryRegister();
             TryBindFromBootstrap();
@@ -813,29 +817,49 @@ namespace Hecton8.Audio
         private void OnDisable()
         {
             Volatile.Write(ref _managedFilterFallbackEnabled, 0);
-            LaserCutter.OnBeamStateChanged -= HandleCutterBeamStateChanged;
-            LaserCutter.OnHeatChanged -= HandleCutterHeatChanged;
-            SpectrumEvents.OnAcousticEchoReturned -= HandleAcousticEchoReturned;
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
-            ProceduralAudioEvents.OnStructuralStressTriggered -= HandleStructuralStressTriggered;
-            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
+            LaserCutterEvents.Unregister(this);
+            SpectrumEvents.UnregisterAcousticEchoListener(this);
+            SpectrumEvents.UnregisterSonarPingListener(this);
+            ProceduralAudioEvents.Unregister(this);
+            PhysicsEvents.Unregister(this);
             AudioSettings.OnAudioConfigurationChanged -= HandleAudioConfigurationChanged;
             UnsubscribeTransportCoordinator();
             TryUnregister();
-            StopAudioProducerThread();
+            bool producerStopped = StopAudioProducerThread();
             RestoreListenerReverbDefaults();
-            DisposeBuffers();
+            if (producerStopped)
+            {
+                DisposeBuffers();
+            }
+            else
+            {
+                ClearNativeOutputBridge();
+            }
+
             AcousticOcclusionUtility.ReleaseRuntime();
-            ClearLowPassState();
+            if (producerStopped)
+                ClearLowPassState();
         }
 
         private void OnDestroy()
         {
-            StopAudioProducerThread();
+            LaserCutterEvents.Unregister(this);
+            SpectrumEvents.UnregisterAcousticEchoListener(this);
+            SpectrumEvents.UnregisterSonarPingListener(this);
+            bool producerStopped = StopAudioProducerThread();
             _audioProducerWakeSignal.Set();
             Thread producerThread = _audioProducerThread;
-            if (producerThread == null || !producerThread.IsAlive)
+            if (producerStopped || producerThread == null || !producerThread.IsAlive)
                 _audioProducerWakeSignal.Dispose();
+
+            if (producerStopped)
+            {
+                DisposeBuffers();
+            }
+            else
+            {
+                ClearNativeOutputBridge();
+            }
 
             if (s_activeInstance == this)
                 s_activeInstance = null;
@@ -869,6 +893,7 @@ namespace Hecton8.Audio
             PlayerTransportCoordinator previousCoordinator = playerTransportCoordinator;
             _boundPlayerObject = playerObject;
             _boundPlayerTransform = playerObject != null ? playerObject.transform : null;
+            _boundPlayerRootEntityId = 0;
             _playerBodyEntityId = 0ul;
             if (playerObject == null)
             {
@@ -878,6 +903,10 @@ namespace Hecton8.Audio
                 _playerSurvivalSystem = null;
                 return;
             }
+
+            Transform playerRoot = _boundPlayerTransform != null ? _boundPlayerTransform.root : null;
+            if (playerRoot != null)
+                _boundPlayerRootEntityId = unchecked((int)EntityId.ToULong(playerRoot.GetEntityId()));
 
             if (playerMovement == null || !ReferenceEquals(playerMovement.gameObject, playerObject))
                 playerObject.TryGetComponent(out playerMovement);
@@ -923,9 +952,6 @@ namespace Hecton8.Audio
 
             TryBindFromBootstrap();
             UpdateCaveReverb(deltaTime);
-            TryConsumeCompletedSonarConeQuery();
-            if (!_sonarConeQueryScheduled && _queuedSonarConeQuery.Valid)
-                ScheduleQueuedSonarConeQuery();
 
             if (playerMovement == null || _playerRigidbody == null)
             {
@@ -1031,14 +1057,40 @@ namespace Hecton8.Audio
             PrimeNearestSonarOcclusionSample();
         }
 
+        /// <summary>
+        /// Recovers active sonar raycast batches in the dispatcher-owned late-frame window.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            TryConsumeCompletedSonarConeQuery();
+            if (!_sonarConeQueryScheduled && _queuedSonarConeQuery.Valid)
+                ScheduleQueuedSonarConeQuery();
+        }
+
         private void StartAudioProducerThread()
         {
-            if (_audioProducerThread != null && _audioProducerThread.IsAlive)
-                return;
+            Thread producerThread = _audioProducerThread;
+            if (producerThread != null)
+            {
+                if (producerThread.IsAlive)
+                {
+                    Interlocked.Exchange(ref _audioProducerRestartRequested, 1);
+                    Interlocked.Exchange(ref _audioProducerRunning, 1);
+                    SignalAudioProducerThread();
+                    if (!producerThread.Join(0))
+                        return;
+
+                    Interlocked.Exchange(ref _audioProducerRestartRequested, 0);
+                    Interlocked.Exchange(ref _audioProducerRunning, 0);
+                }
+
+                _audioProducerThread = null;
+            }
 
             if (Interlocked.CompareExchange(ref _audioProducerRunning, 1, 0) != 0)
                 return;
 
+            Interlocked.Exchange(ref _audioProducerRestartRequested, 0);
             _audioProducerThread = new Thread(AudioProducerLoop)
             {
                 IsBackground = true,
@@ -1049,46 +1101,61 @@ namespace Hecton8.Audio
             SignalAudioProducerThread();
         }
 
-        private void StopAudioProducerThread()
+        private bool StopAudioProducerThread()
         {
+            Interlocked.Exchange(ref _audioProducerRestartRequested, 0);
             if (Interlocked.Exchange(ref _audioProducerRunning, 0) == 0)
-                return;
+                return !IsAudioProducerThreadAlive();
 
             SignalAudioProducerThread();
             Thread producerThread = _audioProducerThread;
-            if (producerThread != null)
+            if (producerThread == null)
+                return true;
+
+            if (producerThread.Join(AudioProducerJoinTimeoutMs))
             {
-                if (producerThread.Join(AudioProducerJoinTimeoutMs))
-                {
-                    _audioProducerThread = null;
-                }
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                else
-                {
-                    Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Audio producer thread failed to stop within watchdog budget.");
-                }
-#endif
+                _audioProducerThread = null;
+                return true;
             }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning("[PlayerCriticalProceduralAudioRenderer] Audio producer thread failed to stop within watchdog budget. Native audio buffers remain owned until the worker exits.");
+#endif
+            return false;
+        }
+
+        private bool IsAudioProducerThreadAlive()
+        {
+            Thread producerThread = _audioProducerThread;
+            return producerThread != null && producerThread.IsAlive;
         }
 
         private void AudioProducerLoop()
         {
-            while (Volatile.Read(ref _audioProducerRunning) != 0)
+            while (true)
             {
-                if (TryResolveAudioProducerWork(out int blockFrames))
+                while (Volatile.Read(ref _audioProducerRunning) != 0)
                 {
-                    ProduceAudioBlock(blockFrames);
-                    continue;
+                    if (TryResolveAudioProducerWork(out int blockFrames))
+                    {
+                        ProduceAudioBlock(blockFrames);
+                        continue;
+                    }
+
+                    _audioProducerWakeSignal.Reset();
+                    if (TryResolveAudioProducerWork(out blockFrames))
+                    {
+                        ProduceAudioBlock(blockFrames);
+                        continue;
+                    }
+
+                    _audioProducerWakeSignal.Wait(AudioProducerIdleWaitTimeoutMs);
                 }
 
-                _audioProducerWakeSignal.Reset();
-                if (TryResolveAudioProducerWork(out blockFrames))
-                {
-                    ProduceAudioBlock(blockFrames);
-                    continue;
-                }
+                if (Interlocked.Exchange(ref _audioProducerRestartRequested, 0) == 0)
+                    return;
 
-                _audioProducerWakeSignal.Wait(AudioProducerIdleWaitTimeoutMs);
+                Interlocked.Exchange(ref _audioProducerRunning, 1);
             }
         }
 
@@ -1569,6 +1636,16 @@ namespace Hecton8.Audio
                 resonanceScale);
         }
 
+        void ISonarPingEventListener.OnSonarPingSent(float intensity)
+        {
+            HandleSonarPingSent(intensity);
+        }
+
+        void IAcousticEchoEventListener.OnAcousticEchoReturned(in AcousticEchoEvent echoEvent)
+        {
+            HandleAcousticEchoReturned(echoEvent);
+        }
+
         private void HandleAudioConfigurationChanged(bool deviceWasChanged)
         {
             RefreshAudioConfiguration();
@@ -1625,12 +1702,13 @@ namespace Hecton8.Audio
 
         private void TryConsumeCompletedSonarConeQuery()
         {
-            if (!_sonarConeQueryScheduled || !_pendingSonarConeHandle.IsCompleted || !_scheduledSonarConeQuery.Valid)
+            if (!_sonarConeQueryScheduled || !_scheduledSonarConeQuery.Valid)
                 return;
 
-            _pendingSonarConeHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _pendingSonarConeHandle, forceComplete: false))
+                return;
+
             _sonarConeQueryScheduled = false;
-            _pendingSonarConeHandle = default;
 
             int inactiveIndex = 1 - Volatile.Read(ref _pendingSonarStateReadIndex);
             NativeArray<SonarEchoTap> inactiveTapBuffer = inactiveIndex == 0 ? _pendingSonarEchoTapsA : _pendingSonarEchoTapsB;
@@ -1842,25 +1920,51 @@ namespace Hecton8.Audio
             return worldDirection.sqrMagnitude > 0.0001f ? worldDirection.normalized : forward;
         }
 
+        /// <summary>
+        /// Receives deferred laser cutter heat and beam-state events.
+        /// </summary>
+        /// <param name="payload">Blittable cutter event payload.</param>
+        public void OnLaserCutterEvent(in LaserCutterEventPayload payload)
+        {
+            if (!IsBoundPlayerCutterEvent(in payload))
+                return;
+
+            LaserCutterEventType eventType = (LaserCutterEventType)payload.EventType;
+            if (eventType == LaserCutterEventType.HeatChanged)
+            {
+                HandleCutterHeatChanged(payload.Heat01);
+                return;
+            }
+
+            if (eventType == LaserCutterEventType.BeamStateChanged)
+                HandleCutterBeamStateChanged(in payload);
+        }
+
         private void HandleCutterHeatChanged(float heat01)
         {
             _laserCutterHeat01 = math.saturate(heat01);
         }
 
-        private void HandleCutterBeamStateChanged(Transform owner, bool isActive)
+        private void HandleCutterBeamStateChanged(in LaserCutterEventPayload payload)
         {
-            if (_boundPlayerTransform == null || owner == null)
-                return;
-
-            if (owner.root != _boundPlayerTransform.root)
-                return;
-
+            bool isActive = LaserCutterEvents.IsBeamActive(in payload);
             _laserCutterBeamActive = isActive;
             if (!isActive)
                 _laserCutterHeat01 = 0f;
         }
 
-        private void HandlePhysicsImpact(PhysicsImpactSignal impactSignal)
+        private bool IsBoundPlayerCutterEvent(in LaserCutterEventPayload payload)
+        {
+            return _boundPlayerRootEntityId != 0 &&
+                   payload.CutterRootInstanceId == _boundPlayerRootEntityId;
+        }
+
+        void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
+        {
+            HandlePhysicsImpact(in impactSignal);
+        }
+
+        private void HandlePhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
             if (_boundPlayerTransform == null)
                 return;
@@ -1924,7 +2028,16 @@ namespace Hecton8.Audio
             _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, impactStress);
         }
 
-        private void HandleStructuralStressTriggered(StructuralStressAudioInfo stressInfo)
+        void IProceduralAudioEventListener.OnAudioPingTriggered(in AudioPingTriggerInfo info)
+        {
+        }
+
+        void IProceduralAudioEventListener.OnStructuralStressTriggered(in StructuralStressAudioInfo info)
+        {
+            HandleStructuralStressTriggered(in info);
+        }
+
+        private void HandleStructuralStressTriggered(in StructuralStressAudioInfo stressInfo)
         {
             if (_boundPlayerTransform == null)
                 return;
@@ -2031,6 +2144,12 @@ namespace Hecton8.Audio
                 _registered = true;
             }
 
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = true;
+            }
+
             if (_slowTickRegistered)
                 return;
 
@@ -2046,8 +2165,12 @@ namespace Hecton8.Audio
             if (_slowTickRegistered)
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
+            if (_lateFrameRegistered)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+
             _registered = false;
             _slowTickRegistered = false;
+            _lateFrameRegistered = false;
         }
 
         private void SubscribeTransportCoordinator()
@@ -2101,9 +2224,17 @@ namespace Hecton8.Audio
 
         private void RefreshAudioConfiguration()
         {
-            bool shouldRestartWorker = Volatile.Read(ref _audioProducerRunning) != 0;
-            if (shouldRestartWorker)
-                StopAudioProducerThread();
+            bool shouldRestartWorker = Volatile.Read(ref _managedFilterFallbackEnabled) != 0;
+            bool hasProducerThread = Volatile.Read(ref _audioProducerRunning) != 0 || IsAudioProducerThreadAlive();
+            bool producerStopped = !IsAudioProducerThreadAlive();
+            if (hasProducerThread)
+                producerStopped = StopAudioProducerThread();
+
+            if (!producerStopped)
+            {
+                ClearNativeOutputBridge();
+                return;
+            }
 
             _sampleRate = math.max(1, AudioSettings.outputSampleRate);
             ClearLowPassState();
@@ -2156,6 +2287,7 @@ namespace Hecton8.Audio
             _lowPassOutputHistory1 = new NativeArray<float>(MaxFilterChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state y1 - owner: PlayerCriticalProceduralAudioRenderer
             _lowPassOutputHistory2 = new NativeArray<float>(MaxFilterChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[8] - final listener low-pass state y2 - owner: PlayerCriticalProceduralAudioRenderer
             _metallicGrainBank = new NativeArray<float>(MetallicGrainBankCapacity, Allocator.AudioKernel, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[8192] - pre-baked metallic screech grain bank for hull granular synthesis - owner: PlayerCriticalProceduralAudioRenderer
+            RegisterNativeBuffers();
             GenerateMetallicGrainBank(_metallicGrainBank);
             _sampleRingBuffer ??= new AudioFrameSpscRingBuffer();
             _sampleRingBuffer.Initialize(math.max(frameCapacity * 16, ringBufferCapacityFrames), BinauralOutputChannels);
@@ -2181,11 +2313,76 @@ namespace Hecton8.Audio
             SignalAudioProducerThread();
         }
 
+        private void RegisterNativeBuffers()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_hullScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_hullScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_impactEchoScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_impactEchoScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_thrusterScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_thrusterScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_heartbeatScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_heartbeatScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_heartbeatDuckScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_heartbeatDuckScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_bubbleScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_bubbleScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_mixScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_mixScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_stereoMixScratch, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_stereoMixScratch), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarEchoDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoDelay), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarConeCommands, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarConeCommands), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarConeResults, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarConeResults), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_pendingSonarEchoTapsA, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_pendingSonarEchoTapsA), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_pendingSonarEchoTapsB, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_pendingSonarEchoTapsB), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarEchoReadCursors, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoReadCursors), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterInput1, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterInput1), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterInput2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterInput2), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterOutput1, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterOutput1), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sonarEchoFilterOutput2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_sonarEchoFilterOutput2), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_impactClangDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_impactClangDelay), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_thrusterCombDelay, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_thrusterCombDelay), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_binauralDelayRing, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_binauralDelayRing), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_binauralShadowHistory, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_binauralShadowHistory), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_lowPassInputHistory1, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_lowPassInputHistory1), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_lowPassInputHistory2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_lowPassInputHistory2), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_lowPassOutputHistory1, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_lowPassOutputHistory1), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_lowPassOutputHistory2, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_lowPassOutputHistory2), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_metallicGrainBank, nameof(PlayerCriticalProceduralAudioRenderer), nameof(_metallicGrainBank), NativeAllocationLifetime.Session);
+        }
+
+        private void UnregisterNativeBuffers()
+        {
+            NativeMemorySentinel.UnregisterNativeArray(_hullScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_impactEchoScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_thrusterScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_heartbeatScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_heartbeatDuckScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_bubbleScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_mixScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_stereoMixScratch);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoDelay);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarConeCommands);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarConeResults);
+            NativeMemorySentinel.UnregisterNativeArray(_pendingSonarEchoTapsA);
+            NativeMemorySentinel.UnregisterNativeArray(_pendingSonarEchoTapsB);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoReadCursors);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterInput1);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterInput2);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterOutput1);
+            NativeMemorySentinel.UnregisterNativeArray(_sonarEchoFilterOutput2);
+            NativeMemorySentinel.UnregisterNativeArray(_impactClangDelay);
+            NativeMemorySentinel.UnregisterNativeArray(_thrusterCombDelay);
+            NativeMemorySentinel.UnregisterNativeArray(_binauralDelayRing);
+            NativeMemorySentinel.UnregisterNativeArray(_binauralShadowHistory);
+            NativeMemorySentinel.UnregisterNativeArray(_lowPassInputHistory1);
+            NativeMemorySentinel.UnregisterNativeArray(_lowPassInputHistory2);
+            NativeMemorySentinel.UnregisterNativeArray(_lowPassOutputHistory1);
+            NativeMemorySentinel.UnregisterNativeArray(_lowPassOutputHistory2);
+            NativeMemorySentinel.UnregisterNativeArray(_metallicGrainBank);
+        }
+
         private void DisposeBuffers()
         {
             ClearNativeOutputBridge();
             _sampleRingBuffer?.Dispose();
             _sampleRingBuffer = null;
+            UnregisterNativeBuffers();
             if (_hullScratch.IsCreated)
                 _hullScratch.Dispose();
             if (_sonarScratch.IsCreated)

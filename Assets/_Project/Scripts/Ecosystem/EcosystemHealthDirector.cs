@@ -28,6 +28,7 @@ namespace Hecton8.Ecosystem
         // COLD ALLOC: long[16384] - explored PDA chunk copy buffer for infection-zone selection - owner: EcosystemHealthDirector
         private readonly long[] _exploredChunkBuffer = new long[ExplorationMapDTO.MaxExploredChunks];
         private bool _registeredToTick;
+        private bool _serviceRegistered;
 
         /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
         public static EcosystemHealthDirector Instance => _instance;
@@ -51,6 +52,7 @@ namespace Hecton8.Ecosystem
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegisterToTickManager();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
         }
@@ -64,12 +66,14 @@ namespace Hecton8.Ecosystem
         {
             UnregisterFromTickManager();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             UnregisterFromTickManager();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
+            TryUnregisterService();
             if (_instance == this)
                 _instance = null;
         }
@@ -167,7 +171,7 @@ namespace Hecton8.Ecosystem
 
         private void EnsureZoneBudget(int targetZoneCount, float infectionPressure)
         {
-            PlayerExplorationTracker tracker = PlayerExplorationTracker.Instance;
+            PlayerExplorationTracker tracker = GlobalRegistry.PlayerExploration;
             if (tracker == null)
                 return;
 
@@ -175,7 +179,8 @@ namespace Hecton8.Ecosystem
             if (exploredCount <= 0)
                 return;
 
-            int seed = FaunaGeneticsManager.Instance != null ? FaunaGeneticsManager.Instance.WorldSeed : 0;
+            FaunaGeneticsManager geneticsManager = GlobalRegistry.FaunaGenetics;
+            int seed = geneticsManager != null ? geneticsManager.WorldSeed : 0;
             int dayIndex;
             float dayTimeHours;
             float playTimeSeconds;
@@ -230,7 +235,7 @@ namespace Hecton8.Ecosystem
 
         private float ResolveInfectionPressure01()
         {
-            EnvironmentalStrainManager environmentalStrainManager = EnvironmentalStrainManager.Instance;
+            EnvironmentalStrainManager environmentalStrainManager = GlobalRegistry.EnvironmentalStrain;
             if (environmentalStrainManager == null)
                 return 0f;
 
@@ -257,6 +262,24 @@ namespace Hecton8.Ecosystem
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registeredToTick = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterEcosystemHealthRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.EcosystemHealth, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterEcosystemHealthRuntime(this);
+            _serviceRegistered = false;
         }
 
         private static long PackChunkKey(WorldChunkCoordinate chunkCoordinate)

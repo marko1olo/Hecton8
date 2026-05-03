@@ -163,8 +163,8 @@ namespace Hecton8.AI
             _foveatedInsideFrustum = true;
             _cachedSelfPosition = self != null ? self.position : Vector3.zero;
             _cachedSelfForward = self != null ? self.forward : Vector3.forward;
-            if (WorldStateManager.Instance != null)
-                _playerTransform = WorldStateManager.Instance.PlayerTransform;
+            if (Hecton8.Core.GlobalRegistry.WorldState != null)
+                _playerTransform = Hecton8.Core.GlobalRegistry.WorldState.PlayerTransform;
 
             if (_playerTransform != null)
             {

@@ -29,7 +29,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Interaction/Physical Interaction Handler")]
-    public sealed class PhysicalInteractionHandler : MonoBehaviour, ITickable, IFixedTickable
+    public sealed class PhysicalInteractionHandler : MonoBehaviour, ITickable, IFixedTickable, ILateFrameTickable
     {
         private enum InteractionState : byte
         {
@@ -139,6 +139,7 @@ namespace Hecton8.Interaction
         private InteractionState _state;
         private bool _registeredTick;
         private bool _registeredFixedTick;
+        private bool _registeredLateFrameTick;
         private float _stateTimer;
         private Vector3 _pullSmoothDampVelocity;
         private const int MaxPanelButtonOverlaps = 8;
@@ -315,6 +316,15 @@ namespace Hecton8.Interaction
                     FixedTickHeavyCarry(fixedDeltaTime);
                     break;
             }
+        }
+
+        /// <summary>
+        /// Finalizes deferred hand-probe jobs in the dispatcher-owned late-frame swap phase.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            if (_physicalHandController != null)
+                _physicalHandController.LateFrameTick();
         }
 
         private void TickPhysicalPanelButtons()
@@ -696,6 +706,12 @@ namespace Hecton8.Interaction
                 GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = true;
             }
+
+            if (!_registeredLateFrameTick)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrameTick = true;
+            }
         }
 
         private void UnregisterFromTickSystems()
@@ -710,6 +726,12 @@ namespace Hecton8.Interaction
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Player);
                 _registeredFixedTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+                _registeredLateFrameTick = false;
             }
         }
 

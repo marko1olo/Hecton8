@@ -128,15 +128,15 @@ Queue corrections from current source recheck:
 
 Follow-up evidence file: `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`.
 
-Local `Editor.log` evidence after restoring `Assets/_Project/Scripts/World/VegetationJobRecovery.cs.meta` reports:
+Local `Editor.log` evidence after restoring `Assets/_Project/Scripts/World/VegetationJobRecovery.cs.meta` and waiting through Bee/backend recovery reports:
 
-- latest `Tundra build success`: line `91784`
-- latest `Begin MonoManager ReloadAssembly`: line `91826`
-- latest `Mono: successfully reloaded assembly`: line `91935`
+- latest `Tundra build success`: line `103944`
+- latest `Begin MonoManager ReloadAssembly`: line `103987`
+- latest `Mono: successfully reloaded assembly`: line `104086`
 - strict post-success signals (`error CS`, `warning CS`, `Burst error`, `Exception`, `Resource ID out of range`, `Tundra build failed`): `0`
 
-MCP console is not globally clean: after Console UI clear it still reports one stale internal build-system exception about missing `BuildFinishedMessage`.
-Treat the current state as local compile-clean by `Editor.log`, not `MCP VERIFIED`.
+MCP console returned `0` error/warning entries after the final reload.
+Treat the current state as editor/script compile-clean, not Play Mode or profiler proof.
 
 ## Priority 0 Additions
 
@@ -144,7 +144,7 @@ Treat the current state as local compile-clean by `Editor.log`, not `MCP VERIFIE
 Reason: the original `FaunaBrain.UpdateBioluminescentHypnosis()` `runtimeContext.PlayerCamera` dependency is stale by current source recheck; it now consumes `PlayerRuntimeContext.LookState`. Remaining fauna headless risk is perception/LOD logic still using player Transform/Rigidbody paths plus absent no-camera Play Mode proof. `StorageCrate.OpenCrate()` was source-patched so gameplay opens immediately and the Animator event is idempotent, but Play Mode proof is absent.
 
 2. Move frame-lane job barriers behind dispatcher-owned completion windows.
-Reason: `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick` call `.Complete()` in cadence-sensitive lanes. `IsCompleted` checks reduce stall probability but do not satisfy the project mandate requiring completion only in defined swap/end windows.
+Reason: the older literal call-site claim naming `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick` is stale by current strict source grep. Current `.Complete(` hits under `Assets/_Project/Scripts` are dispatcher completion callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs` and one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`. The remaining risk is dispatcher-owned completion-window proof and runtime stall profiling, not those stale call sites.
 
 3. Replace broad physics masks with named layer masks.
 Reason: the latest flaw report found query surfaces using `~0`, `DefaultRaycastLayers`, or serialized all-layer defaults. Source-level partial patch applied: `GravityTetherTool`, `PhysicalInteractionHandler`, `PlayerInteraction`, `HectonMusicDirector`, `HectonVoxelVolume`, `ResourceNode`, `SubmarineFluidDynamics`, and `AbyssalThermalManager` now use named/fallback masks. Follow-up source recheck no longer finds the earlier cited `~0` masks in `AutonomousExtractorSystem`, `WorldCaveDirector`, or `WorldProceduralFieldSampler`; scene-layer validation remains pending before claiming physics filtering is complete.
@@ -168,10 +168,54 @@ Reason: `HectonBatchRendererGroupUtility` allocates direct-draw `TempJob` memory
 
 ## Current Do-Not-Claim List
 
+- Do not claim Unity batchmode is globally clean from old logs alone. May 2 fresh dotnet build is clean for `Hecton8.Core.csproj`, but older Unity batch artifacts still include stale compile/path failures and must be re-run cleanly before Unity editor import truth is claimed.
 - Do not claim Play Mode deadlock is fixed. Play Mode was intentionally not launched.
 - Do not claim GC is zero. GCMonitor/profiler proof is absent.
-- Do not claim MCP VERIFIED as a global runtime state. Current May 1 evidence is local `Editor.log` compile/reload success, while MCP console still exposes one stale internal build-system exception. Play Mode, GCMonitor, profiler, and long-run memory proof are absent.
+- Do not claim MCP VERIFIED as a global runtime state. Current May 1 evidence is local `Editor.log` compile/reload success plus MCP console `0` error/warning entries for editor/script state only. Play Mode, GCMonitor, profiler, and long-run memory proof are absent.
 - Do not claim the docs are fully current. This queue now points to current deltas, but older dated documents still contain historical and stale claims.
 - Do not treat `2026-05-01_CURRENT_PROJECT_STATE.md` as runtime verification. It is a conceptual source-backed snapshot only.
+
+## 2026-05-02 Documentation / Compile Evidence Delta
+
+Follow-up evidence file: `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+
+Fresh local command:
+
+- `dotnet build .\Hecton8.Core.csproj`
+- result: exit code `0`, `136 Warning(s)`, `0 Error(s)`, elapsed `00:01:24.05`
+- latest post-restore `dotnet build .\Hecton8.Core.csproj --no-restore` rerun: exit code `0`, `73 Warning(s)`, `0 Error(s)`, elapsed `00:00:23.95`
+
+Queue corrections:
+
+- Priority 0 item 1 remains open. Observability improved for dotnet compile only; Unity batchmode, MCP, Play Mode, GCMonitor, profiler, and memory retention are still not one reliable verification surface.
+- Priority 3 item 1 remains open. This pass updated active indexes and current-state anchors, not every historical document body.
+- The documentation authority path is now `Docs/README.md` -> `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current source inventory for this queue boundary: `1087` first-party `.cs` files under `Assets/_Project`, `1047` under `Assets/_Project/Scripts`, `571562` static script lines, and `0` strict `StartCoroutine(` hits under `Assets/_Project/Scripts`.
+
+STATUS: PENDING VERIFICATION
+
+## 2026-05-03 Foundation Hardening Delta
+
+Follow-up evidence file: `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`.
+
+Fresh Unity batchmode evidence after the deferred PhysX-bake teardown and watchdog pass reports:
+
+- latest `Tundra build success`: `51.07 seconds`, `33 items updated`, `1808 evaluated`
+- `CompileScripts`: `52654.128ms`
+- latest `Mono: successfully reloaded assembly`: present
+- strict compiler failure scan (`error CS`, `warning CS`, `Compiler error`, `Scripts have compiler errors`, `Tundra build failed`, `Compilation failed`): `0`
+- batchmode exit: `Exiting batchmode successfully now!`
+
+Queue correction:
+
+- Priority 0 item 2 is source-patched for `HectonWorldGenerator`: runtime chunk retirement now defers active PhysX-bake teardown instead of force-completing bake handles during cancellation/eviction.
+- Priority 1 item 2 is partially addressed for `ProceduralWreckGenerator` and `HectonFloatingOrigin`: mesh-build yield waits now have a watchdog, and floating-origin shift stability now reports within `1200` frames instead of `50000`.
+
+Still open:
+
+- Play Mode eviction stress is absent.
+- GCMonitor proof is absent.
+- MCP runtime console is absent.
+- Memory-retention soak is absent.
 
 STATUS: PENDING VERIFICATION

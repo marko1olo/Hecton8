@@ -209,7 +209,7 @@ namespace Hecton8.UI
             _lineCharacterThresholds[writeIndex] = _dumpBuilder.Length;
             _visibleLineTarget = writeIndex + 1;
 
-            _dumpLabel.text = _dumpBuilder.ToString();
+            _dumpLabel.SetText(_dumpBuilder);
             _dumpLabel.ForceMeshUpdate();
             _dumpLabel.maxVisibleCharacters = 0;
             if (_textRoot != null)
@@ -362,7 +362,7 @@ namespace Hecton8.UI
 
             if (_dumpLabel != null)
             {
-                _dumpLabel.text = string.Empty;
+                _dumpLabel.SetText(string.Empty);
                 _dumpLabel.maxVisibleCharacters = int.MaxValue;
             }
         }
@@ -399,7 +399,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

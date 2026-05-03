@@ -67,8 +67,8 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve()
         {
-            GameLanguage language = LocalizationManager.Instance != null
-                ? LocalizationManager.Instance.CurrentLanguage
+            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
+                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
                 : GameLanguage.English;
 
             return Resolve(language);
@@ -79,7 +79,7 @@ namespace Hecton.Localization
         /// </summary>
         public string Resolve(GameLanguage language)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
 
             if (TryResolveInline(language, out string inlineValue))
                 return manager != null ? manager.ExpandText(inlineValue) : inlineValue;

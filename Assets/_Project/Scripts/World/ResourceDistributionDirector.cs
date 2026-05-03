@@ -19,7 +19,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4042)]
-    public sealed class ResourceDistributionDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable
+    public sealed class ResourceDistributionDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IRandomEventListener
     {
         private const int DefaultSectorSizeMeters = 128;
         private const int DefaultMaxPendingSpawnRequests = 1024;
@@ -413,16 +413,7 @@ namespace Hecton8.World
             _resourceTombstoneScratch = new List<ResourceNodeTombstoneRecord>(64);
             // COLD ALLOC: List<ResourceNode>[InitialMetamorphismCapacity] — pressure-metamorphism node mapping for Burst result commit — owner: ResourceDistributionDirector
             _metamorphismNodeScratch = new List<ResourceNode>(InitialMetamorphismCapacity);
-            // COLD ALLOC: SpawnRequest[GhostProxySnapBatchCapacity] - request/result bridge for deferred proxy raycasts - owner: ResourceDistributionDirector
-            _ghostProxySnapRequests = new SpawnRequest[GhostProxySnapBatchCapacity];
-            _ghostProxySnapCommands = new NativeArray<RaycastCommand>(
-                GhostProxySnapBatchCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[32] - meshless proxy down-snap batch - owner: ResourceDistributionDirector
-            _ghostProxySnapHits = new NativeArray<RaycastHit>(
-                GhostProxySnapBatchCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[32] - meshless proxy down-snap results - owner: ResourceDistributionDirector
+            EnsureGhostProxySnapBuffers();
 
             EnsureRuntimePrefab();
             UpdateDiagnostics(default);
@@ -434,22 +425,23 @@ namespace Hecton8.World
                 return;
 
             ActiveRuntimeInstance = this;
+            EnsureGhostProxySnapBuffers();
 
             if (!_slowTickRegistered && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = true;
+                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
             }
 
             if (!_lateFrameRegistered && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _lateFrameRegistered = true;
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
 
             if (!_seismicHookRegistered)
             {
-                RandomEventEvents.OnSeismicShockwave += HandleSeismicShockwave;
+                RandomEventEvents.Register(this);
                 _seismicHookRegistered = true;
             }
         }
@@ -458,7 +450,7 @@ namespace Hecton8.World
         {
             if (_seismicHookRegistered)
             {
-                RandomEventEvents.OnSeismicShockwave -= HandleSeismicShockwave;
+                RandomEventEvents.Unregister(this);
                 _seismicHookRegistered = false;
             }
 
@@ -474,8 +466,8 @@ namespace Hecton8.World
                 _lateFrameRegistered = false;
             }
 
-            CompleteMetamorphismJob();
-            CompleteGhostProxySnapJob();
+            CancelMetamorphismJobForTeardown();
+            CancelGhostProxySnapJobForTeardown();
             DespawnAllResidentNodes();
             _residentSectors?.Clear();
             _pendingSpawns?.Clear();
@@ -487,8 +479,8 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            CompleteMetamorphismJob();
-            CompleteGhostProxySnapJob();
+            CancelMetamorphismJobForTeardown();
+            CancelGhostProxySnapJobForTeardown();
             DisposeMetamorphismBuffers();
             DisposeGhostProxySnapBuffers();
         }
@@ -508,7 +500,6 @@ namespace Hecton8.World
             _debugPlayerSector = new Vector2Int(playerSector.x, playerSector.y);
 
             RefreshResidentSectors(playerSector);
-            ProcessCompletedGhostProxySnaps();
             ScheduleGhostProxySnapBatch();
             ProcessPendingSpawns();
             SchedulePressureMetamorphismJob();
@@ -554,14 +545,14 @@ namespace Hecton8.World
                 return false;
             }
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return false;
 
             float safeRadius = math.max(0.25f, crystallizationRadiusMeters);
             Vector3 spawnPosition = ResolveThermalDiamondVoxelFacePosition(runtimePosition, safeRadius, template);
             ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(spawnPosition);
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
@@ -667,7 +658,7 @@ namespace Hecton8.World
                 return false;
 
             ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(runtimePosition);
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
@@ -678,7 +669,7 @@ namespace Hecton8.World
             if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
                 return false;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return false;
 
@@ -813,7 +804,7 @@ namespace Hecton8.World
             if (_runtimePoolReady || _runtimePrefab == null)
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return;
 
@@ -1014,7 +1005,7 @@ namespace Hecton8.World
                 return false;
 
             ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(runtimePosition);
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
                 return false;
 
@@ -1066,7 +1057,7 @@ namespace Hecton8.World
                 _ghostProxySnapRequests[i] = request;
                 _ghostProxySnapHits[i] = default;
 
-                int layerMask = HectonLayerMasks.DefaultRaycastLayerMask;
+                int layerMask = HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask;
                 if (i < scheduledCount && (uint)request.TemplateIndex < (uint)resourceTemplates.Length)
                 {
                     ResourceNodeTemplate template = resourceTemplates[request.TemplateIndex];
@@ -1097,7 +1088,9 @@ namespace Hecton8.World
             if (!_ghostProxySnapJobActive || !_ghostProxySnapHandle.IsCompleted)
                 return;
 
-            _ghostProxySnapHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _ghostProxySnapHandle, forceComplete: false))
+                return;
+
             int scheduledCount = math.min(_scheduledGhostProxySnapCount, GhostProxySnapBatchCapacity);
             for (int i = 0; i < scheduledCount; i++)
             {
@@ -1115,7 +1108,7 @@ namespace Hecton8.World
                 }
 
                 request.RequiresGhostProxySnap = 0;
-                PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+                PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
                 if (registry != null && registry.IsResourceNodeTombstoned(request.TombstoneId))
                     continue;
 
@@ -1132,7 +1125,7 @@ namespace Hecton8.World
             if (!_runtimePoolReady || _runtimePrefab == null || _pendingSpawns.Count == 0)
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return;
 
@@ -1278,8 +1271,9 @@ namespace Hecton8.World
 
         private void CompleteAndApplyMetamorphismJob()
         {
-            _metamorphismJobHandle.Complete();
-            _metamorphismJobHandle = default;
+            if (!DispatcherJobSwap.TryComplete(ref _metamorphismJobHandle, forceComplete: false))
+                return;
+
             _metamorphismJobActive = false;
 
             if (!TryResolvePressureDiamondTemplate(out ResourceNodeTemplate diamondTemplate))
@@ -1289,7 +1283,7 @@ namespace Hecton8.World
                 return;
             }
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             int count = math.min(_scheduledMetamorphismCount, _metamorphismNodeScratch.Count);
             for (int i = 0; i < count; i++)
             {
@@ -1316,12 +1310,12 @@ namespace Hecton8.World
             _metamorphismNodeScratch.Clear();
         }
 
-        private void CompleteMetamorphismJob()
+        private void CancelMetamorphismJobForTeardown()
         {
             if (!_metamorphismJobActive)
                 return;
 
-            _metamorphismJobHandle.Complete();
+            DisposeMetamorphismBuffers(_metamorphismJobHandle);
             _metamorphismJobHandle = default;
             _metamorphismJobActive = false;
             _scheduledMetamorphismCount = 0;
@@ -1350,14 +1344,64 @@ namespace Hecton8.World
 
             if (_metamorphismResults.IsCreated)
                 _metamorphismResults.Dispose();
+
+            _metamorphismInputs = default;
+            _metamorphismResults = default;
         }
 
-        private void CompleteGhostProxySnapJob()
+        private void DisposeMetamorphismBuffers(JobHandle dependency)
+        {
+            bool scheduledDisposal = false;
+            JobHandle disposeHandle = dependency;
+            if (_metamorphismInputs.IsCreated)
+            {
+                disposeHandle = _metamorphismInputs.Dispose(disposeHandle);
+                _metamorphismInputs = default;
+                scheduledDisposal = true;
+            }
+
+            if (_metamorphismResults.IsCreated)
+            {
+                disposeHandle = _metamorphismResults.Dispose(disposeHandle);
+                _metamorphismResults = default;
+                scheduledDisposal = true;
+            }
+
+            if (scheduledDisposal)
+                JobHandle.ScheduleBatchedJobs();
+        }
+
+        private void EnsureGhostProxySnapBuffers()
+        {
+            if (_ghostProxySnapRequests == null || _ghostProxySnapRequests.Length != GhostProxySnapBatchCapacity)
+            {
+                // COLD ALLOC: SpawnRequest[GhostProxySnapBatchCapacity] — request/result bridge for deferred proxy raycasts — owner: ResourceDistributionDirector
+                _ghostProxySnapRequests = new SpawnRequest[GhostProxySnapBatchCapacity];
+            }
+
+            if (!_ghostProxySnapCommands.IsCreated)
+            {
+                _ghostProxySnapCommands = new NativeArray<RaycastCommand>(
+                    GhostProxySnapBatchCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[32] — meshless proxy down-snap batch — owner: ResourceDistributionDirector
+            }
+
+            if (!_ghostProxySnapHits.IsCreated)
+            {
+                _ghostProxySnapHits = new NativeArray<RaycastHit>(
+                    GhostProxySnapBatchCapacity,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[32] — meshless proxy down-snap results — owner: ResourceDistributionDirector
+            }
+        }
+
+        private void CancelGhostProxySnapJobForTeardown()
         {
             if (!_ghostProxySnapJobActive)
                 return;
 
-            _ghostProxySnapHandle.Complete();
+            DisposeGhostProxySnapBuffers(_ghostProxySnapHandle);
             _ghostProxySnapHandle = default;
             _ghostProxySnapJobActive = false;
             _scheduledGhostProxySnapCount = 0;
@@ -1372,11 +1416,36 @@ namespace Hecton8.World
 
             if (_ghostProxySnapHits.IsCreated)
                 _ghostProxySnapHits.Dispose();
+
+            _ghostProxySnapCommands = default;
+            _ghostProxySnapHits = default;
+        }
+
+        private void DisposeGhostProxySnapBuffers(JobHandle dependency)
+        {
+            bool scheduledDisposal = false;
+            JobHandle disposeHandle = dependency;
+            if (_ghostProxySnapCommands.IsCreated)
+            {
+                disposeHandle = _ghostProxySnapCommands.Dispose(disposeHandle);
+                _ghostProxySnapCommands = default;
+                scheduledDisposal = true;
+            }
+
+            if (_ghostProxySnapHits.IsCreated)
+            {
+                disposeHandle = _ghostProxySnapHits.Dispose(disposeHandle);
+                _ghostProxySnapHits = default;
+                scheduledDisposal = true;
+            }
+
+            if (scheduledDisposal)
+                JobHandle.ScheduleBatchedJobs();
         }
 
         private ResourceNodeTemplate ResolveMetamorphosedTemplateOverride(ulong tombstoneId, ResourceNodeTemplate fallback)
         {
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null || !registry.IsResourceNodeMetamorphosed(tombstoneId))
                 return fallback;
 
@@ -1489,12 +1558,25 @@ namespace Hecton8.World
             return false;
         }
 
-        private void HandleSeismicShockwave(SeismicShockwaveEvent payload)
+        void IRandomEventListener.OnRandomEventStarted(RandomEventType type, float intensity)
+        {
+        }
+
+        void IRandomEventListener.OnRandomEventEnded(RandomEventType type)
+        {
+        }
+
+        void IRandomEventListener.OnSeismicShockwave(in SeismicShockwaveEvent payload)
+        {
+            HandleSeismicShockwave(in payload);
+        }
+
+        private void HandleSeismicShockwave(in SeismicShockwaveEvent payload)
         {
             if (!Application.isPlaying || tectonicUpwellingRespawnRate <= 0f)
                 return;
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null || _resourceTombstoneScratch == null)
                 return;
 
@@ -1622,7 +1704,7 @@ namespace Hecton8.World
             if (!brinePool.HazardRegistered)
                 return;
 
-            HazardZoneManager manager = HazardZoneManager.Instance;
+            HazardZoneManager manager = Hecton8.Core.GlobalRegistry.HazardZones;
             if (manager != null)
                 manager.UnregisterZone(brinePool.HazardZoneId);
 
@@ -1714,7 +1796,7 @@ namespace Hecton8.World
             if (_magmaVentPrefab == null)
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return;
 
@@ -1772,7 +1854,7 @@ namespace Hecton8.World
                 return;
 
             UnregisterBrineHazard(ref state.BrinePool);
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             List<ResourceNode> nodes = state.ActiveNodes;
             for (int i = 0; i < nodes.Count; i++)
             {

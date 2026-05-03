@@ -481,14 +481,7 @@ namespace Hecton8.Physics
             _instance = this;
 
             if (Application.isPlaying)
-            {
-                // DontDestroyOnLoad works only on root objects. If the manager was nested
-                // under a scene organizer, detach it once for stable runtime persistence.
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
+                GameBootstrapper.PersistRuntimeService(this);
 
             // Initial observer resolution. If player/camera appears later,
             // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
@@ -689,11 +682,14 @@ namespace Hecton8.Physics
         /// Вызывается GameTickManager в FixedUpdate.
         ///
         /// Pipeline:
+        ///   Runtime guard: a completed previous job is drained before this method writes
+        ///   new data into the same NativeArrays. If the job is still running, this fixed
+        ///   step is skipped instead of blocking.
         ///   1. Resize NativeArrays если count > capacity (Capacity Doubling)
         ///   2. Gather: копируем данные из Rigidbody → NativeArrays
         ///   3. Schedule: BuoyancyJob (Burst, parallel)
-        ///   4. Complete: синхронное ожидание
-        ///   5. Apply: AddForce к каждому Rigidbody
+        ///   4. Completion: only after IsCompleted, no blocking wait
+        ///   5. Apply: queue force packets через PhysicsForceRouter
         ///
         /// Все шаги кроме Job — main thread.
         /// Job — worker threads, Burst compiled, SIMD.
@@ -702,11 +698,8 @@ namespace Hecton8.Physics
         {
             using (ProfilerRegistry.PhysicsTick.Auto())
             {
-            if (_scheduledBuoyancyJobActive)
-            {
-                if (!_scheduledBuoyancyHandle.IsCompleted)
-                    return;
-            }
+            if (!TryDrainScheduledBuoyancyJob())
+                return;
 
             int count = _objects.Count;
             if (count == 0)
@@ -826,14 +819,21 @@ namespace Hecton8.Physics
         {
             DrainCavitationBursts();
 
-            if (!_scheduledBuoyancyJobActive || !_scheduledBuoyancyHandle.IsCompleted)
-                return;
+            TryDrainScheduledBuoyancyJob();
+        }
 
-            _scheduledBuoyancyHandle.Complete();
+        private bool TryDrainScheduledBuoyancyJob()
+        {
+            if (!_scheduledBuoyancyJobActive)
+                return true;
+
+            if (!DispatcherJobSwap.TryComplete(ref _scheduledBuoyancyHandle, false))
+                return false;
+
             ApplyScheduledForces();
-            _scheduledBuoyancyHandle = default;
             _scheduledBuoyancyJobActive = false;
             _scheduledForceCount = 0;
+            return true;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -988,8 +988,7 @@ namespace Hecton8.Physics
         // ══════════════════════════════════════════════════════════
 
         /// <summary>
-        /// Применяет вычисленные силы к Rigidbody. Main thread.
-        /// AddForce(ForceMode.Force) — корректно для FixedUpdate.
+        /// Queues computed force packets. Rigidbody mutation is owned by PhysicsApplySystem.
         /// </summary>
         private void ApplyScheduledForces()
         {
@@ -1575,7 +1574,7 @@ namespace Hecton8.Physics
             for (int i = 0; i < MaxAbyssalHeatSourceCount; i++)
                 _gpuAbyssalHeatSourceUpload[i] = default;
 
-            AbyssalThermalManager thermalManager = AbyssalThermalManager.Instance;
+            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
             if (thermalManager == null)
                 return 0;
 

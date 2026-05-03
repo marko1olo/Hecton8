@@ -15,12 +15,18 @@ namespace Hecton8.Editor
 
         static BootstrapPlayModeEntryGuard()
         {
+            if (Application.isBatchMode)
+                return;
+
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
         }
 
         private static void HandlePlayModeStateChanged(PlayModeStateChange state)
         {
+            if (Application.isBatchMode)
+                return;
+
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
 

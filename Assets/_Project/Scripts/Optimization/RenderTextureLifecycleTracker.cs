@@ -25,6 +25,7 @@ namespace Hecton8.Optimization
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
         
         private bool _registeredSlowTick;
+        private bool _registeredService;
         
         // COLD ALLOC: Dictionary<EntityId, RenderTextureAllocationRecord>[256] — RT tracking — owner: LifecycleTracker
         private readonly Dictionary<EntityId, RenderTextureAllocationRecord> _allocations = new Dictionary<EntityId, RenderTextureAllocationRecord>(256);
@@ -74,17 +75,20 @@ namespace Hecton8.Optimization
         
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
         }
         
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
         }
         
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (_instance == this)
                 _instance = null;
@@ -297,6 +301,15 @@ namespace Hecton8.Optimization
             _registeredSlowTick = true;
         }
 
+        private void TryRegisterService()
+        {
+            if (_registeredService || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterRenderTextureLifecycleRuntime(this);
+            _registeredService = true;
+        }
+
         private void TryUnregister()
         {
             if (!_registeredSlowTick)
@@ -304,6 +317,15 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registeredSlowTick = false;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_registeredService)
+                return;
+
+            GlobalRegistry.UnregisterRenderTextureLifecycleRuntime(this);
+            _registeredService = false;
         }
 
         private void CheckForLeaks()

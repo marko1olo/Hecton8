@@ -22,7 +22,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Loadout Tab")]
-    public sealed class PDALoadoutTab : MonoBehaviour, IUpdatable, IPDAEventListener
+    public sealed class PDALoadoutTab : MonoBehaviour, IUpdatable, IPDAEventListener, IPlayerExpressionEventListener
     {
         private static readonly Color PanelBg = new Color(0.03f, 0.08f, 0.1f, 0.84f);
         private static readonly Color BoxBg = new Color(0.05f, 0.12f, 0.14f, 0.72f);
@@ -228,7 +228,7 @@ namespace Hecton8.UI
             if (playerPDA == null)
                 playerPDA = GetComponentInParent<PlayerPDA>();
             if (playerExpressionManager == null)
-                playerExpressionManager = PlayerExpressionManager.Instance;
+                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
@@ -273,7 +273,7 @@ namespace Hecton8.UI
             }
 
             PDAEvents.Register(this);
-            PlayerExpressionEvents.OnProfileChanged += HandlePlayerExpressionChanged;
+            PlayerExpressionEvents.Register(this);
         }
 
         private void Unsubscribe()
@@ -287,7 +287,7 @@ namespace Hecton8.UI
             }
 
             PDAEvents.Unregister(this);
-            PlayerExpressionEvents.OnProfileChanged -= HandlePlayerExpressionChanged;
+            PlayerExpressionEvents.Unregister(this);
             UnsubscribeDurabilitySystem();
         }
 
@@ -299,7 +299,7 @@ namespace Hecton8.UI
 
         private void RefreshDurabilityBindings()
         {
-            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (_subscribedDurabilitySystem == durabilitySystem)
                 return;
 
@@ -366,7 +366,15 @@ namespace Hecton8.UI
                 RefreshAll();
         }
 
-        private void HandlePlayerExpressionChanged(PlayerExpressionProfile _)
+        public void OnPlayerExpressionEvent(in PlayerExpressionEventPayload payload)
+        {
+            if ((PlayerExpressionEventType)payload.EventType != PlayerExpressionEventType.ProfileChanged)
+                return;
+
+            HandlePlayerExpressionChanged();
+        }
+
+        private void HandlePlayerExpressionChanged()
         {
             _refreshDirty = true;
             if (IsTabActive)
@@ -662,7 +670,7 @@ namespace Hecton8.UI
         {
             if (_slotRoots == null || toolManager == null) return;
 
-            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
 
             for (int i = 0; i < 4; i++)
             {
@@ -784,7 +792,7 @@ namespace Hecton8.UI
             string recommendedPresetName = "GENERAL";
             string recommendedPresetDirective = "No authored target in front of the diver. General-purpose expedition loadout remains valid.";
 
-            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
 
             for (int i = 0; i < toolManager.SlotCount; i++)
             {
@@ -873,7 +881,7 @@ namespace Hecton8.UI
                 return;
 
             if (playerExpressionManager == null)
-                playerExpressionManager = PlayerExpressionManager.Instance;
+                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
 
             if (playerExpressionManager == null || playerExpressionManager.ProfileCount <= 1)
             {
@@ -1004,7 +1012,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (tool.Metadata != null && durabilitySystem != null && durabilitySystem.IsBroken(tool.Metadata.toolID))
             {
                 NotifyWarning($"{(item != null ? CachedToUpperInvariant(item.itemName) : "TOOL")} IS BROKEN");
@@ -1082,7 +1090,7 @@ namespace Hecton8.UI
         internal void InvokeIdentityCycleAction()
         {
             if (playerExpressionManager == null)
-                playerExpressionManager = PlayerExpressionManager.Instance;
+                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
 
             if (playerExpressionManager == null)
             {
@@ -1307,7 +1315,7 @@ namespace Hecton8.UI
         private string GetActiveExpressionName()
         {
             if (playerExpressionManager == null)
-                playerExpressionManager = PlayerExpressionManager.Instance;
+                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
 
             return playerExpressionManager != null
                 ? CachedToUpperInvariant(playerExpressionManager.GetActiveProfileName())
@@ -1317,7 +1325,7 @@ namespace Hecton8.UI
         private string GetActiveExpressionSummary()
         {
             if (playerExpressionManager == null)
-                playerExpressionManager = PlayerExpressionManager.Instance;
+                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
 
             return playerExpressionManager != null
                 ? playerExpressionManager.GetActiveProfileSummary()
@@ -1327,7 +1335,7 @@ namespace Hecton8.UI
         private string GetActiveExpressionLoadoutName()
         {
             if (playerExpressionManager == null)
-                playerExpressionManager = PlayerExpressionManager.Instance;
+                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
 
             return playerExpressionManager != null
                 ? playerExpressionManager.GetActiveRecommendedLoadoutName()
@@ -1337,7 +1345,7 @@ namespace Hecton8.UI
         private string GetActiveExpressionSuitName()
         {
             if (playerExpressionManager == null)
-                playerExpressionManager = PlayerExpressionManager.Instance;
+                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
 
             return playerExpressionManager != null
                 ? playerExpressionManager.GetActiveRecommendedSuitName()
@@ -1347,7 +1355,7 @@ namespace Hecton8.UI
         private string GetLiveExpressionSuitName()
         {
             if (playerExpressionManager == null)
-                playerExpressionManager = PlayerExpressionManager.Instance;
+                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
 
             return playerExpressionManager != null
                 ? playerExpressionManager.GetLiveSuitName()
@@ -1357,7 +1365,7 @@ namespace Hecton8.UI
         private bool IsExpressionSuitApplied()
         {
             if (playerExpressionManager == null)
-                playerExpressionManager = PlayerExpressionManager.Instance;
+                playerExpressionManager = Hecton8.Core.GlobalRegistry.PlayerExpression;
 
             return playerExpressionManager != null && playerExpressionManager.IsActiveRecommendedSuitApplied();
         }

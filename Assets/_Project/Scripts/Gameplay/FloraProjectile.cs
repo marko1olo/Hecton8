@@ -206,7 +206,7 @@ namespace Hecton8.Gameplay
 
         private void DespawnSelf()
         {
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
                 pool.Despawn(gameObject);

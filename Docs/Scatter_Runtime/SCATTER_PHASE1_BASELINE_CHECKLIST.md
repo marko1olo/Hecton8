@@ -6,11 +6,11 @@ Scope: `WorldProceduralScatterDirector` baseline before any DOTS decision
 
 This checklist exists to close `Phase 1 - Establish a Real Baseline` from `HECTON8_RUNTIME_EXECUTION_MASTER_PLAN.md`.
 
-2026-05-01 current-state boundary:
+2026-05-02 current-state boundary:
 
 - This checklist defines required evidence, not current evidence.
 - Do not treat unchecked rows or older capture instructions as proof that scatter is healthy.
-- Current project truth starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project truth starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 
 Do not skip steps.
 Do not report "BEFORE: N/A".

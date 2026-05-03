@@ -1,9 +1,5 @@
 using System.Collections.Generic;
 using Hecton8.Core;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Jobs;
-using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -18,22 +14,6 @@ namespace Hecton8.UI
     public sealed class HectonUIScaler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IOriginShiftListener
     {
         private const string ContentRootName = "HectonUI_ScaledRoot";
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct LinearLayoutJob : IJobParallelFor
-        {
-            public float2 Origin;
-            public float2 Step;
-            public float2 ItemSize;
-            [WriteOnly] public NativeArray<float2> Positions;
-            [WriteOnly] public NativeArray<float2> Sizes;
-
-            public void Execute(int index)
-            {
-                Positions[index] = Origin + Step * index;
-                Sizes[index] = ItemSize;
-            }
-        }
 
         [Header("â”€â”€ Scale Policy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Reference UI resolution used by the root transform matrix.")]
@@ -54,7 +34,7 @@ namespace Hecton8.UI
         [Header("Zero Layout Groups")]
         [Tooltip("Disables Unity Horizontal/Vertical LayoutGroups under this content root. Runtime rows should use the manual linear layout below.")]
         [SerializeField] private bool disableLayoutGroupsUnderContentRoot = true;
-        [Tooltip("Optional high-frequency UI items positioned by Burst-generated anchored positions instead of LayoutGroup rebuilds.")]
+        [Tooltip("Optional high-frequency UI items positioned by direct anchored-position writes instead of LayoutGroup rebuilds.")]
         [SerializeField] private RectTransform[] manualLinearLayoutItems;
         [Tooltip("Anchored position of manual item 0.")]
         [SerializeField] private Vector2 manualLayoutOrigin = Vector2.zero;
@@ -74,10 +54,6 @@ namespace Hecton8.UI
         private Vector2 _lastAppliedReferenceResolution = Vector2.zero;
         private float _lastAppliedMatch = -1f;
         private Matrix4x4 _uiMatrix = Matrix4x4.identity;
-        private NativeArray<float2> _manualLayoutPositions;
-        private NativeArray<float2> _manualLayoutSizes;
-        private JobHandle _manualLayoutJobHandle;
-        private bool _manualLayoutJobScheduled;
         private readonly List<HorizontalOrVerticalLayoutGroup> _layoutGroupDisableBuffer = new List<HorizontalOrVerticalLayoutGroup>(16); // COLD ALLOC: List<HorizontalOrVerticalLayoutGroup>[16] - scaler-owned layout group disable scratch - owner: HectonUIScaler
 
         /// <summary>Current matrix applied to the scaled content root.</summary>
@@ -94,7 +70,7 @@ namespace Hecton8.UI
             ResolveCanvas();
             EnsureContentRoot();
             DisableUnityLayoutGroupsIfConfigured();
-            ScheduleManualLinearLayout(force: true);
+            ApplyManualLinearLayout();
             ApplyScale(force: true);
             _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
             if (!Application.isPlaying)
@@ -114,14 +90,11 @@ namespace Hecton8.UI
         {
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterFromTickManager();
-            DisposeManualLayoutBuffers();
         }
 
         /// <inheritdoc />
         public void Tick(float dt)
         {
-            CompleteManualLinearLayoutIfReady();
-
             if (_pendingContentRootBootstrap)
                 return;
 
@@ -142,7 +115,7 @@ namespace Hecton8.UI
 
             EnsureContentRoot();
             DisableUnityLayoutGroupsIfConfigured();
-            ScheduleManualLinearLayout(force: false);
+            ApplyManualLinearLayout();
             ApplyScale(force: true);
             _pendingContentRootBootstrap = ResolveContentRootInternal(createIfMissing: false) == null;
         }
@@ -185,6 +158,7 @@ namespace Hecton8.UI
 
             ResolveCanvas();
             EnsureContentRoot();
+            ApplyManualLinearLayout();
             ApplyScale(force: true);
         }
 #endif
@@ -422,55 +396,23 @@ namespace Hecton8.UI
             }
         }
 
-        private void ScheduleManualLinearLayout(bool force)
+        private void ApplyManualLinearLayout()
         {
-            if (_manualLayoutJobScheduled || manualLinearLayoutItems == null || manualLinearLayoutItems.Length == 0)
+            if (manualLinearLayoutItems == null || manualLinearLayoutItems.Length == 0)
                 return;
 
             int itemCount = ResolveManualLayoutItemCount();
             if (itemCount <= 0)
                 return;
 
-            EnsureManualLayoutCapacity(itemCount);
-            if (!_manualLayoutPositions.IsCreated || !_manualLayoutSizes.IsCreated)
-                return;
-
-            _manualLayoutJobHandle = new LinearLayoutJob
-            {
-                Origin = manualLayoutOrigin,
-                Step = manualLayoutStep,
-                ItemSize = manualLayoutItemSize,
-                Positions = _manualLayoutPositions,
-                Sizes = _manualLayoutSizes
-            }.Schedule(itemCount, 32);
-            _manualLayoutJobScheduled = true;
-
-            if (!Application.isPlaying && force)
-                CompleteManualLinearLayoutIfReady(forceCompleteInEditor: true);
-        }
-
-        private void CompleteManualLinearLayoutIfReady(bool forceCompleteInEditor = false)
-        {
-            if (!_manualLayoutJobScheduled)
-                return;
-
-            if (!_manualLayoutJobHandle.IsCompleted && !(forceCompleteInEditor && !Application.isPlaying))
-                return;
-
-            _manualLayoutJobHandle.Complete();
-            _manualLayoutJobScheduled = false;
-
-            int itemCount = ResolveManualLayoutItemCount();
             for (int i = 0; i < itemCount; i++)
             {
                 RectTransform item = manualLinearLayoutItems[i];
                 if (item == null)
                     continue;
 
-                float2 position = _manualLayoutPositions[i];
-                float2 size = _manualLayoutSizes[i];
-                item.anchoredPosition = new Vector2(position.x, position.y);
-                item.sizeDelta = new Vector2(size.x, size.y);
+                item.anchoredPosition = manualLayoutOrigin + manualLayoutStep * i;
+                item.sizeDelta = manualLayoutItemSize;
             }
         }
 
@@ -479,63 +421,7 @@ namespace Hecton8.UI
             if (manualLinearLayoutItems == null)
                 return 0;
 
-            return Mathf.Min(manualLinearLayoutItems.Length, _manualLayoutPositions.IsCreated ? _manualLayoutPositions.Length : manualLinearLayoutItems.Length);
-        }
-
-        private void EnsureManualLayoutCapacity(int requiredCapacity)
-        {
-            int safeCapacity = Mathf.Max(1, requiredCapacity);
-            if (_manualLayoutPositions.IsCreated && _manualLayoutPositions.Length >= safeCapacity)
-                return;
-
-            if (_manualLayoutJobScheduled)
-                return;
-
-            DisposeManualLayoutBuffers();
-            _manualLayoutPositions = new NativeArray<float2>(
-                safeCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float2>[manual item count] - Burst manual UI layout positions - owner: HectonUIScaler
-            _manualLayoutSizes = new NativeArray<float2>(
-                safeCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float2>[manual item count] - Burst manual UI layout sizes - owner: HectonUIScaler
-        }
-
-        private void DisposeManualLayoutBuffers()
-        {
-            if (_manualLayoutPositions.IsCreated)
-            {
-                if (_manualLayoutJobScheduled)
-                {
-                    JobHandle disposePositions = _manualLayoutPositions.Dispose(_manualLayoutJobHandle);
-                    _manualLayoutSizes.Dispose(disposePositions);
-                    _manualLayoutJobScheduled = false;
-                }
-                else
-                {
-                    _manualLayoutPositions.Dispose();
-                    if (_manualLayoutSizes.IsCreated)
-                        _manualLayoutSizes.Dispose();
-                }
-
-                _manualLayoutPositions = default;
-                _manualLayoutSizes = default;
-                _manualLayoutJobHandle = default;
-                return;
-            }
-
-            if (_manualLayoutSizes.IsCreated)
-            {
-                if (_manualLayoutJobScheduled)
-                    _manualLayoutSizes.Dispose(_manualLayoutJobHandle);
-                else
-                    _manualLayoutSizes.Dispose();
-
-                _manualLayoutSizes = default;
-                _manualLayoutJobHandle = default;
-                _manualLayoutJobScheduled = false;
-            }
+            return manualLinearLayoutItems.Length;
         }
 
         private void RegisterToTickManager()

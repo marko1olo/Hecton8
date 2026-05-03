@@ -7,7 +7,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 2026-05-01 trust note:
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger as current project truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger as current project truth.
 - Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` when the question is project readiness or overall risk, not narrow domain ownership.
 - This ledger is a navigation aid, not a live verification artifact.
 - Current cross-project risks remain mixed registry/singleton authority, local job barriers, headless/presentation coupling, and missing profiler/GC proof.

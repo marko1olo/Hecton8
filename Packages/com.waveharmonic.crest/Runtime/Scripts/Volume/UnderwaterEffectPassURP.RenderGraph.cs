@@ -131,7 +131,9 @@ namespace WaveHarmonic.Crest
         {
 #pragma warning disable IDE1006 // Naming Styles
             public UniversalCameraData cameraData;
+#pragma warning disable 0649
             public RenderGraphHelper.Handle colorTargetHandle;
+#pragma warning restore 0649
             public RenderGraphHelper.Handle depthTargetHandle;
 #pragma warning restore IDE1006 // Naming Styles
 

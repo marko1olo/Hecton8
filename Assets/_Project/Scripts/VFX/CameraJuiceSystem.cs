@@ -28,7 +28,7 @@ namespace Hecton8.VFX
     /// Integrates with HectonSurvivalSystem, PlayerMovement, InteractionEvents, GameTickManager, SaveManager.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class CameraJuiceSystem : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ISaveable, IInteractionEventListener
+    public sealed class CameraJuiceSystem : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener
     {
         // ═══ SINGLETON ═══
         private static CameraJuiceSystem _instance;
@@ -241,6 +241,8 @@ namespace Hecton8.VFX
 
         // ═══ TICK REGISTRATION ═══
         private bool _registered;
+        private bool _registeredLateFrame;
+        private bool _serviceRegistered;
         private bool _survivalEventsHooked;
         private bool _movementEventsHooked;
         private float _nextDependencyResolveTime;
@@ -335,12 +337,15 @@ namespace Hecton8.VFX
 
         private void OnEnable()
         {
+            TryRegisterToGlobalRegistry();
+
             if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
                 _registered = true;
             }
+            TryRegisterLateFrame();
 
             TryResolveGameplayDependencies();
             SyncDependencySubscriptions();
@@ -352,6 +357,7 @@ namespace Hecton8.VFX
         {
             // Unregister from GameTickManager
             TryUnregister();
+            TryUnregisterFromGlobalRegistry();
 
             UnhookDependencyEvents();
 
@@ -399,17 +405,56 @@ namespace Hecton8.VFX
 
         private void TryUnregister()
         {
-            if (!_registered)
+            TryUnregisterLateFrame();
+
+            if (_registered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
+                _registered = false;
+            }
+        }
+
+        private void TryRegisterToGlobalRegistry()
+        {
+            if (_serviceRegistered || !Application.isPlaying || _instance != this)
                 return;
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Player);
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
-            _registered = false;
+            GlobalRegistry.RegisterCameraJuiceRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.CameraJuice, this);
+        }
+
+        private void TryUnregisterFromGlobalRegistry()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterCameraJuiceRuntime(this);
+            _serviceRegistered = false;
+        }
+
+        private void TryRegisterLateFrame()
+        {
+            if (_registeredLateFrame || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = true;
+        }
+
+        private void TryUnregisterLateFrame()
+        {
+            if (!_registeredLateFrame || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrame = false;
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterFromGlobalRegistry();
 
             if (_instance == this)
             {
@@ -438,9 +483,7 @@ namespace Hecton8.VFX
             }
             catch (Exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[CameraJuiceSystem] Shake calculation failed.");
-#endif
+                LogShakeCalculationFailed();
                 _shakeEnabled = false;
             }
 
@@ -450,9 +493,7 @@ namespace Hecton8.VFX
             }
             catch (Exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[CameraJuiceSystem] FOV calculation failed.");
-#endif
+                LogFovCalculationFailed();
                 _fovEnabled = false;
             }
 
@@ -462,9 +503,7 @@ namespace Hecton8.VFX
             }
             catch (Exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[CameraJuiceSystem] Biome blend failed.");
-#endif
+                LogBiomeBlendFailed();
                 _biomeBlendActive = false;
             }
 
@@ -474,9 +513,7 @@ namespace Hecton8.VFX
             }
             catch (Exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[CameraJuiceSystem] Interaction focus calculation failed.");
-#endif
+                LogInteractionFocusFailed();
                 _depthOfFieldEnabled = false;
             }
 
@@ -485,9 +522,14 @@ namespace Hecton8.VFX
             if (frameTime > 1.0f && Time.time >= _nextLogTime)
             {
                 _nextLogTime = Time.time + 5f;
-                Debug.LogWarning("[CameraJuiceSystem] Frame time exceeded budget.");
+                LogFrameBudgetExceeded();
             }
 #endif
+        }
+
+        public void LateFrameTick()
+        {
+            ResolveScheduledFocusRaycast();
         }
 
         // ═══ ISLOWTICKABLE ═══
@@ -512,9 +554,7 @@ namespace Hecton8.VFX
             }
             catch (Exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[CameraJuiceSystem] Health post-processing failed.");
-#endif
+                LogHealthPostProcessingFailed();
                 _healthO2EffectsEnabled = false;
             }
 
@@ -524,14 +564,54 @@ namespace Hecton8.VFX
             }
             catch (Exception)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[CameraJuiceSystem] O2 post-processing failed.");
-#endif
+                LogO2PostProcessingFailed();
                 _healthO2EffectsEnabled = false;
             }
         }
 
         // ═══ ISAVEABLE ═══
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogShakeCalculationFailed()
+        {
+            Debug.LogError("[CameraJuiceSystem] Shake calculation failed.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogFovCalculationFailed()
+        {
+            Debug.LogError("[CameraJuiceSystem] FOV calculation failed.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogBiomeBlendFailed()
+        {
+            Debug.LogError("[CameraJuiceSystem] Biome blend failed.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogInteractionFocusFailed()
+        {
+            Debug.LogError("[CameraJuiceSystem] Interaction focus calculation failed.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogFrameBudgetExceeded()
+        {
+            Debug.LogWarning("[CameraJuiceSystem] Frame time exceeded budget.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogHealthPostProcessingFailed()
+        {
+            Debug.LogError("[CameraJuiceSystem] Health post-processing failed.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogO2PostProcessingFailed()
+        {
+            Debug.LogError("[CameraJuiceSystem] O2 post-processing failed.");
+        }
 
         public int SavePriority => 75;
         public int LoadPriority => 75;
@@ -569,7 +649,9 @@ namespace Hecton8.VFX
         {
             if (profile == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogError("[CameraJuiceSystem] TriggerShake called with null profile.");
+#endif
                 return;
             }
 
@@ -637,7 +719,9 @@ namespace Hecton8.VFX
         {
             if (biome == null)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[CameraJuiceSystem] TransitionToBiome called with null biome. Using default fallback.");
+#endif
                 // TODO: Use default fallback biome
                 return;
             }
@@ -870,7 +954,6 @@ namespace Hecton8.VFX
             }
 
             EnsureFocusRaycastBuffers();
-            ResolveScheduledFocusRaycast();
 
             float targetFocusDistance = ResolveTargetFocusDistance();
             _focusDistance = Mathf.SmoothDamp(
@@ -897,6 +980,11 @@ namespace Hecton8.VFX
                     1,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] — center-eye DoF focus ray lane — owner: CameraJuiceSystem
+                NativeMemorySentinel.RegisterNativeArray(
+                    _focusRaycastCommands,
+                    nameof(CameraJuiceSystem),
+                    nameof(_focusRaycastCommands),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (!_focusRaycastHits.IsCreated)
@@ -905,6 +993,11 @@ namespace Hecton8.VFX
                     1,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] — center-eye DoF focus hit lane — owner: CameraJuiceSystem
+                NativeMemorySentinel.RegisterNativeArray(
+                    _focusRaycastHits,
+                    nameof(CameraJuiceSystem),
+                    nameof(_focusRaycastHits),
+                    NativeAllocationLifetime.Scene);
             }
         }
 
@@ -912,6 +1005,7 @@ namespace Hecton8.VFX
         {
             if (_focusRaycastCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_focusRaycastCommands);
                 if (_focusRaycastScheduled)
                     _focusRaycastCommands.Dispose(_focusRaycastHandle);
                 else
@@ -922,6 +1016,7 @@ namespace Hecton8.VFX
 
             if (_focusRaycastHits.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_focusRaycastHits);
                 if (_focusRaycastScheduled)
                     _focusRaycastHits.Dispose(_focusRaycastHandle);
                 else
@@ -936,10 +1031,12 @@ namespace Hecton8.VFX
 
         private void ResolveScheduledFocusRaycast()
         {
-            if (!_focusRaycastScheduled || !_focusRaycastHandle.IsCompleted)
+            if (!_focusRaycastScheduled)
                 return;
 
-            _focusRaycastHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _focusRaycastHandle, false))
+                return;
+
             _focusRaycastScheduled = false;
 
             RaycastHit hit = _focusRaycastHits[0];
@@ -1241,7 +1338,7 @@ namespace Hecton8.VFX
             }
 
             float renderScale = 1f;
-            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             if (scaler != null && scaler.Enabled)
             {
                 renderScale = Mathf.Clamp01(scaler.CurrentRenderScale);
@@ -1251,7 +1348,7 @@ namespace Hecton8.VFX
                 (renderScale - _adaptiveBudgetFloorRenderScale) /
                 Mathf.Max(0.0001f, 1f - _adaptiveBudgetFloorRenderScale));
 
-            VRAMMonitor vramMonitor = VRAMMonitor.Instance;
+            VRAMMonitor vramMonitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
             VRAMMonitor.VRAMPressureState pressureState = vramMonitor != null
                 ? vramMonitor.PressureState
                 : VRAMMonitor.VRAMPressureState.Stable;

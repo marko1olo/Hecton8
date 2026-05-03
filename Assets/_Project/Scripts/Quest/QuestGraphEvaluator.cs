@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Celestial;
@@ -10,23 +11,26 @@ using UnityEngine;
 
 namespace Hecton8.Quest
 {
-    internal sealed class QuestGraphEvaluator : IDisposable, INarrativeEventListener, IAtlasSignalEventListener
+    internal sealed class QuestGraphEvaluator : IDisposable, INarrativeEventListener, IAtlasSignalEventListener, ICelestialEventListener
     {
         private const string EventSubscriberId = "quest.graph.evaluator";
         private const float DepthTierTwoMeters = 100f;
         private const float DepthTierThreeMeters = 300f;
         private const float DepthTierFourMeters = 1000f;
+        private const int PendingSignalCapacity = 16;
         private static readonly uint _deepAbyssZoneHash = QuestFlagHashKernel.ComputeStableHash("zone_deep_abyss");
         private static readonly RegistryBucket<QuestGraphEvaluator> _activeEvaluators = new RegistryBucket<QuestGraphEvaluator>(4);
 
         private readonly QuestStateManager _stateManager;
         private readonly Action _onResultsAvailable;
+        private readonly string _pendingSignalsSentinelLabel;
 
         private HectonEventSubscription _itemCollectedSubscription;
         private HectonEventSubscription _itemDiscardedSubscription;
         private HectonEventSubscription _biomeDiscoveredSubscription;
         private HectonEventSubscription _loreAcquiredSubscription;
         private NativeQueue<QuestSignalPayload> _pendingSignals;
+        private int _pendingSignalCount;
         private bool _isBound;
         private bool _isDrainingSignals;
 
@@ -34,7 +38,14 @@ namespace Hecton8.Quest
         {
             _stateManager = stateManager;
             _onResultsAvailable = onResultsAvailable;
+            _pendingSignalsSentinelLabel = nameof(_pendingSignals) + RuntimeHelpers.GetHashCode(this);
             _pendingSignals = new NativeQueue<QuestSignalPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<QuestSignalPayload>[16] - quest signal ingress lane drained on event receipt - owner: QuestGraphEvaluator
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingSignals,
+                16,
+                nameof(QuestGraphEvaluator),
+                _pendingSignalsSentinelLabel,
+                NativeAllocationLifetime.Session);
         }
 
         public void Dispose()
@@ -42,7 +53,12 @@ namespace Hecton8.Quest
             Unbind();
 
             if (_pendingSignals.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(QuestGraphEvaluator), _pendingSignalsSentinelLabel);
                 _pendingSignals.Dispose();
+            }
+
+            _pendingSignalCount = 0;
         }
 
         public void Bind()
@@ -55,7 +71,7 @@ namespace Hecton8.Quest
             _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, EventSubscriberId);
             _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
             NarrativeEvents.Register(this);
-            HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
+            CelestialEvents.Register(this);
             AtlasSignalEvents.Register(this);
             _activeEvaluators.Register(this);
             _isBound = true;
@@ -75,7 +91,7 @@ namespace Hecton8.Quest
             _loreAcquiredSubscription?.Dispose();
             _loreAcquiredSubscription = null;
             NarrativeEvents.Unregister(this);
-            HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
+            CelestialEvents.Unregister(this);
             AtlasSignalEvents.Unregister(this);
             _activeEvaluators.Unregister(this);
             _isBound = false;
@@ -83,6 +99,8 @@ namespace Hecton8.Quest
             while (_pendingSignals.IsCreated && _pendingSignals.TryDequeue(out _))
             {
             }
+
+            _pendingSignalCount = 0;
         }
 
         public void UpdateDepth(float depthMeters)
@@ -162,11 +180,8 @@ namespace Hecton8.Quest
             });
         }
 
-        private void HandleLoreAcquired(LoreAcquiredEvent evt)
+        private void HandleLoreAcquired(in LoreAcquiredEvent evt)
         {
-            if (evt == null)
-                return;
-
             double timestamp = Time.timeAsDouble;
             EnqueueSignal(new QuestSignalPayload
             {
@@ -197,6 +212,23 @@ namespace Hecton8.Quest
                 EventType = (ushort)QuestSignalKind.EclipseStarted,
                 Timestamp = Time.timeAsDouble
             });
+        }
+
+        void ICelestialEventListener.OnCelestialEclipseStarted()
+        {
+            HandleEclipseStart();
+        }
+
+        void ICelestialEventListener.OnCelestialEclipseEnded()
+        {
+        }
+
+        void ICelestialEventListener.OnCelestialSunAngleChanged(float angleDegrees)
+        {
+        }
+
+        void ICelestialEventListener.OnCelestialPlanetPhaseChanged(float phase)
+        {
         }
 
         public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
@@ -230,7 +262,11 @@ namespace Hecton8.Quest
             if (!_pendingSignals.IsCreated)
                 return;
 
+            if (_pendingSignalCount >= PendingSignalCapacity)
+                return;
+
             _pendingSignals.Enqueue(payload);
+            _pendingSignalCount++;
         }
 
         private bool DrainPendingSignals()
@@ -241,7 +277,8 @@ namespace Hecton8.Quest
             _isDrainingSignals = true;
             try
             {
-                while (!_pendingSignals.IsEmpty())
+                int scanBudget = _pendingSignalCount > 0 ? _pendingSignalCount : PendingSignalCapacity;
+                while (scanBudget > 0 && !_pendingSignals.IsEmpty())
                 {
                     if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                         return false;
@@ -249,9 +286,15 @@ namespace Hecton8.Quest
                     if (!_pendingSignals.TryDequeue(out QuestSignalPayload payload))
                         break;
 
+                    if (_pendingSignalCount > 0)
+                        _pendingSignalCount--;
+                    scanBudget--;
                     _stateManager.EvaluateSignal(payload);
                     _onResultsAvailable?.Invoke();
                 }
+
+                if (_pendingSignals.IsEmpty())
+                    _pendingSignalCount = 0;
             }
             finally
             {

@@ -8,9 +8,9 @@ This document describes the live 3D abyssal flow-volume implementation owned by:
 - `Assets/_Project/Scripts/HectonFluidEngine.cs`
 - `Assets/_Project/Art/Shaders/AbyssalFlowField.compute`
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before treating this document as current runtime truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before treating this document as current runtime truth.
 - This is the intended/source-backed flow-field architecture, not proof that the compute shader imports cleanly or that the current scene has no flow/weather console errors.
 - Runtime ownership and verification must be reopened in `HectonFluidEngine.cs`, `GlobalWeatherDirector`, and the Unity console before surgery.
 

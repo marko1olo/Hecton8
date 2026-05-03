@@ -48,6 +48,7 @@ namespace Hecton8.Optimization
         // ── PRIVATE STATE ──────────────────────────────────────────────────────────
         
         private bool _registeredSlowTick;
+        private bool _registeredService;
         private ProfilerRecorder _textureMemoryRecorder;
         private ProfilerRecorder _renderTextureMemoryRecorder;
         
@@ -142,17 +143,20 @@ namespace Hecton8.Optimization
         
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
         }
         
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
         }
         
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
             _textureMemoryRecorder.Dispose();
             _renderTextureMemoryRecorder.Dispose();
             
@@ -204,6 +208,15 @@ namespace Hecton8.Optimization
             _registeredSlowTick = true;
         }
 
+        private void TryRegisterService()
+        {
+            if (_registeredService || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterVRAMMonitorRuntime(this);
+            _registeredService = true;
+        }
+
         private void TryUnregister()
         {
             if (!_registeredSlowTick)
@@ -211,6 +224,15 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
             _registeredSlowTick = false;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_registeredService)
+                return;
+
+            GlobalRegistry.UnregisterVRAMMonitorRuntime(this);
+            _registeredService = false;
         }
         
         private void MeasureVRAM()
@@ -322,7 +344,7 @@ namespace Hecton8.Optimization
             if (recorderValue > 0L)
                 return recorderValue;
 
-            RenderTextureLifecycleTracker tracker = RenderTextureLifecycleTracker.Instance;
+            RenderTextureLifecycleTracker tracker = GlobalRegistry.RenderTextureLifecycle;
             if (tracker != null)
                 return tracker.TrackedRenderTextureMemoryBytes;
 

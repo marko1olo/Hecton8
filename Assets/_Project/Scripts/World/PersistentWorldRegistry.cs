@@ -579,6 +579,7 @@ namespace Hecton8.World
         private List<EntityDataRecord> _entityStateScratch;
         private List<EntityDataRecord> _floraSpawnStateScratch;
         private List<SectorEntityStateWriteWork> _pendingEntityStateTempWrites;
+        private List<long> _dueSectorOverrideCommitHashes;
         private Transform _playerTransform;
         private ItemCatalog _resolvedItemCatalog;
         private bool _tickRegistered;
@@ -624,6 +625,26 @@ namespace Hecton8.World
             if (!math.all(math.isfinite(position)))
                 return true;
 
+            AbsoluteUniversePosition aupPosition = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            return IsModProtectedCoreAup(in aupPosition);
+        }
+
+        /// <summary>
+        /// Returns true when a sandboxed mod command targets protected absolute space near the active player core.
+        /// </summary>
+        /// <param name="position">Absolute Universe Position command center.</param>
+        /// <returns>True when the command must be rejected by the mod security gate.</returns>
+        internal static bool IsModProtectedCoreAup(in AbsoluteUniversePosition position)
+        {
+            double3 absolutePosition = position.ToAbsoluteDouble3();
+            if (!IsFinite(absolutePosition))
+                return true;
+
+            float3 runtimeFloat = position.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtimeFloat)))
+                return true;
+
+            Vector3 runtimePosition = new Vector3(runtimeFloat.x, runtimeFloat.y, runtimeFloat.z);
             if (IsInsideActiveModuleInterior(runtimePosition))
                 return true;
 
@@ -635,9 +656,8 @@ namespace Hecton8.World
             if (!WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform) || playerTransform == null)
                 return false;
 
-            Vector3 playerPosition = playerTransform.position;
-            float3 delta = position - new float3(playerPosition.x, playerPosition.y, playerPosition.z);
-            return math.lengthsq(delta) <= ModCoreProtectionRadiusSq;
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+            return AbsoluteUniversePosition.DistanceSq(in position, in playerAup) <= ModCoreProtectionRadiusSq;
         }
 
         public bool AreResidentWorldPrefabPoolsReady()
@@ -762,12 +782,15 @@ namespace Hecton8.World
             _floraSpawnStateScratch = new List<EntityDataRecord>(128); // COLD ALLOC: List<EntityDataRecord>[128] — standalone flora spawn-state snapshot scratch — owner: PersistentWorldRegistry
             // COLD ALLOC: List<SectorEntityStateWriteWork>[64] — async sector entity-state temp write handles — owner: PersistentWorldRegistry
             _pendingEntityStateTempWrites = new List<SectorEntityStateWriteWork>(MaxPendingEntityStateTempWrites);
+            // COLD ALLOC: List<long>[16] - due sector override commit queue - owner: PersistentWorldRegistry
+            _dueSectorOverrideCommitHashes = new List<long>(16);
             // COLD ALLOC: List<IndexedSectorEntryInfo>[256] â€” cached v8 sector directory entries for paged restore â€” owner: PersistentWorldRegistry
             _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
             // COLD ALLOC: Dictionary<long,SectorOverrideState>[32] â€” paged sector temp-override residency map â€” owner: PersistentWorldRegistry
             _sectorOverrideStates = new Dictionary<long, SectorOverrideState>(32);
             // COLD ALLOC: HashSet<int>[256] â€” resident addressable world-prefab hash residency set â€” owner: PersistentWorldRegistry
             _residentWorldPrefabHashes = new HashSet<int>();
+            RegisterNativeMemorySentinelAllocations();
             RegisterPersistentMemoryBudget();
 
             UpdateDiagnostics();
@@ -802,6 +825,7 @@ namespace Hecton8.World
             DehydrateAll(syncTransformsBackToRecords: false);
             DrainPendingEntityStateTempWrites(int.MaxValue);
             DisposePendingEntityStateTempWritesDeferred();
+            UnregisterNativeMemorySentinelAllocations();
 
             if (_records.IsCreated)
                 _records.Dispose();
@@ -816,13 +840,19 @@ namespace Hecton8.World
                 _deltaRecordIndexByEntityId.Dispose();
 
             if (_deletedInstanceUids.IsCreated)
+            {
                 _deletedInstanceUids.Dispose();
+            }
 
             if (_resourceNodeTombstoneIds.IsCreated)
+            {
                 _resourceNodeTombstoneIds.Dispose();
+            }
 
             if (_resourceNodeMetamorphosedIds.IsCreated)
+            {
                 _resourceNodeMetamorphosedIds.Dispose();
+            }
 
             if (_deltaChunkIndexByChunkId.IsCreated)
                 _deltaChunkIndexByChunkId.Dispose();
@@ -861,7 +891,9 @@ namespace Hecton8.World
                 _spawnVelocityChangeByInstanceUid.Dispose();
 
             if (_dehydrateQueue.IsCreated)
+            {
                 _dehydrateQueue.Dispose();
+            }
 
             if (_pendingHydrationRecords.IsCreated)
                 _pendingHydrationRecords.Dispose();
@@ -2118,7 +2150,7 @@ namespace Hecton8.World
                 return false;
             }
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return false;
 
@@ -2236,7 +2268,7 @@ namespace Hecton8.World
                 pooledRigidbody.Sleep();
             }
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool != null)
             {
                 pool.Despawn(instance);
@@ -2377,8 +2409,11 @@ namespace Hecton8.World
 
         private bool TryEnsureItemLookup()
         {
-            ItemCatalog currentCatalog = PlayerInventory.Instance != null
-                ? PlayerInventory.Instance.ItemCatalog
+            PlayerInventory playerInventory = GlobalRegistry.PlayerInventory != null
+                ? GlobalRegistry.PlayerInventory.Inventory
+                : null;
+            ItemCatalog currentCatalog = playerInventory != null
+                ? playerInventory.ItemCatalog
                 : null;
 
             if (currentCatalog == null)
@@ -2539,68 +2574,77 @@ namespace Hecton8.World
             try
             {
                 await Awaitable.BackgroundThreadAsync();
-                foreach (KeyValuePair<long, List<PersistentWorldDeltaRecord>> pair in sectors)
+                Dictionary<long, List<PersistentWorldDeltaRecord>>.Enumerator sectorEnumerator = sectors.GetEnumerator();
+                try
                 {
-                    List<PersistentWorldDeltaRecord> bucket = pair.Value;
-                    NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    try
+                    while (sectorEnumerator.MoveNext())
                     {
-                        for (int i = 0; i < bucket.Count; i++)
-                            sectorRecords[i] = bucket[i];
-
-                        string tempPath = ResolveSectorOverrideTempPath(pair.Key);
-                        if (!SaveBinaryStorage.TryWriteIndexedPersistentWorldSectorOverride(tempPath, pair.Key, sectorRecords, chunkSizeMeters, out string error))
+                        KeyValuePair<long, List<PersistentWorldDeltaRecord>> pair = sectorEnumerator.Current;
+                        List<PersistentWorldDeltaRecord> bucket = pair.Value;
+                        NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                        try
                         {
-                            failureMessage = $"[PersistentWorldRegistry] Sector override snapshot failed for 0x{pair.Key:X16}: {error}";
-                            break;
-                        }
+                            for (int i = 0; i < bucket.Count; i++)
+                                sectorRecords[i] = bucket[i];
 
-                        string entityStateTempPath = string.Empty;
-                        if (sectorEntityStates.TryGetValue(pair.Key, out List<EntityDataRecord> entityStateBucket) &&
-                            entityStateBucket != null &&
-                            entityStateBucket.Count > 0)
-                        {
-                            NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStateBucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                            try
+                            string tempPath = ResolveSectorOverrideTempPath(pair.Key);
+                            if (!SaveBinaryStorage.TryWriteIndexedPersistentWorldSectorOverride(tempPath, pair.Key, sectorRecords, chunkSizeMeters, out string error))
                             {
-                                for (int stateIndex = 0; stateIndex < entityStateBucket.Count; stateIndex++)
-                                    sectorStates[stateIndex] = entityStateBucket[stateIndex];
+                                failureMessage = $"[PersistentWorldRegistry] Sector override snapshot failed for 0x{pair.Key:X16}: {error}";
+                                break;
+                            }
 
-                                entityStateTempPath = ResolveSectorEntityStateTempPath(pair.Key);
-                                if (!SaveBinaryStorage.TryScheduleIndexedSectorEntityStateOverrideWrite(
-                                        entityStateTempPath,
-                                        pair.Key,
-                                        sectorStates,
-                                        chunkSizeMeters,
-                                        out SaveBinaryStorage.IndexedSectorEntityStateWriteHandle writeHandle,
-                                        out string entityStateError))
+                            string entityStateTempPath = string.Empty;
+                            if (sectorEntityStates.TryGetValue(pair.Key, out List<EntityDataRecord> entityStateBucket) &&
+                                entityStateBucket != null &&
+                                entityStateBucket.Count > 0)
+                            {
+                                NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStateBucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                                try
                                 {
-                                    failureMessage = $"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{pair.Key:X16}: {entityStateError}";
-                                    break;
+                                    for (int stateIndex = 0; stateIndex < entityStateBucket.Count; stateIndex++)
+                                        sectorStates[stateIndex] = entityStateBucket[stateIndex];
+
+                                    entityStateTempPath = ResolveSectorEntityStateTempPath(pair.Key);
+                                    if (!SaveBinaryStorage.TryScheduleIndexedSectorEntityStateOverrideWrite(
+                                            entityStateTempPath,
+                                            pair.Key,
+                                            sectorStates,
+                                            chunkSizeMeters,
+                                            out SaveBinaryStorage.IndexedSectorEntityStateWriteHandle writeHandle,
+                                            out string entityStateError))
+                                    {
+                                        failureMessage = $"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{pair.Key:X16}: {entityStateError}";
+                                        break;
+                                    }
+
+                                    entityStateWriteWork.Add(new SectorEntityStateWriteWork
+                                    {
+                                        SectorHash = pair.Key,
+                                        TempPath = entityStateTempPath,
+                                        WriteHandle = writeHandle
+                                    });
                                 }
-
-                                entityStateWriteWork.Add(new SectorEntityStateWriteWork
+                                finally
                                 {
-                                    SectorHash = pair.Key,
-                                    TempPath = entityStateTempPath,
-                                    WriteHandle = writeHandle
-                                });
+                                    sectorStates.Dispose();
+                                }
                             }
-                            finally
-                            {
-                                sectorStates.Dispose();
-                            }
+
+                            writeResults.Add(new SectorOverrideWriteResult(pair.Key, tempPath, entityStateTempPath));
+                        }
+                        finally
+                        {
+                            sectorRecords.Dispose();
                         }
 
-                        writeResults.Add(new SectorOverrideWriteResult(pair.Key, tempPath, entityStateTempPath));
+                        if (!string.IsNullOrEmpty(failureMessage))
+                            break;
                     }
-                    finally
-                    {
-                        sectorRecords.Dispose();
-                    }
-
-                    if (!string.IsNullOrEmpty(failureMessage))
-                        break;
+                }
+                finally
+                {
+                    sectorEnumerator.Dispose();
                 }
 
                 int pendingEntityStateWrites = entityStateWriteWork.Count;
@@ -2963,10 +3007,9 @@ namespace Hecton8.World
 
         private async Awaitable RunSectorOverrideCommitAsync()
         {
-            // COLD ALLOC: List<long>[16] â€” due sector override commit queue â€” owner: PersistentWorldRegistry
-            List<long> dueSectorHashes = new List<long>(16);
             try
             {
+                _dueSectorOverrideCommitHashes.Clear();
                 float now = Time.unscaledTime;
 
                 Dictionary<long, SectorOverrideState>.Enumerator enumerator = _sectorOverrideStates.GetEnumerator();
@@ -2978,17 +3021,17 @@ namespace Hecton8.World
                         continue;
 
                     if (now - state.LastUnloadedTime >= SectorOverrideCommitDelaySeconds)
-                        dueSectorHashes.Add(pair.Key);
+                        _dueSectorOverrideCommitHashes.Add(pair.Key);
                 }
                 enumerator.Dispose();
 
-                if (dueSectorHashes.Count <= 0)
+                if (_dueSectorOverrideCommitHashes.Count <= 0)
                     return;
 
                 await Awaitable.BackgroundThreadAsync();
-                for (int i = 0; i < dueSectorHashes.Count; i++)
+                for (int i = 0; i < _dueSectorOverrideCommitHashes.Count; i++)
                 {
-                    long sectorHash = dueSectorHashes[i];
+                    long sectorHash = _dueSectorOverrideCommitHashes[i];
                     if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) ||
                         state == null ||
                         string.IsNullOrEmpty(state.TempPath) ||
@@ -3009,9 +3052,9 @@ namespace Hecton8.World
                 }
 
                 await Awaitable.MainThreadAsync();
-                for (int i = 0; i < dueSectorHashes.Count; i++)
+                for (int i = 0; i < _dueSectorOverrideCommitHashes.Count; i++)
                 {
-                    long sectorHash = dueSectorHashes[i];
+                    long sectorHash = _dueSectorOverrideCommitHashes[i];
                     if (_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) &&
                         state != null &&
                         !state.IsResident &&
@@ -4022,13 +4065,13 @@ namespace Hecton8.World
 
         private static bool IsInsideActiveModuleInterior(Vector3 runtimePosition)
         {
-            IReadOnlyList<BaseModule> modules = BaseModule.ActiveModules;
-            if (modules == null || modules.Count <= 0)
+            int moduleCount = BaseModule.ActiveModuleCount;
+            if (moduleCount <= 0)
                 return false;
 
-            for (int i = 0; i < modules.Count; i++)
+            for (int i = 0; i < moduleCount; i++)
             {
-                BaseModule module = modules[i];
+                BaseModule module = BaseModule.GetActiveModuleAt(i);
                 if (module == null)
                     continue;
 
@@ -4058,6 +4101,13 @@ namespace Hecton8.World
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > 0.000001f;
+        }
+
+        private static bool IsFinite(double3 value)
+        {
+            return math.isfinite(value.x) &&
+                   math.isfinite(value.y) &&
+                   math.isfinite(value.z);
         }
 
         private void RegisterSpawnImpulse(uint instanceUid, Vector3 initialImpulse)
@@ -4508,6 +4558,56 @@ namespace Hecton8.World
                 Array.Clear(_poolSlotRigidbodies, 0, _poolSlotRigidbodies.Length);
 
             _hydratedInstancesByRecordIndex?.Clear();
+        }
+
+        private void RegisterNativeMemorySentinelAllocations()
+        {
+            NativeMemorySentinel.RegisterNativeList(_records, MemoryBudgetOwnerName, nameof(_records), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_recordsByChunk, MemoryBudgetOwnerName, nameof(_recordsByChunk), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeList(_deltaRecords, MemoryBudgetOwnerName, nameof(_deltaRecords), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeHashMap(_deltaRecordIndexByEntityId, MemoryBudgetOwnerName, nameof(_deltaRecordIndexByEntityId), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeParallelHashSet(_deletedInstanceUids, MemoryBudgetOwnerName, nameof(_deletedInstanceUids), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeParallelHashSet(_resourceNodeTombstoneIds, MemoryBudgetOwnerName, nameof(_resourceNodeTombstoneIds), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeParallelHashSet(_resourceNodeMetamorphosedIds, MemoryBudgetOwnerName, nameof(_resourceNodeMetamorphosedIds), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeHashMap(_deltaChunkIndexByChunkId, MemoryBudgetOwnerName, nameof(_deltaChunkIndexByChunkId), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeList(_deltaChunkIds, MemoryBudgetOwnerName, nameof(_deltaChunkIds), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeHashMap(_deltaItemIndexByHash, MemoryBudgetOwnerName, nameof(_deltaItemIndexByHash), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeList(_deltaItemHashes, MemoryBudgetOwnerName, nameof(_deltaItemHashes), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_deltaRecordsByChunk, MemoryBudgetOwnerName, nameof(_deltaRecordsByChunk), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeList(_saveSnapshotDeltas, MemoryBudgetOwnerName, nameof(_saveSnapshotDeltas), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_poolSlotData, MemoryBudgetOwnerName, nameof(_poolSlotData), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeHashMap(_guidToPoolIndex, MemoryBudgetOwnerName, nameof(_guidToPoolIndex), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeHashMap(_entityStateByInstanceUid, MemoryBudgetOwnerName, nameof(_entityStateByInstanceUid), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeHashMap(_floraSpawnStateByInstanceUid, MemoryBudgetOwnerName, nameof(_floraSpawnStateByInstanceUid), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeHashMap(_spawnImpulseByInstanceUid, MemoryBudgetOwnerName, nameof(_spawnImpulseByInstanceUid), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeHashMap(_spawnVelocityChangeByInstanceUid, MemoryBudgetOwnerName, nameof(_spawnVelocityChangeByInstanceUid), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeQueue(_dehydrateQueue, maxTrackedItems, MemoryBudgetOwnerName, nameof(_dehydrateQueue), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeList(_pendingHydrationRecords, MemoryBudgetOwnerName, nameof(_pendingHydrationRecords), NativeAllocationLifetime.Session);
+        }
+
+        private void UnregisterNativeMemorySentinelAllocations()
+        {
+            NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, nameof(_records));
+            NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(MemoryBudgetOwnerName, nameof(_recordsByChunk));
+            NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, nameof(_deltaRecords));
+            NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_deltaRecordIndexByEntityId));
+            NativeMemorySentinel.UnregisterNativeParallelHashSet(MemoryBudgetOwnerName, nameof(_deletedInstanceUids));
+            NativeMemorySentinel.UnregisterNativeParallelHashSet(MemoryBudgetOwnerName, nameof(_resourceNodeTombstoneIds));
+            NativeMemorySentinel.UnregisterNativeParallelHashSet(MemoryBudgetOwnerName, nameof(_resourceNodeMetamorphosedIds));
+            NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_deltaChunkIndexByChunkId));
+            NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, nameof(_deltaChunkIds));
+            NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_deltaItemIndexByHash));
+            NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, nameof(_deltaItemHashes));
+            NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(MemoryBudgetOwnerName, nameof(_deltaRecordsByChunk));
+            NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, nameof(_saveSnapshotDeltas));
+            NativeMemorySentinel.UnregisterNativeArray(_poolSlotData);
+            NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_guidToPoolIndex));
+            NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_entityStateByInstanceUid));
+            NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_floraSpawnStateByInstanceUid));
+            NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_spawnImpulseByInstanceUid));
+            NativeMemorySentinel.UnregisterNativeHashMap(MemoryBudgetOwnerName, nameof(_spawnVelocityChangeByInstanceUid));
+            NativeMemorySentinel.UnregisterNativeQueue(MemoryBudgetOwnerName, nameof(_dehydrateQueue));
+            NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, nameof(_pendingHydrationRecords));
         }
 
         private void RegisterPersistentMemoryBudget()

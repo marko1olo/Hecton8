@@ -719,7 +719,9 @@ namespace Hecton8.UI
                 .Append(" | FAB ").Append(_cachedFabricationCount)
                 .Append(" | DEF ").Append(_cachedDefenseCount).AppendLine();
             _sb.Append("BUILT       ").Append(builtCount).AppendLine(" REGISTERED");
-            _sb.Append("BUILDER     ").Append(DescribeBuilderState(builderSlot, builderReady, builderActive)).AppendLine();
+            _sb.Append("BUILDER     ");
+            AppendBuilderState(_sb, builderSlot, builderReady, builderActive);
+            _sb.AppendLine();
             _sb.Append("ACTIVE      ").Append(active != null ? CachedToUpperInvariant(active.moduleName) : "NONE").AppendLine();
             _sb.Append("FAMILY      ").Append(active != null ? active.FamilyLabel : "N/A").AppendLine();
             _sb.Append("ROLE        ").Append(active != null ? DescribePowerRole(active) : "N/A").AppendLine();
@@ -730,7 +732,7 @@ namespace Hecton8.UI
                 _sb.Append("N/A");
             _sb.AppendLine();
             _sb.Append("MODE        ").Append(snapped ? "SNAPPED" : "FREE PLACEMENT").AppendLine();
-            _summaryText.SetText(_sb.ToString());
+            _summaryText.SetText(_sb);
 
             _sb.Clear();
             if (active == null)
@@ -785,7 +787,7 @@ namespace Hecton8.UI
                 _cardBgs[i].color = isActive ? BoxActive : BoxBg;
                 _cardTitles[i].SetText(data != null ? CachedToUpperInvariant(data.moduleName) : "UNKNOWN MODULE");
                 _cardTitles[i].color = isActive ? Primary : (hasCost ? Dim : Warn);
-                _cardBodies[i].SetText(BuildCardBody(data, isActive, hasCost));
+                WriteCardBody(_cardBodies[i], data, isActive, hasCost);
 
                 _cardButtonLabels[i].SetText(isActive ? "ARMED" : (isReadyCandidate ? "ARM" : "QUEUE"));
                 _cardButtonLabels[i].color = isActive ? Primary : (hasCost ? Dim : Warn);
@@ -1001,10 +1003,16 @@ namespace Hecton8.UI
             return true;
         }
 
-        private string BuildCardBody(BuildableData data, bool isActive, bool hasCost)
+        private void WriteCardBody(TextMeshProUGUI target, BuildableData data, bool isActive, bool hasCost)
         {
+            if (target == null)
+                return;
+
             if (data == null)
-                return "OFFLINE";
+            {
+                target.SetText("OFFLINE");
+                return;
+            }
 
             _sb.Clear();
             _sb.Append(isActive ? "STATUS   ARMED" : "STATUS   STANDBY").AppendLine();
@@ -1012,8 +1020,9 @@ namespace Hecton8.UI
             _sb.Append("FAMILY   ").Append(data.FamilyLabel).AppendLine();
             _sb.Append("PURPOSE  ").Append(DescribePurpose(data)).AppendLine();
             _sb.Append("POWER    ");
-            if (data.powerRating > 0f) _sb.Append('+').Append(data.powerRating.ToString("0")).Append("W NET");
-            else if (data.powerRating < 0f) _sb.Append(data.powerRating.ToString("0")).Append("W LOAD");
+            int roundedPower = Mathf.RoundToInt(data.powerRating);
+            if (roundedPower > 0) _sb.Append('+').Append(roundedPower).Append("W NET");
+            else if (roundedPower < 0) _sb.Append(roundedPower).Append("W LOAD");
             else _sb.Append("PASSIVE");
             _sb.AppendLine();
             _sb.Append("FOOTPRINT ").Append(data.TotalResourceCount).Append(" UNITS").AppendLine();
@@ -1028,7 +1037,7 @@ namespace Hecton8.UI
                 _sb.AppendLine();
                 _sb.Append("NOTES    ").Append(CachedToUpperInvariant(TrimForCard(data.description, 56)));
             }
-            return _sb.ToString();
+            target.SetText(_sb);
         }
 
         private void RefreshDirective(
@@ -1080,7 +1089,7 @@ namespace Hecton8.UI
                 _sb.Append("DIRECTIVE // ").Append(playerBuilder != null ? CachedToUpperInvariant(playerBuilder.GetActiveBuildAdvice()) : "FIELD-READY. DEPLOY ACTIVE MODULE.");
             }
 
-            _directiveText.SetText(_sb.ToString());
+            _directiveText.SetText(_sb);
 
             if (_hintText == null)
                 return;
@@ -1093,7 +1102,7 @@ namespace Hecton8.UI
             _sb.Append("TAB / Q-E cycle in the field. INTERACT recovers a placed module. ");
             if (next != null && !ReferenceEquals(next, active))
                 _sb.Append("Next: ").Append(CachedToUpperInvariant(next.moduleName)).Append(" [").Append(next.FamilyShortCode).Append("].");
-            _hintText.SetText(_sb.ToString());
+            _hintText.SetText(_sb);
         }
 
         private static int CountModulesByFamily(ModuleCatalog catalog, BuildableFamily family)
@@ -1140,15 +1149,21 @@ namespace Hecton8.UI
             }
         }
 
-        private static string DescribeBuilderState(int builderSlot, bool builderReady, bool builderActive)
+        private static void AppendBuilderState(StringBuilder builder, int builderSlot, bool builderReady, bool builderActive)
         {
             if (builderActive)
-                return "ACTIVE";
+            {
+                builder.Append("ACTIVE");
+                return;
+            }
+
             if (builderSlot < 0)
-                return "UNASSIGNED";
-            if (!builderReady)
-                return $"ASSIGNED S{builderSlot + 1} / MISSING";
-            return $"ASSIGNED S{builderSlot + 1} / READY";
+            {
+                builder.Append("UNASSIGNED");
+                return;
+            }
+
+            builder.Append("ASSIGNED S").Append(builderSlot + 1).Append(builderReady ? " / READY" : " / MISSING");
         }
 
         private void RefreshBuilderAction(int builderSlot, bool builderReady, bool builderActive)
@@ -1172,13 +1187,13 @@ namespace Hecton8.UI
             }
             else if (builderSlot >= 0 && builderReady)
             {
-                _builderActionLabel.SetText($"ACTIVATE BUILDER [S{builderSlot + 1}]");
+                SetSlotActionLabel(_builderActionLabel, "ACTIVATE BUILDER", builderSlot);
                 _builderActionLabel.color = Dim;
                 _builderActionBg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
             }
             else if (builderSlot >= 0)
             {
-                _builderActionLabel.SetText($"BUILDER MISSING [S{builderSlot + 1}]");
+                SetSlotActionLabel(_builderActionLabel, "BUILDER MISSING", builderSlot);
                 _builderActionLabel.color = Warn;
                 _builderActionBg.color = new Color(0.28f, 0.2f, 0.06f, 0.72f);
             }
@@ -1230,13 +1245,13 @@ namespace Hecton8.UI
             }
             else if (builderSlot >= 0 && builderReady)
             {
-                _fieldActionLabel.SetText($"FIELD PREVIEW [S{builderSlot + 1}]");
+                SetSlotActionLabel(_fieldActionLabel, "FIELD PREVIEW", builderSlot);
                 _fieldActionLabel.color = Dim;
                 _fieldActionBg.color = new Color(0.08f, 0.16f, 0.18f, 0.58f);
             }
             else if (builderSlot >= 0)
             {
-                _fieldActionLabel.SetText($"BUILDER CARGO [S{builderSlot + 1}]");
+                SetSlotActionLabel(_fieldActionLabel, "BUILDER CARGO", builderSlot);
                 _fieldActionLabel.color = Warn;
                 _fieldActionBg.color = new Color(0.28f, 0.2f, 0.06f, 0.72f);
             }
@@ -1256,6 +1271,19 @@ namespace Hecton8.UI
             PDAConstructionFieldActionButton button = _fieldActionButton;
             if (button != null)
                 button.SetVisualState(_fieldActionBg.color, new Color(0.12f, 0.24f, 0.28f, 0.82f));
+        }
+
+        private void SetSlotActionLabel(TextMeshProUGUI label, string prefix, int builderSlot)
+        {
+            if (label == null)
+                return;
+
+            _sb.Clear();
+            _sb.Append(prefix)
+                .Append(" [S")
+                .Append(builderSlot + 1)
+                .Append(']');
+            label.SetText(_sb);
         }
 
         private void SetCardVisible(int index, bool visible)

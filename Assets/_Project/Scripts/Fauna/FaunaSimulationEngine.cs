@@ -246,8 +246,15 @@ namespace Hecton8.AI
             HibernationCatchUpInputs = new NativeArray<FaunaHibernationCatchUpInput>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<FaunaHibernationCatchUpResult>[Capacity] - Tier 2 metabolic restore outputs - owner: FaunaSimulationMemory
             HibernationCatchUpResults = new NativeArray<FaunaHibernationCatchUpResult>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterArrays();
             // COLD ALLOC: NativeQueue<int>(Persistent) - free fauna residency slot queue - owner: FaunaSimulationMemory
             FreeSlots = new NativeQueue<int>(Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeQueue(
+                FreeSlots,
+                Capacity,
+                nameof(FaunaSimulationMemory),
+                nameof(FreeSlots),
+                NativeAllocationLifetime.Session);
 
             for (int i = 0; i < Capacity; i++)
                 FreeSlots.Enqueue(i);
@@ -296,24 +303,98 @@ namespace Hecton8.AI
         public void Dispose()
         {
             if (PoolSlots.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(PoolSlots);
                 PoolSlots.Dispose();
+            }
 
             if (LinearVelocities.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(LinearVelocities);
                 LinearVelocities.Dispose();
+            }
 
             if (SimulationFlags.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(SimulationFlags);
                 SimulationFlags.Dispose();
+            }
 
             if (HibernationCatchUpInputs.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(HibernationCatchUpInputs);
                 HibernationCatchUpInputs.Dispose();
+            }
 
             if (HibernationCatchUpResults.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(HibernationCatchUpResults);
                 HibernationCatchUpResults.Dispose();
+            }
 
             if (FreeSlots.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(FaunaSimulationMemory), nameof(FreeSlots));
                 FreeSlots.Dispose();
+            }
 
             Capacity = 0;
+        }
+
+        public void Dispose(JobHandle dependency)
+        {
+            if (PoolSlots.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(PoolSlots);
+                PoolSlots.Dispose(dependency);
+                PoolSlots = default;
+            }
+
+            if (LinearVelocities.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(LinearVelocities);
+                LinearVelocities.Dispose(dependency);
+                LinearVelocities = default;
+            }
+
+            if (SimulationFlags.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(SimulationFlags);
+                SimulationFlags.Dispose(dependency);
+                SimulationFlags = default;
+            }
+
+            if (HibernationCatchUpInputs.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(HibernationCatchUpInputs);
+                HibernationCatchUpInputs.Dispose(dependency);
+                HibernationCatchUpInputs = default;
+            }
+
+            if (HibernationCatchUpResults.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(HibernationCatchUpResults);
+                HibernationCatchUpResults.Dispose(dependency);
+                HibernationCatchUpResults = default;
+            }
+
+            if (FreeSlots.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(FaunaSimulationMemory), nameof(FreeSlots));
+                FreeSlots.Dispose(dependency);
+                FreeSlots = default;
+            }
+
+            Capacity = 0;
+        }
+
+        private void RegisterArrays()
+        {
+            NativeMemorySentinel.RegisterNativeArray(PoolSlots, nameof(FaunaSimulationMemory), nameof(PoolSlots), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(LinearVelocities, nameof(FaunaSimulationMemory), nameof(LinearVelocities), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(SimulationFlags, nameof(FaunaSimulationMemory), nameof(SimulationFlags), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(HibernationCatchUpInputs, nameof(FaunaSimulationMemory), nameof(HibernationCatchUpInputs), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(HibernationCatchUpResults, nameof(FaunaSimulationMemory), nameof(HibernationCatchUpResults), NativeAllocationLifetime.Session);
         }
     }
 }

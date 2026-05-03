@@ -3,9 +3,9 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this boundary as current runtime truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this boundary as current runtime truth.
 - This document is an anti-corruption contract, not proof that every Crest/MapMagic binding, material path, renderer feature, or scene object currently complies.
 - Re-open adapters, scene bindings, and current console evidence before touching third-party integration.
 

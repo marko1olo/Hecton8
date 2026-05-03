@@ -1,3 +1,5 @@
+using Hecton8.Core;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Power
@@ -66,20 +68,129 @@ namespace Hecton8.Power
     }
 
     /// <summary>
-    /// Static aggregate power telemetry bus for submarine and HUD observers.
+    /// Listener contract for aggregate power telemetry snapshots.
+    /// </summary>
+    public interface IPowerGridTelemetryListener
+    {
+        /// <summary>
+        /// Receives one aggregate power telemetry snapshot during dispatcher LateUpdate.
+        /// </summary>
+        /// <param name="snapshot">Latest aggregate power telemetry snapshot.</param>
+        void OnPowerGridTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot);
+    }
+
+    /// <summary>
+    /// Queue-backed aggregate power telemetry bus for submarine and HUD observers.
     /// </summary>
     public static class PowerGridTelemetryEvents
     {
-        /// <summary>Zero-allocation delegate for aggregate power snapshots.</summary>
-        public delegate void TelemetryUpdatedHandler(in PowerGridTelemetrySnapshot snapshot);
+        private const int PendingEventCapacity = 8;
+        private const int ListenerCapacity = 8;
 
-        /// <summary>Raised after <see cref="PowerGridManager"/> completes a SlowTick evaluation pass.</summary>
-        public static event TelemetryUpdatedHandler OnTelemetryUpdated;
+        // COLD ALLOC: RegistryBucket<IPowerGridTelemetryListener>[8] - power telemetry listeners drained by SystemDispatcher LateUpdate - owner: PowerGridTelemetryEvents
+        private static readonly RegistryBucket<IPowerGridTelemetryListener> _listeners = new RegistryBucket<IPowerGridTelemetryListener>(ListenerCapacity);
+        private static NativeQueue<PowerGridTelemetrySnapshot> _pendingEvents;
+        private static NativeQueue<PowerGridTelemetrySnapshot> _nextFrameEvents;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
+
+        /// <summary>
+        /// Pending aggregate telemetry snapshots.
+        /// </summary>
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        /// <summary>
+        /// Registers a power telemetry listener.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Register(IPowerGridTelemetryListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            _listeners.TryRegister(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a power telemetry listener.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Unregister(IPowerGridTelemetryListener listener)
+        {
+            if (listener == null || !_listeners.Contains(listener))
+                return;
+
+            _listeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Flushes queued telemetry snapshots through registered listeners.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out PowerGridTelemetrySnapshot snapshot))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                IPowerGridTelemetryListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                        rawArray[i].OnPowerGridTelemetryUpdated(in snapshot);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnTelemetryUpdated = null;
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PowerGridTelemetryEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PowerGridTelemetryEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         /// <summary>
@@ -87,7 +198,105 @@ namespace Hecton8.Power
         /// </summary>
         public static void Raise(in PowerGridTelemetrySnapshot snapshot)
         {
-            OnTelemetryUpdated?.Invoke(snapshot);
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return;
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(snapshot);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(snapshot);
+            _pendingEventCount++;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<PowerGridTelemetrySnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] - deferred aggregate power telemetry lane flushed by SystemDispatcher LateUpdate - owner: PowerGridTelemetryEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(PowerGridTelemetryEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<PowerGridTelemetrySnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PowerGridTelemetrySnapshot>[8] - next-frame power telemetry lane prevents same-frame reentrant dispatch - owner: PowerGridTelemetryEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(PowerGridTelemetryEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                return;
+
+            if (_pendingEvents.IsEmpty())
+                PromoteNextFrameEventsIfFrontEmpty();
+
+            if (_pendingEventCount > 0 &&
+                !DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+            {
+                return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<PowerGridTelemetrySnapshot> queue,
+            ref int pendingCount)
+        {
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<PowerGridTelemetrySnapshot> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 }

@@ -174,6 +174,11 @@ namespace Hecton8.World
             NativeArray<float> heightSamples,
             NativeArray<ScatterSimulationCellState> cellStates);
         bool TryComplete(out ScatterSimulationResult result);
+
+        /// <summary>
+        /// Attempts to close pending backend work without blocking the main thread.
+        /// Implementations must leave incomplete jobs tracked for deferred disposal.
+        /// </summary>
         void ForceComplete();
     }
 

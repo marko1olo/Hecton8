@@ -128,8 +128,9 @@ namespace Hecton8.Biolum
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
                 _isRegistered = true;
             }
-            if (HectonBiolumManager.Instance != null)
-                HectonBiolumManager.Instance.RegisterZone(this);
+            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            if (manager != null)
+                manager.RegisterZone(this);
         }
 
         protected virtual void OnDisable()
@@ -139,8 +140,9 @@ namespace Hecton8.Biolum
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _isRegistered = false;
             }
-            if (HectonBiolumManager.Instance != null)
-                HectonBiolumManager.Instance.UnregisterZone(this);
+            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            if (manager != null)
+                manager.UnregisterZone(this);
             UnregisterActiveZone(this);
             CleanupLights();
         }
@@ -352,8 +354,9 @@ namespace Hecton8.Biolum
         protected float ScaleIntensityByMood(float baseIntensity)
         {
             float mood = Mathf.Lerp(0.5f, 1.5f, _moodLevel);
-            float mgr = HectonBiolumManager.Instance != null 
-                ? HectonBiolumManager.Instance._globalIntensityScale 
+            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            float mgr = manager != null
+                ? manager._globalIntensityScale
                 : 1f;
             return baseIntensity * mood * mgr;
         }
@@ -361,8 +364,9 @@ namespace Hecton8.Biolum
         protected float ScaleRangeByHazard(float baseRange)
         {
             float hazard = Mathf.Lerp(1.5f, 0.5f, _hazardLevel);
-            float mgr = HectonBiolumManager.Instance != null 
-                ? HectonBiolumManager.Instance._globalRangeScale 
+            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            float mgr = manager != null
+                ? manager._globalRangeScale
                 : 1f;
             return baseRange * hazard * mgr;
         }
@@ -380,8 +384,9 @@ namespace Hecton8.Biolum
         {
             if (_lodDistanceScale >= 1.0f) return false;
 
-            Vector3 camPos = HectonBiolumManager.Instance != null 
-                ? HectonBiolumManager.Instance.GetCameraPosition() 
+            HectonBiolumManager manager = GlobalRegistry.BiolumManager;
+            Vector3 camPos = manager != null
+                ? manager.GetCameraPosition()
                 : Vector3.zero;
 
             float dist = Vector3.Distance(_cachedTransform.position, camPos);

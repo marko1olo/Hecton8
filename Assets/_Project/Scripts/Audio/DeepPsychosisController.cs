@@ -128,7 +128,7 @@ namespace Hecton8.Audio
                 ? math.saturate(math.unlerp(oxygenThreshold, 0.05f, oxygenNormalized))
                 : 0f;
 
-            EnvironmentalStrainManager strainManager = EnvironmentalStrainManager.Instance;
+            EnvironmentalStrainManager strainManager = GlobalRegistry.EnvironmentalStrain;
             float pollutionLoad = strainManager != null
                 ? math.max(0f, strainManager.MicroplasticStrain + strainManager.GeneralPollution)
                 : 0f;
@@ -202,7 +202,7 @@ namespace Hecton8.Audio
             AudioClip clip = SelectCueClip();
             if (clip == null)
             {
-                AcousticZoneController.Instance?.PlayMadnessWhisperCue();
+                GlobalRegistry.AcousticZone?.PlayMadnessWhisperCue();
                 return;
             }
 
@@ -223,7 +223,7 @@ namespace Hecton8.Audio
             audioManager.PlayAtPoint(clip, cuePosition, volume, pitch, audioManager.AmbientGroup);
 
             if (_psychosisIntensity01 >= 0.55f && UnityEngine.Random.value <= helmetWhisperChance)
-                AcousticZoneController.Instance?.PlayMadnessWhisperCue();
+                GlobalRegistry.AcousticZone?.PlayMadnessWhisperCue();
         }
 
         private AudioClip SelectCueClip()

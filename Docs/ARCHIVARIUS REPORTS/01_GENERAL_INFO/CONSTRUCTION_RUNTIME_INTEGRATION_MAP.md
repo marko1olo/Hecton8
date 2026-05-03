@@ -7,7 +7,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 2026-05-01 trust note:
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
 - This file maps construction/base ownership; it does not prove long-session module stability, save/load restoration, or native-buffer lifetime safety.
 - `HabitatGraphManager`, `BaseModule`, `BaseAirlock`, and logistics graph ownership remain active review surfaces for memory lifecycle and authority boundaries.
 

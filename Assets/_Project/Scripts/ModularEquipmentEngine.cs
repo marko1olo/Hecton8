@@ -17,7 +17,7 @@ namespace Hecton8.Tools
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9918)]
-    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable
+    public sealed class ModularEquipmentEngine : MonoBehaviour, IModularEquipmentService, IUpdatable, IPowerGridTelemetryListener
     {
         private const int MaxTrackedTools = 16;
         private const float OverchargePowerMultiplier = 3f;
@@ -82,18 +82,33 @@ namespace Hecton8.Tools
             {
                 // COLD ALLOC: NativeArray<ToolState>[16] — active modular tool state buffer — owner: ModularEquipmentEngine
                 _toolStates = new NativeArray<ToolState>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _toolStates,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_toolStates),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (!_toolStats.IsCreated)
             {
                 // COLD ALLOC: NativeArray<ToolRuntimeStats>[16] — active compiled tool-stat buffer — owner: ModularEquipmentEngine
                 _toolStats = new NativeArray<ToolRuntimeStats>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _toolStats,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_toolStats),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (!_toolIndexById.IsCreated)
             {
                 // COLD ALLOC: NativeHashMap<uint,int>[16] — tool-id to slot index table — owner: ModularEquipmentEngine
                 _toolIndexById = new NativeHashMap<uint, int>(MaxTrackedTools, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeHashMap(
+                    _toolIndexById,
+                    nameof(ModularEquipmentEngine),
+                    nameof(_toolIndexById),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (Application.isPlaying && transform.parent != null)
@@ -564,8 +579,7 @@ namespace Hecton8.Tools
             if (_telemetrySubscribed)
                 return;
 
-            PowerGridTelemetryEvents.OnTelemetryUpdated -= HandlePowerTelemetryUpdated;
-            PowerGridTelemetryEvents.OnTelemetryUpdated += HandlePowerTelemetryUpdated;
+            PowerGridTelemetryEvents.Register(this);
             _telemetrySubscribed = true;
         }
 
@@ -574,7 +588,7 @@ namespace Hecton8.Tools
             if (!_telemetrySubscribed)
                 return;
 
-            PowerGridTelemetryEvents.OnTelemetryUpdated -= HandlePowerTelemetryUpdated;
+            PowerGridTelemetryEvents.Unregister(this);
             _telemetrySubscribed = false;
         }
 
@@ -587,7 +601,7 @@ namespace Hecton8.Tools
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = true;
+            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregisterUpdatable()
@@ -607,7 +621,21 @@ namespace Hecton8.Tools
             DisposeNativeState();
         }
 
-        private void HandlePowerTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot)
+        /// <summary>
+        /// Receives deferred aggregate power telemetry snapshots.
+        /// </summary>
+        /// <param name="snapshot">Aggregate power telemetry snapshot.</param>
+        public void OnPowerGridTelemetryUpdated(in PowerGridTelemetrySnapshot snapshot)
+        {
+            ApplyPowerGridTelemetry(in snapshot);
+        }
+
+        void Hecton8.Power.IPowerGridTelemetryListener.OnPowerGridTelemetryUpdated(in Hecton8.Power.PowerGridTelemetrySnapshot snapshot)
+        {
+            ApplyPowerGridTelemetry(in snapshot);
+        }
+
+        private void ApplyPowerGridTelemetry(in PowerGridTelemetrySnapshot snapshot)
         {
             _latestSupplyRatio = math.saturate(snapshot.SupplyRatio);
             _wirelessBrownoutActive = _latestSupplyRatio < 0.40f;
@@ -655,13 +683,22 @@ namespace Hecton8.Tools
                 _moduleSlots[i] = null;
 
             if (_toolStates.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_toolStates);
                 _toolStates.Dispose();
+            }
 
             if (_toolStats.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_toolStats);
                 _toolStats.Dispose();
+            }
 
             if (_toolIndexById.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModularEquipmentEngine), nameof(_toolIndexById));
                 _toolIndexById.Dispose();
+            }
 
             _isInitialized = false;
             _toolStates = default;

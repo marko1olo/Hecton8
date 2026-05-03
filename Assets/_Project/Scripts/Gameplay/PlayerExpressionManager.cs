@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Unity.Collections;
 using UnityEngine;
 #if UNITY_EDITOR
 using System.Collections.Generic;
@@ -11,23 +13,286 @@ using UnityEditor;
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Static event bus for player expression changes.
+    /// Player-expression event discriminator for <see cref="PlayerExpressionEventPayload"/>.
+    /// </summary>
+    public enum PlayerExpressionEventType : byte
+    {
+        ProfileChanged = 0
+    }
+
+    /// <summary>
+    /// Unmanaged player-expression payload carried by the native event queue.
+    /// </summary>
+    public struct PlayerExpressionEventPayload
+    {
+        public int ReferenceSlot;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    /// <summary>
+    /// Listener contract for player-expression events drained from <see cref="SystemDispatcher"/>.
+    /// </summary>
+    public interface IPlayerExpressionEventListener
+    {
+        /// <summary>
+        /// Consumes one queue-drained player-expression event.
+        /// </summary>
+        /// <param name="payload">Unmanaged event payload.</param>
+        void OnPlayerExpressionEvent(in PlayerExpressionEventPayload payload);
+    }
+
+    /// <summary>
+    /// Queue-backed bus for player expression changes.
     /// </summary>
     public static class PlayerExpressionEvents
     {
-        /// <summary>Raised when the active player expression profile changes.</summary>
-        public static event System.Action<PlayerExpressionProfile> OnProfileChanged;
+        private const int ListenerCapacity = 8;
+        private const int PendingEventCapacity = 8;
+        private const int ReferenceSlotCapacity = 8;
+
+        private struct PlayerExpressionReferenceSlot
+        {
+            public PlayerExpressionProfile Profile;
+
+            public void Clear()
+            {
+                Profile = null;
+            }
+        }
+
+        // COLD ALLOC: RegistryBucket<IPlayerExpressionEventListener>[8] - player-expression listeners drained by SystemDispatcher LateUpdate - owner: PlayerExpressionEvents
+        private static readonly RegistryBucket<IPlayerExpressionEventListener> _listeners = new RegistryBucket<IPlayerExpressionEventListener>(ListenerCapacity);
+        // COLD ALLOC: PlayerExpressionReferenceSlot[8] - managed profile sidecar for unmanaged payloads - owner: PlayerExpressionEvents
+        private static readonly PlayerExpressionReferenceSlot[] _referenceSlots = new PlayerExpressionReferenceSlot[ReferenceSlotCapacity];
+        // COLD ALLOC: bool[8] - reference slot occupancy map prevents overwrite before deferred flush - owner: PlayerExpressionEvents
+        private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+        private static NativeQueue<PlayerExpressionEventPayload> _pendingEvents;
+        private static int _referenceWriteIndex;
+        private static int _referencePendingCount;
+        private static int _pendingEventCount;
+
+        /// <summary>
+        /// Number of queued player-expression events awaiting LateUpdate dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+
+        /// <summary>
+        /// Registers a listener for deferred player-expression events.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Register(IPlayerExpressionEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a listener from deferred player-expression events.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Unregister(IPlayerExpressionEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Flushes queued player-expression events to registered listeners.
+        /// Called by <see cref="SystemDispatcher"/> from LateUpdate.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out PlayerExpressionEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                IPlayerExpressionEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnPlayerExpressionEvent(in payload);
+
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+
+        /// <summary>
+        /// Resolves the profile attached to an expression event payload.
+        /// Valid only during listener dispatch.
+        /// </summary>
+        /// <param name="payload">Event payload.</param>
+        /// <param name="profile">Resolved profile.</param>
+        /// <returns>True when a profile reference is available.</returns>
+        public static bool TryResolveProfile(in PlayerExpressionEventPayload payload, out PlayerExpressionProfile profile)
+        {
+            profile = null;
+            if (!IsValidReferenceSlot(payload.ReferenceSlot))
+                return false;
+
+            profile = _referenceSlots[payload.ReferenceSlot].Profile;
+            return profile != null;
+        }
 
         internal static void RaiseProfileChanged(PlayerExpressionProfile profile)
         {
-            System.Action<PlayerExpressionProfile> handler = OnProfileChanged;
-            handler?.Invoke(profile);
+            if (_listeners.Count <= 0)
+                return;
+
+            if (!TryReserveReferenceSlot(out int referenceSlot))
+                return;
+
+            _referenceSlots[referenceSlot].Profile = profile;
+            Enqueue(new PlayerExpressionEventPayload
+            {
+                ReferenceSlot = referenceSlot,
+                EventType = (ushort)PlayerExpressionEventType.ProfileChanged,
+                Reserved = 0
+            });
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnProfileChanged = null;
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PlayerExpressionEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            ClearReferenceSlots();
+            _referenceWriteIndex = 0;
+            _referencePendingCount = 0;
+            _pendingEventCount = 0;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<PlayerExpressionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PlayerExpressionEventPayload>[8] - deferred player-expression lane flushed by SystemDispatcher LateUpdate - owner: PlayerExpressionEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(PlayerExpressionEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void Enqueue(in PlayerExpressionEventPayload payload)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+        }
+
+        private static bool TryReserveReferenceSlot(out int referenceSlot)
+        {
+            referenceSlot = -1;
+            if (_referencePendingCount >= ReferenceSlotCapacity)
+                return false;
+
+            for (int probe = 0; probe < ReferenceSlotCapacity; probe++)
+            {
+                int candidateSlot = _referenceWriteIndex;
+                _referenceWriteIndex++;
+                if (_referenceWriteIndex >= ReferenceSlotCapacity)
+                    _referenceWriteIndex = 0;
+
+                if (_referenceSlotOccupied[candidateSlot])
+                    continue;
+
+                referenceSlot = candidateSlot;
+                _referenceSlotOccupied[referenceSlot] = true;
+                _referencePendingCount++;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void ReleaseReferenceSlot(int referenceSlot)
+        {
+            if (!IsValidReferenceSlot(referenceSlot))
+                return;
+
+            if (!_referenceSlotOccupied[referenceSlot])
+                return;
+
+            _referenceSlots[referenceSlot].Clear();
+            _referenceSlotOccupied[referenceSlot] = false;
+            if (_referencePendingCount > 0)
+                _referencePendingCount--;
+        }
+
+        private static bool IsValidReferenceSlot(int referenceSlot)
+        {
+            return (uint)referenceSlot < ReferenceSlotCapacity;
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out PlayerExpressionEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+
+        private static void ClearReferenceSlots()
+        {
+            for (int i = 0; i < ReferenceSlotCapacity; i++)
+            {
+                _referenceSlots[i].Clear();
+                _referenceSlotOccupied[i] = false;
+            }
         }
     }
 
@@ -78,6 +343,7 @@ namespace Hecton8.Gameplay
 
         private bool _runtimeBindingsReady;
         private bool _pendingRecommendedSuitApply;
+        private bool _serviceRegistered;
 
         /// <summary>Singleton instance for the active scene/runtime.</summary>
         public static PlayerExpressionManager Instance => _instance;
@@ -133,6 +399,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             AutoResolveReferences();
+            TryRegisterService();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
@@ -148,12 +415,16 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            TryUnregisterService();
+
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
         }
 
         private void OnDestroy()
         {
+            TryUnregisterService();
+
             if (_instance == this)
             {
                 _instance = null;
@@ -161,6 +432,24 @@ namespace Hecton8.Gameplay
                 _activeHudProfileOverride = null;
                 _activeSuitLabelOverride = null;
             }
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterPlayerExpressionRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerExpression, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterPlayerExpressionRuntime(this);
+            _serviceRegistered = false;
         }
 
 #if UNITY_EDITOR

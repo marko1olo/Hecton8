@@ -10,7 +10,7 @@
 //   • Persist LOD settings via SaveManager
 //
 // ARCHITECTURE:
-//   • Singleton via LODSystemManager.Instance
+//   • GlobalRegistry.LODSystem is the authoritative runtime lookup.
 //   • ITickable — registers with GameTickManager
 //   • ISaveable — persists quality settings
 //   • Zero-GC — pre-allocated collections, NativeArrays
@@ -132,6 +132,7 @@ namespace Hecton8.World
         private bool _jobScheduled;
         private bool _registered;
         private bool _lateFrameRegistered;
+        private bool _serviceRegistered;
 
         private Camera _mainCamera;
         private Transform _cameraTransform;
@@ -200,6 +201,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             EnsureNativeBuffersAllocated();
+            TryRegisterService();
             TryRegister();
             TryRegisterLateFrame();
         }
@@ -210,6 +212,7 @@ namespace Hecton8.World
             UnregisterAllImpostorCandidates();
             TryUnregister();
             TryUnregisterLateFrame();
+            TryUnregisterService();
 
             JobHandle disposeDependency = _jobScheduled ? _distanceJobHandle : default;
             _jobScheduled = false;
@@ -233,6 +236,7 @@ namespace Hecton8.World
             UnregisterAllImpostorCandidates();
             TryUnregister();
             TryUnregisterLateFrame();
+            TryUnregisterService();
 
             // Clear singleton
             if (_instance == this)
@@ -245,12 +249,22 @@ namespace Hecton8.World
             {
                 // COLD ALLOC: NativeArray<float3>[maxLODGroupsPerFrame] — LOD job input positions — owner: LODSystemManager
                 _lodGroupPositions = new NativeArray<float3>(_maxLODGroupsPerFrame, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _lodGroupPositions,
+                    nameof(LODSystemManager),
+                    nameof(_lodGroupPositions),
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_lodGroupSquaredDistances.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float>[maxLODGroupsPerFrame] — LOD job output squared distances — owner: LODSystemManager
                 _lodGroupSquaredDistances = new NativeArray<float>(_maxLODGroupsPerFrame, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _lodGroupSquaredDistances,
+                    nameof(LODSystemManager),
+                    nameof(_lodGroupSquaredDistances),
+                    NativeAllocationLifetime.Session);
             }
         }
 
@@ -258,6 +272,8 @@ namespace Hecton8.World
         {
             if (_lodGroupPositions.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_lodGroupPositions);
+
                 if (!disposeDependency.Equals(default))
                     disposeDependency = _lodGroupPositions.Dispose(disposeDependency);
                 else
@@ -268,6 +284,8 @@ namespace Hecton8.World
 
             if (_lodGroupSquaredDistances.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_lodGroupSquaredDistances);
+
                 if (!disposeDependency.Equals(default))
                     disposeDependency = _lodGroupSquaredDistances.Dispose(disposeDependency);
                 else
@@ -313,6 +331,26 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _lateFrameRegistered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterLODSystemRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.LODSystem, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.LODSystem, this))
+                GlobalRegistry.UnregisterLODSystemRuntime(this);
+
+            _serviceRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -366,7 +404,9 @@ namespace Hecton8.World
             if (!_jobScheduled || !_distanceJobHandle.IsCompleted)
                 return;
 
-            _distanceJobHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _distanceJobHandle, forceComplete: false))
+                return;
+
             ApplyLODTransitions();
             _jobScheduled = false;
         }
@@ -602,10 +642,7 @@ namespace Hecton8.World
             _qualityPreset = preset;
             QualitySettings.lodBias = GetLODBias();
 
-            if (DynamicResolutionScaler.Instance != null)
-            {
-                DynamicResolutionScaler.Instance.SetQualityPreset(preset);
-            }
+            GlobalRegistry.DynamicResolution?.SetQualityPreset(preset);
         }
 
         private void RestoreDefaultLODBias()
@@ -618,7 +655,7 @@ namespace Hecton8.World
             if (!ShouldUseImpostorCandidate(lodGroup))
                 return;
 
-            ImpostorSystem impostorSystem = ImpostorSystem.Instance;
+            ImpostorSystem impostorSystem = GlobalRegistry.Impostors;
             if (impostorSystem == null)
                 return;
 
@@ -630,7 +667,7 @@ namespace Hecton8.World
             if (lodGroup == null)
                 return;
 
-            ImpostorSystem impostorSystem = ImpostorSystem.Instance;
+            ImpostorSystem impostorSystem = GlobalRegistry.Impostors;
             if (impostorSystem == null)
                 return;
 
@@ -639,7 +676,7 @@ namespace Hecton8.World
 
         private void UnregisterAllImpostorCandidates()
         {
-            ImpostorSystem impostorSystem = ImpostorSystem.Instance;
+            ImpostorSystem impostorSystem = GlobalRegistry.Impostors;
             if (impostorSystem == null)
                 return;
 

@@ -22,6 +22,9 @@ namespace Hecton8.Editor
 
         static NativeAllocationTracker()
         {
+            if (Application.isBatchMode)
+                return;
+
             NativeLeakDetection.Mode = NativeLeakDetectionMode.EnabledWithStackTrace;
             Application.logMessageReceivedThreaded -= HandleLogMessageReceivedThreaded;
             Application.logMessageReceivedThreaded += HandleLogMessageReceivedThreaded;

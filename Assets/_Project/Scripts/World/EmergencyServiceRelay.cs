@@ -133,7 +133,7 @@ namespace Hecton8.World
         {
             get
             {
-                HectonNarrativeDirector narrativeDirector = HectonNarrativeDirector.Instance;
+                HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
                 return narrativeDirector != null && !string.IsNullOrWhiteSpace(relayId) && narrativeDirector.HasDiscovery(relayId);
             }
         }
@@ -220,8 +220,8 @@ namespace Hecton8.World
             if (!string.IsNullOrWhiteSpace(resolvedLoreMessage))
                 NotificationEvents.PushInfo(resolvedLoreMessage);
 
-            if (linkedAudioLog != null && AudioLogSystem.Instance != null)
-                AudioLogSystem.Instance.PlayLog(linkedAudioLog);
+            if (linkedAudioLog != null && Hecton8.Core.GlobalRegistry.AudioLogs != null)
+                Hecton8.Core.GlobalRegistry.AudioLogs.PlayLog(linkedAudioLog);
 
             TryGrantRewards(interactor);
             EmergencyServiceRelayEvents.RaiseRelayActivated(this, firstActivation);
@@ -273,9 +273,9 @@ namespace Hecton8.World
 
         private static void EnsureRuntimeRelayDirector()
         {
-            EmergencyServiceRelayDirector existingDirector = EmergencyServiceRelayDirector.ActiveRuntimeInstance;
+            EmergencyServiceRelayDirector existingDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
             if (existingDirector == null)
-                existingDirector = EmergencyServiceRelayDirector.Instance;
+                existingDirector = EmergencyServiceRelayDirector.ActiveRuntimeInstance;
 
             if (!Application.isPlaying ||
                 existingDirector != null ||
@@ -426,7 +426,7 @@ namespace Hecton8.World
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

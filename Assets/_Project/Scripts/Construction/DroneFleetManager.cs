@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Caves;
 using Hecton8.AI;
 using Hecton8.Core;
@@ -109,21 +110,196 @@ namespace Hecton8.Construction
     /// <summary>
     /// Fleet telemetry bridge. The submarine OS and any diegetic diagnostics can subscribe without scene scans.
     /// </summary>
+    public interface IDroneFleetSnapshotEventListener
+    {
+        /// <summary>
+        /// Receives one late-frame drone fleet snapshot update.
+        /// </summary>
+        /// <param name="snapshot">Read-only fleet snapshot.</param>
+        void OnDroneFleetSnapshotUpdated(in HectonDroneFleetSnapshot snapshot);
+    }
+
+    /// <summary>
+    /// Blittable snapshot payload queued before dispatch to fleet snapshot listeners.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct HectonDroneFleetSnapshotPayload
+    {
+        public int ActiveHubCount;
+        public int ActiveDroneCount;
+        public int AssignedTaskCount;
+        public int DockedStasisSlotCount;
+        public int DestroyedDroneCount;
+        public int EmergencyLevel;
+        public float AverageBatteryPercent;
+        public int SolderReserve;
+        public int HostileDroneCount;
+        public int LogicLeechHijackCount;
+        public byte EmergencyOverclockActive;
+        private byte _padding0;
+        private byte _padding1;
+        private byte _padding2;
+    }
+
+    /// <summary>
+    /// NativeQueue-backed fleet telemetry bridge drained by <see cref="SystemDispatcher"/>.
+    /// </summary>
     public static class HectonDroneFleetEvents
     {
-        public delegate void SnapshotUpdatedHandler(in HectonDroneFleetSnapshot snapshot);
+        private const int ListenerCapacity = 8;
+        private const int PendingEventCapacity = 64;
 
-        public static event SnapshotUpdatedHandler OnSnapshotUpdated;
+        private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("HectonDroneFleetEvents.Overflow"));
+        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("HectonDroneFleetEvents"));
+
+        // COLD ALLOC: RegistryBucket<IDroneFleetSnapshotEventListener>[8] - fleet snapshot listeners drained by SystemDispatcher LateUpdate - owner: HectonDroneFleetEvents
+        private static readonly RegistryBucket<IDroneFleetSnapshotEventListener> _listeners = new RegistryBucket<IDroneFleetSnapshotEventListener>(ListenerCapacity);
+
+        private static NativeQueue<HectonDroneFleetSnapshotPayload> _pendingEvents;
+        private static int _pendingEventCount;
+        private static int _lastOverflowWarningFrame = -1;
+
+        /// <summary>
+        /// Number of pending fleet snapshot payloads waiting for late-frame dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnSnapshotUpdated = null;
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(HectonDroneFleetEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+            _lastOverflowWarningFrame = -1;
+        }
+
+        /// <summary>
+        /// Registers a fleet snapshot listener.
+        /// </summary>
+        public static void Register(IDroneFleetSnapshotEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a fleet snapshot listener.
+        /// </summary>
+        public static void Unregister(IDroneFleetSnapshotEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
         }
 
         internal static void RaiseSnapshotUpdated(in HectonDroneFleetSnapshot snapshot)
         {
-            OnSnapshotUpdated?.Invoke(snapshot);
+            Enqueue(new HectonDroneFleetSnapshotPayload
+            {
+                ActiveHubCount = snapshot.ActiveHubCount,
+                ActiveDroneCount = snapshot.ActiveDroneCount,
+                AssignedTaskCount = snapshot.AssignedTaskCount,
+                DockedStasisSlotCount = snapshot.DockedStasisSlotCount,
+                DestroyedDroneCount = snapshot.DestroyedDroneCount,
+                EmergencyLevel = (int)snapshot.EmergencyLevel,
+                AverageBatteryPercent = snapshot.AverageBatteryPercent,
+                SolderReserve = snapshot.SolderReserve,
+                HostileDroneCount = snapshot.HostileDroneCount,
+                LogicLeechHijackCount = snapshot.LogicLeechHijackCount,
+                EmergencyOverclockActive = snapshot.EmergencyOverclockActive ? (byte)1 : (byte)0
+            });
+        }
+
+        /// <summary>
+        /// Flushes pending fleet snapshots to registered listeners.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out HectonDroneFleetSnapshotPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                HectonDroneFleetSnapshot snapshot = new HectonDroneFleetSnapshot(
+                    payload.ActiveHubCount,
+                    payload.ActiveDroneCount,
+                    payload.AssignedTaskCount,
+                    payload.DockedStasisSlotCount,
+                    payload.DestroyedDroneCount,
+                    payload.EmergencyOverclockActive != 0,
+                    (SubmarineEmergencyLevel)payload.EmergencyLevel,
+                    payload.AverageBatteryPercent,
+                    payload.SolderReserve,
+                    payload.HostileDroneCount,
+                    payload.LogicLeechHijackCount);
+
+                IDroneFleetSnapshotEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnDroneFleetSnapshotUpdated(in snapshot);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<HectonDroneFleetSnapshotPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HectonDroneFleetSnapshotPayload>[64] - deferred drone fleet snapshot lane flushed by SystemDispatcher LateUpdate - owner: HectonDroneFleetEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(HectonDroneFleetEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        private static bool Enqueue(in HectonDroneFleetSnapshotPayload payload)
+        {
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                ReportOverflowOncePerFrame();
+                return false;
+            }
+
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
+        }
+
+        private static void ReportOverflowOncePerFrame()
+        {
+            int frame = Time.frameCount;
+            if (_lastOverflowWarningFrame == frame)
+                return;
+
+            _lastOverflowWarningFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
         }
     }
 
@@ -317,6 +493,8 @@ namespace Hecton8.Construction
         private static readonly RaycastHit[] s_DroneRelayRaycastHits = new RaycastHit[1];
         // COLD ALLOC: SubmarineOsEventBridge[1] - static fleet bridge into deferred submarine OS payloads - owner: DroneFleetManager
         private static readonly SubmarineOsEventBridge s_SubmarineOsEventBridge = new SubmarineOsEventBridge();
+        // COLD ALLOC: StorageReservationCommitResolvedBridge[1] - static fleet bridge into deferred command queue acknowledgements - owner: DroneFleetManager
+        private static readonly StorageReservationCommitResolvedBridge s_StorageReservationCommitResolvedBridge = new StorageReservationCommitResolvedBridge();
 
         private sealed class SubmarineOsEventBridge : ISubmarineOsEventListener
         {
@@ -327,13 +505,24 @@ namespace Hecton8.Construction
             }
         }
 
+        private sealed class StorageReservationCommitResolvedBridge : ThreadSafeCommandQueue.IStorageReservationCommitResolvedListener
+        {
+            public void OnStorageReservationCommitResolved(in ThreadSafeCommandQueue.StorageReservationCommitResolvedPayload payload)
+            {
+                HandleStorageReservationCommitResolved(
+                    payload.RequesterId,
+                    payload.ReservationId,
+                    payload.Committed != 0);
+            }
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             if (s_Initialized)
             {
                 HectonSubmarineOsEvents.Unregister(s_SubmarineOsEventBridge);
-                ThreadSafeCommandQueue.OnStorageReservationCommitResolved -= HandleStorageReservationCommitResolved;
+                ThreadSafeCommandQueue.Unregister(s_StorageReservationCommitResolvedBridge);
             }
 
             TryUnregisterHeadlessDriver();
@@ -605,22 +794,22 @@ namespace Hecton8.Construction
             EnsureInitialized();
 
             ConstructionManager manager = GlobalRegistry.ConstructionRuntime;
-            IReadOnlyList<BaseModule> modules = manager != null ? manager.SpawnedBaseModules : null;
-            if (modules == null || modules.Count == 0)
+            int moduleCount = manager != null ? manager.SpawnedBaseModuleCount : 0;
+            if (moduleCount == 0)
                 return false;
 
-            EnsureTaskCapacity(modules.Count * 2);
-            ClearClaimCounts(modules.Count);
-            RebuildActiveClaimCounts(modules, modules.Count);
+            EnsureTaskCapacity(moduleCount * 2);
+            ClearClaimCounts(moduleCount);
+            RebuildActiveClaimCounts(manager, moduleCount);
             ResetHeap();
 
             Vector3 hubPosition = hub.DockPosition;
             PowerGrid hubGrid = hub.CurrentGrid;
             FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
 
-            for (int moduleIndex = 0; moduleIndex < modules.Count; moduleIndex++)
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
             {
-                BaseModule module = modules[moduleIndex];
+                BaseModule module = manager.GetSpawnedBaseModuleAt(moduleIndex);
                 if (module == null || !module.gameObject.activeInHierarchy)
                 {
                     continue;
@@ -705,8 +894,8 @@ namespace Hecton8.Construction
             {
                 HectonSubmarineOsEvents.Unregister(s_SubmarineOsEventBridge);
                 HectonSubmarineOsEvents.Register(s_SubmarineOsEventBridge);
-                ThreadSafeCommandQueue.OnStorageReservationCommitResolved -= HandleStorageReservationCommitResolved;
-                ThreadSafeCommandQueue.OnStorageReservationCommitResolved += HandleStorageReservationCommitResolved;
+                ThreadSafeCommandQueue.Unregister(s_StorageReservationCommitResolvedBridge);
+                ThreadSafeCommandQueue.Register(s_StorageReservationCommitResolvedBridge);
                 s_Initialized = true;
             }
 
@@ -918,8 +1107,9 @@ namespace Hecton8.Construction
 
             if (s_HeadlessJobScheduled)
             {
-                s_HeadlessJobHandle.Complete();
-                s_HeadlessJobHandle = default;
+                if (!DispatcherJobSwap.TryComplete(ref s_HeadlessJobHandle, false))
+                    return;
+
                 s_HeadlessJobScheduled = false;
                 NativeArray<HeadlessDroneState> swap = s_DroneStates;
                 s_DroneStates = s_DroneStateBackBuffer;
@@ -943,8 +1133,7 @@ namespace Hecton8.Construction
             if (!s_HeadlessJobScheduled)
                 return;
 
-            s_HeadlessJobHandle.Complete();
-            s_HeadlessJobHandle = default;
+            DispatcherJobSwap.TryComplete(ref s_HeadlessJobHandle, true);
             s_HeadlessJobScheduled = false;
         }
 
@@ -1172,15 +1361,15 @@ namespace Hecton8.Construction
 
         private static bool TryAttachToAlternateHub(int slot, ref HeadlessDroneState drone)
         {
-            List<RepairDroneHub> hubs = RepairDroneHub.ActiveHubs;
+            int hubCount = RepairDroneHub.ActiveHubCount;
             BaseModule target = s_TargetModulesByDroneSlot[slot];
             RepairDroneHub bestHub = null;
             float bestDistanceSq = float.MaxValue;
             Vector3 dronePosition = ToVector3(drone.Position);
 
-            for (int i = 0; i < hubs.Count; i++)
+            for (int i = 0; i < hubCount; i++)
             {
-                RepairDroneHub candidate = hubs[i];
+                RepairDroneHub candidate = RepairDroneHub.GetActiveHubAt(i);
                 if (candidate == null || !candidate.isActiveAndEnabled || !candidate.HasOperationalPower)
                     continue;
 
@@ -1603,24 +1792,24 @@ namespace Hecton8.Construction
             ClearManagedTaskRefs();
 
             ConstructionManager manager = GlobalRegistry.ConstructionRuntime;
-            IReadOnlyList<BaseModule> modules = manager != null ? manager.SpawnedBaseModules : null;
-            if (modules == null || modules.Count == 0)
+            int moduleCount = manager != null ? manager.SpawnedBaseModuleCount : 0;
+            if (moduleCount == 0)
                 return;
 
-            List<RepairDroneHub> hubs = RepairDroneHub.ActiveHubs;
+            int hubCount = RepairDroneHub.ActiveHubCount;
             FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
-            for (int hubIndex = 0; hubIndex < hubs.Count; hubIndex++)
+            for (int hubIndex = 0; hubIndex < hubCount; hubIndex++)
             {
-                RepairDroneHub hub = hubs[hubIndex];
+                RepairDroneHub hub = RepairDroneHub.GetActiveHubAt(hubIndex);
                 if (hub == null || !hub.isActiveAndEnabled)
                     continue;
 
                 int hubKey = ResolveHubTaskKey(hub);
                 PowerGrid hubGrid = hub.CurrentGrid;
                 Vector3 hubPosition = hub.DockPosition;
-                for (int moduleIndex = 0; moduleIndex < modules.Count && s_HeadlessTaskCount < HeadlessTaskCapacity; moduleIndex++)
+                for (int moduleIndex = 0; moduleIndex < moduleCount && s_HeadlessTaskCount < HeadlessTaskCapacity; moduleIndex++)
                 {
-                    BaseModule module = modules[moduleIndex];
+                    BaseModule module = manager.GetSpawnedBaseModuleAt(moduleIndex);
                     if (module == null || !module.gameObject.activeInHierarchy)
                     {
                         continue;
@@ -1895,7 +2084,7 @@ namespace Hecton8.Construction
                 direction,
                 s_DroneRelayRaycastHits,
                 Mathf.Max(0.01f, distance),
-                HectonLayerMasks.DefaultRaycastLayerMask,
+                HectonLayerMasks.SeamProbeLayerMask,
                 QueryTriggerInteraction.Ignore);
             if (hitCount <= 0)
                 return true;
@@ -1957,7 +2146,7 @@ namespace Hecton8.Construction
             out float phantomFlowStrength,
             out float phantomFlowVerticalFactor)
         {
-            Hecton8.Physics.HectonFluidEngine fluidEngine = Hecton8.Physics.HectonFluidEngine.Instance;
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
             if (fluidEngine == null)
             {
                 baseFlowVelocity = Vector3.zero;
@@ -2395,8 +2584,11 @@ namespace Hecton8.Construction
                 s_TaskClaimCounts[i] = 0;
         }
 
-        private static void RebuildActiveClaimCounts(IReadOnlyList<BaseModule> modules, int moduleCount)
+        private static void RebuildActiveClaimCounts(ConstructionManager manager, int moduleCount)
         {
+            if (manager == null)
+                return;
+
             if (s_DroneSlotDroneIds != null)
             {
                 for (int slot = 0; slot < s_DroneSlotDroneIds.Length; slot++)
@@ -2404,7 +2596,7 @@ namespace Hecton8.Construction
                     if (s_DroneSlotDroneIds[slot] <= 0)
                         continue;
 
-                    IncrementClaimForTarget(modules, moduleCount, s_TargetModulesByDroneSlot[slot]);
+                    IncrementClaimForTarget(manager, moduleCount, s_TargetModulesByDroneSlot[slot]);
                 }
             }
 
@@ -2415,19 +2607,19 @@ namespace Hecton8.Construction
                     if (!s_PendingLaunches[i].Active)
                         continue;
 
-                    IncrementClaimForTarget(modules, moduleCount, s_PendingLaunches[i].Task.Module);
+                    IncrementClaimForTarget(manager, moduleCount, s_PendingLaunches[i].Task.Module);
                 }
             }
         }
 
-        private static void IncrementClaimForTarget(IReadOnlyList<BaseModule> modules, int moduleCount, BaseModule target)
+        private static void IncrementClaimForTarget(ConstructionManager manager, int moduleCount, BaseModule target)
         {
-            if (target == null)
+            if (manager == null || target == null)
                 return;
 
             for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
             {
-                BaseModule module = modules[moduleIndex];
+                BaseModule module = manager.GetSpawnedBaseModuleAt(moduleIndex);
                 if (module == null || !ReferenceEquals(module, target))
                 {
                     continue;
@@ -2502,10 +2694,10 @@ namespace Hecton8.Construction
         {
             int activeHubCount = 0;
             int dockedStasisSlotCount = s_HeadlessStasisSlotCount;
-            List<RepairDroneHub> hubs = RepairDroneHub.ActiveHubs;
-            for (int i = 0; i < hubs.Count; i++)
+            int hubCount = RepairDroneHub.ActiveHubCount;
+            for (int i = 0; i < hubCount; i++)
             {
-                RepairDroneHub hub = hubs[i];
+                RepairDroneHub hub = RepairDroneHub.GetActiveHubAt(i);
                 if (hub == null || !hub.isActiveAndEnabled)
                     continue;
 

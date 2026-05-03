@@ -3,10 +3,10 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-2026-05-01 current-state boundary:
+2026-05-02 current-state boundary:
 
 - This is the first-party audio DSP architecture reference, not live mixer/profiler proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - `SpatialAudioManager` and `PlayerCriticalProceduralAudioRenderer` are source-backed owners; runtime pool state, console health, audio-thread cost, and zero-GC transport still require fresh Unity/profiler verification.
 
 ## Scope

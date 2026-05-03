@@ -12,7 +12,7 @@ namespace Hecton8.Visor
     /// Applies critical-state pulse feedback through a dedicated runtime volume and heartbeat cues.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerStressVFX : MonoBehaviour, ITickable
+    public sealed class PlayerStressVFX : MonoBehaviour, ITickable, IPlayerSignalEventListener
     {
         [Header("── Audio ──────────────────")]
         [Tooltip("Helmet heartbeat cue played while the player approaches death.")]
@@ -82,6 +82,7 @@ namespace Hecton8.Visor
         [SerializeField] private float _debugTemperatureShock01;
 
         private const float PulseTwoPi = Mathf.PI * 2f;
+        private const float DependencyResolveRetryIntervalSeconds = 0.5f;
 
         private bool _registered;
         private HectonSurvivalSystem _survivalSystem;
@@ -99,24 +100,25 @@ namespace Hecton8.Visor
         private float _interactionVolume01 = 1f;
         private float _interactionPitchScale = 1f;
         private float _interactionFrequency01;
+        private float _nextDependencyResolveTime;
         private bool _hasInteractionSignal;
 
         private void Awake()
         {
-            TryResolveDependencies();
+            TryResolveDependencies(force: true);
             EnsureRuntimeVolume();
             _heartbeatTimer = heartbeatIntervalMaxSeconds;
         }
 
         private void OnEnable()
         {
-            PlayerSignalEvents.OnInteractionSignal += HandleInteractionSignal;
+            PlayerSignalEvents.Register(this);
             TryRegisterTickHandler();
         }
 
         private void OnDisable()
         {
-            PlayerSignalEvents.OnInteractionSignal -= HandleInteractionSignal;
+            PlayerSignalEvents.Unregister(this);
             TryUnregisterTickHandler();
             ResetRuntimeEffects();
             _heartbeatTimer = heartbeatIntervalMaxSeconds;
@@ -185,7 +187,20 @@ namespace Hecton8.Visor
             ApplyStressPulse(stress01, beat01, fog01, frost01);
         }
 
-        private void HandleInteractionSignal(InteractionSignal signal)
+        void IPlayerSignalEventListener.OnTraumaHudSignal(in TraumaHudSignal signal)
+        {
+        }
+
+        void IPlayerSignalEventListener.OnInteractionSignal(in InteractionSignal signal)
+        {
+            HandleInteractionSignal(in signal);
+        }
+
+        void IPlayerSignalEventListener.OnToolDepletedSignal(in ToolDepletedSignal signal)
+        {
+        }
+
+        private void HandleInteractionSignal(in InteractionSignal signal)
         {
             _interactionStress01 = Mathf.Clamp01(signal.Stress01);
             _interactionVolume01 = Mathf.Clamp01(signal.Volume01);
@@ -194,8 +209,20 @@ namespace Hecton8.Visor
             _hasInteractionSignal = true;
         }
 
-        private void TryResolveDependencies()
+        private void TryResolveDependencies(bool force = false)
         {
+            if (!force && _survivalSystem != null && _playerMovement != null)
+                return;
+
+            if (!force)
+            {
+                float now = Time.unscaledTime;
+                if (now < _nextDependencyResolveTime)
+                    return;
+
+                _nextDependencyResolveTime = now + DependencyResolveRetryIntervalSeconds;
+            }
+
             if (_survivalSystem == null)
                 TryGetComponent(out _survivalSystem);
 

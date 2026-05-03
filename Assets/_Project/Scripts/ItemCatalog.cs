@@ -45,12 +45,14 @@ namespace Hecton8.SaveSystem
         }
 
         [Serializable]
+#pragma warning disable 0649 // Unity serializes this authoring payload; fields are assigned from catalog assets.
         private struct WorldPrefabAddressableEntry
         {
             public int hashId;
             public string persistentId;
             public AssetReferenceGameObject prefabReference;
         }
+#pragma warning restore 0649
 
         private struct WorldPrefabRuntimeRecord
         {
@@ -292,7 +294,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
             uint dispatchAssetKey = BuildWorldPrefabDispatchKey(hashId);
             if (dispatcher != null &&
                 dispatcher.Enqueue(dispatchAssetKey, AssetPriorityTier.Tier2Proximity, false, out int requestId))
@@ -708,7 +710,7 @@ namespace Hecton8.SaveSystem
             if (_worldPrefabRuntimeLookup == null || _worldPrefabRuntimeLookup.Count <= 0)
                 return;
 
-            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
             if (dispatcher == null)
                 return;
 
@@ -765,7 +767,7 @@ namespace Hecton8.SaveSystem
             if (runtimeRecord.DispatchAssetKey == 0u)
                 return;
 
-            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
             if (dispatcher != null)
             {
                 dispatcher.CancelByAssetKey(runtimeRecord.DispatchAssetKey);
@@ -782,7 +784,7 @@ namespace Hecton8.SaveSystem
             if (runtimeRecord.DispatchRequestId == 0)
                 return;
 
-            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            AssetLoadDispatcher dispatcher = Hecton8.Core.GlobalRegistry.AssetLoadDispatcher;
             if (dispatcher != null)
                 dispatcher.Complete(runtimeRecord.DispatchRequestId, success);
 

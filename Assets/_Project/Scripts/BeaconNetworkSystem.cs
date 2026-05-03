@@ -40,6 +40,7 @@ namespace Hecton8.Gameplay
 
         private readonly List<BeaconRuntime> _activeBeacons = new List<BeaconRuntime>(32);
         private int _nextSequence = 1;
+        private bool _serviceRegistered;
 
         public static BeaconNetworkSystem Instance { get; private set; }
 
@@ -68,14 +69,36 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryRegisterService();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
         }
 
         private void OnDisable()
         {
+            TryUnregisterService();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
             if (Instance == this)
                 Instance = null;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterBeaconNetworkRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.BeaconNetwork, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.BeaconNetwork, this))
+                GlobalRegistry.UnregisterBeaconNetworkRuntime(this);
+
+            _serviceRegistered = false;
         }
 
         public static BeaconNetworkSystem GetOrCreate()
@@ -283,10 +306,19 @@ namespace Hecton8.Gameplay
             }
 
             if (verboseLogging)
-                Debug.Log($"[BeaconNetwork] Deployed {label} at {position}");
+                LogBeaconDeployed(label, position);
 
             NetworkChanged?.Invoke();
             return true;
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogBeaconDeployed(string label, Vector3 position)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.Log($"[BeaconNetwork] Deployed {label} at {position}");
+#endif
         }
 
         private static bool TryResolvePlayerOwnedInstance(out BeaconNetworkSystem beaconNetworkSystem)
@@ -382,9 +414,10 @@ namespace Hecton8.Gameplay
             float lightRange,
             Vector3 fallbackScale)
         {
-            if (worldBeaconPrefab != null && ObjectPoolManager.Instance != null)
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (worldBeaconPrefab != null && pool != null)
             {
-                GameObject instance = ObjectPoolManager.Instance.Spawn(worldBeaconPrefab, position, rotation);
+                GameObject instance = pool.Spawn(worldBeaconPrefab, position, rotation);
                 if (instance != null)
                 {
                     BeaconRuntime pooled = instance.GetComponent<BeaconRuntime>();
@@ -473,7 +506,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

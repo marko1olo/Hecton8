@@ -1,6 +1,6 @@
 # HECTON-8 EVENT FLOW MAP
 
-Date: 2026-05-01
+Date: 2026-05-03
 Status: PENDING VERIFICATION
 Scope: source-backed event topology visible in first-party code; no profiler or play-mode proof in this document.
 
@@ -11,6 +11,7 @@ Mandates followed:
 - `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
 - `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
 - `UI_Data_Streaming_ZeroGC_Optimization.txt`
+- `UI_Localization_Babel_RTL_FontSwap_ZeroAlloc.txt`
 
 ## 1. Audit Standard
 
@@ -22,6 +23,7 @@ Evidence basis:
 - direct scans for `NativeQueue<TPayload>` ownership
 - direct scans for `Raise*`, `Register`, `Unregister`, and `FlushPending()` paths
 - direct scan for remaining static `Action` surfaces in the migrated global buses
+- direct scan for `DontDestroyOnLoad(` runtime ownership boundaries
 
 No runtime replay, scene wiring proof, or GCMonitor capture is claimed here.
 
@@ -31,29 +33,62 @@ No runtime replay, scene wiring proof, or GCMonitor capture is claimed here.
 
 Flush order visible in source:
 1. `ThreadSafeCommandQueue.DrainMainThread()`
-2. `NarrativeEvents.FlushPending()`
-3. `InteractionEvents.FlushPending()`
-4. `CraftingEvents.FlushPending()`
-5. `ScanEvents.FlushPending()`
-6. `SaveEvents.FlushPending()`
-7. `QuestEvents.FlushPending()`
-8. `AudioLogEvents.FlushPending()`
-9. `HectonSubmarineOsEvents.FlushPending()`
-10. `FlashlightEvents.FlushPending()`
-11. `WeatherEvents.FlushPending()`
-12. `ModuleStatusEvents.FlushPending()`
-13. `DepthZoneEvents.FlushPending()`
-14. `SoundscapeEvents.FlushPending()`
-15. `EmergencyServiceRelayEvents.FlushPending()`
-16. `SargassumGlobalDragManager.FlushPendingEvents()`
-17. `AtlasSignalEvents.FlushPending()`
-18. `NotificationEvents.FlushPending()`
-19. `PDAEvents.FlushPending()`
-20. `SceneBootstrap.FlushPendingEvents()`
-21. `ObjectPoolDiagnostics.FlushPending()`
-22. `Atlas6Events.FlushPending()`
-23. `GlobalRegistry.FlushPendingServiceReboundEvents()`
-24. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
+2. `ThreadSafeCommandQueue.FlushStorageReservationCommitResolvedEvents()`
+3. `ModCommandDispatcher.DrainLateFrame()`
+4. `ModRegistryEvents.FlushPending()`
+5. `BootstrapEvents.FlushPending()`
+6. `LocalizationEvents.FlushPending()`
+7. `NarrativeEvents.FlushPending()`
+8. `InteractionEvents.FlushPending()`
+9. `CraftingEvents.FlushPending()`
+10. `ScanEvents.FlushPending()`
+11. `SaveEvents.FlushPending()`
+12. `QuestEvents.FlushPending()`
+13. `FirstHourEvents.FlushPending()`
+14. `EndingEvents.FlushPending()`
+15. `AudioLogEvents.FlushPending()`
+16. `AtmosphereEvents.FlushPending()`
+17. `HighPressureEvents.FlushPending()`
+18. `FatalPressureImplosionEvents.FlushPending()`
+19. `CelestialEvents.FlushPending()`
+20. `EclipseGameplayEvents.FlushPending()`
+21. `AcousticZoneEvents.FlushPending()`
+22. `PhysicsEventBus.FlushPending()`
+23. `FluidFeedbackEvents.FlushPending()`
+24. `RepairDroneTorchAcousticEvents.FlushPending()`
+25. `ElectrolysisAcousticEvents.FlushPending()`
+26. `AudioCaptionEvents.FlushPending()`
+27. `SpectrumEvents.FlushPending()`
+28. `ProceduralAudioEvents.FlushPending()`
+29. `HectonSubmarineOsEvents.FlushPending()`
+30. `FlashlightEvents.FlushPending()`
+31. `LaserCutterEvents.FlushPending()`
+32. `PlayerSignalEvents.FlushPending()`
+33. `MapMagicBiomeEvents.FlushPending()`
+34. `BiomeMatrixEvents.FlushPending()`
+35. `DirectorAIEvents.FlushPending()`
+36. `HectonDroneFleetEvents.FlushPending()`
+37. `WeatherEvents.FlushPending()`
+38. `RandomEventEvents.FlushPending()`
+39. `PowerGridTelemetryEvents.FlushPending()`
+40. `ModuleStatusEvents.FlushPending()`
+41. `DepthZoneEvents.FlushPending()`
+42. `SoundscapeEvents.FlushPending()`
+43. `EmergencyServiceRelayEvents.FlushPending()`
+44. `SargassumGlobalDragManager.FlushPendingEvents()`
+45. `AtlasSignalEvents.FlushPending()`
+46. `InventoryEvents.FlushPending()`
+47. `PlayerExpressionEvents.FlushPending()`
+48. `BaseIntegrityEvents.FlushPending()`
+49. `NotificationEvents.FlushPending()`
+50. `PDAIntrusionEvents.FlushPending()`
+51. `PDAEvents.FlushPending()`
+52. `SceneBootstrap.FlushPendingEvents()`
+53. `ObjectPoolDiagnostics.FlushPending()`
+54. `PerformanceEvents.FlushPending()`
+55. `Atlas6Events.FlushPending()`
+56. `GlobalRegistry.FlushPendingServiceReboundEvents()`
+57. `GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime)`
 
 `SystemDispatcher.TryConsumeLateFrameEventDispatch()` enforces the shared late-frame event budget. If the budget is exhausted, queues retain remaining events for a later frame instead of draining unbounded work.
 
@@ -63,14 +98,41 @@ Confirmed queue-backed deferred buses:
 
 | Bus | Payload | Notes |
 | --- | --- | --- |
+| `ThreadSafeCommandQueue` storage ack lane | `StorageReservationCommitResolvedPayload` | NativeQueue; storage reservation commit acknowledgements replacing direct command-queue static callback. |
+| `ModRegistryEvents` | `ModRegistryEventPayload` | NativeQueue; mod runtime/settings/recipe/buildable registry invalidation lane replacing direct modding static callbacks; same-type invalidations coalesce while pending. |
+| `BootstrapEvents` | `BootstrapEventPayload` | NativeQueue; bootstrap completion lane replacing legacy direct `OnBootstrapComplete` callback. |
+| `LocalizationEvents` | `LocalizationEventPayload` | NativeQueue; language-change and corruption visual refresh lane replacing `LocalizationManager` direct static callbacks. |
 | `SaveEvents` | `SaveEventPayload` | NativeQueue; fixed-string slot/message fields. |
 | `QuestEvents` | `QuestEventPayload` | NativeQueue; quest hash + event type. |
+| `FirstHourEvents` | `FirstHourEventPayload` | NativeQueue; first-hour milestone lane. |
+| `EndingEvents` | `EndingEventPayload` | NativeQueue; ending-state lane. |
 | `ScanEvents` | `ScanEventPayload` | NativeQueue; hash payload plus cold metadata table. |
 | `NarrativeEvents` | `NarrativeEventPayload` | NativeQueue for discovery/depth lane; POI callback lane remains separate. |
 | `AudioLogEvents` | `AudioLogEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for dispatch-time `AudioLogData` resolution. |
+| `AtmosphereEvents` | `EnvironmentState` | NativeQueue; atmosphere snapshot lane. |
+| `HighPressureEvents` | `HighPressureEventPayload` | NativeQueue; submarine high-pressure warning lane replacing direct atmosphere static callbacks. |
+| `FatalPressureImplosionEvents` | `FatalPressureImplosionEventPayload` | NativeQueue; fatal implosion lane replacing direct atmosphere static callbacks. |
+| `CelestialEvents` | `CelestialEventPayload` | NativeQueue; celestial event lane. |
+| `EclipseGameplayEvents` | `EclipseGameplayEventPayload` | NativeQueue; eclipse gameplay state lane. |
+| `AcousticZoneEvents` | `AcousticZoneChangedEvent` | NativeQueue; acoustic-zone transition lane. |
+| `PhysicsEventBus` | `PhysicsEventPayload` | NativeQueue; pressure impulse, EMP, and acoustic ping lane replacing direct physics static callbacks. |
+| `FluidFeedbackEvents` | `SplashEvent` | NativeQueue; fluid splash presentation lane replacing private static splash delegate callback. |
+| `RepairDroneTorchAcousticEvents` | `RepairDroneTorchAcousticPayload` | NativeQueue; repair drone torch audio pulse lane with fixed `AudioClip[32]` sidecar. |
+| `ElectrolysisAcousticEvents` | `ElectrolysisAcousticPayload` | NativeQueue; electrolysis acoustic pulse lane replacing unused public static acoustic delegate. |
+| `AudioCaptionEvents` | `AudioCaptionPayload` | NativeQueue; spatial audio caption lane with fixed `string[32]` sidecar. |
+| `SpectrumEvents` | sonar/spectrum payloads | NativeQueue-backed sonar/spectrum lane. |
+| `ProceduralAudioEvents` | `AudioPingTriggerInfo` / `StructuralStressAudioInfo` | Two NativeQueues for procedural audio triggers. |
 | `HectonSubmarineOsEvents` | `SubmarineOsEventPayload` | NativeQueue; sequential payload with module hash, emergency level, and status bits. |
 | `FlashlightEvents` | `FlashlightEventPayload` | NativeQueue; flashlight state bits plus battery/heat scalar fields. |
+| `LaserCutterEvents` | `LaserCutterEventPayload` | NativeQueue; laser cutter deferred gameplay lane. |
+| `PlayerSignalEvents` | `TraumaHudSignal` / `InteractionSignal` / `ToolDepletedSignal` | NativeQueues for player-facing deferred signal fanout. |
+| `MapMagicBiomeEvents` | `int` biome id | NativeQueue; MapMagic biome transition lane. |
+| `BiomeMatrixEvents` | `BiomeMatrixEventPayload` | NativeQueue; biome matrix transition lane. |
+| `DirectorAIEvents` | `DirectorAIEventPayload` | NativeQueue; director AI event lane. |
+| `HectonDroneFleetEvents` | `HectonDroneFleetSnapshotPayload` | NativeQueue; drone fleet snapshot lane replacing direct snapshot static delegate. |
 | `WeatherEvents` | `WeatherEventPayload` | NativeQueue; weather state mask, wind/current vectors, and current metadata. |
+| `RandomEventEvents` | random-event payloads | NativeQueues for random event starts, ends, and seismic shockwaves. |
+| `PowerGridTelemetryEvents` | power telemetry payloads | NativeQueue-backed power telemetry lane. |
 | `ModuleStatusEvents` | `ModuleStatusEventPayload` | NativeQueue; module entity/hash payload plus bounded managed sidecar for dispatch-time `BaseModule` resolution. |
 | `DepthZoneEvents` | `DepthZoneEventPayload` | NativeQueue; zone hash + enter/exit event type; managed profile lookup remains outside the queued payload. |
 | `SoundscapeEvents` | `SoundscapeEventPayload` | NativeQueue; old/new soundscape tier enums. |
@@ -80,8 +142,15 @@ Confirmed queue-backed deferred buses:
 | `InteractionEvents` | `InteractionEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for first-party reference resolution during dispatch. |
 | `CraftingEvents` | `CraftingEventPayload` | NativeQueue; hash payload plus bounded managed sidecar for first-party reference resolution during dispatch. |
 | `AtlasSignalEvents` | `AtlasSignalEventPayload` | NativeQueue; hash payload plus cold decoded-message table. |
+| `InventoryEvents` | `InventoryEventPayload` | NativeQueue; inventory state mutation lane. |
+| `PlayerExpressionEvents` | `PlayerExpressionEventPayload` | NativeQueue; player expression transition lane. |
+| `BaseIntegrityEvents` | base integrity payloads | NativeQueue-backed UI integrity lane. |
 | `NotificationEvents` | `NotificationEventPayload` | NativeQueue; message hash plus cold message table. |
+| `PDAIntrusionEvents` | PDA intrusion payloads | NativeQueue-backed PDA intrusion lane. |
+| `PDAEvents` | `PDAEventPayload` | NativeQueue; PDA open/close/tab payloads with per-frame dispatch cap. |
 | `ObjectPoolDiagnostics` | `PoolDiagnosticsEventPayload` | NativeQueue; pool hash + metric payload. |
+| `PerformanceEvents` | `PerformanceEventPayload` | NativeQueue; performance threshold lane. |
+| `Atlas6Events` | `Atlas6EventPayload` | NativeQueue; Atlas-6 directive lane. |
 
 ## 4. Interaction Lane
 
@@ -143,6 +212,18 @@ Confirmed listener registration pattern for the migrated lanes:
 - `CameraJuiceSystem`: registers `InteractionEvents` in `OnEnable`; unregisters in `OnDisable`.
 - `TraumaDispatcher`: registers `ModuleStatusEvents` in `OnEnable`; unregisters in `OnDisable`.
 - `PlayerToolManager`: registers `ModuleStatusEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `ModMenuUIController`: registers `ModRegistryEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `Fabricator`: registers `ModRegistryEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `TraumaDispatcher`: registers `PhysicsEventBus` EMP listener in `OnEnable`; unregisters in `OnDisable`.
+- `SpectrumSystem`: registers `PhysicsEventBus` acoustic ping listener when active; unregisters through the existing teardown hook.
+- `FluidFeedbackListener`: registers `FluidFeedbackEvents` in `OnEnable`; unregisters in `OnDisable`.
+- `SpatialAudioManager`: registers `RepairDroneTorchAcousticEvents` in service event subscription; unregisters through the same teardown hook.
+- `AcousticEcholocationTranslator`: registers `AudioCaptionEvents` in `OnEnable`; unregisters in `OnDisable` and `OnDestroy`.
+- `HectonSubmarineOS`: registers `HighPressureEvents` and `FatalPressureImplosionEvents` through its existing subscription path; unregisters through matching teardown.
+- `SpatialAudioManager`: registers `FatalPressureImplosionEvents` in service event subscription; unregisters through the same teardown hook.
+- `DroneFleetManager`: registers a static bridge object for `ThreadSafeCommandQueue` storage reservation acknowledgements and unregisters it during reset.
+- `HectonSubmarineOS`: registers `HectonDroneFleetEvents` in its service subscription path; unregisters through matching teardown.
+- Localization UI/gameplay listeners: register `LocalizationEvents` in `OnEnable`; unregister in `OnDisable` or existing teardown hook. Duplicate teardown calls are idempotent through `RegistryBucket.Contains`.
 - `HectonEventBus` bridge: installed/uninstalled by `ModLoader` hook lifecycle.
 
 Scene/prefab UnityEvent bindings are outside this source-only scan.
@@ -153,22 +234,37 @@ Definitions:
 - `Assets/_Project/Scripts/Gameplay/HectonSubmarineOS.cs`
 - `Assets/_Project/Scripts/PlayerFlashlight.cs`
 - `Assets/_Project/Scripts/Environment/WeatherEvents.cs`
+- `Assets/_Project/Scripts/LocalizationEvents.cs`
+- `Assets/_Project/Scripts/LocalizationManager.cs`
 - `Assets/_Project/Scripts/ModuleStatusEvents.cs`
 - `Assets/_Project/Scripts/Core/GlobalRegistry.cs`
 
 Current shape:
 - direct static multicast delegates were removed from `HectonSubmarineOsEvents` and `FlashlightEvents`
 - weather snapshots are published through `WeatherEvents` only when state/vector/intensity crosses the director epsilon checks
+- `PhysicsEventBus` publishes pressure impulse, EMP, and acoustic ping signals through `NativeQueue<PhysicsEventPayload>`; old direct static `OnPressureImpulse`, `OnElectromagneticPulse`, and `OnAcousticPing` callbacks are removed
+- `FluidFeedbackEvents` publishes `SplashEvent` through `NativeQueue<SplashEvent>`; the old private static splash delegate is removed
+- `RepairDroneTorchAcousticEvents` publishes torch audio pulses through `NativeQueue<RepairDroneTorchAcousticPayload>`; the managed `AudioClip` reference is sidecar-only and cleared after dispatch
+- `ElectrolysisAcousticEvents` publishes electrolysis acoustic pulses through `NativeQueue<ElectrolysisAcousticPayload>`; no first-party listeners are currently registered in source
+- `AudioCaptionEvents` publishes caption requests through `NativeQueue<AudioCaptionPayload>`; the cached caption string is sidecar-only and cleared after dispatch
+- `HighPressureEvents` and `FatalPressureImplosionEvents` publish submarine pressure alarms through NativeQueues; payloads are unmanaged pressure/temperature/node fields only
+- `ThreadSafeCommandQueue` storage reservation acknowledgements publish through `NativeQueue<StorageReservationCommitResolvedPayload>` after command drain; `DroneFleetManager` consumes through a static bridge object
+- `HectonDroneFleetEvents` publishes changed fleet snapshots through `NativeQueue<HectonDroneFleetSnapshotPayload>`; the old `OnSnapshotUpdated` delegate is removed
 - `ModuleStatusEvents` publishes enter/exit through `NativeQueue<ModuleStatusEventPayload>` and uses `IModuleStatusEventListener`
+- `ModRegistryEvents` publishes runtime/settings/recipe/buildable invalidation through `NativeQueue<ModRegistryEventPayload>`, uses `IModRegistryEventListener`, and coalesces redundant same-type invalidations until flush
+- `LocalizationEvents` publishes language-change and corruption visual refresh events through `NativeQueue<LocalizationEventPayload>` and uses interface listeners instead of `LocalizationManager` static delegates
 - `GlobalRegistry` service rebounds enqueue `RegistryEventPayload` and drain in `SystemDispatcher.LateUpdate()`
 - registry sidecar references are dispatch-scoped; the native payload remains unmanaged
 - `SystemDispatcher` records the active lane hash when the late-frame circuit breaker trips and publishes a `PerformanceWarning` telemetry event with the dominant offender hash
 
 ## 9. Remaining Drift
 
-Known remaining direct/static event surfaces still need separate audits:
-- feature-local celestial/weather/direct callback surfaces
-- any UI-only UnityEvent inspector binding not visible in class scans
+Current `Assets/_Project/Scripts` C# scan has no `public static event`, `private static event`, or `static event` declarations.
+
+Known remaining topology risks:
+- instance-level `Action`/`event Action` surfaces still need owner-by-owner leak audits
+- `DontDestroyOnLoad` call sites are textually restricted to `GameBootstrapper` and `CrashTelemetryBuffer`; bootstrap-owned services persist as children under the `GameBootstrapper` root through `GameBootstrapper.PersistRuntimeService(...)`
+- UI-only UnityEvent inspector bindings are not visible in class scans
 
 This document does not certify those surfaces.
 
@@ -179,6 +275,7 @@ CPU: event drains remain bounded by the dispatcher late-frame budget; sidecar oc
 GC: queued payloads are blittable structs; listener dispatch uses preallocated `RegistryBucket` arrays; no queued payload strings were added.
 
 Memory: two fixed `bool[128]` occupancy arrays were added for sidecar safety; no unbounded event cache was introduced.
+Localization adds fixed listener buckets and one persistent native queue capped by software guard at 128 pending payloads.
 
 Cadence: event flush cadence remains `SystemDispatcher.LateUpdate()`.
 
@@ -195,6 +292,7 @@ The changed work is in event publish and late-frame drain paths:
 ## 12. Failure Modes
 
 - If more than 128 unresolved sidecar-backed interaction or crafting events are queued before flush, `TryReserveReferenceSlot` returns false and that sidecar-backed event is dropped.
+- If more than 128 localization events are queued before flush, excess localization payloads are dropped and `GlobalTelemetryBus` receives a `PerformanceWarning`.
 - If late-frame budget is exhausted, remaining queue entries stay pending for a later frame.
 - Hash fields expose stable payload data to mods, but first-party listeners that need Unity references still depend on dispatch-time sidecar resolution.
 - Runtime GC and listener leak proof still require MCP/Profiler validation.

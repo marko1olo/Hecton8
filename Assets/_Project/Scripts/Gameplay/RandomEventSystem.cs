@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 — RandomEventSystem.cs
 // Система случайных событий мира.
 //
@@ -20,7 +20,6 @@
 //   • Никаких new/LINQ в SlowTick.
 // ============================================================================
 
-using System;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
@@ -28,6 +27,7 @@ using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -61,30 +61,148 @@ namespace Hecton8.Gameplay
         CaveCollapse    = 4    // Обрушение пещеры
     }
 
+    /// <summary>
+    /// Deferred payload for random-event activation.
+    /// </summary>
+    public struct RandomEventStartedPayload
+    {
+        /// <summary>Activated random-event type.</summary>
+        public RandomEventType Type;
+
+        /// <summary>Normalized authored event intensity.</summary>
+        public float Intensity;
+    }
+
+    /// <summary>
+    /// Listener contract for queue-backed random world events.
+    /// </summary>
+    public interface IRandomEventListener
+    {
+        /// <summary>Called when a random event starts.</summary>
+        /// <param name="type">Activated event type.</param>
+        /// <param name="intensity">Normalized event intensity.</param>
+        void OnRandomEventStarted(RandomEventType type, float intensity);
+
+        /// <summary>Called when a random event ends.</summary>
+        /// <param name="type">Ended event type.</param>
+        void OnRandomEventEnded(RandomEventType type);
+
+        /// <summary>Called after a seismic shockwave has been queued and flushed.</summary>
+        /// <param name="payload">Seismic payload.</param>
+        void OnSeismicShockwave(in SeismicShockwaveEvent payload);
+    }
+
     public static class RandomEventEvents
     {
+        private const int ListenerCapacity = 16;
+        private const int PendingStartedCapacity = 16;
+        private const int PendingEndedCapacity = 16;
+        private const int PendingSeismicShockwaveCapacity = 8;
+
+        // COLD ALLOC: RegistryBucket<IRandomEventListener>[16] - deferred random event listeners - owner: RandomEventEvents
+        private static readonly RegistryBucket<IRandomEventListener> _listeners = new RegistryBucket<IRandomEventListener>(ListenerCapacity);
+        private static NativeQueue<RandomEventStartedPayload> _pendingStarted;
+        private static NativeQueue<RandomEventType> _pendingEnded;
+        private static NativeQueue<SeismicShockwaveEvent> _pendingSeismicShockwaves;
+        private static int _pendingStartedCount;
+        private static int _pendingEndedCount;
+        private static int _pendingSeismicShockwaveCount;
+
+        public static int PendingCount
+        {
+            get
+            {
+                return _pendingStartedCount + _pendingEndedCount + _pendingSeismicShockwaveCount;
+            }
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnEventStarted = null;
-            OnEventEnded = null;
-            OnSeismicShockwave = null;
+            if (_pendingStarted.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_pendingStarted));
+                _pendingStarted.Dispose();
+                _pendingStarted = default;
+            }
+
+            if (_pendingEnded.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_pendingEnded));
+                _pendingEnded.Dispose();
+                _pendingEnded = default;
+            }
+
+            if (_pendingSeismicShockwaves.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(RandomEventEvents), nameof(_pendingSeismicShockwaves));
+                _pendingSeismicShockwaves.Dispose();
+                _pendingSeismicShockwaves = default;
+            }
+
+            _pendingStartedCount = 0;
+            _pendingEndedCount = 0;
+            _pendingSeismicShockwaveCount = 0;
+            _listeners.Clear();
         }
 
-        /// <summary>Случайное событие началось.</summary>
-        public static event Action<RandomEventType, float> OnEventStarted;
+        public static void Register(IRandomEventListener listener)
+        {
+            if (listener == null)
+                return;
 
-        /// <summary>Случайное событие завершилось.</summary>
-        public static event Action<RandomEventType> OnEventEnded;
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
 
-        /// <summary>Воксельное сейсмическое событие применило реальные разрушения.</summary>
-        public static event Action<SeismicShockwaveEvent> OnSeismicShockwave;
+        public static void Unregister(IRandomEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        public static void FlushPending()
+        {
+            if (_listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            if (!FlushStarted())
+                return;
+            if (!FlushEnded())
+                return;
+            FlushSeismicShockwaves();
+        }
 
         public static void RaiseStarted(RandomEventType type, float intensity)
-            => OnEventStarted?.Invoke(type, intensity);
+        {
+            EnsureInitialized();
+            if (_pendingStartedCount >= PendingStartedCapacity)
+                return;
+
+            _pendingStarted.Enqueue(new RandomEventStartedPayload
+            {
+                Type = type,
+                Intensity = intensity
+            });
+            _pendingStartedCount++;
+        }
 
         public static void RaiseEnded(RandomEventType type)
-            => OnEventEnded?.Invoke(type);
+        {
+            EnsureInitialized();
+            if (_pendingEndedCount >= PendingEndedCapacity)
+                return;
+
+            _pendingEnded.Enqueue(type);
+            _pendingEndedCount++;
+        }
 
         public static void RaiseSeismicShockwave(in SeismicShockwaveEvent payload)
         {
@@ -95,7 +213,190 @@ namespace Hecton8.Gameplay
                 8f,
                 FieldTargetRole.HazardProbe,
                 0));
-            OnSeismicShockwave?.Invoke(payload);
+            EnsureInitialized();
+            if (_pendingSeismicShockwaveCount >= PendingSeismicShockwaveCapacity)
+                return;
+
+            _pendingSeismicShockwaves.Enqueue(payload);
+            _pendingSeismicShockwaveCount++;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingStarted.IsCreated)
+            {
+                _pendingStarted = new NativeQueue<RandomEventStartedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RandomEventStartedPayload>[16] - deferred random-event starts - owner: RandomEventEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingStarted,
+                    PendingStartedCapacity,
+                    nameof(RandomEventEvents),
+                    nameof(_pendingStarted),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_pendingEnded.IsCreated)
+            {
+                _pendingEnded = new NativeQueue<RandomEventType>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RandomEventType>[16] - deferred random-event ends - owner: RandomEventEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEnded,
+                    PendingEndedCapacity,
+                    nameof(RandomEventEvents),
+                    nameof(_pendingEnded),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_pendingSeismicShockwaves.IsCreated)
+            {
+                _pendingSeismicShockwaves = new NativeQueue<SeismicShockwaveEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SeismicShockwaveEvent>[8] - deferred seismic shockwaves - owner: RandomEventEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingSeismicShockwaves,
+                    PendingSeismicShockwaveCapacity,
+                    nameof(RandomEventEvents),
+                    nameof(_pendingSeismicShockwaves),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static bool FlushStarted()
+        {
+            if (!_pendingStarted.IsCreated)
+                return true;
+
+            int scanBudget = _pendingStartedCount > 0 ? _pendingStartedCount : PendingStartedCapacity;
+            while (scanBudget > 0 && !_pendingStarted.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingStarted.TryDequeue(out RandomEventStartedPayload payload))
+                    return true;
+
+                _pendingStartedCount--;
+                scanBudget--;
+                IRandomEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnRandomEventStarted(payload.Type, payload.Intensity);
+            }
+
+            if (_pendingStarted.IsEmpty())
+                _pendingStartedCount = 0;
+
+            return true;
+        }
+
+        private static bool FlushEnded()
+        {
+            if (!_pendingEnded.IsCreated)
+                return true;
+
+            int scanBudget = _pendingEndedCount > 0 ? _pendingEndedCount : PendingEndedCapacity;
+            while (scanBudget > 0 && !_pendingEnded.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingEnded.TryDequeue(out RandomEventType type))
+                    return true;
+
+                _pendingEndedCount--;
+                scanBudget--;
+                IRandomEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnRandomEventEnded(type);
+            }
+
+            if (_pendingEnded.IsEmpty())
+                _pendingEndedCount = 0;
+
+            return true;
+        }
+
+        private static bool FlushSeismicShockwaves()
+        {
+            if (!_pendingSeismicShockwaves.IsCreated)
+                return true;
+
+            int scanBudget = _pendingSeismicShockwaveCount > 0 ? _pendingSeismicShockwaveCount : PendingSeismicShockwaveCapacity;
+            while (scanBudget > 0 && !_pendingSeismicShockwaves.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingSeismicShockwaves.TryDequeue(out SeismicShockwaveEvent payload))
+                    return true;
+
+                _pendingSeismicShockwaveCount--;
+                scanBudget--;
+                IRandomEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnSeismicShockwave(in payload);
+            }
+
+            if (_pendingSeismicShockwaves.IsEmpty())
+                _pendingSeismicShockwaveCount = 0;
+
+            return true;
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (_pendingStarted.IsCreated)
+            {
+                int scanBudget = _pendingStartedCount > 0 ? _pendingStartedCount : PendingStartedCapacity;
+                while (scanBudget > 0 && !_pendingStarted.IsEmpty())
+                {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
+
+                    if (!_pendingStarted.TryDequeue(out _))
+                        return;
+
+                    _pendingStartedCount--;
+                    scanBudget--;
+                }
+
+                if (_pendingStarted.IsEmpty())
+                    _pendingStartedCount = 0;
+            }
+
+            if (_pendingEnded.IsCreated)
+            {
+                int scanBudget = _pendingEndedCount > 0 ? _pendingEndedCount : PendingEndedCapacity;
+                while (scanBudget > 0 && !_pendingEnded.IsEmpty())
+                {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
+
+                    if (!_pendingEnded.TryDequeue(out _))
+                        return;
+
+                    _pendingEndedCount--;
+                    scanBudget--;
+                }
+
+                if (_pendingEnded.IsEmpty())
+                    _pendingEndedCount = 0;
+            }
+
+            if (_pendingSeismicShockwaves.IsCreated)
+            {
+                int scanBudget = _pendingSeismicShockwaveCount > 0 ? _pendingSeismicShockwaveCount : PendingSeismicShockwaveCapacity;
+                while (scanBudget > 0 && !_pendingSeismicShockwaves.IsEmpty())
+                {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
+
+                    if (!_pendingSeismicShockwaves.TryDequeue(out _))
+                        return;
+
+                    _pendingSeismicShockwaveCount--;
+                    scanBudget--;
+                }
+
+                if (_pendingSeismicShockwaves.IsEmpty())
+                    _pendingSeismicShockwaveCount = 0;
+            }
         }
     }
 
@@ -399,7 +700,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

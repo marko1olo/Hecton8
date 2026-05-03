@@ -108,7 +108,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -228,11 +228,9 @@ namespace Hecton8.World
 
             if (includeInactiveBindings && !Application.isPlaying)
             {
-                WorldGenerativeGeologyBinding[] bindings =
-                    FindObjectsByType<WorldGenerativeGeologyBinding>(FindObjectsInactive.Include);
-
-                for (int i = 0; i < bindings.Length; i++)
-                    ConsumeBinding(bindings[i], searchRadius, now);
+                WorldGenerativeGeologyBinding.CopyKnownBindingsTo(_bindingScanBuffer, true);
+                for (int i = 0; i < _bindingScanBuffer.Count; i++)
+                    ConsumeBinding(_bindingScanBuffer[i], searchRadius, now);
             }
             else
             {
@@ -661,6 +659,7 @@ namespace Hecton8.World
             return right.planWeight.CompareTo(left.planWeight);
         }
 
+#if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
             if (_orderedPlans == null || _orderedPlans.Count == 0)
@@ -682,5 +681,6 @@ namespace Hecton8.World
                     Gizmos.DrawWireCube(plan.RuntimeVoxelVolumeCenter, plan.voxelVolumeSize);
             }
         }
+#endif
     }
 }

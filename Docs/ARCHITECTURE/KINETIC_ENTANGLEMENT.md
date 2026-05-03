@@ -3,9 +3,9 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this mechanic map as current runtime truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this mechanic map as current runtime truth.
 - This document is a deterministic interaction contract, not proof that transport, flora death authority, voxel eviction, and current sampling are all wired in the current scene.
 - Re-open the listed owners before changing gameplay logic.
 

@@ -53,7 +53,7 @@ Updated active anchors:
 | File | Change |
 |---|---|
 | `Docs/README.md` | date moved to 2026-04-30; current forensic bundle added to active audit outputs |
-| `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md` | refreshed `1060/1020` script counts, script lines, average, root-script count, and interface delta |
+| `Docs/HECTON8_GLOBAL_ARCHITECTURE_MAP.md` | refreshed script counts, script lines, average, root-script count, and interface delta |
 | `Docs/SYSTEMS_CONTRACTS.md` | added explicit `Status: PENDING VERIFICATION` metadata |
 | `Docs/QUALITY_GATES.md` | split `Status: SECONDARY` from `Verification: PENDING VERIFICATION` |
 | `Docs/PROCEDURAL_ASSET_PIPELINE.md` | added explicit status/verification metadata |
@@ -63,6 +63,9 @@ Updated active anchors:
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/24_VERIFICATION_DOC_TRUST_AND_EVIDENCE_MODEL.md` | refreshed Docs count and active bundle count |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/25_AUDIT_BUNDLE_FILE_ACTUALITY_RECHECK.md` | refreshed bundle count after adding this report |
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/28_STALE_ERROR_PURGE_AND_TRUST_SYNC.md` | added explicit stale-error purge and trust-sync addendum |
+| `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | added May 2 full markdown read-pass, source-count sync, link-integrity update, and build-evidence boundary |
+| `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` | refreshed May 2 source and doc counts |
+| `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | refreshed May 2 source count and largest-file table |
 
 Runtime code changed:
 - none
@@ -91,10 +94,10 @@ Current scale truth:
 
 | Counter | Current value |
 |---|---:|
-| first-party C# under `Assets/_Project` | 1060 |
-| C# under `Assets/_Project/Scripts` | 1020 |
-| script lines under `Assets/_Project/Scripts` | 544728 |
-| scripts directly in `Assets/_Project/Scripts` root | 316 |
+| first-party C# under `Assets/_Project` | 1087 |
+| C# under `Assets/_Project/Scripts` | 1047 |
+| script lines under `Assets/_Project/Scripts` | 571562 |
+| scripts directly in `Assets/_Project/Scripts` root | 317 |
 
 ## 4. Status Metadata Findings
 

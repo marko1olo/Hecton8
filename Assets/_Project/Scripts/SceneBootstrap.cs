@@ -87,8 +87,9 @@ namespace Hecton8.Bootstrap
         // COLD ALLOC: Dictionary<uint,string>[8] - hashed bootstrap failure reasons for cold-path diagnostics resolution - owner: SceneBootstrap
         private static readonly Dictionary<uint, string> _failureReasonsByHash = new Dictionary<uint, string>(8);
         private static NativeQueue<SceneBootstrapEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
 
-        public static int PendingEventCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingEventCount => _pendingEventCount;
 #if UNITY_EDITOR
         private static readonly List<GameObject> _dontDestroyRootScratch = new List<GameObject>(32); // COLD ALLOC: List<GameObject>[32] - editor-only DDOL residue scan scratch - owner: SceneBootstrap
 #endif
@@ -142,12 +143,14 @@ namespace Hecton8.Bootstrap
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SceneBootstrap), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
 
             _listeners.Clear();
             _failureReasonsByHash.Clear();
+            _pendingEventCount = 0;
             BootstrapState.Reset();
             ActiveInstance = null;
         }
@@ -177,7 +180,8 @@ namespace Hecton8.Bootstrap
                 return;
             }
 
-            while (!_pendingEvents.IsEmpty())
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : 12;
+            while (scanBudget > 0 && !_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
@@ -185,11 +189,17 @@ namespace Hecton8.Bootstrap
                 if (!_pendingEvents.TryDequeue(out SceneBootstrapEventPayload payload))
                     return;
 
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+                scanBudget--;
                 ISceneBootstrapEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                     rawArray[i].OnSceneBootstrapEvent(in payload);
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         public static bool TryResolveBootstrapFailureReason(uint errorHash, out string reason)
@@ -202,18 +212,28 @@ namespace Hecton8.Bootstrap
             if (!_pendingEvents.IsCreated)
             {
                 _pendingEvents = new NativeQueue<SceneBootstrapEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SceneBootstrapEventPayload>[12] - deferred bootstrap event lane flushed by SystemDispatcher LateUpdate - owner: SceneBootstrap
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    12,
+                    nameof(SceneBootstrap),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
             }
         }
 
         private static void RaiseGameReadyEvent()
         {
             EnsureEventQueueInitialized();
+            if (_pendingEventCount >= 12)
+                return;
+
             _pendingEvents.Enqueue(new SceneBootstrapEventPayload
             {
                 ErrorHash = 0u,
                 EventType = (ushort)SceneBootstrapEventType.GameReady,
                 Reserved = 0
             });
+            _pendingEventCount++;
         }
 
         private static void RaiseBootstrapFailedEvent(string error)
@@ -221,16 +241,20 @@ namespace Hecton8.Bootstrap
             uint errorHash = string.IsNullOrWhiteSpace(error)
                 ? 0u
                 : unchecked((uint)Hecton.Localization.LocHash.Compute(error));
+            EnsureEventQueueInitialized();
+            if (_pendingEventCount >= 12)
+                return;
+
             if (errorHash != 0u && !_failureReasonsByHash.ContainsKey(errorHash))
                 _failureReasonsByHash.Add(errorHash, error);
 
-            EnsureEventQueueInitialized();
             _pendingEvents.Enqueue(new SceneBootstrapEventPayload
             {
                 ErrorHash = errorHash,
                 EventType = (ushort)SceneBootstrapEventType.BootstrapFailed,
                 Reserved = 0
             });
+            _pendingEventCount++;
         }
 
         private static void DrainPendingEventsWithoutDispatch()
@@ -238,9 +262,19 @@ namespace Hecton8.Bootstrap
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out _))
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : 12;
+            while (scanBudget > 0 && !_pendingEvents.IsEmpty())
             {
+                if (!_pendingEvents.TryDequeue(out _))
+                    return;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+                scanBudget--;
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -321,6 +355,9 @@ namespace Hecton8.Bootstrap
                  "при загрузке сохранения (секунды). При превышении — Warning " +
                  "и активация anyway.")]
         [SerializeField] private float groundReadyTimeout = 15f;
+
+        [Tooltip("Layer mask for the save-load ground-ready raycast. Defaults to terrain, base modules, vehicles, voxel caves, and debris.")]
+        [SerializeField] private LayerMask groundReadyLayerMask = HectonLayerMasks.SeamProbeLayerMask;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — DEBUG
@@ -682,7 +719,7 @@ namespace Hecton8.Bootstrap
                 Log("  ✓ SystemDispatcher (awakened first)");
             }
 
-            if (ObjectPoolManager.Instance == null)
+            if (GlobalRegistry.ObjectPool == null)
             {
                 Debug.LogError("[SceneBootstrap] ObjectPoolManager NOT FOUND! " +
                     "Create a GameObject with ObjectPoolManager component.");
@@ -717,7 +754,7 @@ namespace Hecton8.Bootstrap
 
             // ── Некритические (Warning, не блокируют) ──
 
-            if (Hecton8.World.WorldStateManager.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.WorldState == null)
             {
                 Debug.LogWarning("[SceneBootstrap] WorldStateManager not found. " +
                     "Resource node persistence will be disabled.");
@@ -753,7 +790,7 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private async Awaitable WarmupPoolsAsync(CancellationToken ct)
         {
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null) return;
 
             int totalWarmed = 0;
@@ -813,44 +850,45 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private void StartWorldGeneration()
         {
-            var allBehaviours = FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Exclude);
+            GameObject temporaryWorldGenObject = null;
+            string temporaryWorldGenType = null;
 
-            MonoBehaviour productionWorldGen = null;
-            MonoBehaviour temporaryWorldGen = null;
-
-            for (int i = 0, len = allBehaviours.Length; i < len; i++)
+            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
+            if (mapMagicBridge != null && mapMagicBridge.IsAvailable)
             {
-                MonoBehaviour behaviour = allBehaviours[i];
-                string typeName = behaviour.GetType().Name;
-
-                if (typeName != "HectonWorldGenerator" &&
-                    typeName != "MapMagicObject" &&
-                    typeName != "MapMagic")
+                if (IsTemporaryRuntimeShellObject(mapMagicBridge.gameObject))
                 {
-                    continue;
+                    temporaryWorldGenObject = mapMagicBridge.gameObject;
+                    temporaryWorldGenType = nameof(MapMagicBridge);
                 }
-
-                if (IsTemporaryRuntimeShellObject(behaviour.gameObject))
+                else
                 {
-                    temporaryWorldGen ??= behaviour;
-                    continue;
+                    Log($"  Production world generator active: {mapMagicBridge.gameObject.name} " +
+                        $"({nameof(MapMagicBridge)})");
+                    return;
                 }
-
-                productionWorldGen = behaviour;
-                break;
             }
 
-            if (productionWorldGen != null)
+            global::HectonWorldGenerator legacyWorldGenerator = global::HectonWorldGenerator.ActiveRuntimeInstance;
+            if (legacyWorldGenerator != null)
             {
-                Log($"  Production world generator active: {productionWorldGen.gameObject.name} " +
-                    $"({productionWorldGen.GetType().Name})");
-                return;
+                if (IsTemporaryRuntimeShellObject(legacyWorldGenerator.gameObject))
+                {
+                    temporaryWorldGenObject ??= legacyWorldGenerator.gameObject;
+                    temporaryWorldGenType ??= nameof(HectonWorldGenerator);
+                }
+                else
+                {
+                    Log($"  Production world generator active: {legacyWorldGenerator.gameObject.name} " +
+                        $"({nameof(HectonWorldGenerator)})");
+                    return;
+                }
             }
 
-            if (temporaryWorldGen != null)
+            if (temporaryWorldGenObject != null)
             {
                 Log($"  Blocker: world generation exists only under temporary shell " +
-                    $"'{temporaryWorldGen.gameObject.name}' ({temporaryWorldGen.GetType().Name}). " +
+                    $"'{temporaryWorldGenObject.name}' ({temporaryWorldGenType}). " +
                     "Bootstrap will use static scene geometry until direct scene cleanup removes the shell.");
                 return;
             }
@@ -980,7 +1018,7 @@ namespace Hecton8.Bootstrap
 
             // Очистка состояния мира
             Hecton8.World.WorldStateManager wsm =
-                Hecton8.World.WorldStateManager.Instance;
+                Hecton8.Core.GlobalRegistry.WorldState;
             if (wsm != null)
                 wsm.ClearAll();
 
@@ -1113,7 +1151,16 @@ namespace Hecton8.Bootstrap
                 Vector3 rayOrigin = playerPos + Vector3.up * GroundCheckRayOffset;
                 Ray ray = new Ray(rayOrigin, Vector3.down);
 
-                if (UnityEngine.Physics.RaycastNonAlloc(ray, _groundCheckHits, GroundCheckRayLength) > 0)
+                int groundMask = groundReadyLayerMask.value != 0
+                    ? groundReadyLayerMask.value
+                    : HectonLayerMasks.SeamProbeLayerMask;
+
+                if (UnityEngine.Physics.RaycastNonAlloc(
+                        ray,
+                        _groundCheckHits,
+                        GroundCheckRayLength,
+                        groundMask,
+                        QueryTriggerInteraction.Ignore) > 0)
                 {
                     Log($"  Ground found after {elapsed:F1}s. Safe to activate.");
                     return;
@@ -1259,21 +1306,21 @@ namespace Hecton8.Bootstrap
         {
             Log("  Draining deferred asset releases before gameplay activation...");
 
-            AssetLifecycleGovernor governor = AssetLifecycleGovernor.Instance;
+            AssetLifecycleGovernor governor = Hecton8.Core.GlobalRegistry.AssetLifecycle;
             if (governor != null)
                 governor.ForceDrainPendingReleaseQueue();
 
             await Awaitable.NextFrameAsync(cancellationToken: ct);
             ct.ThrowIfCancellationRequested();
 
-            VRAMPressureMonitor pressureMonitor = VRAMPressureMonitor.Instance;
+            VRAMPressureMonitor pressureMonitor = Hecton8.Core.GlobalRegistry.VRAMPressure;
             if (pressureMonitor != null)
                 pressureMonitor.ForceImmediateSampleAndResponse();
 
             CaptureStartupMemorySnapshot();
 
             float totalVramMb = 0f;
-            VRAMMonitor vramMonitor = VRAMMonitor.Instance;
+            VRAMMonitor vramMonitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
             if (vramMonitor != null)
                 totalVramMb = vramMonitor.TotalVRAMBytes / BytesPerMegabyte;
 
@@ -1298,7 +1345,7 @@ namespace Hecton8.Bootstrap
 
         private async Awaitable<bool> WaitForResidentWorldPrefabPoolsReadyAsync(CancellationToken ct)
         {
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
             {
                 Fail("PersistentWorldRegistry missing. Resident world prefab pools cannot be verified.");
@@ -1513,12 +1560,12 @@ namespace Hecton8.Bootstrap
                     "is a temporary runtime shell. Ignoring it and searching for a production truth-path.";
             }
 
-            WorldProceduralScatterDirector[] allDirectors =
-                FindObjectsByType<WorldProceduralScatterDirector>(FindObjectsInactive.Exclude);
-
-            for (int i = 0, len = allDirectors.Length; i < len; i++)
+            int registeredDirectorCount = WorldProceduralScatterDirector.RegisteredDirectorCount;
+            for (int i = 0; i < registeredDirectorCount; i++)
             {
-                WorldProceduralScatterDirector candidate = allDirectors[i];
+                WorldProceduralScatterDirector candidate = WorldProceduralScatterDirector.GetRegisteredDirectorAt(i);
+                if (candidate == null)
+                    continue;
 
                 if (IsTemporaryRuntimeShellObject(candidate.gameObject))
                     continue;
@@ -1633,6 +1680,8 @@ namespace Hecton8.Bootstrap
             if (worldGenWaitTime   < 0f)  worldGenWaitTime   = 0f;
             if (bootstrapTimeout   < 1f)  bootstrapTimeout   = 1f;
             if (groundReadyTimeout < 1f)  groundReadyTimeout = 1f;
+            if (groundReadyLayerMask.value == 0)
+                groundReadyLayerMask = HectonLayerMasks.SeamProbeLayerMask;
         }
 #endif
     }

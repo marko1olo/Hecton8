@@ -447,7 +447,7 @@ namespace Hecton8.AI
                 _evaluationDueFlags[slot] = 1;
                 _nextEvaluationTimes[slot] = 0f;
                 _evaluationIntervals[slot] = CenterEvaluationIntervalSeconds;
-                _activeSlots.Add(slot);
+                _activeSlots.AddNoResize(slot);
                 return;
             }
 
@@ -710,15 +710,6 @@ namespace Hecton8.AI
 
         internal static void BeginDispatcherFrame(int frameId)
         {
-            if (_evaluationScheduled && _scheduledEvaluationHandle.IsCompleted)
-            {
-                _scheduledEvaluationHandle.Complete();
-                _scheduledSwarmHandle = default;
-                _scheduledEvaluationHandle = default;
-                _evaluationScheduled = false;
-                _lastEvaluatedFrame = _lastScheduledFrame;
-            }
-
             if (!_activeSlots.IsCreated)
                 return;
 
@@ -726,6 +717,19 @@ namespace Hecton8.AI
             ChemicalInfluenceGrid.BeginAiFrame(frameId);
             RefreshThreatVoxelSnapshot(frameId);
             RefreshChemicalGridSnapshot(frameId);
+        }
+
+        internal static void LateFrameTick()
+        {
+            if (!_evaluationScheduled)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _scheduledEvaluationHandle, false))
+                return;
+
+            _scheduledSwarmHandle = default;
+            _evaluationScheduled = false;
+            _lastEvaluatedFrame = _lastScheduledFrame;
         }
 
         internal static unsafe void ScheduleFrameEvaluation(int frameId)

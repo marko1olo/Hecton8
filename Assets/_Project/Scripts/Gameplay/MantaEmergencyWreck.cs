@@ -69,7 +69,7 @@ namespace Hecton8.Gameplay
                 if (!TryResolvePlayerTransform(deltaTime, out Transform playerTransform))
                     return;
 
-                ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+                ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
                 if (poolManager == null)
                     return;
 
@@ -440,7 +440,7 @@ namespace Hecton8.Gameplay
         private void DespawnSelf(bool preserveResidencySlot)
         {
             _preserveResidencyOnDespawn = preserveResidencySlot;
-            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
             if (poolManager != null)
             {
                 poolManager.Despawn(gameObject);
@@ -633,7 +633,7 @@ namespace Hecton8.Gameplay
             GameObject runtimeRoot = new GameObject("[MantaEmergencyWreckResidencyRuntime]"); // COLD ALLOC: GameObject[1] - emergency wreck dehydration runtime owner - owner: MantaEmergencyWreck
             s_residencyRuntime = runtimeRoot.AddComponent<ResidencyRuntime>();
             if (Application.isPlaying)
-                DontDestroyOnLoad(runtimeRoot);
+                GameBootstrapper.PersistRuntimeService(s_residencyRuntime);
         }
 
         private static void ReleaseResidencySlot(int slotIndex)

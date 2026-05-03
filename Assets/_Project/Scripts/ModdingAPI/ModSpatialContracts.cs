@@ -102,8 +102,8 @@ namespace Hecton8.Modding
 
     /// <summary>
     /// Fixed-size asynchronous response payload for AUP-backed mod queries.
-    /// Bytes 52..63 pack opcode-specific data. Flow responses store x/y in Payload0
-    /// and z in Payload1 using math.asuint(float).
+    /// Bytes 52..63 pack opcode-specific data. Flow responses store x/y/z as
+    /// math.asuint(float) in Payload.x/y/z.
     /// </summary>
     [StructLayout(LayoutKind.Sequential, Size = 64)]
     public struct ModAupResponse
@@ -126,11 +126,8 @@ namespace Hecton8.Modding
         /// <summary>AUP local offset echoed from the request.</summary>
         public float3 Local;
 
-        /// <summary>Opcode-specific packed payload. Flow: low32=x, high32=y.</summary>
-        public ulong Payload0;
-
-        /// <summary>Opcode-specific packed payload. Flow: low32=z, high32 reserved.</summary>
-        public uint Payload1;
+        /// <summary>Opcode-specific packed payload. Flow: x/y/z float bits.</summary>
+        public uint3 Payload;
     }
 
     /// <summary>

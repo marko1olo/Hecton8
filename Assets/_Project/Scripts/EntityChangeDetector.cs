@@ -37,6 +37,7 @@
 
 using System;
 using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -286,7 +287,7 @@ namespace Hecton8.Core
                 {
                     GameObject go = new GameObject("[EntityChangeManager]");
                     _instance = go.AddComponent<EntityChangeManager>();
-                    DontDestroyOnLoad(go);
+                    GameBootstrapper.PersistRuntimeService(_instance);
                 }
                 return _instance;
             }

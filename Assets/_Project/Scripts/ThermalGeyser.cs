@@ -267,7 +267,7 @@ namespace Hecton8.Caves
 
         private void EjectMineralBurst()
         {
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null || ejectedMineralItem == null)
                 return;
 

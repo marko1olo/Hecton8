@@ -44,6 +44,9 @@ namespace Hecton8.Editor
 
         static HectonComplianceValidator()
         {
+            if (!ShouldRunAutomaticValidation())
+                return;
+
             EditorApplication.delayCall -= ValidateAfterAssemblyReload;
             EditorApplication.delayCall += ValidateAfterAssemblyReload;
         }
@@ -51,6 +54,9 @@ namespace Hecton8.Editor
         [DidReloadScripts]
         private static void OnScriptsReloaded()
         {
+            if (!ShouldRunAutomaticValidation())
+                return;
+
             EditorApplication.delayCall -= ValidateAfterAssemblyReload;
             EditorApplication.delayCall += ValidateAfterAssemblyReload;
         }
@@ -71,6 +77,9 @@ namespace Hecton8.Editor
 
         private static void ValidateAfterAssemblyReload()
         {
+            if (!ShouldRunAutomaticValidation())
+                return;
+
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
             {
                 EditorApplication.delayCall -= ValidateAfterAssemblyReload;
@@ -108,6 +117,12 @@ namespace Hecton8.Editor
 
         private static void ContinueDeferredValidation()
         {
+            if (!ShouldRunAutomaticValidation())
+            {
+                s_deferredRun = null;
+                return;
+            }
+
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
             {
                 EditorApplication.delayCall -= ContinueDeferredValidation;
@@ -507,8 +522,20 @@ namespace Hecton8.Editor
 
         private static bool ShouldEnforceAsBuildGate()
         {
-            return UnityEngine.Application.isBatchMode ||
-                   string.Equals(global::System.Environment.GetEnvironmentVariable(EnforceEnvironmentVariable), "1", StringComparison.Ordinal);
+            return IsExplicitComplianceEnforcementEnabled();
+        }
+
+        private static bool ShouldRunAutomaticValidation()
+        {
+            return !UnityEngine.Application.isBatchMode || IsExplicitComplianceEnforcementEnabled();
+        }
+
+        private static bool IsExplicitComplianceEnforcementEnabled()
+        {
+            return string.Equals(
+                global::System.Environment.GetEnvironmentVariable(EnforceEnvironmentVariable),
+                "1",
+                StringComparison.Ordinal);
         }
 
         private static string[] GetRuntimeScriptPaths()

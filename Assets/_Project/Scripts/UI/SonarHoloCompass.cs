@@ -1,6 +1,7 @@
 using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Visor;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -15,7 +16,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Sonar Holo Compass")]
-    public sealed class SonarHoloCompass : MonoBehaviour, ITickable
+    public sealed class SonarHoloCompass : MonoBehaviour, ITickable, ILateFrameTickable, ISonarPingEventListener
     {
         private const int MaxDots = 16;
         private const int ProjectionBatchSize = 4;
@@ -107,6 +108,7 @@ namespace Hecton8.UI
         }
 
         private bool _registeredToTick;
+        private bool _registeredLateFrame;
         private bool _uiBuilt;
         private bool _projectionScheduled;
         private Canvas _targetCanvas;
@@ -139,7 +141,7 @@ namespace Hecton8.UI
             EnsureProjectionBuffers();
             ResolveOwners();
             EnsureUiBuilt();
-            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            SpectrumEvents.RegisterSonarPingListener(this);
             RegisterToTickManager();
         }
 
@@ -150,7 +152,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            SpectrumEvents.UnregisterSonarPingListener(this);
             UnregisterFromTickManager();
             HideDots();
             ApplyRootAlpha(0f);
@@ -158,7 +160,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            SpectrumEvents.UnregisterSonarPingListener(this);
             UnregisterFromTickManager();
             DisposeProjectionBuffers();
         }
@@ -174,14 +176,14 @@ namespace Hecton8.UI
 
             if (_canvasGroup == null || _root == null || _viewCamera == null)
             {
-                if (!TryCompleteProjectionIfScheduled())
+                if (_projectionScheduled)
                     return;
                 HideDots();
                 ApplyRootAlpha(0f);
                 return;
             }
 
-            if (!TryCompleteProjectionIfScheduled())
+            if (_projectionScheduled)
                 return;
 
             if (!(Hecton8.Core.GlobalRegistry.Audio is SpatialAudioManager audioManager))
@@ -202,9 +204,19 @@ namespace Hecton8.UI
             ScheduleProjection(emitterCount);
         }
 
+        public void LateFrameTick()
+        {
+            TryCompleteProjectionIfScheduled();
+        }
+
         private void HandleSonarPingSent(float intensity)
         {
             _pingPulse = Mathf.Max(_pingPulse, Mathf.Clamp01(intensity));
+        }
+
+        void ISonarPingEventListener.OnSonarPingSent(float intensity)
+        {
+            HandleSonarPingSent(intensity);
         }
 
         private void ResolveOwners()
@@ -238,6 +250,11 @@ namespace Hecton8.UI
                     MaxDots,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _projectionInputs,
+                    nameof(SonarHoloCompass),
+                    nameof(_projectionInputs),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (!_projectionOutputs.IsCreated)
@@ -246,6 +263,11 @@ namespace Hecton8.UI
                     MaxDots,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _projectionOutputs,
+                    nameof(SonarHoloCompass),
+                    nameof(_projectionOutputs),
+                    NativeAllocationLifetime.Scene);
             }
         }
 
@@ -253,10 +275,16 @@ namespace Hecton8.UI
         {
             JobHandle dependency = _projectionScheduled ? _projectionHandle : default;
             if (_projectionInputs.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_projectionInputs);
                 _projectionInputs.Dispose(dependency);
+            }
 
             if (_projectionOutputs.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_projectionOutputs);
                 _projectionOutputs.Dispose(dependency);
+            }
 
             _projectionInputs = default;
             _projectionOutputs = default;
@@ -399,10 +427,9 @@ namespace Hecton8.UI
             if (!_projectionScheduled)
                 return true;
 
-            if (!_projectionHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _projectionHandle, false))
                 return false;
 
-            _projectionHandle.Complete();
             _projectionScheduled = false;
             ApplyProjectedDots(_pendingProjectionCount);
             _pendingProjectionCount = 0;
@@ -490,15 +517,23 @@ namespace Hecton8.UI
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
             _registeredToTick = true;
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrame = true;
         }
 
         private void UnregisterFromTickManager()
         {
-            if (!_registeredToTick)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
-            _registeredToTick = false;
+            if (_registeredToTick)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+                _registeredToTick = false;
+            }
         }
 
         private static Canvas ResolveTargetCanvas()

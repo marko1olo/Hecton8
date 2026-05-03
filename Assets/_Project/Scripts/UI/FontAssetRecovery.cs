@@ -42,13 +42,49 @@ namespace Hecton8.UI
         };
 
 #if UNITY_EDITOR
+        private const string EditorAssetRepairCompletedSessionKey =
+            "Hecton8.FontAssetRecovery.EditorAssetRepairCompleted";
+        private const string FullSweepMenuPath = "Hecton8/UI/Repair TMP Font Assets (Full Sweep)";
+
         private static bool _editorAssetRepairCompleted;
+        private static bool _editorAssetRepairQueued;
 
         [InitializeOnLoadMethod]
         private static void BootstrapEditorAssetRepair()
         {
+            if (Application.isBatchMode)
+                return;
+
+            if (SessionState.GetBool(EditorAssetRepairCompletedSessionKey, false))
+                return;
+
+            QueueEditorAssetRepair();
+        }
+
+        private static void QueueEditorAssetRepair()
+        {
+            if (Application.isBatchMode)
+                return;
+
+            if (_editorAssetRepairQueued)
+                return;
+
+            _editorAssetRepairQueued = true;
             EditorApplication.delayCall -= RepairKnownAssetImports;
             EditorApplication.delayCall += RepairKnownAssetImports;
+        }
+
+        [MenuItem(FullSweepMenuPath)]
+        private static void RepairKnownAssetImportsFullSweep()
+        {
+            if (!CanRunEditorAssetRepair())
+            {
+                EditorApplication.delayCall -= RepairKnownAssetImportsFullSweep;
+                EditorApplication.delayCall += RepairKnownAssetImportsFullSweep;
+                return;
+            }
+
+            RepairKnownAssetImports(includeProjectWideSweep: true, ignoreSessionGate: true);
         }
 #endif
 
@@ -214,12 +250,28 @@ namespace Hecton8.UI
 #if UNITY_EDITOR
         private static void RepairKnownAssetImports()
         {
-            if (_editorAssetRepairCompleted)
+            RepairKnownAssetImports(includeProjectWideSweep: false, ignoreSessionGate: false);
+        }
+
+        private static void RepairKnownAssetImports(bool includeProjectWideSweep, bool ignoreSessionGate)
+        {
+            _editorAssetRepairQueued = false;
+            if (!ignoreSessionGate &&
+                (_editorAssetRepairCompleted ||
+                 SessionState.GetBool(EditorAssetRepairCompletedSessionKey, false)))
                 return;
+
+            if (!CanRunEditorAssetRepair())
+            {
+                QueueEditorAssetRepair();
+                return;
+            }
 
             _editorAssetRepairCompleted = true;
             bool assetsChanged = false;
-            assetsChanged |= DisableProjectDynamicClearDataOnBuild();
+            assetsChanged |= includeProjectWideSweep
+                ? DisableProjectDynamicClearDataOnBuild()
+                : DisableKnownDynamicClearDataOnBuild();
 
             for (int pathIndex = 0; pathIndex < _knownFontAssetPaths.Length; pathIndex++)
             {
@@ -232,6 +284,15 @@ namespace Hecton8.UI
 
             if (assetsChanged)
                 AssetDatabase.SaveAssets();
+
+            SessionState.SetBool(EditorAssetRepairCompletedSessionKey, true);
+        }
+
+        private static bool CanRunEditorAssetRepair()
+        {
+            return !Application.isBatchMode &&
+                   !EditorApplication.isCompiling &&
+                   !EditorApplication.isUpdating;
         }
 
         private static bool RepairAssetBackedFont(TMP_FontAsset fontAsset)
@@ -324,6 +385,19 @@ namespace Hecton8.UI
                     continue;
 
                 if (SetClearDynamicDataOnBuild(fontAsset, false))
+                    assetsChanged = true;
+            }
+
+            return assetsChanged;
+        }
+
+        private static bool DisableKnownDynamicClearDataOnBuild()
+        {
+            bool assetsChanged = false;
+            for (int pathIndex = 0; pathIndex < _knownFontAssetPaths.Length; pathIndex++)
+            {
+                TMP_FontAsset fontAsset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(_knownFontAssetPaths[pathIndex]);
+                if (fontAsset != null && SetClearDynamicDataOnBuild(fontAsset, false))
                     assetsChanged = true;
             }
 

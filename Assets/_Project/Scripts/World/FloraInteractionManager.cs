@@ -1650,7 +1650,8 @@ namespace Hecton8.World
             if (surfaceBounds.size.sqrMagnitude <= 0.0001f || !surfaceBounds.Contains(positionWS))
                 return false;
 
-            float waterLevel = HectonFluidEngine.Instance != null ? HectonFluidEngine.Instance.WaterLevel : DefaultVegetationWaterLevel;
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            float waterLevel = fluidEngine != null ? fluidEngine.WaterLevel : DefaultVegetationWaterLevel;
             return positionWS.y <= waterLevel - 0.25f;
         }
 
@@ -1738,7 +1739,7 @@ namespace Hecton8.World
             float lightFactor = underwaterVisuals != null ? underwaterVisuals.CurrentLightFactor : 1f;
             float turbidity = underwaterVisuals != null ? underwaterVisuals.CurrentTurbidity : 0f;
 
-            HectonFluidEngine fluidEngine = HectonFluidEngine.Instance;
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
             float waterLevel = fluidEngine != null ? fluidEngine.WaterLevel : DefaultVegetationWaterLevel;
             Vector3 currentVector = ResolveGlobalOceanFlow(samplePositionWS, fluidEngine);
             float currentStrength = currentVector.magnitude;
@@ -2179,9 +2180,6 @@ namespace Hecton8.World
         private void RefreshModuleParasiteState(float deltaTime)
         {
             if (_parasiteGrowthScheduled)
-                CompleteHeadlessParasiteSimulation(force: false);
-
-            if (_parasiteGrowthScheduled)
                 return;
 
             _moduleParasiteScanTimer -= deltaTime;
@@ -2263,8 +2261,8 @@ namespace Hecton8.World
 
         private void EvaluateThermophilicModuleGrowth(float scanDeltaTime)
         {
-            IReadOnlyList<BaseModule> activeModules = BaseModule.ActiveModules;
-            if (activeModules == null || activeModules.Count == 0)
+            int activeModuleCount = BaseModule.ActiveModuleCount;
+            if (activeModuleCount == 0)
             {
                 _thermophileDwellSeconds.Clear();
                 return;
@@ -2292,9 +2290,9 @@ namespace Hecton8.World
             float validationRadiusSq = _thermophileReactorValidationRadius * _thermophileReactorValidationRadius;
             float thresholdTemperature = template.ThermalActivationTemperatureCelsius;
             float dwellThresholdSeconds = template.ThermalActivationDwellSeconds;
-            for (int i = 0; i < activeModules.Count; i++)
+            for (int i = 0; i < activeModuleCount; i++)
             {
-                BaseModule module = activeModules[i];
+                BaseModule module = BaseModule.GetActiveModuleAt(i);
                 if (module == null || !module.isActiveAndEnabled || !module.TryGetHostedBioReactor(out BioReactor reactor) || reactor == null)
                 {
                     _thermophileDwellSeconds.Remove(module);
@@ -2467,10 +2465,9 @@ namespace Hecton8.World
             if (!_parasiteGrowthScheduled)
                 return;
 
-            if (!force && !_parasiteGrowthHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _parasiteGrowthHandle, force))
                 return;
 
-            _parasiteGrowthHandle.Complete();
             _parasiteGrowthScheduled = false;
             ApplyHeadlessParasiteStateFromNodes();
         }
@@ -2790,7 +2787,7 @@ namespace Hecton8.World
 
         private double ResolveParasiteScaleGrowthSecondsDouble()
         {
-            HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
+            HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
             double daySeconds = atmosphereManager != null
                 ? Mathf.Max(1f, atmosphereManager.CycleDuration)
                 : DefaultInGameDaySeconds;
@@ -2824,14 +2821,10 @@ namespace Hecton8.World
             if (moduleRuntimeId == 0)
                 return null;
 
-            IReadOnlyList<BaseModule> activeModules = BaseModule.ActiveModules;
-            if (activeModules == null)
-                return null;
-
-            int count = activeModules.Count;
+            int count = BaseModule.ActiveModuleCount;
             for (int i = 0; i < count; i++)
             {
-                BaseModule module = activeModules[i];
+                BaseModule module = BaseModule.GetActiveModuleAt(i);
                 if (module == null)
                     continue;
 
@@ -3213,6 +3206,9 @@ namespace Hecton8.World
                     continue;
                 }
 
+                if (registeredHandles.Length >= registeredHandles.Capacity)
+                    break;
+
                 Vector3 positionWS = ExtractTranslation(matrices[i]);
                 int handle = spatialHash.Register(
                     AbsoluteUniversePosition.FromRuntimePosition(positionWS),
@@ -3220,7 +3216,8 @@ namespace Hecton8.World
                     ReactiveFloraKindMask,
                     0u,
                     i);
-                registeredHandles.Add(handle);
+                if (handle > 0)
+                    registeredHandles.AddNoResize(handle);
             }
 
             if (underwater)
@@ -4426,19 +4423,19 @@ namespace Hecton8.World
             if (!_isRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _isRegistered = true;
+                _isRegistered = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_isSlowTickRegistered)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _isSlowTickRegistered = true;
+                _isSlowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
             }
 
             if (!_isLateFrameRegistered)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _isLateFrameRegistered = true;
+                _isLateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
         }
 

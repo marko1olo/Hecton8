@@ -152,7 +152,7 @@ namespace Hecton8.Gameplay
             if (_inventory != null)
                 return _inventory;
 
-            _inventory = PlayerInventory.Instance;
+            _inventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
             return _inventory;
         }
 

@@ -310,7 +310,7 @@ namespace Hecton8.Gameplay
             Vector2 offset2D = Random.insideUnitCircle * lootScatterRadius;
             Vector3 spawnPos = hitPoint + new Vector3(offset2D.x, 0.1f, offset2D.y);
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
             {
                 if (!_poolMissingLogged)

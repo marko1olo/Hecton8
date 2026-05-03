@@ -62,6 +62,7 @@ public interface IModuleStatusEventListener
 public static class ModuleStatusEvents
 {
     private const int ListenerCapacity = 16;
+    private const int PendingEventCapacity = 128;
     private const int ReferenceSlotCapacity = 128;
     private const ushort FloodedStatusBit = (ushort)(1 << 0);
     private const ushort BreachedStatusBit = (ushort)(1 << 1);
@@ -89,17 +90,19 @@ public static class ModuleStatusEvents
     private static NativeQueue<ModuleStatusEventPayload> _pendingEvents;
     private static int _referenceWriteIndex;
     private static int _referencePendingCount;
+    private static int _pendingEventCount;
 
     /// <summary>
     /// Pending payload count in the native event lane.
     /// </summary>
-    public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+    public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStaticState()
     {
         if (_pendingEvents.IsCreated)
         {
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(ModuleStatusEvents), nameof(_pendingEvents));
             _pendingEvents.Dispose();
             _pendingEvents = default;
         }
@@ -108,6 +111,7 @@ public static class ModuleStatusEvents
         ClearReferenceSlots();
         _referenceWriteIndex = 0;
         _referencePendingCount = 0;
+        _pendingEventCount = 0;
     }
 
     /// <summary>
@@ -149,13 +153,17 @@ public static class ModuleStatusEvents
             return;
         }
 
-        while (!_pendingEvents.IsEmpty())
+        int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+        while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
         {
             if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                 return;
 
             if (!_pendingEvents.TryDequeue(out ModuleStatusEventPayload payload))
-                return;
+                break;
+
+            if (_pendingEventCount > 0)
+                _pendingEventCount--;
 
             IModuleStatusEventListener[] rawArray = _listeners.RawArray;
             int count = _listeners.Count;
@@ -164,6 +172,9 @@ public static class ModuleStatusEvents
 
             ReleaseReferenceSlot(payload.ReferenceSlot);
         }
+
+        if (_pendingEvents.IsEmpty())
+            _pendingEventCount = 0;
     }
 
     /// <summary>
@@ -224,13 +235,28 @@ public static class ModuleStatusEvents
     private static void EnsureInitialized()
     {
         if (!_pendingEvents.IsCreated)
+        {
             _pendingEvents = new NativeQueue<ModuleStatusEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModuleStatusEventPayload>[128] - deferred module status event lane flushed by SystemDispatcher LateUpdate - owner: ModuleStatusEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(ModuleStatusEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
     }
 
     private static void Enqueue(in ModuleStatusEventPayload payload)
     {
         EnsureInitialized();
+        if (_pendingEventCount >= PendingEventCapacity)
+        {
+            ReleaseReferenceSlot(payload.ReferenceSlot);
+            return;
+        }
+
         _pendingEvents.Enqueue(payload);
+        _pendingEventCount++;
     }
 
     private static bool TryReserveReferenceSlot(out int referenceSlot)
@@ -282,8 +308,23 @@ public static class ModuleStatusEvents
         if (!_pendingEvents.IsCreated)
             return;
 
-        while (_pendingEvents.TryDequeue(out ModuleStatusEventPayload payload))
+        int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+        while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+        {
+            if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                return;
+
+            if (!_pendingEvents.TryDequeue(out ModuleStatusEventPayload payload))
+                break;
+
+            if (_pendingEventCount > 0)
+                _pendingEventCount--;
+
             ReleaseReferenceSlot(payload.ReferenceSlot);
+        }
+
+        if (_pendingEvents.IsEmpty())
+            _pendingEventCount = 0;
     }
 
     private static void ClearReferenceSlots()

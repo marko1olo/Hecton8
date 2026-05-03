@@ -23,7 +23,7 @@ namespace Hecton8.Inventory
     using UnityEngine;
 
     [DisallowMultipleComponent]
-    public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable
+    public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, IPhysicsImpactEventListener
     {
         private const ushort CraftingLockedMask = ItemRuntimeStateFlags.CraftingLocked;
         private const ushort RadioactiveItemStateMask = ItemRuntimeStateFlags.Radioactive;
@@ -61,17 +61,6 @@ namespace Hecton8.Inventory
                     return packedKeyCompare;
 
                 return OriginalIndex.CompareTo(other.OriginalIndex);
-            }
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct InventorySortJob : IJob
-        {
-            public NativeArray<InventorySortEntry> Entries;
-
-            public void Execute()
-            {
-                NativeSortExtension.Sort(Entries);
             }
         }
 
@@ -591,13 +580,13 @@ namespace Hecton8.Inventory
         {
             GlobalRegistry.Save?.Register(this);
             TryRegisterSlowTick();
-            PhysicsEvents.OnImpact += HandlePhysicsImpact;
+            PhysicsEvents.Register(this);
             ResolvePlayerImpactBodyId();
         }
 
         private void OnDisable()
         {
-            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
+            PhysicsEvents.Unregister(this);
             GlobalRegistry.Save?.Unregister(this);
             TryUnregisterSlowTick();
         }
@@ -1286,15 +1275,14 @@ namespace Hecton8.Inventory
             for (int i = 0; i < count; i++)
                 _sortEntriesNative[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
 
-            // COLD SYNC JOB: inventory sort is explicit user action outside gameplay hot paths.
-            JobHandle handle = new InventoryRadixSortJob
+            // ZERO-GC SYNC JOB: inventory sort is explicit user action outside gameplay hot paths.
+            new InventoryRadixSortJob
             {
                 Entries = _sortEntriesNative,
                 Scratch = _sortScratchNative,
                 Counts = _sortRadixCounts,
                 Count = count
-            }.Schedule();
-            handle.Complete();
+            }.Run();
 
             for (int i = 0; i < count; i++)
                 _sortedPlacements[i] = _sortBuffer[_sortEntriesNative[i].OriginalIndex];
@@ -1547,6 +1535,9 @@ namespace Hecton8.Inventory
             {
                 NotifyInventoryChanged();
             }
+
+            if (!allAdded)
+                InventoryEvents.NotifyInventoryFull(itemHashId);
 
             return allAdded;
         }
@@ -1846,6 +1837,7 @@ namespace Hecton8.Inventory
             RefreshDerivedMassAndSurvivalLoad();
             PublishEncumbranceChanged();
             InventoryVersion++;
+            InventoryEvents.NotifyInventoryChanged();
             InventoryChanged?.Invoke();
         }
 
@@ -1935,8 +1927,8 @@ namespace Hecton8.Inventory
             }
             else
             {
-                // COLD SYNC JOB: inventory-derived carry totals refresh only on authored inventory mutation.
-                JobHandle handle = new InventoryMassVolumeJob
+                // ZERO-GC SYNC JOB: inventory-derived carry totals refresh only on authored inventory mutation.
+                new InventoryMassVolumeJob
                 {
                     AnchorHashIds = _grid.AnchorHashIds,
                     StackCounts = _stackCounts,
@@ -1944,8 +1936,7 @@ namespace Hecton8.Inventory
                     AnchorUnitVolumeM3 = _anchorUnitVolumeM3,
                     AnchorUnitRadiationSv = _anchorUnitRadiationSv,
                     Totals = _derivedMassVolumeScratch
-                }.Schedule();
-                handle.Complete();
+                }.Run();
 
                 float3 totals = _derivedMassVolumeScratch[0];
                 TotalMassKg = totals.x;
@@ -2353,7 +2344,12 @@ namespace Hecton8.Inventory
             _playerImpactBodyId = playerBody != null ? EntityId.ToULong(playerBody.GetEntityId()) : 0ul;
         }
 
-        private void HandlePhysicsImpact(PhysicsImpactSignal impactSignal)
+        void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
+        {
+            HandlePhysicsImpact(in impactSignal);
+        }
+
+        private void HandlePhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
             ResolvePlayerImpactBodyId();
             if (_playerImpactBodyId == 0ul ||

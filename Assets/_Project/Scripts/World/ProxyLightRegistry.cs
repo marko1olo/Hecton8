@@ -99,6 +99,7 @@ namespace Hecton8.World
             Shutdown();
             _lightsByKey = new NativeParallelHashMap<int, ProxyLightData>(MaxProxyLights, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<int,ProxyLightData>[128] - proxy light registry storage - owner: ProxyLightRegistry
             _keys = new NativeArray<int>(MaxProxyLights, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[128] - proxy light key iteration buffer - owner: ProxyLightRegistry
+            NativeMemorySentinel.RegisterNativeParallelHashMap(_lightsByKey, nameof(ProxyLightRegistry), nameof(_lightsByKey), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_keys, nameof(ProxyLightRegistry), nameof(_keys), NativeAllocationLifetime.Session);
             _keyCount = 0;
         }
@@ -214,7 +215,10 @@ namespace Hecton8.World
         public static void Shutdown()
         {
             if (_lightsByKey.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(ProxyLightRegistry), nameof(_lightsByKey));
                 _lightsByKey.Dispose();
+            }
 
             if (_keys.IsCreated)
             {

@@ -125,14 +125,6 @@ namespace Hecton8.Core
             if (_instance != this)
                 return;
 
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
-
             _isInitialized = true;
             TryRegisterUpdatable();
             TryRegisterService();

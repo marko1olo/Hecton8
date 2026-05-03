@@ -5,12 +5,21 @@ using Unity.Profiling;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Hecton8.AI;
+using Hecton8.Atmosphere;
+using Hecton8.Audio;
 using Hecton8.Bootstrap;
+using Hecton8.Celestial;
+using Hecton8.Construction;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
 using Hecton8.Narrative;
+using Hecton8.Physics;
+using Hecton8.Power;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
+using Hecton8.Systems.AI;
+using Hecton8.Visor;
 using Hecton8.World;
 
 namespace Hecton8.Core
@@ -51,28 +60,62 @@ namespace Hecton8.Core
         private static readonly ProfilerMarker _dispatcherRaycastScheduleProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Schedule");
         private static readonly ProfilerMarker _dispatcherRaycastCompleteProfilerMarker = new ProfilerMarker("H8.Dispatcher.Raycast.Complete");
         private static readonly uint _ThreadSafeCommandQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ThreadSafeCommandQueue"));
+        private static readonly uint _StorageReservationCommitResolvedQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ThreadSafeCommandQueue.StorageReservationCommit"));
+        private static readonly uint _ModCommandDispatcherQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ModCommandDispatcher"));
+        private static readonly uint _ModRegistryEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ModRegistryEvents"));
+        private static readonly uint _BootstrapEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("BootstrapEvents"));
+        private static readonly uint _LocalizationEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("LocalizationEvents"));
         private static readonly uint _NarrativeEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("NarrativeEvents"));
         private static readonly uint _InteractionEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("InteractionEvents"));
         private static readonly uint _CraftingEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CraftingEvents"));
         private static readonly uint _ScanEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ScanEvents"));
         private static readonly uint _SaveEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SaveEvents"));
         private static readonly uint _QuestEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("QuestEvents"));
+        private static readonly uint _FirstHourEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("FirstHourEvents"));
+        private static readonly uint _EndingEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EndingEvents"));
         private static readonly uint _AudioLogEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AudioLogEvents"));
+        private static readonly uint _AtmosphereEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AtmosphereEvents"));
+        private static readonly uint _HighPressureEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HighPressureEvents"));
+        private static readonly uint _FatalPressureImplosionEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("FatalPressureImplosionEvents"));
+        private static readonly uint _CelestialEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CelestialEvents"));
+        private static readonly uint _EclipseGameplayEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EclipseGameplayEvents"));
+        private static readonly uint _AcousticZoneEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AcousticZoneEvents"));
+        private static readonly uint _PhysicsEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PhysicsEventBus"));
+        private static readonly uint _FluidFeedbackEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("FluidFeedbackEvents"));
+        private static readonly uint _RepairDroneTorchAcousticEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("RepairDroneTorchAcousticEvents"));
+        private static readonly uint _ElectrolysisAcousticEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ElectrolysisAcousticEvents"));
+        private static readonly uint _AudioCaptionEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AudioCaptionEvents"));
+        private static readonly uint _SpectrumEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SpectrumEvents"));
+        private static readonly uint _ProceduralAudioEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents"));
         private static readonly uint _SubmarineOsEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SubmarineOsEvents"));
         private static readonly uint _FlashlightEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("FlashlightEvents"));
+        private static readonly uint _LaserCutterEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("LaserCutterEvents"));
+        private static readonly uint _PlayerSignalEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PlayerSignalEvents"));
+        private static readonly uint _MapMagicBiomeEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("MapMagicBiomeEvents"));
+        private static readonly uint _BiomeMatrixEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("BiomeMatrixEvents"));
+        private static readonly uint _DirectorAIEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DirectorAIEvents"));
+        private static readonly uint _HectonDroneFleetEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("HectonDroneFleetEvents"));
         private static readonly uint _WeatherEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("WeatherEvents"));
+        private static readonly uint _RandomEventEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("RandomEventEvents"));
+        private static readonly uint _PowerGridTelemetryEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PowerGridTelemetryEvents"));
         private static readonly uint _ModuleStatusEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ModuleStatusEvents"));
         private static readonly uint _DepthZoneEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("DepthZoneEvents"));
         private static readonly uint _SoundscapeEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SoundscapeEvents"));
         private static readonly uint _EmergencyRelayEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EmergencyRelayEvents"));
         private static readonly uint _SargassumEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SargassumEvents"));
         private static readonly uint _AtlasSignalEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("AtlasSignalEvents"));
+        private static readonly uint _InventoryEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("InventoryEvents"));
+        private static readonly uint _PlayerExpressionEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PlayerExpressionEvents"));
+        private static readonly uint _BaseIntegrityEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("BaseIntegrityEvents"));
         private static readonly uint _NotificationEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("NotificationEvents"));
+        private static readonly uint _PdaIntrusionEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PDAIntrusionEvents"));
         private static readonly uint _PdaEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PDAEvents"));
         private static readonly uint _SceneBootstrapEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SceneBootstrapEvents"));
         private static readonly uint _ObjectPoolDiagnosticsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ObjectPoolDiagnostics"));
+        private static readonly uint _PerformanceEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PerformanceEvents"));
         private static readonly uint _Atlas6EventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Atlas6Events"));
         private static readonly uint _RegistryEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("RegistryEvents"));
+        private static readonly uint _LateFrameTickablesQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SystemDispatcher.LateFrameTickables"));
         private static readonly uint _LateFrameBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SystemDispatcher.LateFrameEventBudget"));
         private static readonly ProfilerMarker[] _updateLaneProfilerMarkers =
         {
@@ -154,6 +197,12 @@ namespace Hecton8.Core
         private static bool _lateFrameCircuitBreakerTripped;
         private static uint _activeLateFrameEventLaneHash;
         private static uint _dominantLateFrameCircuitBreakerLaneHash;
+
+        internal static float CurrentFrameDeltaTime { get; private set; }
+
+        internal static float CurrentFrameUnscaledDeltaTime { get; private set; }
+
+        internal static SystemDispatcher ActiveRuntimeInstance { get; private set; }
         private static ushort _dominantLateFrameCircuitBreakerLaneCount;
         private static float _nextCircuitBreakerLogTime;
         private static float _nextAupNanInquisitorLogTime;
@@ -211,6 +260,7 @@ namespace Hecton8.Core
             _temporalCompressionActive = false;
             _temporalCompressionFrameCount = 0;
             _pdaOverBudgetConsecutiveFrames = 0;
+            ActiveRuntimeInstance = null;
         }
 
         internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
@@ -288,15 +338,18 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Update owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Register(IUpdatable item, PriorityLayer layer)
+        internal static bool Register(IUpdatable item, PriorityLayer layer)
         {
             if (item == null)
-                return;
+                return false;
+
+            if (!GetLane(layer).TryRegister(item))
+                return false;
 
             if (item is IFoveatedSimulationTarget foveatedTarget)
                 _foveatedSimulationManager.RegisterTarget(foveatedTarget);
 
-            GetLane(layer).Register(item);
+            return true;
         }
 
         /// <summary>
@@ -304,12 +357,12 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Fixed-update owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Register(IFixedTickable item, PriorityLayer layer)
+        internal static bool Register(IFixedTickable item, PriorityLayer layer)
         {
             if (item == null)
-                return;
+                return false;
 
-            GetFixedLane(layer).Register(item);
+            return GetFixedLane(layer).TryRegister(item);
         }
 
         /// <summary>
@@ -317,12 +370,12 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Slow-tick owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Register(ISlowTickable item, PriorityLayer layer)
+        internal static bool Register(ISlowTickable item, PriorityLayer layer)
         {
             if (item == null)
-                return;
+                return false;
 
-            GetSlowLane(layer).Register(item);
+            return GetSlowLane(layer).TryRegister(item);
         }
 
         /// <summary>
@@ -330,12 +383,12 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Late-frame owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Register(ILateFrameTickable item, PriorityLayer layer)
+        internal static bool Register(ILateFrameTickable item, PriorityLayer layer)
         {
             if (item == null)
-                return;
+                return false;
 
-            GetLateFrameLane(layer).Register(item);
+            return GetLateFrameLane(layer).TryRegister(item);
         }
 
         /// <summary>
@@ -343,12 +396,12 @@ namespace Hecton8.Core
         /// </summary>
         /// <param name="item">Post-fixed owner.</param>
         /// <param name="layer">Priority lane.</param>
-        internal static void Register(IPostFixedTickable item, PriorityLayer layer)
+        internal static bool Register(IPostFixedTickable item, PriorityLayer layer)
         {
             if (item == null)
-                return;
+                return false;
 
-            GetPostFixedLane(layer).Register(item);
+            return GetPostFixedLane(layer).TryRegister(item);
         }
 
         /// <summary>
@@ -438,12 +491,18 @@ namespace Hecton8.Core
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             _slowTickAccumulator = 0f;
             _fixedStepAccumulator = 0f;
         }
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Dispatcher, this))
             {
                 DisposeDispatcherRaycastBuffers();
@@ -479,6 +538,8 @@ namespace Hecton8.Core
                     BootstrapBiosErrorOverlay.Show(BootstrapStatus.SafeHaltDisplayMessage);
 
                 float deltaTime = Time.deltaTime;
+                CurrentFrameDeltaTime = deltaTime;
+                CurrentFrameUnscaledDeltaTime = Time.unscaledDeltaTime;
                 long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
                 _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
                 EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
@@ -515,7 +576,7 @@ namespace Hecton8.Core
 
                 PredatorCognitionDomain.ScheduleFrameEvaluation(Time.frameCount);
                 _foveatedSimulationManager.ScheduleFrameJobs();
-                RunFixedStepAccumulator(Time.unscaledDeltaTime, blockGameplayLanes);
+                RunFixedStepAccumulator(CurrentFrameUnscaledDeltaTime, blockGameplayLanes);
                 RunSlowTick(deltaTime, blockGameplayLanes);
                 ScheduleDispatcherRaycasts();
             }
@@ -523,24 +584,42 @@ namespace Hecton8.Core
 
         private void LateUpdate()
         {
-            CompleteDispatcherRaycasts();
-            long completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
-            CompleteFoveatedFrameJobs();
-            using (_lateFrameProfilerMarker.Auto())
+            long completeDispatcherTimestamp = 0L;
+            bool dispatcherPhaseTimingStarted = false;
+            try
             {
-                for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+            DispatcherJobSwap.BeginLateFrameSwapWindow();
+            try
+            {
+                CompleteDispatcherRaycasts();
+                completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
+                dispatcherPhaseTimingStarted = true;
+                CompleteFoveatedFrameJobs();
+                BeginLateFrameEventBudget();
+                SetActiveLateFrameEventLane(_LateFrameTickablesQueueHash);
+                using (_lateFrameProfilerMarker.Auto())
                 {
-                    RegistryBucket<ILateFrameTickable> lane = _lateFramePriorityLanes[laneIndex];
+                    for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                    {
+                        RegistryBucket<ILateFrameTickable> lane = _lateFramePriorityLanes[laneIndex];
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    lane.ValidateNoDestroyedEntriesDebug(nameof(ILateFrameTickable));
+                        lane.ValidateNoDestroyedEntriesDebug(nameof(ILateFrameTickable));
 #endif
-                    ILateFrameTickable[] rawArray = lane.RawArray;
-                    int count = lane.Count;
-                    for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
-                        rawArray[itemIndex].LateFrameTick();
+                        ILateFrameTickable[] rawArray = lane.RawArray;
+                        int count = lane.Count;
+                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                            rawArray[itemIndex].LateFrameTick();
+                    }
                 }
+                AcousticOcclusionUtility.LateFrameTick();
+                PredatorCognitionDomain.LateFrameTick();
+                VoxelDynamicNavGridRuntime.CompletePendingDynamicObstacleUpdates();
             }
-            BeginLateFrameEventBudget();
+            finally
+            {
+                DispatcherJobSwap.EndLateFrameSwapWindow();
+            }
+
             using (_lateFrameCommandQueueDrainProfilerMarker.Auto())
             {
                 SetActiveLateFrameEventLane(_ThreadSafeCommandQueueHash);
@@ -548,7 +627,21 @@ namespace Hecton8.Core
                 if (!ThreadSafeCommandQueue.DrainMainThread())
                     MarkLateFrameEventDispatchDeferred();
             }
+            SetActiveLateFrameEventLane(_StorageReservationCommitResolvedQueueHash);
+            ReportLateFrameQueueDepth(_StorageReservationCommitResolvedQueueHash, ThreadSafeCommandQueue.PendingStorageReservationCommitResolvedCount);
+            if (!ThreadSafeCommandQueue.FlushStorageReservationCommitResolvedEvents())
+                MarkLateFrameEventDispatchDeferred();
+            SetActiveLateFrameEventLane(_ModCommandDispatcherQueueHash);
             Hecton8.Modding.ModCommandDispatcher.DrainLateFrame();
+            SetActiveLateFrameEventLane(_ModRegistryEventsQueueHash);
+            ReportLateFrameQueueDepth(_ModRegistryEventsQueueHash, Hecton8.Modding.ModRegistryEvents.PendingCount);
+            Hecton8.Modding.ModRegistryEvents.FlushPending();
+            SetActiveLateFrameEventLane(_BootstrapEventsQueueHash);
+            ReportLateFrameQueueDepth(_BootstrapEventsQueueHash, BootstrapEvents.PendingCount);
+            BootstrapEvents.FlushPending();
+            SetActiveLateFrameEventLane(_LocalizationEventsQueueHash);
+            ReportLateFrameQueueDepth(_LocalizationEventsQueueHash, Hecton.Localization.LocalizationEvents.PendingCount);
+            Hecton.Localization.LocalizationEvents.FlushPending();
             SetActiveLateFrameEventLane(_NarrativeEventsQueueHash);
             ReportLateFrameQueueDepth(_NarrativeEventsQueueHash, NarrativeEvents.PendingCount);
             NarrativeEvents.FlushPending();
@@ -567,18 +660,87 @@ namespace Hecton8.Core
             SetActiveLateFrameEventLane(_QuestEventsQueueHash);
             ReportLateFrameQueueDepth(_QuestEventsQueueHash, QuestEvents.PendingCount);
             QuestEvents.FlushPending();
+            SetActiveLateFrameEventLane(_FirstHourEventsQueueHash);
+            ReportLateFrameQueueDepth(_FirstHourEventsQueueHash, FirstHourEvents.PendingCount);
+            FirstHourEvents.FlushPending();
+            SetActiveLateFrameEventLane(_EndingEventsQueueHash);
+            ReportLateFrameQueueDepth(_EndingEventsQueueHash, EndingEvents.PendingCount);
+            EndingEvents.FlushPending();
             SetActiveLateFrameEventLane(_AudioLogEventsQueueHash);
             ReportLateFrameQueueDepth(_AudioLogEventsQueueHash, AudioLogEvents.PendingCount);
             AudioLogEvents.FlushPending();
+            SetActiveLateFrameEventLane(_AtmosphereEventsQueueHash);
+            ReportLateFrameQueueDepth(_AtmosphereEventsQueueHash, AtmosphereEvents.PendingCount);
+            AtmosphereEvents.FlushPending();
+            SetActiveLateFrameEventLane(_HighPressureEventsQueueHash);
+            ReportLateFrameQueueDepth(_HighPressureEventsQueueHash, HighPressureEvents.PendingCount);
+            HighPressureEvents.FlushPending();
+            SetActiveLateFrameEventLane(_FatalPressureImplosionEventsQueueHash);
+            ReportLateFrameQueueDepth(_FatalPressureImplosionEventsQueueHash, FatalPressureImplosionEvents.PendingCount);
+            FatalPressureImplosionEvents.FlushPending();
+            SetActiveLateFrameEventLane(_CelestialEventsQueueHash);
+            ReportLateFrameQueueDepth(_CelestialEventsQueueHash, CelestialEvents.PendingCount);
+            CelestialEvents.FlushPending();
+            SetActiveLateFrameEventLane(_EclipseGameplayEventsQueueHash);
+            ReportLateFrameQueueDepth(_EclipseGameplayEventsQueueHash, EclipseGameplayEvents.PendingCount);
+            EclipseGameplayEvents.FlushPending();
+            SetActiveLateFrameEventLane(_AcousticZoneEventsQueueHash);
+            ReportLateFrameQueueDepth(_AcousticZoneEventsQueueHash, AcousticZoneEvents.PendingCount);
+            AcousticZoneEvents.FlushPending();
+            SetActiveLateFrameEventLane(_PhysicsEventsQueueHash);
+            ReportLateFrameQueueDepth(_PhysicsEventsQueueHash, PhysicsEventBus.PendingCount);
+            PhysicsEventBus.FlushPending();
+            SetActiveLateFrameEventLane(_FluidFeedbackEventsQueueHash);
+            ReportLateFrameQueueDepth(_FluidFeedbackEventsQueueHash, FluidFeedbackEvents.PendingCount);
+            FluidFeedbackEvents.FlushPending();
+            SetActiveLateFrameEventLane(_RepairDroneTorchAcousticEventsQueueHash);
+            ReportLateFrameQueueDepth(_RepairDroneTorchAcousticEventsQueueHash, RepairDroneTorchAcousticEvents.PendingCount);
+            RepairDroneTorchAcousticEvents.FlushPending();
+            SetActiveLateFrameEventLane(_ElectrolysisAcousticEventsQueueHash);
+            ReportLateFrameQueueDepth(_ElectrolysisAcousticEventsQueueHash, ElectrolysisAcousticEvents.PendingCount);
+            ElectrolysisAcousticEvents.FlushPending();
+            SetActiveLateFrameEventLane(_AudioCaptionEventsQueueHash);
+            ReportLateFrameQueueDepth(_AudioCaptionEventsQueueHash, AudioCaptionEvents.PendingCount);
+            AudioCaptionEvents.FlushPending();
+            SetActiveLateFrameEventLane(_SpectrumEventsQueueHash);
+            ReportLateFrameQueueDepth(_SpectrumEventsQueueHash, SpectrumEvents.PendingCount);
+            SpectrumEvents.FlushPending();
+            SetActiveLateFrameEventLane(_ProceduralAudioEventsQueueHash);
+            ReportLateFrameQueueDepth(_ProceduralAudioEventsQueueHash, ProceduralAudioEvents.PendingCount);
+            ProceduralAudioEvents.FlushPending();
             SetActiveLateFrameEventLane(_SubmarineOsEventsQueueHash);
             ReportLateFrameQueueDepth(_SubmarineOsEventsQueueHash, HectonSubmarineOsEvents.PendingCount);
             HectonSubmarineOsEvents.FlushPending();
             SetActiveLateFrameEventLane(_FlashlightEventsQueueHash);
             ReportLateFrameQueueDepth(_FlashlightEventsQueueHash, FlashlightEvents.PendingCount);
             FlashlightEvents.FlushPending();
+            SetActiveLateFrameEventLane(_LaserCutterEventsQueueHash);
+            ReportLateFrameQueueDepth(_LaserCutterEventsQueueHash, LaserCutterEvents.PendingCount);
+            LaserCutterEvents.FlushPending();
+            SetActiveLateFrameEventLane(_PlayerSignalEventsQueueHash);
+            ReportLateFrameQueueDepth(_PlayerSignalEventsQueueHash, PlayerSignalEvents.PendingCount);
+            PlayerSignalEvents.FlushPending();
+            SetActiveLateFrameEventLane(_MapMagicBiomeEventsQueueHash);
+            ReportLateFrameQueueDepth(_MapMagicBiomeEventsQueueHash, MapMagicBiomeEvents.PendingCount);
+            MapMagicBiomeEvents.FlushPending();
+            SetActiveLateFrameEventLane(_BiomeMatrixEventsQueueHash);
+            ReportLateFrameQueueDepth(_BiomeMatrixEventsQueueHash, BiomeMatrixEvents.PendingCount);
+            BiomeMatrixEvents.FlushPending();
+            SetActiveLateFrameEventLane(_DirectorAIEventsQueueHash);
+            ReportLateFrameQueueDepth(_DirectorAIEventsQueueHash, DirectorAIEvents.PendingCount);
+            DirectorAIEvents.FlushPending();
+            SetActiveLateFrameEventLane(_HectonDroneFleetEventsQueueHash);
+            ReportLateFrameQueueDepth(_HectonDroneFleetEventsQueueHash, HectonDroneFleetEvents.PendingCount);
+            HectonDroneFleetEvents.FlushPending();
             SetActiveLateFrameEventLane(_WeatherEventsQueueHash);
             ReportLateFrameQueueDepth(_WeatherEventsQueueHash, WeatherEvents.PendingCount);
             WeatherEvents.FlushPending();
+            SetActiveLateFrameEventLane(_RandomEventEventsQueueHash);
+            ReportLateFrameQueueDepth(_RandomEventEventsQueueHash, RandomEventEvents.PendingCount);
+            RandomEventEvents.FlushPending();
+            SetActiveLateFrameEventLane(_PowerGridTelemetryEventsQueueHash);
+            ReportLateFrameQueueDepth(_PowerGridTelemetryEventsQueueHash, PowerGridTelemetryEvents.PendingCount);
+            PowerGridTelemetryEvents.FlushPending();
             SetActiveLateFrameEventLane(_ModuleStatusEventsQueueHash);
             ReportLateFrameQueueDepth(_ModuleStatusEventsQueueHash, ModuleStatusEvents.PendingCount);
             ModuleStatusEvents.FlushPending();
@@ -597,9 +759,21 @@ namespace Hecton8.Core
             SetActiveLateFrameEventLane(_AtlasSignalEventsQueueHash);
             ReportLateFrameQueueDepth(_AtlasSignalEventsQueueHash, Hecton8.AtlasSignal.AtlasSignalEvents.PendingCount);
             Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending();
+            SetActiveLateFrameEventLane(_InventoryEventsQueueHash);
+            ReportLateFrameQueueDepth(_InventoryEventsQueueHash, InventoryEvents.PendingCount);
+            InventoryEvents.FlushPending();
+            SetActiveLateFrameEventLane(_PlayerExpressionEventsQueueHash);
+            ReportLateFrameQueueDepth(_PlayerExpressionEventsQueueHash, PlayerExpressionEvents.PendingCount);
+            PlayerExpressionEvents.FlushPending();
+            SetActiveLateFrameEventLane(_BaseIntegrityEventsQueueHash);
+            ReportLateFrameQueueDepth(_BaseIntegrityEventsQueueHash, Hecton8.UI.BaseIntegrityEvents.PendingCount);
+            Hecton8.UI.BaseIntegrityEvents.FlushPending();
             SetActiveLateFrameEventLane(_NotificationEventsQueueHash);
             ReportLateFrameQueueDepth(_NotificationEventsQueueHash, Hecton8.UI.NotificationEvents.PendingCount);
             Hecton8.UI.NotificationEvents.FlushPending();
+            SetActiveLateFrameEventLane(_PdaIntrusionEventsQueueHash);
+            ReportLateFrameQueueDepth(_PdaIntrusionEventsQueueHash, Hecton8.UI.PDAIntrusionEvents.PendingCount);
+            Hecton8.UI.PDAIntrusionEvents.FlushPending();
             SetActiveLateFrameEventLane(_PdaEventsQueueHash);
             int pdaPendingBeforeFlush = Hecton8.UI.PDAEvents.PendingCount;
             ReportLateFrameQueueDepth(_PdaEventsQueueHash, pdaPendingBeforeFlush);
@@ -611,18 +785,35 @@ namespace Hecton8.Core
             SetActiveLateFrameEventLane(_ObjectPoolDiagnosticsQueueHash);
             ReportLateFrameQueueDepth(_ObjectPoolDiagnosticsQueueHash, ObjectPoolDiagnostics.PendingCount);
             ObjectPoolDiagnostics.FlushPending();
+            SetActiveLateFrameEventLane(_PerformanceEventsQueueHash);
+            ReportLateFrameQueueDepth(_PerformanceEventsQueueHash, PerformanceEvents.PendingCount);
+            PerformanceEvents.FlushPending();
             SetActiveLateFrameEventLane(_Atlas6EventsQueueHash);
             ReportLateFrameQueueDepth(_Atlas6EventsQueueHash, Hecton8.AtlasSignal.Atlas6Events.PendingCount);
             Hecton8.AtlasSignal.Atlas6Events.FlushPending();
             SetActiveLateFrameEventLane(_RegistryEventsQueueHash);
             ReportLateFrameQueueDepth(_RegistryEventsQueueHash, GlobalRegistry.PendingServiceReboundCount);
             GlobalRegistry.FlushPendingServiceReboundEvents();
-            ClearActiveLateFrameEventLane();
-            EndLateFrameEventBudget();
-            GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime);
-            WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
-            NativeArenaAllocator.Reset();
-            EndDispatcherPhaseTiming(completeDispatcherTimestamp, "FoveatedSimulationManager.CompleteFrameJobs");
+            }
+            finally
+            {
+                ClearActiveLateFrameEventLane();
+                if (_lateFrameEventBudgetActive)
+                    EndLateFrameEventBudget();
+
+                try
+                {
+                    GlobalTelemetryBus.LateFrameUpdate(Time.unscaledTime);
+                    WorldSpatialHashGrid.LateFrameMaintenance(Time.frameCount);
+                }
+                finally
+                {
+                    NativeArenaAllocator.Reset();
+
+                    if (dispatcherPhaseTimingStarted)
+                        EndDispatcherPhaseTiming(completeDispatcherTimestamp, "FoveatedSimulationManager.CompleteFrameJobs");
+                }
+            }
         }
 
         /// <summary>
@@ -693,6 +884,10 @@ namespace Hecton8.Core
             _lateFrameCircuitBreakerTripped = false;
             _lateFrameEventBudgetActive = true;
             _activeLateFrameEventLaneHash = 0u;
+            _dominantLateFrameCircuitBreakerLaneHash = 0u;
+            _dominantLateFrameCircuitBreakerLaneCount = 0;
+            System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
+            System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
         }
 
         private static void EndLateFrameEventBudget()
@@ -816,19 +1011,27 @@ namespace Hecton8.Core
 
                 using (_postFixedProfilerMarker.Auto())
                 {
-                    for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                    DispatcherJobSwap.BeginPostFixedSwapWindow();
+                    try
                     {
-                        if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
-                            continue;
+                        for (int laneIndex = 0; laneIndex < LaneCount; laneIndex++)
+                        {
+                            if (ShouldSkipLaneDuringBootstrap(laneIndex, blockGameplayLanes))
+                                continue;
 
-                        RegistryBucket<IPostFixedTickable> lane = _postFixedPriorityLanes[laneIndex];
+                            RegistryBucket<IPostFixedTickable> lane = _postFixedPriorityLanes[laneIndex];
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        lane.ValidateNoDestroyedEntriesDebug(nameof(IPostFixedTickable));
+                            lane.ValidateNoDestroyedEntriesDebug(nameof(IPostFixedTickable));
 #endif
-                        IPostFixedTickable[] rawArray = lane.RawArray;
-                        int count = lane.Count;
-                        for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
-                            rawArray[itemIndex].PostFixedTick(fixedDeltaTime);
+                            IPostFixedTickable[] rawArray = lane.RawArray;
+                            int count = lane.Count;
+                            for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                                rawArray[itemIndex].PostFixedTick(fixedDeltaTime);
+                        }
+                    }
+                    finally
+                    {
+                        DispatcherJobSwap.EndPostFixedSwapWindow();
                     }
                 }
 
@@ -940,7 +1143,7 @@ namespace Hecton8.Core
                 while (scheduledCount < _pendingDispatcherRaycastCount &&
                        _pendingDispatcherRaycastCommands.TryDequeue(out RaycastCommand command))
                 {
-                    _scheduledDispatcherRaycastCommands.Add(command);
+                    _scheduledDispatcherRaycastCommands.AddNoResize(command);
                     _scheduledDispatcherRaycastReceivers[scheduledCount] = _pendingDispatcherRaycastReceivers[scheduledCount];
                     _scheduledDispatcherRaycastRequestIds[scheduledCount] = _pendingDispatcherRaycastRequestIds[scheduledCount];
                     _pendingDispatcherRaycastReceivers[scheduledCount] = null;
@@ -990,9 +1193,10 @@ namespace Hecton8.Core
 
         private static void DisposeDispatcherRaycastBuffers()
         {
+            JobHandle scheduledRaycastDependency = default;
             if (_dispatcherRaycastsScheduled)
             {
-                CompleteJobHandleWithWarning(ref _scheduledDispatcherRaycastHandle, "SystemDispatcher.DispatcherRaycasts.Dispose");
+                scheduledRaycastDependency = _scheduledDispatcherRaycastHandle;
                 _scheduledDispatcherRaycastHandle = default;
                 _dispatcherRaycastsScheduled = false;
             }
@@ -1004,19 +1208,9 @@ namespace Hecton8.Core
                 _pendingDispatcherRaycastCommands = default;
             }
 
-            if (_scheduledDispatcherRaycastCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(nameof(SystemDispatcher), nameof(_scheduledDispatcherRaycastCommands));
-                _scheduledDispatcherRaycastCommands.Dispose();
-                _scheduledDispatcherRaycastCommands = default;
-            }
-
-            if (_scheduledDispatcherRaycastHits.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_scheduledDispatcherRaycastHits);
-                _scheduledDispatcherRaycastHits.Dispose();
-                _scheduledDispatcherRaycastHits = default;
-            }
+            DisposeNativeList(ref _scheduledDispatcherRaycastCommands, scheduledRaycastDependency);
+            DisposeNativeArray(ref _scheduledDispatcherRaycastHits, scheduledRaycastDependency);
+            JobHandle.ScheduleBatchedJobs();
 
             _pendingDispatcherRaycastCount = 0;
             _scheduledDispatcherRaycastCount = 0;
@@ -1024,6 +1218,26 @@ namespace Hecton8.Core
             System.Array.Clear(_pendingDispatcherRaycastRequestIds, 0, _pendingDispatcherRaycastRequestIds.Length);
             System.Array.Clear(_scheduledDispatcherRaycastReceivers, 0, _scheduledDispatcherRaycastReceivers.Length);
             System.Array.Clear(_scheduledDispatcherRaycastRequestIds, 0, _scheduledDispatcherRaycastRequestIds.Length);
+        }
+
+        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle dependency) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeList(nameof(SystemDispatcher), nameof(_scheduledDispatcherRaycastCommands));
+            list.Dispose(dependency);
+            list = default;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose(dependency);
+            array = default;
         }
 
         private static bool ShouldSkipLaneDuringBootstrap(int laneIndex, bool blockGameplayLanes)
@@ -1119,7 +1333,7 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             long startTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
-            handle.Complete();
+            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
             double elapsedMilliseconds =
                 (System.Diagnostics.Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
             if (elapsedMilliseconds > SlowJobCompleteWarningMilliseconds)
@@ -1136,7 +1350,7 @@ namespace Hecton8.Core
                 }
             }
 #else
-            handle.Complete();
+            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 #endif
         }
     }
@@ -1186,6 +1400,14 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9940)]
     public sealed class RenderDispatcher : MonoBehaviour
     {
+        internal static RenderDispatcher ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         private struct RenderSettingsSnapshot
         {
             public bool Fog;
@@ -1244,6 +1466,9 @@ namespace Hecton8.Core
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             _hasPendingRenderSettingsRestore = false;
             _pendingRenderSettingsCamera = null;
         }
@@ -1266,13 +1491,6 @@ namespace Hecton8.Core
             GlobalRegistry.RegisterRenderDispatcher(this);
             _serviceRegistered = true;
 
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
         }
 
         private void OnEnable()
@@ -1292,6 +1510,9 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.RenderDispatcher, this))
                 GlobalRegistry.UnregisterRenderDispatcher(this);
 
@@ -1308,7 +1529,7 @@ namespace Hecton8.Core
                 return;
 
             IRenderable[] rawArray = renderables.RawArray;
-            float deltaTime = Time.deltaTime;
+            float deltaTime = SystemDispatcher.CurrentFrameDeltaTime;
             _pendingRenderSettingsSnapshot = RenderSettingsSnapshot.Capture();
             _pendingRenderSettingsCamera = camera;
             _hasPendingRenderSettingsRestore = true;

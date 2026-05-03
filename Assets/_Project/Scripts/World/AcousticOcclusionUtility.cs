@@ -294,32 +294,8 @@ namespace Hecton8.World
             _layerCacheInitialized = false;
             EnsureLayerCache();
 
-            if (_queryBatchScheduled && _pendingQueryHandle.IsCompleted)
-                _pendingQueryHandle.Complete();
-
-            if (_enclosureBatchScheduled && _pendingEnclosureHandle.IsCompleted)
-                _pendingEnclosureHandle.Complete();
-
-            if (_forwardEchoQueryScheduled && _pendingForwardEchoHandle.IsCompleted)
-                _pendingForwardEchoHandle.Complete();
-
-            if (_queryCommands.IsCreated)
-                _queryCommands.Dispose();
-
-            if (_queryResults.IsCreated)
-                _queryResults.Dispose();
-
-            if (_enclosureCommands.IsCreated)
-                _enclosureCommands.Dispose();
-
-            if (_enclosureResults.IsCreated)
-                _enclosureResults.Dispose();
-
-            if (_forwardEchoCommands.IsCreated)
-                _forwardEchoCommands.Dispose();
-
-            if (_forwardEchoResults.IsCreated)
-                _forwardEchoResults.Dispose();
+            JobHandle teardownDependency = CancelPendingHandlesForTeardown();
+            DisposeRuntimeBuffers(teardownDependency);
 
             _runtimeOwnerCount = 0;
             _queryBatchScheduled = false;
@@ -378,44 +354,12 @@ namespace Hecton8.World
             _nextEnclosureCacheWriteIndex = 0;
             ResetActiveEnclosureQuery();
 
-            if (_queryCommands.IsCreated)
-            {
-                if (_pendingQueryHandle.Equals(default(JobHandle)))
-                    _queryCommands.Dispose();
-                else
-                    _queryCommands.Dispose(_pendingQueryHandle);
-            }
-
-            if (_queryResults.IsCreated)
-            {
-                if (_pendingQueryHandle.Equals(default(JobHandle)))
-                    _queryResults.Dispose();
-                else
-                    _queryResults.Dispose(_pendingQueryHandle);
-            }
-
-            if (_enclosureCommands.IsCreated)
-            {
-                if (_pendingEnclosureHandle.Equals(default(JobHandle)))
-                    _enclosureCommands.Dispose();
-                else
-                    _enclosureCommands.Dispose(_pendingEnclosureHandle);
-            }
-
-            if (_enclosureResults.IsCreated)
-            {
-                if (_pendingEnclosureHandle.Equals(default(JobHandle)))
-                    _enclosureResults.Dispose();
-                else
-                    _enclosureResults.Dispose(_pendingEnclosureHandle);
-            }
-
-            _pendingQueryHandle = default;
-            _pendingEnclosureHandle = default;
-            _queryCommands = default;
-            _queryResults = default;
-            _enclosureCommands = default;
-            _enclosureResults = default;
+            JobHandle teardownDependency = CancelPendingHandlesForTeardown();
+            DisposeRuntimeBuffers(teardownDependency);
+            _forwardEchoQueryScheduled = false;
+            _queuedForwardEchoValid = false;
+            _scheduledForwardEchoValid = false;
+            _cachedForwardEchoEntry.Valid = false;
 
             for (int i = 0; i < MaxQueuedRequests; i++)
                 _cachedEntries[i].Valid = false;
@@ -427,12 +371,39 @@ namespace Hecton8.World
         public static int BuildSensoryMask()
         {
             EnsureLayerCache();
-            int mask = HectonLayerMasks.DefaultRaycastLayerMask;
+            int mask = HectonLayerMasks.SeamProbeLayerMask | HectonLayerMasks.CreatureLayerMask;
             mask &= ~LayerBit(PlayerLayer);
             mask &= ~LayerBit(TriggerZoneLayer);
             mask &= ~LayerBit(TransparentFxLayer);
             mask &= ~LayerBit(FirstPersonToolsLayer);
             return mask;
+        }
+
+        /// <summary>
+        /// Recovers and schedules acoustic raycast jobs in the dispatcher-owned late-frame swap window.
+        /// </summary>
+        public static void LateFrameTick()
+        {
+            if (_runtimeOwnerCount <= 0)
+                return;
+
+            EnsureRuntimeBuffers();
+            TryConsumeCompletedQuery();
+            TryConsumeCompletedEnclosureQuery();
+            TryConsumeCompletedForwardEchoQuery();
+
+            if (!_queryBatchScheduled && _queuedCount > 0)
+                ScheduleQueuedBatch();
+
+            if (!_enclosureBatchScheduled && (_activeEnclosureQuery.Valid || _queuedEnclosureCount > 0))
+                ScheduleQueuedEnclosureBatch();
+
+            if (!_forwardEchoQueryScheduled && _queuedForwardEchoValid)
+                ScheduleQueuedForwardEchoBatch();
+
+            _queuedFrame = Time.frameCount;
+            _queuedCount = 0;
+            _queuedEnclosureCount = 0;
         }
 
         private static void ResetActiveEnclosureQuery()
@@ -462,11 +433,12 @@ namespace Hecton8.World
             if (!_queryCommands.IsCreated || !_queryResults.IsCreated)
                 return;
 
+            int resolvedLayerMask = ResolveSensoryLayerMask(layerMask);
             QueryKey queryKey = new QueryKey
             {
                 SourcePosition = sourcePosition,
                 ListenerPosition = listenerPosition,
-                LayerMask = layerMask,
+                LayerMask = resolvedLayerMask,
                 IgnoreOriginRootEntityId = ResolveEntityId(ignoreOriginRoot),
                 IgnoreTargetRootEntityId = ResolveEntityId(ignoreTargetRoot),
                 IgnoreOriginBodyEntityId = ResolveAttachedBodyEntityId(ignoreOriginRoot),
@@ -509,11 +481,12 @@ namespace Hecton8.World
                 return;
 
             float clampedProbeDistance = math.max(1f, probeDistance);
+            int resolvedLayerMask = ResolveSensoryLayerMask(layerMask);
             EnclosureKey queryKey = new EnclosureKey
             {
                 OriginPosition = originPosition,
                 ProbeDistance = clampedProbeDistance,
-                LayerMask = layerMask,
+                LayerMask = resolvedLayerMask,
                 IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
                 IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
             };
@@ -553,12 +526,13 @@ namespace Hecton8.World
             if (directionLengthSq <= MinimumProbeDistanceMeters * MinimumProbeDistanceMeters)
                 return;
 
+            int resolvedLayerMask = ResolveSensoryLayerMask(layerMask);
             ForwardEchoKey queryKey = new ForwardEchoKey
             {
                 OriginPosition = originPosition,
                 ProbeDistance = math.max(1f, probeDistance),
                 ForwardDirection = forwardDirection / math.sqrt(directionLengthSq),
-                LayerMask = layerMask,
+                LayerMask = resolvedLayerMask,
                 IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
                 IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
             };
@@ -580,11 +554,12 @@ namespace Hecton8.World
         {
             AdvanceFrameFence();
 
+            int resolvedLayerMask = ResolveSensoryLayerMask(layerMask);
             QueryKey queryKey = new QueryKey
             {
                 SourcePosition = sourcePosition,
                 ListenerPosition = listenerPosition,
-                LayerMask = layerMask,
+                LayerMask = resolvedLayerMask,
                 IgnoreOriginRootEntityId = ResolveEntityId(ignoreOriginRoot),
                 IgnoreTargetRootEntityId = ResolveEntityId(ignoreTargetRoot),
                 IgnoreOriginBodyEntityId = ResolveAttachedBodyEntityId(ignoreOriginRoot),
@@ -608,11 +583,12 @@ namespace Hecton8.World
             out AcousticEnclosureResult result)
         {
             AdvanceFrameFence();
+            int resolvedLayerMask = ResolveSensoryLayerMask(layerMask);
             EnclosureKey queryKey = new EnclosureKey
             {
                 OriginPosition = originPosition,
                 ProbeDistance = math.max(1f, probeDistance),
-                LayerMask = layerMask,
+                LayerMask = resolvedLayerMask,
                 IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
                 IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
             };
@@ -640,12 +616,13 @@ namespace Hecton8.World
                 return false;
             }
 
+            int resolvedLayerMask = ResolveSensoryLayerMask(layerMask);
             ForwardEchoKey queryKey = new ForwardEchoKey
             {
                 OriginPosition = originPosition,
                 ProbeDistance = math.max(1f, probeDistance),
                 ForwardDirection = forwardDirection / math.sqrt(directionLengthSq),
-                LayerMask = layerMask,
+                LayerMask = resolvedLayerMask,
                 IgnoreRootEntityId = ResolveEntityId(ignoreRoot),
                 IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
             };
@@ -710,36 +687,18 @@ namespace Hecton8.World
         private static void AdvanceFrameFence()
         {
             int currentFrame = Time.frameCount;
-            if (_queuedFrame == currentFrame)
-            {
-                TryConsumeCompletedQuery();
-                TryConsumeCompletedEnclosureQuery();
-                return;
-            }
-
-            TryConsumeCompletedQuery();
-            TryConsumeCompletedEnclosureQuery();
-            TryConsumeCompletedForwardEchoQuery();
-            if (!_queryBatchScheduled && _queuedCount > 0)
-                ScheduleQueuedBatch();
-
-            if (!_enclosureBatchScheduled && (_activeEnclosureQuery.Valid || _queuedEnclosureCount > 0))
-                ScheduleQueuedEnclosureBatch();
-
-            if (!_forwardEchoQueryScheduled && _queuedForwardEchoValid)
-                ScheduleQueuedForwardEchoBatch();
-
-            _queuedFrame = currentFrame;
-            _queuedCount = 0;
-            _queuedEnclosureCount = 0;
+            if (_queuedFrame != currentFrame)
+                _queuedFrame = currentFrame;
         }
 
         private static void TryConsumeCompletedQuery()
         {
-            if (!_queryBatchScheduled || !_pendingQueryHandle.IsCompleted)
+            if (!_queryBatchScheduled)
                 return;
 
-            _pendingQueryHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _pendingQueryHandle, forceComplete: false))
+                return;
+
             for (int queryIndex = 0; queryIndex < _scheduledCount; queryIndex++)
             {
                 QueryKey queryKey = _scheduledEntries[queryIndex].Key;
@@ -756,15 +715,16 @@ namespace Hecton8.World
 
             _queryBatchScheduled = false;
             _scheduledCount = 0;
-            _pendingQueryHandle = default;
         }
 
         private static void TryConsumeCompletedEnclosureQuery()
         {
-            if (!_enclosureBatchScheduled || !_pendingEnclosureHandle.IsCompleted)
+            if (!_enclosureBatchScheduled)
                 return;
 
-            _pendingEnclosureHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _pendingEnclosureHandle, forceComplete: false))
+                return;
+
             if (_activeEnclosureQuery.Valid)
             {
                 for (int scheduledIndex = 0; scheduledIndex < _scheduledEnclosureRayCount; scheduledIndex++)
@@ -792,15 +752,16 @@ namespace Hecton8.World
 
             _enclosureBatchScheduled = false;
             _scheduledEnclosureRayCount = 0;
-            _pendingEnclosureHandle = default;
         }
 
         private static void TryConsumeCompletedForwardEchoQuery()
         {
-            if (!_forwardEchoQueryScheduled || !_pendingForwardEchoHandle.IsCompleted || !_scheduledForwardEchoValid)
+            if (!_forwardEchoQueryScheduled || !_scheduledForwardEchoValid)
                 return;
 
-            _pendingForwardEchoHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _pendingForwardEchoHandle, forceComplete: false))
+                return;
+
             RaycastHit hit = _forwardEchoResults[0];
             Collider collider = hit.collider;
             AcousticForwardEchoResult result;
@@ -838,7 +799,63 @@ namespace Hecton8.World
             _cachedForwardEchoEntry.Valid = true;
             _scheduledForwardEchoValid = false;
             _forwardEchoQueryScheduled = false;
+        }
+
+        private static JobHandle CancelPendingHandlesForTeardown()
+        {
+            JobHandle dependency = JobHandle.CombineDependencies(_pendingQueryHandle, _pendingEnclosureHandle);
+            dependency = JobHandle.CombineDependencies(dependency, _pendingForwardEchoHandle);
+
+            _pendingQueryHandle = default;
+            _pendingEnclosureHandle = default;
             _pendingForwardEchoHandle = default;
+            _queryBatchScheduled = false;
+            _enclosureBatchScheduled = false;
+            _forwardEchoQueryScheduled = false;
+            return dependency;
+        }
+
+        private static void DisposeRuntimeBuffers(JobHandle dependency)
+        {
+            JobHandle disposeHandle = dependency;
+
+            if (_queryCommands.IsCreated)
+            {
+                disposeHandle = _queryCommands.Dispose(disposeHandle);
+                _queryCommands = default;
+            }
+
+            if (_queryResults.IsCreated)
+            {
+                disposeHandle = _queryResults.Dispose(disposeHandle);
+                _queryResults = default;
+            }
+
+            if (_enclosureCommands.IsCreated)
+            {
+                disposeHandle = _enclosureCommands.Dispose(disposeHandle);
+                _enclosureCommands = default;
+            }
+
+            if (_enclosureResults.IsCreated)
+            {
+                disposeHandle = _enclosureResults.Dispose(disposeHandle);
+                _enclosureResults = default;
+            }
+
+            if (_forwardEchoCommands.IsCreated)
+            {
+                disposeHandle = _forwardEchoCommands.Dispose(disposeHandle);
+                _forwardEchoCommands = default;
+            }
+
+            if (_forwardEchoResults.IsCreated)
+            {
+                disposeHandle = _forwardEchoResults.Dispose(disposeHandle);
+                _forwardEchoResults = default;
+            }
+
+            JobHandle.ScheduleBatchedJobs();
         }
 
         private static void ScheduleQueuedBatch()
@@ -861,7 +878,7 @@ namespace Hecton8.World
                 }
 
                 parameters = new QueryParameters(queryKey.LayerMask, false, QueryTriggerInteraction.Ignore);
-                _queryCommands.Add(new RaycastCommand(queryKey.SourcePosition, delta / distance, parameters, distance));
+                _queryCommands.AddNoResize(new RaycastCommand(queryKey.SourcePosition, delta / distance, parameters, distance));
                 _scheduledEntries[_scheduledCount].Key = queryKey;
                 _scheduledCount++;
             }
@@ -911,7 +928,7 @@ namespace Hecton8.World
                 if ((_activeEnclosureQuery.CompletedAxisMask & (1 << axisIndex)) != 0)
                     continue;
 
-                _enclosureCommands.Add(new RaycastCommand(
+                _enclosureCommands.AddNoResize(new RaycastCommand(
                     _activeEnclosureQuery.Key.OriginPosition,
                     ResolveEnclosureProbeDirection(axisIndex),
                     parameters,
@@ -1399,6 +1416,18 @@ namespace Hecton8.World
         private static ulong ResolveEntityId(Transform target)
         {
             return target != null ? EntityId.ToULong(target.GetEntityId()) : 0ul;
+        }
+
+        private static int ResolveSensoryLayerMask(int layerMask)
+        {
+            if (layerMask == 0)
+                return 0;
+
+            int sensoryMask = BuildSensoryMask();
+            if (HectonLayerMasks.IsEverythingLayerMask(layerMask))
+                return sensoryMask;
+
+            return layerMask & sensoryMask;
         }
 
         private static ulong ResolveAttachedBodyEntityId(Transform target)

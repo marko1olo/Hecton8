@@ -366,6 +366,7 @@ namespace Hecton8.Modding
 
         private static bool HandleCallbackWatchdog(
             string subscriberId,
+            uint subscriberHash,
             uint eventHash,
             long elapsedTicks,
             ref int consecutiveStallFrames)
@@ -377,7 +378,7 @@ namespace Hecton8.Modding
             }
 
             consecutiveStallFrames++;
-            uint modHash = ModCommandDispatcher.ComputeModHash(subscriberId);
+            uint modHash = subscriberHash != 0u ? subscriberHash : ModCommandDispatcher.ComputeModHash(subscriberId);
             float elapsedMilliseconds = elapsedTicks * 1000f / Stopwatch.Frequency;
             GlobalTelemetryBus.PublishModStallWarning(modHash, eventHash, elapsedMilliseconds);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -444,11 +445,13 @@ namespace Hecton8.Modding
 
             internal HectonEventSubscription Subscribe(HectonUnmanagedEventHandler<TPayload> handler, string subscriberId)
             {
+                string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId;
                 SubscriptionEntry entry = new SubscriptionEntry
                 {
                     Id = _nextSubscriptionId++,
                     Handler = handler,
-                    SubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId,
+                    SubscriberId = resolvedSubscriberId,
+                    SubscriberHash = ModCommandDispatcher.ComputeModHash(resolvedSubscriberId),
                     IsActive = true,
                     ConsecutiveStallFrames = 0
                 };
@@ -475,9 +478,9 @@ namespace Hecton8.Modding
                         {
                             long callbackStartTimestamp = Stopwatch.GetTimestamp();
                             long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
-                            if (ModCommandDispatcher.IsRegisteredMod(entry.SubscriberId))
+                            if (ModCommandDispatcher.IsRegisteredMod(entry.SubscriberHash))
                             {
-                                using (ModExecutionScope.Enter(entry.SubscriberId))
+                                using (ModExecutionScope.Enter(entry.SubscriberId, entry.SubscriberHash))
                                 {
                                     entry.Handler(in payload);
                                 }
@@ -489,9 +492,10 @@ namespace Hecton8.Modding
 
                             long callbackElapsedTicks = Stopwatch.GetTimestamp() - callbackStartTimestamp;
                             long allocationDelta = GC.GetAllocatedBytesForCurrentThread() - allocationBefore;
-                            ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberId, allocationDelta);
+                            ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberHash, allocationDelta);
                             if (HectonEventBus.HandleCallbackWatchdog(
                                     entry.SubscriberId,
+                                    entry.SubscriberHash,
                                     _eventHash,
                                     callbackElapsedTicks,
                                     ref entry.ConsecutiveStallFrames))
@@ -587,6 +591,7 @@ namespace Hecton8.Modding
                 public bool IsActive;
                 public HectonUnmanagedEventHandler<TPayload> Handler;
                 public string SubscriberId;
+                public uint SubscriberHash;
                 public int ConsecutiveStallFrames;
             }
         }
@@ -601,11 +606,13 @@ namespace Hecton8.Modding
 
             internal HectonEventSubscription Subscribe(HectonNativeEventHandler handler, string subscriberId)
             {
+                string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId;
                 SubscriptionEntry entry = new SubscriptionEntry
                 {
                     Id = _nextSubscriptionId++,
                     Handler = handler,
-                    SubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId,
+                    SubscriberId = resolvedSubscriberId,
+                    SubscriberHash = ModCommandDispatcher.ComputeModHash(resolvedSubscriberId),
                     IsActive = true,
                     ConsecutiveStallFrames = 0
                 };
@@ -632,9 +639,9 @@ namespace Hecton8.Modding
                         {
                             long callbackStartTimestamp = Stopwatch.GetTimestamp();
                             long allocationBefore = GC.GetAllocatedBytesForCurrentThread();
-                            if (ModCommandDispatcher.IsRegisteredMod(entry.SubscriberId))
+                            if (ModCommandDispatcher.IsRegisteredMod(entry.SubscriberHash))
                             {
-                                using (ModExecutionScope.Enter(entry.SubscriberId))
+                                using (ModExecutionScope.Enter(entry.SubscriberId, entry.SubscriberHash))
                                 {
                                     entry.Handler(eventKind, payload);
                                 }
@@ -646,9 +653,10 @@ namespace Hecton8.Modding
 
                             long callbackElapsedTicks = Stopwatch.GetTimestamp() - callbackStartTimestamp;
                             long allocationDelta = GC.GetAllocatedBytesForCurrentThread() - allocationBefore;
-                            ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberId, allocationDelta);
+                            ModCommandDispatcher.ReportModManagedAllocation(entry.SubscriberHash, allocationDelta);
                             if (HectonEventBus.HandleCallbackWatchdog(
                                     entry.SubscriberId,
+                                    entry.SubscriberHash,
                                     (uint)eventKind,
                                     callbackElapsedTicks,
                                     ref entry.ConsecutiveStallFrames))
@@ -744,6 +752,7 @@ namespace Hecton8.Modding
                 public bool IsActive;
                 public HectonNativeEventHandler Handler;
                 public string SubscriberId;
+                public uint SubscriberHash;
                 public int ConsecutiveStallFrames;
             }
         }
@@ -766,11 +775,13 @@ namespace Hecton8.Modding
 
             internal HectonEventSubscription Subscribe(Action<TEvent> handler, string subscriberId)
             {
+                string resolvedSubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId;
                 SubscriptionEntry entry = new SubscriptionEntry
                 {
                     Id = _nextSubscriptionId++,
                     Handler = handler,
-                    SubscriberId = string.IsNullOrWhiteSpace(subscriberId) ? "anonymous" : subscriberId,
+                    SubscriberId = resolvedSubscriberId,
+                    SubscriberHash = ModCommandDispatcher.ComputeModHash(resolvedSubscriberId),
                     IsActive = true,
                     ConsecutiveStallFrames = 0
                 };
@@ -797,9 +808,9 @@ namespace Hecton8.Modding
                         try
                         {
                             long callbackStartTimestamp = Stopwatch.GetTimestamp();
-                            if (ModCommandDispatcher.IsRegisteredMod(entry.SubscriberId))
+                            if (ModCommandDispatcher.IsRegisteredMod(entry.SubscriberHash))
                             {
-                                using (ModExecutionScope.Enter(entry.SubscriberId))
+                                using (ModExecutionScope.Enter(entry.SubscriberId, entry.SubscriberHash))
                                 {
                                     entry.Handler(evt);
                                 }
@@ -812,6 +823,7 @@ namespace Hecton8.Modding
                             long callbackElapsedTicks = Stopwatch.GetTimestamp() - callbackStartTimestamp;
                             if (HectonEventBus.HandleCallbackWatchdog(
                                     entry.SubscriberId,
+                                    entry.SubscriberHash,
                                     _eventHash,
                                     callbackElapsedTicks,
                                     ref entry.ConsecutiveStallFrames))
@@ -907,6 +919,7 @@ namespace Hecton8.Modding
                 public bool IsActive;
                 public Action<TEvent> Handler;
                 public string SubscriberId;
+                public uint SubscriberHash;
                 public int ConsecutiveStallFrames;
             }
         }

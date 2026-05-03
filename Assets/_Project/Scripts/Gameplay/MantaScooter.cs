@@ -34,7 +34,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Tools/Manta Scooter")]
-    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IUpdatable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter
+    public sealed class MantaScooter : PlayerTool, IBatteryTool, ITickable, IUpdatable, IPlayerTransportSource, IPlayerTransportLifecycleOwner, IDamageSignalEmitter, ILocalizationLanguageChangedListener
     {
         private const float DefaultTransportPropulsionReference = 800f;
 
@@ -379,13 +379,13 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleMantaLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RefreshMantaLocalizationCache();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleMantaLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             RestoreHeadlightDefaults();
             ClearHeadlightGlobals();
         }
@@ -790,7 +790,7 @@ namespace Hecton8.Gameplay
             if (wreckPrefab == null)
                 return false;
 
-            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
             if (poolManager == null)
                 return false;
 
@@ -1153,7 +1153,7 @@ namespace Hecton8.Gameplay
             _misfireDeviationPitchDegrees = signedPitch * deviationMagnitude * 0.55f;
             _misfireDeviationYawDegrees = signedYaw * deviationMagnitude;
 
-            AcousticZoneController controller = AcousticZoneController.Instance;
+            AcousticZoneController controller = GlobalRegistry.AcousticZone;
             if (controller != null)
                 controller.PlayMantaMisfire(stress01);
         }
@@ -1728,6 +1728,15 @@ namespace Hecton8.Gameplay
             _registeredTick = false;
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleMantaLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleMantaLanguageChanged(GameLanguage language)
         {
             RefreshMantaLocalizationCache();
@@ -1770,7 +1779,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveMantaLocalizedLabel(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

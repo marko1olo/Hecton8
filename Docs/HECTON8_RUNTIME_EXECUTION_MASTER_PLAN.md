@@ -2,15 +2,16 @@
 
 Status: `ACTIVE`
 Verification: `PENDING VERIFICATION`
-Date: `2026-05-01`
+Date: `2026-05-02`
 
 This is the working execution plan for getting HECTON-8 to a stable, optimized, verifiable runtime state.
 
 Current-state boundary:
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as execution guidance.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as execution guidance.
 - This plan is still directionally valid, but it is not a runtime verification report.
-- Play Mode deadlock, editor responsiveness, zero-GC, and memory retention remain `PENDING VERIFICATION`.
+- Current May 2 dotnet compile evidence is clean for `Hecton8.Core.csproj` only: `0 Error(s)`, `117 Warning(s)`.
+- Play Mode deadlock, Unity editor responsiveness, zero-GC, and memory retention remain `PENDING VERIFICATION`.
 - DOTS remains optional/prototype-only until source and profiler evidence prove otherwise.
 
 This plan replaces vague "finish DOTS" thinking with a hard sequence:

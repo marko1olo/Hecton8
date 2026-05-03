@@ -1,5 +1,4 @@
 using Hecton8.Core;
-using Hecton8.Bootstrap;
 using Hecton8.Gameplay;
 using UnityEngine;
 
@@ -34,12 +33,13 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (destructibleOrganicManager == null)
-                destructibleOrganicManager = GetComponent<DestructibleOrganicManager>();
+            ResolveOrganicManager();
         }
 
         private void OnEnable()
         {
+            ResolveOrganicManager();
+
             if (_tickRegistered || !Application.isPlaying)
                 return;
 
@@ -64,9 +64,6 @@ namespace Hecton8.World
         /// </summary>
         public void Tick(float deltaTime)
         {
-            if (destructibleOrganicManager == null)
-                destructibleOrganicManager = GetComponent<DestructibleOrganicManager>();
-
             if (destructibleOrganicManager == null || !TryResolvePlayerRuntime())
                 return;
 
@@ -81,6 +78,14 @@ namespace Hecton8.World
                 _survivalSystem.DrainOxygen(oxygenDrain);
         }
 
+        private void ResolveOrganicManager()
+        {
+            if (destructibleOrganicManager != null)
+                return;
+
+            TryGetComponent(out destructibleOrganicManager);
+        }
+
         private bool TryResolvePlayerRuntime()
         {
             if (_playerTransform != null && _survivalSystem != null)
@@ -90,14 +95,16 @@ namespace Hecton8.World
                 return false;
 
             _nextPlayerResolveTime = Time.time + Mathf.Max(0.1f, playerResolveRetryIntervalSeconds);
-            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+            if (!PlayerRuntimeContextService.TryGetActiveRuntimeContext(out PlayerRuntimeContext runtimeContext) ||
+                runtimeContext == null ||
+                runtimeContext.PlayerTransform == null ||
+                runtimeContext.SurvivalSystem == null)
+            {
                 return false;
+            }
 
-            if (!playerTransform.TryGetComponent(out HectonSurvivalSystem survivalSystem) || survivalSystem == null)
-                return false;
-
-            _playerTransform = playerTransform;
-            _survivalSystem = survivalSystem;
+            _playerTransform = runtimeContext.PlayerTransform;
+            _survivalSystem = runtimeContext.SurvivalSystem;
             return true;
         }
     }

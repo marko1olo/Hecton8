@@ -273,7 +273,7 @@ namespace Hecton8.Gameplay
             UnregisterFromTick();
 
             // Try pool despawn
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
                 pool.Despawn(gameObject);

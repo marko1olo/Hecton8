@@ -179,7 +179,7 @@ namespace Hecton8.Interaction
 
             ResolveWorldStateIdentity();
 
-            WorldStateManager worldStateManager = WorldStateManager.Instance;
+            WorldStateManager worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
             if (_worldStateIdentityAvailable &&
                 worldStateManager != null &&
                 worldStateManager.IsPickupDepleted(_worldStatePersistenceKey))
@@ -381,7 +381,7 @@ namespace Hecton8.Interaction
 
         public void Interact(Transform interactor)
         {
-            TryHandleInventoryPickup(PlayerInventory.Instance, interactor);
+            TryHandleInventoryPickup(Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime, interactor);
         }
 
         public bool TryHandleInventoryPickup(PlayerInventory inventory, Transform interactor)
@@ -403,7 +403,16 @@ namespace Hecton8.Interaction
             }
 
             InteractionEvents.RaiseItemCollected(itemData, attempt.AddedQuantity, interactor);
-            HectonEventBus.Publish(new ItemCollectedEvent(itemData, _cachedItemHashId, attempt.AddedQuantity, interactor));
+            bool hasInteractorPosition = interactor != null;
+            ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(interactor.GetEntityId()) : 0ul;
+            Vector3 interactorPosition = hasInteractorPosition ? interactor.position : Vector3.zero;
+            HectonEventBus.Publish(new ItemCollectedEvent(
+                itemData,
+                _cachedItemHashId,
+                attempt.AddedQuantity,
+                interactorEntityId,
+                interactorPosition,
+                hasInteractorPosition));
 
             quantity = attempt.RejectedQuantity;
             if (quantity > 0)
@@ -414,7 +423,7 @@ namespace Hecton8.Interaction
             }
 
             if (_worldStateIdentityAvailable)
-                WorldStateManager.Instance?.RegisterCollectedPickup(_worldStatePersistenceKey, _worldStateChunkKey);
+                Hecton8.Core.GlobalRegistry.WorldState?.RegisterCollectedPickup(_worldStatePersistenceKey, _worldStateChunkKey);
 
             _persistentWorldRegistry?.MarkRecordCollected(_persistentWorldRecordIndex);
             ConsumeWorldProxy();
@@ -475,9 +484,10 @@ namespace Hecton8.Interaction
             if (_highlighter != null)
                 _highlighter.SetHighlight(false);
 
-            if (ObjectPoolManager.Instance != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
-                ObjectPoolManager.Instance.Despawn(gameObject);
+                pool.Despawn(gameObject);
                 return;
             }
 
@@ -627,10 +637,10 @@ namespace Hecton8.Interaction
         private bool ResolveSubmergedState()
         {
             if (_playerMovement == null &&
-                WorldStateManager.Instance != null &&
-                WorldStateManager.Instance.PlayerTransform != null)
+                Hecton8.Core.GlobalRegistry.WorldState != null &&
+                Hecton8.Core.GlobalRegistry.WorldState.PlayerTransform != null)
             {
-                WorldStateManager.Instance.PlayerTransform.TryGetComponent(out _playerMovement);
+                Hecton8.Core.GlobalRegistry.WorldState.PlayerTransform.TryGetComponent(out _playerMovement);
             }
 
             if (_playerMovement == null)

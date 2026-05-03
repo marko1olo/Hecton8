@@ -242,6 +242,7 @@ namespace Hecton8.Gameplay
         private NativeList<int> _spatialQueryHandles;
         private bool _jobRunning;
         private bool _registered;
+        private bool _serviceRegistered;
         private int _activeCount;
         private float _stepAccumulator;
         private float _toxicityDose;
@@ -472,6 +473,7 @@ namespace Hecton8.Gameplay
             AllocateNativeState();
             ResolvePlayerContext();
             TryRegister();
+            TryRegisterService();
             UpdateDiagnostics();
         }
 
@@ -479,6 +481,7 @@ namespace Hecton8.Gameplay
         {
             PublishExposureMask(0);
             TryUnregister();
+            TryUnregisterService();
             ClearRuntimeState();
             DisposeNativeState();
         }
@@ -487,6 +490,7 @@ namespace Hecton8.Gameplay
         {
             PublishExposureMask(0);
             TryUnregister();
+            TryUnregisterService();
             ClearRuntimeState();
             DisposeNativeState();
             if (Instance == this)
@@ -645,10 +649,12 @@ namespace Hecton8.Gameplay
 
         private void ConsumeCompletedJob()
         {
-            if (!_jobRunning || !_jobHandle.IsCompleted)
+            if (!_jobRunning)
                 return;
 
-            _jobHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _jobHandle, forceComplete: false))
+                return;
+
             _jobRunning = false;
 
             HazardExposureJobResult result = _jobResult[0];
@@ -1018,11 +1024,9 @@ namespace Hecton8.Gameplay
 
         private void ClearRuntimeState()
         {
-            if (_jobRunning && _jobHandle.IsCompleted)
+            if (_jobRunning && DispatcherJobSwap.TryComplete(ref _jobHandle, forceComplete: false))
             {
-                _jobHandle.Complete();
                 _jobRunning = false;
-                _jobHandle = default;
             }
 
             _activeCount = 0;
@@ -1252,6 +1256,24 @@ namespace Hecton8.Gameplay
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+                return;
+
+            GlobalRegistry.RegisterHazardZoneRuntime(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterHazardZoneRuntime(this);
+            _serviceRegistered = false;
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]

@@ -25,7 +25,12 @@ namespace Hecton8.Modding
 
         internal static Scope Enter(string modId)
         {
-            return new Scope(modId);
+            return new Scope(modId, 0u);
+        }
+
+        internal static Scope Enter(string modId, uint modHash)
+        {
+            return new Scope(modId, modHash);
         }
 
         internal readonly struct Scope : System.IDisposable
@@ -34,13 +39,13 @@ namespace Hecton8.Modding
             private readonly uint _previousModHash;
             private readonly int _previousScopeDepth;
 
-            internal Scope(string modId)
+            internal Scope(string modId, uint modHash)
             {
                 _previousModId = _currentModId;
                 _previousModHash = _currentModHash;
                 _previousScopeDepth = _scopeDepth;
                 _currentModId = string.IsNullOrWhiteSpace(modId) ? "anonymous" : modId;
-                _currentModHash = ModCommandDispatcher.ComputeModHash(_currentModId);
+                _currentModHash = modHash != 0u ? modHash : ModCommandDispatcher.ComputeModHash(_currentModId);
                 _scopeDepth = _previousScopeDepth + 1;
             }
 
@@ -55,6 +60,10 @@ namespace Hecton8.Modding
 
     internal static class ModSaveStateStore
     {
+        private const uint FnvOffsetBasis = 2166136261u;
+        private const uint FnvPrime = 16777619u;
+        private const string SaveDictionaryPrefix = "m8v1:";
+
         // COLD ALLOC: Dictionary<string,string>[64] — custom mod save payload map persisted inside SaveData — owner: ModSaveStateStore
         private struct ModSaveEntry
         {
@@ -62,6 +71,7 @@ namespace Hecton8.Modding
             public string Value;
             public uint KeyHash;
             public uint ModHash;
+            public uint CompoundHash;
         }
 
         private static readonly List<ModSaveEntry> _customModData = new List<ModSaveEntry>(64);
@@ -83,14 +93,18 @@ namespace Hecton8.Modding
             }
 
             uint keyHash = ModCommandDispatcher.ComputeModHash(key);
-            if (_customModIndexByHash.TryGetValue(keyHash, out int index) && index >= 0 && index < _customModData.Count)
+            uint modHash = ResolvePersistenceOwnerHash(key);
+            uint compoundHash = ComputeCompoundPersistenceHash(modHash, keyHash);
+            if (_customModIndexByHash.TryGetValue(compoundHash, out int index) && index >= 0 && index < _customModData.Count)
             {
                 ModSaveEntry entry = _customModData[index];
-                if (entry.Key == key || string.IsNullOrEmpty(entry.Key))
+                if (entry.Key == key || string.IsNullOrEmpty(entry.Key) || entry.KeyHash == keyHash)
                 {
                     entry.Key = key;
                     entry.Value = value ?? string.Empty;
-                    entry.ModHash = ResolvePersistenceOwnerHash(key);
+                    entry.KeyHash = keyHash;
+                    entry.ModHash = modHash;
+                    entry.CompoundHash = compoundHash;
                     _customModData[index] = entry;
                     return;
                 }
@@ -99,25 +113,30 @@ namespace Hecton8.Modding
             for (int i = 0; i < _customModData.Count; i++)
             {
                 ModSaveEntry entry = _customModData[i];
-                if (entry.Key != key && !string.IsNullOrEmpty(entry.Key))
+                if (!MatchesPersistenceEntry(in entry, key, keyHash, modHash, compoundHash))
                     continue;
+
+                if (entry.CompoundHash != 0u && entry.CompoundHash != compoundHash)
+                    _customModIndexByHash.Remove(entry.CompoundHash);
 
                 entry.Key = key;
                 entry.Value = value ?? string.Empty;
                 entry.KeyHash = keyHash;
-                entry.ModHash = ResolvePersistenceOwnerHash(key);
+                entry.ModHash = modHash;
+                entry.CompoundHash = compoundHash;
                 _customModData[i] = entry;
-                _customModIndexByHash[keyHash] = i;
+                _customModIndexByHash[compoundHash] = i;
                 return;
             }
 
-            _customModIndexByHash[keyHash] = _customModData.Count;
+            _customModIndexByHash[compoundHash] = _customModData.Count;
             _customModData.Add(new ModSaveEntry
             {
                 Key = key,
                 Value = value ?? string.Empty,
                 KeyHash = keyHash,
-                ModHash = ResolvePersistenceOwnerHash(key)
+                ModHash = modHash,
+                CompoundHash = compoundHash
             });
         }
 
@@ -127,17 +146,19 @@ namespace Hecton8.Modding
                 return defaultValue ?? string.Empty;
 
             uint keyHash = ModCommandDispatcher.ComputeModHash(key);
-            if (_customModIndexByHash.TryGetValue(keyHash, out int index) && index >= 0 && index < _customModData.Count)
+            uint modHash = ResolvePersistenceOwnerHash(key);
+            uint compoundHash = ComputeCompoundPersistenceHash(modHash, keyHash);
+            if (_customModIndexByHash.TryGetValue(compoundHash, out int index) && index >= 0 && index < _customModData.Count)
             {
                 ModSaveEntry entry = _customModData[index];
-                if (entry.Key == key || string.IsNullOrEmpty(entry.Key))
+                if (MatchesPersistenceEntry(in entry, key, keyHash, modHash, compoundHash))
                     return entry.Value ?? string.Empty;
             }
 
             for (int i = 0; i < _customModData.Count; i++)
             {
                 ModSaveEntry entry = _customModData[i];
-                if (entry.Key == key || (entry.KeyHash == keyHash && string.IsNullOrEmpty(entry.Key)))
+                if (MatchesPersistenceEntry(in entry, key, keyHash, modHash, compoundHash))
                     return entry.Value ?? string.Empty;
             }
 
@@ -163,7 +184,9 @@ namespace Hecton8.Modding
             while (enumerator.MoveNext())
             {
                 ModSaveEntry entry = enumerator.Current;
-                if (!string.IsNullOrWhiteSpace(entry.Key))
+                if (entry.ModHash != 0u && entry.KeyHash != 0u)
+                    data.CustomModData[BuildSerializedStorageKey(entry.ModHash, entry.KeyHash)] = entry.Value ?? string.Empty;
+                else if (!string.IsNullOrWhiteSpace(entry.Key))
                     data.CustomModData[entry.Key] = entry.Value ?? string.Empty;
             }
         }
@@ -183,14 +206,18 @@ namespace Hecton8.Modding
                 if (string.IsNullOrWhiteSpace(key))
                     continue;
 
-                uint keyHash = ModCommandDispatcher.ComputeModHash(key);
-                _customModIndexByHash[keyHash] = _customModData.Count;
+                bool isNamespaced = TryParseSerializedStorageKey(key, out uint modHash, out uint keyHash);
+                uint compoundHash = isNamespaced
+                    ? ComputeCompoundPersistenceHash(modHash, keyHash)
+                    : keyHash;
+                _customModIndexByHash[compoundHash] = _customModData.Count;
                 _customModData.Add(new ModSaveEntry
                 {
-                    Key = key,
+                    Key = isNamespaced ? string.Empty : key,
                     Value = enumerator.Current.Value ?? string.Empty,
                     KeyHash = keyHash,
-                    ModHash = ResolvePersistenceOwnerHash(key)
+                    ModHash = modHash,
+                    CompoundHash = compoundHash
                 });
             }
         }
@@ -298,24 +325,28 @@ namespace Hecton8.Modding
 
                     string value = DecodeUtf16Payload(payloadBytes, payloadLength);
                     uint keyHash = unchecked((uint)sector.PagedSectorHash);
-                    if (_customModIndexByHash.TryGetValue(keyHash, out int existingIndex) &&
+                    uint compoundHash = ComputeCompoundPersistenceHash(sector.ModHash, keyHash);
+                    if (_customModIndexByHash.TryGetValue(compoundHash, out int existingIndex) &&
                         existingIndex >= 0 &&
                         existingIndex < _customModData.Count)
                     {
                         ModSaveEntry existing = _customModData[existingIndex];
                         existing.Value = value;
+                        existing.KeyHash = keyHash;
                         existing.ModHash = sector.ModHash;
+                        existing.CompoundHash = compoundHash;
                         _customModData[existingIndex] = existing;
                         continue;
                     }
 
-                    _customModIndexByHash[keyHash] = _customModData.Count;
+                    _customModIndexByHash[compoundHash] = _customModData.Count;
                     _customModData.Add(new ModSaveEntry
                     {
                         Key = string.Empty,
                         Value = value,
                         KeyHash = keyHash,
-                        ModHash = sector.ModHash
+                        ModHash = sector.ModHash,
+                        CompoundHash = compoundHash
                     });
                 }
                 finally
@@ -334,6 +365,109 @@ namespace Hecton8.Modding
             return currentModHash != 0u
                 ? currentModHash
                 : ModCommandDispatcher.ComputeModHash(key);
+        }
+
+        private static bool MatchesPersistenceEntry(
+            in ModSaveEntry entry,
+            string key,
+            uint keyHash,
+            uint modHash,
+            uint compoundHash)
+        {
+            if (entry.CompoundHash == compoundHash)
+                return true;
+
+            if (entry.ModHash == modHash && entry.KeyHash == keyHash)
+                return true;
+
+            return entry.ModHash == 0u && entry.KeyHash == keyHash && entry.Key == key;
+        }
+
+        private static uint ComputeCompoundPersistenceHash(uint modHash, uint keyHash)
+        {
+            uint hash = FnvOffsetBasis;
+            hash = AccumulateFnv(hash, modHash);
+            hash = AccumulateFnv(hash, 0x9E3779B9u);
+            return AccumulateFnv(hash, keyHash);
+        }
+
+        private static uint AccumulateFnv(uint hash, uint value)
+        {
+            unchecked
+            {
+                hash ^= (byte)value;
+                hash *= FnvPrime;
+                hash ^= (byte)(value >> 8);
+                hash *= FnvPrime;
+                hash ^= (byte)(value >> 16);
+                hash *= FnvPrime;
+                hash ^= (byte)(value >> 24);
+                hash *= FnvPrime;
+                return hash;
+            }
+        }
+
+        private static string BuildSerializedStorageKey(uint modHash, uint keyHash)
+        {
+            return SaveDictionaryPrefix + modHash.ToString("X8") + ":" + keyHash.ToString("X8");
+        }
+
+        private static bool TryParseSerializedStorageKey(string storageKey, out uint modHash, out uint keyHash)
+        {
+            modHash = 0u;
+            keyHash = 0u;
+            if (string.IsNullOrEmpty(storageKey) ||
+                storageKey.Length != SaveDictionaryPrefix.Length + 17 ||
+                !storageKey.StartsWith(SaveDictionaryPrefix, System.StringComparison.Ordinal))
+            {
+                keyHash = ModCommandDispatcher.ComputeModHash(storageKey);
+                return false;
+            }
+
+            int modOffset = SaveDictionaryPrefix.Length;
+            int separatorOffset = modOffset + 8;
+            if (storageKey[separatorOffset] != ':')
+            {
+                keyHash = ModCommandDispatcher.ComputeModHash(storageKey);
+                return false;
+            }
+
+            if (!TryParseHexUInt(storageKey, modOffset, out modHash) ||
+                !TryParseHexUInt(storageKey, separatorOffset + 1, out keyHash) ||
+                modHash == 0u ||
+                keyHash == 0u)
+            {
+                modHash = 0u;
+                keyHash = ModCommandDispatcher.ComputeModHash(storageKey);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool TryParseHexUInt(string value, int offset, out uint result)
+        {
+            result = 0u;
+            if (value == null || offset < 0 || offset + 8 > value.Length)
+                return false;
+
+            for (int i = 0; i < 8; i++)
+            {
+                char c = value[offset + i];
+                uint nibble;
+                if (c >= '0' && c <= '9')
+                    nibble = (uint)(c - '0');
+                else if (c >= 'A' && c <= 'F')
+                    nibble = (uint)(c - 'A' + 10);
+                else if (c >= 'a' && c <= 'f')
+                    nibble = (uint)(c - 'a' + 10);
+                else
+                    return false;
+
+                result = (result << 4) | nibble;
+            }
+
+            return true;
         }
 
         private static string DecodeUtf16Payload(NativeArray<byte> payloadBytes, int payloadLength)
@@ -408,7 +542,7 @@ namespace Hecton8.Modding
 
         internal static ItemCatalog ResolveActiveCatalog()
         {
-            PlayerInventory playerInventory = PlayerInventory.Instance;
+            PlayerInventory playerInventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
             return playerInventory != null ? playerInventory.ItemCatalog : null;
         }
 
@@ -437,15 +571,12 @@ namespace Hecton8.Modding
         // COLD ALLOC: List<RecipeData>[32] — runtime-only crafting recipe overlay — owner: ModRecipeRegistry
         private static readonly List<RecipeData> _runtimeRecipes = new List<RecipeData>(32);
 
-        internal static event System.Action RegistryChanged;
-
         internal static int Count => _runtimeRecipes.Count;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _runtimeRecipes.Clear();
-            RegistryChanged = null;
         }
 
         internal static bool TryRegister(RecipeData recipeData, out string error)
@@ -480,13 +611,13 @@ namespace Hecton8.Modding
                 return true;
 
             _runtimeRecipes.Add(recipeData);
-            RegistryChanged?.Invoke();
+            ModRegistryEvents.NotifyRecipeRegistryChanged();
             return true;
         }
 
         internal static void FlushPendingRegistrations()
         {
-            RegistryChanged?.Invoke();
+            ModRegistryEvents.NotifyRecipeRegistryChanged();
         }
 
         internal static RecipeData GetAt(int index)
@@ -522,13 +653,10 @@ namespace Hecton8.Modding
         // COLD ALLOC: List<PendingBuildableRegistration>[16] — deferred buildable registrations until the live module catalog exists — owner: ModBuildableRegistry
         private static readonly List<PendingBuildableRegistration> _pendingBuildables = new List<PendingBuildableRegistration>(16);
 
-        internal static event System.Action RegistryChanged;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _pendingBuildables.Clear();
-            RegistryChanged = null;
         }
 
         internal static bool TryRegister(BuildableData buildableData, string customCategory, out string error)
@@ -552,7 +680,7 @@ namespace Hecton8.Modding
             {
                 bool success = catalog.TryRegisterRuntimeModule(buildableData, NormalizeCategory(customCategory), out error);
                 if (success)
-                    RegistryChanged?.Invoke();
+                    ModRegistryEvents.NotifyBuildableRegistryChanged();
 
                 return success;
             }
@@ -569,7 +697,7 @@ namespace Hecton8.Modding
                 CustomCategory = NormalizeCategory(customCategory)
             });
 
-            RegistryChanged?.Invoke();
+            ModRegistryEvents.NotifyBuildableRegistryChanged();
             return true;
         }
 
@@ -596,7 +724,7 @@ namespace Hecton8.Modding
             }
 
             if (changed)
-                RegistryChanged?.Invoke();
+                ModRegistryEvents.NotifyBuildableRegistryChanged();
         }
 
         internal static ModuleCatalog ResolveActiveCatalog()

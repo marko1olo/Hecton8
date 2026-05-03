@@ -253,8 +253,12 @@ namespace NASAPunk.Visor
         private void OnEnable()
         {
 #if UNITY_EDITOR
-            if (EditorApplication.isCompiling)
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+            {
+                SuspendEditModeProjection();
+                UnregisterEditorTick();
                 return;
+            }
 #endif
 
             RegisterActiveController();
@@ -266,12 +270,7 @@ namespace NASAPunk.Visor
             TryRegisterRuntimeTick();
 #if UNITY_EDITOR
             if (!Application.isPlaying)
-            {
-                if (!IsEditorPreviewActive())
-                    SuspendEditModeProjection();
-
-                EvaluateEditorTickRegistration();
-            }
+                UnregisterEditorTick();
 #endif
         }
 
@@ -377,8 +376,12 @@ namespace NASAPunk.Visor
         private void OnValidate()
         {
 #if UNITY_EDITOR
-            if (EditorApplication.isCompiling)
+            if (EditorApplication.isCompiling || !Application.isPlaying)
+            {
+                SuspendEditModeProjection();
+                UnregisterEditorTick();
                 return;
+            }
 #endif
 
             EnsurePropertyBlock();
@@ -390,10 +393,6 @@ namespace NASAPunk.Visor
                 return;
 
             RebuildProjection();
-#if UNITY_EDITOR
-            if (!Application.isPlaying)
-                EvaluateEditorTickRegistration();
-#endif
         }
 
         public void Tick(float deltaTime)
@@ -1057,7 +1056,7 @@ namespace NASAPunk.Visor
             ReleaseOwnedRuntimeTexture();
 
             // Rent RT from pool (zero-GC, O(1) lookup)
-            _hudRT = RenderTexturePool.Instance.Rent(targetWidth, targetHeight, RenderTextureFormat.ARGB32, this);
+            _hudRT = Hecton8.Core.GlobalRegistry.RenderTexturePool.Rent(targetWidth, targetHeight, RenderTextureFormat.ARGB32, this);
             _hudRT.filterMode = _filterMode;
             _hudRT.useMipMap = false;
             _hudRT.name = "VisorHUD_RT_Scaled";
@@ -1101,11 +1100,11 @@ namespace NASAPunk.Visor
             if (!_enableAdaptiveRuntimeRTScaling || !Application.isPlaying)
                 return QuantizeAdaptiveScale(Mathf.Clamp(effectiveScale, 0.1f, 1f));
 
-            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             if (scaler != null && scaler.Enabled)
                 effectiveScale *= Mathf.Clamp01(scaler.CurrentRenderScale);
 
-            VRAMMonitor vramMonitor = VRAMMonitor.Instance;
+            VRAMMonitor vramMonitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
             if (vramMonitor != null)
             {
                 switch (vramMonitor.PressureState)
@@ -1187,12 +1186,12 @@ namespace NASAPunk.Visor
                 return;
 
             // Register disposal with lifecycle tracker
-            if (RenderTextureLifecycleTracker.Instance != null)
-                RenderTextureLifecycleTracker.Instance.RegisterDisposal(_hudRT);
+            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle != null)
+                Hecton8.Core.GlobalRegistry.RenderTextureLifecycle.RegisterDisposal(_hudRT);
 
             // Return to pool for reuse (zero-GC)
-            if (RenderTexturePool.Instance != null)
-                RenderTexturePool.Instance.Return(_hudRT);
+            if (Hecton8.Core.GlobalRegistry.RenderTexturePool != null)
+                Hecton8.Core.GlobalRegistry.RenderTexturePool.Return(_hudRT);
             else
             {
                 // Fallback if pool not available (Editor mode or shutdown)

@@ -340,7 +340,7 @@ namespace Hecton8.Modding
             /// <returns>True when one unit was removed from inventory and the recycle outputs were granted successfully.</returns>
             public static bool ProcessRecycle(string itemId)
             {
-                ScrapManager manager = ScrapManager.Instance;
+                ScrapManager manager = GlobalRegistry.Scrap;
                 return manager != null && manager.ProcessRecycle(itemId);
             }
         }
@@ -485,10 +485,13 @@ namespace Hecton8.Modding
                 Dictionary<string, string> entries,
                 bool overwriteExisting = true)
             {
+                if (!ModExecutionScope.HasActiveMod)
+                    throw new IllegalContractException("Mod localization injection must originate from an active mod execution scope.");
+
                 if (entries == null || entries.Count == 0)
                     return;
 
-                Hecton.Localization.LocalizationManager manager = Hecton.Localization.LocalizationManager.Instance;
+                Hecton.Localization.LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
                 if (manager == null)
                 {
                     Debug.LogWarning("[HectonAPI.Localization] LocalizationManager is unavailable. Injection was skipped.");
@@ -670,6 +673,9 @@ namespace Hecton8.Modding
             /// <param name="value">Serialized payload text. Null is normalized to an empty string.</param>
             public static void SetModString(string key, string value)
             {
+                if (!ModExecutionScope.HasActiveMod)
+                    throw new IllegalContractException("Mod save writes must originate from an active mod execution scope.");
+
                 ModSaveStateStore.SetModString(key, value);
             }
 
@@ -681,6 +687,9 @@ namespace Hecton8.Modding
             /// <returns>The stored payload text or <paramref name="defaultValue"/> when no payload exists.</returns>
             public static string GetModString(string key, string defaultValue = "")
             {
+                if (!ModExecutionScope.HasActiveMod)
+                    throw new IllegalContractException("Mod save reads must originate from an active mod execution scope.");
+
                 return ModSaveStateStore.GetModString(key, defaultValue);
             }
         }

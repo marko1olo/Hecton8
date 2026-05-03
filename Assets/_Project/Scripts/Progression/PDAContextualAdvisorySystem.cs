@@ -15,7 +15,7 @@ namespace Hecton8.Progression
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Progression/PDA Contextual Advisory System")]
-    public sealed class PDAContextualAdvisorySystem : MonoBehaviour, ISlowTickable, ISaveable
+    public sealed class PDAContextualAdvisorySystem : MonoBehaviour, ISlowTickable, ISaveable, IInventoryEventListener, IBaseIntegrityEventListener
     {
         [Flags]
         private enum AdvisoryFlags
@@ -95,9 +95,8 @@ namespace Hecton8.Progression
             TryRegisterWithSaveManager();
             SubscribeToEventBus();
             RebindOwnerSubscriptions();
-            InventoryEvents.OnInventoryFull += HandleInventoryFull;
-            BaseIntegrityEvents.OnModuleEmergency += HandleModuleEmergency;
-            BaseIntegrityEvents.OnModuleAirQualityWarning += HandleModuleAirQualityWarning;
+            InventoryEvents.Register(this);
+            BaseIntegrityEvents.Register(this);
         }
 
         private void Start()
@@ -109,9 +108,8 @@ namespace Hecton8.Progression
 
         private void OnDisable()
         {
-            InventoryEvents.OnInventoryFull -= HandleInventoryFull;
-            BaseIntegrityEvents.OnModuleEmergency -= HandleModuleEmergency;
-            BaseIntegrityEvents.OnModuleAirQualityWarning -= HandleModuleAirQualityWarning;
+            InventoryEvents.Unregister(this);
+            BaseIntegrityEvents.Unregister(this);
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
@@ -120,9 +118,9 @@ namespace Hecton8.Progression
 
         private void OnDestroy()
         {
-            InventoryEvents.OnInventoryFull -= HandleInventoryFull;
-            BaseIntegrityEvents.OnModuleEmergency -= HandleModuleEmergency;
-            BaseIntegrityEvents.OnModuleAirQualityWarning -= HandleModuleAirQualityWarning;
+            InventoryEvents.Unregister(this);
+            BaseIntegrityEvents.Unregister(this);
+            BaseIntegrityEvents.AssertUnregistered(this, nameof(PDAContextualAdvisorySystem));
             UnbindOwnerSubscriptions();
             UnsubscribeFromEventBus();
             UnregisterFromTickManager();
@@ -216,7 +214,31 @@ namespace Hecton8.Progression
             _heatStressExposureSeconds = Mathf.Max(0f, data.pdaAdvisories.heatStressExposureSeconds);
         }
 
-        private void HandleInventoryFull(Hecton8.Items.ItemData item)
+        /// <inheritdoc />
+        public void OnInventoryEvent(in InventoryEventPayload payload)
+        {
+            if ((InventoryEventType)payload.EventType != InventoryEventType.InventoryFull)
+                return;
+
+            HandleInventoryFull();
+        }
+
+        /// <inheritdoc />
+        public void OnBaseIntegrityEvent(in BaseIntegrityEventPayload payload)
+        {
+            switch ((BaseIntegrityEventType)payload.EventType)
+            {
+                case BaseIntegrityEventType.Emergency:
+                    HandleModuleEmergency((BaseModuleFailureMode)payload.FailureMode, payload.Value);
+                    break;
+
+                case BaseIntegrityEventType.AirQualityWarning:
+                    HandleModuleAirQualityWarning(payload.Value);
+                    break;
+            }
+        }
+
+        private void HandleInventoryFull()
         {
             if ((_issuedFlags & AdvisoryFlags.InventoryFull) != 0)
                 return;
@@ -285,7 +307,8 @@ namespace Hecton8.Progression
 
         private void HandlePlayerSpawned(PlayerSpawnedEvent playerSpawnedEvent)
         {
-            if (playerSpawnedEvent == null || playerSpawnedEvent.PlayerObject != gameObject)
+            ulong ownerEntityId = EntityId.ToULong(gameObject.GetEntityId());
+            if (playerSpawnedEvent == null || playerSpawnedEvent.PlayerEntityId != ownerEntityId)
                 return;
 
             RebindOwnerSubscriptions();

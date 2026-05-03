@@ -11,7 +11,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(TMP_Text))]
     [AddComponentMenu("Hecton/UI/Localized TMP Auto Sizer")]
-    public sealed class LocalizedTMPAutoSizer : MonoBehaviour, IUpdatable
+    public sealed class LocalizedTMPAutoSizer : MonoBehaviour, IUpdatable, ILocalizationLanguageChangedListener
     {
         private const float CollapsedRectThreshold = 0.5f;
         private const int MaxRectRepairPasses = 4;
@@ -65,7 +65,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             InvalidateConfiguration();
             QueueConfigurationApply();
             TryRegisterForTick();
@@ -73,7 +73,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregisterFromTick();
         }
 
@@ -135,6 +135,15 @@ namespace Hecton8.UI
             autoSizer.ApplyConfiguration();
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             InvalidateConfiguration();
@@ -179,8 +188,8 @@ namespace Hecton8.UI
             CaptureDefaults();
             RepairCollapsedRectHierarchy();
 
-            GameLanguage language = LocalizationManager.Instance != null
-                ? LocalizationManager.Instance.CurrentLanguage
+            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
+                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
                 : GameLanguage.English;
             Vector2 rectSize = targetText.rectTransform != null ? targetText.rectTransform.rect.size : Vector2.zero;
             if (!_configurationDirty &&
@@ -325,7 +334,7 @@ namespace Hecton8.UI
             if (text == null)
                 return;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
             bool rtl = LocalizedMeasurementFormatter.IsRightToLeft(language);
             if (text.isRightToLeftText == rtl)

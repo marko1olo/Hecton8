@@ -32,7 +32,6 @@
 //   • Никаких new/LINQ в hot path.
 // ============================================================================
 
-using System;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
@@ -41,6 +40,7 @@ using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton.Localization;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -53,33 +53,279 @@ namespace Hecton8.Gameplay
         Amplify     = 3    // Усилить сигнал
     }
 
+    /// <summary>
+    /// Ending event discriminator for <see cref="EndingEventPayload"/>.
+    /// </summary>
+    public enum EndingEventType : byte
+    {
+        ConditionMet = 0,
+        Chosen = 1,
+        SequenceComplete = 2
+    }
+
+    /// <summary>
+    /// Unmanaged ending event payload.
+    /// </summary>
+    public struct EndingEventPayload
+    {
+        public byte EventType;
+        public byte Choice;
+        public ushort Reserved;
+    }
+
+    /// <summary>
+    /// Listener contract for ending events drained from <see cref="SystemDispatcher"/>.
+    /// </summary>
+    public interface IEndingEventListener
+    {
+        /// <summary>
+        /// Consumes one queue-drained ending event.
+        /// </summary>
+        /// <param name="payload">Unmanaged ending payload.</param>
+        void OnEndingEvent(in EndingEventPayload payload);
+    }
+
     public static class EndingEvents
     {
+        private const int ListenerCapacity = 8;
+        private const int PendingEventCapacity = 8;
+
+        // COLD ALLOC: RegistryBucket<IEndingEventListener>[8] - ending listeners drained by SystemDispatcher LateUpdate - owner: EndingEvents
+        private static readonly RegistryBucket<IEndingEventListener> _listeners = new RegistryBucket<IEndingEventListener>(ListenerCapacity);
+        private static NativeQueue<EndingEventPayload> _pendingEvents;
+        private static NativeQueue<EndingEventPayload> _nextFrameEvents;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
+
+        /// <summary>
+        /// Number of queued ending events awaiting LateUpdate dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnEndingConditionMet = null;
-            OnEndingChosen = null;
-            OnEndingSequenceComplete = null;
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(EndingEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(EndingEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
-        /// <summary>Условия для концовки выполнены — игрок у ядра.</summary>
-        public static event Action OnEndingConditionMet;
+        /// <summary>
+        /// Registers a listener for deferred ending events.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Register(IEndingEventListener listener)
+        {
+            if (listener == null)
+                return;
 
-        /// <summary>Игрок сделал выбор концовки.</summary>
-        public static event Action<EndingChoice> OnEndingChosen;
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
 
-        /// <summary>Финальная последовательность завершена.</summary>
-        public static event Action<EndingChoice> OnEndingSequenceComplete;
+        /// <summary>
+        /// Unregisters a listener from deferred ending events.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Unregister(IEndingEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
 
         public static void RaiseConditionMet()
-            => OnEndingConditionMet?.Invoke();
+        {
+            Enqueue(EndingEventType.ConditionMet, EndingChoice.None);
+        }
 
         public static void RaiseChosen(EndingChoice choice)
-            => OnEndingChosen?.Invoke(choice);
+        {
+            Enqueue(EndingEventType.Chosen, choice);
+        }
 
         public static void RaiseSequenceComplete(EndingChoice choice)
-            => OnEndingSequenceComplete?.Invoke(choice);
+        {
+            Enqueue(EndingEventType.SequenceComplete, choice);
+        }
+
+        /// <summary>
+        /// Flushes queued ending events to registered listeners.
+        /// Called by <see cref="SystemDispatcher"/> from LateUpdate.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out EndingEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                IEndingEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                        rawArray[i].OnEndingEvent(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
+        }
+
+        private static void Enqueue(EndingEventType type, EndingChoice choice)
+        {
+            if (_listeners.Count <= 0)
+                return;
+
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return;
+
+            EndingEventPayload payload = new EndingEventPayload
+            {
+                EventType = (byte)type,
+                Choice = (byte)choice,
+                Reserved = 0
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<EndingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] - deferred ending lane flushed by SystemDispatcher LateUpdate - owner: EndingEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(EndingEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<EndingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EndingEventPayload>[8] - next-frame ending lane prevents same-frame reentrant dispatch - owner: EndingEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(EndingEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                return;
+
+            if (_pendingEvents.IsEmpty())
+                PromoteNextFrameEventsIfFrontEmpty();
+
+            if (_pendingEventCount > 0 &&
+                !DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+            {
+                return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<EndingEventPayload> queue,
+            ref int pendingCount)
+        {
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<EndingEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
+        }
     }
 
     [DisallowMultipleComponent]
@@ -117,6 +363,7 @@ namespace Hecton8.Gameplay
         private bool _conditionMet;
         private bool _endingComplete;
         private bool _registered;
+        private bool _serviceRegistered;
         private HectonSurvivalSystem _survivalSystem;
 
         // ══════════════════════════════════════════════════════════
@@ -148,6 +395,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegister();
+            TryRegisterService();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
@@ -160,6 +408,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
@@ -170,6 +419,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (Instance == this)
                 Instance = null;
@@ -186,7 +436,7 @@ namespace Hecton8.Gameplay
             float depth = _survivalSystem != null ? _survivalSystem.Depth : 0f;
             if (depth < requiredDepth) return;
 
-            AtlasSignalSystem signal = AtlasSignalSystem.Instance;
+            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal == null) return;
             if (signal.CurrentStrength < requiredSignalStrength) return;
 
@@ -226,6 +476,24 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+                return;
+
+            Hecton8.Core.GlobalRegistry.RegisterEndingRuntime(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            Hecton8.Core.GlobalRegistry.UnregisterEndingRuntime(this);
+            _serviceRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -286,11 +554,11 @@ namespace Hecton8.Gameplay
         private void ExecuteShutDown()
         {
             // Атлас-6 выключен. Сигнал прекращается.
-            AtlasSignalSystem signal = AtlasSignalSystem.Instance;
+            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal != null)
                 signal.DecodeSignal("atlas6_shutdown");
 
-            Atlas6DirectiveSystem directive = Atlas6DirectiveSystem.Instance;
+            Atlas6DirectiveSystem directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
             if (directive != null)
                 directive.RegisterBarterTransaction(); // Корпорация получила что хотела
 
@@ -314,7 +582,7 @@ namespace Hecton8.Gameplay
         private void ExecuteAmplify()
         {
             // Сигнал усилен — публичный. Атлас-6 выключается сам.
-            AtlasSignalSystem signal = AtlasSignalSystem.Instance;
+            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal != null)
                 signal.DecodeSignal("atlas6_amplified_public");
 
@@ -375,7 +643,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 

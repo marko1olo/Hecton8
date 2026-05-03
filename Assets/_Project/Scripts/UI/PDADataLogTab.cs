@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 â€” PDADataLogTab.cs
 // Ð’ÐºÐ»Ð°Ð´ÐºÐ° PDA: Ð°Ñ€Ñ…Ð¸Ð² Ð°ÑƒÐ´Ð¸Ð¾Ð´Ð½ÐµÐ²Ð½Ð¸ÐºÐ¾Ð² ÐºÐ¾Ð»Ð¾Ð½Ð¸Ð¸.
 //
@@ -34,10 +34,14 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Data Log Tab")]
-    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, IAudioLogEventListener, IPDAEventListener
+    public sealed class PDADataLogTab : MonoBehaviour, ITickable, IUpdatable, IAudioLogEventListener, IPDAEventListener, ILocalizationLanguageChangedListener
     {
         private const string PlaybackTimerTemplate = "{0:00}:{1:00}";
         private static readonly char[] PlaybackTimerTemplateChars = PlaybackTimerTemplate.ToCharArray();
+        private const int MaxRegisteredCatalogTabs = 4;
+
+        // COLD ALLOC: RegistryBucket<PDADataLogTab>[4] - active PDA catalog sources for procedural lore lookup - owner: PDADataLogTab
+        private static readonly RegistryBucket<PDADataLogTab> _registeredCatalogTabs = new RegistryBucket<PDADataLogTab>(MaxRegisteredCatalogTabs);
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -115,6 +119,7 @@ namespace Hecton8.UI
         private bool _built;
         private bool _registered;
         private bool _pdaEventsRegistered;
+        private bool _catalogTabRegistered;
         private bool _dirty;
         private bool _detailVisible = true;
 
@@ -196,6 +201,35 @@ namespace Hecton8.UI
             return copyCount;
         }
 
+        /// <summary>
+        /// Copies the first active PDA catalog into a caller-owned buffer without scene search.
+        /// </summary>
+        /// <param name="buffer">Destination buffer owned by the caller.</param>
+        /// <param name="count">Copied entry count.</param>
+        /// <returns>True when a live catalog source produced entries.</returns>
+        internal static bool TryCopyRegisteredCatalog(AudioLogData[] buffer, out int count)
+        {
+            count = 0;
+            if (buffer == null || buffer.Length == 0)
+                return false;
+
+            PDADataLogTab[] rawArray = _registeredCatalogTabs.RawArray;
+            int registeredCount = _registeredCatalogTabs.Count;
+            for (int i = 0; i < registeredCount; i++)
+            {
+                PDADataLogTab tab = rawArray[i];
+                if (tab == null || !tab.isActiveAndEnabled)
+                    continue;
+
+                count = tab.CopyCatalog(buffer);
+                if (count > 0)
+                    return true;
+            }
+
+            count = 0;
+            return false;
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  NESTED TYPE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -227,6 +261,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            TryRegisterCatalogTab();
             RebuildLocalizationCache();
             if (!_built) EnsureBuilt();
             ApplyLocalizedStaticText();
@@ -235,7 +270,7 @@ namespace Hecton8.UI
 
             AudioLogEvents.Register(this);
             TryRegisterPDAEvents();
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
 
             RebuildLoreBindingCache();
             _dirty = true;
@@ -243,19 +278,21 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
+            TryUnregisterCatalogTab();
             TryUnregister();
 
             AudioLogEvents.Unregister(this);
             UnregisterPDAEvents();
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
 
         private void OnDestroy()
         {
+            TryUnregisterCatalogTab();
             TryUnregister();
             AudioLogEvents.Unregister(this);
             UnregisterPDAEvents();
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             PDAEvents.AssertUnregistered(this, nameof(PDADataLogTab));
             if (_runtimeHologramMaterial != null)
             {
@@ -280,6 +317,29 @@ namespace Hecton8.UI
 
             PDAEvents.Unregister(this);
             _pdaEventsRegistered = false;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCatalogRegistry()
+        {
+            _registeredCatalogTabs.Clear();
+        }
+
+        private void TryRegisterCatalogTab()
+        {
+            if (_catalogTabRegistered)
+                return;
+
+            _catalogTabRegistered = _registeredCatalogTabs.TryRegister(this);
+        }
+
+        private void TryUnregisterCatalogTab()
+        {
+            if (!_catalogTabRegistered)
+                return;
+
+            _registeredCatalogTabs.Unregister(this);
+            _catalogTabRegistered = false;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -326,7 +386,7 @@ namespace Hecton8.UI
         {
             if (_selectedIndex < 0 || _selectedIndex >= CatalogCount) return;
 
-            AudioLogSystem system = AudioLogSystem.Instance;
+            AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
             if (system == null) return;
 
             AudioLogData log = GetLog(_selectedIndex);
@@ -415,7 +475,7 @@ namespace Hecton8.UI
 
         private void HandlePlaybackStarted(float durationSeconds)
         {
-            AudioLogData data = AudioLogSystem.Instance != null ? AudioLogSystem.Instance.CurrentLog : null;
+            AudioLogData data = Hecton8.Core.GlobalRegistry.AudioLogs != null ? Hecton8.Core.GlobalRegistry.AudioLogs.CurrentLog : null;
             _playbackRemaining = durationSeconds > 0f ? durationSeconds : (data != null ? data.Duration : 0f);
             if (_subtitleLabel != null && data != null)
             {
@@ -706,7 +766,7 @@ namespace Hecton8.UI
 
         private void RefreshList()
         {
-            LoreDatabaseManager database = LoreDatabaseManager.Instance;
+            LoreDatabaseManager database = Hecton8.Core.GlobalRegistry.LoreDatabase;
             int discovered = database != null ? database.UnlockedCount : 0;
             int logCount = CatalogCount;
 
@@ -823,7 +883,7 @@ namespace Hecton8.UI
 
         private void RefreshRowHighlights()
         {
-            AudioLogSystem system = AudioLogSystem.Instance;
+            AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
             string playingId = system != null && system.IsPlaying && system.CurrentLog != null
                 ? system.CurrentLog.logId
                 : null;
@@ -849,7 +909,7 @@ namespace Hecton8.UI
 
         private void RefreshPlayButton()
         {
-            AudioLogSystem system = AudioLogSystem.Instance;
+            AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
             AudioLogData selectedLog = GetSelectedLog();
             bool isDiscovered = selectedLog != null && IsCatalogLogUnlocked(_selectedIndex);
             bool isPlaying = system != null && system.IsPlaying;
@@ -948,7 +1008,7 @@ namespace Hecton8.UI
             if (_catalogLoreRecordIndices.Length != logCount)
                 _catalogLoreRecordIndices = new int[logCount]; // COLD ALLOC: int[allLogs.Length] — lore record index cache aligned to PDA archive catalog — owner: PDADataLogTab
 
-            LoreDatabaseManager database = LoreDatabaseManager.Instance;
+            LoreDatabaseManager database = Hecton8.Core.GlobalRegistry.LoreDatabase;
             for (int i = 0; i < logCount; i++)
             {
                 AudioLogData log = GetLog(i);
@@ -989,7 +1049,7 @@ namespace Hecton8.UI
                 return false;
 
             EnsureLoreBindingCache();
-            LoreDatabaseManager database = LoreDatabaseManager.Instance;
+            LoreDatabaseManager database = Hecton8.Core.GlobalRegistry.LoreDatabase;
             if (database == null || !database.TryGetPackedUnlockWords(out Unity.Collections.NativeArray<uint> words))
                 return false;
 
@@ -1071,6 +1131,15 @@ namespace Hecton8.UI
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  UI HELPERS
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void HandleLanguageChanged(GameLanguage language)
         {
@@ -1175,7 +1244,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             if (stressBucket == _lastStressCorruptionBucket)
                 return;
@@ -1186,7 +1255,7 @@ namespace Hecton8.UI
 
             if (_subtitleLabel != null)
             {
-                AudioLogSystem system = AudioLogSystem.Instance;
+                AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
                 AudioLogData subtitleLog = system != null && system.IsPlaying ? system.CurrentLog : GetSelectedLog();
                 string displaySubtitle = ResolveLogStressReactiveText(subtitleLog, "subtitle", _prevSubtitleText);
                 ApplyDynamicText(_subtitleLabel, displaySubtitle, ref _summaryTextBuffer);
@@ -1200,7 +1269,7 @@ namespace Hecton8.UI
             if (effect == null)
                 return;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             effect.SetEffectActive(
                 manager != null &&
                 log != null &&
@@ -1213,7 +1282,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.ApplyHullStressCorruptionIfNeeded(text)
                 : text;
@@ -1224,7 +1293,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return text;
 
@@ -1236,7 +1305,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -1387,7 +1456,7 @@ namespace Hecton8.UI
 
         private void TriggerHiddenRecordFlash(AudioLogData log)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null || _summaryLabel == null || log == null)
                 return;
 
@@ -1789,7 +1858,7 @@ namespace Hecton8.UI
 
             public void OnPointerClick(UnityEngine.EventSystems.PointerEventData e)
             {
-                AudioLogSystem sys = AudioLogSystem.Instance;
+                AudioLogSystem sys = Hecton8.Core.GlobalRegistry.AudioLogs;
                 if (sys != null && sys.IsPlaying)
                     sys.StopPlayback();
                 else

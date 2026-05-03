@@ -19,7 +19,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Pause Menu Controller")]
-    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUpdatable, ISaveEventListener
+    public sealed class PauseMenuController : MonoBehaviour, ITickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener
     {
         internal static PauseMenuController ActiveRuntimeInstance { get; private set; }
         private const string PauseMenuRootName = "PauseMenu_Root";
@@ -182,7 +182,7 @@ namespace Hecton8.UI
             TryRegister();
             BindInputActions();
 
-            LocalizationManager.OnLanguageChanged += OnLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             SaveEvents.Register(this);
         }
 
@@ -194,8 +194,8 @@ namespace Hecton8.UI
             UnbindInputActions();
 
             // TASK 31: Null-safe event unsubscription in OnDisable
-            if (LocalizationManager.Instance != null)
-                LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+            if (Hecton8.Core.GlobalRegistry.Localization != null)
+                LocalizationEvents.UnregisterLanguageListener(this);
             
             SaveEvents.Unregister(this);
 
@@ -316,8 +316,7 @@ namespace Hecton8.UI
             }
 
             // TASK 33: Ensure correct input mode restoration
-            if (InputManager.Instance != null)
-                InputManager.Instance.SwitchToUIInput();
+            GlobalRegistry.Input.SwitchToUIInput();
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -353,6 +352,15 @@ namespace Hecton8.UI
 
             RefreshLanguageSettingsStatus();
         }
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            OnLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void OnLanguageChanged(GameLanguage newLanguage)
         {
@@ -391,12 +399,8 @@ namespace Hecton8.UI
             if (pauseTimeScale)
                 Time.timeScale = Mathf.Approximately(Time.timeScale, 0f) ? _cachedTimeScale : Time.timeScale;
 
-            if (restorePlayerInput &&
-                InputManager.Instance != null &&
-                InputManager.Instance.CanSwitchActionMaps)
-            {
-                InputManager.Instance.SwitchToPlayerInput();
-            }
+            if (restorePlayerInput && GlobalRegistry.Input.IsInitialized)
+                GlobalRegistry.Input.SwitchToPlayerInput();
 
             ClearPauseSelection();
             ApplyCursorState(restorePlayerInput);
@@ -433,8 +437,7 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return false;
 
-            InputManager inputManager = InputManager.Instance;
-            return inputManager != null && inputManager.CanSwitchActionMaps;
+            return GlobalRegistry.Input.IsInitialized;
         }
 
         private void AutoResolve()
@@ -802,7 +805,7 @@ namespace Hecton8.UI
                     ApplySaveStatusLiteral(_cachedSaveManagerUnavailable);
 
                 // Localized error message
-                LocalizationManager loc = LocalizationManager.Instance;
+                LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
                 string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save Error";
                 string message = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save system is unavailable. Cannot save game.";
 
@@ -834,7 +837,7 @@ namespace Hecton8.UI
                     ApplySaveStatusText(string.Empty, upperSlotName, _cachedFailedTerminal);
 
                 // Localized error message
-                LocalizationManager loc = LocalizationManager.Instance;
+                LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
                 string displaySlotName = BuildSlotDisplayName(loc, slotName);
                 string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_CRASHED_TITLE) : "Save Error";
                 string message = loc != null 
@@ -1096,9 +1099,9 @@ namespace Hecton8.UI
         {
             // TASK 33: Ensure all settings are saved before Application.Quit()
             // Save UserOptions (input overrides, etc.)
-            if (UserOptionsPersistence.Instance != null)
+            if (Hecton8.Core.GlobalRegistry.UserOptions != null)
             {
-                UserOptionsPersistence.Instance.Save();
+                Hecton8.Core.GlobalRegistry.UserOptions.Save();
             }
 
             // SettingsManager saves settings individually via PlayerPrefs
@@ -1166,7 +1169,8 @@ namespace Hecton8.UI
             colors.disabledColor = new Color(0.12f, 0.12f, 0.12f, 0.5f);
             button.colors = colors;
             button.transition = Selectable.Transition.ColorTint;
-            button.onClick.AddListener(() => onClick?.Invoke());
+            if (onClick != null)
+                button.onClick.AddListener(onClick.Invoke);
 
             TextMeshProUGUI text = CreateText(rect, "Label", labelFont, 12f, FontStyles.Bold, TextAlignmentOptions.Center);
             Stretch(text.rectTransform, 0f, 0f, 0f, 0f);
@@ -1447,7 +1451,7 @@ namespace Hecton8.UI
             if (_saveStatus != null)
                 ApplySaveStatusText(GetUpperSlotDisplayName(slotName), _cachedFailed, CachedToUpperInvariant(normalizedError));
 
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             string displaySlotName = BuildSlotDisplayName(loc, slotName);
             string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_FAILED_TITLE) : "Save Failed";
             string message = loc != null
@@ -1468,7 +1472,7 @@ namespace Hecton8.UI
 
         private void CycleLanguage()
         {
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             if (localization == null)
             {
                 RefreshLanguageSettingsStatus();
@@ -1484,7 +1488,7 @@ namespace Hecton8.UI
             if (_settingsLanguageStatus == null)
                 return;
 
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             if (localization == null)
             {
                 SetSettingsLanguageStatus(ResolveLocalized(
@@ -1559,7 +1563,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -1567,7 +1571,7 @@ namespace Hecton8.UI
 
         private static string GetUpperSlotDisplayName(string slotName)
         {
-            return CachedToUpperInvariant(BuildSlotDisplayName(LocalizationManager.Instance, slotName));
+            return CachedToUpperInvariant(BuildSlotDisplayName(Hecton8.Core.GlobalRegistry.Localization, slotName));
         }
 
         private static string BuildSlotDisplayName(LocalizationManager loc, string slotName)

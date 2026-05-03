@@ -22,7 +22,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-120)] // Manager order must stay ahead of gameplay consumers that read/wire destruction state.
-    public sealed class DestructibleOrganicManager : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class DestructibleOrganicManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable
     {
         private static DestructibleOrganicManager _activeRuntimeInstance;
 
@@ -61,6 +61,7 @@ namespace Hecton8.World
         private const byte FloraRuntimeFlagDead = 1 << 6;
         private const int DefaultCorpseNodeCapacity = 96;
         private const float DefaultCorpseBloodIntensity = 6f;
+        private const int MaterialClassCount = 5;
 
         private enum HarvestState : byte
         {
@@ -335,6 +336,7 @@ namespace Hecton8.World
         private int _underwaterCount;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
+        private bool _lateFrameTickRegistered;
         private bool _yieldScheduled;
 
         private NativeArray<Matrix4x4> _surfaceMatrices;
@@ -571,13 +573,19 @@ namespace Hecton8.World
             if (!_tickRegistered)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _tickRegistered = true;
+                _tickRegistered = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_slowTickRegistered)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _slowTickRegistered = true;
+                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+            }
+
+            if (!_lateFrameTickRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameTickRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
 
             SyncDestroyedFloraFromPersistence();
@@ -598,6 +606,12 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _slowTickRegistered = false;
+            }
+
+            if (_lateFrameTickRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameTickRegistered = false;
             }
 
             CompleteYieldJobIfNeeded();
@@ -691,18 +705,24 @@ namespace Hecton8.World
         public void Tick(float deltaTime)
         {
             float currentTime = Time.time;
-            VoxelDynamicNavGridRuntime.CompletePendingDynamicObstacleUpdates();
             RefreshActiveCachesIfNeeded(force: false);
             UpdateDecompositionVisuals(currentTime);
             UpdateRegrowthVisuals();
             UpdateMatureSporeAcoustics(currentTime);
             UpdateDamageVisuals(currentTime);
             UpdateWiltInstances(currentTime);
-            CompleteYieldJobIfNeeded(force: false);
-            DrainDropBuffer();
-            VoxelDynamicNavGridRuntime.EnqueueDestroyedOrganicEvents(_pendingYieldEvents);
-            ScheduleYieldJobIfNeeded();
+            bool dropBufferDrained = DrainDropBuffer();
+            if (dropBufferDrained)
+            {
+                VoxelDynamicNavGridRuntime.EnqueueDestroyedOrganicEvents(_pendingYieldEvents);
+                ScheduleYieldJobIfNeeded();
+            }
             VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
+        }
+
+        public void LateFrameTick()
+        {
+            CompleteYieldJobIfNeeded(force: false);
         }
 
         /// <summary>
@@ -972,9 +992,8 @@ namespace Hecton8.World
 
         private void BuildTemplateCaches()
         {
-            int materialClassCount = System.Enum.GetValues(typeof(HarvestableTemplate.MaterialClass)).Length;
-            // COLD ALLOC: int[materialClassCount] - material-class to template-index lookup table - owner: DestructibleOrganicManager
-            _templateIndexByMaterialClass = new int[materialClassCount];
+            // COLD ALLOC: int[MaterialClassCount] - material-class to template-index lookup table - owner: DestructibleOrganicManager
+            _templateIndexByMaterialClass = new int[MaterialClassCount];
             for (int i = 0; i < _templateIndexByMaterialClass.Length; i++)
                 _templateIndexByMaterialClass[i] = -1;
 
@@ -1297,12 +1316,11 @@ namespace Hecton8.World
 
         private void BuildYieldMaterialLut()
         {
-            int materialClassCount = System.Enum.GetValues(typeof(HarvestableTemplate.MaterialClass)).Length;
             DisposeNativeArray(ref _yieldMaterialLut);
             _yieldMaterialLut = new NativeArray<EntropyYieldMaterialLutEntry>(
-                math.max(1, materialClassCount),
+                math.max(1, MaterialClassCount),
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: EntropyYieldMaterialLutEntry[materialClassCount] - deterministic density/unit-mass lookup for burst flora yield - owner: DestructibleOrganicManager
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: EntropyYieldMaterialLutEntry[MaterialClassCount] - deterministic density/unit-mass lookup for burst flora yield - owner: DestructibleOrganicManager
 
             WriteYieldMaterialLut(HarvestableTemplate.MaterialClass.None, 1000f, 1f, 0.5f, 0f);
             WriteYieldMaterialLut(HarvestableTemplate.MaterialClass.Kelp, 460f, 1.2f, 0.58f, 0.08f);
@@ -1515,7 +1533,7 @@ namespace Hecton8.World
 
         private void SyncDestroyedFloraFromPersistence()
         {
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null || !_destroyedFloraScratch.IsCreated || !_destroyedByInstanceUid.IsCreated)
                 return;
 
@@ -1547,7 +1565,7 @@ namespace Hecton8.World
 
         private void SyncFloraStateOverridesFromPersistence()
         {
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null ||
                 !_floraStateOverrideScratch.IsCreated ||
                 !_persistedHealth01ByInstanceUid.IsCreated ||
@@ -1592,10 +1610,12 @@ namespace Hecton8.World
 
         private void CompleteYieldJobIfNeeded(bool force = true)
         {
-            if (!_yieldScheduled || (!force && !_yieldJobHandle.IsCompleted))
+            if (!_yieldScheduled)
                 return;
 
-            _yieldJobHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _yieldJobHandle, force))
+                return;
+
             _yieldScheduled = false;
             _scheduledYieldCount = 0;
         }
@@ -1606,8 +1626,9 @@ namespace Hecton8.World
                 !_pendingYieldEvents.IsCreated ||
                 _pendingYieldEvents.Length <= 0 ||
                 !_dropBuffer.IsCreated ||
+                !_dropBuffer.IsEmpty ||
                 !_yieldMaterialLut.IsCreated)
-            return;
+                return;
 
             int eventCount = math.min(_pendingYieldEvents.Length, _dropBuffer.Capacity);
             EnsureNativeCapacity(ref _yieldJobInput, eventCount);
@@ -1630,15 +1651,18 @@ namespace Hecton8.World
             _yieldScheduled = true;
         }
 
-        private void DrainDropBuffer()
+        private bool DrainDropBuffer()
         {
             if (!_dropBuffer.IsCreated)
-                return;
+                return true;
 
-            PlayerInventory playerInventory = PlayerInventory.Instance;
+            PlayerInventory playerInventory = GlobalRegistry.PlayerInventory != null
+                ? GlobalRegistry.PlayerInventory.Inventory
+                : null;
             Hecton8.SaveSystem.ItemCatalog itemCatalog = playerInventory != null ? playerInventory.ItemCatalog : null;
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
-            while (_dropBuffer.TryDequeue(out ItemDropData drop))
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            int remainingBudget = _dropBuffer.Capacity;
+            while (remainingBudget-- > 0 && _dropBuffer.TryDequeue(out ItemDropData drop))
             {
                 if (drop.ItemHashId == 0 || drop.Quantity == 0)
                     continue;
@@ -1657,6 +1681,8 @@ namespace Hecton8.World
                     registry.TryRegisterDroppedItem(drop.ItemHashId, itemCatalog, rejectedQuantity, runtimePosition);
                 }
             }
+
+            return _dropBuffer.IsEmpty;
         }
 
         private void RefreshCorpseResourceNodes(float currentTime)
@@ -2145,7 +2171,7 @@ namespace Hecton8.World
                 hasNavObstacleBounds ? navObstacleCenter : float3.zero,
                 hasNavObstacleBounds ? navObstacleExtents : float3.zero);
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 
@@ -2186,7 +2212,7 @@ namespace Hecton8.World
             ApplyRuntimeFlagsToLaneInstance(underwater, activeIndex, runtimeFlags);
             ApplyDecompositionToLaneInstance(underwater, activeIndex, instanceUid, 0f);
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 
@@ -2373,7 +2399,7 @@ namespace Hecton8.World
             PrimeDecompositionState(instanceUid, Time.time - OrganicDecompositionDurationSeconds);
             ClearOrganicLifecycleState(instanceUid);
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 
@@ -2991,7 +3017,7 @@ namespace Hecton8.World
             HarvestState harvestState = ResolveHarvestState(templateIndex, baseHealth, currentHealth, normalizedHeightScale);
             if (PersistentWorldRegistry.IsPristineFloraState(normalizedHealth, normalizedHeightScale))
             {
-                PersistentWorldRegistry.Instance?.TryClearFloraStateOverride(instanceUid);
+                GlobalRegistry.PersistentWorldRegistry?.TryClearFloraStateOverride(instanceUid);
                 ClearPersistedFloraStateOverride(instanceUid);
                 return;
             }
@@ -3008,7 +3034,7 @@ namespace Hecton8.World
                 _persistedHeightScale01ByInstanceUid.TryAdd(instanceUid, (Unity.Mathematics.half)normalizedHeightScale);
             }
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -3860,7 +3886,7 @@ namespace Hecton8.World
                 _decompositionStartTimeByInstanceUid.Remove(instanceUid);
             MarkOrganicTouched(instanceUid, Time.time);
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null)
                 registry.TryClearFloraStateOverride(instanceUid);
 

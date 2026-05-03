@@ -100,7 +100,7 @@ namespace WaveHarmonic.Crest.Editor
             {
                 ValidatedHelper.ExecuteValidators(target, ValidatedHelper.DebugLog);
 
-                foreach (var component in FindObjectsByType<EditorBehaviour>(FindObjectsSortMode.None))
+                foreach (var component in FindObjectsByType<EditorBehaviour>(FindObjectsInactive.Exclude))
                 {
                     if (component is WaterRenderer) continue;
                     ValidatedHelper.ExecuteValidators(component, ValidatedHelper.DebugLog);

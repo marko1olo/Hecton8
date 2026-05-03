@@ -34,7 +34,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class ClimbableLadder : MonoBehaviour, IInteractable
+    public sealed class ClimbableLadder : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
         private const string DefaultInteractText = "Climb Ladder";
 
@@ -151,13 +151,13 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -202,6 +202,15 @@ namespace Hecton8.Gameplay
             _cachedInteractText = ResolveLocalized(LocalizationKeys.INTERACT_CLIMB_LADDER, DefaultInteractText);
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
@@ -209,7 +218,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return fallback;
 

@@ -547,7 +547,6 @@ namespace Hecton8.Gameplay
 
         /// <summary>Максимальная целостность (read-only).</summary>
         public float MaxIntegrity => maxIntegrity;
-        internal static IReadOnlyList<BaseModule> ActiveModules => s_activeModules;
         internal static int ActiveModuleCount => s_activeModules.Count;
         internal static BaseModule GetActiveModuleAt(int index)
         {
@@ -1680,7 +1679,7 @@ namespace Hecton8.Gameplay
             PlaySpatialSfx(deconstructClip);
 
             Vector3 dropPosition = transform.position + Vector3.up * 0.5f;
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             InventoryGrid grid = playerInventory != null ? playerInventory.Grid : null;
             EjectHostedModuleContents(playerInventory, pool, ref dropPosition);
 
@@ -1751,7 +1750,7 @@ namespace Hecton8.Gameplay
             else
             {
                 // Fallback: если ConstructionManager недоступен
-                ObjectPoolManager fallbackPool = ObjectPoolManager.Instance;
+                ObjectPoolManager fallbackPool = GlobalRegistry.ObjectPool;
                 if (fallbackPool != null)
                     fallbackPool.Despawn(gameObject);
                 else
@@ -1829,7 +1828,7 @@ namespace Hecton8.Gameplay
             if (itemCatalog == null)
                 return;
 
-            PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             if (persistentWorldRegistry != null &&
                 persistentWorldRegistry.TryRegisterDroppedItem(itemHashId, itemCatalog, 1, position))
             {
@@ -1880,7 +1879,10 @@ namespace Hecton8.Gameplay
             if (playerInventory != null && playerInventory.ItemCatalog != null)
                 return playerInventory.ItemCatalog;
 
-            PlayerInventory inventoryInstance = PlayerInventory.Instance;
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            PlayerInventory inventoryInstance = inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
             return inventoryInstance != null ? inventoryInstance.ItemCatalog : null;
         }
 
@@ -2677,7 +2679,7 @@ namespace Hecton8.Gameplay
             if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) && atmosphereSystem != null)
                 return atmosphereSystem.ResolveExternalDepthMeters();
 
-            HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
+            HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
             if (atmosphereManager != null)
                 return Mathf.Max(0f, atmosphereManager.SeaLevelY - transform.position.y);
 
@@ -3511,7 +3513,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveFloodedReefActivationSeconds()
         {
-            HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
+            HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
             float daySeconds = atmosphereManager != null
                 ? Mathf.Max(1f, atmosphereManager.CycleDuration)
                 : DefaultInGameDaySeconds;

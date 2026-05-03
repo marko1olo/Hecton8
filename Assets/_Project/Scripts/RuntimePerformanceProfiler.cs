@@ -34,6 +34,8 @@ namespace Hecton8.Dev
     public sealed class RuntimePerformanceProfiler : MonoBehaviour, ITickable, IUpdatable, ISlowTickable
     {
         private const int RecorderCapacity = 1;
+        private const int RendererOwnershipAuditRootCapacity = 512;
+        private const int RendererOwnershipAuditTransformCapacity = 16384;
         private const float BytesPerMegabyte = 1024f * 1024f;
         private const string AutoBootstrapObjectName = "__DEV_RuntimePerformanceProfiler";
         private const string BootstrapSceneName = "00_BOOTSTRAP";
@@ -174,6 +176,10 @@ namespace Hecton8.Dev
         private readonly Dictionary<string, int> _auditGeologyFamilies = new Dictionary<string, int>(32);
         private readonly Dictionary<string, int> _auditVoxelFamilies = new Dictionary<string, int>(16);
         private readonly Dictionary<string, int> _auditSocketKinds = new Dictionary<string, int>(16);
+        // COLD ALLOC: List<GameObject>[512] - non-alloc scene root scratch for renderer ownership audit - owner: RuntimePerformanceProfiler
+        private readonly List<GameObject> _auditSceneRoots = new List<GameObject>(RendererOwnershipAuditRootCapacity);
+        // COLD ALLOC: Transform[16384] - non-alloc transform traversal stack for renderer ownership audit - owner: RuntimePerformanceProfiler
+        private readonly Transform[] _rendererAuditStack = new Transform[RendererOwnershipAuditTransformCapacity];
 
         private ProfilerRecorder _frameTimeRecorder;
         private ProfilerRecorder _mainThreadRecorder;
@@ -344,9 +350,8 @@ namespace Hecton8.Dev
 
             LogAutoBootstrapDecision("create-auto-bootstrap");
             GameObject profilerObject = new GameObject(AutoBootstrapObjectName);
-            DontDestroyOnLoad(profilerObject);
-
             RuntimePerformanceProfiler profiler = profilerObject.AddComponent<RuntimePerformanceProfiler>();
+            GameBootstrapper.PersistRuntimeService(profiler);
             profiler.ApplyAutoBootstrapDefaults();
         }
 
@@ -418,13 +423,6 @@ namespace Hecton8.Dev
             }
 
             _instance = this;
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
 
             ClampSettings();
             _debugCurrentScene = SceneManager.GetActiveScene().name;
@@ -687,7 +685,7 @@ namespace Hecton8.Dev
 
         public void Tick(float deltaTime)
         {
-            float sampleDeltaTime = deltaTime > 0f ? deltaTime : Time.unscaledDeltaTime;
+            float sampleDeltaTime = deltaTime > 0f ? deltaTime : SystemDispatcher.CurrentFrameUnscaledDeltaTime;
             if (!_debugProfilingActive)
             {
                 PumpPendingRuntimeRoutes(sampleDeltaTime);
@@ -1086,7 +1084,7 @@ namespace Hecton8.Dev
                 _nextBudgetViolationLogTime = 0f;
             }
 
-            if (traceRendererOwnershipOnSpike && ShouldCaptureRendererOwnershipAudit())
+            if (traceRendererOwnershipOnSpike && RuntimeDiagnosticsTrace.IsActive && ShouldCaptureRendererOwnershipAudit())
                 CaptureRendererOwnershipAudit();
 
             ResetSampleWindow();
@@ -1265,7 +1263,7 @@ namespace Hecton8.Dev
         /// </summary>
         private void UpdateVRAMDiagnostics()
         {
-            if (VRAMMonitor.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.VRAMMonitor == null)
             {
                 _debugLastTextureMB = 0f;
                 _debugLastRenderTextureMB = 0f;
@@ -1275,7 +1273,7 @@ namespace Hecton8.Dev
             }
 
             // Query VRAM breakdown (zero-GC)
-            VRAMMonitor monitor = VRAMMonitor.Instance;
+            VRAMMonitor monitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
             long textureBytes = monitor.TextureMemoryBytes;
             long renderTextureBytes = monitor.RenderTextureMemoryBytes;
             long totalBytes = monitor.TotalVRAMBytes;
@@ -1285,9 +1283,9 @@ namespace Hecton8.Dev
             _debugLastTotalVRAMMB = totalBytes / BytesPerMegabyte;
 
             // Check thresholds
-            bool textureOverBudget = VRAMMonitor.Instance.IsTextureMemoryOverBudget;
-            bool rtOverBudget = VRAMMonitor.Instance.IsRenderTextureMemoryOverBudget;
-            bool totalOverBudget = VRAMMonitor.Instance.IsTotalVRAMOverBudget;
+            bool textureOverBudget = Hecton8.Core.GlobalRegistry.VRAMMonitor.IsTextureMemoryOverBudget;
+            bool rtOverBudget = Hecton8.Core.GlobalRegistry.VRAMMonitor.IsRenderTextureMemoryOverBudget;
+            bool totalOverBudget = Hecton8.Core.GlobalRegistry.VRAMMonitor.IsTotalVRAMOverBudget;
 
             if (textureOverBudget || rtOverBudget || totalOverBudget)
             {
@@ -1945,6 +1943,9 @@ namespace Hecton8.Dev
 
         private bool ShouldCaptureRendererOwnershipAudit()
         {
+            if (!RuntimeDiagnosticsTrace.IsActive)
+                return false;
+
             float now = Application.isPlaying ? Time.unscaledTime : 0f;
             if (now < _nextOwnershipAuditAllowedTime)
                 return false;
@@ -1961,7 +1962,6 @@ namespace Hecton8.Dev
             if (Application.isPlaying)
                 _nextOwnershipAuditAllowedTime = Time.unscaledTime + rendererOwnershipAuditCooldownSeconds;
 
-            Renderer[] renderers = FindObjectsByType<Renderer>(FindObjectsInactive.Exclude);
             _auditScatterFamilies.Clear();
             _auditGeologyFamilies.Clear();
             _auditVoxelFamilies.Clear();
@@ -1974,54 +1974,41 @@ namespace Hecton8.Dev
             int socketRenderers = 0;
             int zoneRenderers = 0;
             int otherRenderers = 0;
+            int skippedSceneRoots = 0;
+            int skippedSubtrees = 0;
 
-            for (int i = 0; i < renderers.Length; i++)
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
             {
-                Renderer renderer = renderers[i];
-                if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.isLoaded)
                     continue;
 
-                totalRenderers++;
-
-                WorldGenerativeGeologyVoxelRuntime voxelRuntime = renderer.GetComponentInParent<WorldGenerativeGeologyVoxelRuntime>();
-                if (voxelRuntime != null)
+                int rootCount = scene.rootCount;
+                if (rootCount > _auditSceneRoots.Capacity)
                 {
-                    voxelRenderers++;
-                    IncrementAuditCount(_auditVoxelFamilies, voxelRuntime.FamilyId);
+                    skippedSceneRoots += rootCount;
                     continue;
                 }
 
-                WorldGenerativeGeologyBinding binding = renderer.GetComponentInParent<WorldGenerativeGeologyBinding>();
-                if (binding != null)
+                _auditSceneRoots.Clear();
+                scene.GetRootGameObjects(_auditSceneRoots);
+                for (int rootIndex = 0; rootIndex < _auditSceneRoots.Count; rootIndex++)
                 {
-                    geologyRenderers++;
-                    IncrementAuditCount(_auditGeologyFamilies, binding.FamilyId);
-                    continue;
-                }
+                    GameObject root = _auditSceneRoots[rootIndex];
+                    if (root == null || !root.activeInHierarchy)
+                        continue;
 
-                WorldProceduralProxyInstance proxy = renderer.GetComponentInParent<WorldProceduralProxyInstance>();
-                if (proxy != null)
-                {
-                    scatterRenderers++;
-                    IncrementAuditCount(_auditScatterFamilies, proxy.FamilyId);
-                    continue;
+                    AccumulateRendererOwnershipAudit(
+                        root.transform,
+                        ref totalRenderers,
+                        ref voxelRenderers,
+                        ref geologyRenderers,
+                        ref scatterRenderers,
+                        ref socketRenderers,
+                        ref zoneRenderers,
+                        ref otherRenderers,
+                        ref skippedSubtrees);
                 }
-
-                WorldContentSocket socket = renderer.GetComponentInParent<WorldContentSocket>();
-                if (socket != null)
-                {
-                    socketRenderers++;
-                    IncrementAuditCount(_auditSocketKinds, socket.Kind.ToString());
-                    continue;
-                }
-
-                if (renderer.GetComponentInParent<WorldZoneAnchor>() != null)
-                {
-                    zoneRenderers++;
-                    continue;
-                }
-
-                otherRenderers++;
             }
 
             _auditBuilder.Clear();
@@ -2038,7 +2025,11 @@ namespace Hecton8.Dev
                 .Append(" zones=")
                 .Append(zoneRenderers)
                 .Append(" other=")
-                .Append(otherRenderers);
+                .Append(otherRenderers)
+                .Append(" skippedRoots=")
+                .Append(skippedSceneRoots)
+                .Append(" skippedSubtrees=")
+                .Append(skippedSubtrees);
             AppendTopAuditEntries(_auditBuilder, "scatterTop", _auditScatterFamilies);
             AppendTopAuditEntries(_auditBuilder, "geologyTop", _auditGeologyFamilies);
             AppendTopAuditEntries(_auditBuilder, "voxelTop", _auditVoxelFamilies);
@@ -2046,6 +2037,147 @@ namespace Hecton8.Dev
 
             _debugLastOwnershipAudit = _auditBuilder.ToString();
             RuntimeDiagnosticsTrace.WriteEvent("render.audit", _debugLastOwnershipAudit);
+        }
+
+        private void AccumulateRendererOwnershipAudit(
+            Transform root,
+            ref int totalRenderers,
+            ref int voxelRenderers,
+            ref int geologyRenderers,
+            ref int scatterRenderers,
+            ref int socketRenderers,
+            ref int zoneRenderers,
+            ref int otherRenderers,
+            ref int skippedSubtrees)
+        {
+            int stackCount = 0;
+            if (!TryPushRendererAuditTransform(root, ref stackCount, ref skippedSubtrees))
+                return;
+
+            while (stackCount > 0)
+            {
+                Transform current = _rendererAuditStack[--stackCount];
+                _rendererAuditStack[stackCount] = null;
+                if (current == null || !current.gameObject.activeInHierarchy)
+                    continue;
+
+                if (current.TryGetComponent(out Renderer renderer) && renderer.enabled)
+                {
+                    totalRenderers++;
+                    ClassifyRendererOwnership(
+                        current,
+                        ref voxelRenderers,
+                        ref geologyRenderers,
+                        ref scatterRenderers,
+                        ref socketRenderers,
+                        ref zoneRenderers,
+                        ref otherRenderers);
+                }
+
+                int childCount = current.childCount;
+                for (int childIndex = 0; childIndex < childCount; childIndex++)
+                {
+                    Transform child = current.GetChild(childIndex);
+                    if (child != null && child.gameObject.activeInHierarchy)
+                        TryPushRendererAuditTransform(child, ref stackCount, ref skippedSubtrees);
+                }
+            }
+        }
+
+        private bool TryPushRendererAuditTransform(Transform target, ref int stackCount, ref int skippedSubtrees)
+        {
+            if (target == null)
+                return false;
+
+            if (stackCount >= _rendererAuditStack.Length)
+            {
+                skippedSubtrees++;
+                return false;
+            }
+
+            _rendererAuditStack[stackCount++] = target;
+            return true;
+        }
+
+        private void ClassifyRendererOwnership(
+            Transform rendererTransform,
+            ref int voxelRenderers,
+            ref int geologyRenderers,
+            ref int scatterRenderers,
+            ref int socketRenderers,
+            ref int zoneRenderers,
+            ref int otherRenderers)
+        {
+            Transform cursor = rendererTransform;
+            while (cursor != null)
+            {
+                if (cursor.TryGetComponent(out WorldGenerativeGeologyVoxelRuntime voxelRuntime))
+                {
+                    voxelRenderers++;
+                    IncrementAuditCount(_auditVoxelFamilies, voxelRuntime.FamilyId);
+                    return;
+                }
+
+                if (cursor.TryGetComponent(out WorldGenerativeGeologyBinding binding))
+                {
+                    geologyRenderers++;
+                    IncrementAuditCount(_auditGeologyFamilies, binding.FamilyId);
+                    return;
+                }
+
+                if (cursor.TryGetComponent(out WorldProceduralProxyInstance proxy))
+                {
+                    scatterRenderers++;
+                    IncrementAuditCount(_auditScatterFamilies, proxy.FamilyId);
+                    return;
+                }
+
+                if (cursor.TryGetComponent(out WorldContentSocket socket))
+                {
+                    socketRenderers++;
+                    IncrementAuditCount(_auditSocketKinds, ResolveSocketKindName(socket.Kind));
+                    return;
+                }
+
+                if (cursor.TryGetComponent(out WorldZoneAnchor _))
+                {
+                    zoneRenderers++;
+                    return;
+                }
+
+                cursor = cursor.parent;
+            }
+
+            otherRenderers++;
+        }
+
+        private static string ResolveSocketKindName(WorldContentSocket.ContentKind kind)
+        {
+            switch (kind)
+            {
+                case WorldContentSocket.ContentKind.ResourcePickup:
+                    return "ResourcePickup";
+                case WorldContentSocket.ContentKind.ResourceNode:
+                    return "ResourceNode";
+                case WorldContentSocket.ContentKind.FabricationStation:
+                    return "FabricationStation";
+                case WorldContentSocket.ContentKind.ConstructionPoint:
+                    return "ConstructionPoint";
+                case WorldContentSocket.ContentKind.PowerPoint:
+                    return "PowerPoint";
+                case WorldContentSocket.ContentKind.ServiceTarget:
+                    return "ServiceTarget";
+                case WorldContentSocket.ContentKind.NavigationMarker:
+                    return "NavigationMarker";
+                case WorldContentSocket.ContentKind.HazardPoint:
+                    return "HazardPoint";
+                case WorldContentSocket.ContentKind.CombatPoint:
+                    return "CombatPoint";
+                case WorldContentSocket.ContentKind.Landmark:
+                    return "Landmark";
+                default:
+                    return "Generic";
+            }
         }
 
         private static void IncrementAuditCount(Dictionary<string, int> counts, string key)

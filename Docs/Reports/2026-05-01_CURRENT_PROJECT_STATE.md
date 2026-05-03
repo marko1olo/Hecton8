@@ -1,8 +1,10 @@
 # HECTON-8 Current Project State
 
-Date: `2026-05-01`
+Date: `2026-05-03`
 Status: `PENDING VERIFICATION`
 Scope: conceptual source-backed project state, not a runtime certification report
+
+Path note: filename retained as the stable current-state anchor. This file now includes May 2 documentation/build-evidence and May 3 event-generation addenda.
 
 ## Mandates Followed
 
@@ -30,7 +32,11 @@ This file is not proof of:
 
 No Play Mode was launched for this update.
 Local `Editor.log` evidence exists in `Docs/Reports/2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`, `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`, and `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`.
-The latest continuation pass is compile-clean by local `Editor.log`, but MCP console still exposes one stale internal build-system exception. Do not claim global MCP-clean status.
+The latest May 1 continuation pass was compile-clean by local `Editor.log`, and MCP console returned `0` error/warning entries after Bee/backend recovery. The May 2 documentation sweep added fresh local dotnet evidence: `dotnet build .\Hecton8.Core.csproj` returned exit code `0`, `136 Warning(s)`, and `0 Error(s)`; latest post-restore `dotnet build .\Hecton8.Core.csproj --no-restore` returned exit code `0`, `73 Warning(s)`, and `0 Error(s)`. Current source inventory is `1087` first-party `.cs` files under `Assets/_Project`, `1047` `.cs` files under `Assets/_Project/Scripts`, and `571562` static script lines. This is still not Play Mode, GC, profiler, scene/prefab, or runtime-stability proof.
+
+Latest documentation sweep:
+
+- `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
 
 ## Current Runtime Shape
 
@@ -50,7 +56,7 @@ Current source-backed shape:
 - Construction/base runtime is real: `ConstructionManager`, `HabitatGraphManager`, `BaseModule`, `BaseAirlock`, logistics, integrity, life support, and module graph code exist. Latest source recheck added the missing pressure-buckling stress path and structural stress trigger bridge; runtime gameplay proof is still absent.
 - Audio runtime is real: `SpatialAudioManager` owns `IAudioService`, procedural audio systems exist, and audio events are partially queue-backed. Latest source recheck added the structural stress procedural audio payload/event bridge; legacy/static residue remains.
 - Abyssal thermal/base coupling is now source-present: `AbyssalThermalManager` contains habitat thermal infiltration into active `BaseModule` room temperature on `SlowTick`. This is compile-checked only, not balanced or profiled.
-- Event topology is mixed: several first-party lanes are `NativeQueue`-backed and flushed by `SystemDispatcher.LateUpdate()`, while direct static delegate buses and the managed mod-facing `HectonEventBus` still exist. Source recheck shows dispatcher budget and `HectonEventBus.MaxDispatchDepth` are present; NativeQueue generation split remains unproven.
+- Event topology is mixed: several first-party lanes are `NativeQueue`-backed and flushed by `SystemDispatcher.LateUpdate()`, while direct static delegate buses and the managed mod-facing `HectonEventBus` still exist. Source recheck shows dispatcher budget and `HectonEventBus.MaxDispatchDepth` are present; NativeQueue generation split is source-present only for `BootstrapEvents`, `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `SaveEvents`, `InventoryEvents`, `WeatherEvents`, `QuestEvents`, `PowerGridTelemetryEvents`, `NarrativeEvents`, `NotificationEvents`, `FirstHourEvents`, `EndingEvents`, `AtmosphereEvents`, `EclipseGameplayEvents`, `AcousticZoneEvents`, `CelestialEvents`, `MapMagicBiomeEvents`, and `BiomeMatrixEvents`, not globally proven.
 - Object pooling has hardened exhaustion behavior by current source review, but project-wide "no runtime Instantiate" is not proven.
 
 ## Current System Authority Map
@@ -84,12 +90,13 @@ Use that file when the question is not "which exact class owns this line" but "i
 
 These are the current high-level truths to preserve across future docs:
 
+- Current local dotnet build evidence is clean for `Hecton8.Core.csproj`: restore build `0 Error(s)`, `136 Warning(s)`; latest post-restore `--no-restore` rerun `0 Error(s)`, `73 Warning(s)` on May 2. Treat this as compile evidence only.
 - Do not claim the Play Mode/editor deadlock is fixed. Static patches reduced candidate classes; runtime proof is absent.
 - Do not claim global zero-GC. Some systems are designed for zero-GC, but project-wide profiler proof is absent.
 - Do not claim DOTS is production architecture. DOTS/Entities is currently a seam/stub direction, not the live backbone.
 - Do not claim Entities is installed. Current `Packages/manifest.json` does not declare `com.unity.entities`; `Assets/_Project/Scripts/World/Dots` is a gated placeholder lane.
 - Do not claim Core asmdef isolation is complete. The active enforcement report explicitly rejected blind removal.
-- Do not claim event architecture is fully queue-backed or generation-split. The project uses both queue-backed lanes and direct/static managed buses; event budget/depth guards exist, but same-frame NativeQueue reenqueue remains a design risk.
+- Do not claim event architecture is fully queue-backed or globally generation-split. The project uses both queue-backed lanes and direct/static managed buses; event budget/depth guards exist, and only `BootstrapEvents` / `InteractionEvents` / `CraftingEvents` / `ScanEvents` / `SaveEvents` / `InventoryEvents` / `WeatherEvents` / `QuestEvents` / `PowerGridTelemetryEvents` / `NarrativeEvents` / `NotificationEvents` / `FirstHourEvents` / `EndingEvents` / `AtmosphereEvents` / `EclipseGameplayEvents` / `AcousticZoneEvents` / `CelestialEvents` / `MapMagicBiomeEvents` / `BiomeMatrixEvents` currently have source-level same-frame reenqueue isolation.
 - Do not use older scatter manifesto teardown examples as current native-memory law. Current `.agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt` and source ownership win.
 - Do not claim all docs are current. Active entry docs are current enough to guide work; older dated docs must be treated as historical unless linked by current indexes.
 - Do not treat presentation, QA harnesses, DOTS seams, networking placeholders, or modding boundaries as load-bearing gameplay just because source files exist.
@@ -110,13 +117,14 @@ Use this read order for current state:
 1. `../AGENTS.md`
 2. task-relevant files under `.agents-skills/`
 3. `Docs/README.md`
-4. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-5. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
-6. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
-7. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
-8. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
-9. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
-10. system-specific docs and source files
+4. `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
+5. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+6. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+7. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
+8. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+9. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
+10. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
+11. system-specific docs and source files
 
 `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` is the current blunt project-level verdict.
 It does not replace this file as the system-shape entry point; it summarizes the overall risk/readiness conclusion.
@@ -162,23 +170,24 @@ Line-number evidence inside older maps may drift after source edits. Treat class
 ## Verification State
 
 - Play Mode: not launched.
-- Unity console: current MCP `read_console` still returns one internal build-system exception after Console UI clear: `Read the full binlog without getting a BuildFinishedMessage`. Local `Editor.log` supersedes that stale console entry with `Tundra build success` at line `91784`, `Begin MonoManager ReloadAssembly` at line `91826`, and `Mono: successfully reloaded assembly` at line `91935`; scan after latest success found no `error CS*`, `warning CS*`, `Burst error`, `Exception:`, `Tundra build failed`, or `Resource ID out of range` lines. This is editor compile evidence only, not Play Mode proof.
-- MCP: used for script refresh/console read/editor-state read. Editor state reports Play Mode false, compiling false, and domain reload pending false, but console is not a globally clean evidence surface because of the stale internal build-system entry.
+- Unity console: no fresh MCP console proof was captured in the May 2 documentation sweep. May 1 MCP `read_console` returned `0` error/warning entries after Bee/backend recovery. Treat that as older editor/script evidence only.
+- MCP: used for script refresh/console read/editor-state read. Editor state reports Play Mode false, compiling false, domain reload pending false, active scene `00_BOOTSTRAP`, and `ready_for_tools: true`.
 - Runtime GC: not measured.
 - Memory retention: not measured.
-- Code compilation: latest local `Editor.log` reached `Tundra build success` and `Mono: successfully reloaded assembly`; strict post-success scan is clean. This is editor compile evidence, not Play Mode proof.
+- Code compilation: fresh May 2 local command `dotnet build .\Hecton8.Core.csproj` exited `0` with `136 Warning(s)` and `0 Error(s)`; latest post-restore `dotnet build .\Hecton8.Core.csproj --no-restore` rerun exited `0` with `73 Warning(s)` and `0 Error(s)`. Existing earlier dotnet artifacts `.codex-artifacts/dotnet-Hecton8.Core-2026-05-02-after-scatter-dispose-register-hardening.log` and `.codex-artifacts/dotnet-Hecton8.Core-2026-05-02-after-scatter-candidate-count-clamp.log` report `Build succeeded`, `73 Warning(s)`, `0 Error(s)`. This is dotnet compile evidence, not Unity Play Mode proof.
+- Unity batchmode: conflicting old artifacts remain. `unity-batch-smoke.log` ends in return code `0`; other older Unity batch logs contain compile/path failures. Re-run Unity batchmode cleanly before claiming Unity editor import/build truth.
 
 ## Regression Model
 
-CPU: runtime source changed in input rebinding placement, habitat graph stress evaluation, procedural audio event payloads, abyssal thermal habitat coupling, and lore lookup hardening; no profiler numbers were captured.
-GC: no new hot-path managed containers or LINQ were added by the reviewed changes; measured 0 B/frame proof is absent.
-Memory: no scenes/assets/native container capacities were changed in this pass; runtime retention is unmeasured.
-Cadence: `AbyssalThermalManager` now applies habitat thermal infiltration during `SlowTick`; frame-time impact is unmeasured.
-Correctness: editor compile blockers were cleared by source review and local `Editor.log`; gameplay behavior remains unverified.
+CPU: May 2 documentation sweep did not change runtime code; no profiler numbers were captured.
+GC: no hot-path code changed by the May 2 documentation sweep; measured 0 B/frame proof is absent.
+Memory: no scenes/assets/native container capacities were changed by the May 2 documentation sweep; runtime retention is unmeasured.
+Cadence: no tick/fixed/late/slow tick code changed by the May 2 documentation sweep.
+Correctness: current dotnet compile evidence is clean for `Hecton8.Core.csproj`; gameplay behavior remains unverified.
 
 ## Hot Path Impact
 
-Non-zero. Runtime source changed, but the intended cadence is cold/lifecycle or `SlowTick`, not per-frame `Tick`. Hot-path profiler proof is absent.
+None from the May 2 documentation sweep. Existing source changes in the dirty worktree still require their own runtime/profiler verification.
 
 ## Failure Modes
 

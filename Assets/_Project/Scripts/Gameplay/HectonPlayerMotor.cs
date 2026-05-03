@@ -1,6 +1,7 @@
 using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.Physics;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -15,7 +16,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Player/Hecton Player Motor")]
-    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable
+    public sealed class HectonPlayerMotor : MonoBehaviour, IMotorForces, IPostFixedTickable, IInventoryEventListener
     {
         private struct ScheduledSweepState
         {
@@ -94,14 +95,14 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            InventoryEvents.OnEncumbranceChanged += HandleEncumbranceChanged;
+            InventoryEvents.Register(this);
             TryRegisterPostFixedTick();
             TryRegisterMotorService();
         }
 
         private void OnDisable()
         {
-            InventoryEvents.OnEncumbranceChanged -= HandleEncumbranceChanged;
+            InventoryEvents.Unregister(this);
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
             DisposeScheduledSweepState();
@@ -110,7 +111,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
-            InventoryEvents.OnEncumbranceChanged -= HandleEncumbranceChanged;
+            InventoryEvents.Unregister(this);
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
             DisposeScheduledSweepState();
@@ -127,6 +128,18 @@ namespace Hecton8.Gameplay
         public void SetEncumbranceMovementMultiplier(float multiplier)
         {
             _encumbranceMovementMultiplier = math.clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
+        }
+
+        /// <inheritdoc />
+        public void OnInventoryEvent(in InventoryEventPayload payload)
+        {
+            if ((InventoryEventType)payload.EventType != InventoryEventType.EncumbranceChanged)
+                return;
+
+            if (!InventoryEvents.TryBuildEncumbranceChangedEvent(in payload, out EncumbranceChangedEvent encumbranceEvent))
+                return;
+
+            HandleEncumbranceChanged(encumbranceEvent);
         }
 
         private void HandleEncumbranceChanged(EncumbranceChangedEvent payload)
@@ -717,12 +730,13 @@ namespace Hecton8.Gameplay
 
         private void CompleteScheduledSweepInPostFixedSwapWindow()
         {
-            if (!_scheduledSweepPending || !_nativeState.ScheduledSweepHandle.IsCompleted)
+            if (!_scheduledSweepPending)
                 return;
 
-            _nativeState.ScheduledSweepHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _nativeState.ScheduledSweepHandle, forceComplete: false))
+                return;
+
             _scheduledSweepPending = false;
-            _nativeState.ScheduledSweepHandle = default;
             _scheduledSweepResultReady = true;
             _scheduledSweepWasBlocked = false;
             _scheduledSweepBlockingHit = default;

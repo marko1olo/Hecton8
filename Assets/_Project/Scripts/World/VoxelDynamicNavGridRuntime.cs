@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Unity.Burst;
@@ -40,6 +41,8 @@ namespace Hecton8.World
         private const int DynamicClearanceFallbackScheduleCount = 1;
         private const float DynamicClearanceWarningCooldownSeconds = 5f;
         private const int MaxPersistentDynamicObstacleCount = 512;
+        private const int DirtyVolumeQueueCapacity = 32;
+        private const int PendingObstacleClearQueueCapacity = 16;
         private const float PersistentObstacleMergeDistanceMeters = 2f;
         private const string DynamicClearanceBudgetWarningMessage = "[VoxelDynamicNavGridRuntime] Partial clearance dilation exceeded 1ms; next destroyed-flora clear uses reduced clearance radius.";
 
@@ -70,6 +73,8 @@ namespace Hecton8.World
         private static bool _clearRuntimeContainersWhenTeardownCompletes;
         private static int _persistentDynamicObstacleWriteCursor;
         private static int _dynamicClearanceFallbackSchedulesRemaining;
+        private static int _dirtyVolumeQueueCount;
+        private static int _pendingObstacleClearQueueCount;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextDynamicClearanceWarningTime = float.NegativeInfinity;
 #endif
@@ -474,11 +479,9 @@ namespace Hecton8.World
             {
                 if (HasPendingDynamicUpdate)
                 {
-                    if (!PendingDynamicUpdateHandle.IsCompleted)
+                    if (!DispatcherJobSwap.TryComplete(ref PendingDynamicUpdateHandle, forceComplete: false))
                         return false;
 
-                    PendingDynamicUpdateHandle.Complete();
-                    PendingDynamicUpdateHandle = default;
                     HasPendingDynamicUpdate = false;
                 }
 
@@ -549,13 +552,20 @@ namespace Hecton8.World
             EnsureInitialized();
             int volumeInstanceId = GetStableVolumeEntityId(volume);
             VolumeRecord record = GetOrCreateRecord(volumeInstanceId);
+            if (record.IsDirty && record.RuntimeStamp == volume.RuntimeStamp)
+                return;
+
             record.IsDirty = true;
             record.RuntimeStamp = volume.RuntimeStamp;
+            if (_dirtyVolumeQueueCount >= DirtyVolumeQueueCapacity)
+                return;
+
             _dirtyVolumes.Enqueue(new DirtyVolumeRequest
             {
                 VolumeInstanceId = volumeInstanceId,
                 RuntimeStamp = volume.RuntimeStamp
             });
+            _dirtyVolumeQueueCount++;
         }
 
         internal static bool TryPrepareBuild(
@@ -586,14 +596,8 @@ namespace Hecton8.World
             VolumeRecord record = GetOrCreateRecord(volumeInstanceId);
             if (record.HasPendingDynamicUpdate)
             {
-                CompletePendingDynamicObstacleUpdates();
-                if (!_records.TryGetValue(volumeInstanceId, out record) || record.HasPendingDynamicUpdate)
-                {
-                    if (record != null)
-                        record.IsDirty = true;
-
-                    return false;
-                }
+                record.IsDirty = true;
+                return false;
             }
 
             bool consumedDirtyMarker = ConsumeDirtyMarker(volumeInstanceId, runtimeStamp);
@@ -755,7 +759,7 @@ namespace Hecton8.World
             float3 expandedExtents = extents + new float3(lateralExpansion, math.max(0f, lateralExpansion * 0.25f), lateralExpansion);
             RegisterPersistentDynamicObstacle(center, expandedExtents);
             MarkAllVolumesDirty();
-            _pendingObstacleClears.Enqueue(new DynamicObstacleClearRequest
+            TryEnqueueDynamicObstacleClear(new DynamicObstacleClearRequest
             {
                 Center = center,
                 Extents = expandedExtents
@@ -776,7 +780,7 @@ namespace Hecton8.World
                     continue;
 
                 RemovePersistentDynamicObstacles(destroyedEvent.NavObstacleCenter, extents);
-                _pendingObstacleClears.Enqueue(new DynamicObstacleClearRequest
+                TryEnqueueDynamicObstacleClear(new DynamicObstacleClearRequest
                 {
                     Center = destroyedEvent.NavObstacleCenter,
                     Extents = extents
@@ -796,11 +800,11 @@ namespace Hecton8.World
                 long completionStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 using (_partialClearanceDilationCompleteMarker.Auto())
                 {
-                    record.PendingDynamicUpdateHandle.Complete();
+                    if (!DispatcherJobSwap.TryComplete(ref record.PendingDynamicUpdateHandle, forceComplete: false))
+                        continue;
                 }
 
                 EvaluateDynamicClearanceBudget(completionStartTimestamp);
-                record.PendingDynamicUpdateHandle = default;
                 record.HasPendingDynamicUpdate = false;
 
                 NativeArray<byte> passabilitySwap = record.Current;
@@ -939,8 +943,15 @@ namespace Hecton8.World
         private static bool TryDequeueValidDynamicClearRequest(out DynamicObstacleClearRequest request)
         {
             request = default;
-            while (_pendingObstacleClears.TryDequeue(out DynamicObstacleClearRequest candidate))
+            int scanBudget = _pendingObstacleClearQueueCount > 0
+                ? _pendingObstacleClearQueueCount
+                : PendingObstacleClearQueueCapacity;
+            while (scanBudget-- > 0 &&
+                   _pendingObstacleClears.TryDequeue(out DynamicObstacleClearRequest candidate))
             {
+                if (_pendingObstacleClearQueueCount > 0)
+                    _pendingObstacleClearQueueCount--;
+
                 if (candidate.Extents.x <= 0.0001f ||
                     candidate.Extents.y <= 0.0001f ||
                     candidate.Extents.z <= 0.0001f)
@@ -1314,14 +1325,18 @@ namespace Hecton8.World
             _portalGraphDirty = true;
             _teardownPending = false;
             _clearRuntimeContainersWhenTeardownCompletes = false;
+            _dirtyVolumeQueueCount = 0;
+            _pendingObstacleClearQueueCount = 0;
             if (_dirtyVolumes.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(VoxelDynamicNavGridRuntime), nameof(_dirtyVolumes));
                 _dirtyVolumes.Dispose();
                 _dirtyVolumes = default;
             }
 
             if (_pendingObstacleClears.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(VoxelDynamicNavGridRuntime), nameof(_pendingObstacleClears));
                 _pendingObstacleClears.Dispose();
                 _pendingObstacleClears = default;
             }
@@ -1342,10 +1357,26 @@ namespace Hecton8.World
                 DisposePendingCompletedRecords(false);
 
             if (!_dirtyVolumes.IsCreated)
+            {
                 _dirtyVolumes = new NativeQueue<DirtyVolumeRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DirtyVolumeRequest>[32] - dirty voxel volume rebuild requests - owner: VoxelDynamicNavGridRuntime
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _dirtyVolumes,
+                    DirtyVolumeQueueCapacity,
+                    nameof(VoxelDynamicNavGridRuntime),
+                    nameof(_dirtyVolumes),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_pendingObstacleClears.IsCreated)
+            {
                 _pendingObstacleClears = new NativeQueue<DynamicObstacleClearRequest>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DynamicObstacleClearRequest>[16] - destroyed-organic obstacle clear queue - owner: VoxelDynamicNavGridRuntime
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingObstacleClears,
+                    PendingObstacleClearQueueCapacity,
+                    nameof(VoxelDynamicNavGridRuntime),
+                    nameof(_pendingObstacleClears),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_persistentDynamicObstacles.IsCreated)
                 _persistentDynamicObstacles = new NativeList<NavObstaclePrimitive>(MaxPersistentDynamicObstacleCount, Allocator.Persistent); // COLD ALLOC: NativeList<NavObstaclePrimitive>[512] - overgrowth/vine dynamic obstacle snapshot lane - owner: VoxelDynamicNavGridRuntime
@@ -1358,7 +1389,7 @@ namespace Hecton8.World
 
             GameObject lifecycleRoot = new GameObject("[VoxelDynamicNavGridRuntime]"); // COLD ALLOC: GameObject[1] - static navgrid native-container lifecycle owner - owner: VoxelDynamicNavGridRuntime
             _lifecycleOwner = lifecycleRoot.AddComponent<VoxelDynamicNavGridRuntimeLifecycle>();
-            Object.DontDestroyOnLoad(lifecycleRoot);
+            GameBootstrapper.PersistRuntimeService(_lifecycleOwner);
         }
 
         internal static void MarkAllVolumesDirty()
@@ -1434,8 +1465,15 @@ namespace Hecton8.World
 
             bool found = false;
             _dirtyRequestSpill.Clear();
-            while (_dirtyVolumes.TryDequeue(out DirtyVolumeRequest request))
+            int scanBudget = _dirtyVolumeQueueCount > 0
+                ? _dirtyVolumeQueueCount
+                : DirtyVolumeQueueCapacity;
+            while (scanBudget-- > 0 &&
+                   _dirtyVolumes.TryDequeue(out DirtyVolumeRequest request))
             {
+                if (_dirtyVolumeQueueCount > 0)
+                    _dirtyVolumeQueueCount--;
+
                 if (!found &&
                     request.VolumeInstanceId == volumeInstanceId &&
                     request.RuntimeStamp == runtimeStamp)
@@ -1447,13 +1485,38 @@ namespace Hecton8.World
                 _dirtyRequestSpill.Add(request);
             }
 
+            _dirtyVolumeQueueCount = 0;
             for (int i = 0; i < _dirtyRequestSpill.Count; i++)
             {
+                if (_dirtyVolumeQueueCount >= DirtyVolumeQueueCapacity)
+                    break;
+
                 _dirtyVolumes.Enqueue(_dirtyRequestSpill[i]);
+                _dirtyVolumeQueueCount++;
             }
 
             _dirtyRequestSpill.Clear();
             return found;
+        }
+
+        private static void TryEnqueueDynamicObstacleClear(DynamicObstacleClearRequest request)
+        {
+            if (!_pendingObstacleClears.IsCreated ||
+                request.Extents.x <= 0.0001f ||
+                request.Extents.y <= 0.0001f ||
+                request.Extents.z <= 0.0001f)
+            {
+                return;
+            }
+
+            if (_pendingObstacleClearQueueCount >= PendingObstacleClearQueueCapacity)
+            {
+                MarkAllVolumesDirty();
+                return;
+            }
+
+            _pendingObstacleClears.Enqueue(request);
+            _pendingObstacleClearQueueCount++;
         }
 
         private static void EnsureBuffer(ref NativeArray<byte> buffer, int length)
@@ -1487,7 +1550,12 @@ namespace Hecton8.World
                 return;
             }
 
-            ReleaseVoxelBuffers(record);
+            if (!ReleaseVoxelBuffers(record))
+            {
+                record.IsPureVoid = false;
+                return;
+            }
+
             record.IsPureVoid = true;
             record.PortalsReady = true;
             record.PortalCount = 0;
@@ -1514,15 +1582,10 @@ namespace Hecton8.World
             return true;
         }
 
-        private static void ReleaseVoxelBuffers(VolumeRecord record)
+        private static bool ReleaseVoxelBuffers(VolumeRecord record)
         {
             if (record.HasPendingDynamicUpdate)
-            {
-                // [BLOCKING_SYNC_POINT] Pure-void stripping is a disposal boundary; native buffers cannot be freed while dilation reads them.
-                record.PendingDynamicUpdateHandle.Complete();
-                record.PendingDynamicUpdateHandle = default;
-                record.HasPendingDynamicUpdate = false;
-            }
+                return false;
 
             if (record.Current.IsCreated)
                 record.Current.Dispose();
@@ -1543,6 +1606,7 @@ namespace Hecton8.World
             record.BaseNext = default;
             record.CurrentDistance = default;
             record.NextDistance = default;
+            return true;
         }
 
         private static int FlattenIndex(int x, int y, int z, int3 dimensions)

@@ -38,6 +38,7 @@ namespace Hecton8.UI
         private const string PulseTimerTemplate = "{0:D2}:{1:D2}";
         private static readonly char[] StrengthPercentTemplateChars = StrengthPercentTemplate.ToCharArray();
         private static readonly char[] PulseTimerTemplateChars = PulseTimerTemplate.ToCharArray();
+        private static readonly char[] PulseTimerEmptyChars = "—:—".ToCharArray();
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -438,8 +439,8 @@ namespace Hecton8.UI
 
         private void RefreshAll()
         {
-            AtlasSignalSystem sys = AtlasSignalSystem.Instance;
-            AtlasSignalDecoder decoder = AtlasSignalDecoder.Instance;
+            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
+            AtlasSignalDecoder decoder = Hecton8.Core.GlobalRegistry.AtlasSignalDecoder;
             _atlasTelemetryVisible = CanRevealAtlasTelemetry(sys);
             bool hasReadableContact = HasReadableAtlasContact(sys);
 
@@ -553,7 +554,7 @@ namespace Hecton8.UI
         {
             if (_directionLabel == null) return;
 
-            AtlasSignalSystem sys = AtlasSignalSystem.Instance;
+            AtlasSignalSystem sys = Hecton8.Core.GlobalRegistry.AtlasSignal;
             int revealStage = sys != null ? sys.CurrentRevealStage : 0;
 
             if (!_signalDetected)
@@ -601,7 +602,8 @@ namespace Hecton8.UI
                     return;
 
                 _lastCountdownSeconds = -1;
-                _pulseTimerLabel.text = "—:—";
+                _pulseTimerLabel.SetCharArray(PulseTimerEmptyChars, 0, PulseTimerEmptyChars.Length);
+                _pulseTimerLabel.UpdateVertexData(TMP_VertexDataUpdateFlags.All);
                 return;
             }
 
@@ -617,7 +619,7 @@ namespace Hecton8.UI
 
         private bool CanRevealAtlasTelemetry(AtlasSignalSystem sys)
         {
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector != null)
             {
                 return firstHourDirector.IsMilestoneComplete(minimumMilestoneToReveal) &&

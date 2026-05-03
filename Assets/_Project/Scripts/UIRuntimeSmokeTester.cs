@@ -5,6 +5,7 @@
 // ============================================================================
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Hecton8.Gameplay;
 using Hecton8.UI;
@@ -29,6 +30,9 @@ namespace Hecton8.Dev
         [SerializeField] private float actionTimeout = 1.25f;
         [SerializeField] private float settleDelay = 0.1f;
         [SerializeField] private bool verboseLogging = false;
+
+        // COLD ALLOC: List<GameObject>[512] - loaded-scene root traversal scratch for UI smoke reference resolution - owner: UIRuntimeSmokeTester
+        private static readonly List<GameObject> _sceneRootScratch = new List<GameObject>(512);
 
         private bool _isRunning;
 
@@ -304,22 +308,30 @@ namespace Hecton8.Dev
 
         private static T FindSceneObjectIncludingInactive<T>() where T : Component
         {
-            T[] all = Resources.FindObjectsOfTypeAll<T>();
-            for (int i = 0; i < all.Length; i++)
+            _sceneRootScratch.Clear();
+
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
             {
-                T candidate = all[i];
-                if (candidate == null)
-                    continue;
-
-                GameObject go = candidate.gameObject;
-                if (go == null)
-                    continue;
-
-                Scene scene = go.scene;
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
                 if (!scene.IsValid() || !scene.isLoaded)
                     continue;
 
-                return candidate;
+                scene.GetRootGameObjects(_sceneRootScratch);
+                for (int rootIndex = 0; rootIndex < _sceneRootScratch.Count; rootIndex++)
+                {
+                    GameObject root = _sceneRootScratch[rootIndex];
+                    if (root == null)
+                        continue;
+
+                    T candidate = FindComponentInChildrenIncludingInactive<T>(root.transform);
+                    if (candidate != null)
+                    {
+                        _sceneRootScratch.Clear();
+                        return candidate;
+                    }
+                }
+
+                _sceneRootScratch.Clear();
             }
 
             return null;
@@ -327,18 +339,30 @@ namespace Hecton8.Dev
 
         private static GameObject FindSceneGameObjectIncludingInactive(string name)
         {
-            GameObject[] all = Resources.FindObjectsOfTypeAll<GameObject>();
-            for (int i = 0; i < all.Length; i++)
-            {
-                GameObject candidate = all[i];
-                if (candidate == null || !string.Equals(candidate.name, name, System.StringComparison.Ordinal))
-                    continue;
+            if (string.IsNullOrEmpty(name))
+                return null;
 
-                Scene scene = candidate.scene;
+            _sceneRootScratch.Clear();
+
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
                 if (!scene.IsValid() || !scene.isLoaded)
                     continue;
 
-                return candidate;
+                scene.GetRootGameObjects(_sceneRootScratch);
+                for (int rootIndex = 0; rootIndex < _sceneRootScratch.Count; rootIndex++)
+                {
+                    GameObject root = _sceneRootScratch[rootIndex];
+                    GameObject candidate = FindGameObjectInChildrenIncludingInactive(root != null ? root.transform : null, name);
+                    if (candidate != null)
+                    {
+                        _sceneRootScratch.Clear();
+                        return candidate;
+                    }
+                }
+
+                _sceneRootScratch.Clear();
             }
 
             return null;
@@ -348,6 +372,42 @@ namespace Hecton8.Dev
         {
             if (verboseLogging)
                 Debug.Log("[UISmoke] " + message);
+        }
+
+        private static T FindComponentInChildrenIncludingInactive<T>(Transform root) where T : Component
+        {
+            if (root == null)
+                return null;
+
+            if (root.TryGetComponent(out T candidate))
+                return candidate;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                T match = FindComponentInChildrenIncludingInactive<T>(root.GetChild(i));
+                if (match != null)
+                    return match;
+            }
+
+            return null;
+        }
+
+        private static GameObject FindGameObjectInChildrenIncludingInactive(Transform root, string name)
+        {
+            if (root == null)
+                return null;
+
+            if (string.Equals(root.name, name, StringComparison.Ordinal))
+                return root.gameObject;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                GameObject match = FindGameObjectInChildrenIncludingInactive(root.GetChild(i), name);
+                if (match != null)
+                    return match;
+            }
+
+            return null;
         }
     }
 }

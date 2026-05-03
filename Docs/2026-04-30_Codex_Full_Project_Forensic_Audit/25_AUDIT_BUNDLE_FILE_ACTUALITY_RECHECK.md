@@ -43,33 +43,33 @@ Status discipline:
 
 ## 2. Fresh Repository Counters
 
-Snapshot date: 2026-05-01.
+Snapshot date: 2026-05-02.
 
 | Surface | Fresh count |
 |---|---:|
-| first-party C# under `Assets/_Project` | 1060 |
-| C# under `Assets/_Project/Scripts` | 1020 |
+| first-party C# under `Assets/_Project` | 1087 |
+| C# under `Assets/_Project/Scripts` | 1047 |
 | C# tests under `Assets/_Project/Tests` | 4 |
 | non-meta files under `Assets/_Project/Data` | 1287 |
 | prefabs under `Assets/_Project/Prefabs` | 378 |
 | first-party `.shader` files | 65 |
-| first-party `.compute` files | 22 |
-| non-meta files under `Docs` after this addendum | 584 |
+| first-party `.compute` files | 23 |
+| non-meta files under `Docs` after this addendum | 595 |
 
 Fresh folder source-size checks:
 
 | Folder | C# files | Lines |
 |---|---:|---:|
-| `Assets/_Project/Scripts/World` | 115 | 71,255 |
-| `Assets/_Project/Scripts/UI` | 79 | 37,860 |
-| `Assets/_Project/Scripts/Gameplay` | 106 | 35,225 |
-| `Assets/_Project/Scripts/Core` | 35 | 10,639 |
-| `Assets/_Project/Scripts/Construction` | 25 | 10,866 |
-| `Assets/_Project/Scripts/Visor` | 19 | 8,464 |
-| `Assets/_Project/Scripts/Audio` | 13 | 7,880 |
-| `Assets/_Project/Scripts/Fauna` | 17 | 8,692 |
-| `Assets/_Project/Scripts/Optimization` | 22 | 4,294 |
-| `Assets/_Project/Scripts/VFX` | 5 | 2,132 |
+| `Assets/_Project/Scripts/World` | 130 | 74,076 |
+| `Assets/_Project/Scripts/UI` | 79 | 39,315 |
+| `Assets/_Project/Scripts/Gameplay` | 107 | 37,273 |
+| `Assets/_Project/Scripts/Core` | 39 | 13,220 |
+| `Assets/_Project/Scripts/Construction` | 25 | 12,568 |
+| `Assets/_Project/Scripts/Visor` | 19 | 8,925 |
+| `Assets/_Project/Scripts/Audio` | 13 | 8,317 |
+| `Assets/_Project/Scripts/Fauna` | 17 | 9,031 |
+| `Assets/_Project/Scripts/Optimization` | 22 | 4,405 |
+| `Assets/_Project/Scripts/VFX` | 5 | 2,177 |
 
 ## 3. Fresh Code-Truth Spot Checks
 
@@ -98,7 +98,7 @@ Interpretation:
 | `02_SYSTEM_REALITY_MATRIX.md` | current as model | System readiness percentages remain audit estimates, not measured runtime proof. |
 | `03_CODE_HEALTH_AND_RUNTIME_ARCHITECTURE.md` | current with caution | Architecture risks remain relevant; compile/editor claims must be read through `07`. |
 | `04_PLAYER_PERSPECTIVE_AND_READINESS.md` | current as qualitative assessment | Player-facing readiness remains non-metric and must not be used as a shipping proof. |
-| `05_EVIDENCE_LEDGER.md` | refreshed | First-party C# count updated to 1060 and script count to 1020. Other grep evidence remains static-code evidence. |
+| `05_EVIDENCE_LEDGER.md` | refreshed | First-party C# count updated to 1087 and script count to 1047. Other grep evidence remains static-code evidence. |
 | `06_CRITICAL_ACTION_QUEUE.md` | current with caution | Queue remains directionally valid; exact priorities require compile/runtime verification. |
 | `07_REVERIFICATION_ADDENDUM_2026-04-30.md` | current as correction layer | Supersedes earlier compile-error assumptions. |
 | `08_SUBSYSTEM_IMPLEMENTATION_CATALOG.md` | refreshed | World/Core/Visor line counts updated. |

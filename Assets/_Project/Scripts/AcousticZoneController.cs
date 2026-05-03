@@ -55,6 +55,7 @@ using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.Visor;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Audio;
 #if UNITY_EDITOR
@@ -62,11 +63,215 @@ using UnityEditor;
 #endif
 namespace Hecton8.Audio
 {
+    /// <summary>
+    /// Deferred acoustic-zone transition payload.
+    /// </summary>
+    public readonly struct AcousticZoneChangedEvent
+    {
+        /// <summary>Builds a new acoustic-zone transition payload.</summary>
+        /// <param name="isInterior">True when the player entered a dry/interior zone.</param>
+        public AcousticZoneChangedEvent(bool isInterior)
+        {
+            IsInterior = isInterior;
+        }
+
+        /// <summary>True when the player is in a dry/interior zone.</summary>
+        public bool IsInterior { get; }
+    }
+
+    /// <summary>
+    /// Listener contract for deferred acoustic-zone transitions.
+    /// </summary>
+    public interface IAcousticZoneEventListener
+    {
+        /// <summary>Receives one acoustic-zone transition.</summary>
+        /// <param name="payload">Zone transition payload.</param>
+        void OnAcousticZoneChanged(in AcousticZoneChangedEvent payload);
+    }
+
+    /// <summary>
+    /// Queue-backed acoustic-zone event lane drained by <see cref="SystemDispatcher"/> in LateUpdate.
+    /// </summary>
+    public static class AcousticZoneEvents
+    {
+        private const int ListenerCapacity = 4;
+        private const int PendingZoneChangeCapacity = 4;
+
+        // COLD ALLOC: RegistryBucket<IAcousticZoneEventListener>[4] - deferred acoustic-zone listeners - owner: AcousticZoneEvents
+        private static readonly RegistryBucket<IAcousticZoneEventListener> _listeners =
+            new RegistryBucket<IAcousticZoneEventListener>(ListenerCapacity);
+        private static NativeQueue<AcousticZoneChangedEvent> _pendingZoneChanges;
+        private static NativeQueue<AcousticZoneChangedEvent> _nextFrameZoneChanges;
+        private static int _pendingZoneChangeCount;
+        private static int _nextFrameZoneChangeCount;
+        private static bool _isDispatching;
+
+        /// <summary>Number of acoustic-zone payloads waiting for LateUpdate dispatch.</summary>
+        public static int PendingCount => _pendingZoneChangeCount + _nextFrameZoneChangeCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingZoneChanges.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(AcousticZoneEvents), nameof(_pendingZoneChanges));
+                _pendingZoneChanges.Dispose();
+                _pendingZoneChanges = default;
+            }
+
+            if (_nextFrameZoneChanges.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(AcousticZoneEvents), nameof(_nextFrameZoneChanges));
+                _nextFrameZoneChanges.Dispose();
+                _nextFrameZoneChanges = default;
+            }
+
+            _listeners.Clear();
+            _pendingZoneChangeCount = 0;
+            _nextFrameZoneChangeCount = 0;
+            _isDispatching = false;
+        }
+
+        /// <summary>Registers one acoustic-zone listener.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Register(IAcousticZoneEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>Unregisters one acoustic-zone listener.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Unregister(IAcousticZoneEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>Queues one acoustic-zone transition.</summary>
+        /// <param name="payload">Zone transition payload.</param>
+        public static void Raise(in AcousticZoneChangedEvent payload)
+        {
+            EnsureInitialized();
+            if (_pendingZoneChangeCount + _nextFrameZoneChangeCount >= PendingZoneChangeCapacity)
+                return;
+
+            if (_isDispatching)
+            {
+                _nextFrameZoneChanges.Enqueue(payload);
+                _nextFrameZoneChangeCount++;
+                return;
+            }
+
+            _pendingZoneChanges.Enqueue(payload);
+            _pendingZoneChangeCount++;
+        }
+
+        /// <summary>Flushes queued acoustic-zone transitions on the main thread.</summary>
+        public static void FlushPending()
+        {
+            if (!_pendingZoneChanges.IsCreated)
+                return;
+
+            PromoteNextFrameZoneChangesIfFrontEmpty();
+            int scanBudget = _pendingZoneChangeCount > 0 ? _pendingZoneChangeCount : PendingZoneChangeCapacity;
+            while (scanBudget-- > 0 && !_pendingZoneChanges.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingZoneChanges.TryDequeue(out AcousticZoneChangedEvent payload))
+                    break;
+
+                if (_pendingZoneChangeCount > 0)
+                    _pendingZoneChangeCount--;
+
+                IAcousticZoneEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IAcousticZoneEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnAcousticZoneChanged(in payload);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingZoneChanges.IsEmpty())
+            {
+                _pendingZoneChangeCount = 0;
+                PromoteNextFrameZoneChangesIfFrontEmpty();
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingZoneChanges.IsCreated)
+            {
+                _pendingZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] - deferred acoustic-zone lane - owner: AcousticZoneEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingZoneChanges,
+                    PendingZoneChangeCapacity,
+                    nameof(AcousticZoneEvents),
+                    nameof(_pendingZoneChanges),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameZoneChanges.IsCreated)
+            {
+                _nextFrameZoneChanges = new NativeQueue<AcousticZoneChangedEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticZoneChangedEvent>[4] - next-frame acoustic-zone lane prevents same-frame reentrant dispatch - owner: AcousticZoneEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameZoneChanges,
+                    PendingZoneChangeCapacity,
+                    nameof(AcousticZoneEvents),
+                    nameof(_nextFrameZoneChanges),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PromoteNextFrameZoneChangesIfFrontEmpty()
+        {
+            if (!_pendingZoneChanges.IsCreated ||
+                !_nextFrameZoneChanges.IsCreated ||
+                !_pendingZoneChanges.IsEmpty() ||
+                _nextFrameZoneChangeCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<AcousticZoneChangedEvent> swap = _pendingZoneChanges;
+            _pendingZoneChanges = _nextFrameZoneChanges;
+            _nextFrameZoneChanges = swap;
+            _pendingZoneChangeCount = _nextFrameZoneChangeCount;
+            _nextFrameZoneChangeCount = 0;
+        }
+    }
+
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)] // После FluidEngine (-5000), до большинства систем
-    public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable, ISoundscapeEventListener
+    public sealed class AcousticZoneController : MonoBehaviour, ITickable, IUpdatable, ISoundscapeEventListener, IPhysicsImpactEventListener, ISonarPingEventListener, IAtmosphereStateEventListener
     {
-        private static readonly string[] SoundscapeTierLabels = System.Enum.GetNames(typeof(SoundscapeTier));
+        private const string SurfaceSoundscapeTierLabel = "Surface";
+        private const string ShallowSoundscapeTierLabel = "Shallow";
+        private const string TwilightSoundscapeTierLabel = "Twilight";
+        private const string DarknessSoundscapeTierLabel = "Darkness";
+        private const string AbyssSoundscapeTierLabel = "Abyss";
+        private const string DeepAbyssSoundscapeTierLabel = "DeepAbyss";
+        private const string ThermalSoundscapeTierLabel = "Thermal";
 
 #if UNITY_EDITOR
         private const string DefaultWaterDrainSoundPath = "Assets/_Project/Audio/Movement/swimming -onwater.wav";
@@ -115,7 +320,6 @@ namespace Hecton8.Audio
         private static void ResetStaticState()
         {
             _instance = null;
-            OnAcousticZoneChanged = null;
         }
 
         public static AcousticZoneController Instance
@@ -133,18 +337,6 @@ namespace Hecton8.Audio
         // ══════════════════════════════════════════════════════════
         //  GLOBAL EVENT — ACOUSTIC ZONE CHANGE
         // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Fires when player transitions between acoustic zones.
-        /// Parameter: true = interior (dry, inside base), false = underwater.
-        ///
-        /// Subscribers (future):
-        ///   - Ambient sound layers (start/stop underwater drone).
-        ///   - Footstep system (switch to metal footsteps).
-        ///   - Music system (switch between exploration/safety tracks).
-        ///   - VFX (water droplets on helmet when exiting water).
-        /// </summary>
-        public static event Action<bool> OnAcousticZoneChanged;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — SNAPSHOTS
@@ -573,6 +765,7 @@ namespace Hecton8.Audio
         /// Registration tracking для GameTickManager.
         /// </summary>
         private bool _registeredToTickManager;
+        private bool _serviceRegistered;
         private float _nextPlayerResolveTime;
         private const float PlayerResolveRetryInterval = 1f;
         private const float SurfaceWeatherStateEpsilon = 0.001f;
@@ -726,11 +919,12 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
-            HectonAtmosphereManager.OnStateChanged += HandleAtmosphereStateChanged;
+            AtmosphereEvents.Register(this);
             SoundscapeEvents.Register(this);
-            PhysicsEvents.OnImpact += HandlePhysicsImpact;
-            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            PhysicsEvents.Register(this);
+            SpectrumEvents.RegisterSonarPingListener(this);
             _stormInterferencePulseTimer = 0f;
             _stormAmbientInterference = 0f;
             _stormAmbientFlutterPhase = 0f;
@@ -784,10 +978,10 @@ namespace Hecton8.Audio
 
         private void OnDisable()
         {
-            HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
+            AtmosphereEvents.Unregister(this);
             SoundscapeEvents.Unregister(this);
-            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            PhysicsEvents.Unregister(this);
+            SpectrumEvents.UnregisterSonarPingListener(this);
             _stormInterferencePulseTimer = 0f;
             _stormAmbientInterference = 0f;
             _stormAmbientFlutterPhase = 0f;
@@ -799,21 +993,22 @@ namespace Hecton8.Audio
             _acousticSonarImpulse = 0f;
             ResetSourceLevelAcousticFallback();
             TryUnregister();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
-            HectonAtmosphereManager.OnStateChanged -= HandleAtmosphereStateChanged;
+            TryUnregisterService();
+            AtmosphereEvents.Unregister(this);
             SoundscapeEvents.Unregister(this);
-            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            PhysicsEvents.Unregister(this);
+            SpectrumEvents.UnregisterSonarPingListener(this);
             ResetSourceLevelAcousticFallback();
 
             if (_instance == this)
             {
                 _instance = null;
-                OnAcousticZoneChanged = null;
             }
         }
 
@@ -856,6 +1051,24 @@ namespace Hecton8.Audio
         ///   относительно визуального перехода через шлюз.
         ///   Один bool per frame — ничтожная нагрузка даже на MX350.
         /// </summary>
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterAcousticZoneRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.AcousticZone, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterAcousticZoneRuntime(this);
+            _serviceRegistered = false;
+        }
+
         public void Tick(float deltaTime)
         {
             // ── Ленивый поиск игрока (если ещё не найден) ──
@@ -908,7 +1121,7 @@ namespace Hecton8.Audio
             ApplyZoneTransition(currentZone);
 
             // ── Событие для внешних систем ──
-            OnAcousticZoneChanged?.Invoke(currentZone == AcousticZoneState.Interior);
+            AcousticZoneEvents.Raise(new AcousticZoneChangedEvent(currentZone == AcousticZoneState.Interior));
 
             UpdateDiagnostics(currentZone);
         }
@@ -1140,7 +1353,7 @@ namespace Hecton8.Audio
 
             ApplyZoneTransition(forcedZone);
 
-            OnAcousticZoneChanged?.Invoke(isInterior);
+            AcousticZoneEvents.Raise(new AcousticZoneChangedEvent(isInterior));
             UpdateDiagnostics(forcedZone);
         }
 
@@ -1339,6 +1552,11 @@ namespace Hecton8.Audio
             _hasCachedExteriorZone = true;
         }
 
+        void IAtmosphereStateEventListener.OnAtmosphereStateChanged(EnvironmentState state)
+        {
+            HandleAtmosphereStateChanged(state);
+        }
+
         private void ResolveBiomeMatrixDirector(bool force)
         {
             if (biomeMatrixDirector != null)
@@ -1361,7 +1579,7 @@ namespace Hecton8.Audio
             if (!force && currentTime < _nextSoundscapeResolveTime)
                 return;
 
-            soundscapeSystem = SoundscapeSystem.Instance;
+            soundscapeSystem = GlobalRegistry.Soundscape;
             _nextSoundscapeResolveTime = currentTime + soundscapeResolveRetryInterval;
         }
 
@@ -1504,7 +1722,7 @@ namespace Hecton8.Audio
         private HectonAtmosphereManager ResolveAtmosphereManager()
         {
             if (_atmosphereManager == null)
-                _atmosphereManager = HectonAtmosphereManager.Instance;
+                _atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
 
             return _atmosphereManager;
         }
@@ -1936,7 +2154,17 @@ namespace Hecton8.Audio
             sam.PlayStatic2D(sonarPingClip, volume, sam.InterfaceGroup);
         }
 
-        private void HandlePhysicsImpact(PhysicsImpactSignal impactSignal)
+        void ISonarPingEventListener.OnSonarPingSent(float intensity)
+        {
+            HandleSonarPingSent(intensity);
+        }
+
+        void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
+        {
+            HandlePhysicsImpact(in impactSignal);
+        }
+
+        private void HandlePhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
             if (!enableRuntimeAcousticGraph)
                 return;
@@ -2812,8 +3040,23 @@ namespace Hecton8.Audio
 
         private static string ResolveSoundscapeTierLabel(SoundscapeTier tier)
         {
-            int index = (int)tier;
-            return (uint)index < (uint)SoundscapeTierLabels.Length ? SoundscapeTierLabels[index] : SoundscapeTierLabels[0];
+            switch (tier)
+            {
+                case SoundscapeTier.Shallow:
+                    return ShallowSoundscapeTierLabel;
+                case SoundscapeTier.Twilight:
+                    return TwilightSoundscapeTierLabel;
+                case SoundscapeTier.Darkness:
+                    return DarknessSoundscapeTierLabel;
+                case SoundscapeTier.Abyss:
+                    return AbyssSoundscapeTierLabel;
+                case SoundscapeTier.DeepAbyss:
+                    return DeepAbyssSoundscapeTierLabel;
+                case SoundscapeTier.Thermal:
+                    return ThermalSoundscapeTierLabel;
+                default:
+                    return SurfaceSoundscapeTierLabel;
+            }
         }
 
 #if UNITY_EDITOR

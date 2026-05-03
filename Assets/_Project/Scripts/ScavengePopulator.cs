@@ -440,8 +440,8 @@ namespace Hecton8.Core
         {
             if (_spawnQueue.Count == 0) return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
-            WorldStateManager wsm  = WorldStateManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            WorldStateManager wsm  = Hecton8.Core.GlobalRegistry.WorldState;
 
             if (pool == null) return;
 
@@ -597,7 +597,7 @@ namespace Hecton8.Core
             if (!_chunks.TryGetValue(coord, out ChunkData chunk))
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
 
             List<ActiveNode> nodes = chunk.activeNodes;
             int count = nodes.Count;

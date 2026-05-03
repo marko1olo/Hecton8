@@ -56,6 +56,11 @@ namespace Hecton8.Bootstrap
 
         private void OnValidate()
         {
+#if UNITY_EDITOR
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+                return;
+#endif
+
             RefreshSystemStatus(false);
             RefreshLoreContentStatus();
         }
@@ -200,16 +205,12 @@ namespace Hecton8.Bootstrap
 
         private void RefreshLoreContentStatus()
         {
-            // COLD ALLOC: scene validation arrays — explicit validation/editor-only diagnostics
-            Hecton8.Interaction.NarrativeDiscovery[] discoveries =
-                FindObjectsByType<Hecton8.Interaction.NarrativeDiscovery>(FindObjectsInactive.Include);
+            int discoveries = Hecton8.Interaction.NarrativeDiscovery.ActiveDiscoveryCount;
 
-            // COLD ALLOC: scene validation arrays — explicit validation/editor-only diagnostics
-            Hecton8.Narrative.AudioLogPickup[] audioPickups =
-                FindObjectsByType<Hecton8.Narrative.AudioLogPickup>(FindObjectsInactive.Include);
+            int audioPickups = Hecton8.Narrative.AudioLogPickup.RegisteredPickupTemplateCount;
 
-            _narrativeDiscoveryCount = discoveries != null ? discoveries.Length : 0;
-            _audioLogPickupCount = audioPickups != null ? audioPickups.Length : 0;
+            _narrativeDiscoveryCount = discoveries;
+            _audioLogPickupCount = audioPickups;
         }
 
         private int CountFoundSystems()

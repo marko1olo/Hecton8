@@ -103,12 +103,14 @@ namespace WaveHarmonic.Crest
         int _Version = 1;
 #pragma warning restore 414
 
+#pragma warning disable 0618
         [System.Obsolete("Please use DisplacementPass instead.")]
         [Tooltip("When to render the input into the displacement data.\n\nIf enabled, it renders into all LODs of the simulation after the combine step rather than before with filtering. Furthermore, it will also affect dynamic waves.")]
         [@GenerateAPI(Setter.Custom)]
         [@DecoratedField, SerializeField]
         [HideInInspector]
         bool _RenderPostCombine = true;
+#pragma warning restore 0618
 
         void SetRenderPostCombine(bool previous, bool current, bool force = false)
         {
@@ -121,7 +123,9 @@ namespace WaveHarmonic.Crest
         {
             if (_Version < 1)
             {
+#pragma warning disable 0618
                 SetRenderPostCombine(_RenderPostCombine, _RenderPostCombine, force: true);
+#pragma warning restore 0618
                 _Version = 1;
             }
         }

@@ -666,7 +666,7 @@ namespace Hecton8.UI
                 return _cartographyTexture != null && !force;
             }
 
-            PlayerExplorationTracker explorationTracker = PlayerExplorationTracker.Instance;
+            PlayerExplorationTracker explorationTracker = GlobalRegistry.PlayerExploration;
             NativeArray<ulong> explorationWords = _emptyExplorationWords;
             int explorationAxisLength = 0;
             int explorationOriginOffset = 0;
@@ -776,6 +776,11 @@ namespace Hecton8.UI
                     CartographyTextureSize * CartographyTextureSize,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<Color32>[16384] - headless PDA cartography pixel buffer - owner: PDAMapTab
+                NativeMemorySentinel.RegisterNativeArray(
+                    _cartographyPixels,
+                    nameof(PDAMapTab),
+                    nameof(_cartographyPixels),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (!_emptyExplorationWords.IsCreated)
@@ -784,6 +789,11 @@ namespace Hecton8.UI
                     1,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ulong>[1] - created empty exploration-mask fallback for PDA cartography jobs - owner: PDAMapTab
+                NativeMemorySentinel.RegisterNativeArray(
+                    _emptyExplorationWords,
+                    nameof(PDAMapTab),
+                    nameof(_emptyExplorationWords),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (!_emptyAcousticDensity.IsCreated)
@@ -792,6 +802,11 @@ namespace Hecton8.UI
                     1,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[1] - created empty acoustic-density fallback for PDA cartography jobs - owner: PDAMapTab
+                NativeMemorySentinel.RegisterNativeArray(
+                    _emptyAcousticDensity,
+                    nameof(PDAMapTab),
+                    nameof(_emptyAcousticDensity),
+                    NativeAllocationLifetime.Scene);
             }
         }
 
@@ -803,6 +818,11 @@ namespace Hecton8.UI
                     PointCloudCapacity,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SonarPointCloudPoint>[4096] - PDA sonar point-cloud upload payload - owner: PDAMapTab
+                NativeMemorySentinel.RegisterNativeArray(
+                    _pointCloudPoints,
+                    nameof(PDAMapTab),
+                    nameof(_pointCloudPoints),
+                    NativeAllocationLifetime.Scene);
             }
 
             if (_pointCloudBuffer == null || !_pointCloudBuffer.IsValid())
@@ -838,10 +858,9 @@ namespace Hecton8.UI
             if (!_cartographyJobScheduled)
                 return;
 
-            if (applyTexture && !_cartographyJobHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _cartographyJobHandle, !applyTexture))
                 return;
 
-            _cartographyJobHandle.Complete();
             _cartographyJobScheduled = false;
             if (!applyTexture || _cartographyTexture == null || !_cartographyPixels.IsCreated)
                 return;
@@ -971,7 +990,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            PDAMarkerRegistry markerRegistry = PDAMarkerRegistry.Instance;
+            PDAMarkerRegistry markerRegistry = GlobalRegistry.PDAMarkers;
             if (markerRegistry == null)
             {
                 ClearPendingMarkerUpdates();
@@ -1368,24 +1387,28 @@ namespace Hecton8.UI
 
             if (_cartographyPixels.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_cartographyPixels);
                 _cartographyPixels.Dispose();
                 _cartographyPixels = default;
             }
 
             if (_emptyExplorationWords.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_emptyExplorationWords);
                 _emptyExplorationWords.Dispose();
                 _emptyExplorationWords = default;
             }
 
             if (_emptyAcousticDensity.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_emptyAcousticDensity);
                 _emptyAcousticDensity.Dispose();
                 _emptyAcousticDensity = default;
             }
 
             if (_pointCloudPoints.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_pointCloudPoints);
                 _pointCloudPoints.Dispose();
                 _pointCloudPoints = default;
             }

@@ -319,7 +319,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = true;
+            _isRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterTick()
@@ -511,64 +511,18 @@ namespace Hecton8.World
                 return default;
             }
 
-            bool canCullPerInstance = _usingOwnedUploadBuffers && _uploadedLandmarkMatrices.IsCreated;
-            NativeArray<byte> visibilityMask = new NativeArray<byte>(_instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<float4> cullingPlanes = default;
-            int planeCount = 0;
-            if (canCullPerInstance)
-            {
-                planeCount = cullingContext.cullingPlanes.IsCreated ? cullingContext.cullingPlanes.Length : 0;
-                if (planeCount > 0)
-                {
-                    cullingPlanes = new NativeArray<float4>(planeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
-                    {
-                        Plane plane = cullingContext.cullingPlanes[planeIndex];
-                        cullingPlanes[planeIndex] = new float4(plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
-                    }
-                }
-            }
-
-            unsafe
-            {
-                BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(_instanceCount, 1, 1);
-                JobHandle visibilityHandle = new HectonBatchRendererGroupUtility.BuildMatrixVisibilityMaskJob
-                {
-                    Matrices = _uploadedLandmarkMatrices,
-                    CullingPlanes = cullingPlanes,
-                    VisibilityMask = visibilityMask,
-                    InstanceCount = _instanceCount,
-                    PlaneCount = planeCount,
-                    EnableCpuCulling = canCullPerInstance,
-                    GlobalOffset = float3.zero,
-                    RadiusScale = 1.7321f,
-                    MinRadius = 0.5f
-                }.Schedule(_instanceCount, 64);
-
-                JobHandle finalizeHandle = new HectonBatchRendererGroupUtility.FinalizeSingleDrawCommandOutputJob
-                {
-                    VisibilityMask = visibilityMask,
-                    InstanceCount = _instanceCount,
-                    BatchId = _batchId,
-                    MeshId = _batchMeshId,
-                    MaterialId = _batchMaterialId,
-                    Layer = gameObject.layer,
-                    SubMeshIndex = _subMeshIndex,
-                    ShadowCastingMode = ShadowCastingMode.Off,
-                    ReceiveShadows = false,
-                    MotionMode = MotionVectorGenerationMode.Camera,
-                    VisibleInstances = output.visibleInstances,
-                    DrawCommands = output.drawCommands,
-                    DrawRanges = output.drawRanges,
-                    OutputCommands = HectonBatchRendererGroupUtility.GetDirectDrawOutputPointer(cullingOutput)
-                }.Schedule(visibilityHandle);
-
-                JobHandle disposeHandle = visibilityMask.Dispose(finalizeHandle);
-                if (cullingPlanes.IsCreated)
-                    disposeHandle = cullingPlanes.Dispose(disposeHandle);
-
-                return disposeHandle;
-            }
+            HectonBatchRendererGroupUtility.WriteAllVisibleSingleDrawOutput(
+                cullingOutput,
+                _instanceCount,
+                _batchId,
+                _batchMeshId,
+                _batchMaterialId,
+                gameObject.layer,
+                _subMeshIndex,
+                ShadowCastingMode.Off,
+                receiveShadows: false,
+                MotionVectorGenerationMode.Camera);
+            return default;
         }
     }
 }

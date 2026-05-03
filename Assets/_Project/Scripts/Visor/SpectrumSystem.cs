@@ -68,46 +68,573 @@ namespace Hecton8.Visor
         public float Resonance { get; }
     }
 
+    /// <summary>
+    /// Listener for deferred spectrum mode changes.
+    /// </summary>
+    public interface ISpectrumModeEventListener
+    {
+        /// <summary>Receives the new active spectrum mode.</summary>
+        /// <param name="mode">New mode.</param>
+        void OnSpectrumModeChanged(SpectrumMode mode);
+    }
+
+    /// <summary>
+    /// Listener for deferred sonar pulse radius broadcasts.
+    /// </summary>
+    public interface ISonarPulseEventListener
+    {
+        /// <summary>Receives the authored sonar pulse radius.</summary>
+        /// <param name="radius">Radius in world meters.</param>
+        void OnSonarPulse(float radius);
+    }
+
+    /// <summary>
+    /// Listener for deferred active sonar ping broadcasts.
+    /// </summary>
+    public interface ISonarPingEventListener
+    {
+        /// <summary>Receives the normalized active sonar ping intensity.</summary>
+        /// <param name="intensity">Normalized intensity.</param>
+        void OnSonarPingSent(float intensity);
+    }
+
+    /// <summary>
+    /// Listener for deferred sonar contact snapshots.
+    /// </summary>
+    public interface ISonarSnapshotEventListener
+    {
+        /// <summary>Receives the latest spatial sonar contact snapshot.</summary>
+        /// <param name="snapshot">Snapshot payload.</param>
+        void OnSonarSnapshotUpdated(in SpatialSonarSnapshot snapshot);
+    }
+
+    /// <summary>
+    /// Listener for deferred acoustic echo returns.
+    /// </summary>
+    public interface IAcousticEchoEventListener
+    {
+        /// <summary>Receives one active-sonar echo return.</summary>
+        /// <param name="echoEvent">Echo payload.</param>
+        void OnAcousticEchoReturned(in AcousticEchoEvent echoEvent);
+    }
+
+    /// <summary>
+    /// Queue-backed spectrum bus drained by <see cref="SystemDispatcher"/> in LateUpdate.
+    /// </summary>
     public static class SpectrumEvents
     {
+        private const int ModeListenerCapacity = 8;
+        private const int SonarPulseListenerCapacity = 8;
+        private const int SonarPingListenerCapacity = 24;
+        private const int SonarSnapshotListenerCapacity = 8;
+        private const int AcousticEchoListenerCapacity = 8;
+
+        // COLD ALLOC: RegistryBucket<ISpectrumModeEventListener>[8] - deferred spectrum mode listeners - owner: SpectrumEvents
+        private static readonly RegistryBucket<ISpectrumModeEventListener> _modeListeners =
+            new RegistryBucket<ISpectrumModeEventListener>(ModeListenerCapacity);
+        // COLD ALLOC: RegistryBucket<ISonarPulseEventListener>[8] - deferred sonar pulse listeners - owner: SpectrumEvents
+        private static readonly RegistryBucket<ISonarPulseEventListener> _sonarPulseListeners =
+            new RegistryBucket<ISonarPulseEventListener>(SonarPulseListenerCapacity);
+        // COLD ALLOC: RegistryBucket<ISonarPingEventListener>[24] - deferred active sonar ping listeners - owner: SpectrumEvents
+        private static readonly RegistryBucket<ISonarPingEventListener> _sonarPingListeners =
+            new RegistryBucket<ISonarPingEventListener>(SonarPingListenerCapacity);
+        // COLD ALLOC: RegistryBucket<ISonarSnapshotEventListener>[8] - deferred sonar snapshot listeners - owner: SpectrumEvents
+        private static readonly RegistryBucket<ISonarSnapshotEventListener> _sonarSnapshotListeners =
+            new RegistryBucket<ISonarSnapshotEventListener>(SonarSnapshotListenerCapacity);
+        // COLD ALLOC: RegistryBucket<IAcousticEchoEventListener>[8] - deferred acoustic echo listeners - owner: SpectrumEvents
+        private static readonly RegistryBucket<IAcousticEchoEventListener> _acousticEchoListeners =
+            new RegistryBucket<IAcousticEchoEventListener>(AcousticEchoListenerCapacity);
+
+        private static NativeQueue<SpectrumMode> _pendingModeChanged;
+        private static NativeQueue<float> _pendingSonarPulses;
+        private static NativeQueue<float> _pendingSonarPings;
+        private static NativeQueue<SpatialSonarSnapshot> _pendingSonarSnapshots;
+        private static NativeQueue<AcousticEchoEvent> _pendingAcousticEchoes;
+        private static int _pendingModeChangedCount;
+        private static int _pendingSonarPulseCount;
+        private static int _pendingSonarPingCount;
+        private static int _pendingSonarSnapshotCount;
+        private static int _pendingAcousticEchoCount;
+        private const int PendingModeChangedCapacity = 8;
+        private const int PendingSonarPulseCapacity = 8;
+        private const int PendingSonarPingCapacity = 24;
+        private const int PendingSonarSnapshotCapacity = 8;
+        private const int PendingAcousticEchoCapacity = 8;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnModeChanged = null;
-            OnSonarPulse = null;
-            OnSonarPingSent = null;
-            OnSonarSnapshotUpdated = null;
-            OnAcousticEchoReturned = null;
+            DisposeQueues();
+            _modeListeners.Clear();
+            _sonarPulseListeners.Clear();
+            _sonarPingListeners.Clear();
+            _sonarSnapshotListeners.Clear();
+            _acousticEchoListeners.Clear();
             LastSonarPulseRadiusMeters = 0f;
         }
 
         /// <summary>Режим визора изменился.</summary>
-        public static event Action<SpectrumMode> OnModeChanged;
 
         /// <summary>Сонар-пульс. float: радиус обнаружения.</summary>
-        public static event Action<float> OnSonarPulse;
         /// <summary>Controller-authored active sonar ping. Float = normalized pulse intensity 0-1.</summary>
-        public static event Action<float> OnSonarPingSent;
-        public static event Action<SpatialSonarSnapshot> OnSonarSnapshotUpdated;
-        public static event Action<AcousticEchoEvent> OnAcousticEchoReturned;
 
         /// <summary>Most recent emitted sonar pulse radius in authored meters.</summary>
         public static float LastSonarPulseRadiusMeters { get; private set; }
 
-        public static void RaiseModeChanged(SpectrumMode mode) => OnModeChanged?.Invoke(mode);
+        /// <summary>Number of spectrum events waiting for LateUpdate dispatch.</summary>
+        public static int PendingCount
+        {
+            get
+            {
+                return _pendingModeChangedCount
+                    + _pendingSonarPulseCount
+                    + _pendingSonarPingCount
+                    + _pendingSonarSnapshotCount
+                    + _pendingAcousticEchoCount;
+            }
+        }
+
+        /// <summary>Registers a listener for spectrum mode changes.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void RegisterModeListener(ISpectrumModeEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_modeListeners.Contains(listener))
+                _modeListeners.Register(listener);
+        }
+
+        /// <summary>Unregisters a listener from spectrum mode changes.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void UnregisterModeListener(ISpectrumModeEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_modeListeners.Contains(listener))
+                _modeListeners.Unregister(listener);
+        }
+
+        /// <summary>Registers a listener for sonar pulse radius broadcasts.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void RegisterSonarPulseListener(ISonarPulseEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_sonarPulseListeners.Contains(listener))
+                _sonarPulseListeners.Register(listener);
+        }
+
+        /// <summary>Unregisters a listener from sonar pulse radius broadcasts.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void UnregisterSonarPulseListener(ISonarPulseEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_sonarPulseListeners.Contains(listener))
+                _sonarPulseListeners.Unregister(listener);
+        }
+
+        /// <summary>Registers a listener for active sonar ping events.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void RegisterSonarPingListener(ISonarPingEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_sonarPingListeners.Contains(listener))
+                _sonarPingListeners.Register(listener);
+        }
+
+        /// <summary>Unregisters a listener from active sonar ping events.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void UnregisterSonarPingListener(ISonarPingEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_sonarPingListeners.Contains(listener))
+                _sonarPingListeners.Unregister(listener);
+        }
+
+        /// <summary>Registers a listener for sonar snapshots.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void RegisterSonarSnapshotListener(ISonarSnapshotEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_sonarSnapshotListeners.Contains(listener))
+                _sonarSnapshotListeners.Register(listener);
+        }
+
+        /// <summary>Unregisters a listener from sonar snapshots.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void UnregisterSonarSnapshotListener(ISonarSnapshotEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_sonarSnapshotListeners.Contains(listener))
+                _sonarSnapshotListeners.Unregister(listener);
+        }
+
+        /// <summary>Registers a listener for acoustic echo returns.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void RegisterAcousticEchoListener(IAcousticEchoEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_acousticEchoListeners.Contains(listener))
+                _acousticEchoListeners.Register(listener);
+        }
+
+        /// <summary>Unregisters a listener from acoustic echo returns.</summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void UnregisterAcousticEchoListener(IAcousticEchoEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_acousticEchoListeners.Contains(listener))
+                _acousticEchoListeners.Unregister(listener);
+        }
+
+        /// <summary>Flushes queued spectrum payloads through registered listeners.</summary>
+        public static void FlushPending()
+        {
+            if (!FlushModeChanged())
+                return;
+            if (!FlushSonarPulses())
+                return;
+            if (!FlushSonarPings())
+                return;
+            if (!FlushSonarSnapshots())
+                return;
+            FlushAcousticEchoes();
+        }
+
+        /// <summary>Queues a spectrum mode change.</summary>
+        /// <param name="mode">New spectrum mode.</param>
+        public static void RaiseModeChanged(SpectrumMode mode)
+        {
+            EnsureInitialized();
+            if (_pendingModeChangedCount >= PendingModeChangedCapacity)
+                return;
+
+            _pendingModeChanged.Enqueue(mode);
+            _pendingModeChangedCount++;
+        }
+
+        /// <summary>Queues a sonar pulse radius broadcast.</summary>
+        /// <param name="radius">Pulse radius in authored meters.</param>
         public static void RaiseSonarPulse(float radius)
         {
             LastSonarPulseRadiusMeters = Mathf.Max(0f, radius);
-            OnSonarPulse?.Invoke(radius);
+            EnsureInitialized();
+            if (_pendingSonarPulseCount >= PendingSonarPulseCapacity)
+                return;
+
+            _pendingSonarPulses.Enqueue(LastSonarPulseRadiusMeters);
+            _pendingSonarPulseCount++;
         }
-        public static void RaiseSonarPingSent(float intensity) => OnSonarPingSent?.Invoke(intensity);
-        public static void RaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot) => OnSonarSnapshotUpdated?.Invoke(snapshot);
-        public static void RaiseAcousticEchoReturned(AcousticEchoEvent echoEvent) => OnAcousticEchoReturned?.Invoke(echoEvent);
+
+        /// <summary>Queues an active sonar ping broadcast.</summary>
+        /// <param name="intensity">Normalized ping intensity.</param>
+        public static void RaiseSonarPingSent(float intensity)
+        {
+            EnsureInitialized();
+            if (_pendingSonarPingCount >= PendingSonarPingCapacity)
+                return;
+
+            _pendingSonarPings.Enqueue(intensity);
+            _pendingSonarPingCount++;
+        }
+
+        /// <summary>Queues an updated spatial sonar snapshot.</summary>
+        /// <param name="snapshot">Snapshot payload.</param>
+        public static void RaiseSonarSnapshotUpdated(SpatialSonarSnapshot snapshot)
+        {
+            EnsureInitialized();
+            if (_pendingSonarSnapshotCount >= PendingSonarSnapshotCapacity)
+                return;
+
+            _pendingSonarSnapshots.Enqueue(snapshot);
+            _pendingSonarSnapshotCount++;
+        }
+
+        /// <summary>Queues one acoustic echo return.</summary>
+        /// <param name="echoEvent">Echo payload.</param>
+        public static void RaiseAcousticEchoReturned(AcousticEchoEvent echoEvent)
+        {
+            EnsureInitialized();
+            if (_pendingAcousticEchoCount >= PendingAcousticEchoCapacity)
+                return;
+
+            _pendingAcousticEchoes.Enqueue(echoEvent);
+            _pendingAcousticEchoCount++;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingModeChanged.IsCreated)
+            {
+                _pendingModeChanged = new NativeQueue<SpectrumMode>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpectrumMode>[8] - deferred spectrum mode lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingModeChanged,
+                    PendingModeChangedCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_pendingModeChanged),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_pendingSonarPulses.IsCreated)
+            {
+                _pendingSonarPulses = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[8] - deferred sonar pulse lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingSonarPulses,
+                    PendingSonarPulseCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_pendingSonarPulses),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_pendingSonarPings.IsCreated)
+            {
+                _pendingSonarPings = new NativeQueue<float>(Allocator.Persistent); // COLD ALLOC: NativeQueue<float>[24] - deferred active sonar ping lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingSonarPings,
+                    PendingSonarPingCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_pendingSonarPings),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_pendingSonarSnapshots.IsCreated)
+            {
+                _pendingSonarSnapshots = new NativeQueue<SpatialSonarSnapshot>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SpatialSonarSnapshot>[8] - deferred sonar snapshot lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingSonarSnapshots,
+                    PendingSonarSnapshotCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_pendingSonarSnapshots),
+                    NativeAllocationLifetime.Session);
+            }
+            if (!_pendingAcousticEchoes.IsCreated)
+            {
+                _pendingAcousticEchoes = new NativeQueue<AcousticEchoEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AcousticEchoEvent>[8] - deferred acoustic echo lane - owner: SpectrumEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingAcousticEchoes,
+                    PendingAcousticEchoCapacity,
+                    nameof(SpectrumEvents),
+                    nameof(_pendingAcousticEchoes),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static bool FlushModeChanged()
+        {
+            if (!_pendingModeChanged.IsCreated)
+                return true;
+
+            int scanBudget = _pendingModeChangedCount > 0 ? _pendingModeChangedCount : PendingModeChangedCapacity;
+            while (scanBudget > 0 && !_pendingModeChanged.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingModeChanged.TryDequeue(out SpectrumMode mode))
+                    return true;
+
+                if (_pendingModeChangedCount > 0)
+                    _pendingModeChangedCount--;
+                scanBudget--;
+                ISpectrumModeEventListener[] rawArray = _modeListeners.RawArray;
+                int count = _modeListeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnSpectrumModeChanged(mode);
+
+            }
+
+            if (_pendingModeChanged.IsEmpty())
+                _pendingModeChangedCount = 0;
+
+            return true;
+        }
+
+        private static bool FlushSonarPulses()
+        {
+            if (!_pendingSonarPulses.IsCreated)
+                return true;
+
+            int scanBudget = _pendingSonarPulseCount > 0 ? _pendingSonarPulseCount : PendingSonarPulseCapacity;
+            while (scanBudget > 0 && !_pendingSonarPulses.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingSonarPulses.TryDequeue(out float radius))
+                    return true;
+
+                if (_pendingSonarPulseCount > 0)
+                    _pendingSonarPulseCount--;
+                scanBudget--;
+                ISonarPulseEventListener[] rawArray = _sonarPulseListeners.RawArray;
+                int count = _sonarPulseListeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnSonarPulse(radius);
+
+            }
+
+            if (_pendingSonarPulses.IsEmpty())
+                _pendingSonarPulseCount = 0;
+
+            return true;
+        }
+
+        private static bool FlushSonarPings()
+        {
+            if (!_pendingSonarPings.IsCreated)
+                return true;
+
+            int scanBudget = _pendingSonarPingCount > 0 ? _pendingSonarPingCount : PendingSonarPingCapacity;
+            while (scanBudget > 0 && !_pendingSonarPings.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingSonarPings.TryDequeue(out float intensity))
+                    return true;
+
+                if (_pendingSonarPingCount > 0)
+                    _pendingSonarPingCount--;
+                scanBudget--;
+                ISonarPingEventListener[] rawArray = _sonarPingListeners.RawArray;
+                int count = _sonarPingListeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnSonarPingSent(intensity);
+
+            }
+
+            if (_pendingSonarPings.IsEmpty())
+                _pendingSonarPingCount = 0;
+
+            return true;
+        }
+
+        private static bool FlushSonarSnapshots()
+        {
+            if (!_pendingSonarSnapshots.IsCreated)
+                return true;
+
+            int scanBudget = _pendingSonarSnapshotCount > 0 ? _pendingSonarSnapshotCount : PendingSonarSnapshotCapacity;
+            while (scanBudget > 0 && !_pendingSonarSnapshots.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingSonarSnapshots.TryDequeue(out SpatialSonarSnapshot snapshot))
+                    return true;
+
+                if (_pendingSonarSnapshotCount > 0)
+                    _pendingSonarSnapshotCount--;
+                scanBudget--;
+                ISonarSnapshotEventListener[] rawArray = _sonarSnapshotListeners.RawArray;
+                int count = _sonarSnapshotListeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnSonarSnapshotUpdated(in snapshot);
+
+            }
+
+            if (_pendingSonarSnapshots.IsEmpty())
+                _pendingSonarSnapshotCount = 0;
+
+            return true;
+        }
+
+        private static bool FlushAcousticEchoes()
+        {
+            if (!_pendingAcousticEchoes.IsCreated)
+                return true;
+
+            int scanBudget = _pendingAcousticEchoCount > 0 ? _pendingAcousticEchoCount : PendingAcousticEchoCapacity;
+            while (scanBudget > 0 && !_pendingAcousticEchoes.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!_pendingAcousticEchoes.TryDequeue(out AcousticEchoEvent echoEvent))
+                    return true;
+
+                if (_pendingAcousticEchoCount > 0)
+                    _pendingAcousticEchoCount--;
+                scanBudget--;
+                IAcousticEchoEventListener[] rawArray = _acousticEchoListeners.RawArray;
+                int count = _acousticEchoListeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnAcousticEchoReturned(in echoEvent);
+            }
+
+            if (_pendingAcousticEchoes.IsEmpty())
+                _pendingAcousticEchoCount = 0;
+
+            return true;
+        }
+
+        private static void DisposeQueues()
+        {
+            if (_pendingModeChanged.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_pendingModeChanged));
+                _pendingModeChanged.Dispose();
+                _pendingModeChanged = default;
+            }
+
+            if (_pendingSonarPulses.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_pendingSonarPulses));
+                _pendingSonarPulses.Dispose();
+                _pendingSonarPulses = default;
+            }
+
+            if (_pendingSonarPings.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_pendingSonarPings));
+                _pendingSonarPings.Dispose();
+                _pendingSonarPings = default;
+            }
+
+            if (_pendingSonarSnapshots.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_pendingSonarSnapshots));
+                _pendingSonarSnapshots.Dispose();
+                _pendingSonarSnapshots = default;
+            }
+
+            if (_pendingAcousticEchoes.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpectrumEvents), nameof(_pendingAcousticEchoes));
+                _pendingAcousticEchoes.Dispose();
+                _pendingAcousticEchoes = default;
+            }
+
+            _pendingModeChangedCount = 0;
+            _pendingSonarPulseCount = 0;
+            _pendingSonarPingCount = 0;
+            _pendingSonarSnapshotCount = 0;
+            _pendingAcousticEchoCount = 0;
+        }
     }
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-95)]
-    public sealed class SpectrumSystem : MonoBehaviour, ITickable
+    public sealed class SpectrumSystem : MonoBehaviour, ITickable, IAcousticPingEventListener
     {
         private const int SonarRevealMaxContacts = 24;
         private const int PassiveRadarAzimuthSectorCount = 8;
@@ -222,6 +749,7 @@ namespace Hecton8.Visor
         private SpectrumMode _currentMode = SpectrumMode.Normal;
         private float _sonarTimer;
         private bool _registered;
+        private bool _serviceRegistered;
         private bool _acousticPingSubscribed;
         private bool _hasSonarSnapshot;
         private Transform _playerTransform;
@@ -325,6 +853,7 @@ namespace Hecton8.Visor
 
         private void OnEnable()
         {
+            TryRegisterService();
             SubscribeAcousticPingEvents();
 
             if (!_registered && Application.isPlaying && GlobalRegistry.Dispatcher != null)
@@ -349,6 +878,7 @@ namespace Hecton8.Visor
         private void OnDisable()
         {
             UnsubscribeAcousticPingEvents();
+            TryUnregisterService();
 
             if (_registered)
             {
@@ -366,6 +896,7 @@ namespace Hecton8.Visor
         private void OnDestroy()
         {
             UnsubscribeAcousticPingEvents();
+            TryUnregisterService();
 
             if (_registered)
             {
@@ -378,6 +909,24 @@ namespace Hecton8.Visor
                 Instance = null;
 
             SonarGridOverlay.ClearGlobals();
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterSpectrumRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Spectrum, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSpectrumRuntime(this);
+            _serviceRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -533,7 +1082,7 @@ namespace Hecton8.Visor
             if (_acousticPingSubscribed || !Application.isPlaying)
                 return;
 
-            PhysicsEventBus.OnAcousticPing += HandleAcousticPing;
+            PhysicsEventBus.Register((IAcousticPingEventListener)this);
             _acousticPingSubscribed = true;
         }
 
@@ -542,8 +1091,16 @@ namespace Hecton8.Visor
             if (!_acousticPingSubscribed)
                 return;
 
-            PhysicsEventBus.OnAcousticPing -= HandleAcousticPing;
+            PhysicsEventBus.Unregister((IAcousticPingEventListener)this);
             _acousticPingSubscribed = false;
+        }
+
+        /// <summary>
+        /// Receives deferred acoustic ping events from the physics event lane.
+        /// </summary>
+        public void OnAcousticPing(in AcousticPingEvent pingEvent)
+        {
+            HandleAcousticPing(in pingEvent);
         }
 
         private void HandleAcousticPing(in AcousticPingEvent pingEvent)
@@ -1193,7 +1750,7 @@ namespace Hecton8.Visor
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
         }
     }

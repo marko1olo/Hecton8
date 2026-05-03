@@ -1,4 +1,4 @@
-﻿// ============================================================================
+// ============================================================================
 // HECTON-8 — EclipseGameplaySystem.cs
 // Геймплейные последствия Великого Затмения.
 //
@@ -10,7 +10,7 @@
 //   • Planet-shine — единственное освещение
 //
 // АРХИТЕКТУРА:
-//   • Слушает HectonCelestialEngine.OnEclipseStart/End.
+//   • Слушает CelestialEvents eclipse start/end lane.
 //   • Публикует события для HUD, атмосферы, фауны.
 //   • ISlowTickable — температурный дрейф во время затмения.
 //   • Интегрируется с HectonAtmosphereManager через событие.
@@ -26,40 +26,259 @@ using Hecton.Localization;
 using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.UI;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
 {
     /// <summary>
-    /// Статическая шина событий затмения для геймплейных систем.
+    /// Main-thread listener for deferred eclipse gameplay events.
+    /// </summary>
+    public interface IEclipseGameplayEventListener
+    {
+        /// <summary>Called when eclipse gameplay phase changes.</summary>
+        void OnEclipseGameplayPhaseChanged(bool active);
+
+        /// <summary>Called when night predator rise pressure changes.</summary>
+        void OnNightPredatorsRising(float intensity);
+
+        /// <summary>Called when eclipse temperature delta changes.</summary>
+        void OnEclipseTemperatureDelta(float delta);
+    }
+
+    /// <summary>
+    /// Queue-backed eclipse gameplay event lane.
     /// </summary>
     public static class EclipseGameplayEvents
     {
+        private struct EclipseGameplayEventPayload
+        {
+            public byte EventType;
+            public byte BoolValue;
+            public float Value;
+        }
+
+        private const byte PhaseChangedEventType = 1;
+        private const byte NightPredatorsRisingEventType = 2;
+        private const byte TemperatureDeltaEventType = 3;
+        private const int ExpectedPendingEventCapacity = 8;
+        private const int ListenerCapacity = 8;
+
+        private static readonly RegistryBucket<IEclipseGameplayEventListener> _listeners = new RegistryBucket<IEclipseGameplayEventListener>(ListenerCapacity);
+        private static NativeQueue<EclipseGameplayEventPayload> _pendingEvents;
+        private static NativeQueue<EclipseGameplayEventPayload> _nextFrameEvents;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
+
+        /// <summary>
+        /// Number of queued eclipse gameplay payloads awaiting dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnEclipsePhaseChanged = null;
-            OnNightPredatorsRising = null;
-            OnEclipseTemperatureDelta = null;
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(EclipseGameplayEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(EclipseGameplayEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
-        /// <summary>Фаза затмения изменилась. bool: true = активно.</summary>
-        public static event Action<bool> OnEclipsePhaseChanged;
+        /// <summary>
+        /// Registers a main-thread eclipse gameplay listener.
+        /// </summary>
+        public static void Register(IEclipseGameplayEventListener listener)
+        {
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
 
-        /// <summary>Ночные хищники поднимаются. float: интенсивность [0..1].</summary>
-        public static event Action<float> OnNightPredatorsRising;
+        /// <summary>
+        /// Unregisters a main-thread eclipse gameplay listener.
+        /// </summary>
+        public static void Unregister(IEclipseGameplayEventListener listener)
+        {
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
 
-        /// <summary>Температурная дельта от затмения. float: дельта °C (отрицательная).</summary>
-        public static event Action<float> OnEclipseTemperatureDelta;
+        /// <summary>Queues an eclipse phase change.</summary>
+        public static void RaisePhaseChanged(bool active)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
+                return;
 
-        public static void RaisePhaseChanged(bool active) => OnEclipsePhaseChanged?.Invoke(active);
-        public static void RaiseNightPredatorsRising(float intensity) => OnNightPredatorsRising?.Invoke(intensity);
-        public static void RaiseTemperatureDelta(float delta) => OnEclipseTemperatureDelta?.Invoke(delta);
+            Enqueue(new EclipseGameplayEventPayload
+            {
+                EventType = PhaseChangedEventType,
+                BoolValue = active ? (byte)1 : (byte)0
+            });
+        }
+
+        /// <summary>Queues night predator rise pressure.</summary>
+        public static void RaiseNightPredatorsRising(float intensity)
+        {
+            EnqueueValue(NightPredatorsRisingEventType, intensity);
+        }
+
+        /// <summary>Queues eclipse temperature delta.</summary>
+        public static void RaiseTemperatureDelta(float delta)
+        {
+            EnqueueValue(TemperatureDeltaEventType, delta);
+        }
+
+        /// <summary>
+        /// Flushes queued eclipse gameplay events on the main thread.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : ExpectedPendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out EclipseGameplayEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                _isDispatching = true;
+                try
+                {
+                    Dispatch(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
+        }
+
+        private static void EnqueueValue(byte eventType, float value)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
+                return;
+
+            Enqueue(new EclipseGameplayEventPayload
+            {
+                EventType = eventType,
+                Value = value
+            });
+        }
+
+        private static void Enqueue(in EclipseGameplayEventPayload payload)
+        {
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+        }
+
+        private static void Dispatch(in EclipseGameplayEventPayload payload)
+        {
+            IEclipseGameplayEventListener[] rawListeners = _listeners.RawArray;
+            int listenerCount = _listeners.Count;
+            for (int i = listenerCount - 1; i >= 0; i--)
+            {
+                IEclipseGameplayEventListener listener = rawListeners[i];
+                if (listener == null)
+                    continue;
+
+                switch (payload.EventType)
+                {
+                    case PhaseChangedEventType:
+                        listener.OnEclipseGameplayPhaseChanged(payload.BoolValue != 0);
+                        break;
+                    case NightPredatorsRisingEventType:
+                        listener.OnNightPredatorsRising(payload.Value);
+                        break;
+                    case TemperatureDeltaEventType:
+                        listener.OnEclipseTemperatureDelta(payload.Value);
+                        break;
+                }
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[8] - deferred eclipse gameplay lane flushed by SystemDispatcher - owner: EclipseGameplayEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    ExpectedPendingEventCapacity,
+                    nameof(EclipseGameplayEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[8] - next-frame eclipse gameplay lane prevents same-frame reentrant dispatch - owner: EclipseGameplayEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    ExpectedPendingEventCapacity,
+                    nameof(EclipseGameplayEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<EclipseGameplayEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
+        }
     }
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-100)]
-    public sealed class EclipseGameplaySystem : MonoBehaviour, ISlowTickable
+    public sealed class EclipseGameplaySystem : MonoBehaviour, ISlowTickable, ICelestialEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -131,22 +350,19 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             TryRegister();
-
-            HectonCelestialEngine.OnEclipseStart += HandleEclipseStart;
-            HectonCelestialEngine.OnEclipseEnd   += HandleEclipseEnd;
+            CelestialEvents.Register(this);
         }
 
         private void OnDisable()
         {
             TryUnregister();
-
-            HectonCelestialEngine.OnEclipseStart -= HandleEclipseStart;
-            HectonCelestialEngine.OnEclipseEnd   -= HandleEclipseEnd;
+            CelestialEvents.Unregister(this);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            CelestialEvents.Unregister(this);
 
             if (Instance == this)
                 Instance = null;
@@ -240,6 +456,24 @@ namespace Hecton8.Gameplay
             LogEclipseEnded();
         }
 
+        void ICelestialEventListener.OnCelestialEclipseStarted()
+        {
+            HandleEclipseStart();
+        }
+
+        void ICelestialEventListener.OnCelestialEclipseEnded()
+        {
+            HandleEclipseEnd();
+        }
+
+        void ICelestialEventListener.OnCelestialSunAngleChanged(float angleDegrees)
+        {
+        }
+
+        void ICelestialEventListener.OnCelestialPlanetPhaseChanged(float phase)
+        {
+        }
+
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
         private static void LogEclipseStarted()
         {
@@ -274,7 +508,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

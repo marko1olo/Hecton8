@@ -336,7 +336,7 @@ namespace Hecton8.Physics
             if (oceanRenderer != null && oceanRenderer.Root != null)
                 return oceanRenderer.Root.position.y;
 
-            HectonFluidEngine fluidEngine = HectonFluidEngine.Instance;
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
             return fluidEngine != null ? fluidEngine.WaterLevel : 0f;
         }
 

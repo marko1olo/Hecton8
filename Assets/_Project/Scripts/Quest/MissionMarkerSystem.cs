@@ -256,7 +256,7 @@ namespace Hecton8.Quest
             Vector3 resolvedPosition;
             if (cache.TargetHash == _atlasCoreMarkerTargetHash)
             {
-                AtlasSignalSystem atlasSignalSystem = AtlasSignalSystem.Instance;
+                AtlasSignalSystem atlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignal;
                 if (atlasSignalSystem == null)
                     return false;
 

@@ -27,6 +27,26 @@ namespace Hecton8.Construction
         private static Material s_finalProxyMaterial;
         private static Mesh s_wireBoxMesh;
         private static int s_socketLayer = int.MinValue;
+        // COLD ALLOC: Vector3[8] - shared unit wire box vertices for generated module proxies - owner: ConstructionRuntimeProxyFactory
+        private static readonly Vector3[] s_wireBoxVertices =
+        {
+            new Vector3(-0.5f, -0.5f, -0.5f),
+            new Vector3(0.5f, -0.5f, -0.5f),
+            new Vector3(0.5f, -0.5f, 0.5f),
+            new Vector3(-0.5f, -0.5f, 0.5f),
+            new Vector3(-0.5f, 0.5f, -0.5f),
+            new Vector3(0.5f, 0.5f, -0.5f),
+            new Vector3(0.5f, 0.5f, 0.5f),
+            new Vector3(-0.5f, 0.5f, 0.5f)
+        };
+
+        // COLD ALLOC: int[24] - shared unit wire box edge indices for generated module proxies - owner: ConstructionRuntimeProxyFactory
+        private static readonly int[] s_wireBoxIndices =
+        {
+            0, 1, 1, 2, 2, 3, 3, 0,
+            4, 5, 5, 6, 6, 7, 7, 4,
+            0, 4, 1, 5, 2, 6, 3, 7
+        };
 
         internal static bool TryCreateGhostProxy(BuildableData data, Vector3 position, Quaternion rotation, LayerMask blockingMask, out GameObject proxyRoot)
         {
@@ -174,26 +194,9 @@ namespace Hecton8.Construction
                 name = "H8_RuntimeModuleWireBox"
             };
 
-            // COLD ALLOC: Vector3[8] — shared unit wire box vertices for generated module proxies — owner: ConstructionRuntimeProxyFactory
-            s_wireBoxMesh.vertices = new[]
-            {
-                new Vector3(-0.5f, -0.5f, -0.5f),
-                new Vector3( 0.5f, -0.5f, -0.5f),
-                new Vector3( 0.5f, -0.5f,  0.5f),
-                new Vector3(-0.5f, -0.5f,  0.5f),
-                new Vector3(-0.5f,  0.5f, -0.5f),
-                new Vector3( 0.5f,  0.5f, -0.5f),
-                new Vector3( 0.5f,  0.5f,  0.5f),
-                new Vector3(-0.5f,  0.5f,  0.5f)
-            };
+            s_wireBoxMesh.vertices = s_wireBoxVertices;
             s_wireBoxMesh.SetIndices(
-                // COLD ALLOC: int[24] — shared unit wire box edge indices for generated module proxies — owner: ConstructionRuntimeProxyFactory
-                new[]
-                {
-                    0, 1, 1, 2, 2, 3, 3, 0,
-                    4, 5, 5, 6, 6, 7, 7, 4,
-                    0, 4, 1, 5, 2, 6, 3, 7
-                },
+                s_wireBoxIndices,
                 MeshTopology.Lines,
                 0);
             s_wireBoxMesh.RecalculateBounds();

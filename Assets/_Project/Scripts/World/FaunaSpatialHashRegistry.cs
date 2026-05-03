@@ -227,6 +227,9 @@ namespace Hecton8.World
             EnsureInitialized();
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
             int handle = _nativeHash.Register(positionAup, float3.zero, (int)kind, ResolveEntityFlags(kind), 0);
+            if (handle <= 0)
+                return 0;
+
             _entries[handle] = new Entry
             {
                 Transform = targetTransform,

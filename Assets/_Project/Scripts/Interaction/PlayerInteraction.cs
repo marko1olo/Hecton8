@@ -432,7 +432,7 @@ namespace Hecton8.Interaction
             }
 
             if (_currentPickupSource != null &&
-                _currentPickupSource.TryHandleInventoryPickup(PlayerInventory.Instance, transform))
+                _currentPickupSource.TryHandleInventoryPickup(Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime, transform))
             {
                 InteractionEvents.RaiseInteractionStarted(
                     _currentHovered, transform);

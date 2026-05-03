@@ -32,7 +32,7 @@ namespace Hecton.Localization
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SpriteRenderer))]
     [AddComponentMenu("Hecton/Localization/Localized Sprite Renderer")]
-    public sealed class LocalizedSpriteRenderer : MonoBehaviour
+    public sealed class LocalizedSpriteRenderer : MonoBehaviour, ILocalizationLanguageChangedListener
     {
         [Header("References")]
         [Tooltip("Target SpriteRenderer. Defaults to the component on the same GameObject.")]
@@ -54,13 +54,13 @@ namespace Hecton.Localization
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             ApplyCurrentSprite();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
 
 #if UNITY_EDITOR
@@ -71,6 +71,15 @@ namespace Hecton.Localization
                 ApplyCurrentSprite();
         }
 #endif
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void HandleLanguageChanged(GameLanguage language)
         {
@@ -92,8 +101,8 @@ namespace Hecton.Localization
 
         private Sprite ResolveSpriteForCurrentLanguage()
         {
-            GameLanguage language = LocalizationManager.Instance != null
-                ? LocalizationManager.Instance.CurrentLanguage
+            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
+                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
                 : GameLanguage.English;
 
             if (variants != null)

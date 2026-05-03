@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Collections;
 using UnityEngine;
 
@@ -142,6 +143,11 @@ namespace Hecton8.Inventory
             s_templates = new ItemTemplate[templates.Length];
             Array.Copy(templates, s_templates, templates.Length);
             s_hashToIndex = new NativeHashMap<uint, int>(templates.Length, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeHashMap(
+                s_hashToIndex,
+                nameof(ItemTemplateRegistry),
+                nameof(s_hashToIndex),
+                NativeAllocationLifetime.Session);
 
             for (int index = 0; index < s_templates.Length; index++)
             {
@@ -185,6 +191,7 @@ namespace Hecton8.Inventory
         {
             if (s_hashToIndex.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ItemTemplateRegistry), nameof(s_hashToIndex));
                 s_hashToIndex.Dispose();
                 s_hashToIndex = default;
             }

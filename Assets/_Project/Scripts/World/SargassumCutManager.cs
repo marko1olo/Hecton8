@@ -217,6 +217,7 @@ namespace Hecton8.World
         private ComputeShader _damageVolumeCompute;
         private int _damageVolumeKernel = -1;
         private GraphicsBuffer _damageVolumeStampCommandBuffer;
+        private bool _serviceRegistered;
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private float _maskEnergy;
@@ -436,11 +437,13 @@ namespace Hecton8.World
         {
             CreateResources();
             PublishGlobals();
+            TryRegisterService();
             TryRegister();
         }
 
         private void OnDisable()
         {
+            TryUnregisterService();
             TryUnregister();
             Shader.SetGlobalFloat(_CutMaskActiveId, 0f);
             Shader.SetGlobalFloat(_DamageVolumeActiveId, 0f);
@@ -449,6 +452,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
+            TryUnregisterService();
             TryUnregister();
             ReleaseResources();
 
@@ -1234,14 +1238,32 @@ namespace Hecton8.World
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = true;
+                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
             }
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterSargassumCutRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.SargassumCut, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSargassumCutRuntime(this);
+            _serviceRegistered = false;
         }
 
         private void TryUnregister()

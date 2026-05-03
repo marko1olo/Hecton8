@@ -311,7 +311,7 @@ namespace Hecton8.UI
         {
             int count = 0;
 
-            EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
+            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
             EmergencyServiceRelay relayTarget = relayDirector != null ? relayDirector.GetActiveRouteTarget() : null;
             if (relayTarget != null && relayTarget.isActiveAndEnabled && count < _runtimeWaypoints.Length)
             {

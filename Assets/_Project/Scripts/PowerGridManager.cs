@@ -13,17 +13,25 @@ namespace Hecton8.Power
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5500)]
-    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, IPowerGridService
+    public sealed class PowerGridManager : MonoBehaviour, ISlowTickable, ILateFrameTickable, IPowerGridService
     {
         private static List<PowerGrid> _allGrids;
+
+        internal static PowerGridManager ActiveRuntimeInstance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             DisposeAllGrids();
+            ActiveRuntimeInstance = null;
         }
 
-        internal static List<PowerGrid> RuntimeGrids => _allGrids;
+        internal static int RuntimeGridCount => _allGrids != null ? _allGrids.Count : 0;
+
+        internal static PowerGrid GetRuntimeGridAt(int index)
+        {
+            return _allGrids != null && index >= 0 && index < _allGrids.Count ? _allGrids[index] : null;
+        }
 
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬ Settings Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [Tooltip("ÃÂÃÂ°Ã‘â€¡ÃÂ°ÃÂ»Ã‘Å’ÃÂ½ÃÂ°Ã‘Â Ã‘â€˜ÃÂ¼ÃÂºÃÂ¾Ã‘ÂÃ‘â€šÃ‘Å’ Ã‘ÂÃÂ¿ÃÂ¸Ã‘ÂÃÂºÃÂ° Ã‘ÂÃÂµÃ‘â€šÃÂµÃÂ¹.")]
@@ -42,7 +50,9 @@ namespace Hecton8.Power
         [SerializeField] private float _debugPendingWirelessToolDemandWattSeconds;
 
         private bool _dispatcherRegistered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
+        private bool _slowTickFinalizationPending;
         private float _pendingWirelessToolDemandWattSeconds;
         private const float MaxPendingWirelessToolDemandWattSeconds = 4096f;
 
@@ -100,36 +110,38 @@ namespace Hecton8.Power
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             if (_allGrids == null)
                 _allGrids = new List<PowerGrid>(math.max(1, initialGridCapacity));
         }
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
             TryRegister();
             TryRegisterService();
         }
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
+            CompletePendingSlowTickEvaluationsForTeardown();
             TryUnregister();
             TryUnregisterService();
         }
 
+        /// <inheritdoc />
         public void SlowTick()
         {
             if (_allGrids == null)
                 return;
 
-            int totalNodes = 0;
-            int deficitCount = 0;
-            float totalGeneration = 0f;
-            float totalConsumption = 0f;
-            float totalBatteryStoredEnergy = 0f;
-            float totalBatteryCapacity = 0f;
-            int emergencyReserveGridCount = 0;
-            float lowestSupplyRatio = 1f;
-            LogisticsBrownoutTier highestBrownoutTier = LogisticsBrownoutTier.None;
+            if (_slowTickFinalizationPending)
+                return;
 
             for (int gridIndex = _allGrids.Count - 1; gridIndex >= 0; gridIndex--)
             {
@@ -143,80 +155,25 @@ namespace Hecton8.Power
                 grid.BeginSlowTickEvaluation();
             }
 
-            int finalizedGridCount = _allGrids.Count;
-            for (int gridIndex = 0; gridIndex < finalizedGridCount; gridIndex++)
-            {
-                PowerGrid grid = _allGrids[gridIndex];
-                if (grid == null)
-                    continue;
+            _slowTickFinalizationPending = true;
+        }
 
-                grid.EndSlowTickEvaluation();
-                totalNodes += grid.NodeCount;
-                totalGeneration += grid.TotalGeneration;
-                totalConsumption += grid.TotalConsumption;
-                totalBatteryStoredEnergy += grid.TotalBatteryStoredEnergyWattSeconds;
-                totalBatteryCapacity += grid.TotalBatteryCapacityWattSeconds;
-                lowestSupplyRatio = math.min(lowestSupplyRatio, grid.SupplyRatio);
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (!_slowTickFinalizationPending)
+                return;
 
-                if (grid.HasPowerDeficit)
-                    deficitCount++;
-                if (grid.IsBatteryEmergencyReserveActive)
-                    emergencyReserveGridCount++;
-                if (grid.BrownoutTier > highestBrownoutTier)
-                    highestBrownoutTier = grid.BrownoutTier;
-            }
+            if (!TryFinalizeSlowTickEvaluations())
+                return;
 
-            ConsumePendingWirelessToolDemand();
-            totalBatteryStoredEnergy = 0f;
-            totalBatteryCapacity = 0f;
-            emergencyReserveGridCount = 0;
-            for (int gridIndex = 0; gridIndex < finalizedGridCount; gridIndex++)
-            {
-                PowerGrid grid = _allGrids[gridIndex];
-                if (grid == null)
-                    continue;
-
-                totalBatteryStoredEnergy += grid.TotalBatteryStoredEnergyWattSeconds;
-                totalBatteryCapacity += grid.TotalBatteryCapacityWattSeconds;
-                if (grid.IsBatteryEmergencyReserveActive)
-                    emergencyReserveGridCount++;
-            }
-
-            UpdateDiagnostics(totalGeneration, totalConsumption, totalNodes, deficitCount);
-            _debugBatteryStoredEnergyWattSeconds = totalBatteryStoredEnergy;
-            _debugBatteryCapacityWattSeconds = totalBatteryCapacity;
-            _debugBatteryChargeNormalized = totalBatteryCapacity > 0.0001f
-                ? math.saturate(totalBatteryStoredEnergy / totalBatteryCapacity)
-                : 0f;
-            _debugEmergencyReserveGridCount = emergencyReserveGridCount;
-            _debugPendingWirelessToolDemandWattSeconds = _pendingWirelessToolDemandWattSeconds;
-
-            float supplyRatio = totalConsumption > 0.0001f
-                ? math.saturate(totalGeneration / totalConsumption)
-                : 1f;
-            if (finalizedGridCount > 0)
-                supplyRatio = math.min(supplyRatio, lowestSupplyRatio);
-
-            float availablePowerNormalized = totalBatteryCapacity > 0.0001f
-                ? _debugBatteryChargeNormalized
-                : supplyRatio;
-
-            PowerGridTelemetrySnapshot telemetrySnapshot = new PowerGridTelemetrySnapshot(
-                finalizedGridCount,
-                deficitCount,
-                totalGeneration,
-                totalConsumption,
-                supplyRatio,
-                _debugBatteryChargeNormalized,
-                availablePowerNormalized,
-                highestBrownoutTier,
-                deficitCount > 0,
-                emergencyReserveGridCount > 0);
-            PowerGridTelemetryEvents.Raise(in telemetrySnapshot);
+            PublishTelemetrySnapshot();
+            _slowTickFinalizationPending = false;
         }
 
         private void OnDestroy()
         {
+            CompletePendingSlowTickEvaluationsForTeardown();
             TryUnregister();
             TryUnregisterService();
             DisposeAllGrids();
@@ -366,13 +323,144 @@ namespace Hecton8.Power
             removedGrid?.Dispose();
         }
 
+        private static bool TryFinalizeSlowTickEvaluations()
+        {
+            if (_allGrids == null)
+                return true;
+
+            for (int gridIndex = _allGrids.Count - 1; gridIndex >= 0; gridIndex--)
+            {
+                PowerGrid grid = _allGrids[gridIndex];
+                if (grid == null || grid.NodeCount == 0)
+                    SwapRemoveAt(gridIndex);
+            }
+
+            bool allReady = true;
+            int gridCount = _allGrids.Count;
+            for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
+            {
+                PowerGrid grid = _allGrids[gridIndex];
+                if (grid == null)
+                    continue;
+
+                if (!grid.TryEndSlowTickEvaluation())
+                    allReady = false;
+            }
+
+            return allReady;
+        }
+
+        private static void CompleteAllPendingGridEvaluations()
+        {
+            if (_allGrids == null)
+                return;
+
+            int gridCount = _allGrids.Count;
+            for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
+                _allGrids[gridIndex]?.EndSlowTickEvaluation();
+        }
+
+        private void CompletePendingSlowTickEvaluationsForTeardown()
+        {
+            if (!_slowTickFinalizationPending)
+                return;
+
+            CompleteAllPendingGridEvaluations();
+            _slowTickFinalizationPending = false;
+        }
+
+        private void PublishTelemetrySnapshot()
+        {
+            int totalNodes = 0;
+            int deficitCount = 0;
+            float totalGeneration = 0f;
+            float totalConsumption = 0f;
+            float totalBatteryStoredEnergy = 0f;
+            float totalBatteryCapacity = 0f;
+            int emergencyReserveGridCount = 0;
+            float lowestSupplyRatio = 1f;
+            LogisticsBrownoutTier highestBrownoutTier = LogisticsBrownoutTier.None;
+            int finalizedGridCount = _allGrids != null ? _allGrids.Count : 0;
+
+            for (int gridIndex = 0; gridIndex < finalizedGridCount; gridIndex++)
+            {
+                PowerGrid grid = _allGrids[gridIndex];
+                if (grid == null)
+                    continue;
+
+                totalNodes += grid.NodeCount;
+                totalGeneration += grid.TotalGeneration;
+                totalConsumption += grid.TotalConsumption;
+                totalBatteryStoredEnergy += grid.TotalBatteryStoredEnergyWattSeconds;
+                totalBatteryCapacity += grid.TotalBatteryCapacityWattSeconds;
+                lowestSupplyRatio = math.min(lowestSupplyRatio, grid.SupplyRatio);
+
+                if (grid.HasPowerDeficit)
+                    deficitCount++;
+                if (grid.IsBatteryEmergencyReserveActive)
+                    emergencyReserveGridCount++;
+                if (grid.BrownoutTier > highestBrownoutTier)
+                    highestBrownoutTier = grid.BrownoutTier;
+            }
+
+            ConsumePendingWirelessToolDemand();
+            totalBatteryStoredEnergy = 0f;
+            totalBatteryCapacity = 0f;
+            emergencyReserveGridCount = 0;
+            for (int gridIndex = 0; gridIndex < finalizedGridCount; gridIndex++)
+            {
+                PowerGrid grid = _allGrids[gridIndex];
+                if (grid == null)
+                    continue;
+
+                totalBatteryStoredEnergy += grid.TotalBatteryStoredEnergyWattSeconds;
+                totalBatteryCapacity += grid.TotalBatteryCapacityWattSeconds;
+                if (grid.IsBatteryEmergencyReserveActive)
+                    emergencyReserveGridCount++;
+            }
+
+            UpdateDiagnostics(totalGeneration, totalConsumption, totalNodes, deficitCount);
+            _debugBatteryStoredEnergyWattSeconds = totalBatteryStoredEnergy;
+            _debugBatteryCapacityWattSeconds = totalBatteryCapacity;
+            _debugBatteryChargeNormalized = totalBatteryCapacity > 0.0001f
+                ? math.saturate(totalBatteryStoredEnergy / totalBatteryCapacity)
+                : 0f;
+            _debugEmergencyReserveGridCount = emergencyReserveGridCount;
+            _debugPendingWirelessToolDemandWattSeconds = _pendingWirelessToolDemandWattSeconds;
+
+            float supplyRatio = totalConsumption > 0.0001f
+                ? math.saturate(totalGeneration / totalConsumption)
+                : 1f;
+            if (finalizedGridCount > 0)
+                supplyRatio = math.min(supplyRatio, lowestSupplyRatio);
+
+            float availablePowerNormalized = totalBatteryCapacity > 0.0001f
+                ? _debugBatteryChargeNormalized
+                : supplyRatio;
+
+            PowerGridTelemetrySnapshot telemetrySnapshot = new PowerGridTelemetrySnapshot(
+                finalizedGridCount,
+                deficitCount,
+                totalGeneration,
+                totalConsumption,
+                supplyRatio,
+                _debugBatteryChargeNormalized,
+                availablePowerNormalized,
+                highestBrownoutTier,
+                deficitCount > 0,
+                emergencyReserveGridCount > 0);
+            PowerGridTelemetryEvents.Raise(in telemetrySnapshot);
+        }
+
         private void TryRegister()
         {
             if (_dispatcherRegistered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _dispatcherRegistered = true;
+            _dispatcherRegistered = SystemDispatcher.GetSlowLane(PriorityLayer.Environment).Contains(this);
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryRegisterService()
@@ -386,11 +474,17 @@ namespace Hecton8.Power
 
         private void TryUnregister()
         {
-            if (!_dispatcherRegistered)
-                return;
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
+            }
 
-            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
-            _dispatcherRegistered = false;
+            if (_dispatcherRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = false;
+            }
         }
 
         private void TryUnregisterService()

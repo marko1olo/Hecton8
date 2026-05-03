@@ -214,7 +214,7 @@ namespace Hecton8.World
 
         private bool CanPublishReadability()
         {
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector == null)
                 return true;
 
@@ -235,7 +235,7 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveBiomeMatrixDirector(ref biomeMatrixDirector);
             WorldRuntimeReferenceUtility.TryResolveWorldZoneDirector(ref worldZoneDirector);
             if (depthZoneDirector == null)
-                depthZoneDirector = DepthZoneDirector.Instance;
+                depthZoneDirector = GlobalRegistry.DepthZone;
         }
 
         private void ResetObservedState()

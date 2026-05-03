@@ -371,7 +371,7 @@ namespace Hecton8.World
 
         private void RefreshLodRegistration()
         {
-            LODSystemManager manager = LODSystemManager.Instance;
+            LODSystemManager manager = GlobalRegistry.LODSystem;
             if (manager == null)
             {
                 UnregisterLodGroups();
@@ -413,7 +413,7 @@ namespace Hecton8.World
 
         private void RefreshCullingRegistration()
         {
-            CullingManager manager = CullingManager.Instance;
+            CullingManager manager = GlobalRegistry.Culling;
             if (manager == null)
             {
                 UnregisterCulling();

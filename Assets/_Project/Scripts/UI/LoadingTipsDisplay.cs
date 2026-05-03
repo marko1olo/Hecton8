@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Loading Tips Display")]
-    public sealed class LoadingTipsDisplay : MonoBehaviour, ITickable, IUpdatable
+    public sealed class LoadingTipsDisplay : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
         [Header("=== UI REFERENCES ===")]
         [SerializeField] private TextMeshProUGUI tipText;
@@ -85,7 +85,7 @@ namespace Hecton8.UI
         {
             TryRegister();
 
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             StartTipCycle();
         }
 
@@ -93,7 +93,7 @@ namespace Hecton8.UI
         {
             TryUnregister();
 
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             StopTipCycle();
         }
 
@@ -186,7 +186,7 @@ namespace Hecton8.UI
                 _tips = new string[TipKeys.Length];
             }
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             for (int i = 0; i < TipKeys.Length; i++)
             {
                 string fallback = i < DefaultTips.Length ? DefaultTips[i] : string.Empty;
@@ -233,6 +233,15 @@ namespace Hecton8.UI
             _isFadingIn = true;
             _fadeTimer = 0f;
         }
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void HandleLanguageChanged(GameLanguage language)
         {

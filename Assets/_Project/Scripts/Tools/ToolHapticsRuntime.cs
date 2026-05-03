@@ -233,19 +233,40 @@ namespace Hecton8.Tools
         private void EnsureBuffers()
         {
             if (!_frontBuffer.IsCreated)
+            {
                 _frontBuffer = new NativeArray<HapticCommand>(BufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HapticCommand>[16] — active haptic buffer consumed by input dispatch — owner: ToolHapticsRuntime
 
+                NativeMemorySentinel.RegisterNativeArray(
+                    _frontBuffer,
+                    nameof(ToolHapticsRuntime),
+                    nameof(_frontBuffer),
+                    NativeAllocationLifetime.Scene);
+            }
+
             if (!_backBuffer.IsCreated)
+            {
                 _backBuffer = new NativeArray<HapticCommand>(BufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HapticCommand>[16] — frame-local haptic write buffer merged in LateFrameTick — owner: ToolHapticsRuntime
+                NativeMemorySentinel.RegisterNativeArray(
+                    _backBuffer,
+                    nameof(ToolHapticsRuntime),
+                    nameof(_backBuffer),
+                    NativeAllocationLifetime.Scene);
+            }
         }
 
         private void DisposeBuffers()
         {
             if (_frontBuffer.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_frontBuffer);
                 _frontBuffer.Dispose();
+            }
 
             if (_backBuffer.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_backBuffer);
                 _backBuffer.Dispose();
+            }
 
             _frontBuffer = default;
             _backBuffer = default;

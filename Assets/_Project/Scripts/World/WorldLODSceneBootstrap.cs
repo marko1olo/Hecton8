@@ -5,6 +5,7 @@
 // ============================================================================
 
 using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -125,7 +126,7 @@ namespace Hecton8.World
 
                         if (_registerWithCullingManager)
                         {
-                            _cullingManager ??= CullingManager.Instance;
+                            _cullingManager ??= GlobalRegistry.Culling;
                             if (_cullingManager != null)
                             {
                                 _cullingManager.RegisterCullableObject(lodGroup.gameObject);
@@ -156,7 +157,7 @@ namespace Hecton8.World
 
                         if (_registerWithCullingManager)
                         {
-                            _cullingManager ??= CullingManager.Instance;
+                            _cullingManager ??= GlobalRegistry.Culling;
                             if (_cullingManager != null)
                             {
                                 _cullingManager.UnregisterCullableObject(lodGroup.gameObject);

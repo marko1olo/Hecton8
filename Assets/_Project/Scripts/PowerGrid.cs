@@ -10,7 +10,6 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
-using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -29,7 +28,6 @@ namespace Hecton8.Power
         private const float ShortCircuitResistanceMultiplier = 100f;
         private const float BatteryDispatchDeltaTimeSeconds = 0.5f;
         private const float BatteryEmergencyReserveThreshold = 0.10f;
-        private const int BatteryParallelBatchSize = 16;
         private const float OverloadHeatWattsScale = 0.22f;
         private const float MinimumOverloadHeatWatts = 1800f;
         private const float OverloadThermalDamagePerSecond = 18f;
@@ -50,6 +48,13 @@ namespace Hecton8.Power
             Idle = 0,
             Charge = 1,
             Discharge = 2
+        }
+
+        private enum SlowTickEvaluationPhase : byte
+        {
+            Idle = 0,
+            InitialEvaluation = 1,
+            FinalEvaluation = 2
         }
 
         private struct BatteryDispatchRecord
@@ -75,72 +80,6 @@ namespace Hecton8.Power
             public SubmarineFluidDynamics FluidDynamics;
             public IDamageReceiver DamageReceiver;
             public int RoomIndex;
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ResolveBatteryDispatchJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<BatteryDispatchRecord> Records;
-            public NativeArray<BatteryDispatchResult> Results;
-
-            public BatteryDispatchMode Mode;
-            public float RequestedPowerWatts;
-            public float TotalAvailablePowerWatts;
-            public float DeltaTimeSeconds;
-
-            public void Execute(int index)
-            {
-                BatteryDispatchRecord record = Records[index];
-                float safeCapacity = math.max(1f, record.CapacityWattSeconds);
-                BatteryDispatchResult result = new BatteryDispatchResult
-                {
-                    NextStoredEnergyWattSeconds = math.clamp(record.StoredEnergyWattSeconds, 0f, safeCapacity),
-                    PlannedGridPowerWatts = 0f
-                };
-
-                if (Mode == BatteryDispatchMode.Idle || RequestedPowerWatts <= 0.0001f || TotalAvailablePowerWatts <= 0.0001f)
-                {
-                    Results[index] = result;
-                    return;
-                }
-
-                float safeDeltaTime = math.max(0.001f, DeltaTimeSeconds);
-                float safeChargeEfficiency = math.max(0.1f, record.ChargeEfficiency);
-                float safeDischargeEfficiency = math.max(0.1f, record.DischargeEfficiency);
-
-                if (Mode == BatteryDispatchMode.Charge)
-                {
-                    float missingEnergy = math.max(0f, safeCapacity - record.StoredEnergyWattSeconds);
-                    float availablePower = math.max(
-                        0f,
-                        math.min(
-                            math.max(0f, record.MaxChargePowerWatts),
-                            missingEnergy / (safeDeltaTime * safeChargeEfficiency)));
-                    float allocatedPower = math.min(
-                        availablePower,
-                        RequestedPowerWatts * (availablePower / math.max(0.0001f, TotalAvailablePowerWatts)));
-                    result.NextStoredEnergyWattSeconds = math.clamp(
-                        record.StoredEnergyWattSeconds + (allocatedPower * safeDeltaTime * safeChargeEfficiency),
-                        0f,
-                        safeCapacity);
-                    result.PlannedGridPowerWatts = -allocatedPower;
-                    Results[index] = result;
-                    return;
-                }
-
-                float availableOutputPower = math.max(
-                    0f,
-                    math.min(
-                        math.max(0f, record.MaxDischargePowerWatts),
-                        (record.StoredEnergyWattSeconds * safeDischargeEfficiency) / safeDeltaTime));
-                float deliveredPower = math.min(
-                    availableOutputPower,
-                    RequestedPowerWatts * (availableOutputPower / math.max(0.0001f, TotalAvailablePowerWatts)));
-                float drainedEnergy = (deliveredPower * safeDeltaTime) / safeDischargeEfficiency;
-                result.NextStoredEnergyWattSeconds = math.clamp(record.StoredEnergyWattSeconds - drainedEnergy, 0f, safeCapacity);
-                result.PlannedGridPowerWatts = deliveredPower;
-                Results[index] = result;
-            }
         }
 
         /// <summary>Unique runtime ID for diagnostics.</summary>
@@ -181,6 +120,7 @@ namespace Hecton8.Power
         private bool _isDirty = true;
         private bool _hasEvaluatedAtLeastOnce;
         private bool _slowTickEvaluationPending;
+        private SlowTickEvaluationPhase _slowTickEvaluationPhase;
 
         /// <summary>Number of registered nodes in this grid.</summary>
         public int NodeCount => _nodes.Count;
@@ -399,11 +339,13 @@ namespace Hecton8.Power
                 _logisticsGraph.ClearPublishedNodeStates();
                 _isDirty = false;
                 _hasEvaluatedAtLeastOnce = true;
+                _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
                 return;
             }
 
             _logisticsGraph.ScheduleEvaluation();
             _slowTickEvaluationPending = true;
+            _slowTickEvaluationPhase = SlowTickEvaluationPhase.InitialEvaluation;
             _isDirty = false;
         }
 
@@ -413,24 +355,56 @@ namespace Hecton8.Power
             if (!_slowTickEvaluationPending)
                 return;
 
-            _logisticsGraph.CompleteEvaluation();
-            LogisticsNetworkGraph.DistributionSummary rawDistribution = _logisticsGraph.GetScheduledDistributionSummary();
-            ResolveBatteryDispatch(rawDistribution);
+            while (_slowTickEvaluationPending)
+            {
+                if (_slowTickEvaluationPhase == SlowTickEvaluationPhase.InitialEvaluation)
+                {
+                    _logisticsGraph.CompleteEvaluation();
+                    ScheduleFinalSlowTickEvaluationPass();
+                    continue;
+                }
 
-            BuildGraphSnapshot();
-            JobHandle finalEvaluationHandle = _logisticsGraph.ScheduleEvaluation();
-            _logisticsGraph.ScheduleNodeStatePublish(finalEvaluationHandle);
-            _logisticsGraph.CompleteEvaluation();
-            _logisticsGraph.CompleteNodeStatePublish();
-            CommitBatteryDispatchPlans();
-            ApplyDistributionSummary(
-                _logisticsGraph.GetScheduledTopologySummary(),
-                _logisticsGraph.GetScheduledDistributionSummary());
-            ApplyConsumerStates();
-            ApplyOverloadThermalDamage();
-            ApplyCableThermalSharing();
-            _slowTickEvaluationPending = false;
-            _hasEvaluatedAtLeastOnce = true;
+                if (_slowTickEvaluationPhase == SlowTickEvaluationPhase.FinalEvaluation)
+                {
+                    _logisticsGraph.CompleteEvaluation();
+                    _logisticsGraph.CompleteNodeStatePublish();
+                    CommitSlowTickEvaluation();
+                    return;
+                }
+
+                _slowTickEvaluationPending = false;
+            }
+        }
+
+        /// <summary>
+        /// Progresses the pending slow-tick evaluation without forcing job completion.
+        /// </summary>
+        /// <returns>True when the evaluation is fully committed or no evaluation is pending.</returns>
+        public bool TryEndSlowTickEvaluation()
+        {
+            if (!_slowTickEvaluationPending)
+                return true;
+
+            if (_slowTickEvaluationPhase == SlowTickEvaluationPhase.InitialEvaluation)
+            {
+                if (!_logisticsGraph.TryCompleteEvaluation())
+                    return false;
+
+                ScheduleFinalSlowTickEvaluationPass();
+            }
+
+            if (_slowTickEvaluationPhase == SlowTickEvaluationPhase.FinalEvaluation)
+            {
+                if (!_logisticsGraph.TryCompleteEvaluation())
+                    return false;
+
+                if (!_logisticsGraph.TryCompleteNodeStatePublish())
+                    return false;
+
+                CommitSlowTickEvaluation();
+            }
+
+            return !_slowTickEvaluationPending;
         }
 
         /// <summary>Rebuilds the topology-only snapshot and returns current connectivity analysis.</summary>
@@ -445,9 +419,35 @@ namespace Hecton8.Power
             return topology;
         }
 
+        private void ScheduleFinalSlowTickEvaluationPass()
+        {
+            LogisticsNetworkGraph.DistributionSummary rawDistribution = _logisticsGraph.GetScheduledDistributionSummary();
+            ResolveBatteryDispatch(rawDistribution);
+
+            BuildGraphSnapshot();
+            JobHandle finalEvaluationHandle = _logisticsGraph.ScheduleEvaluation();
+            _logisticsGraph.ScheduleNodeStatePublish(finalEvaluationHandle);
+            _slowTickEvaluationPhase = SlowTickEvaluationPhase.FinalEvaluation;
+        }
+
+        private void CommitSlowTickEvaluation()
+        {
+            CommitBatteryDispatchPlans();
+            ApplyDistributionSummary(
+                _logisticsGraph.GetScheduledTopologySummary(),
+                _logisticsGraph.GetScheduledDistributionSummary());
+            ApplyConsumerStates();
+            ApplyOverloadThermalDamage();
+            ApplyCableThermalSharing();
+            _slowTickEvaluationPending = false;
+            _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
+            _hasEvaluatedAtLeastOnce = true;
+        }
+
         private void EvaluateBalanceViaScheduledJob()
         {
             _slowTickEvaluationPending = false;
+            _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
             ResetBatteryDispatchPlans();
             BuildGraphSnapshot();
 
@@ -470,22 +470,9 @@ namespace Hecton8.Power
             }
 
             _logisticsGraph.ScheduleEvaluation();
-            _logisticsGraph.CompleteEvaluation();
-            LogisticsNetworkGraph.DistributionSummary rawDistribution = _logisticsGraph.GetScheduledDistributionSummary();
-            ResolveBatteryDispatch(rawDistribution);
-
-            BuildGraphSnapshot();
-            JobHandle finalEvaluationHandle = _logisticsGraph.ScheduleEvaluation();
-            _logisticsGraph.ScheduleNodeStatePublish(finalEvaluationHandle);
-            _logisticsGraph.CompleteEvaluation();
-            _logisticsGraph.CompleteNodeStatePublish();
-            CommitBatteryDispatchPlans();
-            ApplyDistributionSummary(
-                _logisticsGraph.GetScheduledTopologySummary(),
-                _logisticsGraph.GetScheduledDistributionSummary());
-            ApplyConsumerStates();
-            ApplyOverloadThermalDamage();
-            ApplyCableThermalSharing();
+            _slowTickEvaluationPending = true;
+            _slowTickEvaluationPhase = SlowTickEvaluationPhase.InitialEvaluation;
+            EndSlowTickEvaluation();
         }
 
         internal List<PowerNode> TopologyNodes => _topologyNodes;
@@ -1255,18 +1242,16 @@ namespace Hecton8.Power
                 return;
             }
 
-            ResolveBatteryDispatchJob dispatchJob = new ResolveBatteryDispatchJob
+            for (int batteryIndex = 0; batteryIndex < batteryCount; batteryIndex++)
             {
-                Records = _batteryDispatchRecords,
-                Results = _batteryDispatchResults,
-                Mode = dispatchMode,
-                RequestedPowerWatts = requestedPowerWatts,
-                TotalAvailablePowerWatts = totalAvailablePowerWatts,
-                DeltaTimeSeconds = BatteryDispatchDeltaTimeSeconds
-            };
-
-            JobHandle dispatchHandle = dispatchJob.Schedule(batteryCount, BatteryParallelBatchSize);
-            dispatchHandle.Complete();
+                BatteryDispatchRecord dispatchRecord = _batteryDispatchRecords[batteryIndex];
+                _batteryDispatchResults[batteryIndex] = ResolveBatteryDispatchRecord(
+                    in dispatchRecord,
+                    dispatchMode,
+                    requestedPowerWatts,
+                    totalAvailablePowerWatts,
+                    BatteryDispatchDeltaTimeSeconds);
+            }
 
             _totalBatteryStoredEnergyWattSeconds = 0f;
             _totalBatteryCapacityWattSeconds = 0f;
@@ -1285,6 +1270,64 @@ namespace Hecton8.Power
             _batteryEmergencyReserveActive = ResolveBatteryEmergencyReserveActive(
                 _totalBatteryStoredEnergyWattSeconds,
                 _totalBatteryCapacityWattSeconds);
+        }
+
+        private static BatteryDispatchResult ResolveBatteryDispatchRecord(
+            in BatteryDispatchRecord record,
+            BatteryDispatchMode mode,
+            float requestedPowerWatts,
+            float totalAvailablePowerWatts,
+            float deltaTimeSeconds)
+        {
+            float safeCapacity = math.max(1f, record.CapacityWattSeconds);
+            BatteryDispatchResult result = new BatteryDispatchResult
+            {
+                NextStoredEnergyWattSeconds = math.clamp(record.StoredEnergyWattSeconds, 0f, safeCapacity),
+                PlannedGridPowerWatts = 0f
+            };
+
+            if (mode == BatteryDispatchMode.Idle ||
+                requestedPowerWatts <= 0.0001f ||
+                totalAvailablePowerWatts <= 0.0001f)
+            {
+                return result;
+            }
+
+            float safeDeltaTime = math.max(0.001f, deltaTimeSeconds);
+            float safeChargeEfficiency = math.max(0.1f, record.ChargeEfficiency);
+            float safeDischargeEfficiency = math.max(0.1f, record.DischargeEfficiency);
+
+            if (mode == BatteryDispatchMode.Charge)
+            {
+                float missingEnergy = math.max(0f, safeCapacity - record.StoredEnergyWattSeconds);
+                float availablePower = math.max(
+                    0f,
+                    math.min(
+                        math.max(0f, record.MaxChargePowerWatts),
+                        missingEnergy / (safeDeltaTime * safeChargeEfficiency)));
+                float allocatedPower = math.min(
+                    availablePower,
+                    requestedPowerWatts * (availablePower / math.max(0.0001f, totalAvailablePowerWatts)));
+                result.NextStoredEnergyWattSeconds = math.clamp(
+                    record.StoredEnergyWattSeconds + (allocatedPower * safeDeltaTime * safeChargeEfficiency),
+                    0f,
+                    safeCapacity);
+                result.PlannedGridPowerWatts = -allocatedPower;
+                return result;
+            }
+
+            float availableOutputPower = math.max(
+                0f,
+                math.min(
+                    math.max(0f, record.MaxDischargePowerWatts),
+                    (record.StoredEnergyWattSeconds * safeDischargeEfficiency) / safeDeltaTime));
+            float deliveredPower = math.min(
+                availableOutputPower,
+                requestedPowerWatts * (availableOutputPower / math.max(0.0001f, totalAvailablePowerWatts)));
+            float drainedEnergy = (deliveredPower * safeDeltaTime) / safeDischargeEfficiency;
+            result.NextStoredEnergyWattSeconds = math.clamp(record.StoredEnergyWattSeconds - drainedEnergy, 0f, safeCapacity);
+            result.PlannedGridPowerWatts = deliveredPower;
+            return result;
         }
 
         private void CommitBatteryDispatchPlans()

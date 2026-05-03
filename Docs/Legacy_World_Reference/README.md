@@ -5,9 +5,9 @@ Status: `PENDING VERIFICATION`
 
 Purpose: hold older but still useful world-structure and terrain reference docs outside repo root.
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using these files.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using these files.
 - This folder is historical/reference material only, not current runtime, terrain, scatter, or scene authority.
 - Internal assumptions may predate the current bootstrap, registry, world generation, and procedural asset pipeline.
 

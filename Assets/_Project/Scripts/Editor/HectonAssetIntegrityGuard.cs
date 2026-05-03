@@ -12,6 +12,7 @@ namespace Hecton8.Editor.Validation
     internal sealed class HectonAssetIntegrityGuard : AssetPostprocessor
     {
         private const string GuardName = "HectonAssetIntegrityGuard";
+        private static readonly List<string> s_poisonedPaths = new List<string>(8); // COLD ALLOC: List<string>[8] — imported data asset path scratch — owner: HectonAssetIntegrityGuard
 
         private static void OnPostprocessAllAssets(
             string[] importedAssets,
@@ -22,14 +23,21 @@ namespace Hecton8.Editor.Validation
             if (LayerMaskSanitizer.IsSanitizing || importedAssets == null || importedAssets.Length == 0)
                 return;
 
-            List<string> poisonedPaths = new List<string>(8);
-            int poisonCount = LayerMaskSanitizer.CountPoisonedDataAssets(importedAssets, poisonedPaths);
-            if (poisonCount <= 0)
-                return;
+            s_poisonedPaths.Clear();
+            try
+            {
+                int poisonCount = LayerMaskSanitizer.CountPoisonedDataAssets(importedAssets, s_poisonedPaths);
+                if (poisonCount <= 0)
+                    return;
 
-            string message = BuildImportBlockMessage(poisonedPaths);
-            Debug.LogError(message);
-            throw new InvalidOperationException(message);
+                string message = BuildImportBlockMessage(s_poisonedPaths);
+                Debug.LogError(message);
+                throw new InvalidOperationException(message);
+            }
+            finally
+            {
+                s_poisonedPaths.Clear();
+            }
         }
 
         private static string BuildImportBlockMessage(List<string> poisonedPaths)

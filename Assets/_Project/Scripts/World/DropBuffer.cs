@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using Unity.Collections;
 
 namespace Hecton8.World
@@ -14,8 +15,17 @@ namespace Hecton8.World
 
         public DropBuffer(int capacity, Allocator allocator)
         {
-            _queue = new NativeQueue<ItemDropData>(allocator);
             _capacity = Math.Max(1, capacity);
+            _queue = new NativeQueue<ItemDropData>(allocator);
+            if (allocator == Allocator.Persistent)
+            {
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _queue,
+                    _capacity,
+                    nameof(DropBuffer),
+                    nameof(_queue),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         /// <summary>True when the persistent native queue is available.</summary>
@@ -23,6 +33,9 @@ namespace Hecton8.World
 
         /// <summary>Configured maximum event count budget for one schedule window.</summary>
         public int Capacity => _capacity;
+
+        /// <summary>True when no pending drop records remain in the native queue.</summary>
+        public bool IsEmpty => !_queue.IsCreated || _queue.IsEmpty();
 
         /// <summary>Returns a Burst-safe writer for the current queue.</summary>
         public NativeQueue<ItemDropData>.ParallelWriter AsParallelWriter()
@@ -57,7 +70,10 @@ namespace Hecton8.World
         public void Dispose()
         {
             if (_queue.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(DropBuffer), nameof(_queue));
                 _queue.Dispose();
+            }
 
             _capacity = 0;
         }

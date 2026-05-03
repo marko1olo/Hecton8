@@ -407,7 +407,7 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
-            HectonFluidEngine engine = HectonFluidEngine.Instance;
+            HectonFluidEngine engine = GlobalRegistry.Fluid;
             if (engine != null)
                 engine.Register(this);
 
@@ -425,7 +425,7 @@ namespace Hecton8.Physics
             _dryZoneRefCount = 0;
             _isGrounded = false;
 
-            HectonFluidEngine engine = HectonFluidEngine.Instance;
+            HectonFluidEngine engine = GlobalRegistry.Fluid;
             if (engine != null)
                 engine.Unregister(this);
 
@@ -574,7 +574,7 @@ namespace Hecton8.Physics
                 return;
             }
 
-            HectonFluidEngine engine = HectonFluidEngine.Instance;
+            HectonFluidEngine engine = GlobalRegistry.Fluid;
             float waterY = engine != null ? engine.WaterLevel : 5000f;
 
             bool submerged = transform.position.y < waterY;

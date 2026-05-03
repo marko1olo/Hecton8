@@ -14,7 +14,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4037)]
-    public sealed class WorldProceduralFieldSampler : MonoBehaviour
+    public sealed class WorldProceduralFieldSampler : MonoBehaviour, IBiomeMatrixEventListener
     {
         private const string SyntheticZoneLabelPrefix = "Synthetic:";
         private const string PatternLabelSedimentResources = "SedimentResources";
@@ -1544,7 +1544,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
+            BiomeMatrixEvents.Register(this);
             _isDataDirty = true;
 #if UNITY_EDITOR
             EnsureAssemblyReloadHook();
@@ -1553,7 +1553,7 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-            BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+            BiomeMatrixEvents.Unregister(this);
             CompletePendingSamplingJob();
             DisposeBurstData();
             _isDataDirty = true;
@@ -1565,7 +1565,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+            BiomeMatrixEvents.Unregister(this);
             CompletePendingSamplingJob();
             DisposeBurstData();
             _isDataDirty = true;
@@ -1620,7 +1620,7 @@ namespace Hecton8.World
 
         internal void PrepareForEditorReload()
         {
-            BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+            BiomeMatrixEvents.Unregister(this);
             CompletePendingSamplingJob();
             DisposeBurstData();
             _isDataDirty = true;
@@ -1654,6 +1654,15 @@ namespace Hecton8.World
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile _)
         {
             _isDataDirty = true;
+        }
+
+        void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            HandleMatrixBiomeChanged(profile);
+        }
+
+        void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
+        {
         }
 
         public bool TryBuildCellInput(Vector3 position, int cellX, int cellZ, out CellInputData input)
@@ -1767,7 +1776,7 @@ namespace Hecton8.World
                 };
 
                 JobHandle warmupHandle = ScheduleCellSamplingJob(warmupInputs, warmupOutputs, 1);
-                warmupHandle.Complete();
+                DispatcherJobSwap.TryComplete(ref warmupHandle, true);
                 _lastSamplingJobHandle = default;
                 _hasPendingSamplingJob = false;
                 return true;
@@ -3723,8 +3732,7 @@ namespace Hecton8.World
             if (!_hasPendingSamplingJob)
                 return;
 
-            _lastSamplingJobHandle.Complete();
-            _lastSamplingJobHandle = default;
+            DispatcherJobSwap.TryComplete(ref _lastSamplingJobHandle, true);
             _hasPendingSamplingJob = false;
         }
 

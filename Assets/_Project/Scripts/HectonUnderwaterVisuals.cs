@@ -71,7 +71,7 @@ namespace Hecton8.Environment
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
-    public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IRenderable, ISoundscapeEventListener
+    public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IRenderable, ISoundscapeEventListener, IBiomeMatrixEventListener, IMapMagicBiomeEventListener
     {
         internal static HectonUnderwaterVisuals ActiveRuntimeInstance { get; private set; }
         internal static Material RuntimeSkyMaterialReference { get; private set; }
@@ -847,8 +847,8 @@ namespace Hecton8.Environment
                 TryRegisterRenderDispatcher();
                 EnsureRuntimeVisualOwners();
                 EnsureGameplayCameraStackEnabled();
-                MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
-                BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
+                MapMagicBiomeEvents.Register(this);
+                BiomeMatrixEvents.Register(this);
                 SoundscapeEvents.Register(this);
                 ResolveBiomeMatrixDirector();
                 ApplyCurrentMatrixVisualOverride();
@@ -1125,8 +1125,8 @@ namespace Hecton8.Environment
                 }
 
                 UnregisterRenderDispatcher();
-                MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
-                BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+                MapMagicBiomeEvents.Unregister(this);
+                BiomeMatrixEvents.Unregister(this);
                 SoundscapeEvents.Unregister(this);
 
                 if (_registeredTick)
@@ -1188,6 +1188,12 @@ namespace Hecton8.Environment
 
         private void OnDestroy()
         {
+            if (Application.isPlaying)
+            {
+                MapMagicBiomeEvents.Unregister(this);
+                BiomeMatrixEvents.Unregister(this);
+            }
+
             if (ReferenceEquals(RuntimeSkyMaterialReference, skyMaterial))
                 RuntimeSkyMaterialReference = null;
 
@@ -1744,7 +1750,7 @@ namespace Hecton8.Environment
             _cachedAtmoManager = atmosphereManager;
 
             if (_cachedAtmoManager == null)
-                _cachedAtmoManager = HectonAtmosphereManager.Instance;
+                _cachedAtmoManager = Hecton8.Core.GlobalRegistry.Atmosphere;
 
             _atmoManagerCached = _cachedAtmoManager != null;
 
@@ -2230,7 +2236,7 @@ namespace Hecton8.Environment
             if (!enableSargassumCanopyLighting)
                 return sample;
 
-            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
             if (dragManager == null)
                 return sample;
 
@@ -3146,6 +3152,20 @@ namespace Hecton8.Environment
             ApplyBiomePaletteTarget(_targetBiomeIndex);
         }
 
+        void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            HandleMatrixBiomeChanged(profile);
+        }
+
+        void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
+        {
+        }
+
+        void IMapMagicBiomeEventListener.OnMapMagicBiomeChanged(int biomeId)
+        {
+            HandleBiomeChanged(biomeId);
+        }
+
         private void HandleSoundscapeTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
         {
             ApplySoundscapeTierResponse(newTier);
@@ -3157,8 +3177,9 @@ namespace Hecton8.Environment
         }
         private void RefreshSoundscapeTierResponse(bool force)
         {
-            SoundscapeTier tier = SoundscapeSystem.Instance != null
-                ? SoundscapeSystem.Instance.CurrentTier
+            SoundscapeSystem soundscape = GlobalRegistry.Soundscape;
+            SoundscapeTier tier = soundscape != null
+                ? soundscape.CurrentTier
                 : SoundscapeTier.Shallow;
 
             ApplySoundscapeTierResponse(tier);
@@ -3738,7 +3759,7 @@ namespace Hecton8.Environment
                 ResolveSpaceCamera();
 
             if (depthZoneDirector == null)
-                depthZoneDirector = DepthZoneDirector.Instance;
+                depthZoneDirector = GlobalRegistry.DepthZone;
 
             EnsureCrestOceanCameraOwnership();
 
@@ -3972,7 +3993,7 @@ namespace Hecton8.Environment
                 return;
 
             if (depthZoneDirector == null)
-                depthZoneDirector = DepthZoneDirector.Instance;
+                depthZoneDirector = GlobalRegistry.DepthZone;
 
             DepthZoneProfile currentZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
             if (!isUnderwater || !_wasUnderwater)
@@ -4219,7 +4240,7 @@ namespace Hecton8.Environment
                 return;
             }
 
-            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             if (scaler == null || !scaler.Enabled)
             {
                 ApplyAdaptiveBudgetResponse(1f, 1f);
@@ -4372,7 +4393,7 @@ namespace Hecton8.Environment
                 CalmTurbulenceFrequency,
                 StormTurbulenceFrequency,
                 _weatherStormFlowBlend);
-            float hudDeltaTime = Application.isPlaying ? math.max(0f, Time.unscaledDeltaTime) : 0.0166667f;
+            float hudDeltaTime = Application.isPlaying ? math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime) : 0.0166667f;
             float hudAlpha = 1f - math.exp(-HudFogPerturbationResponse * hudDeltaTime);
             _hudFogSmoothedLuminance01 = math.lerp(
                 _hudFogSmoothedLuminance01,
@@ -4481,7 +4502,7 @@ namespace Hecton8.Environment
 
         private static float ResolveStormFlowBlend()
         {
-            HectonSurfaceWeatherDirector surfaceWeather = HectonSurfaceWeatherDirector.Instance;
+            HectonSurfaceWeatherDirector surfaceWeather = GlobalRegistry.SurfaceWeather;
             if (surfaceWeather == null || surfaceWeather.IsSurfaceSuppressed)
                 return 0f;
 
@@ -5064,7 +5085,7 @@ namespace Hecton8.Environment
                 return false;
 
             float renderScale = 1f;
-            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             if (scaler != null)
                 renderScale = math.saturate(scaler.CurrentRenderScale);
 
@@ -5395,7 +5416,7 @@ namespace Hecton8.Environment
 #endif
                 return;
             }
-            _physicsEngine = Hecton8.Physics.HectonFluidEngine.Instance;
+            _physicsEngine = GlobalRegistry.Fluid;
             _physicsEngineCached = _physicsEngine != null;
 #if UNITY_EDITOR
             _debugPhysicsEngineFound = _physicsEngineCached;

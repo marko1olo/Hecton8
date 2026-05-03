@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 
 namespace Hecton8.Tools
@@ -71,7 +72,7 @@ namespace Hecton8.Tools
             }
 
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            GameBootstrapper.PersistRuntimeService(this);
 
             EnsureFrameHistoryCapacity();
             InitializeBudgets();

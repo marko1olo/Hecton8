@@ -76,24 +76,42 @@ namespace Hecton8.World
         {
             public NativeList<int> Handles;
             public NativeParallelHashSet<int> Dedup;
+            private readonly string _sentinelOwner;
 
-            public QueryScratchArena(int initialCapacity)
+            public QueryScratchArena(int initialCapacity, string sentinelOwner)
             {
                 int safeCapacity = math.max(1, initialCapacity);
+                _sentinelOwner = sentinelOwner;
                 // COLD ALLOC: NativeList<int>[safeCapacity] — persistent query result staging arena for AUP spatial overlap queries — owner: HectonSpatialHash
                 Handles = new NativeList<int>(safeCapacity, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeList(
+                    Handles,
+                    _sentinelOwner,
+                    QueryScratchHandlesLabel,
+                    NativeAllocationLifetime.Scene);
                 // COLD ALLOC: NativeParallelHashSet<int>[safeCapacity] — persistent dedupe arena for multi-cell overlap queries — owner: HectonSpatialHash
                 Dedup = new NativeParallelHashSet<int>(safeCapacity, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeParallelHashSet(
+                    Dedup,
+                    _sentinelOwner,
+                    QueryScratchDedupLabel,
+                    NativeAllocationLifetime.Scene);
             }
 
             public void EnsureCapacity(int requiredCapacity)
             {
                 int safeCapacity = math.max(1, requiredCapacity);
                 if (Handles.Capacity < safeCapacity)
+                {
                     Handles.Capacity = safeCapacity;
+                    NativeMemorySentinel.RefreshNativeList(Handles, _sentinelOwner, QueryScratchHandlesLabel);
+                }
 
                 if (Dedup.Capacity < safeCapacity)
+                {
                     Dedup.Capacity = safeCapacity;
+                    NativeMemorySentinel.RefreshNativeParallelHashSet(Dedup, _sentinelOwner, QueryScratchDedupLabel);
+                }
             }
 
             public void Reset()
@@ -105,10 +123,37 @@ namespace Hecton8.World
             public void Dispose()
             {
                 if (Handles.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, QueryScratchHandlesLabel);
                     Handles.Dispose();
+                }
 
                 if (Dedup.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, QueryScratchDedupLabel);
                     Dedup.Dispose();
+                }
+            }
+
+            public JobHandle Dispose(JobHandle dependency)
+            {
+                JobHandle disposeHandle = dependency;
+
+                if (Handles.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, QueryScratchHandlesLabel);
+                    disposeHandle = Handles.Dispose(disposeHandle);
+                    Handles = default;
+                }
+
+                if (Dedup.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, QueryScratchDedupLabel);
+                    disposeHandle = Dedup.Dispose(disposeHandle);
+                    Dedup = default;
+                }
+
+                return disposeHandle;
             }
         }
 
@@ -144,6 +189,8 @@ namespace Hecton8.World
         private const uint ChemicalScentEventMask = 1u << 1;
         private const uint DisturbanceEventMask = 1u << 3;
         private const float CascadeIntensityThreshold = 0.8f;
+        private const string QueryScratchHandlesLabel = "_queryScratch.Handles";
+        private const string QueryScratchDedupLabel = "_queryScratch.Dedup";
 
         private static readonly ProfilerMarker _registerProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.Register");
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.World.AupSpatialHash.Update");
@@ -170,6 +217,8 @@ namespace Hecton8.World
         private NativeList<int> _compactionHandleSnapshot;
         private NativeList<SpatialEntry> _compactionEntrySnapshot;
         private QueryScratchArena _queryScratch;
+        private static int _nextSentinelInstanceId;
+        private readonly string _sentinelOwner;
         private JobHandle _cellCompactionHandle;
         private JobHandle _readerFence;
         private uint _nextSlot;
@@ -183,40 +232,62 @@ namespace Hecton8.World
             int safeEntryCapacity = math.max(1, entryCapacity);
             int safeCellCapacity = math.max(safeEntryCapacity, cellCapacity);
             _cellSizeMeters = math.max(0.5d, cellSizeMeters);
+            _sentinelOwner = string.Concat(nameof(HectonSpatialHash), "_", ++_nextSentinelInstanceId);
             // COLD ALLOC: NativeParallelHashMap<int,SpatialEntry>[safeEntryCapacity] — AUP spatial registry records — owner: HectonSpatialHash
             _entries = new NativeParallelHashMap<int, SpatialEntry>(safeEntryCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelHashMap(_entries, _sentinelOwner, nameof(_entries), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeList<int>[safeEntryCapacity] - dense active-handle list for zero-alloc hash rebuilds - owner: HectonSpatialHash
             _entryHandles = new NativeList<int>(safeEntryCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeList(_entryHandles, _sentinelOwner, nameof(_entryHandles), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeQueue<uint>[safeEntryCapacity] - generation-counted free handle queue - owner: HectonSpatialHash
             _freeHandles = new NativeQueue<uint>(Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeQueue(
+                _freeHandles,
+                safeEntryCapacity,
+                _sentinelOwner,
+                nameof(_freeHandles),
+                NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeParallelHashSet<uint>[safeEntryCapacity] - duplicate queued-handle guard - owner: HectonSpatialHash
             _queuedFreeHandles = new NativeParallelHashSet<uint>(safeEntryCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelHashSet(_queuedFreeHandles, _sentinelOwner, nameof(_queuedFreeHandles), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeParallelHashMap<uint,uint>[safeEntryCapacity] - current generation per spatial handle slot - owner: HectonSpatialHash
             _slotGenerations = new NativeParallelHashMap<uint, uint>(safeEntryCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelHashMap(_slotGenerations, _sentinelOwner, nameof(_slotGenerations), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeParallelMultiHashMap<long3,int>[safeCellCapacity] — AUP cell occupancy buckets — owner: HectonSpatialHash
             _cellOccupancy = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_cellOccupancy, _sentinelOwner, nameof(_cellOccupancy), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeParallelMultiHashMap<long3,int>[safeCellCapacity] - spatial bucket compaction scratch - owner: HectonSpatialHash
             _cellOccupancyScratch = new NativeParallelMultiHashMap<Long3, int>(safeCellCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_cellOccupancyScratch, _sentinelOwner, nameof(_cellOccupancyScratch), NativeAllocationLifetime.Scene);
             int safeTransientCellCapacity = math.max(DefaultTransientCellCapacity, safeCellCapacity);
             // COLD ALLOC: NativeParallelMultiHashMap<uint,TransientEventRecord>[safeTransientCellCapacity] - transient acoustic/chemical event buckets - owner: HectonSpatialHash
             _transientEvents = new NativeParallelMultiHashMap<uint, TransientEventRecord>(safeTransientCellCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_transientEvents, _sentinelOwner, nameof(_transientEvents), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeParallelMultiHashMap<uint,TransientEventRecord>[safeTransientCellCapacity] - expired-event prune scratch buckets - owner: HectonSpatialHash
             _transientEventsScratch = new NativeParallelMultiHashMap<uint, TransientEventRecord>(safeTransientCellCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeParallelHashSet<uint>[safeTransientCellCapacity] - unique transient cell keys - owner: HectonSpatialHash
             _transientCellKeySet = new NativeParallelHashSet<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelHashSet(_transientCellKeySet, _sentinelOwner, nameof(_transientCellKeySet), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeParallelHashSet<uint>[safeTransientCellCapacity] - transient prune scratch key set - owner: HectonSpatialHash
             _transientCellKeySetScratch = new NativeParallelHashSet<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelHashSet(_transientCellKeySetScratch, _sentinelOwner, nameof(_transientCellKeySetScratch), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeParallelHashSet<uint>[safeTransientCellCapacity] - transient event id dedupe for multi-cell queries - owner: HectonSpatialHash
             _transientQueryDedupe = new NativeParallelHashSet<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeParallelHashSet(_transientQueryDedupe, _sentinelOwner, nameof(_transientQueryDedupe), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeList<uint>[safeTransientCellCapacity] - active transient cell-key traversal list - owner: HectonSpatialHash
             _transientCellKeys = new NativeList<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeList(_transientCellKeys, _sentinelOwner, nameof(_transientCellKeys), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeList<uint>[safeTransientCellCapacity] - transient prune scratch cell-key traversal list - owner: HectonSpatialHash
             _transientCellKeysScratch = new NativeList<uint>(safeTransientCellCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeList(_transientCellKeysScratch, _sentinelOwner, nameof(_transientCellKeysScratch), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeList<int>[safeEntryCapacity] - immutable handle snapshot for async occupancy compaction - owner: HectonSpatialHash
             _compactionHandleSnapshot = new NativeList<int>(safeEntryCapacity, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeList(_compactionHandleSnapshot, _sentinelOwner, nameof(_compactionHandleSnapshot), NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeList<SpatialEntry>[safeEntryCapacity] - immutable entry snapshot for async occupancy compaction - owner: HectonSpatialHash
             _compactionEntrySnapshot = new NativeList<SpatialEntry>(safeEntryCapacity, Allocator.Persistent);
-            _queryScratch = new QueryScratchArena(safeEntryCapacity);
+            NativeMemorySentinel.RegisterNativeList(_compactionEntrySnapshot, _sentinelOwner, nameof(_compactionEntrySnapshot), NativeAllocationLifetime.Scene);
+            _queryScratch = new QueryScratchArena(safeEntryCapacity, _sentinelOwner);
             _nextSlot = 1u;
             _nextTransientEventId = 1u;
         }
@@ -329,7 +400,7 @@ namespace Hecton8.World
             uint sourceKey = 0u,
             float temperature = 0f)
         {
-                if (radiusMeters <= 0f || intensity <= 0f || eventTypeMask == 0u || IsTransientExpired(currentTimestamp, expirationTimestamp))
+            if (radiusMeters <= 0f || intensity <= 0f || eventTypeMask == 0u || IsTransientExpired(currentTimestamp, expirationTimestamp))
                 return;
 
             using (_transientRegisterProfilerMarker.Auto())
@@ -353,9 +424,10 @@ namespace Hecton8.World
 
                 Long3 minCell = ToCell(absoluteCenter - new double3(safeRadius, safeRadius, safeRadius));
                 Long3 maxCell = ToCell(absoluteCenter + new double3(safeRadius, safeRadius, safeRadius));
-                EnsureTransientCapacity(EstimateCellSpan(minCell, maxCell));
+                int cellSpan = EstimateCellSpan(minCell, maxCell);
+                EnsureTransientCapacity(cellSpan);
                 AddTransientRecordToCells(in record, minCell, maxCell, _transientEvents, _transientCellKeySet, _transientCellKeys);
-                TryEmitDisturbanceCascade(in record, minCell, maxCell, currentTimestamp);
+                TryEmitDisturbanceCascade(in record, minCell, maxCell, currentTimestamp, cellSpan);
             }
         }
 
@@ -407,7 +479,8 @@ namespace Hecton8.World
                                 if (math.lengthsq(delta) > combinedRadius * combinedRadius)
                                     continue;
 
-                                results.Add(record);
+                                if (results.Length < results.Capacity)
+                                    results.AddNoResize(record);
                             }
                             while (_transientEvents.TryGetNextValue(out record, ref iterator));
                         }
@@ -594,17 +667,7 @@ namespace Hecton8.World
                     while (_transientEvents.TryGetNextValue(out record, ref iterator));
                 }
 
-                NativeParallelMultiHashMap<uint, TransientEventRecord> eventSwap = _transientEvents;
-                _transientEvents = _transientEventsScratch;
-                _transientEventsScratch = eventSwap;
-
-                NativeParallelHashSet<uint> keySetSwap = _transientCellKeySet;
-                _transientCellKeySet = _transientCellKeySetScratch;
-                _transientCellKeySetScratch = keySetSwap;
-
-                NativeList<uint> keyListSwap = _transientCellKeys;
-                _transientCellKeys = _transientCellKeysScratch;
-                _transientCellKeysScratch = keyListSwap;
+                SwapTransientScratch();
             }
         }
 
@@ -683,6 +746,7 @@ namespace Hecton8.World
                     _transientCellKeySetScratch.Clear();
                     _transientCellKeysScratch.Clear();
                     _transientEventsScratch.Capacity = targetCapacity;
+                    NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch));
 
                     for (int i = 0; i < _transientCellKeys.Length; i++)
                     {
@@ -702,6 +766,7 @@ namespace Hecton8.World
                     SwapTransientScratch();
                     _transientEventsScratch.Clear();
                     _transientEventsScratch.Capacity = targetCapacity;
+                    NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch));
                     compacted = true;
                 }
             }
@@ -717,8 +782,12 @@ namespace Hecton8.World
             if (!_cellCompactionHandle.IsCompleted || !_readerFence.IsCompleted)
                 return false;
 
-            _readerFence.Complete();
-            _cellCompactionHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _readerFence, forceComplete: false) ||
+                !DispatcherJobSwap.TryComplete(ref _cellCompactionHandle, forceComplete: false))
+            {
+                return false;
+            }
+
             if (_compactionMutationVersion != _mutationVersion)
             {
                 _cellOccupancyScratch.Clear();
@@ -733,9 +802,13 @@ namespace Hecton8.World
             NativeParallelMultiHashMap<Long3, int> occupancySwap = _cellOccupancy;
             _cellOccupancy = _cellOccupancyScratch;
             _cellOccupancyScratch = occupancySwap;
+            RefreshCellOccupancySentinelCapacities();
             _cellOccupancyScratch.Clear();
             if (_pendingCellCompactionTargetCapacity > 0 && _cellOccupancyScratch.Capacity != _pendingCellCompactionTargetCapacity)
+            {
                 _cellOccupancyScratch.Capacity = _pendingCellCompactionTargetCapacity;
+                RefreshCellOccupancySentinelCapacities();
+            }
 
             _cellCompactionScheduled = false;
             _pendingCellCompactionTargetCapacity = 0;
@@ -782,17 +855,7 @@ namespace Hecton8.World
                     while (_transientEvents.TryGetNextValue(out record, ref iterator));
                 }
 
-                NativeParallelMultiHashMap<uint, TransientEventRecord> eventSwap = _transientEvents;
-                _transientEvents = _transientEventsScratch;
-                _transientEventsScratch = eventSwap;
-
-                NativeParallelHashSet<uint> keySetSwap = _transientCellKeySet;
-                _transientCellKeySet = _transientCellKeySetScratch;
-                _transientCellKeySetScratch = keySetSwap;
-
-                NativeList<uint> keyListSwap = _transientCellKeys;
-                _transientCellKeys = _transientCellKeysScratch;
-                _transientCellKeysScratch = keyListSwap;
+                SwapTransientScratch();
             }
         }
 
@@ -844,16 +907,17 @@ namespace Hecton8.World
                                 if (!SphereOverlapsEntry(absoluteCenter, radius * radius, in entry))
                                     continue;
 
-                                _queryScratch.Handles.Add(handle);
+                                _queryScratch.Handles.AddNoResize(handle);
                             }
                             while (_cellOccupancy.TryGetNextValue(out handle, ref iterator));
                         }
                     }
                 }
 
-                resultHandles.ResizeUninitialized(_queryScratch.Handles.Length);
-                NativeArray<int>.Copy(_queryScratch.Handles.AsArray(), resultHandles.AsArray(), _queryScratch.Handles.Length);
-                return _queryScratch.Handles.Length;
+                int copyCount = math.min(_queryScratch.Handles.Length, resultHandles.Capacity);
+                resultHandles.ResizeUninitialized(copyCount);
+                NativeArray<int>.Copy(_queryScratch.Handles.AsArray(), resultHandles.AsArray(), copyCount);
+                return copyCount;
             }
         }
 
@@ -869,62 +933,133 @@ namespace Hecton8.World
 
         public void Dispose()
         {
-            if (_cellCompactionScheduled)
-            {
-                _cellCompactionHandle.Complete();
-                _readerFence.Complete();
-                _cellCompactionScheduled = false;
-            }
+            JobHandle disposeHandle = CancelPendingJobsForTeardown();
 
             if (_entries.IsCreated)
-                _entries.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashMap(_sentinelOwner, nameof(_entries));
+                disposeHandle = _entries.Dispose(disposeHandle);
+                _entries = default;
+            }
 
             if (_entryHandles.IsCreated)
-                _entryHandles.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_entryHandles));
+                disposeHandle = _entryHandles.Dispose(disposeHandle);
+                _entryHandles = default;
+            }
 
             if (_freeHandles.IsCreated)
-                _freeHandles.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(_sentinelOwner, nameof(_freeHandles));
+                disposeHandle = _freeHandles.Dispose(disposeHandle);
+                _freeHandles = default;
+            }
 
             if (_queuedFreeHandles.IsCreated)
-                _queuedFreeHandles.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, nameof(_queuedFreeHandles));
+                disposeHandle = _queuedFreeHandles.Dispose(disposeHandle);
+                _queuedFreeHandles = default;
+            }
 
             if (_slotGenerations.IsCreated)
-                _slotGenerations.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashMap(_sentinelOwner, nameof(_slotGenerations));
+                disposeHandle = _slotGenerations.Dispose(disposeHandle);
+                _slotGenerations = default;
+            }
 
             if (_cellOccupancy.IsCreated)
-                _cellOccupancy.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(_sentinelOwner, nameof(_cellOccupancy));
+                disposeHandle = _cellOccupancy.Dispose(disposeHandle);
+                _cellOccupancy = default;
+            }
 
             if (_cellOccupancyScratch.IsCreated)
-                _cellOccupancyScratch.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(_sentinelOwner, nameof(_cellOccupancyScratch));
+                disposeHandle = _cellOccupancyScratch.Dispose(disposeHandle);
+                _cellOccupancyScratch = default;
+            }
 
             if (_transientEvents.IsCreated)
-                _transientEvents.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(_sentinelOwner, nameof(_transientEvents));
+                disposeHandle = _transientEvents.Dispose(disposeHandle);
+                _transientEvents = default;
+            }
 
             if (_transientEventsScratch.IsCreated)
-                _transientEventsScratch.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelMultiHashMap(_sentinelOwner, nameof(_transientEventsScratch));
+                disposeHandle = _transientEventsScratch.Dispose(disposeHandle);
+                _transientEventsScratch = default;
+            }
 
             if (_transientCellKeySet.IsCreated)
-                _transientCellKeySet.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, nameof(_transientCellKeySet));
+                disposeHandle = _transientCellKeySet.Dispose(disposeHandle);
+                _transientCellKeySet = default;
+            }
 
             if (_transientCellKeySetScratch.IsCreated)
-                _transientCellKeySetScratch.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, nameof(_transientCellKeySetScratch));
+                disposeHandle = _transientCellKeySetScratch.Dispose(disposeHandle);
+                _transientCellKeySetScratch = default;
+            }
 
             if (_transientQueryDedupe.IsCreated)
-                _transientQueryDedupe.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashSet(_sentinelOwner, nameof(_transientQueryDedupe));
+                disposeHandle = _transientQueryDedupe.Dispose(disposeHandle);
+                _transientQueryDedupe = default;
+            }
 
             if (_transientCellKeys.IsCreated)
-                _transientCellKeys.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_transientCellKeys));
+                disposeHandle = _transientCellKeys.Dispose(disposeHandle);
+                _transientCellKeys = default;
+            }
 
             if (_transientCellKeysScratch.IsCreated)
-                _transientCellKeysScratch.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_transientCellKeysScratch));
+                disposeHandle = _transientCellKeysScratch.Dispose(disposeHandle);
+                _transientCellKeysScratch = default;
+            }
 
             if (_compactionHandleSnapshot.IsCreated)
-                _compactionHandleSnapshot.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_compactionHandleSnapshot));
+                disposeHandle = _compactionHandleSnapshot.Dispose(disposeHandle);
+                _compactionHandleSnapshot = default;
+            }
 
             if (_compactionEntrySnapshot.IsCreated)
-                _compactionEntrySnapshot.Dispose();
+            {
+                NativeMemorySentinel.UnregisterNativeList(_sentinelOwner, nameof(_compactionEntrySnapshot));
+                disposeHandle = _compactionEntrySnapshot.Dispose(disposeHandle);
+                _compactionEntrySnapshot = default;
+            }
 
-            _queryScratch.Dispose();
+            disposeHandle = _queryScratch.Dispose(disposeHandle);
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private JobHandle CancelPendingJobsForTeardown()
+        {
+            JobHandle dependency = JobHandle.CombineDependencies(_cellCompactionHandle, _readerFence);
+            _cellCompactionHandle = default;
+            _readerFence = default;
+            _cellCompactionScheduled = false;
+            _pendingCellCompactionTargetCapacity = 0;
+            _compactionMutationVersion = 0u;
+            return dependency;
         }
 
         private int AllocateHandle()
@@ -983,47 +1118,83 @@ namespace Hecton8.World
         {
             int requiredEntryCapacity = _entryHandles.Length + math.max(0, additionalEntries);
             if (_entries.Capacity < requiredEntryCapacity)
+            {
                 _entries.Capacity = math.max(requiredEntryCapacity, _entries.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeParallelHashMap(_entries, _sentinelOwner, nameof(_entries));
+            }
 
             if (_entryHandles.Capacity < requiredEntryCapacity)
+            {
                 _entryHandles.Capacity = math.max(requiredEntryCapacity, _entryHandles.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeList(_entryHandles, _sentinelOwner, nameof(_entryHandles));
+            }
 
             if (_queuedFreeHandles.Capacity < requiredEntryCapacity)
+            {
                 _queuedFreeHandles.Capacity = math.max(requiredEntryCapacity, _queuedFreeHandles.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeParallelHashSet(_queuedFreeHandles, _sentinelOwner, nameof(_queuedFreeHandles));
+            }
 
             if (_slotGenerations.Capacity < requiredEntryCapacity)
+            {
                 _slotGenerations.Capacity = math.max(requiredEntryCapacity, _slotGenerations.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeParallelHashMap(_slotGenerations, _sentinelOwner, nameof(_slotGenerations));
+            }
 
             int cellSpan = EstimateCellSpan(minCell, maxCell);
             int requiredCellCapacity = _cellOccupancy.Count() + cellSpan;
             if (_cellOccupancy.Capacity < requiredCellCapacity)
+            {
                 _cellOccupancy.Capacity = math.max(requiredCellCapacity, _cellOccupancy.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_cellOccupancy, _sentinelOwner, nameof(_cellOccupancy));
+            }
         }
 
         private void EnsureTransientCapacity(int additionalCells)
         {
             int requiredCapacity = _transientEvents.Count() + math.max(1, additionalCells);
             if (_transientEvents.Capacity < requiredCapacity)
+            {
                 _transientEvents.Capacity = math.max(requiredCapacity, _transientEvents.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEvents, _sentinelOwner, nameof(_transientEvents));
+            }
 
             if (_transientEventsScratch.Capacity < requiredCapacity)
+            {
                 _transientEventsScratch.Capacity = math.max(requiredCapacity, _transientEventsScratch.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch));
+            }
 
             int requiredKeyCapacity = _transientCellKeys.Length + math.max(1, additionalCells);
             if (_transientCellKeySet.Capacity < requiredKeyCapacity)
+            {
                 _transientCellKeySet.Capacity = math.max(requiredKeyCapacity, _transientCellKeySet.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeParallelHashSet(_transientCellKeySet, _sentinelOwner, nameof(_transientCellKeySet));
+            }
 
             if (_transientCellKeySetScratch.Capacity < requiredKeyCapacity)
+            {
                 _transientCellKeySetScratch.Capacity = math.max(requiredKeyCapacity, _transientCellKeySetScratch.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeParallelHashSet(_transientCellKeySetScratch, _sentinelOwner, nameof(_transientCellKeySetScratch));
+            }
 
             if (_transientQueryDedupe.Capacity < requiredCapacity)
+            {
                 _transientQueryDedupe.Capacity = math.max(requiredCapacity, _transientQueryDedupe.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeParallelHashSet(_transientQueryDedupe, _sentinelOwner, nameof(_transientQueryDedupe));
+            }
 
             if (_transientCellKeys.Capacity < requiredKeyCapacity)
+            {
                 _transientCellKeys.Capacity = math.max(requiredKeyCapacity, _transientCellKeys.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeList(_transientCellKeys, _sentinelOwner, nameof(_transientCellKeys));
+            }
 
             if (_transientCellKeysScratch.Capacity < requiredKeyCapacity)
+            {
                 _transientCellKeysScratch.Capacity = math.max(requiredKeyCapacity, _transientCellKeysScratch.Capacity << 1);
+                NativeMemorySentinel.RefreshNativeList(_transientCellKeysScratch, _sentinelOwner, nameof(_transientCellKeysScratch));
+            }
         }
 
         private void AddTransientRecordToCells(
@@ -1059,13 +1230,22 @@ namespace Hecton8.World
                 return false;
 
             if (_cellOccupancyScratch.Capacity != targetCapacity)
+            {
                 _cellOccupancyScratch.Capacity = targetCapacity;
+                NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_cellOccupancyScratch, _sentinelOwner, nameof(_cellOccupancyScratch));
+            }
 
             _cellOccupancyScratch.Clear();
             if (_compactionHandleSnapshot.Capacity < entryCount)
+            {
                 _compactionHandleSnapshot.Capacity = entryCount;
+                NativeMemorySentinel.RefreshNativeList(_compactionHandleSnapshot, _sentinelOwner, nameof(_compactionHandleSnapshot));
+            }
             if (_compactionEntrySnapshot.Capacity < entryCount)
+            {
                 _compactionEntrySnapshot.Capacity = entryCount;
+                NativeMemorySentinel.RefreshNativeList(_compactionEntrySnapshot, _sentinelOwner, nameof(_compactionEntrySnapshot));
+            }
 
             _compactionHandleSnapshot.ResizeUninitialized(entryCount);
             _compactionEntrySnapshot.ResizeUninitialized(entryCount);
@@ -1101,7 +1281,8 @@ namespace Hecton8.World
             in TransientEventRecord triggerRecord,
             Long3 minCell,
             Long3 maxCell,
-            double currentTimestamp)
+            double currentTimestamp,
+            int cellSpan)
         {
             if ((triggerRecord.EventTypeMask & AcousticImpulseEventMask) == 0u ||
                 triggerRecord.Intensity <= CascadeIntensityThreshold ||
@@ -1126,6 +1307,7 @@ namespace Hecton8.World
                 SourceKey = triggerRecord.SourceKey
             };
 
+            EnsureTransientCapacity(cellSpan);
             NativeArray<TransientEventRecord> stagedRecord = NativeArenaAllocator.Allocate<TransientEventRecord>(1);
             if (stagedRecord.IsCreated)
             {
@@ -1216,6 +1398,23 @@ namespace Hecton8.World
             NativeList<uint> keyListSwap = _transientCellKeys;
             _transientCellKeys = _transientCellKeysScratch;
             _transientCellKeysScratch = keyListSwap;
+            RefreshTransientSentinelCapacities();
+        }
+
+        private void RefreshCellOccupancySentinelCapacities()
+        {
+            NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_cellOccupancy, _sentinelOwner, nameof(_cellOccupancy));
+            NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_cellOccupancyScratch, _sentinelOwner, nameof(_cellOccupancyScratch));
+        }
+
+        private void RefreshTransientSentinelCapacities()
+        {
+            NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEvents, _sentinelOwner, nameof(_transientEvents));
+            NativeMemorySentinel.RefreshNativeParallelMultiHashMap(_transientEventsScratch, _sentinelOwner, nameof(_transientEventsScratch));
+            NativeMemorySentinel.RefreshNativeParallelHashSet(_transientCellKeySet, _sentinelOwner, nameof(_transientCellKeySet));
+            NativeMemorySentinel.RefreshNativeParallelHashSet(_transientCellKeySetScratch, _sentinelOwner, nameof(_transientCellKeySetScratch));
+            NativeMemorySentinel.RefreshNativeList(_transientCellKeys, _sentinelOwner, nameof(_transientCellKeys));
+            NativeMemorySentinel.RefreshNativeList(_transientCellKeysScratch, _sentinelOwner, nameof(_transientCellKeysScratch));
         }
 
         private void RemoveEntryCells(int handle, in SpatialEntry entry)

@@ -18,7 +18,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/HUD Notification")]
-    public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable, INotificationEventListener
+    public sealed class HUDNotification : MonoBehaviour, ITickable, IUpdatable, INotificationEventListener, IInventoryEventListener
     {
         private static HUDNotification _ActiveInstance;
 
@@ -104,7 +104,7 @@ namespace Hecton8.UI
 
             if (font == null) font = TMP_Settings.defaultFontAsset;
 
-            InventoryEvents.OnInventoryFull += OnInventoryFull;
+            InventoryEvents.Register(this);
             NotificationEvents.Register(this);
 
             EnsureBuilt();
@@ -117,7 +117,7 @@ namespace Hecton8.UI
                 _ActiveInstance = null;
 
             UnregisterFromTickManager();
-            InventoryEvents.OnInventoryFull -= OnInventoryFull;
+            InventoryEvents.Unregister(this);
             NotificationEvents.Unregister(this);
             _queueCount = 0;
             _currentMessageHash = 0u;
@@ -125,6 +125,8 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            InventoryEvents.Unregister(this);
+
             if (_queue.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_queue);
@@ -319,6 +321,16 @@ namespace Hecton8.UI
             Enqueue(payload.MessageHash, (NotificationSeverity)payload.Severity);
         }
 
+        /// <inheritdoc />
+        public void OnInventoryEvent(in InventoryEventPayload payload)
+        {
+            if ((InventoryEventType)payload.EventType != InventoryEventType.InventoryFull)
+                return;
+
+            InventoryEvents.TryResolveItem(in payload, out ItemData item);
+            OnInventoryFull(item);
+        }
+
         private void OnInventoryFull(ItemData item)
         {
             ShowWarning(GetInventoryFullMessage(item));
@@ -343,7 +355,7 @@ namespace Hecton8.UI
 
         private void RefreshStressCorruptionIfNeeded()
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             if (stressBucket == _lastStressCorruptionBucket)
                 return;
@@ -379,7 +391,7 @@ namespace Hecton8.UI
             if (messageHash == 0u || !NotificationEvents.TryResolveMessage(messageHash, out string message) || string.IsNullOrEmpty(message))
                 return false;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             string displayMessage = manager != null
                 ? manager.ApplyHullStressCorruptionIfNeeded(message)
                 : message;

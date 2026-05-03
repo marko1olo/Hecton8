@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -641,7 +641,7 @@ namespace Hecton8.World
                 if (!_chunkBuildJobs.TryGetValue(key, out ChunkBuildJobState jobState) || jobState == null)
                     continue;
 
-                VegetationLateFrameJobSwap.TryComplete(ref jobState.Handle, forceComplete: false);
+                DispatcherJobSwap.TryComplete(ref jobState.Handle, forceComplete: false);
                 if (!jobState.CancelRequested && IsJobStateCurrent(jobState))
                 {
                     ReleaseChunkPayloadStorage(key);

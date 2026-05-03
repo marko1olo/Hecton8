@@ -9,7 +9,7 @@ namespace Hecton.Localization
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Localization/Localized World Sign")]
-    public sealed class LocalizedWorldSign : MonoBehaviour
+    public sealed class LocalizedWorldSign : MonoBehaviour, ILocalizationLanguageChangedListener
     {
         [Header("── References ───────────────────────────────────────────────")]
         [Tooltip("Target TMP text owner. Defaults to TMP_Text on the same GameObject.")]
@@ -34,13 +34,13 @@ namespace Hecton.Localization
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RefreshLocalizedText();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
 
 #if UNITY_EDITOR
@@ -51,6 +51,15 @@ namespace Hecton.Localization
                 RefreshLocalizedText();
         }
 #endif
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void HandleLanguageChanged(GameLanguage language)
         {
@@ -75,7 +84,7 @@ namespace Hecton.Localization
 
         private string ResolveLocalizedText()
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager != null && !string.IsNullOrWhiteSpace(tableKey))
             {
                 string fallback = string.IsNullOrWhiteSpace(fallbackText) ? tableKey : fallbackText;

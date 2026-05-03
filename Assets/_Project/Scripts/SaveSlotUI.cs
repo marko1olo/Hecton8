@@ -3,6 +3,7 @@ using Hecton.Localization;
 using Hecton8.SaveSystem;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Hecton.UI.MainMenu
@@ -13,7 +14,7 @@ namespace Hecton.UI.MainMenu
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Button))]
-    public sealed class SaveSlotUI : MonoBehaviour
+    public sealed class SaveSlotUI : MonoBehaviour, ILocalizationLanguageChangedListener
     {
         [Header("=== Text Fields ===")]
         [SerializeField] private TMP_Text slotNameText;
@@ -34,6 +35,7 @@ namespace Hecton.UI.MainMenu
         private Color _slotNameBaseColor;
         private Color _detailsBaseColor;
         private bool _useCompactSingleTextLayout;
+        private UnityAction _buttonClickAction;
 
         /// <summary>
         /// True when the slot button can currently be selected by menu navigation.
@@ -58,9 +60,13 @@ namespace Hecton.UI.MainMenu
         private void Awake()
         {
             AutoWireTextReferences();
-            _button = GetComponent<Button>();
-            _button.onClick.RemoveListener(OnButtonClicked);
-            _button.onClick.AddListener(OnButtonClicked);
+            TryGetComponent(out _button);
+            _buttonClickAction = OnButtonClicked; // COLD ALLOC: UnityAction[1] - cached save slot click listener - owner: SaveSlotUI
+            if (_button != null)
+            {
+                _button.onClick.RemoveListener(_buttonClickAction);
+                _button.onClick.AddListener(_buttonClickAction);
+            }
 
             if (slotNameText != null)
                 _slotNameBaseColor = slotNameText.color;
@@ -71,13 +77,28 @@ namespace Hecton.UI.MainMenu
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += OnLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
+
+        private void OnDestroy()
+        {
+            if (_button != null)
+                _button.onClick.RemoveListener(_buttonClickAction);
+        }
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            OnLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void OnLanguageChanged(GameLanguage newLanguage)
         {
@@ -259,7 +280,7 @@ namespace Hecton.UI.MainMenu
 
         private void ApplyPresentation()
         {
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             string prefix = loc != null
                 ? loc.Get(LocalizationKeys.SLOT_PREFIX)
                 : "SLOT";

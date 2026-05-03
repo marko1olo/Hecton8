@@ -12,14 +12,18 @@ namespace Hecton8.Narrative
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class AudioLogPickup : MonoBehaviour, IInteractable
+    public sealed class AudioLogPickup : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
+        private const int MaxRegisteredPickupTemplates = 64;
         private const string DefaultPlaybackVerbRu = "Воспроизвести запись";
         private const string DefaultPlaybackVerbEn = "Play Log";
         private const string DefaultTextVerbRu = "Открыть запись";
         private const string DefaultTextVerbEn = "Open Log";
         private const string DefaultArchiveVerbRu = "Открыть архив";
         private const string DefaultArchiveVerbEn = "Open Archive";
+
+        // COLD ALLOC: RegistryBucket<AudioLogPickup>[64] - active pickup templates for procedural lore lookup - owner: AudioLogPickup
+        private static readonly RegistryBucket<AudioLogPickup> _registeredPickupTemplates = new RegistryBucket<AudioLogPickup>(MaxRegisteredPickupTemplates);
 
         [Header("── Audio Log ───────────────────────────────")]
         [Tooltip("Данные аудиодневника.")]
@@ -37,15 +41,19 @@ namespace Hecton8.Narrative
 
         private string _cachedInteractText;
         private bool _alreadyDiscovered;
+        private bool _pickupTemplateRegistered;
+
+        internal static int RegisteredPickupTemplateCount => _registeredPickupTemplates.Count;
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            TryRegisterPickupTemplate();
+            LocalizationEvents.RegisterLanguageListener(this);
             _alreadyDiscovered = false;
 
-            if (logData != null && AudioLogSystem.Instance != null)
+            if (logData != null && Hecton8.Core.GlobalRegistry.AudioLogs != null)
             {
-                _alreadyDiscovered = AudioLogSystem.Instance.IsDiscovered(logData.logId);
+                _alreadyDiscovered = Hecton8.Core.GlobalRegistry.AudioLogs.IsDiscovered(logData.logId);
 
                 if (_alreadyDiscovered && deactivateAfterPickup)
                 {
@@ -60,10 +68,16 @@ namespace Hecton8.Narrative
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            TryUnregisterPickupTemplate();
+            LocalizationEvents.UnregisterLanguageListener(this);
 
             if (highlightObject != null)
                 highlightObject.SetActive(false);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterPickupTemplate();
         }
 
         private void BuildCache()
@@ -125,11 +139,11 @@ namespace Hecton8.Narrative
                 return;
             }
 
-            AudioLogSystem system = AudioLogSystem.Instance;
+            AudioLogSystem system = Hecton8.Core.GlobalRegistry.AudioLogs;
             if (system == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[AudioLogPickup] AudioLogSystem.Instance is null.");
+                Debug.LogWarning("[AudioLogPickup] Hecton8.Core.GlobalRegistry.AudioLogs is null.");
 #endif
                 return;
             }
@@ -153,6 +167,15 @@ namespace Hecton8.Narrative
             BuildCache();
         }
 #endif
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void HandleLanguageChanged(GameLanguage language)
         {
@@ -179,7 +202,7 @@ namespace Hecton8.Narrative
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -193,6 +216,52 @@ namespace Hecton8.Narrative
             highlightObject = null;
             _alreadyDiscovered = false;
             BuildCache();
+        }
+
+        /// <summary>
+        /// Resolves the first active audio-log pickup template without scene search.
+        /// </summary>
+        /// <param name="template">Resolved pickup template.</param>
+        /// <returns>True when an active template is registered.</returns>
+        internal static bool TryGetRegisteredTemplate(out AudioLogPickup template)
+        {
+            AudioLogPickup[] rawArray = _registeredPickupTemplates.RawArray;
+            int registeredCount = _registeredPickupTemplates.Count;
+            for (int i = 0; i < registeredCount; i++)
+            {
+                AudioLogPickup pickup = rawArray[i];
+                if (pickup == null || !pickup.isActiveAndEnabled || pickup.gameObject == null)
+                    continue;
+
+                template = pickup;
+                return true;
+            }
+
+            template = null;
+            return false;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetPickupTemplateRegistry()
+        {
+            _registeredPickupTemplates.Clear();
+        }
+
+        private void TryRegisterPickupTemplate()
+        {
+            if (_pickupTemplateRegistered)
+                return;
+
+            _pickupTemplateRegistered = _registeredPickupTemplates.TryRegister(this);
+        }
+
+        private void TryUnregisterPickupTemplate()
+        {
+            if (!_pickupTemplateRegistered)
+                return;
+
+            _registeredPickupTemplates.Unregister(this);
+            _pickupTemplateRegistered = false;
         }
     }
 }

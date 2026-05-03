@@ -32,7 +32,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
     [AddComponentMenu("Hecton/Gameplay/Deployable Beacon")]
-    public sealed class DeployableBeacon : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable
+    public sealed class DeployableBeacon : MonoBehaviour, IInteractable, ITickable, IUpdatable, IFixedTickable, ILocalizationLanguageChangedListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -187,7 +187,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             TryRegisterTickSystems();
 
             // Register to beacon registry for HUD access
@@ -205,7 +205,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             // Unregister from beacon registry
             BeaconRegistry.Unregister(this);
             TryUnregisterTickSystems();
@@ -474,6 +474,15 @@ namespace Hecton8.Gameplay
             _cachedInteractText = ResolveLocalized(LocalizationKeys.INTERACT_CONFIGURE_BEACON, DefaultInteractText);
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
@@ -485,7 +494,7 @@ namespace Hecton8.Gameplay
         {
             if (!string.IsNullOrWhiteSpace(localizedLabelTableKey))
             {
-                LocalizationManager manager = LocalizationManager.Instance;
+                LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
                 if (manager != null && manager.TryGet(manager.CurrentLanguage, localizedLabelTableKey, out string localizedLabel))
                     return localizedLabel;
             }
@@ -495,7 +504,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

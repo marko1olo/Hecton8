@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Hecton8.Audio;
 using Hecton8.Caves;
 using Hecton.Localization;
 using Hecton8.Core;
@@ -198,13 +197,14 @@ namespace Hecton8.Modding
         private const int MaxCommandsPerModPerTick = 128;
         private const int MaxModRaycasts = 128;
         private const int MaxModRenderInstancesPerFrame = 1024;
+        private const int MaxRejectEventsPerLateFrame = MaxDrainPerLateFrame;
+        private const int MaxAupResponsesPerLateFrame = MaxDrainPerLateFrame;
+        private const int MaxMemoryEvictionEventsPerLateFrame = ModCapacity;
         private const int CurrentApiVersion = ModLoader.CurrentAPIVersion;
         private const int AupCellSizeMeters = 5000;
         private const double SpawnConflictEpsilonSq = 0.25d;
         private const long ModHeapQuotaBytes = 16L * 1024L * 1024L;
         private const float MaxModVoxelModifyRadiusMeters = 8f;
-        private const float MaxModAcousticPingRadiusMeters = 80f;
-        private const float ModAcousticPingLifetimeSeconds = 1.25f;
 
         private const byte ModStateActive = 1;
         private const byte ModStateQuarantined = 2;
@@ -281,60 +281,93 @@ namespace Hecton8.Modding
         internal static void Initialize()
         {
             if (!_pendingCommands.IsCreated)
+            {
                 _pendingCommands = new NativeQueue<ModCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModCommand>[4096] - sandboxed mod command ring buffer - owner: ModCommandDispatcher
+                RegisterQueue(_pendingCommands, CommandCapacity, nameof(_pendingCommands));
+            }
 
             if (!_pendingAupCommands.IsCreated)
+            {
                 _pendingAupCommands = new NativeQueue<ModAupCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModAupCommand>[4096] - AUP-stable mod command ring buffer - owner: ModCommandDispatcher
+                RegisterQueue(_pendingAupCommands, CommandCapacity, nameof(_pendingAupCommands));
+            }
 
             if (!_pendingRenderCommands.IsCreated)
+            {
                 _pendingRenderCommands = new NativeQueue<ModRenderInstanceCommand>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRenderInstanceCommand>[1024] - mod instancing request lane - owner: ModCommandDispatcher
+                RegisterQueue(_pendingRenderCommands, MaxModRenderInstancesPerFrame, nameof(_pendingRenderCommands));
+            }
 
             if (!_pendingRaycastResults.IsCreated)
+            {
                 _pendingRaycastResults = new NativeQueue<ModRaycastResultPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModRaycastResultPayload>[128] - next-frame mod raycast callback lane - owner: ModCommandDispatcher
+                RegisterQueue(_pendingRaycastResults, MaxModRaycasts, nameof(_pendingRaycastResults));
+            }
 
             if (!_pendingRejectEvents.IsCreated)
+            {
                 _pendingRejectEvents = new NativeQueue<ModInteractionRejectedPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModInteractionRejectedPayload>[256] - unmanaged mod rejection event lane - owner: ModCommandDispatcher
+                RegisterQueue(_pendingRejectEvents, MaxDrainPerLateFrame, nameof(_pendingRejectEvents));
+            }
 
             if (!_pendingMemoryEvictionEvents.IsCreated)
+            {
                 _pendingMemoryEvictionEvents = new NativeQueue<ModCriticalMemoryEvictionPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModCriticalMemoryEvictionPayload>[32] - unmanaged mod memory eviction event lane - owner: ModCommandDispatcher
+                RegisterQueue(_pendingMemoryEvictionEvents, ModCapacity, nameof(_pendingMemoryEvictionEvents));
+            }
 
             if (!_pendingAupResponses.IsCreated)
+            {
                 _pendingAupResponses = new NativeQueue<ModAupResponse>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ModAupResponse>[256] - unmanaged mod AUP response event lane - owner: ModCommandDispatcher
+                RegisterQueue(_pendingAupResponses, MaxDrainPerLateFrame, nameof(_pendingAupResponses));
+            }
 
             if (!_modStatesByHash.IsCreated)
+            {
                 _modStatesByHash = new NativeHashMap<uint, ModCommandModState>(ModCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,ModCommandModState>[32] - O(1) mod command security lookup - owner: ModCommandDispatcher
+                NativeMemorySentinel.RegisterNativeHashMap(_modStatesByHash, nameof(ModCommandDispatcher), nameof(_modStatesByHash), NativeAllocationLifetime.Session);
+            }
 
             if (!_modIndexByHash.IsCreated)
+            {
                 _modIndexByHash = new NativeHashMap<uint, int>(ModCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) mod hash reverse-index lookup - owner: ModCommandDispatcher
+                NativeMemorySentinel.RegisterNativeHashMap(_modIndexByHash, nameof(ModCommandDispatcher), nameof(_modIndexByHash), NativeAllocationLifetime.Session);
+            }
 
             if (!_kernelIndexByCommandKey.IsCreated)
+            {
                 _kernelIndexByCommandKey = new NativeHashMap<uint, int>(KernelCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[32] - O(1) command kernel lookup - owner: ModCommandDispatcher
+                NativeMemorySentinel.RegisterNativeHashMap(_kernelIndexByCommandKey, nameof(ModCommandDispatcher), nameof(_kernelIndexByCommandKey), NativeAllocationLifetime.Session);
+            }
         }
 
         internal static void Shutdown()
         {
-            DisposeQueue(ref _pendingCommands);
-            DisposeQueue(ref _pendingAupCommands);
-            DisposeQueue(ref _pendingRenderCommands);
-            DisposeQueue(ref _pendingRaycastResults);
-            DisposeQueue(ref _pendingRejectEvents);
-            DisposeQueue(ref _pendingMemoryEvictionEvents);
-            DisposeQueue(ref _pendingAupResponses);
+            DisposeQueue(ref _pendingCommands, nameof(_pendingCommands));
+            DisposeQueue(ref _pendingAupCommands, nameof(_pendingAupCommands));
+            DisposeQueue(ref _pendingRenderCommands, nameof(_pendingRenderCommands));
+            DisposeQueue(ref _pendingRaycastResults, nameof(_pendingRaycastResults));
+            DisposeQueue(ref _pendingRejectEvents, nameof(_pendingRejectEvents));
+            DisposeQueue(ref _pendingMemoryEvictionEvents, nameof(_pendingMemoryEvictionEvents));
+            DisposeQueue(ref _pendingAupResponses, nameof(_pendingAupResponses));
 
             if (_modStatesByHash.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_modStatesByHash));
                 _modStatesByHash.Dispose();
                 _modStatesByHash = default;
             }
 
             if (_modIndexByHash.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_modIndexByHash));
                 _modIndexByHash.Dispose();
                 _modIndexByHash = default;
             }
 
             if (_kernelIndexByCommandKey.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModCommandDispatcher), nameof(_kernelIndexByCommandKey));
                 _kernelIndexByCommandKey.Dispose();
                 _kernelIndexByCommandKey = default;
             }
@@ -435,6 +468,11 @@ namespace Hecton8.Modding
         internal static bool IsRegisteredMod(string modId)
         {
             uint modHash = ComputeModHash(modId);
+            return IsRegisteredMod(modHash);
+        }
+
+        internal static bool IsRegisteredMod(uint modHash)
+        {
             return modHash != 0u &&
                    _modStatesByHash.IsCreated &&
                    _modStatesByHash.ContainsKey(modHash);
@@ -638,6 +676,9 @@ namespace Hecton8.Modding
             int drained = 0;
             while (_queuedAupCommandCount > 0 && drained < MaxDrainPerLateFrame)
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
                 if (!_pendingAupCommands.TryDequeue(out ModAupCommand aupCommand))
                     return;
 
@@ -708,6 +749,9 @@ namespace Hecton8.Modding
             int drained = 0;
             while (_queuedCommandCount > 0 && drained < MaxDrainPerLateFrame)
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
                 if (!_pendingCommands.TryDequeue(out ModCommand command))
                     return;
 
@@ -732,6 +776,9 @@ namespace Hecton8.Modding
             int drained = 0;
             while (_queuedRenderCommandCount > 0 && drained < MaxModRenderInstancesPerFrame)
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
                 if (!_pendingRenderCommands.TryDequeue(out ModRenderInstanceCommand command))
                     return;
 
@@ -852,7 +899,7 @@ namespace Hecton8.Modding
                 return;
             }
 
-            if (PersistentWorldRegistry.IsModProtectedCoreRuntimePosition(runtimeCenter))
+            if (IsProtectedCoreAup(in position))
             {
                 RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.ProtectedCoreSector);
                 EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.VoxelModify, ModAupResponseStatus.Rejected, in position);
@@ -901,15 +948,14 @@ namespace Hecton8.Modding
                 return;
             }
 
-            PackFloat3(flowVector, out ulong payload0, out uint payload1);
+            uint3 payload = PackSequentialFloat3(flowVector.x, flowVector.y, flowVector.z);
             EnqueueAupResponse(
                 command.ModHash,
                 command.RequestId,
                 ModAupResponseKind.FlowVector,
                 ModAupResponseStatus.Accepted,
                 in position,
-                payload0,
-                payload1);
+                payload);
         }
 
         private static void ExecuteModAcousticPing(in ModCommand command, in ModAup position)
@@ -925,22 +971,13 @@ namespace Hecton8.Modding
             }
 
             float normalizedIntensity = math.saturate(intensity01);
-            if (!(GlobalRegistry.Audio is SpatialAudioManager audioManager) ||
-                !audioManager.TryEmitModAcousticPing(runtimePosition, normalizedIntensity))
+            IAudioService audioManager = GlobalRegistry.Audio;
+            if (audioManager == null || !audioManager.TryEmitModAcousticPing(runtimePosition, normalizedIntensity))
             {
                 RejectCommand(command.ModHash, command.RequestId, command.Opcode, command.TargetSystem, ModCommandRejectReason.AcousticUnavailable);
                 EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.AcousticPing, ModAupResponseStatus.Unavailable, in position);
                 return;
             }
-
-            AcousticPingEvent pingEvent = new AcousticPingEvent(
-                runtimePosition,
-                MaxModAcousticPingRadiusMeters * normalizedIntensity,
-                normalizedIntensity,
-                ModAcousticPingLifetimeSeconds,
-                FieldTargetRole.Generic,
-                0);
-            PhysicsEventBus.NotifyAcousticPing(in pingEvent);
 
             EnqueueAupResponse(command.ModHash, command.RequestId, ModAupResponseKind.AcousticPing, ModAupResponseStatus.Accepted, in position);
         }
@@ -1001,12 +1038,27 @@ namespace Hecton8.Modding
                 return false;
             }
 
+            if (!IsValidAupLocal(aupCommand.Position.Local) || !float.IsFinite(aupCommand.Scalar))
+            {
+                rejectReason = ModCommandRejectReason.InvalidPayload;
+                return false;
+            }
+
             float3 framePosition = RebaseAupToFrameSpace(aupCommand.Position.Grid, aupCommand.Position.Local);
+            if (!IsFinite(framePosition))
+            {
+                rejectReason = ModCommandRejectReason.InvalidPayload;
+                return false;
+            }
+
             float3 direction = aupCommand.Direction;
             float directionLengthSq = math.lengthsq(direction);
             if (rebasedCommand.Opcode == (ushort)ModCommandOpcode.RaycastQuery)
             {
-                if (directionLengthSq <= 0.0001f || aupCommand.Scalar <= 0f)
+                if (!IsFinite(direction) ||
+                    directionLengthSq <= 0.0001f ||
+                    !float.IsFinite(directionLengthSq) ||
+                    aupCommand.Scalar <= 0f)
                 {
                     rejectReason = ModCommandRejectReason.InvalidTarget;
                     return false;
@@ -1108,8 +1160,11 @@ namespace Hecton8.Modding
                 Normal = hasHit ? new float3(hit.normal.x, hit.normal.y, hit.normal.z) : default
             };
 
-            _pendingRaycastResults.Enqueue(payload);
-            _queuedRaycastResultCount++;
+            if (_queuedRaycastResultCount < MaxModRaycasts)
+            {
+                _pendingRaycastResults.Enqueue(payload);
+                _queuedRaycastResultCount++;
+            }
         }
 
         private static bool TryAcceptSpawnCandidate(
@@ -1158,7 +1213,7 @@ namespace Hecton8.Modding
 
         private static void EnqueueRejectEvent(uint modHash, uint requestId, ushort opcode, ushort targetSystem, ModCommandRejectReason reason)
         {
-            if (!_pendingRejectEvents.IsCreated)
+            if (!_pendingRejectEvents.IsCreated || _queuedRejectEventCount >= MaxRejectEventsPerLateFrame)
                 return;
 
             _pendingRejectEvents.Enqueue(new ModInteractionRejectedPayload
@@ -1174,7 +1229,8 @@ namespace Hecton8.Modding
 
         private static void EnqueueMemoryEvictionEvent(uint modHash, long trackedHeapBytes)
         {
-            if (!_pendingMemoryEvictionEvents.IsCreated)
+            if (!_pendingMemoryEvictionEvents.IsCreated ||
+                _queuedMemoryEvictionEventCount >= MaxMemoryEvictionEventsPerLateFrame)
                 return;
 
             _pendingMemoryEvictionEvents.Enqueue(new ModCriticalMemoryEvictionPayload
@@ -1193,10 +1249,9 @@ namespace Hecton8.Modding
             ModAupResponseKind responseKind,
             ModAupResponseStatus status,
             in ModAup position,
-            ulong payload0 = 0UL,
-            uint payload1 = 0u)
+            uint3 payload = default)
         {
-            if (!_pendingAupResponses.IsCreated)
+            if (!_pendingAupResponses.IsCreated || _queuedAupResponseCount >= MaxAupResponsesPerLateFrame)
                 return;
 
             _pendingAupResponses.Enqueue(new ModAupResponse
@@ -1207,34 +1262,57 @@ namespace Hecton8.Modding
                 Status = (uint)status,
                 Grid = position.Grid,
                 Local = position.Local,
-                Payload0 = payload0,
-                Payload1 = payload1
+                Payload = payload
             });
             _queuedAupResponseCount++;
         }
 
         private static void FlushDeferredEventQueues()
         {
-            while (_queuedRaycastResultCount > 0 && _pendingRaycastResults.TryDequeue(out ModRaycastResultPayload raycastPayload))
+            while (_queuedRaycastResultCount > 0 && !_pendingRaycastResults.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingRaycastResults.TryDequeue(out ModRaycastResultPayload raycastPayload))
+                    break;
+
                 _queuedRaycastResultCount--;
                 HectonEventBus.Publish(in raycastPayload);
             }
 
-            while (_queuedRejectEventCount > 0 && _pendingRejectEvents.TryDequeue(out ModInteractionRejectedPayload rejectPayload))
+            while (_queuedRejectEventCount > 0 && !_pendingRejectEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingRejectEvents.TryDequeue(out ModInteractionRejectedPayload rejectPayload))
+                    break;
+
                 _queuedRejectEventCount--;
                 HectonEventBus.Publish(in rejectPayload);
             }
 
-            while (_queuedMemoryEvictionEventCount > 0 && _pendingMemoryEvictionEvents.TryDequeue(out ModCriticalMemoryEvictionPayload evictionPayload))
+            while (_queuedMemoryEvictionEventCount > 0 && !_pendingMemoryEvictionEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingMemoryEvictionEvents.TryDequeue(out ModCriticalMemoryEvictionPayload evictionPayload))
+                    break;
+
                 _queuedMemoryEvictionEventCount--;
                 HectonEventBus.Publish(in evictionPayload);
             }
 
-            while (_queuedAupResponseCount > 0 && _pendingAupResponses.TryDequeue(out ModAupResponse aupResponse))
+            while (_queuedAupResponseCount > 0 && !_pendingAupResponses.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingAupResponses.TryDequeue(out ModAupResponse aupResponse))
+                    break;
+
                 _queuedAupResponseCount--;
                 HectonEventBus.Publish(in aupResponse);
             }
@@ -1344,6 +1422,21 @@ namespace Hecton8.Modding
             return new float3((float)runtimeX, (float)runtimeY, (float)runtimeZ);
         }
 
+        private static bool IsProtectedCoreAup(in ModAup position)
+        {
+            AbsoluteUniversePosition absolutePosition = new AbsoluteUniversePosition
+            {
+                GridX = position.Grid.x,
+                GridY = position.Grid.y,
+                GridZ = position.Grid.z,
+                LocalX = position.Local.x,
+                LocalY = position.Local.y,
+                LocalZ = position.Local.z
+            };
+
+            return PersistentWorldRegistry.IsModProtectedCoreAup(in absolutePosition);
+        }
+
         private static double DistanceSqAup(long3 gridA, float3 localA, long3 gridB, float3 localB)
         {
             const double cellSize = AupCellSizeMeters;
@@ -1374,13 +1467,6 @@ namespace Hecton8.Modding
             return new uint3(math.asuint(a), math.asuint(b), math.asuint(c));
         }
 
-        private static void PackFloat3(float3 value, out ulong payload0, out uint payload1)
-        {
-            uint3 packed = PackSequentialFloat3(value.x, value.y, value.z);
-            payload0 = ((ulong)packed.y << 32) | packed.x;
-            payload1 = packed.z;
-        }
-
         private static void UnpackFloat2(ulong packed, out float a, out float b)
         {
             a = math.asfloat(unchecked((uint)(packed & 0xFFFFFFFFUL)));
@@ -1394,12 +1480,37 @@ namespace Hecton8.Modding
                    float.IsFinite(value.z);
         }
 
-        private static void DisposeQueue<TPayload>(ref NativeQueue<TPayload> queue)
+        private static bool IsFinite(float3 value)
+        {
+            return math.all(math.isfinite(value));
+        }
+
+        private static bool IsValidAupLocal(float3 local)
+        {
+            return math.all(math.isfinite(local)) &&
+                   math.abs(local.x) <= AupCellSizeMeters &&
+                   math.abs(local.y) <= AupCellSizeMeters &&
+                   math.abs(local.z) <= AupCellSizeMeters;
+        }
+
+        private static void RegisterQueue<TPayload>(NativeQueue<TPayload> queue, int expectedCapacity, string label)
+            where TPayload : unmanaged
+        {
+            NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                expectedCapacity,
+                nameof(ModCommandDispatcher),
+                label,
+                NativeAllocationLifetime.Session);
+        }
+
+        private static void DisposeQueue<TPayload>(ref NativeQueue<TPayload> queue, string label)
             where TPayload : unmanaged
         {
             if (!queue.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeQueue(nameof(ModCommandDispatcher), label);
             queue.Dispose();
             queue = default;
         }

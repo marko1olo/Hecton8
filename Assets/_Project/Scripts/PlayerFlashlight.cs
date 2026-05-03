@@ -75,23 +75,27 @@ namespace Hecton8.Gameplay
     public static class FlashlightEvents
     {
         private const int ListenerCapacity = 16;
+        private const int PendingEventCapacity = 16;
 
         // COLD ALLOC: RegistryBucket<IFlashlightEventListener>[16] - flashlight deferred listeners - owner: FlashlightEvents
         private static readonly RegistryBucket<IFlashlightEventListener> _listeners = new RegistryBucket<IFlashlightEventListener>(ListenerCapacity);
         private static NativeQueue<FlashlightEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(FlashlightEvents), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
 
             _listeners.Clear();
+            _pendingEventCount = 0;
         }
 
         public static void Register(IFlashlightEventListener listener)
@@ -124,16 +128,23 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            while (!_pendingEvents.IsEmpty())
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
                 if (!_pendingEvents.TryDequeue(out FlashlightEventPayload payload))
-                    return;
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
 
                 DispatchRegisteredListeners(in payload);
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         internal static void RaiseToggled(bool isOn, float batteryPercent, float heat01)
@@ -159,12 +170,23 @@ namespace Hecton8.Gameplay
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
+            {
                 _pendingEvents = new NativeQueue<FlashlightEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FlashlightEventPayload>[16] - deferred flashlight event lane - owner: FlashlightEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(FlashlightEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void Enqueue(FlashlightEventType eventType, bool isOn, float batteryPercent, float heat01)
         {
             EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+                return;
+
             _pendingEvents.Enqueue(new FlashlightEventPayload
             {
                 BatteryPercent = batteryPercent,
@@ -172,6 +194,7 @@ namespace Hecton8.Gameplay
                 EventType = (ushort)eventType,
                 StateBits = isOn ? (ushort)1 : (ushort)0
             });
+            _pendingEventCount++;
         }
 
         private static void DispatchRegisteredListeners(in FlashlightEventPayload payload)
@@ -190,9 +213,21 @@ namespace Hecton8.Gameplay
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out _))
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out _))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
     }
 

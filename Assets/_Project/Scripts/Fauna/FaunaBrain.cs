@@ -1,9 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Hecton8.Caves;
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Jobs;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Hecton8.Core;
@@ -171,7 +168,6 @@ namespace Hecton8.AI
         private readonly Vector3[] _voxelRouteWaypoints = new Vector3[MaxVoxelRouteWaypointCount];
         // COLD ALLOC: AbsoluteUniversePosition[16] - origin-shift-stable route ownership for predator steering - owner: FaunaBrain
         private readonly AbsoluteUniversePosition[] _voxelRouteWaypointAups = new AbsoluteUniversePosition[MaxVoxelRouteWaypointCount];
-        private FaunaRouteRehydrationCache _voxelRouteRehydrationCache;
 
         // --- Event Hooks ---
         public Action<AIState> OnStateChanged;
@@ -191,6 +187,7 @@ namespace Hecton8.AI
         private Transform _apexRivalTarget;
         private Transform _baitFeedingTarget;
         private Vector3 _forcedMigrationTarget;
+        private AbsoluteUniversePosition _forcedMigrationTargetAup;
         private float _apexIntimidationUntilTime;
         private float _forcedMigrationUntilTime;
         private float _nextBurrowBreachTime;
@@ -326,7 +323,6 @@ namespace Hecton8.AI
             _utilityBrain.SetRuntimeActive(false);
             ResetDispatcherCadence();
             ClearVoxelPathGuidance();
-            DisposeVoxelRouteRehydrationCache();
             ClearEcholocationMimicSignal();
             ReleaseMimicOcclusionRuntimeOwner();
         }
@@ -344,7 +340,6 @@ namespace Hecton8.AI
             UnregisterOriginShiftListener();
             _utilityBrain.Dispose();
             ClearVoxelPathGuidance();
-            DisposeVoxelRouteRehydrationCache();
             ClearEcholocationMimicSignal();
             ReleaseMimicOcclusionRuntimeOwner();
         }
@@ -389,7 +384,6 @@ namespace Hecton8.AI
             ResetDispatcherCadence();
             ClearProceduralStrikeIntent();
             ClearVoxelPathGuidance();
-            DisposeVoxelRouteRehydrationCache();
             ClearEcholocationMimicSignal();
             ReleaseMimicOcclusionRuntimeOwner();
         }
@@ -548,7 +542,7 @@ namespace Hecton8.AI
                     fearPressure01 += vegetationBridge.SamplePredatorFearPressure(selfPosition, speciesId);
                 }
 
-                HazardZoneManager hazardZoneManager = HazardZoneManager.Instance;
+                HazardZoneManager hazardZoneManager = Hecton8.Core.GlobalRegistry.HazardZones;
                 if (hazardZoneManager != null &&
                     hazardZoneManager.TrySampleHazardAvoidance((Vector3)selfPosition, PredatorHazardAvoidanceRadius, out Vector3 hazardFleeDirection, out float hazardPressure01))
                 {
@@ -1150,6 +1144,8 @@ namespace Hecton8.AI
             if (!_hasForcedMigrationTarget || _cognitionTimeSeconds > _forcedMigrationUntilTime)
             {
                 _hasForcedMigrationTarget = false;
+                _forcedMigrationTarget = default;
+                _forcedMigrationTargetAup = default;
                 return false;
             }
 
@@ -1474,6 +1470,7 @@ namespace Hecton8.AI
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             RefreshVoxelRouteRuntimeCacheFromAup();
+            RefreshForcedMigrationTargetFromAup(in shiftData);
         }
 
         private void RegisterOriginShiftListener()
@@ -1482,7 +1479,7 @@ namespace Hecton8.AI
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _originShiftListenerRegistered = true;
+            _originShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void UnregisterOriginShiftListener()
@@ -1509,111 +1506,31 @@ namespace Hecton8.AI
                 return;
 
             int clampedCount = math.clamp(_voxelRouteWaypointCount, 0, MaxVoxelRouteWaypointCount);
-            EnsureVoxelRouteRehydrationCache();
-            for (int waypointIndex = 0; waypointIndex < clampedCount; waypointIndex++)
-                _voxelRouteRehydrationCache.WaypointAups[waypointIndex] = _voxelRouteWaypointAups[waypointIndex];
-
-            _voxelRouteRehydrationCache.TargetAup[0] = _voxelRouteTargetAup;
             Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
-            var job = new RehydrateVoxelRouteJob
-            {
-                WaypointAups = _voxelRouteRehydrationCache.WaypointAups,
-                RuntimeWaypoints = _voxelRouteRehydrationCache.RuntimeWaypoints,
-                TargetAup = _voxelRouteRehydrationCache.TargetAup,
-                RuntimeTarget = _voxelRouteRehydrationCache.RuntimeTarget,
-                CommittedOriginOffset = new float3(committedOffset.x, committedOffset.y, committedOffset.z)
-            };
-
-            JobHandle handle = job.Schedule(clampedCount, 4);
-            handle.Complete();
+            float3 committedOriginOffset = new float3(committedOffset.x, committedOffset.y, committedOffset.z);
             for (int waypointIndex = 0; waypointIndex < clampedCount; waypointIndex++)
             {
-                float3 runtimeWaypoint = _voxelRouteRehydrationCache.RuntimeWaypoints[waypointIndex];
+                AbsoluteUniversePosition waypoint = _voxelRouteWaypointAups[waypointIndex];
+                float3 runtimeWaypoint = AUPMath.ToRuntimeFloat3(in waypoint, committedOriginOffset);
                 _voxelRouteWaypoints[waypointIndex] = new Vector3(runtimeWaypoint.x, runtimeWaypoint.y, runtimeWaypoint.z);
             }
 
-            float3 runtimeTarget = _voxelRouteRehydrationCache.RuntimeTarget[0];
+            AbsoluteUniversePosition target = _voxelRouteTargetAup;
+            float3 runtimeTarget = AUPMath.ToRuntimeFloat3(in target, committedOriginOffset);
             _voxelRouteTargetPosition = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
         }
 
-        private void EnsureVoxelRouteRehydrationCache()
+        private void RefreshForcedMigrationTargetFromAup(in OriginShiftEventData shiftData)
         {
-            if (_voxelRouteRehydrationCache.IsCreated)
+            if (!_hasForcedMigrationTarget)
                 return;
 
-            _voxelRouteRehydrationCache = FaunaRouteRehydrationCache.Create(MaxVoxelRouteWaypointCount);
-        }
-
-        private void DisposeVoxelRouteRehydrationCache()
-        {
-            _voxelRouteRehydrationCache.Dispose();
-        }
-
-        private struct FaunaRouteRehydrationCache : IDisposable
-        {
-            public NativeArray<AbsoluteUniversePosition> WaypointAups;
-            public NativeArray<float3> RuntimeWaypoints;
-            public NativeArray<AbsoluteUniversePosition> TargetAup;
-            public NativeArray<float3> RuntimeTarget;
-
-            public bool IsCreated => WaypointAups.IsCreated ||
-                                     RuntimeWaypoints.IsCreated ||
-                                     TargetAup.IsCreated ||
-                                     RuntimeTarget.IsCreated;
-
-            public static FaunaRouteRehydrationCache Create(int capacity)
-            {
-                int safeCapacity = math.max(1, capacity);
-                return new FaunaRouteRehydrationCache
-                {
-                    // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[16] - Burst route rehydration AUP input cache - owner: FaunaBrain
-                    WaypointAups = new NativeArray<AbsoluteUniversePosition>(safeCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory),
-                    // COLD ALLOC: NativeArray<float3>[16] - Burst route rehydration runtime output cache - owner: FaunaBrain
-                    RuntimeWaypoints = new NativeArray<float3>(safeCapacity, Allocator.Persistent, NativeArrayOptions.UninitializedMemory),
-                    // COLD ALLOC: NativeArray<AbsoluteUniversePosition>[1] - Burst route rehydration target input - owner: FaunaBrain
-                    TargetAup = new NativeArray<AbsoluteUniversePosition>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory),
-                    // COLD ALLOC: NativeArray<float3>[1] - Burst route rehydration target output - owner: FaunaBrain
-                    RuntimeTarget = new NativeArray<float3>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory)
-                };
-            }
-
-            public void Dispose()
-            {
-                if (WaypointAups.IsCreated)
-                    WaypointAups.Dispose();
-                if (RuntimeWaypoints.IsCreated)
-                    RuntimeWaypoints.Dispose();
-                if (TargetAup.IsCreated)
-                    TargetAup.Dispose();
-                if (RuntimeTarget.IsCreated)
-                    RuntimeTarget.Dispose();
-
-                WaypointAups = default;
-                RuntimeWaypoints = default;
-                TargetAup = default;
-                RuntimeTarget = default;
-            }
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct RehydrateVoxelRouteJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<AbsoluteUniversePosition> WaypointAups;
-            [WriteOnly] public NativeArray<float3> RuntimeWaypoints;
-            [ReadOnly] public NativeArray<AbsoluteUniversePosition> TargetAup;
-            [WriteOnly] public NativeArray<float3> RuntimeTarget;
-            public float3 CommittedOriginOffset;
-
-            public void Execute(int index)
-            {
-                AbsoluteUniversePosition waypoint = WaypointAups[index];
-                RuntimeWaypoints[index] = AUPMath.ToRuntimeFloat3(in waypoint, CommittedOriginOffset);
-                if (index != 0)
-                    return;
-
-                AbsoluteUniversePosition target = TargetAup[0];
-                RuntimeTarget[0] = AUPMath.ToRuntimeFloat3(in target, CommittedOriginOffset);
-            }
+            float3 committedOriginOffset = new float3(
+                shiftData.NewTotalOffset.x,
+                shiftData.NewTotalOffset.y,
+                shiftData.NewTotalOffset.z);
+            float3 runtimeTarget = AUPMath.ToRuntimeFloat3(in _forcedMigrationTargetAup, committedOriginOffset);
+            _forcedMigrationTarget = new Vector3(runtimeTarget.x, runtimeTarget.y, runtimeTarget.z);
         }
 
         public void FixedTick(float fdt)
@@ -1907,8 +1824,9 @@ namespace Hecton8.AI
                 else
                 {
                     // Fallback for non-brain prey (e.g. static/simple pooled objects)
-                    if (ObjectPoolManager.Instance != null)
-                        ObjectPoolManager.Instance.Despawn(target.gameObject);
+                    ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+                    if (pool != null)
+                        pool.Despawn(target.gameObject);
                     else
                         target.gameObject.SetActive(false);
                 }
@@ -1954,9 +1872,10 @@ namespace Hecton8.AI
                 // 3. JUICE (User REQ: Camera Shake + Physical Force)
                 if (_speciesProfile != null && _speciesProfile.attackShakeProfile != null)
                 {
-                    if (CameraJuiceSystem.Instance != null)
+                    CameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
+                    if (cameraJuice != null)
                     {
-                        CameraJuiceSystem.Instance.TriggerShake(_speciesProfile.attackShakeProfile);
+                        cameraJuice.TriggerShake(_speciesProfile.attackShakeProfile);
                     }
                 }
 
@@ -2140,6 +2059,7 @@ namespace Hecton8.AI
                 ecosystemDirector.TryResolveMigrationTarget(ComputeStableSpeciesId(), transform.position, out Vector3 migrationTarget))
             {
                 _forcedMigrationTarget = migrationTarget;
+                _forcedMigrationTargetAup = AbsoluteUniversePosition.FromRuntimePosition(migrationTarget);
                 _forcedMigrationUntilTime = _cognitionTimeSeconds + retreatDuration;
                 _hasForcedMigrationTarget = true;
             }
@@ -2155,8 +2075,9 @@ namespace Hecton8.AI
             _isDead = true;
             RegisterCorpseResourceNode();
             ReportApexPredatorKill();
-            if (ObjectPoolManager.Instance != null)
-                ObjectPoolManager.Instance.Despawn(gameObject);
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool != null)
+                pool.Despawn(gameObject);
             else
                 gameObject.SetActive(false);
         }
@@ -2331,6 +2252,7 @@ namespace Hecton8.AI
             _apexRivalTarget = null;
             _baitFeedingTarget = null;
             _forcedMigrationTarget = default;
+            _forcedMigrationTargetAup = default;
             _apexIntimidationUntilTime = 0f;
             _forcedMigrationUntilTime = 0f;
             _nextBurrowBreachTime = 0f;

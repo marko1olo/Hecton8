@@ -20,40 +20,46 @@ namespace Hecton8.Construction
     {
         internal sealed class LogisticsReservation
         {
-            // COLD ALLOC: List<StorageCrate>[8] — touched storage crates for a single logistics reservation — owner: LogisticsReservation
-            private readonly List<StorageCrate> _touchedCrates = new List<StorageCrate>(8);
+            private const int TouchedCrateCapacity = 32;
+            // COLD ALLOC: StorageCrate[32] — fixed touched-crate reservation buffer — owner: LogisticsReservation
+            private readonly StorageCrate[] _touchedCrates = new StorageCrate[TouchedCrateCapacity];
+            private int _touchedCrateCount;
 
             public int ReservationId { get; private set; }
             public PowerGrid Grid { get; private set; }
             public bool IsPrepared { get; private set; }
 
-            public int TouchedCrateCount => _touchedCrates.Count;
+            public int TouchedCrateCount => _touchedCrateCount;
 
             public void Initialize(int reservationId, PowerGrid grid)
             {
                 ReservationId = reservationId;
                 Grid = grid;
                 IsPrepared = true;
-                _touchedCrates.Clear();
+                ClearTouchedCrates();
             }
 
-            public void AddTouchedCrate(StorageCrate crate)
+            public bool TryAddTouchedCrate(StorageCrate crate)
             {
                 if (crate == null)
-                    return;
+                    return true;
 
-                for (int i = 0; i < _touchedCrates.Count; i++)
+                for (int i = 0; i < _touchedCrateCount; i++)
                 {
                     if (ReferenceEquals(_touchedCrates[i], crate))
-                        return;
+                        return true;
                 }
 
-                _touchedCrates.Add(crate);
+                if (_touchedCrateCount >= TouchedCrateCapacity)
+                    return false;
+
+                _touchedCrates[_touchedCrateCount++] = crate;
+                return true;
             }
 
             public StorageCrate GetTouchedCrate(int index)
             {
-                return index >= 0 && index < _touchedCrates.Count ? _touchedCrates[index] : null;
+                return index >= 0 && index < _touchedCrateCount ? _touchedCrates[index] : null;
             }
 
             public void Release()
@@ -61,7 +67,15 @@ namespace Hecton8.Construction
                 ReservationId = 0;
                 Grid = null;
                 IsPrepared = false;
-                _touchedCrates.Clear();
+                ClearTouchedCrates();
+            }
+
+            private void ClearTouchedCrates()
+            {
+                for (int i = 0; i < _touchedCrateCount; i++)
+                    _touchedCrates[i] = null;
+
+                _touchedCrateCount = 0;
             }
         }
 
@@ -89,6 +103,10 @@ namespace Hecton8.Construction
         private static readonly List<FabricatorEndpoint> s_FabricatorEndpoints = new List<FabricatorEndpoint>(8);
         // COLD ALLOC: List<RecyclerEndpoint>[8] — recycler endpoint registry — owner: BaseLogisticsNetwork
         private static readonly List<RecyclerEndpoint> s_RecyclerEndpoints = new List<RecyclerEndpoint>(8);
+        private const int ReservationPoolCapacity = 64;
+        // COLD ALLOC: LogisticsReservation[64] â€” fixed logistics reservation token pool â€” owner: BaseLogisticsNetwork
+        private static readonly LogisticsReservation[] s_ReservationPool = CreateReservationPool();
+        private static int s_ReservationPoolCount = ReservationPoolCapacity;
         private static int s_NextReservationId = 1;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -97,6 +115,7 @@ namespace Hecton8.Construction
             s_StorageEndpoints.Clear();
             s_FabricatorEndpoints.Clear();
             s_RecyclerEndpoints.Clear();
+            ResetReservationPool();
             s_NextReservationId = 1;
         }
 
@@ -303,9 +322,8 @@ namespace Hecton8.Construction
             if (grid == null || costs == null || costs.Count == 0)
                 return false;
 
-            // COLD ALLOC: LogisticsReservation[1] — two-phase prepare token for a single network request — owner: BaseLogisticsNetwork
-            LogisticsReservation preparedReservation = new LogisticsReservation();
-            preparedReservation.Initialize(GetNextReservationId(), grid);
+            if (!TryRentReservation(grid, out LogisticsReservation preparedReservation))
+                return false;
 
             var enumerator = costs.GetEnumerator();
             while (enumerator.MoveNext())
@@ -339,9 +357,8 @@ namespace Hecton8.Construction
             if (grid == null || costs == null || costs.Count == 0)
                 return false;
 
-            // COLD ALLOC: LogisticsReservation[1] — two-phase prepare token for a single network request — owner: BaseLogisticsNetwork
-            LogisticsReservation preparedReservation = new LogisticsReservation();
-            preparedReservation.Initialize(GetNextReservationId(), grid);
+            if (!TryRentReservation(grid, out LogisticsReservation preparedReservation))
+                return false;
 
             for (int i = 0; i < costs.Count; i++)
             {
@@ -379,8 +396,8 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            LogisticsReservation preparedReservation = new LogisticsReservation();
-            preparedReservation.Initialize(GetNextReservationId(), grid);
+            if (!TryRentReservation(grid, out LogisticsReservation preparedReservation))
+                return false;
 
             for (int i = 0; i < costCount; i++)
             {
@@ -416,7 +433,7 @@ namespace Hecton8.Construction
                 crate?.CommitReservation(reservationId);
             }
 
-            reservation.Release();
+            ReturnReservation(reservation);
         }
 
         public static void CommitReservedViaCommandQueue(LogisticsReservation reservation)
@@ -449,7 +466,7 @@ namespace Hecton8.Construction
                     crate.CommitReservation(reservationId);
             }
 
-            reservation.Release();
+            ReturnReservation(reservation);
         }
 
         /// <summary>
@@ -468,7 +485,60 @@ namespace Hecton8.Construction
                 crate?.ReleaseReservation(reservationId);
             }
 
+            ReturnReservation(reservation);
+        }
+
+        private static LogisticsReservation[] CreateReservationPool()
+        {
+            LogisticsReservation[] pool = new LogisticsReservation[ReservationPoolCapacity]; // COLD ALLOC: LogisticsReservation[64] â€” fixed reservation token storage â€” owner: BaseLogisticsNetwork
+            for (int i = 0; i < ReservationPoolCapacity; i++)
+                pool[i] = new LogisticsReservation(); // COLD ALLOC: LogisticsReservation[1] â€” prewarmed logistics reservation token â€” owner: BaseLogisticsNetwork
+
+            return pool;
+        }
+
+        private static void ResetReservationPool()
+        {
+            for (int i = 0; i < ReservationPoolCapacity; i++)
+            {
+                LogisticsReservation reservation = s_ReservationPool[i];
+                if (reservation == null)
+                    continue;
+
+                reservation.Release();
+            }
+
+            s_ReservationPoolCount = ReservationPoolCapacity;
+        }
+
+        private static bool TryRentReservation(PowerGrid grid, out LogisticsReservation reservation)
+        {
+            reservation = null;
+            if (grid == null || s_ReservationPoolCount <= 0)
+                return false;
+
+            int poolIndex = --s_ReservationPoolCount;
+            reservation = s_ReservationPool[poolIndex];
+            if (reservation == null)
+            {
+                s_ReservationPoolCount++;
+                return false;
+            }
+
+            reservation.Initialize(GetNextReservationId(), grid);
+            return true;
+        }
+
+        private static void ReturnReservation(LogisticsReservation reservation)
+        {
+            if (reservation == null)
+                return;
+
             reservation.Release();
+            if (s_ReservationPoolCount >= ReservationPoolCapacity)
+                return;
+
+            s_ReservationPool[s_ReservationPoolCount++] = reservation;
         }
 
         private static bool TryReserveSingleItem(
@@ -494,7 +564,12 @@ namespace Hecton8.Construction
 
                 while (remaining > 0 && endpoint.Crate.TryReserveItem(item, reservationId))
                 {
-                    reservation.AddTouchedCrate(endpoint.Crate);
+                    if (!reservation.TryAddTouchedCrate(endpoint.Crate))
+                    {
+                        endpoint.Crate.ReleaseReservation(reservationId);
+                        return false;
+                    }
+
                     remaining--;
                 }
             }
@@ -525,7 +600,12 @@ namespace Hecton8.Construction
 
                 while (remaining > 0 && endpoint.Crate.TryReserveItemByHash(itemHashId, reservationId))
                 {
-                    reservation.AddTouchedCrate(endpoint.Crate);
+                    if (!reservation.TryAddTouchedCrate(endpoint.Crate))
+                    {
+                        endpoint.Crate.ReleaseReservation(reservationId);
+                        return false;
+                    }
+
                     remaining--;
                 }
             }

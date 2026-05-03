@@ -3,7 +3,7 @@
 // Zero-GC gameplay event bus for tool-driven effect signals.
 // ============================================================================
 
-using System;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -56,14 +56,58 @@ namespace Hecton8.Gameplay
     }
 
     /// <summary>
-    /// Static gameplay event bus for tool-effect signals.
+    /// Listener contract for immediate pre-repair tool effects.
+    /// </summary>
+    public interface IToolEffectListener
+    {
+        /// <summary>
+        /// Consumes one tool-effect signal before the owning tool applies its final gameplay mutation.
+        /// </summary>
+        /// <param name="signal">Tool effect payload.</param>
+        void OnToolEffectApplied(in ToolEffectSignal signal);
+    }
+
+    /// <summary>
+    /// Immediate gameplay signal router for pre-repair tool effects.
     /// </summary>
     public static class ToolEffectEvents
     {
+        private const int ListenerCapacity = 16;
+
+        // COLD ALLOC: RegistryBucket<IToolEffectListener>[16] - immediate pre-repair tool effect listeners - owner: ToolEffectEvents
+        private static readonly RegistryBucket<IToolEffectListener> _listeners = new RegistryBucket<IToolEffectListener>(ListenerCapacity);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _listeners.Clear();
+        }
+
         /// <summary>
-        /// Raised when a gameplay tool applies a typed effect to a base module.
+        /// Registers a listener for immediate tool-effect signals.
         /// </summary>
-        public static event Action<ToolEffectSignal> OnEffectApplied;
+        /// <param name="listener">Listener instance.</param>
+        public static void Register(IToolEffectListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a listener from immediate tool-effect signals.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Unregister(IToolEffectListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
 
         /// <summary>
         /// Dispatches a gameplay tool-effect signal without heap allocations.
@@ -75,11 +119,17 @@ namespace Hecton8.Gameplay
             float magnitude,
             Vector3 hitPointWorld)
         {
-            Action<ToolEffectSignal> handler = OnEffectApplied;
-            if (handler == null || module == null || effectType == EffectType.None || magnitude <= 0f)
+            if (module == null || effectType == EffectType.None || magnitude <= 0f)
                 return;
 
-            handler(new ToolEffectSignal(effectType, module, sourceTransform, magnitude, hitPointWorld));
+            int count = _listeners.Count;
+            if (count <= 0)
+                return;
+
+            ToolEffectSignal signal = new ToolEffectSignal(effectType, module, sourceTransform, magnitude, hitPointWorld);
+            IToolEffectListener[] rawArray = _listeners.RawArray;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnToolEffectApplied(in signal);
         }
     }
 }

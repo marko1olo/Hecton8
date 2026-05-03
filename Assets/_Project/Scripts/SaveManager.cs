@@ -3,7 +3,7 @@
 // Save persistence service. Runtime owner is injected through GlobalRegistry.
 //
 // АРХИТЕКТУРА:
-//   • Реестр ISaveable вместо FindObjectsByType (zero GC при save/load).
+//   • Реестр ISaveable через explicit registration (zero GC при save/load).
 //   • XXHash3 checksums for header/payload integrity.
 //   • Unity 6 Awaitable API: BackgroundThreadAsync / MainThreadAsync.
 // ============================================================================
@@ -38,6 +38,15 @@ namespace Hecton8.SaveSystem
         private const float IntegrityScanIntervalSeconds = 10f;
         private const float IndexedDefragCheckIntervalSeconds = 5f;
         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
+        private const int MaxRegisteredSaveables = 256;
+
+        internal static SaveManager ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
 
         // ══════════════════════════════════════════════════════════
         //  SAVE STATE
@@ -77,30 +86,56 @@ namespace Hecton8.SaveSystem
         [SerializeField] private bool verboseLogging;
         [SerializeField] private int _debugRegisteredCount;
 
-        private readonly List<ISaveable> _saveables = new List<ISaveable>(16);
+        // COLD ALLOC: ISaveable[256] - fixed persistence registry prevents List resize during scene registration - owner: SaveManager
+        private readonly ISaveable[] _saveables = new ISaveable[MaxRegisteredSaveables];
+        // COLD ALLOC: List<IndexedSectorEntryInfo>[128] - reusable indexed-save directory probe scratch - owner: SaveManager
+        private readonly List<SaveBinaryStorage.IndexedSectorEntryInfo> _indexedSectorDirectoryScratch = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(128);
+        private int _saveableCount;
         private bool _registryDirty;
+        private bool _saveableCapacityWarningLogged;
         private double _sessionStartTime;
         private double _totalPlayTime;
         private bool _isBusy;
 
-        private static readonly Comparison<ISaveable> SavePriorityCompare = (a, b) => a.SavePriority.CompareTo(b.SavePriority);
-        private static readonly Comparison<ISaveable> LoadPriorityCompare = (a, b) => a.LoadPriority.CompareTo(b.LoadPriority);
+        private static readonly IComparer<ISaveable> SavePriorityComparer = new SavePriorityComparerImpl();
+        private static readonly IComparer<ISaveable> LoadPriorityComparer = new LoadPriorityComparerImpl();
+
+        private sealed class SavePriorityComparerImpl : IComparer<ISaveable>
+        {
+            public int Compare(ISaveable x, ISaveable y)
+            {
+                return CompareSavePriority(x, y);
+            }
+        }
+
+        private sealed class LoadPriorityComparerImpl : IComparer<ISaveable>
+        {
+            public int Compare(ISaveable x, ISaveable y)
+            {
+                return CompareLoadPriority(x, y);
+            }
+        }
 
         private NativeArray<byte> _savePayloadBuffer;
         private NativeArray<byte> _compressedSaveBuffer;
         private NativeArray<byte> _integrityPayloadMirror;
         private NativeArray<ulong> _integrityScanResult;
+        private NativeArray<byte> _pendingIntegrityPayloadSource;
         private JobHandle _integrityScanHandle;
         private ulong _expectedIntegrityPayloadHash64;
+        private ulong _pendingExpectedIntegrityPayloadHash64;
         private float _nextIntegrityScanTime;
         private int _integrityPayloadLength;
+        private int _pendingIntegrityPayloadLength;
         private bool _integrityScanScheduled;
+        private bool _pendingIntegrityPayloadStage;
         private bool _updatableRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _emergencyBackupScheduled;
         private bool _indexedDefragInFlight;
         private string _integritySlotName;
+        private string _pendingIntegritySlotName;
         private string _activeIndexedSavePath;
         private float _nextIndexedDefragCheckTime;
 
@@ -213,6 +248,9 @@ namespace Hecton8.SaveSystem
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             _sessionStartTime = Time.realtimeSinceStartupAsDouble;
             InitializeNativeBuffers();
             SaveBinaryStorage.WarmRuntime();
@@ -226,17 +264,7 @@ namespace Hecton8.SaveSystem
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
-            if (!_updatableRegistered)
-            {
-                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                _updatableRegistered = true;
-            }
-
-            if (!_lateFrameRegistered)
-            {
-                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-                _lateFrameRegistered = true;
-            }
+            TryRegisterDispatcherLanes();
         }
 
         private void OnDisable()
@@ -256,6 +284,9 @@ namespace Hecton8.SaveSystem
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this))
                 GlobalRegistry.UnregisterSaveService(this);
 
@@ -287,19 +318,7 @@ namespace Hecton8.SaveSystem
             if (_serviceRegistered)
             {
                 if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
-                {
-                    if (!_updatableRegistered)
-                    {
-                        GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                        _updatableRegistered = true;
-                    }
-
-                    if (!_lateFrameRegistered)
-                    {
-                        GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-                        _lateFrameRegistered = true;
-                    }
-                }
+                    TryRegisterDispatcherLanes();
 
                 return;
             }
@@ -308,18 +327,21 @@ namespace Hecton8.SaveSystem
             _serviceRegistered = true;
 
             if (isActiveAndEnabled && Application.isPlaying && GlobalRegistry.Dispatcher != null)
-            {
-                if (!_updatableRegistered)
-                {
-                    GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-                    _updatableRegistered = true;
-                }
+                TryRegisterDispatcherLanes();
+        }
 
-                if (!_lateFrameRegistered)
-                {
-                    GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-                    _lateFrameRegistered = true;
-                }
+        private void TryRegisterDispatcherLanes()
+        {
+            if (!_updatableRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
+                _updatableRegistered = GlobalRegistry.Updatables.Contains(this);
+            }
+
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Core).Contains(this);
             }
         }
 
@@ -379,12 +401,20 @@ namespace Hecton8.SaveSystem
 
         public void LateFrameTick()
         {
-            if (!_integrityScanScheduled || !_integrityScanHandle.IsCompleted)
-                return;
+            if (_integrityScanScheduled)
+            {
+                if (!_integrityScanHandle.IsCompleted)
+                    return;
 
-            _integrityScanHandle.Complete();
-            _integrityScanScheduled = false;
-            EvaluateIntegrityScanResult();
+                if (!DispatcherJobSwap.TryComplete(ref _integrityScanHandle, forceComplete: false))
+                    return;
+
+                _integrityScanScheduled = false;
+                EvaluateIntegrityScanResult();
+            }
+
+            if (_pendingIntegrityPayloadStage)
+                FlushPendingIntegrityPayloadStage();
         }
 
         private unsafe void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
@@ -394,10 +424,63 @@ namespace Hecton8.SaveSystem
 
             if (_integrityScanScheduled)
             {
-                _integrityScanHandle.Complete();
+                if (!_integrityScanHandle.IsCompleted)
+                {
+                    QueuePendingIntegrityPayloadStage(payloadBytes, payloadLength, expectedHash64, slotName);
+                    return;
+                }
+
+                if (!DispatcherJobSwap.TryComplete(ref _integrityScanHandle, forceComplete: false))
+                {
+                    QueuePendingIntegrityPayloadStage(payloadBytes, payloadLength, expectedHash64, slotName);
+                    return;
+                }
+
                 _integrityScanScheduled = false;
             }
 
+            CopyIntegrityPayload(payloadBytes, payloadLength, expectedHash64, slotName);
+        }
+
+        private void QueuePendingIntegrityPayloadStage(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
+        {
+            _pendingIntegrityPayloadSource = payloadBytes;
+            _pendingIntegrityPayloadLength = payloadLength;
+            _pendingExpectedIntegrityPayloadHash64 = expectedHash64;
+            _pendingIntegritySlotName = slotName ?? string.Empty;
+            _pendingIntegrityPayloadStage = true;
+        }
+
+        private void FlushPendingIntegrityPayloadStage()
+        {
+            if (!_pendingIntegrityPayloadSource.IsCreated ||
+                _pendingIntegrityPayloadLength <= 0 ||
+                _pendingIntegrityPayloadLength > _pendingIntegrityPayloadSource.Length)
+            {
+                ClearPendingIntegrityPayloadStage();
+                return;
+            }
+
+            CopyIntegrityPayload(
+                _pendingIntegrityPayloadSource,
+                _pendingIntegrityPayloadLength,
+                _pendingExpectedIntegrityPayloadHash64,
+                _pendingIntegritySlotName);
+
+            ClearPendingIntegrityPayloadStage();
+        }
+
+        private void ClearPendingIntegrityPayloadStage()
+        {
+            _pendingIntegrityPayloadSource = default;
+            _pendingIntegrityPayloadLength = 0;
+            _pendingExpectedIntegrityPayloadHash64 = 0UL;
+            _pendingIntegritySlotName = string.Empty;
+            _pendingIntegrityPayloadStage = false;
+        }
+
+        private unsafe void CopyIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
+        {
             EnsureIntegrityMirrorCapacity(payloadLength);
             void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payloadBytes);
             void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_integrityPayloadMirror);
@@ -505,8 +588,8 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
                 return;
 
-            List<SaveBinaryStorage.IndexedSectorEntryInfo> scratchDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(1);
-            if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(absolutePath, scratchDirectory, out _, out _))
+            _indexedSectorDirectoryScratch.Clear();
+            if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(absolutePath, _indexedSectorDirectoryScratch, out _, out _))
                 return;
 
             _activeIndexedSavePath = absolutePath;
@@ -538,27 +621,121 @@ namespace Hecton8.SaveSystem
             _integrityScanScheduled = false;
             _integrityPayloadLength = 0;
             _expectedIntegrityPayloadHash64 = 0UL;
+            ClearPendingIntegrityPayloadStage();
         }
 
         public void Register(ISaveable saveable)
         {
             if (saveable == null) return;
-            if (!_saveables.Contains(saveable)) { _saveables.Add(saveable); _registryDirty = true; }
-            _debugRegisteredCount = _saveables.Count;
+
+            for (int i = 0; i < _saveableCount; i++)
+            {
+                if (ReferenceEquals(_saveables[i], saveable))
+                {
+                    _debugRegisteredCount = _saveableCount;
+                    return;
+                }
+            }
+
+            if (_saveableCount >= MaxRegisteredSaveables)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                if (!_saveableCapacityWarningLogged)
+                {
+                    Debug.LogError("[SaveManager] Saveable registry capacity exceeded. Increase MaxRegisteredSaveables or split save ownership.");
+                    _saveableCapacityWarningLogged = true;
+                }
+#endif
+                _debugRegisteredCount = _saveableCount;
+                return;
+            }
+
+            _saveables[_saveableCount] = saveable;
+            _saveableCount++;
+            _registryDirty = true;
+            _debugRegisteredCount = _saveableCount;
         }
 
         public void Unregister(ISaveable saveable)
         {
             if (saveable == null) return;
-            if (_saveables.Remove(saveable)) _registryDirty = true;
-            _debugRegisteredCount = _saveables.Count;
+
+            for (int i = 0; i < _saveableCount; i++)
+            {
+                if (!ReferenceEquals(_saveables[i], saveable))
+                    continue;
+
+                _saveableCount--;
+                _saveables[i] = _saveables[_saveableCount];
+                _saveables[_saveableCount] = null;
+                _registryDirty = true;
+                break;
+            }
+
+            _debugRegisteredCount = _saveableCount;
         }
 
-        private void SortRegistryIfDirty(Comparison<ISaveable> comparison)
+        private void SortRegistryIfDirty(IComparer<ISaveable> comparer)
         {
+            PruneDeadSaveables();
             if (!_registryDirty) return;
-            _saveables.Sort(comparison);
+
+            Array.Sort(_saveables, 0, _saveableCount, comparer);
             _registryDirty = false;
+        }
+
+        private void PruneDeadSaveables()
+        {
+            int writeIndex = 0;
+            for (int readIndex = 0; readIndex < _saveableCount; readIndex++)
+            {
+                ISaveable saveable = _saveables[readIndex];
+                if (!IsAlive(saveable))
+                {
+                    _registryDirty = true;
+                    continue;
+                }
+
+                _saveables[writeIndex] = saveable;
+                writeIndex++;
+            }
+
+            if (writeIndex == _saveableCount)
+                return;
+
+            Array.Clear(_saveables, writeIndex, _saveableCount - writeIndex);
+            _saveableCount = writeIndex;
+            _debugRegisteredCount = _saveableCount;
+        }
+
+        private static int CompareSavePriority(ISaveable a, ISaveable b)
+        {
+            if (ReferenceEquals(a, b))
+                return 0;
+
+            bool aAlive = IsAlive(a);
+            bool bAlive = IsAlive(b);
+            if (!aAlive)
+                return bAlive ? 1 : 0;
+            if (!bAlive)
+                return -1;
+
+            return a.SavePriority.CompareTo(b.SavePriority);
+        }
+
+        private static int CompareLoadPriority(ISaveable a, ISaveable b)
+        {
+            if (ReferenceEquals(a, b))
+                return 0;
+
+            bool aAlive = IsAlive(a);
+            bool bAlive = IsAlive(b);
+            if (!aAlive)
+                return bAlive ? 1 : 0;
+            if (!bAlive)
+                return -1;
+
+            return a.LoadPriority.CompareTo(b.LoadPriority);
         }
 
         private static bool IsAlive(ISaveable saveable)
@@ -625,13 +802,14 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                SortRegistryIfDirty(SavePriorityCompare);
-                for (int i = 0; i < _saveables.Count; i++)
+                SortRegistryIfDirty(SavePriorityComparer);
+                for (int i = 0; i < _saveableCount; i++)
                 {
-                    if (!IsAlive(_saveables[i]))
+                    ISaveable saveable = _saveables[i];
+                    if (!IsAlive(saveable))
                         continue;
 
-                    if (_saveables[i] is VoxelDeltaProcessor voxelDeltaProcessor)
+                    if (saveable is VoxelDeltaProcessor voxelDeltaProcessor)
                     {
                         if (voxelDeltaSnapshot.IsCreated)
                             voxelDeltaSnapshot.Dispose();
@@ -640,7 +818,7 @@ namespace Hecton8.SaveSystem
                         continue;
                     }
 
-                    _saveables[i].PopulateSaveData(data);
+                    saveable.PopulateSaveData(data);
                 }
 
                 ModSaveStateStore.PopulateSaveData(data);
@@ -867,24 +1045,25 @@ namespace Hecton8.SaveSystem
                 QuestManager.StageLoadedPackedState(loadedQuestHeader, loadedQuestStateWords);
                 
                 _registryDirty = true;
-                SortRegistryIfDirty(LoadPriorityCompare);
+                SortRegistryIfDirty(LoadPriorityComparer);
 
                 VoxelDeltaProcessor voxelDeltaProcessor = null;
                 long loadApplyStartTicks = Stopwatch.GetTimestamp();
-                for (int i = 0; i < _saveables.Count; i++)
+                for (int i = 0; i < _saveableCount; i++)
                 {
-                    if (!IsAlive(_saveables[i]))
+                    ISaveable saveable = _saveables[i];
+                    if (!IsAlive(saveable))
                         continue;
 
-                    if (_saveables[i] is VoxelDeltaProcessor loadedVoxelDeltaProcessor)
+                    if (saveable is VoxelDeltaProcessor loadedVoxelDeltaProcessor)
                     {
                         voxelDeltaProcessor = loadedVoxelDeltaProcessor;
                         continue;
                     }
 
-                    _saveables[i].LoadFromSaveData(data);
+                    saveable.LoadFromSaveData(data);
                     double elapsedMs = (Stopwatch.GetTimestamp() - loadApplyStartTicks) * StopwatchTickToMilliseconds;
-                    if (i + 1 < _saveables.Count && elapsedMs >= LoadApplyFrameBudgetMilliseconds)
+                    if (i + 1 < _saveableCount && elapsedMs >= LoadApplyFrameBudgetMilliseconds)
                     {
                         await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
                         loadApplyStartTicks = Stopwatch.GetTimestamp();
@@ -897,8 +1076,8 @@ namespace Hecton8.SaveSystem
                 if (persistentWorldRegistryForLoad != null)
                 {
                     string loadedAbsolutePath = GetPersistentAbsolutePath(loadedCandidate.SavePath);
-                    List<SaveBinaryStorage.IndexedSectorEntryInfo> indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(128);
-                    if (SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(loadedAbsolutePath, indexedSectorDirectory, out _, out _))
+                    _indexedSectorDirectoryScratch.Clear();
+                    if (SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(loadedAbsolutePath, _indexedSectorDirectoryScratch, out _, out _))
                     {
                         persistentWorldRegistryForLoad.RestoreFromIndexedSave(loadedAbsolutePath);
 

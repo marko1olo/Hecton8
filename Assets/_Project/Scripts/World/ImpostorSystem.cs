@@ -10,7 +10,7 @@
 //   • Stabilize impostor transitions with hysteresis and adaptive threshold scaling
 //
 // ARCHITECTURE:
-//   • Singleton via ImpostorSystem.Instance
+//   • GlobalRegistry.Impostors is the authoritative runtime lookup.
 //   • ITickable — registers with GameTickManager
 //   • Zero-GC — pre-allocated collections, struct-based data
 //   • Scene-owned fallback material derivation (no runtime Addressables dependency)
@@ -148,6 +148,7 @@ namespace Hecton8.World
         private Transform _cameraTransform;
         private float _cameraResolveRetryTimer;
         private bool _registered;
+        private bool _serviceRegistered;
 
         /// <summary>
         /// Singleton instance. Null when the system is absent.
@@ -186,6 +187,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
         }
 
@@ -193,12 +195,14 @@ namespace Hecton8.World
         {
             RestoreAllOriginalVisibility();
             TryUnregister();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             RestoreAllOriginalVisibility();
             TryUnregister();
+            TryUnregisterService();
 
             ReleaseCachedMaterials();
             _impostorBillboards.Clear();
@@ -225,9 +229,29 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterImpostorRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Impostors, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.Impostors, this))
+                GlobalRegistry.UnregisterImpostorRuntime(this);
+
+            _serviceRegistered = false;
         }
 
         /// <summary>
@@ -383,14 +407,15 @@ namespace Hecton8.World
             if (!_textureCache.TryGetValue(instance.ImpostorID, out ImpostorTextureData data) || !data.IsLoaded)
                 return;
 
-            if (_billboardPrefab == null || ObjectPoolManager.Instance == null)
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (_billboardPrefab == null || pool == null)
                 return;
 
             GameObject originalObject = instance.OriginalObject;
             if (originalObject == null)
                 return;
 
-            GameObject billboard = ObjectPoolManager.Instance.Spawn(
+            GameObject billboard = pool.Spawn(
                 _billboardPrefab,
                 instance.OriginalTransform.position,
                 Quaternion.identity);
@@ -598,8 +623,9 @@ namespace Hecton8.World
         {
             if (instance.BillboardObject != null)
             {
-                if (ObjectPoolManager.Instance != null)
-                    ObjectPoolManager.Instance.Despawn(instance.BillboardObject);
+                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+                if (pool != null)
+                    pool.Despawn(instance.BillboardObject);
                 else
                     instance.BillboardObject.SetActive(false);
             }
@@ -649,7 +675,7 @@ namespace Hecton8.World
         private float ResolveThresholdScale()
         {
             float qualityScale = 1f;
-            LODSystemManager lodSystemManager = LODSystemManager.Instance;
+            LODSystemManager lodSystemManager = GlobalRegistry.LODSystem;
             if (lodSystemManager != null)
             {
                 switch (lodSystemManager.QualityPreset)
@@ -667,7 +693,7 @@ namespace Hecton8.World
             if (!_enableAdaptiveThresholdScaling)
                 return qualityScale;
 
-            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             if (scaler == null)
                 return qualityScale;
 

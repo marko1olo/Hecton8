@@ -50,6 +50,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Atmosphere;
 using Hecton8.Caves;
@@ -70,7 +72,7 @@ namespace Hecton8.Audio
     /// Runtime audio service accessed through Hecton8.Core.GlobalRegistry.Audio.
     /// Zero-GC Ð² hot path. Ð–Ñ‘ÑÑ‚ÐºÐ¸Ð¹ Ð»Ð¸Ð¼Ð¸Ñ‚ Ð¾Ð´Ð½Ð¾Ð²Ñ€ÐµÐ¼ÐµÐ½Ð½Ñ‹Ñ… Ð¸ÑÑ‚Ð¾Ñ‡Ð½Ð¸ÐºÐ¾Ð².
     /// </summary>
-    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable
+    public sealed class SpatialAudioManager : MonoBehaviour, IAudioService, IUpdatable, IPhysicsImpactEventListener, IRepairDroneTorchAcousticListener, IFatalPressureImplosionEventListener
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float SoundSpeedAirMetersPerSecond = 343f;
@@ -119,6 +121,14 @@ namespace Hecton8.Audio
         private const float ThreatBusDuckReleaseSharpness = 5f;
         private const float ParasiteRoomAudioAttackSharpness = 8f;
         private const float ParasiteRoomAudioReleaseSharpness = 3f;
+
+        internal static SpatialAudioManager ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
         private const int MaxDelayedAudioEvents = 16;
         private const int MaxHarvestAudioEventsPerFrame = 10;
         private const float FatalPressureImplosionEventVolume = 0.96f;
@@ -349,18 +359,26 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             // Self-state only. Runtime resources are allocated by explicit bootstrap registration.
             _resolvedAcousticOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask();
         }
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
+
             if (_isInitialized)
                 TrySubscribeAudioEvents();
         }
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             TryUnsubscribeAudioEvents();
             if (_isInitialized)
             {
@@ -390,6 +408,9 @@ namespace Hecton8.Audio
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             ReleaseTelemetryCaches();
         }
 
@@ -433,9 +454,9 @@ namespace Hecton8.Audio
             if (_eventsSubscribed)
                 return;
 
-            PhysicsEvents.OnImpact += HandlePhysicsImpact;
-            FatalPressureImplosionEvents.OnFatalPressureImplosion += HandleFatalPressureImplosion;
-            RepairDroneTorchAcousticEvents.OnTorchAcoustic += HandleRepairDroneTorchAcoustic;
+            PhysicsEvents.Register(this);
+            FatalPressureImplosionEvents.Register(this);
+            RepairDroneTorchAcousticEvents.Register(this);
             _eventsSubscribed = true;
         }
 
@@ -444,9 +465,9 @@ namespace Hecton8.Audio
             if (!_eventsSubscribed)
                 return;
 
-            PhysicsEvents.OnImpact -= HandlePhysicsImpact;
-            FatalPressureImplosionEvents.OnFatalPressureImplosion -= HandleFatalPressureImplosion;
-            RepairDroneTorchAcousticEvents.OnTorchAcoustic -= HandleRepairDroneTorchAcoustic;
+            PhysicsEvents.Unregister(this);
+            FatalPressureImplosionEvents.Unregister(this);
+            RepairDroneTorchAcousticEvents.Unregister(this);
             _eventsSubscribed = false;
         }
 
@@ -1356,7 +1377,12 @@ private int AcquireSourceIndex()
             _registeredUpdatable = true;
         }
 
-        private void HandlePhysicsImpact(PhysicsImpactSignal impactSignal)
+        void IPhysicsImpactEventListener.OnPhysicsImpact(in PhysicsImpactSignal impactSignal)
+        {
+            HandlePhysicsImpact(in impactSignal);
+        }
+
+        private void HandlePhysicsImpact(in PhysicsImpactSignal impactSignal)
         {
             // Mirrors impact positions for passive radar/UI consumers only.
             // Audible impact energy is synthesized through PlayerCriticalProceduralAudioRenderer.
@@ -1426,6 +1452,14 @@ private int AcquireSourceIndex()
                 TraumaWeight = FatalPressureImplosionTraumaWeight
             };
             TryEnqueueDelayedAudioEvent(in delayedEvent);
+        }
+
+        /// <summary>
+        /// Receives deferred fatal pressure implosion notifications from the submarine atmosphere event lane.
+        /// </summary>
+        public void OnFatalPressureImplosion(in FatalPressureImplosionEvent implosionEvent)
+        {
+            HandleFatalPressureImplosion(in implosionEvent);
         }
 
         /// <summary>
@@ -1544,6 +1578,14 @@ private int AcquireSourceIndex()
                 acousticEvent.Volume,
                 acousticEvent.Pitch,
                 ResolvedDefaultWorldMixerGroup);
+        }
+
+        /// <summary>
+        /// Receives deferred repair-drone torch acoustic pulses from the construction event lane.
+        /// </summary>
+        public void OnRepairDroneTorchAcoustic(in RepairDroneTorchAcousticEvent acousticEvent)
+        {
+            HandleRepairDroneTorchAcoustic(in acousticEvent);
         }
 
         private void ApplyDelayedTrauma(in DelayedAudioEvent delayedEvent, Vector3 listenerAbsolutePosition)
@@ -1946,7 +1988,15 @@ private int AcquireSourceIndex()
                 _acousticRadarGridBuffer = new ComputeBuffer(AcousticRadarGridCellCount, sizeof(float));
 
             if (!_delayedAudioIngress.IsCreated)
+            {
                 _delayedAudioIngress = new NativeQueue<DelayedAudioEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DelayedAudioEvent>[16] - underwater propagation ingress queue for delayed world events - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _delayedAudioIngress,
+                    MaxDelayedAudioEvents,
+                    nameof(SpatialAudioManager),
+                    nameof(_delayedAudioIngress),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_pendingDelayedAudioEvents.IsCreated)
                 _pendingDelayedAudioEvents = new NativeList<DelayedAudioEvent>(MaxDelayedAudioEvents, Allocator.Persistent); // COLD ALLOC: NativeList<DelayedAudioEvent>[16] - active delayed world-event schedule - owner: SpatialAudioManager
@@ -1974,6 +2024,7 @@ private int AcquireSourceIndex()
 
             if (_delayedAudioIngress.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SpatialAudioManager), nameof(_delayedAudioIngress));
                 _delayedAudioIngress.Dispose();
                 _delayedAudioIngress = default;
             }
@@ -2864,7 +2915,7 @@ private int AcquireSourceIndex()
     }
 
     /// <summary>
-    /// Zero-allocation payload for contextual spatial-audio captions.
+    /// Caption request wrapper for contextual spatial-audio captions.
     /// Producers are expected to pass a cached/prelocalized caption string.
     /// </summary>
     public readonly struct AudioCaptionRequest
@@ -2891,29 +2942,258 @@ private int AcquireSourceIndex()
     }
 
     /// <summary>
-    /// Main-thread event bus for spatial-audio captions.
+    /// Unmanaged caption payload carried by the deferred audio-caption lane.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct AudioCaptionPayload
+    {
+        public Vector3 WorldPosition;
+        public float DurationSeconds;
+        public float Intensity;
+        public uint CaptionHashId;
+        public int ReferenceSlot;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    /// <summary>
+    /// Listener for deferred spatial-audio caption requests.
+    /// </summary>
+    public interface IAudioCaptionEventListener
+    {
+        void OnAudioCaptionRequested(AudioCaptionRequest request);
+    }
+
+    /// <summary>
+    /// NativeQueue-backed main-thread event bus for spatial-audio captions.
     /// Audio systems publish semantic cue text here; HUD overlays render it.
     /// </summary>
     public static class AudioCaptionEvents
     {
+        private const int ListenerCapacity = 8;
+        private const int PendingEventCapacity = 32;
+        private const int ReferenceSlotCapacity = 32;
+        private const ushort CaptionRequestedEventType = 1;
+        private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("AudioCaptionEvents.Overflow"));
+        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("AudioCaptionEvents"));
+
+        // COLD ALLOC: RegistryBucket<IAudioCaptionEventListener>[8] - audio caption listeners drained by SystemDispatcher LateUpdate - owner: AudioCaptionEvents
+        private static readonly RegistryBucket<IAudioCaptionEventListener> _listeners = new RegistryBucket<IAudioCaptionEventListener>(ListenerCapacity);
+        // COLD ALLOC: string[32] - managed caption text sidecar for unmanaged audio caption payloads - owner: AudioCaptionEvents
+        private static readonly string[] _captionReferenceSlots = new string[ReferenceSlotCapacity];
+        // COLD ALLOC: bool[32] - caption sidecar occupancy map prevents wrap overwrite before deferred flush - owner: AudioCaptionEvents
+        private static readonly bool[] _referenceSlotOccupied = new bool[ReferenceSlotCapacity];
+        private static NativeQueue<AudioCaptionPayload> _pendingEvents;
+        private static int _pendingEventCount;
+        private static int _referenceWriteIndex;
+        private static int _referencePendingCount;
+        private static int _lastOverflowWarningFrame = -1;
+
+        /// <summary>Number of caption payloads waiting for late-frame dispatch.</summary>
+        public static int PendingCount => _pendingEventCount;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnCaptionRequested = null;
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(AudioCaptionEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            ClearReferenceSlots();
+            _pendingEventCount = 0;
+            _referenceWriteIndex = 0;
+            _referencePendingCount = 0;
+            _lastOverflowWarningFrame = -1;
         }
 
-        /// <summary>Raised on the main thread when a semantic audio cue should be captioned.</summary>
-        public static event System.Action<AudioCaptionRequest> OnCaptionRequested;
+        /// <summary>Registers one audio caption listener.</summary>
+        public static void Register(IAudioCaptionEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>Unregisters one audio caption listener.</summary>
+        public static void Unregister(IAudioCaptionEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>Flushes queued audio captions to registered UI listeners.</summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out AudioCaptionPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                Dispatch(in payload);
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
 
         /// <summary>
-        /// Raises a caption request using a prelocalized text payload.
+        /// Queues a caption request using a prelocalized text payload.
         /// </summary>
         public static void Raise(AudioCaptionRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.CaptionText))
                 return;
 
-            OnCaptionRequested?.Invoke(request);
+            if (!TryReserveReferenceSlot(out int referenceSlot))
+            {
+                ReportOverflowOncePerFrame();
+                return;
+            }
+
+            _captionReferenceSlots[referenceSlot] = request.CaptionText;
+            Enqueue(new AudioCaptionPayload
+            {
+                WorldPosition = request.WorldPosition,
+                DurationSeconds = request.DurationSeconds,
+                Intensity = request.Intensity,
+                CaptionHashId = unchecked((uint)LocHash.Compute(request.CaptionText)),
+                ReferenceSlot = referenceSlot,
+                EventType = CaptionRequestedEventType,
+                Reserved = 0
+            });
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<AudioCaptionPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AudioCaptionPayload>[32] - deferred spatial audio caption lane flushed by SystemDispatcher LateUpdate - owner: AudioCaptionEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(AudioCaptionEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        private static bool Enqueue(in AudioCaptionPayload payload)
+        {
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+                ReportOverflowOncePerFrame();
+                return false;
+            }
+
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
+        }
+
+        private static void Dispatch(in AudioCaptionPayload payload)
+        {
+            if (payload.EventType != CaptionRequestedEventType ||
+                !IsValidReferenceSlot(payload.ReferenceSlot))
+            {
+                return;
+            }
+
+            string captionText = _captionReferenceSlots[payload.ReferenceSlot];
+            if (string.IsNullOrWhiteSpace(captionText))
+                return;
+
+            AudioCaptionRequest request = new AudioCaptionRequest(
+                captionText,
+                payload.WorldPosition,
+                payload.DurationSeconds,
+                payload.Intensity);
+
+            IAudioCaptionEventListener[] rawArray = _listeners.RawArray;
+            int count = _listeners.Count;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnAudioCaptionRequested(request);
+        }
+
+        private static bool TryReserveReferenceSlot(out int referenceSlot)
+        {
+            referenceSlot = -1;
+            if (_referencePendingCount >= ReferenceSlotCapacity)
+                return false;
+
+            for (int probe = 0; probe < ReferenceSlotCapacity; probe++)
+            {
+                int candidateSlot = _referenceWriteIndex;
+                _referenceWriteIndex++;
+                if (_referenceWriteIndex >= ReferenceSlotCapacity)
+                    _referenceWriteIndex = 0;
+
+                if (_referenceSlotOccupied[candidateSlot])
+                    continue;
+
+                referenceSlot = candidateSlot;
+                _referenceSlotOccupied[referenceSlot] = true;
+                _referencePendingCount++;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static void ReleaseReferenceSlot(int referenceSlot)
+        {
+            if (!IsValidReferenceSlot(referenceSlot) || !_referenceSlotOccupied[referenceSlot])
+                return;
+
+            _captionReferenceSlots[referenceSlot] = null;
+            _referenceSlotOccupied[referenceSlot] = false;
+            if (_referencePendingCount > 0)
+                _referencePendingCount--;
+        }
+
+        private static bool IsValidReferenceSlot(int referenceSlot)
+        {
+            return (uint)referenceSlot < ReferenceSlotCapacity;
+        }
+
+        private static void ClearReferenceSlots()
+        {
+            for (int i = 0; i < ReferenceSlotCapacity; i++)
+            {
+                _captionReferenceSlots[i] = null;
+                _referenceSlotOccupied[i] = false;
+            }
+        }
+
+        private static void ReportOverflowOncePerFrame()
+        {
+            int frame = Time.frameCount;
+            if (_lastOverflowWarningFrame == frame)
+                return;
+
+            _lastOverflowWarningFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
         }
     }
 }

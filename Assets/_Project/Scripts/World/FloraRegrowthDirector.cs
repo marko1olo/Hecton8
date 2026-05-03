@@ -372,11 +372,7 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (destructibleOrganicManager == null)
-                destructibleOrganicManager = GetComponent<DestructibleOrganicManager>();
-
-            if (vegetationBridge == null)
-                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
+            ResolveLocalComponentReferences();
 
             _destroyedFloraScratch = new NativeList<PersistentWorldDeltaRecord>(
                 DefaultTrackedRegrowthCapacity,
@@ -430,36 +426,47 @@ namespace Hecton8.World
             _lastSeedPlayTime = GetCurrentPlayTimeSeconds();
         }
 
+        private void ResolveLocalComponentReferences()
+        {
+            if (destructibleOrganicManager == null)
+                TryGetComponent(out destructibleOrganicManager);
+
+            if (vegetationBridge == null)
+                TryGetComponent(out vegetationBridge);
+        }
+
         private void OnEnable()
         {
             if (!Application.isPlaying)
                 return;
+
+            ResolveLocalComponentReferences();
 
             if (GlobalRegistry.Dispatcher != null)
             {
                 if (!_tickRegistered)
                 {
                     GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                    _tickRegistered = true;
+                    _tickRegistered = GlobalRegistry.Updatables.Contains(this);
                 }
 
                 if (!_slowTickRegistered)
                 {
                     GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                    _slowTickRegistered = true;
+                    _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
                 }
 
                 if (!_lateFrameRegistered)
                 {
                     GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                    _lateFrameRegistered = true;
+                    _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
                 }
             }
 
             if (!_originShiftRegistered)
             {
                 HectonFloatingOrigin.RegisterListener(this);
-                _originShiftRegistered = true;
+                _originShiftRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
             }
         }
 
@@ -936,7 +943,7 @@ namespace Hecton8.World
 
         private static bool TryCompleteVegetationJob(ref JobHandle handle, bool forceComplete)
         {
-            return VegetationJobRecovery.TryComplete(ref handle, forceComplete);
+            return DispatcherJobSwap.TryComplete(ref handle, forceComplete);
         }
 
         private void UpsertSymbioticFungalBuff(SymbioticFungalBuffState buff)
@@ -1044,7 +1051,7 @@ namespace Hecton8.World
             if (!_regrowthStates.IsCreated || !_stateIndexByInstanceUid.IsCreated || destructibleOrganicManager == null)
                 return;
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             float currentPlayTime = GetCurrentPlayTimeSeconds();
             UpdateSeedFlights(deltaTime);
             for (int i = _regrowthStates.Length - 1; i >= 0; i--)
@@ -1100,7 +1107,7 @@ namespace Hecton8.World
             if (!_destroyedFloraScratch.IsCreated || !_regrowthStates.IsCreated || !_stateIndexByInstanceUid.IsCreated)
                 return;
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null || destructibleOrganicManager == null)
                 return;
 
@@ -1256,12 +1263,9 @@ namespace Hecton8.World
             if (!_seedFlightStates.IsCreated || _seedFlightStates.Length <= 0)
                 return;
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return;
-
-            if (vegetationBridge == null)
-                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
 
             for (int i = _seedFlightStates.Length - 1; i >= 0; i--)
             {
@@ -1301,8 +1305,6 @@ namespace Hecton8.World
         {
             landedState = state;
             landedState.Landed = 1;
-            if (vegetationBridge == null)
-                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
 
             Vector3 landingPosition = new Vector3(state.Position.x, state.Position.y, state.Position.z);
             if (vegetationBridge == null)
@@ -1336,16 +1338,17 @@ namespace Hecton8.World
                 return;
             }
 
-            if (vegetationBridge == null)
-                vegetationBridge = GetComponent<HectonMapMagicVegetationBridge>();
-
             if (vegetationBridge == null ||
                 _seedEmissionByDestroyedUid.ContainsKey(deltaRecord.InstanceUid))
             {
                 return;
             }
 
-            Vector3 basePosition = ToRuntimePosition(deltaRecord.UnpackPosition(PersistentWorldRegistry.Instance.ChunkSizeMeters));
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            if (registry == null)
+                return;
+
+            Vector3 basePosition = ToRuntimePosition(deltaRecord.UnpackPosition(registry.ChunkSizeMeters));
             for (int seedIndex = 0; seedIndex < SeedsPerSargassumCluster; seedIndex++)
             {
                 uint seedUid = deltaRecord.InstanceUid ^ (uint)((seedIndex + 1) * 0x9E3779B9u);

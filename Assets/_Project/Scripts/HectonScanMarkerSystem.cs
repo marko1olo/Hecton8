@@ -25,6 +25,26 @@ namespace Hecton8.Gameplay
         private static readonly int FlickerIntensityId = Shader.PropertyToID("_FlickerIntensity");
         // COLD ALLOC: List<VisorHUDController>[2] — HUD camera resolve scratch — owner: HectonScanMarkerSystem
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
+        // COLD ALLOC: Vector3[4] - shared scanner marker quad vertices - owner: HectonScanMarkerSystem
+        private static readonly Vector3[] s_markerQuadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f)
+        };
+
+        // COLD ALLOC: Vector2[4] - shared scanner marker quad UVs - owner: HectonScanMarkerSystem
+        private static readonly Vector2[] s_markerQuadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(1f, 0f),
+            new Vector2(1f, 1f),
+            new Vector2(0f, 1f)
+        };
+
+        // COLD ALLOC: int[6] - shared scanner marker quad indices - owner: HectonScanMarkerSystem
+        private static readonly int[] s_markerQuadTriangles = { 0, 2, 1, 0, 3, 2 };
 
         private struct ActiveMarker
         {
@@ -333,26 +353,9 @@ namespace Hecton8.Gameplay
                 name = "ScannerMarkerQuad"
             };
 
-            Vector3[] vertices =
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3( 0.5f, -0.5f, 0f),
-                new Vector3( 0.5f,  0.5f, 0f),
-                new Vector3(-0.5f,  0.5f, 0f)
-            };
-
-            Vector2[] uv =
-            {
-                new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(1f, 1f),
-                new Vector2(0f, 1f)
-            };
-
-            int[] triangles = { 0, 2, 1, 0, 3, 2 };
-            mesh.vertices = vertices;
-            mesh.uv = uv;
-            mesh.triangles = triangles;
+            mesh.vertices = s_markerQuadVertices;
+            mesh.uv = s_markerQuadUvs;
+            mesh.triangles = s_markerQuadTriangles;
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             mesh.UploadMeshData(false);

@@ -113,6 +113,9 @@ namespace Hecton8.AI
                 currentVelocity = Vector3.MoveTowards(currentVelocity, Vector3.zero, maxVelocityDelta);
             }
 
+            if (!IsFinite(currentVelocity))
+                currentVelocity = Vector3.zero;
+
             _body.linearVelocity = currentVelocity;
             velocity = currentVelocity;
             currentSpeed = currentVelocity.magnitude;
@@ -136,8 +139,9 @@ namespace Hecton8.AI
                 float targetRoll = -angle * bankingStrength * 0.1f * bankIntensity * bankMult;
                 _lastBankingRoll = Mathf.Lerp(_lastBankingRoll, targetRoll, 5f * fdt);
 
-                Vector3 eulers = nextRotation.eulerAngles;
-                _body.MoveRotation(Quaternion.Euler(eulers.x, eulers.y, _lastBankingRoll));
+                Quaternion bankedRotation = nextRotation * Quaternion.AngleAxis(_lastBankingRoll, Vector3.forward);
+                if (IsFinite(bankedRotation))
+                    _body.MoveRotation(bankedRotation);
                 currentDirection = lookDir;
             }
         }
@@ -156,6 +160,21 @@ namespace Hecton8.AI
             velocity = Vector3.zero;
             desiredDirection = Vector3.zero;
             _smoothedSteerDirection = currentDirection.sqrMagnitude > 0.0001f ? currentDirection : Vector3.forward;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) &&
+                   float.IsFinite(value.w);
         }
     }
 }

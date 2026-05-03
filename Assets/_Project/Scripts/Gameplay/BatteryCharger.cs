@@ -59,7 +59,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Gameplay/Battery Charger")]
-    public sealed class BatteryCharger : MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IInteractable
+    public sealed class BatteryCharger : MonoBehaviour, ITickable, IUpdatable, IPowerComponent, IInteractable, ILocalizationLanguageChangedListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -451,7 +451,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             TryRegister();
             RebuildLocalizedTextCache();
             UpdateAllIndicators();
@@ -459,7 +459,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
         }
 
@@ -729,6 +729,15 @@ namespace Hecton8.Gameplay
             _cachedSwapBatteryText = ResolveLocalized(LocalizationKeys.INTERACT_SWAP_BATTERY, DefaultSwapBatteryText);
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
@@ -736,7 +745,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

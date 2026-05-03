@@ -1,6 +1,6 @@
 # Documentation Governance
 
-Date: `2026-05-01`
+Date: `2026-05-02`
 Status: `PENDING VERIFICATION`
 
 Purpose: prevent workspace documentation from collapsing back into root-level noise.
@@ -9,19 +9,20 @@ Current-state boundary:
 
 - This file defines documentation placement and authority order only.
 - It is not runtime proof and does not certify that every listed document is current by itself.
-- Current project truth starts at `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` plus source files.
+- Current project truth starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, current source files, and fresh verification logs.
 
 ## Authority Order
 
 1. `../AGENTS.md`
 2. task-relevant `.agents-skills/*` mandates
 3. `Docs/README.md`
-4. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-5. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
-6. active execution docs under `Docs/`
-7. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
-8. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
-9. archive bundles under `Docs/_Archive/`
+4. `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
+5. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+6. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+7. active execution docs under `Docs/`
+8. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
+9. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
+10. archive bundles under `Docs/_Archive/`
 
 ## What Belongs In Root
 
@@ -103,6 +104,7 @@ Do not invent vague folders like `misc`, `temp docs`, `new stuff`, `agent notes`
 - when moving active docs, update `Docs/README.md`
 - when moving superseded docs to deprecated, add or update a local `README.md` explaining the replacement authority
 - when shrinking root, update `Docs/ROOT_DOCS_REFERENCE.md`
+- when refreshing broad documentation truth without rewriting every file, create a dated report under `Docs/Reports/` and update `Docs/README.md`, `Docs/Reports/README.md`, and the current-state anchor
 - when archiving a large wave, update `Docs/_Archive/README.md` and the bundle manifest
 - if a legacy document is kept for historical value but not active authority, put it in a reference bundle or archive, not in root
 - if a filesystem lock blocks rename/delete, keep a temporary compatibility mirror but declare the canonical bundle path explicitly in `Docs/README.md`

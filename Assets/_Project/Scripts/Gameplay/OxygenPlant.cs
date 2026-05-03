@@ -137,7 +137,7 @@ namespace Hecton8.Gameplay
 
             Vector3 spawnPos = spawnPoint.position;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
             {
                 if (!_poolMissingLogged)

@@ -18,12 +18,18 @@ namespace Hecton8.Core
             ValidateActiveUrpRequirements();
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             SceneManager.sceneLoaded += HandleSceneLoaded;
+            RenderPipelineManager.beginCameraRendering -= HandleBeginCameraRendering;
+            RenderPipelineManager.beginCameraRendering += HandleBeginCameraRendering;
         }
 
         private static void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             ValidateActiveUrpRequirements();
-            EnsureSceneCameraRequirements();
+        }
+
+        private static void HandleBeginCameraRendering(ScriptableRenderContext context, Camera camera)
+        {
+            EnsureCameraRequirements(camera);
         }
 
         private static void ValidateActiveUrpRequirements()
@@ -53,45 +59,41 @@ namespace Hecton8.Core
             }
         }
 
-        private static void EnsureSceneCameraRequirements()
+        private static void EnsureCameraRequirements(Camera camera)
         {
-            OceanRenderer oceanRenderer = UnityEngine.Object.FindAnyObjectByType<OceanRenderer>(FindObjectsInactive.Include);
+            if (camera == null)
+                return;
+
+            OceanRenderer oceanRenderer = OceanRenderer.Instance;
             if (oceanRenderer == null)
                 return;
 
-            int oceanLayerMask = 1 << oceanRenderer.Layer;
-            UniversalAdditionalCameraData[] cameraDataList =
-                UnityEngine.Object.FindObjectsByType<UniversalAdditionalCameraData>(FindObjectsInactive.Include); // COLD ALLOC: UniversalAdditionalCameraData[] - scene camera requirement sweep - owner: HectonUrpTextureRequirementsGuard
-
-            for (int cameraIndex = 0; cameraIndex < cameraDataList.Length; cameraIndex++)
+            if (!camera.TryGetComponent(out UniversalAdditionalCameraData cameraData) ||
+                cameraData.renderType != CameraRenderType.Base)
             {
-                UniversalAdditionalCameraData cameraData = cameraDataList[cameraIndex];
-                if (cameraData == null || cameraData.renderType != CameraRenderType.Base)
-                    continue;
-
-                if (!cameraData.TryGetComponent(out Camera camera))
-                    continue;
-
-                bool rendersOcean = (camera.cullingMask & oceanLayerMask) != 0;
-                bool hasUnderwaterRenderer = cameraData.TryGetComponent<UnderwaterRenderer>(out _);
-                if (!rendersOcean && !hasUnderwaterRenderer)
-                    continue;
-
-                if (cameraData.requiresDepthOption != CameraOverrideOption.On)
-                    cameraData.requiresDepthOption = CameraOverrideOption.On;
-
-                if (cameraData.requiresColorOption != CameraOverrideOption.On)
-                    cameraData.requiresColorOption = CameraOverrideOption.On;
-
-                if (!cameraData.requiresDepthTexture)
-                    cameraData.requiresDepthTexture = true;
-
-                if (!cameraData.requiresColorTexture)
-                    cameraData.requiresColorTexture = true;
-
-                if (!cameraData.renderPostProcessing)
-                    cameraData.renderPostProcessing = true;
+                return;
             }
+
+            int oceanLayerMask = 1 << oceanRenderer.Layer;
+            bool rendersOcean = (camera.cullingMask & oceanLayerMask) != 0;
+            bool hasUnderwaterRenderer = camera.TryGetComponent<UnderwaterRenderer>(out _);
+            if (!rendersOcean && !hasUnderwaterRenderer)
+                return;
+
+            if (cameraData.requiresDepthOption != CameraOverrideOption.On)
+                cameraData.requiresDepthOption = CameraOverrideOption.On;
+
+            if (cameraData.requiresColorOption != CameraOverrideOption.On)
+                cameraData.requiresColorOption = CameraOverrideOption.On;
+
+            if (!cameraData.requiresDepthTexture)
+                cameraData.requiresDepthTexture = true;
+
+            if (!cameraData.requiresColorTexture)
+                cameraData.requiresColorTexture = true;
+
+            if (!cameraData.renderPostProcessing)
+                cameraData.renderPostProcessing = true;
         }
 
         private static UniversalRenderPipelineAsset ResolveActiveUrpAsset()

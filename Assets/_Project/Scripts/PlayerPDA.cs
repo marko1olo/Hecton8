@@ -100,12 +100,14 @@ namespace Hecton8.UI
     {
         // COLD ALLOC: RegistryBucket<IPDAEventListener>[32] - PDA listeners drained by SystemDispatcher LateUpdate - owner: PDAEvents
         private static readonly RegistryBucket<IPDAEventListener> _listeners = new RegistryBucket<IPDAEventListener>(32);
+        private const int PendingEventCapacity = 32;
         private const int EventDedupCapacity = 128;
         private static NativeQueue<PDAEventPayload> _pendingEvents;
         private static NativeParallelHashSet<ulong> _queuedEventKeys;
+        private static int _pendingEventCount;
         private static int _dedupFrame = -1;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEventCount;
 
         public static void Register(IPDAEventListener listener)
         {
@@ -165,7 +167,8 @@ namespace Hecton8.UI
                 return;
 
             int processedCount = 0;
-            while (!_pendingEvents.IsEmpty() && processedCount < maxEventsPerFrame)
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget > 0 && !_pendingEvents.IsEmpty() && processedCount < maxEventsPerFrame)
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
@@ -173,6 +176,9 @@ namespace Hecton8.UI
                 if (!_pendingEvents.TryDequeue(out PDAEventPayload payload))
                     return;
 
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+                scanBudget--;
                 ApplySimulationSideEffects(in payload);
                 IPDAEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
@@ -181,6 +187,9 @@ namespace Hecton8.UI
 
                 processedCount++;
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         internal static void RaiseOpened(int tab)
@@ -304,32 +313,53 @@ namespace Hecton8.UI
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PDAEvents), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
 
             if (_queuedEventKeys.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeParallelHashSet(nameof(PDAEvents), nameof(_queuedEventKeys));
                 _queuedEventKeys.Dispose();
                 _queuedEventKeys = default;
             }
 
             _listeners.Clear();
+            _pendingEventCount = 0;
             _dedupFrame = -1;
         }
 
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
+            {
                 _pendingEvents = new NativeQueue<PDAEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PDAEventPayload>[32] - deferred PDA event lane flushed by SystemDispatcher LateUpdate - owner: PDAEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(PDAEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_queuedEventKeys.IsCreated)
+            {
                 _queuedEventKeys = new NativeParallelHashSet<ulong>(EventDedupCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashSet<ulong>[128] - per-frame PDA duplicate suppression keys - owner: PDAEvents
+                NativeMemorySentinel.RegisterNativeParallelHashSet(
+                    _queuedEventKeys,
+                    nameof(PDAEvents),
+                    nameof(_queuedEventKeys),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void Enqueue(in PDAEventPayload payload)
         {
             EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+                return;
+
             PrepareDedupFrame();
             PDAEventPayload resolvedPayload = payload;
             ResolveDedupFields(ref resolvedPayload);
@@ -338,6 +368,7 @@ namespace Hecton8.UI
                 return;
 
             _pendingEvents.Enqueue(resolvedPayload);
+            _pendingEventCount++;
         }
 
         private static void DrainWithoutDispatch(int maxEventsPerFrame)
@@ -349,11 +380,24 @@ namespace Hecton8.UI
                 return;
 
             int processedCount = 0;
-            while (processedCount < maxEventsPerFrame && _pendingEvents.TryDequeue(out PDAEventPayload payload))
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget > 0 && processedCount < maxEventsPerFrame && !_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out PDAEventPayload payload))
+                    return;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+                scanBudget--;
                 ApplySimulationSideEffects(in payload);
                 processedCount++;
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         private static void ApplySimulationSideEffects(in PDAEventPayload payload)
@@ -1527,7 +1571,7 @@ namespace Hecton8.UI
                 return;
 
             ResolveDiagnosticsSources();
-            int fps = Mathf.RoundToInt(1f / Mathf.Max(0.0001f, Time.unscaledDeltaTime));
+            int fps = Mathf.RoundToInt(1f / Mathf.Max(0.0001f, SystemDispatcher.CurrentFrameUnscaledDeltaTime));
             long totalMemoryBytes = GC.GetTotalMemory(false);
             int memoryMb = (int)(totalMemoryBytes / (1024L * 1024L));
             int boidCount = _microFaunaBoids != null ? _microFaunaBoids.BoidCount : 0;

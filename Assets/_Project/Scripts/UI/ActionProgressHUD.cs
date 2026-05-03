@@ -125,7 +125,7 @@ namespace Hecton8.UI
         {
             if (_eventSubscribed) return;
 
-            PlayerActionController controller = PlayerActionController.Instance;
+            PlayerActionController controller = GlobalRegistry.PlayerActions;
             if (controller == null) return;
 
             controller.OnActionProgress += OnActionProgress;
@@ -138,7 +138,7 @@ namespace Hecton8.UI
         {
             if (!_eventSubscribed) return;
 
-            PlayerActionController controller = PlayerActionController.Instance;
+            PlayerActionController controller = GlobalRegistry.PlayerActions;
             if (controller == null) return;
 
             controller.OnActionProgress -= OnActionProgress;
@@ -240,7 +240,7 @@ namespace Hecton8.UI
         {
             if (actionText == null) return;
 
-            PlayerActionController controller = PlayerActionController.Instance;
+            PlayerActionController controller = GlobalRegistry.PlayerActions;
             if (controller == null) return;
 
             ItemData item = controller.ActiveItem;

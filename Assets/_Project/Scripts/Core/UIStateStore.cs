@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -415,45 +416,27 @@ namespace Hecton8.Core
         /// </summary>
         public static void Shutdown()
         {
-            if (_states.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_states);
-                _states.Dispose();
-                _states = default;
-            }
-
-            if (_valueSlots.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_valueSlots);
-                _valueSlots.Dispose();
-                _valueSlots = default;
-            }
-
-            if (_historyStates.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_historyStates);
-                _historyStates.Dispose();
-                _historyStates = default;
-            }
-
-            if (_pdaLogEventHashes.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_pdaLogEventHashes);
-                _pdaLogEventHashes.Dispose();
-                _pdaLogEventHashes = default;
-            }
-
-            if (_pdaLogEventTimestamps.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_pdaLogEventTimestamps);
-                _pdaLogEventTimestamps.Dispose();
-                _pdaLogEventTimestamps = default;
-            }
+            JobHandle noDependency = default;
+            DisposeNativeArray(ref _states, noDependency);
+            DisposeNativeArray(ref _valueSlots, noDependency);
+            DisposeNativeArray(ref _historyStates, noDependency);
+            DisposeNativeArray(ref _pdaLogEventHashes, noDependency);
+            DisposeNativeArray(ref _pdaLogEventTimestamps, noDependency);
 
             _pdaLogWriteIndex = 0;
             _pdaLogCount = 0;
             _historyWriteIndex = 0;
             _historyCount = 0;
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose(dependency);
+            array = default;
         }
 
         private static void CapturePDAStateSnapshot(in UIStateData state)

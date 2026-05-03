@@ -116,6 +116,77 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers a native hash map allocation by capacity. Unity does not expose stable hash map block pointers.
+        /// </summary>
+        public static int RegisterNativeHashMap<TKey, TValue>(
+            NativeHashMap<TKey, TValue> map,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return 0;
+
+            long bytes = EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime);
+        }
+
+        /// <summary>
+        /// Registers a native parallel hash map allocation by capacity. Unity does not expose stable hash map block pointers.
+        /// </summary>
+        public static int RegisterNativeParallelHashMap<TKey, TValue>(
+            NativeParallelHashMap<TKey, TValue> map,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return 0;
+
+            long bytes = EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime);
+        }
+
+        /// <summary>
+        /// Registers a native parallel hash set allocation by capacity. Unity does not expose stable hash set block pointers.
+        /// </summary>
+        public static int RegisterNativeParallelHashSet<TKey>(
+            NativeParallelHashSet<TKey> set,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where TKey : unmanaged, IEquatable<TKey>
+        {
+            if (!set.IsCreated)
+                return 0;
+
+            long bytes = EstimateNativeHashSetBytes<TKey>(set.Capacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime);
+        }
+
+        /// <summary>
+        /// Registers a native parallel multi-hash map allocation by capacity. Unity does not expose stable multi-hash map block pointers.
+        /// </summary>
+        public static int RegisterNativeParallelMultiHashMap<TKey, TValue>(
+            NativeParallelMultiHashMap<TKey, TValue> map,
+            string owner,
+            string label,
+            NativeAllocationLifetime lifetime)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return 0;
+
+            long bytes = EstimateNativeMultiHashMapBytes<TKey, TValue>(map.Capacity);
+            return RegisterPointer(null, bytes, owner, label, lifetime);
+        }
+
+        /// <summary>
         /// Registers a native queue allocation. Unity does not expose the queue block pointer, so pointer is zero.
         /// </summary>
         public static int RegisterNativeQueue<T>(
@@ -130,6 +201,84 @@ namespace Hecton8.Core
 
             long bytes = (long)UnsafeUtility.SizeOf<T>() * Math.Max(1, expectedCapacity);
             return RegisterPointer(null, bytes, owner, label, lifetime);
+        }
+
+        /// <summary>
+        /// Refreshes a tracked native list allocation after an explicit capacity change.
+        /// </summary>
+        public static void RefreshNativeList<T>(
+            NativeList<T> list,
+            string owner,
+            string label) where T : unmanaged
+        {
+            if (!list.IsCreated)
+                return;
+
+            long bytes = (long)UnsafeUtility.SizeOf<T>() * list.Capacity;
+            RefreshPointerlessBytes(owner, label, bytes);
+        }
+
+        /// <summary>
+        /// Refreshes a tracked native hash map allocation after an explicit capacity change.
+        /// </summary>
+        public static void RefreshNativeHashMap<TKey, TValue>(
+            NativeHashMap<TKey, TValue> map,
+            string owner,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            RefreshPointerlessBytes(owner, label, EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity));
+        }
+
+        /// <summary>
+        /// Refreshes a tracked native parallel hash map allocation after an explicit capacity change.
+        /// </summary>
+        public static void RefreshNativeParallelHashMap<TKey, TValue>(
+            NativeParallelHashMap<TKey, TValue> map,
+            string owner,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            RefreshPointerlessBytes(owner, label, EstimateNativeHashMapBytes<TKey, TValue>(map.Capacity));
+        }
+
+        /// <summary>
+        /// Refreshes a tracked native parallel hash set allocation after an explicit capacity change.
+        /// </summary>
+        public static void RefreshNativeParallelHashSet<TKey>(
+            NativeParallelHashSet<TKey> set,
+            string owner,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+        {
+            if (!set.IsCreated)
+                return;
+
+            RefreshPointerlessBytes(owner, label, EstimateNativeHashSetBytes<TKey>(set.Capacity));
+        }
+
+        /// <summary>
+        /// Refreshes a tracked native parallel multi-hash map allocation after an explicit capacity change.
+        /// </summary>
+        public static void RefreshNativeParallelMultiHashMap<TKey, TValue>(
+            NativeParallelMultiHashMap<TKey, TValue> map,
+            string owner,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            RefreshPointerlessBytes(owner, label, EstimateNativeMultiHashMapBytes<TKey, TValue>(map.Capacity));
         }
 
         /// <summary>
@@ -202,6 +351,38 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters a pointerless native hash map allocation by owner and label.
+        /// </summary>
+        public static void UnregisterNativeHashMap(string owner, string label)
+        {
+            Unregister(owner, label);
+        }
+
+        /// <summary>
+        /// Unregisters a pointerless native parallel hash map allocation by owner and label.
+        /// </summary>
+        public static void UnregisterNativeParallelHashMap(string owner, string label)
+        {
+            Unregister(owner, label);
+        }
+
+        /// <summary>
+        /// Unregisters a pointerless native parallel hash set allocation by owner and label.
+        /// </summary>
+        public static void UnregisterNativeParallelHashSet(string owner, string label)
+        {
+            Unregister(owner, label);
+        }
+
+        /// <summary>
+        /// Unregisters a pointerless native parallel multi-hash map allocation by owner and label.
+        /// </summary>
+        public static void UnregisterNativeParallelMultiHashMap(string owner, string label)
+        {
+            Unregister(owner, label);
+        }
+
+        /// <summary>
         /// Unregisters a pointerless native queue allocation by owner and label.
         /// </summary>
         public static void UnregisterNativeQueue(string owner, string label)
@@ -215,6 +396,9 @@ namespace Hecton8.Core
         public static void UnregisterPointer(void* pointer)
         {
             IntPtr target = (IntPtr)pointer;
+            if (target == IntPtr.Zero)
+                return;
+
             for (int i = 0; i < _count; i++)
             {
                 if (_records[i].Pointer != target)
@@ -291,6 +475,69 @@ namespace Hecton8.Core
             _count--;
             _records[index] = _records[_count];
             _records[_count] = default;
+        }
+
+        private static void RefreshPointerlessBytes(string owner, string label, long bytes)
+        {
+            if (bytes <= 0L)
+                return;
+
+            for (int i = _count - 1; i >= 0; i--)
+            {
+                NativeAllocationRecord record = _records[i];
+                if (record.Pointer != IntPtr.Zero ||
+                    !string.Equals(record.Owner, owner, StringComparison.Ordinal) ||
+                    !string.Equals(record.Label, label, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                long delta = bytes - record.Bytes;
+                if (delta == 0L)
+                    return;
+
+                record.Bytes = bytes;
+                _records[i] = record;
+                _trackedBytes += delta;
+                return;
+            }
+        }
+
+        private static long EstimateNativeHashMapBytes<TKey, TValue>(int capacity)
+            where TKey : unmanaged
+            where TValue : unmanaged
+        {
+            long safeCapacity = Math.Max(1, capacity);
+            long bytesPerEntry =
+                UnsafeUtility.SizeOf<TKey>() +
+                UnsafeUtility.SizeOf<TValue>() +
+                sizeof(int) +
+                1L;
+            return safeCapacity * bytesPerEntry;
+        }
+
+        private static long EstimateNativeHashSetBytes<TKey>(int capacity)
+            where TKey : unmanaged
+        {
+            long safeCapacity = Math.Max(1, capacity);
+            long bytesPerEntry =
+                UnsafeUtility.SizeOf<TKey>() +
+                sizeof(int) +
+                sizeof(int);
+            return safeCapacity * bytesPerEntry;
+        }
+
+        private static long EstimateNativeMultiHashMapBytes<TKey, TValue>(int capacity)
+            where TKey : unmanaged
+            where TValue : unmanaged
+        {
+            long safeCapacity = Math.Max(1, capacity);
+            long bytesPerEntry =
+                UnsafeUtility.SizeOf<TKey>() +
+                UnsafeUtility.SizeOf<TValue>() +
+                sizeof(int) +
+                sizeof(int);
+            return safeCapacity * bytesPerEntry;
         }
 
         private static string CaptureStackTrace()

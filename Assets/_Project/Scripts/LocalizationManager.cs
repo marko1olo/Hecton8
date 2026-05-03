@@ -93,9 +93,6 @@ namespace Hecton.Localization
 
         public static LocalizationManager Instance { get; private set; }
 
-        public static event Action<GameLanguage> OnLanguageChanged;
-        public static event Action OnCorruptionVisualStateChanged;
-
         [Header("=== Config ===")]
         [SerializeField] private GameLanguage defaultLanguage = GameLanguage.English;
 
@@ -130,6 +127,7 @@ namespace Hecton.Localization
         private GameLanguage _lastMadnessResolvedLanguage = (GameLanguage)(-1);
         private string _lastMadnessResolvedSourceToken = string.Empty;
         private string _lastMadnessResolvedValue = string.Empty;
+        private bool _registeredLocalizationRuntime;
 
         /// <summary>
         /// Active language for runtime lookups.
@@ -140,8 +138,6 @@ namespace Hecton.Localization
         private static void ResetStaticState()
         {
             Instance = null;
-            OnLanguageChanged = null;
-            OnCorruptionVisualStateChanged = null;
         }
 
         private void Awake()
@@ -153,7 +149,9 @@ namespace Hecton.Localization
             }
 
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            GlobalRegistry.RegisterLocalizationRuntime(this);
+            _registeredLocalizationRuntime = ReferenceEquals(GlobalRegistry.Localization, this);
+            GameBootstrapper.PersistRuntimeService(this);
 
             if (GetComponent<FontStreamingManager>() == null)
                 gameObject.AddComponent<FontStreamingManager>(); // COLD ALLOC: FontStreamingManager[1] — runtime staged localized font swap owner — owner: LocalizationManager
@@ -177,11 +175,15 @@ namespace Hecton.Localization
 
         private void OnDestroy()
         {
+            if (_registeredLocalizationRuntime)
+            {
+                GlobalRegistry.UnregisterLocalizationRuntime(this);
+                _registeredLocalizationRuntime = false;
+            }
+
             if (Instance == this)
             {
                 Instance = null;
-                OnLanguageChanged = null;
-                OnCorruptionVisualStateChanged = null;
             }
         }
 
@@ -307,7 +309,7 @@ namespace Hecton.Localization
             _externalPdaCorrosionIntensity = Mathf.Max(_externalPdaCorrosionIntensity, clampedIntensity);
             _externalPdaCorrosionEndTime = Mathf.Max(_externalPdaCorrosionEndTime, Time.unscaledTime + clampedDuration);
             _cachedHullStressFrame = -1;
-            OnCorruptionVisualStateChanged?.Invoke();
+            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
         }
 
         /// <summary>
@@ -351,7 +353,7 @@ namespace Hecton.Localization
         internal void RefreshHullStressHudCorruptionVisuals()
         {
             EvaluateMadnessOverrideState();
-            OnCorruptionVisualStateChanged?.Invoke();
+            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
         }
 
         /// <summary>
@@ -584,7 +586,7 @@ namespace Hecton.Localization
                 RefreshRuntimeRegistry();
 
             if (CurrentLanguage == language)
-                OnLanguageChanged?.Invoke(language);
+                LocalizationEvents.PublishLanguageChanged(language);
 
 #if UNITY_EDITOR
             Debug.Log($"[Localization] Injected {entries.Count} entries into {language} from '{sourceId}'.");
@@ -911,8 +913,9 @@ namespace Hecton.Localization
 
             _madnessLastRollBucket = rollBucket;
 
-            DepthZoneProfile currentZone = DepthZoneDirector.Instance != null
-                ? DepthZoneDirector.Instance.CurrentZone
+            DepthZoneDirector depthZoneDirector = GlobalRegistry.DepthZone;
+            DepthZoneProfile currentZone = depthZoneDirector != null
+                ? depthZoneDirector.CurrentZone
                 : null;
             string zoneToken = currentZone != null && !string.IsNullOrWhiteSpace(currentZone.zoneId)
                 ? currentZone.zoneId
@@ -933,7 +936,7 @@ namespace Hecton.Localization
             if (IsInDeadZoneContext())
                 return true;
 
-            DepthZoneDirector director = DepthZoneDirector.Instance;
+            DepthZoneDirector director = GlobalRegistry.DepthZone;
             DepthZoneProfile currentZone = director != null ? director.CurrentZone : null;
             return currentZone != null &&
                    string.Equals(currentZone.zoneId, DeepAbyssZoneId, StringComparison.Ordinal);
@@ -990,7 +993,7 @@ namespace Hecton.Localization
             if (_madnessActiveWindowId < 0 || _lastMadnessAudioWindowId == _madnessActiveWindowId)
                 return;
 
-            AcousticZoneController controller = AcousticZoneController.Instance;
+            AcousticZoneController controller = GlobalRegistry.AcousticZone;
             if (controller == null)
                 return;
 
@@ -1004,7 +1007,7 @@ namespace Hecton.Localization
                 return bucket;
 
             _lastPublishedVisualBucket = bucket;
-            OnCorruptionVisualStateChanged?.Invoke();
+            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, bucket);
             return bucket;
         }
 
@@ -1389,8 +1392,8 @@ namespace Hecton.Localization
 
         private void RestoreSavedLanguage()
         {
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
-            if (options.HasKey(PrefsLanguageKey))
+            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
+            if (options != null && options.HasKey(PrefsLanguageKey))
             {
                 int saved = options.GetInt(PrefsLanguageKey, (int)defaultLanguage);
                 if (Enum.IsDefined(typeof(GameLanguage), saved))
@@ -1474,8 +1477,8 @@ namespace Hecton.Localization
         {
             _lastPublishedVisualBucket = int.MinValue;
             RefreshRuntimeRegistry();
-            OnLanguageChanged?.Invoke(CurrentLanguage);
-            OnCorruptionVisualStateChanged?.Invoke();
+            LocalizationEvents.PublishLanguageChanged(CurrentLanguage);
+            LocalizationEvents.PublishCorruptionVisualStateChanged(CurrentLanguage, _lastPublishedVisualBucket);
         }
 
         private void RefreshRuntimeRegistry()
@@ -1485,7 +1488,10 @@ namespace Hecton.Localization
 
         private static void SavePersistentLanguagePreference(GameLanguage language)
         {
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
+            if (options == null)
+                return;
+
             options.SetInt(PrefsLanguageKey, (int)language);
             options.Save();
         }

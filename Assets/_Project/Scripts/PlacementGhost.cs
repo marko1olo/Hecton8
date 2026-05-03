@@ -28,6 +28,7 @@ namespace Hecton8.Building
 
         private Renderer[] _renderers;
         private Collider[] _ownColliders;
+        private Transform _cachedTransform;
         private bool _canBuild = true;
         private bool _collisionValid = true;
         private bool _externalValid = true;
@@ -72,7 +73,10 @@ namespace Hecton8.Building
             blockingMask = runtimeBlockingMask;
             checkShrink = runtimeShrink;
 
+            _cachedTransform = transform;
+            // COLD ALLOC: Renderer[][child renderer count] — runtime placement ghost renderer cache — owner: PlacementGhost
             _renderers = GetComponentsInChildren<Renderer>(true);
+            // COLD ALLOC: Collider[][child collider count] — runtime placement ghost own-collider cache — owner: PlacementGhost
             _ownColliders = GetComponentsInChildren<Collider>(true);
             RefreshBuildState();
             ApplyMaterial(_canBuild ? validMaterial : invalidMaterial);
@@ -80,7 +84,10 @@ namespace Hecton8.Building
 
         private void Awake()
         {
+            _cachedTransform = transform;
+            // COLD ALLOC: Renderer[][child renderer count] — placement ghost renderer cache — owner: PlacementGhost
             _renderers = GetComponentsInChildren<Renderer>(true);
+            // COLD ALLOC: Collider[][child collider count] — placement ghost own-collider cache — owner: PlacementGhost
             _ownColliders = GetComponentsInChildren<Collider>(true);
         }
 
@@ -113,9 +120,10 @@ namespace Hecton8.Building
 
         public void FixedTick(float fixedDeltaTime)
         {
-            Vector3 center = transform.TransformPoint(checkCenterOffset);
+            Transform cachedTransform = _cachedTransform;
+            Vector3 center = cachedTransform.TransformPoint(checkCenterOffset);
             Vector3 halfExtents = checkHalfExtents - Vector3.one * checkShrink;
-            Quaternion rotation = transform.rotation;
+            Quaternion rotation = cachedTransform.rotation;
 
             int overlapCount = UnityEngine.Physics.OverlapBoxNonAlloc(
                 center,
@@ -198,10 +206,11 @@ namespace Hecton8.Building
 #if UNITY_EDITOR
         private void OnDrawGizmosSelected()
         {
-            Vector3 center = transform.TransformPoint(checkCenterOffset);
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            Vector3 center = cachedTransform.TransformPoint(checkCenterOffset);
             Vector3 halfExtents = checkHalfExtents - Vector3.one * checkShrink;
 
-            Gizmos.matrix = Matrix4x4.TRS(center, transform.rotation, Vector3.one);
+            Gizmos.matrix = Matrix4x4.TRS(center, cachedTransform.rotation, Vector3.one);
             Gizmos.color = _canBuild
                 ? new Color(0f, 1f, 0f, 0.25f)
                 : new Color(1f, 0f, 0f, 0.25f);

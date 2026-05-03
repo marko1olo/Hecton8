@@ -9,6 +9,25 @@ Scope: `Assets/_Project/Scripts/`
 
 This is a static forensic report. No Play Mode was launched. No GCMonitor, Jobs Debugger, Memory Profiler, RenderDoc, or 10-minute retention run was captured. Findings are code-review evidence, not runtime measurements.
 
+## 2026-05-02 Source Recheck Delta
+
+Follow-up evidence: `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+
+Scan surface now reads:
+
+- `Assets/_Project/Scripts/`: `1047` C# files.
+- Current filesystem LOC under `Assets/_Project/Scripts`: `571562`.
+- `.agents-skills`: `52` mandate files indexed.
+
+Current strict `.Complete(` grep under `Assets/_Project/Scripts` finds `6` text hits:
+
+- `ItemCatalog.cs`: `dispatcher.Complete(...)` request completion callbacks.
+- `Optimization/AssetLifecycleGovernor.cs`: `dispatcher.Complete(...)` request completion callbacks.
+- `World/DispatcherJobSwap.cs`: one explicit `JobHandle.Complete()` in the dispatcher swap helper.
+
+This makes the older broad claim that `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick` currently own `.Complete()` barriers stale by strict source grep.
+Remaining risk is narrower: prove `DispatcherJobSwap` is only called in a legal dispatcher/end-of-frame swap window and capture runtime stall profiling.
+
 ## 2026-05-01 Source Recheck Delta
 
 Follow-up evidence: `Docs/Reports/2026-05-01_HEADLESS_FAUNA_CONSOLE_DELTA.md`.
@@ -17,17 +36,17 @@ Current source no longer matches the original `FaunaBrain.UpdateBioluminescentHy
 
 This does not prove fauna headless correctness. `FaunaSensorSuite` still uses player `Transform` / Rigidbody references for perception and distance gating, and no no-camera headless Play Mode test has been run.
 
-Scan surface:
+Original May 1 scan surface:
 
 - `Assets/_Project/Scripts/`: 1020 C# files.
 - First-party C# LOC scanned during the original Doomsday pass: 466768.
-- Current 2026-05-01 filesystem LOC under `Assets/_Project/Scripts`: 544728. Findings remain static-review findings and need a fresh full re-run for the new delta.
+- Current 2026-05-01 filesystem LOC under `Assets/_Project/Scripts`: 544728. Superseded for count purposes by the May 2 scan above.
 - `.agents-skills`: 52 mandate files indexed.
 - Mandates loaded for classification: `OPT_Zero_GC_Policy_AllocFree_Mandate`, `OPT_Native_Memory_Collections_JobSystem_Protocol`, `MATH_Coordinate_Precision_AUP_FloatingOrigin`, `CORE_Submarine_Vehicles_Kinematics_AUP`, `PHYS_Physics_Integrity_Determinism_ForceMode`, `ARCH_Global_Registry_ServiceLocator_DI_Init`, `DBG_Telemetry_Crash_Reporting_PostMortem`.
 
 Primary risk model:
 
-- CPU: frame-lane `.Complete()` barriers still exist in `Tick`/post-fixed code. Most are `IsCompleted` gated, but the architecture still allows local result ownership instead of a single global swap stage.
+- CPU: old frame-lane `.Complete()` barrier examples need reclassification; May 2 strict grep only finds one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs` plus custom dispatcher request completion callbacks. Runtime stall proof is still absent.
 - Headless correctness: some gameplay state transitions still depend on Camera or Animator components.
 - Native memory: 122 files contain `Allocator.Persistent` or `Allocator.TempJob`; the one clear no-local-dispose outlier is BRG direct-draw TempJob memory.
 - Physics correctness: `~0` / Everything masks and default layer fallbacks remain in runtime query paths.
@@ -37,8 +56,8 @@ Primary risk model:
 ## Surgery Log: 3 Most Dangerous Flaws
 
 1. CRITICAL: original `FaunaBrain.UpdateBioluminescentHypnosis()` camera dependency is stale by current source recheck; broader fauna headless proof is still absent because perception still depends on player Transform/Rigidbody paths and no no-camera Play Mode test was run.
-2. CRITICAL: `StorageCrate.OpenCrate()` can enter `Opening` and rely on `OnAnimationComplete()` for the `Open` transition. Animator present but event missing means inventory access can dead-state.
-3. HIGH: `JobHandle.Complete()` exists in `Tick` / `PostFixedTick` lanes. `IsCompleted` gates reduce stalls but do not satisfy the mandate: barriers are locally owned, not dispatcher-owned swap windows.
+2. CRITICAL: original `StorageCrate.OpenCrate()` Animator-event dead-state finding is stale by current source recheck; `OpenCrate()` now calls `CompleteOpen()` directly and `OnAnimationComplete()` is idempotent fallback. Play Mode proof is still absent.
+3. HIGH: original `JobHandle.Complete()` in `Tick` / `PostFixedTick` lane finding is stale by strict source grep. Current explicit `JobHandle.Complete()` evidence is `World/DispatcherJobSwap.cs`; verify legal swap-window usage and runtime stall cost before closure.
 
 ## CRITICAL Findings
 
@@ -79,7 +98,15 @@ Regression model:
 
 ### CRITICAL-02: Storage Crate State Depends On Animator Event
 
-Evidence:
+Status: STALE BY 2026-05-02 SOURCE RECHECK. Keep as historical evidence only.
+
+Current source evidence:
+
+- `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:314` calls `CompleteOpen()` directly from `OpenCrate()`.
+- `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:356` keeps `OnAnimationComplete()` as an idempotent fallback.
+- `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:875` guards `CompleteOpen()` against double-open state.
+
+Original evidence:
 
 - `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:296` sets `_state = CrateState.Opening`.
 - `Assets/_Project/Scripts/Gameplay/StorageCrate.cs:307` triggers `animator.SetTrigger(_openTriggerHash)`.
@@ -100,7 +127,7 @@ The state graph is:
 
 The second edge is presentation-driven when `animator != null`. If the presentation event is absent, `Opening` has no timeout or logic-owned exit edge.
 
-Required fix:
+Original required fix:
 
 - Logic owns the open transition; animation only reads state.
 - Use a gameplay timer or deterministic immediate state transition independent of Animator event.
@@ -118,7 +145,15 @@ Regression model:
 
 ### HIGH-01: Job Completion Barriers In Frame Lanes
 
-Evidence from method-context scan:
+Status: PARTIALLY STALE BY 2026-05-02 STRICT SOURCE GREP.
+
+Current evidence:
+
+- `Assets/_Project/Scripts/ItemCatalog.cs`: two `dispatcher.Complete(...)` request completion callbacks.
+- `Assets/_Project/Scripts/Optimization/AssetLifecycleGovernor.cs`: three `dispatcher.Complete(...)` request completion callbacks.
+- `Assets/_Project/Scripts/World/DispatcherJobSwap.cs`: one explicit `JobHandle.Complete()` in the dispatcher swap helper.
+
+Original method-context scan, now stale:
 
 - `Assets/_Project/Scripts/ProximityColliderSystem.cs:426` declares `Tick(float deltaTime)`.
 - `Assets/_Project/Scripts/ProximityColliderSystem.cs:456` calls `_jobHandle.Complete()`.
@@ -127,15 +162,15 @@ Evidence from method-context scan:
 - `Assets/_Project/Scripts/HectonFluidEngine.cs:789` declares `PostFixedTick(float fixedDeltaTime)`.
 - `Assets/_Project/Scripts/HectonFluidEngine.cs:796` calls `_scheduledBuoyancyHandle.Complete()`.
 
-Scan totals:
+Original scan totals, now stale:
 
 - Total `.Complete(` lexical hits in first-party scripts: 149.
 - Direct frame-lane `.Complete()` hits found by method-context scan: 3.
 - `.Complete()` inside job `Execute()` methods: none found by static method-context scan.
 
-Failure path:
+Current failure path:
 
-The listed calls are mostly `IsCompleted` gated. That avoids most hard stalls, but the job ownership model is still local: each owner decides when to consume results inside its own frame lane. That creates implicit ordering and mixed-generation state risk.
+The old listed call sites are not current by grep. The remaining `DispatcherJobSwap` helper may be legal if it is only reached from the dispatcher-owned swap window. Without runtime/frame-phase proof, it remains a stall-risk candidate, not a closed defect.
 
 Mathematical reason:
 

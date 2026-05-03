@@ -76,12 +76,15 @@ namespace Hecton8.World
         private const string CaveBlendSdfBlendLabel = "SdfBlend";
         private const string CaveBlendCarvePortalLabel = "CarvePortal";
 
+        // COLD ALLOC: List<WorldGenerativeGeologyBinding>[256] - loaded geology binding registry including inactive editor bindings - owner: WorldGenerativeGeologyBinding
+        private static readonly List<WorldGenerativeGeologyBinding> _knownBindings = new List<WorldGenerativeGeologyBinding>(256);
         private static readonly List<WorldGenerativeGeologyBinding> _activeBindings = new List<WorldGenerativeGeologyBinding>(256);
         private static readonly List<int> _staleBindingIndexBuffer = new List<int>(32);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
+            _knownBindings.Clear();
             _activeBindings.Clear();
             _staleBindingIndexBuffer.Clear();
         }
@@ -164,11 +167,13 @@ namespace Hecton8.World
         private void Awake()
         {
             CacheReferences();
+            RegisterKnownBinding(this);
         }
 
         private void OnEnable()
         {
             CacheReferences();
+            RegisterKnownBinding(this);
             RegisterActiveBinding(this);
         }
 
@@ -180,7 +185,15 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             UnregisterActiveBinding(this);
+            UnregisterKnownBinding(this);
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            RegisterKnownBinding(this);
+        }
+#endif
 
         private void CacheReferences()
         {
@@ -207,7 +220,32 @@ namespace Hecton8.World
                 destination.Add(binding);
             }
 
-            TrimStaleActiveBindings();
+            TrimStaleBindings(_activeBindings);
+        }
+
+        public static void CopyKnownBindingsTo(List<WorldGenerativeGeologyBinding> destination, bool includeInactive)
+        {
+            if (destination == null)
+                return;
+
+            destination.Clear();
+            _staleBindingIndexBuffer.Clear();
+            for (int i = 0; i < _knownBindings.Count; i++)
+            {
+                WorldGenerativeGeologyBinding binding = _knownBindings[i];
+                if (binding == null)
+                {
+                    _staleBindingIndexBuffer.Add(i);
+                    continue;
+                }
+
+                if (!includeInactive && !binding.isActiveAndEnabled)
+                    continue;
+
+                destination.Add(binding);
+            }
+
+            TrimStaleBindings(_knownBindings);
         }
 
         public static bool TryGetActiveBinding(long runtimeKey, out WorldGenerativeGeologyBinding binding)
@@ -230,12 +268,28 @@ namespace Hecton8.World
                     continue;
 
                 binding = candidate;
-                TrimStaleActiveBindings();
+                TrimStaleBindings(_activeBindings);
                 return true;
             }
 
-            TrimStaleActiveBindings();
+            TrimStaleBindings(_activeBindings);
             return false;
+        }
+
+        private static void RegisterKnownBinding(WorldGenerativeGeologyBinding binding)
+        {
+            if (binding == null || _knownBindings.Contains(binding))
+                return;
+
+            _knownBindings.Add(binding);
+        }
+
+        private static void UnregisterKnownBinding(WorldGenerativeGeologyBinding binding)
+        {
+            if (binding == null)
+                return;
+
+            _knownBindings.Remove(binding);
         }
 
         private static void RegisterActiveBinding(WorldGenerativeGeologyBinding binding)
@@ -254,15 +308,21 @@ namespace Hecton8.World
             _activeBindings.Remove(binding);
         }
 
-        private static void TrimStaleActiveBindings()
+        private static void TrimStaleBindings(List<WorldGenerativeGeologyBinding> bindings)
         {
+            if (bindings == null)
+            {
+                _staleBindingIndexBuffer.Clear();
+                return;
+            }
+
             for (int i = _staleBindingIndexBuffer.Count - 1; i >= 0; i--)
             {
                 int index = _staleBindingIndexBuffer[i];
-                if (index < 0 || index >= _activeBindings.Count)
+                if (index < 0 || index >= bindings.Count)
                     continue;
 
-                _activeBindings.RemoveAt(index);
+                bindings.RemoveAt(index);
             }
 
             _staleBindingIndexBuffer.Clear();

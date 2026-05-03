@@ -306,7 +306,7 @@ namespace Hecton8.Meta
         {
             RebindOwnerSubscriptions();
 
-            HectonDiscoveryManager discoveryManager = HectonDiscoveryManager.Instance;
+            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
             _currentRunBiomeDiscoveries = discoveryManager != null ? discoveryManager.TotalDiscovered : 0;
             if (_currentRunBiomeDiscoveries > _profile.highestBiomeDiscoveriesInSingleRun)
             {
@@ -434,7 +434,7 @@ namespace Hecton8.Meta
             if (_survivalSystem == null && playerObject != null)
                 playerObject.TryGetComponent(out _survivalSystem);
 
-            HectonDiscoveryManager discoveryManager = HectonDiscoveryManager.Instance;
+            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
             if (discoveryManager != null)
                 _currentRunBiomeDiscoveries = discoveryManager.TotalDiscovered;
 

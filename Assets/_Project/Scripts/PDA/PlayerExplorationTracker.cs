@@ -16,7 +16,7 @@ namespace Hecton8.PDA
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/PDA/Player Exploration Tracker")]
-    public sealed class PlayerExplorationTracker : MonoBehaviour, ITickable, ISaveable
+    public sealed class PlayerExplorationTracker : MonoBehaviour, ITickable, ISaveable, IMapMagicBiomeEventListener
     {
         private const int ExplorationChunkSizeMeters = ExplorationMapDTO.DenseChunkSizeMeters;
         private const int MaskAxisBits = ExplorationMapDTO.MortonMaskAxisBits;
@@ -44,6 +44,7 @@ namespace Hecton8.PDA
         private NativeList<int> _exploredBitIndices;
         private bool _registeredToTick;
         private bool _registeredToSave;
+        private bool _serviceRegistered;
         private bool _explorationMaskInitialized;
         private Vector3 _lastSampledPosition;
         private int _lastBitIndex = -1;
@@ -91,9 +92,10 @@ namespace Hecton8.PDA
                 Instance = this;
 
             InitializeExplorationMask();
+            TryRegisterService();
             TryRegisterWithTickManager();
             TryRegisterWithSaveManager();
-            MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
+            MapMagicBiomeEvents.Register(this);
             ResolvePlayerTransform(force: true);
         }
 
@@ -108,9 +110,10 @@ namespace Hecton8.PDA
 
         private void OnDisable()
         {
-            MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
+            MapMagicBiomeEvents.Unregister(this);
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
+            TryUnregisterService();
 
             if (Instance == this)
                 Instance = null;
@@ -118,9 +121,10 @@ namespace Hecton8.PDA
 
         private void OnDestroy()
         {
-            MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
+            MapMagicBiomeEvents.Unregister(this);
             UnregisterFromTickManager();
             UnregisterFromSaveManager();
+            TryUnregisterService();
             DisposeExplorationMask();
 
             if (Instance == this)
@@ -164,9 +168,22 @@ namespace Hecton8.PDA
         /// </summary>
         public bool TryWorldToChunk(Vector3 worldPosition, out Vector2Int chunkCoordinates)
         {
+            chunkCoordinates = default;
+            float chunkX = math.floor(worldPosition.x / ExplorationChunkSizeMeters);
+            float chunkZ = math.floor(worldPosition.z / ExplorationChunkSizeMeters);
+            if (!math.isfinite(chunkX) ||
+                !math.isfinite(chunkZ) ||
+                chunkX < -MaskOriginOffset ||
+                chunkZ < -MaskOriginOffset ||
+                chunkX >= MaskAxisLength - MaskOriginOffset ||
+                chunkZ >= MaskAxisLength - MaskOriginOffset)
+            {
+                return false;
+            }
+
             chunkCoordinates = new Vector2Int(
-                Mathf.FloorToInt(worldPosition.x / ExplorationChunkSizeMeters),
-                Mathf.FloorToInt(worldPosition.z / ExplorationChunkSizeMeters));
+                (int)chunkX,
+                (int)chunkZ);
             return true;
         }
 
@@ -199,7 +216,7 @@ namespace Hecton8.PDA
             for (int i = 0; i < count; i++)
             {
                 DecodeBitIndex(_exploredBitIndices[i], out int chunkX, out int chunkY, out int chunkZ);
-                buffer[i] = PDAKeyUtility.PackMortonChunkKey(chunkX, chunkY, chunkZ);
+                buffer[i] = PDAKeyUtility.TryPackMortonChunkKey(chunkX, chunkY, chunkZ, out long key) ? key : 0L;
             }
 
             return count;
@@ -566,9 +583,14 @@ namespace Hecton8.PDA
             if (!forwardBiomeDiscovery || biomeId <= 0)
                 return;
 
-            HectonDiscoveryManager discoveryManager = HectonDiscoveryManager.Instance;
+            HectonDiscoveryManager discoveryManager = GlobalRegistry.Discovery;
             if (discoveryManager != null)
                 discoveryManager.DiscoverBiome(biomeId);
+        }
+
+        void IMapMagicBiomeEventListener.OnMapMagicBiomeChanged(int biomeId)
+        {
+            HandleBiomeChanged(biomeId);
         }
 
         private void TryRegisterWithTickManager()
@@ -580,7 +602,7 @@ namespace Hecton8.PDA
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredToTick = true;
+            _registeredToTick = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void UnregisterFromTickManager()
@@ -615,6 +637,24 @@ namespace Hecton8.PDA
                 saveManager.Unregister(this);
 
             _registeredToSave = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterPlayerExplorationRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PlayerExploration, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterPlayerExplorationRuntime(this);
+            _serviceRegistered = false;
         }
 
 #if UNITY_EDITOR

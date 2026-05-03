@@ -165,7 +165,7 @@ Per-layer cull distances:
 
 **Enable/Disable:**
 ```csharp
-DynamicResolutionScaler.Instance.SetEnabled(true);
+GlobalRegistry.DynamicResolution?.SetEnabled(true);
 ```
 
 ---
@@ -305,62 +305,62 @@ Settings are restored from save data. If invalid, defaults to Medium preset.
 
 ```csharp
 // Register LOD group
-LODSystemManager.Instance.RegisterLODGroup(lodGroup);
+GlobalRegistry.LODSystem?.RegisterLODGroup(lodGroup);
 
 // Unregister LOD group
-LODSystemManager.Instance.UnregisterLODGroup(lodGroup);
+GlobalRegistry.LODSystem?.UnregisterLODGroup(lodGroup);
 
 // Set quality preset
-LODSystemManager.Instance.SetQualityPreset(LODQualityPreset.High);
+GlobalRegistry.LODSystem?.SetQualityPreset(LODQualityPreset.High);
 
 // Get LOD bias
-float bias = LODSystemManager.Instance.GetLODBias();
+float bias = GlobalRegistry.LODSystem != null ? GlobalRegistry.LODSystem.GetLODBias() : 1f;
 
 // Get registered count
-int count = LODSystemManager.Instance.RegisteredLODGroupCount;
+int count = GlobalRegistry.LODSystem != null ? GlobalRegistry.LODSystem.RegisteredLODGroupCount : 0;
 
 // Get CPU time
-float cpuTime = LODSystemManager.Instance.LODSystemCPUTime;
+float cpuTime = GlobalRegistry.LODSystem != null ? GlobalRegistry.LODSystem.LODSystemCPUTime : 0f;
 ```
 
 ### CullingManager
 
 ```csharp
 // Register cullable object
-CullingManager.Instance.RegisterCullableObject(gameObject, cullDistance);
+GlobalRegistry.Culling?.RegisterCullableObject(gameObject, cullDistance);
 
 // Unregister cullable object
-CullingManager.Instance.UnregisterCullableObject(gameObject);
+GlobalRegistry.Culling?.UnregisterCullableObject(gameObject);
 
 // Get culled counts
-int frustumCulled = CullingManager.Instance.FrustumCulledCount;
-int distanceCulled = CullingManager.Instance.DistanceCulledCount;
+int frustumCulled = GlobalRegistry.Culling != null ? GlobalRegistry.Culling.FrustumCulledCount : 0;
+int distanceCulled = GlobalRegistry.Culling != null ? GlobalRegistry.Culling.DistanceCulledCount : 0;
 ```
 
 ### DynamicResolutionScaler
 
 ```csharp
 // Enable/disable
-DynamicResolutionScaler.Instance.SetEnabled(true);
+GlobalRegistry.DynamicResolution?.SetEnabled(true);
 
 // Get current scale
-float scale = DynamicResolutionScaler.Instance.CurrentRenderScale;
+float scale = GlobalRegistry.DynamicResolution != null ? GlobalRegistry.DynamicResolution.CurrentRenderScale : 1f;
 
 // Set quality preset
-DynamicResolutionScaler.Instance.SetQualityPreset(LODQualityPreset.Medium);
+GlobalRegistry.DynamicResolution?.SetQualityPreset(LODQualityPreset.Medium);
 ```
 
 ### ImpostorSystem
 
 ```csharp
 // Register impostor candidate
-ImpostorSystem.Instance.RegisterImpostorCandidate(gameObject, lodGroup);
+GlobalRegistry.Impostors?.RegisterImpostorCandidate(gameObject, lodGroup);
 
 // Unregister impostor candidate
-ImpostorSystem.Instance.UnregisterImpostorCandidate(gameObject);
+GlobalRegistry.Impostors?.UnregisterImpostorCandidate(gameObject);
 
 // Get active impostor count
-int count = ImpostorSystem.Instance.ActiveImpostorCount;
+int count = GlobalRegistry.Impostors != null ? GlobalRegistry.Impostors.ActiveImpostorCount : 0;
 ```
 
 ---

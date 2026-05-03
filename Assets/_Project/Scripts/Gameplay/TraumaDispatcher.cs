@@ -2,6 +2,7 @@ using Hecton8.Core;
 using Hecton8.Audio;
 using Hecton8.Construction;
 using Hecton8.Physics;
+using Hecton8.World;
 using Hecton.Localization;
 using Unity.Collections;
 using Unity.Jobs;
@@ -15,7 +16,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(HectonSurvivalSystem))]
     [RequireComponent(typeof(HectonPlayerMovement))]
-    public sealed class TraumaDispatcher : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IDamageSignalReceiver, IModuleStatusEventListener
+    public sealed class TraumaDispatcher : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IDamageSignalReceiver, IModuleStatusEventListener, IElectromagneticPulseEventListener
     {
         private const float IntegrityChannelDecayPerSecond = 0.35f;
         private const float PowerChannelDecayPerSecond = 0.28f;
@@ -140,8 +141,9 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveReferences();
+            InitializeParasiteSporeLosBuffers();
             ModuleStatusEvents.Register(this);
-            PhysicsEventBus.OnElectromagneticPulse += HandleElectromagneticPulse;
+            PhysicsEventBus.Register((IElectromagneticPulseEventListener)this);
 
             if (_playerTransportCoordinator != null)
                 _playerTransportCoordinator.ActiveTransportLifecycleChanged += HandleTransportLifecycleChanged;
@@ -159,7 +161,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             ModuleStatusEvents.Unregister(this);
-            PhysicsEventBus.OnElectromagneticPulse -= HandleElectromagneticPulse;
+            PhysicsEventBus.Unregister((IElectromagneticPulseEventListener)this);
 
             if (_playerTransportCoordinator != null)
                 _playerTransportCoordinator.ActiveTransportLifecycleChanged -= HandleTransportLifecycleChanged;
@@ -168,7 +170,7 @@ namespace Hecton8.Gameplay
             ClearTransportBinding();
             TryUnregister();
             TryUnregisterLateFrame();
-            CompleteParasiteSporeLosQuery(true);
+            DisposeParasiteSporeLosBuffers();
             ResetChannels();
             ResetRadiationFatigue();
             PublishSignals(true);
@@ -177,7 +179,6 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregisterLateFrame();
-            CompleteParasiteSporeLosQuery(true);
             DisposeParasiteSporeLosBuffers();
         }
 
@@ -243,6 +244,14 @@ namespace Hecton8.Gameplay
                 default);
             _parasiteSporeLosScheduled = true;
             _pendingParasiteSporeLosQuery = false;
+        }
+
+        /// <summary>
+        /// Receives deferred electromagnetic pulse events from the physics event lane.
+        /// </summary>
+        public void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
+        {
+            HandleElectromagneticPulse(in pulseEvent);
         }
 
         /// <summary>
@@ -650,6 +659,16 @@ namespace Hecton8.Gameplay
             {
                 _parasiteSporeLosCommands = new NativeArray<RaycastCommand>(ParasiteSporeLosQueryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[1] — parasite spore line-of-sight command buffer — owner: TraumaDispatcher
                 _parasiteSporeLosHits = new NativeArray<RaycastHit>(ParasiteSporeLosQueryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[1] — parasite spore line-of-sight result buffer — owner: TraumaDispatcher
+                NativeMemorySentinel.RegisterNativeArray(
+                    _parasiteSporeLosCommands,
+                    nameof(TraumaDispatcher),
+                    nameof(_parasiteSporeLosCommands),
+                    NativeAllocationLifetime.Scene);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _parasiteSporeLosHits,
+                    nameof(TraumaDispatcher),
+                    nameof(_parasiteSporeLosHits),
+                    NativeAllocationLifetime.Scene);
             }
         }
 
@@ -676,10 +695,9 @@ namespace Hecton8.Gameplay
             if (!_parasiteSporeLosScheduled)
                 return;
 
-            if (!force && !_parasiteSporeLosHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _parasiteSporeLosHandle, force))
                 return;
 
-            _parasiteSporeLosHandle.Complete();
             _parasiteSporeLosScheduled = false;
             RaycastHit hit = _parasiteSporeLosHits[0];
             _parasiteSporeLosBlocked = hit.collider != null &&
@@ -696,17 +714,34 @@ namespace Hecton8.Gameplay
 
         private void DisposeParasiteSporeLosBuffers()
         {
+            bool disposeAfterScheduledQuery = _parasiteSporeLosScheduled;
+            JobHandle disposeDependency = _parasiteSporeLosHandle;
+
             if (_parasiteSporeLosCommands.IsCreated)
             {
-                _parasiteSporeLosCommands.Dispose();
+                NativeMemorySentinel.UnregisterNativeArray(_parasiteSporeLosCommands);
+                if (disposeAfterScheduledQuery)
+                    _parasiteSporeLosCommands.Dispose(disposeDependency);
+                else
+                    _parasiteSporeLosCommands.Dispose();
+
                 _parasiteSporeLosCommands = default;
             }
 
             if (_parasiteSporeLosHits.IsCreated)
             {
-                _parasiteSporeLosHits.Dispose();
+                NativeMemorySentinel.UnregisterNativeArray(_parasiteSporeLosHits);
+                if (disposeAfterScheduledQuery)
+                    _parasiteSporeLosHits.Dispose(disposeDependency);
+                else
+                    _parasiteSporeLosHits.Dispose();
+
                 _parasiteSporeLosHits = default;
             }
+
+            _parasiteSporeLosHandle = default;
+            _parasiteSporeLosScheduled = false;
+            ResetParasiteSporeLosState();
         }
 
         private void UpdateActiveParasiteAudioState()
@@ -778,7 +813,7 @@ namespace Hecton8.Gameplay
             if (_activeTransportOwner is MantaScooter mantaScooter)
                 mantaScooter.ApplyEmpDisruption(durationSeconds);
 
-            Hecton.Localization.LocalizationManager manager = Hecton.Localization.LocalizationManager.Instance;
+            Hecton.Localization.LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager != null)
                 manager.RequestExternalPdaCorrosion(claritySuppression01, durationSeconds);
         }

@@ -75,7 +75,7 @@ namespace Hecton8.Dev
         private void Awake()
         {
             ActiveRuntimeInstance = this;
-            DontDestroyOnLoad(gameObject);
+            GameBootstrapper.PersistRuntimeService(this);
             AutoResolve();
             LogVerbose($"Awake runOnStart={runOnStart} verbose={verboseLogging} scene={SceneManager.GetActiveScene().name}");
         }

@@ -10,7 +10,7 @@
 //   • Apply quality preset-based minimum scale
 //
 // ARCHITECTURE:
-//   • Singleton via DynamicResolutionScaler.Instance
+//   • GlobalRegistry.DynamicResolution is the authoritative runtime lookup.
 //   • ITickable — registers with GameTickManager
 //   • Zero-GC — no allocations in hot paths
 //
@@ -25,7 +25,6 @@
 //   • UniversalRenderPipeline.asset — render scale application
 // ============================================================================
 
-using System;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 using Hecton8.Core;
@@ -51,7 +50,10 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-130)] // Run after CullingManager
     public sealed class DynamicResolutionScaler : MonoBehaviour, ITickable, ISaveable
     {
-        private static readonly string[] RenderPressureStateLabels = Enum.GetNames(typeof(RenderPressureState));
+        private const string StablePressureStateLabel = "Stable";
+        private const string RecoveringPressureStateLabel = "Recovering";
+        private const string PressuredPressureStateLabel = "Pressured";
+        private const string CriticalPressureStateLabel = "Critical";
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -120,6 +122,7 @@ namespace Hecton8.World
         private int _recoveryHoldFramesRemaining = 0;
         private float _startupGraceRemainingSeconds;
         private bool _registered;
+        private bool _serviceRegistered;
         private LODQualityPreset _qualityPreset = LODQualityPreset.Medium;
         private float _smoothedFrameTimeMs;
         private float _peakFrameTimeMs;
@@ -240,12 +243,14 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
@@ -255,6 +260,7 @@ namespace Hecton8.World
 
             RestoreDefaultRenderScale();
             TryUnregister();
+            TryUnregisterService();
 
             // Clear singleton
             if (_instance == this)
@@ -275,9 +281,29 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
 
             _registered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterDynamicResolutionRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.DynamicResolution, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.DynamicResolution, this))
+                GlobalRegistry.UnregisterDynamicResolutionRuntime(this);
+
+            _serviceRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -594,8 +620,17 @@ namespace Hecton8.World
 
         private static string ResolvePressureStateLabel(RenderPressureState state)
         {
-            int index = (int)state;
-            return (uint)index < (uint)RenderPressureStateLabels.Length ? RenderPressureStateLabels[index] : RenderPressureStateLabels[0];
+            switch (state)
+            {
+                case RenderPressureState.Recovering:
+                    return RecoveringPressureStateLabel;
+                case RenderPressureState.Pressured:
+                    return PressuredPressureStateLabel;
+                case RenderPressureState.Critical:
+                    return CriticalPressureStateLabel;
+                default:
+                    return StablePressureStateLabel;
+            }
         }
 
         private float GetMinimumRenderScaleForPreset(LODQualityPreset preset)

@@ -88,6 +88,11 @@ namespace WaveHarmonic.Crest
         [UnityEditor.Callbacks.DidReloadScripts]
         static void OnReLoadScripts()
         {
+            if (Application.isBatchMode)
+            {
+                return;
+            }
+
             AfterScriptReload();
         }
     }

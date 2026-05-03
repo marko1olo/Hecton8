@@ -67,13 +67,13 @@ namespace Hecton8.Optimization.Editor
                 return;
             }
             
-            if (RenderTextureLifecycleTracker.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
             {
                 EditorGUILayout.HelpBox("RenderTextureLifecycleTracker not available. Ensure VRAMOptimizationBootstrap is running.", MessageType.Warning);
                 return;
             }
             
-            var tracker = RenderTextureLifecycleTracker.Instance;
+            var tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycle;
             
             // Summary
             EditorGUILayout.BeginVertical(EditorStyles.helpBox);

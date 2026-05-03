@@ -386,17 +386,6 @@ namespace Hecton8.Dev
             if (WorldGenerativeGeologyBinding.TryGetActiveBinding(runtimeKey, out binding))
                 return true;
 
-            WorldGenerativeGeologyBinding[] bindings =
-                FindObjectsByType<WorldGenerativeGeologyBinding>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < bindings.Length; i++)
-            {
-                if (bindings[i] == null || bindings[i].RuntimeKey != runtimeKey)
-                    continue;
-
-                binding = bindings[i];
-                return true;
-            }
-
             return false;
         }
 
@@ -405,15 +394,9 @@ namespace Hecton8.Dev
             if (runtimeKey == 0L)
                 return null;
 
-            WorldGenerativeGeologyVoxelRuntime[] runtimes =
-                FindObjectsByType<WorldGenerativeGeologyVoxelRuntime>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < runtimes.Length; i++)
-            {
-                if (runtimes[i] != null && runtimes[i].RuntimeKey == runtimeKey)
-                    return runtimes[i];
-            }
-
-            return null;
+            return WorldGenerativeGeologyVoxelRuntime.TryGetActiveRuntime(runtimeKey, out WorldGenerativeGeologyVoxelRuntime runtime)
+                ? runtime
+                : null;
         }
 
         private bool HasRequiredReferences()

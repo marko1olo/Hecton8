@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Hecton8.BuildTools;
 using UnityEngine;
 using Unity.Profiling;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 
 namespace Hecton8.Tools
@@ -81,7 +82,7 @@ namespace Hecton8.Tools
             }
 
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            GameBootstrapper.PersistRuntimeService(this);
             EnsureFrameBufferCapacity();
         }
 

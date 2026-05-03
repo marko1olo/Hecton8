@@ -442,6 +442,7 @@ namespace Hecton8.Physics
         private NativeArray<uint> _jobCompartmentFlags;
         private NativeArray<float> _bulkheadTransferDeltas;
         private NativeQueue<SplashEvent> _splashEventQueue;
+        private string _splashEventQueueSentinelLabel;
         private FluidMathCore _fluidMathCore;
         private bool _fluidSimulationRegistered;
 
@@ -1346,6 +1347,16 @@ namespace Hecton8.Physics
             _bulkheadTransferDeltas = new NativeArray<float>(BulkheadCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeQueue<SplashEvent>(Persistent) â€” deferred exterior splash payload queue for VFX consumers â€” owner: SubmarineFluidDynamics
             _splashEventQueue = new NativeQueue<SplashEvent>(Allocator.Persistent);
+            _splashEventQueueSentinelLabel = string.Concat(
+                nameof(_splashEventQueue),
+                "_",
+                EntityId.ToULong(GetEntityId()));
+            NativeMemorySentinel.RegisterNativeQueue(
+                _splashEventQueue,
+                ExteriorBuoyancySampleCount,
+                nameof(SubmarineFluidDynamics),
+                _splashEventQueueSentinelLabel,
+                NativeAllocationLifetime.Scene);
         }
 
         private void SeedNativeStateFromAuthoring()
@@ -1518,11 +1529,11 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _jobFloodVolumes);
             DisposeDeferred(ref _jobCompartmentFlags);
             DisposeDeferred(ref _bulkheadTransferDeltas);
-            _disposeHandle.Complete();
-            _disposeHandle = default;
+            DispatcherJobSwap.TryComplete(ref _disposeHandle, true);
 
             if (_splashEventQueue.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SubmarineFluidDynamics), _splashEventQueueSentinelLabel);
                 _splashEventQueue.Dispose();
                 _splashEventQueue = default;
             }
@@ -1581,7 +1592,7 @@ namespace Hecton8.Physics
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _registeredOriginShiftListener = true;
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void TryUnregister()
@@ -1647,7 +1658,7 @@ namespace Hecton8.Physics
                 return;
 
             // COLD SYNC JOB: authoritative state writes must not race a pending fluid transfer.
-            _fluidJobHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _fluidJobHandle, true);
             ApplyCompletedFluidTransfer();
         }
 
@@ -1657,16 +1668,18 @@ namespace Hecton8.Physics
                 return;
 
             // COLD SYNC JOB: authoritative compartment writes must not race a pending flood mass-properties job.
-            _massPropertiesJobHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _massPropertiesJobHandle, true);
             ApplyCompletedFloodMassProperties();
         }
 
         private void CompleteFluidTransferInPostFixedSwapWindow()
         {
-            if (!_fluidJobRunning || !_fluidJobHandle.IsCompleted || !_jobFloodVolumes.IsCreated || !_jobCompartmentFlags.IsCreated)
+            if (!_fluidJobRunning || !_jobFloodVolumes.IsCreated || !_jobCompartmentFlags.IsCreated)
                 return;
 
-            _fluidJobHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _fluidJobHandle, false))
+                return;
+
             ApplyCompletedFluidTransfer();
         }
 
@@ -1689,10 +1702,12 @@ namespace Hecton8.Physics
 
         private void CompleteFloodMassPropertiesInPostFixedSwapWindow()
         {
-            if (!_massPropertiesJobRunning || !_massPropertiesJobHandle.IsCompleted || !_massPropertiesBack.IsCreated)
+            if (!_massPropertiesJobRunning || !_massPropertiesBack.IsCreated)
                 return;
 
-            _massPropertiesJobHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _massPropertiesJobHandle, false))
+                return;
+
             ApplyCompletedFloodMassProperties();
         }
 
@@ -3782,7 +3797,7 @@ namespace Hecton8.Physics
         {
             if (sampleDepthFromAtmosphere)
             {
-                HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
+                HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
                 if (atmosphereManager != null && _cachedTransform != null)
                 {
                     float depthMeters = atmosphereManager.SeaLevelY - _cachedTransform.position.y;

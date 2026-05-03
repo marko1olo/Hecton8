@@ -30,12 +30,18 @@ namespace ScifiOffice
         public GameObject canvas;
 
         private InputManager _inputManager;
+        private CanvasGroup _canvasGroup;
+        private bool _mobileControlsVisible;
 
         private void Start()
         {
             rb = playerBody.GetComponent<Rigidbody>();
             col = playerBody.GetComponent<CapsuleCollider>();
             _inputManager = InputManager.Instance;
+            if (canvas != null && !canvas.TryGetComponent(out _canvasGroup))
+                _canvasGroup = canvas.AddComponent<CanvasGroup>(); // COLD ALLOC: CanvasGroup[1] - mobile demo controls visibility without per-frame SetActive - owner: DemoFirstPersonController
+            _mobileControlsVisible = controlType != ControlType.android;
+            SetMobileControlsVisible(controlType == ControlType.android);
 
             if (controlType == ControlType.keyboardMouse)
                 Cursor.lockState = CursorLockMode.Locked;
@@ -86,14 +92,28 @@ namespace ScifiOffice
             else if (controlType == ControlType.android)
             {
                 // Show mobile controls.
-                canvas.SetActive(true);
+                SetMobileControlsVisible(true);
             }
             else
             {
                 // Do not show mobile controls when using keyboard controls.
                 Crouch();
-                canvas.SetActive(false);
+                SetMobileControlsVisible(false);
             }
+        }
+
+        private void SetMobileControlsVisible(bool visible)
+        {
+            if (_mobileControlsVisible == visible)
+                return;
+
+            _mobileControlsVisible = visible;
+            if (_canvasGroup == null)
+                return;
+
+            _canvasGroup.alpha = visible ? 1f : 0f;
+            _canvasGroup.interactable = visible;
+            _canvasGroup.blocksRaycasts = visible;
         }
 
         public void Look(float deltaTime)

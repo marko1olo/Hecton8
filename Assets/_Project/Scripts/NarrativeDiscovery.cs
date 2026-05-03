@@ -14,7 +14,7 @@ using UnityEngine;
 namespace Hecton8.Interaction
 {
     [DisallowMultipleComponent]
-    public sealed class NarrativeDiscovery : MonoBehaviour, IInteractable
+    public sealed class NarrativeDiscovery : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
         private const string DefaultStudyVerbRu = "Изучить";
         private const string DefaultStudyVerbEn = "Study";
@@ -46,20 +46,30 @@ namespace Hecton8.Interaction
 
         private string _cachedInteractText;
         private bool _registeredLifecycle;
+        private static int _activeDiscoveryCount;
 
         public string DiscoveryId => discoveryId;
         public bool HasValidDiscoveryId => !string.IsNullOrWhiteSpace(discoveryId);
+        internal static int ActiveDiscoveryCount => _activeDiscoveryCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDiscoveryRegistry()
+        {
+            _activeDiscoveryCount = 0;
+        }
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RebuildCache();
 
             NarrativeEvents.RaiseNarrativePOIRegistered(this);
             _registeredLifecycle = true;
+            _activeDiscoveryCount++;
 
-            if (disableAfterDiscovery && HectonNarrativeDirector.Instance != null &&
-                HectonNarrativeDirector.Instance.HasDiscovery(discoveryId))
+            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
+            if (disableAfterDiscovery && narrativeDirector != null &&
+                narrativeDirector.HasDiscovery(discoveryId))
             {
                 gameObject.SetActive(false);
             }
@@ -67,12 +77,14 @@ namespace Hecton8.Interaction
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
 
             if (_registeredLifecycle)
             {
                 NarrativeEvents.RaiseNarrativePOIDisposed(this);
                 _registeredLifecycle = false;
+                if (_activeDiscoveryCount > 0)
+                    _activeDiscoveryCount--;
             }
 
             if (highlightObject != null)
@@ -123,10 +135,11 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            if (HectonNarrativeDirector.Instance != null && HectonNarrativeDirector.Instance.HasDiscovery(discoveryId))
+            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
+            if (narrativeDirector != null && narrativeDirector.HasDiscovery(discoveryId))
             {
-                if (linkedAudioLog != null && AudioLogSystem.Instance != null)
-                    AudioLogSystem.Instance.PlayLog(linkedAudioLog);
+                if (linkedAudioLog != null && Hecton8.Core.GlobalRegistry.AudioLogs != null)
+                    Hecton8.Core.GlobalRegistry.AudioLogs.PlayLog(linkedAudioLog);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.Log($"[Narrative] '{discoveryId}' already discovered.");
@@ -135,10 +148,11 @@ namespace Hecton8.Interaction
             }
 
             NarrativeEvents.RaiseDiscoveryMade(discoveryId);
-            HectonEventBus.Publish(new LoreAcquiredEvent(LoreDatabaseManager.ComputeLoreHash(discoveryId)));
+            LoreAcquiredEvent loreAcquiredEvent = new LoreAcquiredEvent(LoreDatabaseManager.ComputeLoreHash(discoveryId));
+            HectonEventBus.Publish(in loreAcquiredEvent);
 
-            if (linkedAudioLog != null && AudioLogSystem.Instance != null)
-                AudioLogSystem.Instance.PlayLog(linkedAudioLog);
+            if (linkedAudioLog != null && Hecton8.Core.GlobalRegistry.AudioLogs != null)
+                Hecton8.Core.GlobalRegistry.AudioLogs.PlayLog(linkedAudioLog);
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Narrative] Discovery made: {discoveryId} ({ResolveDisplayName()})");
@@ -159,6 +173,15 @@ namespace Hecton8.Interaction
             RebuildCache();
         }
 #endif
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void HandleLanguageChanged(GameLanguage language)
         {
@@ -192,7 +215,7 @@ namespace Hecton8.Interaction
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.AI;
@@ -4057,7 +4057,7 @@ namespace Hecton8.World
                 if (!_chunkBuildJobs.TryGetValue(key, out ChunkBuildJobState jobState) || jobState == null)
                     continue;
 
-                VegetationLateFrameJobSwap.TryComplete(ref jobState.Handle, forceComplete: true);
+                DispatcherJobSwap.TryComplete(ref jobState.Handle, forceComplete: true);
                 DisposeJobState(jobState);
                 _chunkBuildJobs.Remove(key);
             }
@@ -5387,7 +5387,7 @@ namespace Hecton8.World
             if (!_insideLateFrameJobSwap)
                 return false;
 
-            VegetationLateFrameJobSwap.TryComplete(ref readerHandle, forceComplete: false);
+            DispatcherJobSwap.TryComplete(ref readerHandle, forceComplete: false);
             return true;
         }
 
@@ -5748,7 +5748,10 @@ namespace Hecton8.World
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _isRegistered = true;
+            _isRegistered =
+                GlobalRegistry.Updatables.Contains(this) &&
+                GlobalRegistry.SlowTickables.Contains(this) &&
+                SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private void TryUnregister()

@@ -39,6 +39,7 @@ namespace Hecton8.Optimization
         [SerializeField, Range(1, 8)] private int maxEmergencyEvictionsPerPass = 4;
 
         private bool _registeredTick;
+        private bool _registeredService;
         private int _framesUntilSample;
         private int _baselineMipLimit;
         private int _activeMipLimit;
@@ -67,6 +68,7 @@ namespace Hecton8.Optimization
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
         }
 
@@ -78,11 +80,13 @@ namespace Hecton8.Optimization
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (_instance == this)
                 _instance = null;
@@ -114,6 +118,15 @@ namespace Hecton8.Optimization
             _registeredTick = true;
         }
 
+        private void TryRegisterService()
+        {
+            if (_registeredService || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterVRAMPressureRuntime(this);
+            _registeredService = true;
+        }
+
         private void TryUnregister()
         {
             if (!_registeredTick)
@@ -123,13 +136,22 @@ namespace Hecton8.Optimization
             _registeredTick = false;
         }
 
+        private void TryUnregisterService()
+        {
+            if (!_registeredService)
+                return;
+
+            GlobalRegistry.UnregisterVRAMPressureRuntime(this);
+            _registeredService = false;
+        }
+
         private void SampleAndRespond()
         {
-            VRAMMonitor monitor = VRAMMonitor.Instance;
+            VRAMMonitor monitor = GlobalRegistry.VRAMMonitor;
             if (monitor != null)
                 monitor.SlowTick();
 
-            AssetLifecycleGovernor governor = AssetLifecycleGovernor.Instance;
+            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
             long maxSystemRamBytes = (long)SystemInfo.systemMemorySize * 1024L * 1024L;
             long currentReservedBytes = Profiler.GetTotalReservedMemoryLong();
             if (governor != null)
@@ -212,7 +234,7 @@ namespace Hecton8.Optimization
 
                 if (monitor != null && monitor.RenderTextureBudgetUtilization >= 1f)
                 {
-                    RenderTexturePool pool = RenderTexturePool.Instance;
+                    RenderTexturePool pool = GlobalRegistry.RenderTexturePool;
                     if (pool != null)
                         pool.ClearAllPools();
                 }

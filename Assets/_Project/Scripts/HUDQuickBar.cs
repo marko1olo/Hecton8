@@ -229,7 +229,7 @@ namespace Hecton8.UI
 
         private void RefreshDurabilitySubscription()
         {
-            ToolDurabilitySystem currentSystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem currentSystem = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (ReferenceEquals(_subscribedDurabilitySystem, currentSystem))
                 return;
 
@@ -528,7 +528,7 @@ namespace Hecton8.UI
 
             if (prefab != null && prefab.TryGetComponent(out PlayerTool tool) && tool.Metadata != null)
             {
-                ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+                ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
                 if (durabilitySystem != null)
                 {
                     float maxDurability = tool.Metadata.maxDurability;

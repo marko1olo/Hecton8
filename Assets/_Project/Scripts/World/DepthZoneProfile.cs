@@ -78,7 +78,7 @@ namespace Hecton8.World
                 ? "UNKNOWN ZONE"
                 : resolvedDisplayName.ToUpperInvariant();
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             cachedHudLabel = manager != null
                 ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_ENTER, upperDisplayName)
                 : "ZONE: " + upperDisplayName;

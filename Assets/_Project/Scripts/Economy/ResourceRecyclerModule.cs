@@ -80,8 +80,14 @@ namespace Hecton8.Economy
         private readonly int[] _bufferQuantities = new int[MaxBufferSlots];
         private int _bufferedItemCount;
 
-        /// <summary>Live registry used by world pollution telemetry.</summary>
-        internal static List<ResourceRecyclerModule> ActiveModules => s_ActiveModules;
+        /// <summary>Active recycler count used by world pollution telemetry.</summary>
+        internal static int ActiveModuleCount => s_ActiveModules.Count;
+
+        /// <summary>Returns an active recycler by index without exposing mutable registry storage.</summary>
+        internal static ResourceRecyclerModule GetActiveModuleAt(int index)
+        {
+            return index >= 0 && index < s_ActiveModules.Count ? s_ActiveModules[index] : null;
+        }
 
         /// <summary>True while the recycler is actively drawing process power.</summary>
         internal bool IsProcessing => _isProcessing;
@@ -281,7 +287,7 @@ namespace Hecton8.Economy
                 _cachedInventory = interactor.GetComponentInParent<PlayerInventory>();
 
             if (_cachedInventory == null)
-                _cachedInventory = PlayerInventory.Instance;
+                _cachedInventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
 
             return _cachedInventory;
         }
@@ -462,7 +468,7 @@ namespace Hecton8.Economy
         private static float ResolvePowerMultiplier(ItemData sourceItem, int yieldUnits)
         {
             float scarcityScale = 1f;
-            ResourceScarcityDirector director = ResourceScarcityDirector.Instance;
+            ResourceScarcityDirector director = GlobalRegistry.ResourceScarcity;
             if (director != null && sourceItem != null)
                 scarcityScale = Mathf.Max(1f, director.GetIngredientMultiplier(sourceItem.PersistentId));
 

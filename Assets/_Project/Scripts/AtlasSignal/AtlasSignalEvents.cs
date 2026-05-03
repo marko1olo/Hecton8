@@ -32,25 +32,30 @@ namespace Hecton8.AtlasSignal
 
     public static class AtlasSignalEvents
     {
+        private const int PendingEventCapacity = 16;
+
         // COLD ALLOC: RegistryBucket<IAtlasSignalEventListener>[16] - Atlas signal listeners drained on dispatcher LateUpdate - owner: AtlasSignalEvents
         private static readonly RegistryBucket<IAtlasSignalEventListener> _listeners = new RegistryBucket<IAtlasSignalEventListener>(16);
         // COLD ALLOC: Dictionary<uint,string>[16] - decoded Atlas message IDs keyed by FNV-1a hash for cold-path listener resolution - owner: AtlasSignalEvents
         private static readonly Dictionary<uint, string> _decodedMessageIdsByHash = new Dictionary<uint, string>(16);
         private static NativeQueue<AtlasSignalEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(AtlasSignalEvents), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
 
             _listeners.Clear();
             _decodedMessageIdsByHash.Clear();
+            _pendingEventCount = 0;
         }
 
         public static void Register(IAtlasSignalEventListener listener)
@@ -78,19 +83,26 @@ namespace Hecton8.AtlasSignal
                 return;
             }
 
-            while (!_pendingEvents.IsEmpty())
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
                 if (!_pendingEvents.TryDequeue(out AtlasSignalEventPayload payload))
-                    return;
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
 
                 IAtlasSignalEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                     rawArray[i].OnAtlasSignalEvent(in payload);
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         public static uint ComputeMessageHash(string messageId)
@@ -147,17 +159,20 @@ namespace Hecton8.AtlasSignal
             if (messageHash == 0u)
                 return;
 
-            if (!_decodedMessageIdsByHash.ContainsKey(messageHash))
-                _decodedMessageIdsByHash.Add(messageHash, messageId);
-
-            Enqueue(new AtlasSignalEventPayload
+            if (!Enqueue(new AtlasSignalEventPayload
             {
                 SourcePosition = default,
                 SignalStrength = 0f,
                 MessageHash = messageHash,
                 EventType = (ushort)AtlasSignalEventType.Decoded,
                 Reserved = 0
-            });
+            }))
+            {
+                return;
+            }
+
+            if (!_decodedMessageIdsByHash.ContainsKey(messageHash))
+                _decodedMessageIdsByHash.Add(messageHash, messageId);
         }
 
         private static void EnsureInitialized()
@@ -165,13 +180,24 @@ namespace Hecton8.AtlasSignal
             if (!_pendingEvents.IsCreated)
             {
                 _pendingEvents = new NativeQueue<AtlasSignalEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<AtlasSignalEventPayload>[16] - deferred Atlas signal lane flushed by SystemDispatcher LateUpdate - owner: AtlasSignalEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(AtlasSignalEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
             }
         }
 
-        private static void Enqueue(in AtlasSignalEventPayload payload)
+        private static bool Enqueue(in AtlasSignalEventPayload payload)
         {
             EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+                return false;
+
             _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
         }
 
         private static void DrainWithoutDispatch()
@@ -179,9 +205,21 @@ namespace Hecton8.AtlasSignal
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out _))
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out _))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
     }
 }

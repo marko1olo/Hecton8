@@ -24,7 +24,7 @@ namespace Hecton8.UI
     /// HUD element that displays deployed beacons on screen.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class BeaconHUDElement : MonoBehaviour, ITickable, IUpdatable
+    public class BeaconHUDElement : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
         private static readonly char[] s_EmptyChars = new char[1];
 
@@ -111,14 +111,14 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizationCache();
             RegisterToTick();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             UnregisterFromTick();
             HideAllIcons();
         }
@@ -329,6 +329,15 @@ namespace Hecton8.UI
             return text;
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizationCache();
@@ -337,7 +346,7 @@ namespace Hecton8.UI
 
         private void RebuildLocalizationCache()
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             _distanceLanguage = manager != null ? manager.CurrentLanguage : GameLanguage.English;
             string unitLabel = LocalizedMeasurementFormatter.ResolveDistanceUnitLabel(_distanceLanguage);
             if (string.IsNullOrEmpty(unitLabel))

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -58,7 +59,13 @@ namespace Hecton8.Bootstrap
             "BIOS ERROR 0xBOOT\nEXPECTED: 00_BOOTSTRAP [0]\nDETECTED: {0} [{1}]\nACTION: FORCED RECOVERY";
         private const int BootstrapSceneLoadWatchdogFrames = 1200;
         private const int BootstrapJobWaitWatchdogFrames = 1200;
+        private const int BootstrapSceneRootScratchCapacity = 256;
+        private const int BootstrapTransformScratchCapacity = 4096;
         private static readonly UTF8Encoding _fatalBootCrashEncoding = new UTF8Encoding(false);
+        // COLD ALLOC: List<GameObject>[256] - bootstrap scene-root traversal scratch without scene-wide array allocation - owner: GameBootstrapper
+        private static readonly List<GameObject> _bootstrapSceneRootScratch = new List<GameObject>(BootstrapSceneRootScratchCapacity);
+        // COLD ALLOC: List<Transform>[4096] - bootstrap transform traversal scratch without recursive iterator allocation - owner: GameBootstrapper
+        private static readonly List<Transform> _bootstrapTransformScratch = new List<Transform>(BootstrapTransformScratchCapacity);
 
         private enum BootstrapPhase : byte
         {
@@ -199,11 +206,6 @@ namespace Hecton8.Bootstrap
         private int _bootstrapExecutionOrderCount;
 
         /// <summary>
-        /// Fires after the unified bootstrap state machine has completed its core phases.
-        /// </summary>
-        public static event Action OnBootstrapComplete;
-
-        /// <summary>
         /// True once the bootstrap core finished its ordered initialization phases.
         /// </summary>
         public static bool IsBootstrapComplete => _isBootstrapComplete;
@@ -217,6 +219,8 @@ namespace Hecton8.Bootstrap
         /// True once bootstrap shader and residency prewarm gates have completed.
         /// </summary>
         public static bool ArePreWarmAssetsReady => _preWarmAssetsReady;
+
+        internal static bool HasRuntimeInstance => _instance != null;
 
         /// <summary>
         /// True when all mandatory core services are registered and scene routing may proceed.
@@ -240,8 +244,8 @@ namespace Hecton8.Bootstrap
             _bootstrapInputManager = null;
             _headlessBootMode = false;
             _preWarmAssetsReady = false;
-            OnBootstrapComplete = null;
-
+            _bootstrapSceneRootScratch.Clear();
+            _bootstrapTransformScratch.Clear();
             if (_sceneGuardRegistered)
             {
                 SceneManager.sceneLoaded -= HandleSceneLoadedGuard;
@@ -280,10 +284,6 @@ namespace Hecton8.Bootstrap
         {
             if (_instance != null)
                 return _instance;
-
-            GameBootstrapper existing = UnityEngine.Object.FindAnyObjectByType<GameBootstrapper>();
-            if (existing != null)
-                return existing;
 
             Scene activeScene = SceneManager.GetActiveScene();
             GameObject runtimeRoot = new GameObject("[GameBootstrapper]"); // COLD ALLOC: GameObject[1] - bootstrap authority root when scene authoring omitted it - owner: GameBootstrapper
@@ -332,7 +332,12 @@ namespace Hecton8.Bootstrap
             _instance = this;
 
             if (Application.isPlaying)
+            {
+                if (transform.parent != null)
+                    transform.SetParent(null, true);
+
                 DontDestroyOnLoad(gameObject);
+            }
         }
 
         private void Start()
@@ -424,7 +429,7 @@ namespace Hecton8.Bootstrap
                 EnsureExtendedRegistryCoverageForActiveScene();
                 _isBootstrapComplete = true;
                 BootstrapBiosErrorOverlay.Hide();
-                OnBootstrapComplete?.Invoke();
+                BootstrapEvents.NotifyBootstrapComplete();
 
                 if (!await RunBootstrapPhaseAsync(BootstrapPhase.SceneActivate, BootstrapStepToken.SceneActivate, InitializeSceneActivatePhaseAsync, ct))
                     return false;
@@ -524,7 +529,9 @@ namespace Hecton8.Bootstrap
                 if (!_headlessBootMode)
                 {
                     VRAMEnforcer.InitializeRuntimeBudget();
-                    SceneInstantiationGate.EnsureRuntimeInstance();
+                    VRAMOptimizationBootstrap.EnsureRuntimeManagers();
+                    SceneInstantiationGate gate = SceneInstantiationGate.EnsureRuntimeInstance();
+                    PersistRuntimeService(gate);
                 }
 
                 if (!await WarmConfiguredShaderVariantCollectionsAsync(ct))
@@ -617,7 +624,7 @@ namespace Hecton8.Bootstrap
 
                 SceneBootstrap sceneBootstrap = _pendingSceneBootstrap;
                 if (sceneBootstrap == null)
-                    sceneBootstrap = UnityEngine.Object.FindAnyObjectByType<SceneBootstrap>();
+                    sceneBootstrap = SceneBootstrap.ActiveInstance;
 
                 if (sceneBootstrap == null)
                     return true;
@@ -750,7 +757,7 @@ namespace Hecton8.Bootstrap
                 return false;
             }
 
-            InputManager inputManager = UnityEngine.Object.FindAnyObjectByType<InputManager>(FindObjectsInactive.Include);
+            InputManager inputManager = InputManager.Instance;
             if (inputManager == null)
             {
                 GameObject inputRoot = new GameObject("[InputManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned native input owner - owner: GameBootstrapper
@@ -772,20 +779,23 @@ namespace Hecton8.Bootstrap
 
             _bootstrapInputManager = inputManager;
 
-            if (Application.isPlaying)
-                DontDestroyOnLoad(inputManager.gameObject);
+            PersistRuntimeService(inputManager);
+            UserOptionsPersistence userOptionsPersistence = UserOptionsPersistence.EnsureRuntimeInstance();
+            PersistRuntimeService(userOptionsPersistence);
+            if (userOptionsPersistence != null)
+                GlobalRegistry.RegisterUserOptionsRuntime(userOptionsPersistence);
 
-            RebindingManager rebindingManager = UnityEngine.Object.FindAnyObjectByType<RebindingManager>(FindObjectsInactive.Include);
+            RebindingManager rebindingManager = RebindingManager.ActiveRuntimeInstance;
             if (rebindingManager == null)
             {
                 GameObject rebindingRoot = new GameObject("[RebindingManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned input binding service - owner: GameBootstrapper
                 rebindingManager = rebindingRoot.AddComponent<RebindingManager>();
             }
 
-            if (Application.isPlaying && rebindingManager != null)
-                DontDestroyOnLoad(rebindingManager.gameObject);
+            PersistRuntimeService(rebindingManager);
 
-            ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
+            ContextualPhysicalIkRuntime contextualIkRuntime = ContextualPhysicalIkRuntime.EnsureRuntimeInstance();
+            PersistRuntimeService(contextualIkRuntime);
             if (!InitializeBootstrapLayerNodes(BootstrapPhase.Player))
                 return false;
 
@@ -1048,6 +1058,7 @@ namespace Hecton8.Bootstrap
                     if (sceneRuntimeService == null)
                         return false;
 
+                    PersistRuntimeService(sceneRuntimeService);
                     sceneRuntimeService.InitializeService();
                     return GlobalRegistry.Scene != null;
                 }
@@ -1067,6 +1078,7 @@ namespace Hecton8.Bootstrap
                     if (physicsApplySystem == null)
                         return false;
 
+                    PersistRuntimeService(physicsApplySystem);
                     physicsApplySystem.InitializeService();
                     return GlobalRegistry.Physics != null;
                 }
@@ -1077,6 +1089,7 @@ namespace Hecton8.Bootstrap
                     if (debrisManager == null)
                         return false;
 
+                    PersistRuntimeService(debrisManager);
                     debrisManager.InitializeService();
                     return GlobalRegistry.Debris != null;
                 }
@@ -1087,6 +1100,7 @@ namespace Hecton8.Bootstrap
                     if (environmentContextService == null)
                         return false;
 
+                    PersistRuntimeService(environmentContextService);
                     environmentContextService.InitializeService();
                     return GlobalRegistry.Environment != null;
                 }
@@ -1097,6 +1111,7 @@ namespace Hecton8.Bootstrap
                     if (oceanKinematicsRuntimeService == null)
                         return false;
 
+                    PersistRuntimeService(oceanKinematicsRuntimeService);
                     oceanKinematicsRuntimeService.InitializeService();
                     return GlobalRegistry.OceanKinematics != null;
                 }
@@ -1128,6 +1143,7 @@ namespace Hecton8.Bootstrap
                     if (playerContextService == null)
                         return false;
 
+                    PersistRuntimeService(playerContextService);
                     playerContextService.InitializeServiceDeferredSync();
                     return GlobalRegistry.Player != null;
                 }
@@ -1138,6 +1154,7 @@ namespace Hecton8.Bootstrap
                     if (playerInventoryManager == null)
                         return false;
 
+                    PersistRuntimeService(playerInventoryManager);
                     playerInventoryManager.InitializeService();
                     return GlobalRegistry.PlayerInventory != null;
                 }
@@ -1148,6 +1165,7 @@ namespace Hecton8.Bootstrap
                     if (playerSensoryManager == null)
                         return false;
 
+                    PersistRuntimeService(playerSensoryManager);
                     playerSensoryManager.InitializeService();
                     return GlobalRegistry.PlayerSensory != null;
                 }
@@ -1164,7 +1182,7 @@ namespace Hecton8.Bootstrap
         {
             SystemDispatcher dispatcher = GlobalRegistry.Dispatcher;
             if (dispatcher == null)
-                dispatcher = UnityEngine.Object.FindAnyObjectByType<SystemDispatcher>();
+                dispatcher = SystemDispatcher.ActiveRuntimeInstance;
 
             if (dispatcher == null)
             {
@@ -1172,18 +1190,35 @@ namespace Hecton8.Bootstrap
                 dispatcher = runtimeRoot.AddComponent<SystemDispatcher>();
             }
 
-            if (Application.isPlaying)
-                DontDestroyOnLoad(dispatcher.gameObject);
+            PersistRuntimeService(dispatcher);
 
             dispatcher.InitializeService();
             return dispatcher;
+        }
+
+        internal static void PersistRuntimeService(Component component)
+        {
+            if (!Application.isPlaying || component == null)
+                return;
+
+            GameBootstrapper bootstrapper = _instance;
+            if (bootstrapper == null)
+                return;
+
+            Transform bootstrapTransform = bootstrapper.transform;
+            Transform componentTransform = component.transform;
+            if (componentTransform == bootstrapTransform)
+                return;
+
+            if (componentTransform.parent != bootstrapTransform)
+                componentTransform.SetParent(bootstrapTransform, true);
         }
 
         private static GameTickManager EnsureGameTickManagerRegistered()
         {
             GameTickManager tickManager = GlobalRegistry.TickManager;
             if (tickManager == null)
-                tickManager = UnityEngine.Object.FindAnyObjectByType<GameTickManager>();
+                tickManager = GameTickManager.ActiveRuntimeInstance;
 
             if (tickManager == null)
             {
@@ -1191,8 +1226,7 @@ namespace Hecton8.Bootstrap
                 tickManager = runtimeRoot.AddComponent<GameTickManager>();
             }
 
-            if (Application.isPlaying)
-                DontDestroyOnLoad(tickManager.gameObject);
+            PersistRuntimeService(tickManager);
 
             tickManager.InitializeService();
             return tickManager;
@@ -1202,7 +1236,7 @@ namespace Hecton8.Bootstrap
         {
             SaveManager saveManager = GlobalRegistry.SaveRuntime;
             if (saveManager == null)
-                saveManager = UnityEngine.Object.FindAnyObjectByType<SaveManager>();
+                saveManager = SaveManager.ActiveRuntimeInstance;
 
             if (saveManager == null)
             {
@@ -1210,8 +1244,7 @@ namespace Hecton8.Bootstrap
                 saveManager = runtimeRoot.AddComponent<SaveManager>();
             }
 
-            if (Application.isPlaying)
-                DontDestroyOnLoad(saveManager.gameObject);
+            PersistRuntimeService(saveManager);
 
             saveManager.InitializeService();
             return saveManager;
@@ -1221,7 +1254,7 @@ namespace Hecton8.Bootstrap
         {
             ObjectPoolManager objectPoolManager = GlobalRegistry.ObjectPool;
             if (objectPoolManager == null)
-                objectPoolManager = UnityEngine.Object.FindAnyObjectByType<ObjectPoolManager>();
+                objectPoolManager = ObjectPoolManager.ActiveRuntimeInstance;
 
             if (objectPoolManager == null)
             {
@@ -1229,8 +1262,7 @@ namespace Hecton8.Bootstrap
                 objectPoolManager = runtimeRoot.AddComponent<ObjectPoolManager>();
             }
 
-            if (Application.isPlaying)
-                DontDestroyOnLoad(objectPoolManager.gameObject);
+            PersistRuntimeService(objectPoolManager);
 
             objectPoolManager.InitializeService();
             return objectPoolManager;
@@ -1240,7 +1272,7 @@ namespace Hecton8.Bootstrap
         {
             RenderDispatcher dispatcher = GlobalRegistry.RenderDispatcher;
             if (dispatcher == null)
-                dispatcher = UnityEngine.Object.FindAnyObjectByType<RenderDispatcher>();
+                dispatcher = RenderDispatcher.ActiveRuntimeInstance;
 
             if (dispatcher == null)
             {
@@ -1248,6 +1280,7 @@ namespace Hecton8.Bootstrap
                 dispatcher = runtimeRoot.AddComponent<RenderDispatcher>();
             }
 
+            PersistRuntimeService(dispatcher);
             dispatcher.InitializeService();
             return dispatcher;
         }
@@ -1257,7 +1290,7 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.InteractionSignals is EquipmentInteractionHandler registeredHandler)
                 return registeredHandler;
 
-            EquipmentInteractionHandler interactionHandler = UnityEngine.Object.FindAnyObjectByType<EquipmentInteractionHandler>();
+            EquipmentInteractionHandler interactionHandler = EquipmentInteractionHandler.ActiveRuntimeInstance;
             if (interactionHandler == null)
             {
                 GameObject runtimeRoot = new GameObject("[EquipmentInteractionHandler]"); // COLD ALLOC: GameObject[1] - bootstrap-owned interaction signal root - owner: GameBootstrapper
@@ -1278,7 +1311,13 @@ namespace Hecton8.Bootstrap
             }
 
             if (Application.isPlaying)
+            {
+                Transform telemetryTransform = telemetry.transform;
+                if (telemetryTransform.parent != null)
+                    telemetryTransform.SetParent(null, true);
+
                 DontDestroyOnLoad(telemetry.gameObject);
+            }
 
             return telemetry;
         }
@@ -1299,8 +1338,7 @@ namespace Hecton8.Bootstrap
                 enableWindowLogging: false,
                 sampleWindow: 2f);
 
-            if (Application.isPlaying)
-                DontDestroyOnLoad(profiler.gameObject);
+            PersistRuntimeService(profiler);
 
             return profiler;
         }
@@ -1308,15 +1346,17 @@ namespace Hecton8.Bootstrap
 
         private static PrefabRegistry EnsurePrefabRegistry()
         {
-            PrefabRegistry registry = PrefabRegistry.Instance;
+            PrefabRegistry registry = PrefabRegistry.ActiveRuntimeInstance;
             if (registry != null)
+            {
+                PersistRuntimeService(registry);
                 return registry;
+            }
 
             GameObject runtimeRoot = new GameObject(PrefabRegistryRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-owned prefab registry fallback - owner: GameBootstrapper
-            if (Application.isPlaying)
-                DontDestroyOnLoad(runtimeRoot);
-
-            return runtimeRoot.AddComponent<PrefabRegistry>();
+            PrefabRegistry createdRegistry = runtimeRoot.AddComponent<PrefabRegistry>();
+            PersistRuntimeService(createdRegistry);
+            return createdRegistry;
         }
 
         private static PersistentWorldRegistry EnsurePersistentWorldRegistry()
@@ -1326,26 +1366,16 @@ namespace Hecton8.Bootstrap
                 return registry;
 
             GameObject runtimeRoot = new GameObject(PersistentWorldRegistryRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-owned persistent world registry fallback - owner: GameBootstrapper
-            if (Application.isPlaying)
-                DontDestroyOnLoad(runtimeRoot);
-
-            return runtimeRoot.AddComponent<PersistentWorldRegistry>();
+            PersistentWorldRegistry createdRegistry = runtimeRoot.AddComponent<PersistentWorldRegistry>();
+            PersistRuntimeService(createdRegistry);
+            return createdRegistry;
         }
 
         private static HectonFloatingOrigin EnsureFloatingOriginRegistered()
         {
-            HectonFloatingOrigin origin = HectonFloatingOrigin.Instance;
-            if (origin == null)
-                origin = UnityEngine.Object.FindAnyObjectByType<HectonFloatingOrigin>();
+            HectonFloatingOrigin origin = HectonFloatingOrigin.Instance ?? HectonFloatingOrigin.EnsureRuntimeInstance();
 
-            if (origin == null)
-            {
-                GameObject runtimeRoot = new GameObject("[HectonFloatingOrigin]"); // COLD ALLOC: GameObject[1] - bootstrap-owned AUP/floating-origin authority for headless simulation - owner: GameBootstrapper
-                origin = runtimeRoot.AddComponent<HectonFloatingOrigin>();
-            }
-
-            if (Application.isPlaying)
-                DontDestroyOnLoad(origin.gameObject);
+            PersistRuntimeService(origin);
 
             origin.InitializeService();
             return origin;
@@ -1355,7 +1385,7 @@ namespace Hecton8.Bootstrap
         {
             GlobalPhysicsStateManager manager = GlobalRegistry.PhysicsStateManager;
             if (manager == null)
-                manager = UnityEngine.Object.FindAnyObjectByType<GlobalPhysicsStateManager>();
+                manager = GlobalPhysicsStateManager.ActiveRuntimeInstance;
 
             if (manager == null)
             {
@@ -1363,6 +1393,7 @@ namespace Hecton8.Bootstrap
                 manager = runtimeRoot.AddComponent<GlobalPhysicsStateManager>();
             }
 
+            PersistRuntimeService(manager);
             manager.InitializeService();
             return manager;
         }
@@ -1371,16 +1402,12 @@ namespace Hecton8.Bootstrap
         {
             EcosystemDirector director = EcosystemDirector.ActiveRuntimeInstance;
             if (director == null)
-                director = UnityEngine.Object.FindAnyObjectByType<EcosystemDirector>();
-
-            if (director == null)
             {
                 GameObject runtimeRoot = new GameObject("[EcosystemDirector]"); // COLD ALLOC: GameObject[1] - bootstrap-owned data-only ecosystem simulation owner - owner: GameBootstrapper
                 director = runtimeRoot.AddComponent<EcosystemDirector>();
             }
 
-            if (Application.isPlaying)
-                DontDestroyOnLoad(director.gameObject);
+            PersistRuntimeService(director);
 
             director.InitializeService();
             return director;
@@ -1393,9 +1420,6 @@ namespace Hecton8.Bootstrap
                 return true;
 
             FaunaDirector faunaDirector = FaunaDirector.ActiveRuntimeInstance;
-            if (faunaDirector == null && !_headlessBootMode)
-                faunaDirector = UnityEngine.Object.FindAnyObjectByType<FaunaDirector>();
-
             if (faunaDirector != null)
                 faunaDirector.InitializeService();
 
@@ -1414,7 +1438,7 @@ namespace Hecton8.Bootstrap
                 return registeredDispatcher;
             }
 
-            InputDispatcher dispatcher = UnityEngine.Object.FindAnyObjectByType<InputDispatcher>();
+            InputDispatcher dispatcher = InputDispatcher.ActiveRuntimeInstance;
             if (dispatcher == null)
             {
                 GameObject runtimeRoot = new GameObject("[InputDispatcher]"); // COLD ALLOC: GameObject[1] - bootstrap-owned input dispatcher root - owner: GameBootstrapper
@@ -1431,7 +1455,7 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.PowerGrid is PowerGridManager registeredPowerGrid)
                 return registeredPowerGrid;
 
-            PowerGridManager powerGridManager = UnityEngine.Object.FindAnyObjectByType<PowerGridManager>();
+            PowerGridManager powerGridManager = PowerGridManager.ActiveRuntimeInstance;
             if (powerGridManager == null)
             {
                 GameObject runtimeRoot = new GameObject("[PowerGridManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned power grid runtime root - owner: GameBootstrapper
@@ -1447,7 +1471,7 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.Logistics is ConstructionManager registeredConstruction)
                 return registeredConstruction;
 
-            ConstructionManager constructionManager = UnityEngine.Object.FindAnyObjectByType<ConstructionManager>();
+            ConstructionManager constructionManager = ConstructionManager.ActiveRuntimeInstance;
             if (constructionManager == null)
                 return null;
 
@@ -1460,15 +1484,14 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.Audio is SpatialAudioManager registeredAudioService)
                 return registeredAudioService;
 
-            SpatialAudioManager sceneAudioService = UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>();
+            SpatialAudioManager sceneAudioService = SpatialAudioManager.ActiveRuntimeInstance;
             if (sceneAudioService != null)
                 return sceneAudioService;
 
             GameObject runtimeRoot = new GameObject("[SpatialAudioManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned audio service root - owner: GameBootstrapper
-            if (Application.isPlaying)
-                DontDestroyOnLoad(runtimeRoot);
-
-            return runtimeRoot.AddComponent<SpatialAudioManager>(); // COLD ALLOC: SpatialAudioManager[1] - bootstrap-owned audio service runtime - owner: GameBootstrapper
+            SpatialAudioManager createdAudioService = runtimeRoot.AddComponent<SpatialAudioManager>(); // COLD ALLOC: SpatialAudioManager[1] - bootstrap-owned audio service runtime - owner: GameBootstrapper
+            PersistRuntimeService(createdAudioService);
+            return createdAudioService;
         }
 
         private static bool InitializeSpatialAudioBootstrapNode()
@@ -1703,7 +1726,7 @@ namespace Hecton8.Bootstrap
             if (_isBootstrapComplete)
             {
                 EnsureExtendedRegistryCoverageForActiveScene();
-                SceneBootstrap sceneBootstrap = UnityEngine.Object.FindAnyObjectByType<SceneBootstrap>();
+                SceneBootstrap sceneBootstrap = SceneBootstrap.ActiveInstance;
                 if (sceneBootstrap != null)
                     RequestSceneActivation(sceneBootstrap);
 
@@ -1753,7 +1776,7 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.ThermodynamicsService != null)
                 return;
 
-            AbyssalThermalManager manager = UnityEngine.Object.FindAnyObjectByType<AbyssalThermalManager>();
+            AbyssalThermalManager manager = AbyssalThermalManager.Instance;
             if (manager != null)
                 GlobalRegistry.RegisterThermodynamicsRuntime(manager);
         }
@@ -1763,7 +1786,7 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.Logistics != null)
                 return;
 
-            ConstructionManager manager = UnityEngine.Object.FindAnyObjectByType<ConstructionManager>();
+            ConstructionManager manager = ConstructionManager.ActiveRuntimeInstance;
             if (manager != null)
                 GlobalRegistry.RegisterLogisticsService(manager);
         }
@@ -1773,7 +1796,7 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.WorldGen != null)
                 return;
 
-            WorldProceduralScatterDirector director = UnityEngine.Object.FindAnyObjectByType<WorldProceduralScatterDirector>();
+            WorldProceduralScatterDirector director = WorldProceduralScatterDirector.ActiveRuntimeInstance;
             if (director != null)
                 GlobalRegistry.RegisterWorldGenService(director);
         }
@@ -1783,7 +1806,7 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.EncounterDirector != null)
                 return;
 
-            HectonDirectorAI director = UnityEngine.Object.FindAnyObjectByType<HectonDirectorAI>();
+            HectonDirectorAI director = HectonDirectorAI.ActiveRuntimeInstance;
             if (director != null)
                 GlobalRegistry.RegisterEncounterDirectorService(director);
         }
@@ -1793,22 +1816,15 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.QuestSystem != null)
                 return;
 
-            QuestManager questManager = UnityEngine.Object.FindAnyObjectByType<QuestManager>();
+            QuestManager questManager = QuestManager.ActiveRuntimeInstance;
             if (questManager != null)
                 GlobalRegistry.RegisterQuestRuntime(questManager);
         }
 
         private static void EnsureBootstrapAudioListener(Scene bootstrapScene)
         {
-            AudioListener[] listeners = UnityEngine.Object.FindObjectsByType<AudioListener>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < listeners.Length; i++)
-            {
-                AudioListener listener = listeners[i];
-                if (listener == null || !listener.enabled || !listener.gameObject.activeInHierarchy)
-                    continue;
-
+            if (HasActiveAudioListener(bootstrapScene))
                 return;
-            }
 
             GameObject listenerObject = new GameObject(BootstrapAudioListenerRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-only audio listener before menu handoff - owner: GameBootstrapper
             if (bootstrapScene.IsValid())
@@ -1819,6 +1835,54 @@ namespace Hecton8.Bootstrap
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeDiagnosticsTrace.WriteEvent("bootstrap.audio", "created bootstrap-only listener");
 #endif
+        }
+
+        private static bool HasActiveAudioListener(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return false;
+
+            _bootstrapSceneRootScratch.Clear();
+            _bootstrapTransformScratch.Clear();
+            scene.GetRootGameObjects(_bootstrapSceneRootScratch);
+
+            for (int i = 0; i < _bootstrapSceneRootScratch.Count; i++)
+            {
+                GameObject root = _bootstrapSceneRootScratch[i];
+                if (root == null || !root.activeInHierarchy)
+                    continue;
+
+                _bootstrapTransformScratch.Add(root.transform);
+            }
+
+            while (_bootstrapTransformScratch.Count > 0)
+            {
+                int lastIndex = _bootstrapTransformScratch.Count - 1;
+                Transform current = _bootstrapTransformScratch[lastIndex];
+                _bootstrapTransformScratch.RemoveAt(lastIndex);
+
+                if (current == null)
+                    continue;
+
+                GameObject currentObject = current.gameObject;
+                if (currentObject.activeInHierarchy &&
+                    currentObject.TryGetComponent(out AudioListener listener) &&
+                    listener != null &&
+                    listener.enabled)
+                {
+                    _bootstrapSceneRootScratch.Clear();
+                    _bootstrapTransformScratch.Clear();
+                    return true;
+                }
+
+                int childCount = current.childCount;
+                for (int i = 0; i < childCount; i++)
+                    _bootstrapTransformScratch.Add(current.GetChild(i));
+            }
+
+            _bootstrapSceneRootScratch.Clear();
+            _bootstrapTransformScratch.Clear();
+            return false;
         }
 
         private static async Awaitable WaitForJobCompletionAsync(JobHandle handle, CancellationToken ct)
@@ -1847,7 +1911,7 @@ namespace Hecton8.Bootstrap
             }
             finally
             {
-                handle.Complete();
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
             }
         }
 
@@ -2001,6 +2065,12 @@ namespace Hecton8.Bootstrap
         }
 
         /// <inheritdoc />
+        public bool TryEmitModAcousticPing(UnityEngine.Vector3 runtimePosition, float intensity01)
+        {
+            return false;
+        }
+
+        /// <inheritdoc />
         public void StopAll()
         {
         }
@@ -2097,7 +2167,9 @@ namespace Hecton8.Bootstrap
                 return _instance;
 
             GameObject runtimeRoot = new GameObject(OverlayRootName); // COLD ALLOC: GameObject[1] - hardware-error BIOS fallback overlay root - owner: HardwareErrorCanvas
+            GameBootstrapper.EnsureRuntimeInstance();
             HardwareErrorCanvas overlay = runtimeRoot.AddComponent<HardwareErrorCanvas>();
+            GameBootstrapper.PersistRuntimeService(overlay);
             return overlay;
         }
 
@@ -2112,7 +2184,7 @@ namespace Hecton8.Bootstrap
             _instance = this;
 
             if (Application.isPlaying)
-                DontDestroyOnLoad(gameObject);
+                GameBootstrapper.PersistRuntimeService(this);
 
             BuildVisualTree();
         }

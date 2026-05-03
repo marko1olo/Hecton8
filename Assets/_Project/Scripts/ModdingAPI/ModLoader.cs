@@ -51,8 +51,6 @@ namespace Hecton8.Modding
         private static bool _hooksInstalled;
         private static bool _shutdownInvoked;
 
-        internal static event Action RuntimeRegistryChanged;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -66,7 +64,6 @@ namespace Hecton8.Modding
             _modsInitialized = false;
             _hooksInstalled = false;
             _shutdownInvoked = false;
-            RuntimeRegistryChanged = null;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
@@ -673,7 +670,12 @@ namespace Hecton8.Modding
 
             GameObject playerObject = SceneBootstrap.CurrentPlayerObject;
             if (playerObject != null)
-                HectonEventBus.Publish(new PlayerSpawnedEvent(playerObject));
+            {
+                Transform playerTransform = playerObject.transform;
+                ulong playerEntityId = EntityId.ToULong(playerObject.GetEntityId());
+                Vector3 playerPosition = playerTransform != null ? playerTransform.position : Vector3.zero;
+                HectonEventBus.Publish(new PlayerSpawnedEvent(playerEntityId, playerPosition));
+            }
         }
 
         private static void HandleApplicationQuitting()
@@ -730,7 +732,7 @@ namespace Hecton8.Modding
             if (info.Metadata.StableIdHash != 0u && _runtimeInfoIndexByHash.TryGetValue(info.Metadata.StableIdHash, out int index))
             {
                 _runtimeInfos[index] = info;
-                RuntimeRegistryChanged?.Invoke();
+                ModRegistryEvents.NotifyRuntimeRegistryChanged(info.Metadata.StableIdHash);
                 return;
             }
 
@@ -738,7 +740,7 @@ namespace Hecton8.Modding
                 _runtimeInfoIndexByHash.Add(info.Metadata.StableIdHash, _runtimeInfos.Count);
 
             _runtimeInfos.Add(info);
-            RuntimeRegistryChanged?.Invoke();
+            ModRegistryEvents.NotifyRuntimeRegistryChanged(info.Metadata.StableIdHash);
         }
 
         private static string ResolveModsRoot()

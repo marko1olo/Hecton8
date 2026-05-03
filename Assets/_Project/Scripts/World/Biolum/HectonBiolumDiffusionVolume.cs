@@ -208,7 +208,7 @@ namespace Hecton8.Biolum
                 _playerTransform = playerTransform;
 
             if (_biolumManager == null)
-                _biolumManager = HectonBiolumManager.Instance;
+                _biolumManager = GlobalRegistry.BiolumManager;
         }
 
         private void EnsureResources()
@@ -322,7 +322,7 @@ namespace Hecton8.Biolum
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

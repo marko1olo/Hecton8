@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using Hecton8.Audio;
 
@@ -42,6 +43,7 @@ namespace Hecton8.UI
 
         private Button _button;
         private Hecton8.Core.IAudioService _audioManager;
+        private UnityAction _cachedClickAction;
 
         // ══════════════════════════════════════════════════════════
         // LIFECYCLE
@@ -49,20 +51,21 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _button = GetComponent<Button>();
+            TryGetComponent(out _button);
             _audioManager = Hecton8.Core.GlobalRegistry.Audio;
+            _cachedClickAction = OnButtonClicked; // COLD ALLOC: UnityAction[1] — cached UI click audio listener — owner: UIButtonAudioTrigger
         }
 
         private void OnEnable()
         {
             if (_button != null)
-                _button.onClick.AddListener(OnButtonClicked);
+                _button.onClick.AddListener(_cachedClickAction);
         }
 
         private void OnDisable()
         {
             if (_button != null)
-                _button.onClick.RemoveListener(OnButtonClicked);
+                _button.onClick.RemoveListener(_cachedClickAction);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -71,6 +74,9 @@ namespace Hecton8.UI
 
         private void OnButtonClicked()
         {
+            if (_audioManager == null)
+                _audioManager = Hecton8.Core.GlobalRegistry.Audio;
+
             if (_audioManager == null || clickSound == null)
                 return;
 

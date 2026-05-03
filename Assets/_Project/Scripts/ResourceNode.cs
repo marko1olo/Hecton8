@@ -20,7 +20,7 @@ namespace Hecton8.Scavenging
     /// Legacy UniqueId support remains for scene-authored compatibility, but authoritative depletion lives in PersistentWorldRegistry.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable, IInteractionSignalConsumer
+    public sealed class ResourceNode : MonoBehaviour, IPoolable, ICuttable, IInteractionSignalConsumer, ISonarPingEventListener
     {
         private static readonly int _MeltCenterId = Shader.PropertyToID("_MeltCenter");
         private static readonly int _MeltRadiusId = Shader.PropertyToID("_MeltRadius");
@@ -240,6 +240,7 @@ namespace Hecton8.Scavenging
 
         private void OnDestroy()
         {
+            UnregisterSonarEchoResponse();
             if (_depletionLock.IsCreated)
                 _depletionLock.Dispose();
         }
@@ -376,7 +377,7 @@ namespace Hecton8.Scavenging
             if (_registeredSonarEchoResponse || !Application.isPlaying)
                 return;
 
-            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            SpectrumEvents.RegisterSonarPingListener(this);
             _registeredSonarEchoResponse = true;
         }
 
@@ -385,7 +386,7 @@ namespace Hecton8.Scavenging
             if (!_registeredSonarEchoResponse)
                 return;
 
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            SpectrumEvents.UnregisterSonarPingListener(this);
             _registeredSonarEchoResponse = false;
         }
 
@@ -416,6 +417,11 @@ namespace Hecton8.Scavenging
             SpectrumEvents.RaiseAcousticEchoReturned(new AcousticEchoEvent(nodePosition, distanceMeters, returnStrength, resonance));
         }
 
+        void ISonarPingEventListener.OnSonarPingSent(float intensity)
+        {
+            HandleSonarPingSent(intensity);
+        }
+
         private void ResolvePersistentIdentity()
         {
             _persistentTombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(_cachedTransform.position);
@@ -426,13 +432,13 @@ namespace Hecton8.Scavenging
 
         private bool ShouldSuppressSpawn()
         {
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null && registry.IsResourceNodeTombstoned(_persistentTombstoneId))
                 return true;
 
             if (!string.IsNullOrEmpty(uniqueId))
             {
-                WorldStateManager worldStateManager = WorldStateManager.Instance;
+                WorldStateManager worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
                 if (worldStateManager != null && worldStateManager.IsNodeDepleted(uniqueId))
                     return true;
             }
@@ -442,13 +448,13 @@ namespace Hecton8.Scavenging
 
         private void RegisterPersistentDepletion()
         {
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null)
                 registry.TryRegisterDestroyedResourceNode(_persistentTombstoneId, _cachedTransform.position);
 
             if (!string.IsNullOrEmpty(uniqueId))
             {
-                WorldStateManager worldStateManager = WorldStateManager.Instance;
+                WorldStateManager worldStateManager = Hecton8.Core.GlobalRegistry.WorldState;
                 if (worldStateManager != null)
                     worldStateManager.RegisterDepletedNode(uniqueId);
             }
@@ -464,7 +470,7 @@ namespace Hecton8.Scavenging
             if (lootPrefab == null || lootCount <= 0)
                 return true;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
             {
                 if (!_lootSpawnBlockedLogged)
@@ -632,7 +638,7 @@ namespace Hecton8.Scavenging
 
             _despawnRequested = true;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
             {
                 pool.Despawn(gameObject);
@@ -796,7 +802,7 @@ namespace Hecton8.Scavenging
 
         private bool TryDropYieldItem(ItemData itemData, Vector3 hitPoint, Vector3 hitNormal, uint seed)
         {
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null || itemData == null)
                 return false;
 
@@ -809,7 +815,7 @@ namespace Hecton8.Scavenging
 
         private void SpawnImpactDebris(Vector3 hitPoint, Vector3 hitNormal, float toolPower)
         {
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null || !EnsureRuntimeDebrisPool(pool))
                 return;
 
@@ -1297,7 +1303,7 @@ namespace Hecton8.Scavenging
             {
                 _active = false;
 
-                ObjectPoolManager pool = _owningPool != null ? _owningPool : ObjectPoolManager.Instance;
+                ObjectPoolManager pool = _owningPool != null ? _owningPool : GlobalRegistry.ObjectPool;
                 if (pool != null && TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
                 {
                     pool.Despawn(gameObject);

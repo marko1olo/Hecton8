@@ -617,6 +617,14 @@ namespace Hecton8.Core
             out ComputeBuffer gridBuffer);
 
         /// <summary>
+        /// Emits one sandboxed mod acoustic ping through the engine-owned sensory path.
+        /// </summary>
+        /// <param name="runtimePosition">Frame-space ping origin.</param>
+        /// <param name="intensity01">Normalized signal intensity.</param>
+        /// <returns>True when the ping was accepted into the sensory path.</returns>
+        bool TryEmitModAcousticPing(Vector3 runtimePosition, float intensity01);
+
+        /// <summary>
         /// Stops every active world and UI voice immediately.
         /// </summary>
         void StopAll();
@@ -1339,6 +1347,64 @@ namespace Hecton8.Core
         PlayerMotor = 37,
         Profile = 38,
         InputBinding = 39,
+        CullingRuntime = 40,
+        LODSystemRuntime = 41,
+        DynamicResolutionRuntime = 42,
+        ImpostorRuntime = 43,
+        DepthZoneRuntime = 44,
+        LocalizationRuntime = 45,
+        AudioLogRuntime = 46,
+        AtlasSignalRuntime = 47,
+        FirstHourRuntime = 48,
+        EmergencyRelayRuntime = 49,
+        AtmosphereRuntime = 50,
+        BeaconNetworkRuntime = 51,
+        ScanLogRuntime = 52,
+        ToolDurabilityRuntime = 53,
+        LoreDatabaseRuntime = 54,
+        AssetLifecycleRuntime = 55,
+        AssetLoadDispatcherRuntime = 56,
+        VRAMMonitorRuntime = 57,
+        VRAMPressureRuntime = 58,
+        RenderTextureLifecycleRuntime = 59,
+        RenderTexturePoolRuntime = 60,
+        WorldStateRuntime = 61,
+        UserOptionsRuntime = 62,
+        BiolumManagerRuntime = 63,
+        AbyssalFluidDecalRuntime = 64,
+        SargassumDragRuntime = 65,
+        SargassumCutRuntime = 66,
+        PlayerExpressionRuntime = 67,
+        SpectrumRuntime = 68,
+        SoundscapeRuntime = 69,
+        AcousticZoneRuntime = 70,
+        SurfaceWeatherRuntime = 71,
+        EnvironmentalStrainRuntime = 72,
+        EcosystemHealthRuntime = 73,
+        FaunaGeneticsRuntime = 74,
+        PlayerExplorationRuntime = 75,
+        DiscoveryRuntime = 76,
+        ResourceScarcityRuntime = 77,
+        PDAExchangeRuntime = 78,
+        PlayerActionRuntime = 79,
+        PDAMarkerRuntime = 80,
+        AmbientWaterMotionRuntime = 81,
+        SuitUpgradeRuntime = 82,
+        EndingRuntime = 83,
+        Atlas6DirectiveRuntime = 84,
+        HazardZoneRuntime = 85,
+        MissionRuntime = 86,
+        RockManagerRuntime = 87,
+        CameraJuiceRuntime = 88,
+        MusicDirectorRuntime = 89,
+        SubtitleRuntime = 90,
+        AtlasSignalDecoderRuntime = 91,
+        ScrapRuntime = 92,
+        AutonomousExtractorRuntime = 93,
+        VisorRTRuntime = 94,
+        CameraRTRuntime = 95,
+        PostFXRTRuntime = 96,
+        UIRTRuntime = 97,
         Unknown = 255
     }
 

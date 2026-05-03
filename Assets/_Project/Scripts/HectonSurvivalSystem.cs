@@ -711,7 +711,7 @@ namespace Hecton8.Gameplay
 
         private void HandleTemperature(float dt)
         {
-            var atmosphere = HectonAtmosphereManager.Instance;
+            var atmosphere = Hecton8.Core.GlobalRegistry.Atmosphere;
             float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
             float localHeat = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
             float abyssalColdPenalty = ResolveAbyssalColdPenaltyCelsius();
@@ -889,7 +889,7 @@ namespace Hecton8.Gameplay
 
         private void HandleRadiation(float dt)
         {
-            var atmosphere = HectonAtmosphereManager.Instance;
+            var atmosphere = Hecton8.Core.GlobalRegistry.Atmosphere;
             float baseRad = atmosphere != null ? atmosphere.CurrentRadiation : 0f;
 
             // Add local radiation sources
@@ -921,7 +921,7 @@ namespace Hecton8.Gameplay
 
         private void HandleToxicity(float dt)
         {
-            if (HazardZoneManager.Instance != null)
+            if (Hecton8.Core.GlobalRegistry.HazardZones != null)
                 return;
 
             float toxicity = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Toxicity);
@@ -1185,7 +1185,7 @@ namespace Hecton8.Gameplay
                 OnPressureChanged?.Invoke(pressure);
             }
 
-            var atmosphere = HectonAtmosphereManager.Instance;
+            var atmosphere = Hecton8.Core.GlobalRegistry.Atmosphere;
             
             // Temperature Publishing (Atmosphere + Local)
             float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;

@@ -4,13 +4,13 @@ Status: PENDING VERIFICATION
 Verification: not runtime-measured in this pass
 Scope: Save, Steam, Audio, Telemetry, CI, Accessibility, Endgame
 
-Current-state boundary, 2026-05-01:
+Current-state boundary, 2026-05-02:
 
 - This file is a contracts and target-behavior document, not a proof that every listed file/class exists or is production-ready.
-- Current source-backed system ownership starts from `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current source-backed system ownership starts from `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - Current save implementation authority is `SaveManager.cs` / `SaveBinaryStorage.cs`; versioning and migration requirements below remain contractual.
 - Current audio service authority is `SpatialAudioManager` plus procedural audio owners; older `UnderwaterAudioProcessor.cs` naming below is a target contract unless source confirms a concrete owner.
-- No line in this document is a clean-console, zero-GC, Steam, CI, or accessibility verification claim without a fresh runtime/log artifact.
+- No line in this document is a clean-console, zero-GC, Steam, CI, or accessibility verification claim without a fresh runtime/log artifact. May 2 dotnet compile evidence is compile-only: `0 Error(s)`, `117 Warning(s)` for `Hecton8.Core.csproj`.
 
 These systems are developed separately from asset pipeline work.
 [FORBID] Use this document as primary source for asset generation.

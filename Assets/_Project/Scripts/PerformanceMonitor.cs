@@ -24,7 +24,7 @@
 // INTEGRATION:
 //   Add to persistent world object (AutoLoad scene).
 //   Or instantiate via singleton factory.
-//   Events: OnGCAllocPeak, OnFrameTimeSpike, OnJobQueueBacklog.
+//   Events: PerformanceEvents NativeQueue lane for frame, GC, and job alerts.
 //
 // USAGE:
 //   // Get current metrics (zero alloc)
@@ -32,9 +32,7 @@
 //   if (stats.frameTimeMs > 16.67f)
 //       Debug.LogWarning("Frame budget exceeded!");
 //
-//   // Subscribe to critical events
-//   PerformanceMonitor.OnFrameTimeSpike += HandleFrameTimePeak;
-//   PerformanceMonitor.OnGCAllocExceeded += HandleGCConcern;
+//   // Register IPerformanceEventListener during OnEnable and unregister in OnDisable.
 //
 //   // Periodic reporting (1 sec sampling)
 //   string report = PerformanceMonitor.GetReport(); // text report
@@ -42,10 +40,223 @@
 // ============================================================================
 
 using System;
+using System.Runtime.InteropServices;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Core
 {
+    /// <summary>
+    /// Performance threshold event type emitted by <see cref="PerformanceEvents"/>.
+    /// </summary>
+    public enum PerformanceEventType : byte
+    {
+        FrameTimeSpike = 0,
+        GCAllocExceeded = 1,
+        JobQueueBacklog = 2
+    }
+
+    /// <summary>
+    /// Blittable performance event payload drained by <see cref="SystemDispatcher"/> in LateUpdate.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PerformanceEventPayload
+    {
+        public long CurrentRawValue;
+        public long ThresholdRawValue;
+        public float CurrentValue;
+        public float ThresholdValue;
+        public int FrameCount;
+        public ushort EventType;
+        public ushort Reserved;
+    }
+
+    /// <summary>
+    /// Listener contract for performance threshold events.
+    /// </summary>
+    public interface IPerformanceEventListener
+    {
+        void OnPerformanceEvent(in PerformanceEventPayload payload);
+    }
+
+    /// <summary>
+    /// Queue-backed performance threshold lane. Producers are sampled Tick paths; listeners run in LateUpdate.
+    /// </summary>
+    public static class PerformanceEvents
+    {
+        private const int PendingEventCapacity = 16;
+
+        // COLD ALLOC: RegistryBucket<IPerformanceEventListener>[8] - performance threshold listeners drained by SystemDispatcher LateUpdate - owner: PerformanceEvents
+        private static readonly RegistryBucket<IPerformanceEventListener> _listeners = new RegistryBucket<IPerformanceEventListener>(8);
+        private static NativeQueue<PerformanceEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
+
+        /// <summary>
+        /// Pending payload count in the performance threshold lane.
+        /// </summary>
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+
+        /// <summary>
+        /// Registers a performance threshold listener.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Register(IPerformanceEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            _listeners.TryRegister(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a performance threshold listener.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Unregister(IPerformanceEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            _listeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Flushes queued performance threshold events through registered listeners.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out PerformanceEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                IPerformanceEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnPerformanceEvent(in payload);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+
+        internal static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<PerformanceEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PerformanceEventPayload>[16] - deferred performance threshold lane flushed by SystemDispatcher LateUpdate - owner: PerformanceEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(PerformanceEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        internal static void RaiseFrameTimeSpike(float frameTimeMs, float thresholdMs, int frameCount)
+        {
+            Enqueue(new PerformanceEventPayload
+            {
+                CurrentRawValue = (long)(frameTimeMs * 1000f),
+                ThresholdRawValue = (long)(thresholdMs * 1000f),
+                CurrentValue = frameTimeMs,
+                ThresholdValue = thresholdMs,
+                FrameCount = frameCount,
+                EventType = (ushort)PerformanceEventType.FrameTimeSpike,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseGCAllocExceeded(long allocatedBytes, long thresholdBytes, int frameCount)
+        {
+            Enqueue(new PerformanceEventPayload
+            {
+                CurrentRawValue = allocatedBytes,
+                ThresholdRawValue = thresholdBytes,
+                CurrentValue = allocatedBytes / (1024f * 1024f),
+                ThresholdValue = thresholdBytes / (1024f * 1024f),
+                FrameCount = frameCount,
+                EventType = (ushort)PerformanceEventType.GCAllocExceeded,
+                Reserved = 0
+            });
+        }
+
+        internal static void RaiseJobQueueBacklog(int pendingJobCount, int thresholdCount, int frameCount)
+        {
+            Enqueue(new PerformanceEventPayload
+            {
+                CurrentRawValue = pendingJobCount,
+                ThresholdRawValue = thresholdCount,
+                CurrentValue = pendingJobCount,
+                ThresholdValue = thresholdCount,
+                FrameCount = frameCount,
+                EventType = (ushort)PerformanceEventType.JobQueueBacklog,
+                Reserved = 0
+            });
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(PerformanceEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+        }
+
+        private static void Enqueue(in PerformanceEventPayload payload)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+                return;
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out _))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+    }
+
     /// <summary>
     /// Single frame's performance metrics snapshot.
     /// Struct — zero heap allocation, all stack-based.
@@ -145,23 +356,11 @@ namespace Hecton8.Core
         private static void ClearStaticState()
         {
             _instance = null;
-            OnFrameTimeSpike = null;
-            OnGCAllocExceeded = null;
-            OnJobQueueBacklog = null;
         }
 
         // ════════════════════════════════════════════════════════════
         //  EVENTS
         // ════════════════════════════════════════════════════════════
-
-        /// <summary>Fired when frame time exceeds peakFrameTimeThreshold (ms).</summary>
-        public static event Action OnFrameTimeSpike;
-
-        /// <summary>Fired when GC allocations exceed peakAllocThreshold (MB/frame).</summary>
-        public static event Action OnGCAllocExceeded;
-
-        /// <summary>Fired when pending job count exceeds jobBacklogThreshold.</summary>
-        public static event Action OnJobQueueBacklog;
 
         /// <summary>
         /// True when at least one sample has been captured.
@@ -241,7 +440,7 @@ namespace Hecton8.Core
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
+            Hecton8.Bootstrap.GameBootstrapper.PersistRuntimeService(this);
 
             _frameStopwatch = new System.Diagnostics.Stopwatch();
             _frameTimeHistory = new float[Mathf.Max(1, (int)(avgFrameWindow * 60))];
@@ -261,6 +460,7 @@ namespace Hecton8.Core
             if (GlobalRegistry.Dispatcher == null)
                 return;
 
+            PerformanceEvents.EnsureInitialized();
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
             _isRegisteredToTickManager = true;
         }
@@ -302,13 +502,21 @@ namespace Hecton8.Core
             // Auto-reporting
             if (enableAutoReporting)
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 _autoReportTimer -= deltaTime;
                 if (_autoReportTimer <= 0f)
                 {
                     _autoReportTimer = autoReportInterval;
-                    UnityEngine.Debug.Log(GetReport());
+                    LogAutoReport();
                 }
+#endif
             }
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogAutoReport()
+        {
+            UnityEngine.Debug.Log(GetReport());
         }
 
         // ════════════════════════════════════════════════════════════
@@ -374,14 +582,16 @@ namespace Hecton8.Core
 
         private void CheckThresholds()
         {
+            int frameCount = _currentSnapshot.frameCount;
             if (_currentSnapshot.frameTimeMs > peakFrameTimeThreshold)
-                OnFrameTimeSpike?.Invoke();
+                PerformanceEvents.RaiseFrameTimeSpike(_currentSnapshot.frameTimeMs, peakFrameTimeThreshold, frameCount);
 
-            if (_currentSnapshot.gcAllocatedThisFrame > peakAllocThreshold * 1024 * 1024)
-                OnGCAllocExceeded?.Invoke();
+            long gcThresholdBytes = (long)(peakAllocThreshold * 1024f * 1024f);
+            if (_currentSnapshot.gcAllocatedThisFrame > gcThresholdBytes)
+                PerformanceEvents.RaiseGCAllocExceeded(_currentSnapshot.gcAllocatedThisFrame, gcThresholdBytes, frameCount);
 
             if (_currentSnapshot.pendingJobCount > jobBacklogThreshold)
-                OnJobQueueBacklog?.Invoke();
+                PerformanceEvents.RaiseJobQueueBacklog(_currentSnapshot.pendingJobCount, jobBacklogThreshold, frameCount);
         }
 
         // ════════════════════════════════════════════════════════════

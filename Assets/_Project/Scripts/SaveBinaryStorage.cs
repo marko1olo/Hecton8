@@ -1685,7 +1685,7 @@ namespace Hecton8.SaveSystem
                 };
 
                 JobHandle decompressHandle = decompressJob.Schedule();
-                decompressHandle.Complete();
+                DispatcherJobSwap.TryComplete(ref decompressHandle, forceComplete: true);
                 decompressedLength = resultLength[0];
             }
             finally
@@ -2515,7 +2515,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            writeHandle.Handle.Complete();
+            DispatcherJobSwap.TryComplete(ref writeHandle.Handle, forceComplete: true);
             return TryCompleteIndexedSectorEntityStateOverrideWrite(ref writeHandle, out error);
         }
 
@@ -2650,7 +2650,7 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            writeHandle.Handle.Complete();
+            DispatcherJobSwap.TryComplete(ref writeHandle.Handle, forceComplete: true);
 
             int fileLength = writeHandle.ResultLength[0];
             if (fileLength <= UnsafeUtility.SizeOf<SectorEntityStateFileHeader>())
@@ -2672,7 +2672,7 @@ namespace Hecton8.SaveSystem
                 return;
 
             if (!writeHandle.Handle.IsCompleted)
-                writeHandle.Handle.Complete();
+                DispatcherJobSwap.TryComplete(ref writeHandle.Handle, forceComplete: true);
 
             writeHandle.Dispose();
         }

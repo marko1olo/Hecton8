@@ -27,6 +27,7 @@ namespace Hecton8.Visor
 
         private const int FieldResolution = 256;
         private const int ThreadGroupSize = 8;
+        private const float DependencyResolveRetryIntervalSeconds = 0.5f;
         private static readonly int _CausticsTextureId = Shader.PropertyToID("_HectonProjectedCausticsTex");
         private static readonly int _CausticsWorldRectId = Shader.PropertyToID("_HectonProjectedCausticsWorldRect");
         private static readonly int _CausticsParamsId = Shader.PropertyToID("_HectonProjectedCausticsParams");
@@ -114,6 +115,7 @@ namespace Hecton8.Visor
         private Camera _gameplayCamera;
         private RenderTexture _causticsTexture;
         private Vector4 _worldRect;
+        private float _nextDependencyResolveTime;
         [SerializeField] private float _debugWaveDisplacement;
         [SerializeField] private Vector2 _debugWaveFlow;
 
@@ -153,7 +155,7 @@ namespace Hecton8.Visor
             if (deltaTime < 0f)
                 return;
 
-            ResolveDependencies();
+            ResolveDependenciesThrottled();
             EnsureResources();
             UpdateWorldRect();
 
@@ -204,11 +206,12 @@ namespace Hecton8.Visor
             float fadeOut = 1f - math.saturate((depthMeters - depthFadeStart) / math.max(0.01f, depthFadeRange));
             float fade = fadeIn * fadeOut;
 
-            DepthZoneProfile depthZone = DepthZoneDirector.Instance != null ? DepthZoneDirector.Instance.CurrentZone : null;
+            DepthZoneDirector depthZoneDirector = GlobalRegistry.DepthZone;
+            DepthZoneProfile depthZone = depthZoneDirector != null ? depthZoneDirector.CurrentZone : null;
             if (depthZone != null && depthZone.dangerLevel >= 0.75f)
                 fade *= 0.7f;
 
-            HectonSurfaceWeatherDirector weatherDirector = HectonSurfaceWeatherDirector.Instance;
+            HectonSurfaceWeatherDirector weatherDirector = GlobalRegistry.SurfaceWeather;
             if (weatherDirector != null && depthMeters <= 80f)
                 fade *= 1f - (weatherDirector.CurrentElectricalActivity * stormFadePenalty);
 
@@ -243,6 +246,29 @@ namespace Hecton8.Visor
 
             if (_vegetationBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref _vegetationBridge);
+        }
+
+        private void ResolveDependenciesThrottled()
+        {
+            if (!NeedsDependencyResolve())
+                return;
+
+            float now = Time.unscaledTime;
+            if (now < _nextDependencyResolveTime)
+                return;
+
+            _nextDependencyResolveTime = now + DependencyResolveRetryIntervalSeconds;
+            ResolveDependencies();
+        }
+
+        private bool NeedsDependencyResolve()
+        {
+            return _playerTransform == null ||
+                   _survivalSystem == null ||
+                   _gameplayCamera == null ||
+                   _oceanKinematics == null ||
+                   !_oceanKinematics.IsAvailable ||
+                   _vegetationBridge == null;
         }
 
         private void BindTerrainHeightPayload()
@@ -377,7 +403,7 @@ namespace Hecton8.Visor
 
         private float ResolveWaterLevel()
         {
-            HectonFluidEngine fluidEngine = HectonFluidEngine.Instance;
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
             if (fluidEngine != null)
                 return fluidEngine.WaterLevel;
 

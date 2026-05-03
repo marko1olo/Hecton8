@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
@@ -174,7 +174,7 @@ namespace Hecton8.World
             if (!_threatPropagationScheduled)
                 return;
 
-            if (!VegetationLateFrameJobSwap.TryComplete(ref _threatPropagationHandle, forceComplete))
+            if (!DispatcherJobSwap.TryComplete(ref _threatPropagationHandle, forceComplete))
                 return;
 
             NativeArray<float> threatSwap = _nativeMemory.EcosystemThreatGridCurrentNative;
@@ -360,7 +360,7 @@ namespace Hecton8.World
             if (!_flowFieldScheduled)
                 return;
 
-            if (!VegetationLateFrameJobSwap.TryComplete(ref _flowFieldHandle, forceComplete))
+            if (!DispatcherJobSwap.TryComplete(ref _flowFieldHandle, forceComplete))
                 return;
 
             NativeArray<float2> flowSwap = _nativeMemory.EcosystemFlowFieldCurrentNative;
@@ -376,7 +376,7 @@ namespace Hecton8.World
             if (!_abyssalThermalGridScheduled)
                 return;
 
-            if (!VegetationLateFrameJobSwap.TryComplete(ref _abyssalThermalGridHandle, forceComplete))
+            if (!DispatcherJobSwap.TryComplete(ref _abyssalThermalGridHandle, forceComplete))
                 return;
 
             bool canComparePreviousFlowVolume =

@@ -11,6 +11,13 @@ namespace Hecton8.Core
         private readonly T[] _items;
         private readonly int _capacity;
         private int _count;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private bool _indexErrorLogged;
+        private bool _nullRegistrationLogged;
+        private bool _capacityErrorLogged;
+        private bool _unregisterMissLogged;
+        private bool _destroyedEntryLogged;
+#endif
 
         /// <summary>
         /// Active item count.
@@ -31,7 +38,15 @@ namespace Hecton8.Core
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if ((uint)index >= (uint)_count)
-                throw new ArgumentOutOfRangeException(nameof(index));
+            {
+                if (!_indexErrorLogged)
+                {
+                    UnityEngine.Debug.LogError(
+                        $"[RegistryBucket<{typeof(T).Name}>] Index {index} outside live count {_count}.");
+                    _indexErrorLogged = true;
+                }
+                return null;
+            }
 #endif
             return _items[index];
         }
@@ -53,23 +68,51 @@ namespace Hecton8.Core
         /// <param name="item">Item instance to register.</param>
         public void Register(T item)
         {
+            TryRegister(item);
+        }
+
+        /// <summary>
+        /// Attempts to append a new item to the tail of the dense array.
+        /// </summary>
+        /// <param name="item">Item instance to register.</param>
+        /// <returns>True when the item was registered.</returns>
+        public bool TryRegister(T item)
+        {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (item == null)
-                throw new ArgumentNullException(nameof(item), $"[RegistryBucket<{typeof(T).Name}>] Null registration is forbidden.");
+            {
+                if (!_nullRegistrationLogged)
+                {
+                    UnityEngine.Debug.LogError(
+                        $"[RegistryBucket<{typeof(T).Name}>] Null registration is forbidden.");
+                    _nullRegistrationLogged = true;
+                }
+                return false;
+            }
 
             if (_count >= _capacity)
             {
-                throw new InvalidOperationException(
-                    $"[GlobalRegistry] RegistryBucket<{typeof(T).Name}> capacity ({_capacity}) exceeded.");
+                if (!_capacityErrorLogged)
+                {
+                    UnityEngine.Debug.LogError(
+                        $"[GlobalRegistry] RegistryBucket<{typeof(T).Name}> capacity ({_capacity}) exceeded.");
+                    _capacityErrorLogged = true;
+                }
+                return false;
             }
 
             if (Contains(item))
-            {
-                throw new InvalidOperationException(
-                    $"[GlobalRegistry] Double-registration detected for {typeof(T).Name}.");
-            }
+                return false;
+#else
+            if (item == null || _count >= _capacity || Contains(item))
+                return false;
 #endif
             _items[_count++] = item;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _indexErrorLogged = false;
+            _destroyedEntryLogged = false;
+#endif
+            return true;
         }
 
         /// <summary>
@@ -87,12 +130,21 @@ namespace Hecton8.Core
                 _count--;
                 _items[i] = _items[_count];
                 _items[_count] = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                _indexErrorLogged = false;
+                _unregisterMissLogged = false;
+                _destroyedEntryLogged = false;
+#endif
                 return true;
             }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            UnityEngine.Debug.LogWarning(
-                $"[GlobalRegistry] Unregister called for non-registered {typeof(T).Name}.");
+            if (!_unregisterMissLogged)
+            {
+                UnityEngine.Debug.LogWarning(
+                    $"[GlobalRegistry] Unregister called for non-registered {typeof(T).Name}.");
+                _unregisterMissLogged = true;
+            }
 #endif
             return false;
         }
@@ -120,6 +172,13 @@ namespace Hecton8.Core
         {
             Array.Clear(_items, 0, _count);
             _count = 0;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _indexErrorLogged = false;
+            _nullRegistrationLogged = false;
+            _capacityErrorLogged = false;
+            _unregisterMissLogged = false;
+            _destroyedEntryLogged = false;
+#endif
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -137,8 +196,12 @@ namespace Hecton8.Core
                 if (unityObject != null)
                     continue;
 
-                UnityEngine.Debug.LogError(
-                    $"[RegistryBucket<{typeof(T).Name}>] Destroyed object remained registered in {bucketName} at index {i}.");
+                if (!_destroyedEntryLogged)
+                {
+                    UnityEngine.Debug.LogError(
+                        $"[RegistryBucket<{typeof(T).Name}>] Destroyed object remained registered in {bucketName} at index {i}.");
+                    _destroyedEntryLogged = true;
+                }
                 return;
             }
         }

@@ -317,8 +317,8 @@ namespace Hecton8.Items
 
         private void EnsureLocalizedCache()
         {
-            GameLanguage language = LocalizationManager.Instance != null
-                ? LocalizationManager.Instance.CurrentLanguage
+            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
+                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
                 : GameLanguage.English;
 
             if (_cachedLanguage == language &&

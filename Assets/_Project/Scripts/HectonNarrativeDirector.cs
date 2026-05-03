@@ -16,7 +16,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-150)]
-    public sealed class HectonNarrativeDirector : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, INarrativePointOfInterestListener
+    public sealed class HectonNarrativeDirector : MonoBehaviour, ISaveable, ISlowTickable, INarrativeEventListener, INarrativePointOfInterestListener, IDirectorAIEventListener
     {
         private struct NarrativeNode
         {
@@ -108,6 +108,7 @@ namespace Hecton8.Gameplay
 
             _instance = this;
             _narrativeNodesByHash = new Unity.Collections.NativeHashMap<uint, NarrativeNode>(128, Unity.Collections.Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,NarrativeNode>[128] - narrative hash lookup for discovery routing - owner: HectonNarrativeDirector
+            NativeMemorySentinel.RegisterNativeHashMap(_narrativeNodesByHash, nameof(HectonNarrativeDirector), nameof(_narrativeNodesByHash), NativeAllocationLifetime.Scene);
             RebuildDiscoveryLookup();
         }
 
@@ -120,7 +121,7 @@ namespace Hecton8.Gameplay
 
             NarrativeEvents.Register(this);
             NarrativeEvents.RegisterPointOfInterestListener(this);
-            HectonDirectorAI.OnRequestRareDiscovery += HandleRareDiscoveryRequest;
+            DirectorAIEvents.Register(this);
 
             ResolvePlayerTransform();
         }
@@ -134,15 +135,19 @@ namespace Hecton8.Gameplay
 
             NarrativeEvents.Unregister(this);
             NarrativeEvents.UnregisterPointOfInterestListener(this);
-            HectonDirectorAI.OnRequestRareDiscovery -= HandleRareDiscoveryRequest;
+            DirectorAIEvents.Unregister(this);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            DirectorAIEvents.Unregister(this);
 
             if (_narrativeNodesByHash.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeHashMap(nameof(HectonNarrativeDirector), nameof(_narrativeNodesByHash));
                 _narrativeNodesByHash.Dispose();
+            }
 
             if (_instance == this)
                 _instance = null;
@@ -218,9 +223,13 @@ namespace Hecton8.Gameplay
             currentDepthTier = newTier;
             NarrativeEvents.RaiseDepthTierReached(currentDepthTier);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            LogDepthTierReached();
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDepthTierReached()
+        {
             Debug.Log("[Narrative] New depth tier reached.");
-#endif
         }
 
         public bool HasDiscovery(string id)
@@ -308,14 +317,14 @@ namespace Hecton8.Gameplay
         {
             _rareDiscoveryRequested = true;
 
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector != null &&
                 !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstModule))
             {
                 return;
             }
 
-            AtlasSignalSystem atlasSignalSystem = AtlasSignalSystem.Instance;
+            AtlasSignalSystem atlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignal;
             bool rebroadcastedPulse = CanRebroadcastAtlasRareDiscoveryPulse(atlasSignalSystem);
             if (rebroadcastedPulse)
                 AtlasSignalEvents.RaisePulse(atlasSignalSystem.CurrentStrength);
@@ -323,8 +332,33 @@ namespace Hecton8.Gameplay
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[Narrative] Rare Discovery requested near {hintPosition}. " +
                       $"Atlas-6 signal {(rebroadcastedPulse ? "pulse triggered" : "pulse skipped")} (strength: " +
-                      $"{(AtlasSignalSystem.Instance != null ? AtlasSignalSystem.Instance.CurrentStrength : 0f):F2}).");
+                      $"{(Hecton8.Core.GlobalRegistry.AtlasSignal != null ? Hecton8.Core.GlobalRegistry.AtlasSignal.CurrentStrength : 0f):F2}).");
 #endif
+        }
+
+        void IDirectorAIEventListener.OnDirectorSpawnHordeRequested(Vector3 position)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorEquipmentGlitchRequested(float intensity)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorRareDiscoveryRequested(Vector3 position)
+        {
+            HandleRareDiscoveryRequest(position);
+        }
+
+        void IDirectorAIEventListener.OnDirectorWeatherShiftRequested(float intensity)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorMissionTriggerRequested(Vector3 position)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorPredatorPressureChanged(bool pressureEnabled)
+        {
         }
 
         private static bool CanRebroadcastAtlasRareDiscoveryPulse(AtlasSignalSystem atlasSignalSystem)

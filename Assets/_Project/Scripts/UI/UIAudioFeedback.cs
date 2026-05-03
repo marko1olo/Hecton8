@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.Events;
 using Hecton8.Audio;
 using System.Collections.Generic;
 
@@ -81,6 +82,12 @@ namespace Hecton8.UI
         private Hecton8.Core.IAudioService _audioManager;
         private float _lastSliderTickTime;
         private static UIAudioFeedback _instance;
+        private UnityAction _primaryButtonClickAction;
+        private UnityAction _secondaryButtonClickAction;
+        private UnityAction _destructiveButtonClickAction;
+        private UnityAction<float> _sliderChangedAction;
+        private UnityAction<bool> _toggleChangedAction;
+        private UnityAction<BaseEventData> _buttonHoverAction;
         // COLD ALLOC: List<Button>(64) — UI button registration buffer — owner: UIAudioFeedback
         private readonly List<Button> _buttonResolveBuffer = new List<Button>(64);
         // COLD ALLOC: List<Slider>(32) — UI slider registration buffer — owner: UIAudioFeedback
@@ -99,6 +106,12 @@ namespace Hecton8.UI
         private void Awake()
         {
             _instance = this;
+            _primaryButtonClickAction = OnPrimaryButtonClicked; // COLD ALLOC: UnityAction[1] - cached primary button audio listener - owner: UIAudioFeedback
+            _secondaryButtonClickAction = OnSecondaryButtonClicked; // COLD ALLOC: UnityAction[1] - cached secondary button audio listener - owner: UIAudioFeedback
+            _destructiveButtonClickAction = OnDestructiveButtonClicked; // COLD ALLOC: UnityAction[1] - cached destructive button audio listener - owner: UIAudioFeedback
+            _sliderChangedAction = OnSliderChanged; // COLD ALLOC: UnityAction<float>[1] - cached slider audio listener - owner: UIAudioFeedback
+            _toggleChangedAction = OnToggleChanged; // COLD ALLOC: UnityAction<bool>[1] - cached toggle audio listener - owner: UIAudioFeedback
+            _buttonHoverAction = OnButtonHoverEvent; // COLD ALLOC: UnityAction<BaseEventData>[1] - cached button hover audio listener - owner: UIAudioFeedback
         }
 
         private void Start()
@@ -111,6 +124,10 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            UnregisterAllButtons();
+            UnregisterAllSliders();
+            UnregisterAllToggles();
+
             if (_instance == this)
                 _instance = null;
         }
@@ -210,7 +227,8 @@ namespace Hecton8.UI
                 if (slider == null)
                     continue;
 
-                slider.onValueChanged.AddListener(_ => OnSliderChanged());
+                slider.onValueChanged.RemoveListener(_sliderChangedAction);
+                slider.onValueChanged.AddListener(_sliderChangedAction);
             }
 
             _sliderResolveBuffer.Clear();
@@ -226,7 +244,69 @@ namespace Hecton8.UI
                 if (toggle == null)
                     continue;
 
-                toggle.onValueChanged.AddListener(OnToggleChanged);
+                toggle.onValueChanged.RemoveListener(_toggleChangedAction);
+                toggle.onValueChanged.AddListener(_toggleChangedAction);
+            }
+
+            _toggleResolveBuffer.Clear();
+        }
+
+        private void UnregisterAllButtons()
+        {
+            _buttonResolveBuffer.Clear();
+            GetComponentsInChildren(true, _buttonResolveBuffer);
+            for (int i = 0; i < _buttonResolveBuffer.Count; i++)
+            {
+                Button button = _buttonResolveBuffer[i];
+                if (button == null)
+                    continue;
+
+                button.onClick.RemoveListener(_primaryButtonClickAction);
+                button.onClick.RemoveListener(_secondaryButtonClickAction);
+                button.onClick.RemoveListener(_destructiveButtonClickAction);
+
+                if (button.TryGetComponent(out EventTrigger trigger))
+                {
+                    List<EventTrigger.Entry> entries = trigger.triggers;
+                    for (int entryIndex = 0; entryIndex < entries.Count; entryIndex++)
+                    {
+                        EventTrigger.Entry entry = entries[entryIndex];
+                        if (entry != null && entry.eventID == EventTriggerType.PointerEnter)
+                            entry.callback.RemoveListener(_buttonHoverAction);
+                    }
+                }
+            }
+
+            _buttonResolveBuffer.Clear();
+        }
+
+        private void UnregisterAllSliders()
+        {
+            _sliderResolveBuffer.Clear();
+            GetComponentsInChildren(true, _sliderResolveBuffer);
+            for (int i = 0; i < _sliderResolveBuffer.Count; i++)
+            {
+                Slider slider = _sliderResolveBuffer[i];
+                if (slider == null)
+                    continue;
+
+                slider.onValueChanged.RemoveListener(_sliderChangedAction);
+            }
+
+            _sliderResolveBuffer.Clear();
+        }
+
+        private void UnregisterAllToggles()
+        {
+            _toggleResolveBuffer.Clear();
+            GetComponentsInChildren(true, _toggleResolveBuffer);
+            for (int i = 0; i < _toggleResolveBuffer.Count; i++)
+            {
+                Toggle toggle = _toggleResolveBuffer[i];
+                if (toggle == null)
+                    continue;
+
+                toggle.onValueChanged.RemoveListener(_toggleChangedAction);
             }
 
             _toggleResolveBuffer.Clear();
@@ -237,8 +317,15 @@ namespace Hecton8.UI
             if (button == null)
                 return;
 
-            // Add click listener
-            button.onClick.AddListener(() => OnButtonClicked(type));
+            UnityAction action = type switch
+            {
+                ButtonType.Primary => _primaryButtonClickAction,
+                ButtonType.Destructive => _destructiveButtonClickAction,
+                _ => _secondaryButtonClickAction
+            };
+
+            button.onClick.RemoveListener(action);
+            button.onClick.AddListener(action);
 
             // Add hover listener if enabled
             if (enableHoverSounds)
@@ -251,7 +338,7 @@ namespace Hecton8.UI
                 {
                     eventID = EventTriggerType.PointerEnter
                 };
-                entry.callback.AddListener(_ => OnButtonHover());
+                entry.callback.AddListener(_buttonHoverAction);
                 trigger.triggers.Add(entry);
             }
         }
@@ -278,6 +365,21 @@ namespace Hecton8.UI
         // CALLBACKS
         // ══════════════════════════════════════════════════════════
 
+        private void OnPrimaryButtonClicked()
+        {
+            OnButtonClicked(ButtonType.Primary);
+        }
+
+        private void OnSecondaryButtonClicked()
+        {
+            OnButtonClicked(ButtonType.Secondary);
+        }
+
+        private void OnDestructiveButtonClicked()
+        {
+            OnButtonClicked(ButtonType.Destructive);
+        }
+
         private void OnButtonClicked(ButtonType type)
         {
             AudioClip clip = type switch
@@ -297,7 +399,12 @@ namespace Hecton8.UI
                 PlaySound(hoverButton, hoverVolume);
         }
 
-        private void OnSliderChanged()
+        private void OnButtonHoverEvent(BaseEventData eventData)
+        {
+            OnButtonHover();
+        }
+
+        private void OnSliderChanged(float value)
         {
             float currentTime = Time.unscaledTime;
             if (currentTime - _lastSliderTickTime < sliderTickThrottle)

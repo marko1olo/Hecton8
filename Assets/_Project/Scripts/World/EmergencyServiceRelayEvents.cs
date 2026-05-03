@@ -19,6 +19,8 @@ namespace Hecton8.World
     /// </summary>
     public static class EmergencyServiceRelayEvents
     {
+        private const int PendingEventCapacity = 16;
+
         private struct RelayEventPayload
         {
             public ulong RelayEntityId;
@@ -28,18 +30,21 @@ namespace Hecton8.World
         private static readonly RegistryBucket<IEmergencyServiceRelayEventListener> _listeners = new RegistryBucket<IEmergencyServiceRelayEventListener>(16);
         private static readonly System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay> _relaysByInstanceId = new System.Collections.Generic.Dictionary<ulong, EmergencyServiceRelay>(32);
         private static NativeQueue<RelayEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(EmergencyServiceRelayEvents), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
 
+            _pendingEventCount = 0;
             _listeners.Clear();
             _relaysByInstanceId.Clear();
         }
@@ -63,7 +68,7 @@ namespace Hecton8.World
         /// <param name="firstActivation">True when this was the first discovery-grade access.</param>
         public static void RaiseRelayActivated(EmergencyServiceRelay relay, bool firstActivation)
         {
-            if (relay == null)
+            if (relay == null || _listeners.Count <= 0 || _pendingEventCount >= PendingEventCapacity)
                 return;
 
             EnsureInitialized();
@@ -74,6 +79,7 @@ namespace Hecton8.World
                 RelayEntityId = relayEntityId,
                 FirstActivation = firstActivation ? (byte)1 : (byte)0
             });
+            _pendingEventCount++;
         }
 
         public static void FlushPending()
@@ -81,8 +87,18 @@ namespace Hecton8.World
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out RelayEventPayload payload))
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out RelayEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
                 if (!_relaysByInstanceId.TryGetValue(payload.RelayEntityId, out EmergencyServiceRelay relay) || relay == null)
                     continue;
 
@@ -92,12 +108,23 @@ namespace Hecton8.World
                 for (int i = count - 1; i >= 0; i--)
                     rawArray[i].OnEmergencyServiceRelayActivated(relay, firstActivation);
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
+            {
                 _pendingEvents = new NativeQueue<RelayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<RelayEventPayload>[16] - emergency relay event lane flushed by SystemDispatcher - owner: EmergencyServiceRelayEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(EmergencyServiceRelayEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
     }
 }

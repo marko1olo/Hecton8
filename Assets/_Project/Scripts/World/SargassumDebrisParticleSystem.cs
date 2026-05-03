@@ -292,7 +292,7 @@ namespace Hecton8.World
                 return;
             }
 
-            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
             if (dragManager == null || !dragManager.HasFieldData)
             {
                 _debugAmbientDensity01 = 0f;

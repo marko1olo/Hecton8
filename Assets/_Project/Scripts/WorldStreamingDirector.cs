@@ -247,7 +247,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -503,8 +503,12 @@ namespace Hecton8.World
             if (_playerMovement == null && playerTransform != null)
                 playerTransform.TryGetComponent(out _playerMovement);
 
-            if (playerRigidbody == null && playerTransform != null)
-                playerRigidbody = playerTransform.GetComponent<Rigidbody>();
+            if (playerRigidbody == null &&
+                playerTransform != null &&
+                playerTransform.TryGetComponent(out Rigidbody resolvedRigidbody))
+            {
+                playerRigidbody = resolvedRigidbody;
+            }
 
             if (mapMagicBridge == null)
                 WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);

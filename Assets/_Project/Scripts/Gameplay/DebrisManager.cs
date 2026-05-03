@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -141,13 +142,6 @@ namespace Hecton8.Gameplay
                 _matrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxActiveChunks, MatrixStrideBytes);
             }
 
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
         }
 
         private void OnEnable()
@@ -170,7 +164,7 @@ namespace Hecton8.Gameplay
             if (!_originShiftRegistered)
             {
                 HectonFloatingOrigin.RegisterListener(this);
-                _originShiftRegistered = true;
+                _originShiftRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
             }
         }
 
@@ -317,10 +311,12 @@ namespace Hecton8.Gameplay
         /// <inheritdoc />
         public void LateFrameTick()
         {
-            if (!_simulationScheduled || !_simulationHandle.IsCompleted)
+            if (!_simulationScheduled)
                 return;
 
-            _simulationHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _simulationHandle, forceComplete: false))
+                return;
+
             _simulationScheduled = false;
             SwapStateBuffers();
         }
@@ -921,6 +917,7 @@ namespace Hecton8.Gameplay
         [SerializeField, HideInInspector] private Mesh[] cachedChunkMeshes;
         [SerializeField, HideInInspector] private Matrix4x4[] cachedLocalMatrices;
         [SerializeField, HideInInspector] private float[] cachedMassScales;
+        [SerializeField, HideInInspector] private Collider[] cachedRuntimeColliders;
 
         /// <inheritdoc />
         public bool IsValid => sharedMaterial != null &&
@@ -929,7 +926,8 @@ namespace Hecton8.Gameplay
                                cachedMassScales != null &&
                                cachedChunkMeshes.Length > 0 &&
                                cachedChunkMeshes.Length == cachedLocalMatrices.Length &&
-                               cachedChunkMeshes.Length == cachedMassScales.Length;
+                               cachedChunkMeshes.Length == cachedMassScales.Length &&
+                               (!disableChunkCollidersAtRuntime || cachedRuntimeColliders != null);
 
         /// <inheritdoc />
         public int ChunkCount => cachedChunkMeshes != null ? cachedChunkMeshes.Length : 0;
@@ -1039,6 +1037,7 @@ namespace Hecton8.Gameplay
             cachedChunkMeshes = new Mesh[validCount];
             cachedLocalMatrices = new Matrix4x4[validCount];
             cachedMassScales = new float[validCount];
+            cachedRuntimeColliders = root.GetComponentsInChildren<Collider>(true); // COLD ALLOC: Collider[][chunk collider count] - runtime collider disable cache - owner: OrganicDebrisProfile
 
             Matrix4x4 rootWorldToLocal = transform.worldToLocalMatrix;
             int writeIndex = 0;
@@ -1070,11 +1069,14 @@ namespace Hecton8.Gameplay
             if (!disableChunkCollidersAtRuntime)
                 return;
 
-            Collider[] colliders = chunkRoot.GetComponentsInChildren<Collider>(true);
-            for (int i = 0; i < colliders.Length; i++)
+            if (cachedRuntimeColliders == null)
+                return;
+
+            for (int i = 0; i < cachedRuntimeColliders.Length; i++)
             {
-                if (colliders[i] != null)
-                    colliders[i].enabled = false;
+                Collider cachedCollider = cachedRuntimeColliders[i];
+                if (cachedCollider != null)
+                    cachedCollider.enabled = false;
             }
         }
     }

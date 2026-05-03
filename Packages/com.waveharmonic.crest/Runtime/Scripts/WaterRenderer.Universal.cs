@@ -166,7 +166,9 @@ namespace WaveHarmonic.Crest
 
 #if UNITY_6000_0_OR_NEWER
                 // Copy depth pass does not support RG directly.
+#pragma warning disable 0618
                 if (GraphicsSettings.GetRenderPipelineSettings<RenderGraphSettings>().enableRenderCompatibilityMode)
+#pragma warning restore 0618
 #endif
                 {
                     renderer.EnqueuePass(Instance._CopyDepthPass);

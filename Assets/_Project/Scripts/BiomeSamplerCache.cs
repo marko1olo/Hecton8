@@ -95,7 +95,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()

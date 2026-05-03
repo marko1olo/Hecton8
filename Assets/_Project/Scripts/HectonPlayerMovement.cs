@@ -42,7 +42,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Rigidbody))]
-    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener, ISargassumGlobalDragEventListener
+    public sealed class HectonPlayerMovement : MonoBehaviour, IUpdatable, IFixedTickable, IOriginShiftListener, ISargassumGlobalDragEventListener, ISonarPingEventListener
     {
         private const float GroundCheckSkin = 0.02f;
         private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
@@ -1553,7 +1553,7 @@ namespace Hecton8.Gameplay
             if (_activeSonarPingCooldownTimer > 0f)
                 return false;
 
-            SpectrumSystem spectrumSystem = SpectrumSystem.Instance;
+            SpectrumSystem spectrumSystem = GlobalRegistry.Spectrum;
             if (spectrumSystem == null)
                 return false;
 
@@ -2027,7 +2027,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            float fixedDt = math.max(Time.fixedDeltaTime, 0.0001f);
+            float fixedDt = math.max(_currentFixedDeltaTime, 0.0001f);
             float alpha = math.saturate((Time.time - Time.fixedTime) / fixedDt);
             _renderInterpolatedCameraYaw = Mathf.LerpAngle(_previousRenderInterpolationState.CameraYaw, _currentRenderInterpolationState.CameraYaw, alpha);
             _renderInterpolatedBodyYaw = Mathf.LerpAngle(_previousRenderInterpolationState.BodyYaw, _currentRenderInterpolationState.BodyYaw, alpha);
@@ -2600,7 +2600,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             SargassumGlobalDragManager.Register(this);
-            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            SpectrumEvents.RegisterSonarPingListener(this);
             BindInventoryLoadSource();
             ResolvePlayerToolManager();
             ResolvePlayerTransportCoordinator();
@@ -2613,7 +2613,7 @@ namespace Hecton8.Gameplay
             if (!_registeredOriginShiftListener)
             {
                 HectonFloatingOrigin.RegisterListener(this);
-                _registeredOriginShiftListener = true;
+                _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
             }
             TryRegisterToDispatchers();
         }
@@ -2632,7 +2632,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             SargassumGlobalDragManager.Unregister(this);
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            SpectrumEvents.UnregisterSonarPingListener(this);
             UnbindInventoryLoadSource();
             UnsubscribeFromInput();
             _cachedMoveInput = Vector2.zero;
@@ -2806,7 +2806,7 @@ namespace Hecton8.Gameplay
             if (TryGetComponent(out PlayerInventory localInventory))
                 return localInventory;
 
-            return PlayerInventory.Instance;
+            return Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
         }
 
         private void HandleInventoryLoadChanged()
@@ -3667,7 +3667,7 @@ namespace Hecton8.Gameplay
             if (_sargassumMovementInfluence == null)
                 return;
 
-            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
             if (dragManager != null)
             {
                 Vector3 samplePosition = _cachedTransform.position;
@@ -3711,7 +3711,7 @@ namespace Hecton8.Gameplay
             if ((_isWalking && !IsExosuitTransportActive()) || IsInDryInterior())
                 return;
 
-            AbyssalThermalManager thermalManager = AbyssalThermalManager.Instance;
+            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
             if (thermalManager == null)
                 return;
 
@@ -4104,6 +4104,11 @@ namespace Hecton8.Gameplay
                 return;
 
             _juiceProcessor.RegisterSonarPingImpulse(intensity);
+        }
+
+        void ISonarPingEventListener.OnSonarPingSent(float intensity)
+        {
+            HandleSonarPingSent(intensity);
         }
 
         private void TryPlaySargassumEntanglementAudio(SargassumGlobalDragManager.EntanglementStrainSignal signal)
@@ -4518,7 +4523,7 @@ namespace Hecton8.Gameplay
             if (wipeoutSuitUpgradeBreakChance <= 0f)
                 return;
 
-            SuitUpgradeManager suitUpgradeManager = SuitUpgradeManager.Instance;
+            SuitUpgradeManager suitUpgradeManager = Hecton8.Core.GlobalRegistry.SuitUpgrades;
             if (suitUpgradeManager == null)
                 return;
 
@@ -4632,7 +4637,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveFallbackWaterSurfaceY()
         {
-            HectonFluidEngine fluidEngine = HectonFluidEngine.Instance;
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
             return fluidEngine != null ? fluidEngine.WaterLevel : waterSurfaceY;
         }
 
@@ -6419,7 +6424,7 @@ namespace Hecton8.Gameplay
             if (_hullStressIntensity <= 0.9f || _hullStressHudCorruptionRefreshTimer > 0f)
                 return;
 
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             if (localization == null)
                 return;
 
@@ -6836,7 +6841,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveFatalPressureCorruptionIntensity(float sequenceIntensity)
         {
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             float localizationIntensity = localization != null
                 ? localization.GetHullStressCorruptionIntensity()
                 : 0f;
@@ -6864,7 +6869,7 @@ namespace Hecton8.Gameplay
 
         private void PushFatalPressureCorruptionWarning()
         {
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             string message = localization != null
                 ? localization.GetOrFallback(localization.CurrentLanguage, LocalizationKeys.HUD_STATUS_PRESSURE_LIMIT_EXCEEDED, "PRESSURE LIMIT EXCEEDED")
                 : "PRESSURE LIMIT EXCEEDED";
@@ -7914,7 +7919,7 @@ namespace Hecton8.Gameplay
                 exosuitFootstepSonarPingRadius <= 0.01f)
                 return;
 
-            SpectrumSystem spectrumSystem = SpectrumSystem.Instance;
+            SpectrumSystem spectrumSystem = GlobalRegistry.Spectrum;
             if (spectrumSystem != null)
                 spectrumSystem.TriggerActiveSonarPing(exosuitFootstepSonarPingRadius, exosuitFootstepSonarRevealDuration);
 

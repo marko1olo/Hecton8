@@ -64,8 +64,8 @@ namespace Hecton8.Modding
                 return _instance;
 
             GameObject gameObject = new GameObject(ManagerRuntimeName); // COLD ALLOC: GameObject[1] — persistent mod world owner — owner: ModWorldPersistenceManager
-            DontDestroyOnLoad(gameObject);
             _instance = gameObject.AddComponent<ModWorldPersistenceManager>();
+            GameBootstrapper.PersistRuntimeService(_instance);
             return _instance;
         }
 
@@ -78,7 +78,7 @@ namespace Hecton8.Modding
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
+            GameBootstrapper.PersistRuntimeService(this);
             TryRegisterWithSaveManager();
         }
 
@@ -119,10 +119,10 @@ namespace Hecton8.Modding
                 return null;
             }
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
             {
-                Debug.LogWarning("[ModWorldPersistenceManager] ObjectPoolManager is unavailable. Persistent mod spawn was rejected.");
+                Debug.LogWarning("[ModWorldPersistenceManager] GlobalRegistry.ObjectPool is unavailable. Persistent mod spawn was rejected.");
                 return null;
             }
 
@@ -171,7 +171,7 @@ namespace Hecton8.Modding
             RemoveRecord(marker.SpawnId);
             _liveEntitiesByHash.Remove(marker.SpawnHash);
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool != null)
                 pool.Despawn(instance);
             else
@@ -189,7 +189,7 @@ namespace Hecton8.Modding
 
             ModWorldSavePayload payload = new ModWorldSavePayload
             {
-                Records = _records.ToArray(),
+                Records = _records,
                 NextSpawnSequence = _nextSpawnSequence
             };
 
@@ -227,7 +227,7 @@ namespace Hecton8.Modding
 
             if (payload.Records != null)
             {
-                for (int i = 0; i < payload.Records.Length; i++)
+                for (int i = 0; i < payload.Records.Count; i++)
                 {
                     ModWorldSpawnRecord record = payload.Records[i];
                     if (string.IsNullOrWhiteSpace(record.SpawnId) ||
@@ -296,7 +296,7 @@ namespace Hecton8.Modding
                     continue;
                 }
 
-                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
                 if (pool == null)
                     continue;
 
@@ -323,9 +323,10 @@ namespace Hecton8.Modding
                     continue;
 
                 Transform cachedTransform = marker.transform;
+                Vector3 runtimePosition = cachedTransform.position;
                 ModWorldSpawnRecord record = _records[index];
-                record.Position = cachedTransform.position;
-                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(cachedTransform.position);
+                record.Position = runtimePosition;
+                AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
                 record.GridX = aup.GridX;
                 record.GridY = aup.GridY;
                 record.GridZ = aup.GridZ;
@@ -340,8 +341,7 @@ namespace Hecton8.Modding
 
         private ModSpawnedEntity AttachMarker(GameObject instance, ModWorldSpawnRecord record)
         {
-            ModSpawnedEntity marker = instance.GetComponent<ModSpawnedEntity>();
-            if (marker == null)
+            if (!instance.TryGetComponent(out ModSpawnedEntity marker))
             {
                 marker = instance.AddComponent<ModSpawnedEntity>(); // COLD ALLOC: Component[1] — marker for persistent mod world instance — owner: ModWorldPersistenceManager
             }
@@ -471,7 +471,7 @@ namespace Hecton8.Modding
         [Serializable]
         private struct ModWorldSavePayload
         {
-            public ModWorldSpawnRecord[] Records;
+            public List<ModWorldSpawnRecord> Records;
             public int NextSpawnSequence;
         }
     }

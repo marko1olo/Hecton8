@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Hecton.UI.MainMenu
@@ -18,7 +19,7 @@ namespace Hecton.UI.MainMenu
     /// save slot generation, and async scene loading.
     /// All UI text is driven through LocalizationManager.
     /// </summary>
-    public sealed class MainMenuController : MonoBehaviour, ITickable, IUpdatable, ISaveEventListener
+    public sealed class MainMenuController : MonoBehaviour, ITickable, IUpdatable, ISaveEventListener, ILocalizationLanguageChangedListener
     {
         private enum PanelTransitionState
         {
@@ -91,6 +92,12 @@ namespace Hecton.UI.MainMenu
         private InputManager _inputManager;
         private bool _cancelRequested;
         private PanelTransitionState _panelTransitionState;
+        private UnityAction _newGameClickAction;
+        private UnityAction _loadGameClickAction;
+        private UnityAction _settingsClickAction;
+        private UnityAction _quitClickAction;
+        private UnityAction _backFromSaveLoadClickAction;
+        private UnityAction _backFromSettingsClickAction;
 
 
         private void Awake()
@@ -104,6 +111,7 @@ namespace Hecton.UI.MainMenu
             }
 
             BootstrapStatus.MarkMainMenuReached();
+            CacheButtonActions();
             AutoWireSceneReferences();
             ConfigureAdaptiveLabels();
             ValidateReferences();
@@ -135,7 +143,7 @@ namespace Hecton.UI.MainMenu
             BlockCancelInputBriefly();
             EnsureInputSystemEventRouting();
             BindMenuInput();
-            LocalizationManager.OnLanguageChanged += OnLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             
             // Subscribe to save/load events for UI feedback
             SaveEvents.Register(this);
@@ -148,8 +156,8 @@ namespace Hecton.UI.MainMenu
             UnbindMenuInput();
 
             // TASK 31: Null-safe event unsubscription in OnDisable
-            if (LocalizationManager.Instance != null)
-                LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+            if (Hecton8.Core.GlobalRegistry.Localization != null)
+                LocalizationEvents.UnregisterLanguageListener(this);
             
             // Unsubscribe from save/load events with null checks
             SaveEvents.Unregister(this);
@@ -157,6 +165,15 @@ namespace Hecton.UI.MainMenu
             UnregisterFromTickManager();
             _lastUnscaledTickTime = 0f;
         }
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            OnLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void OnLanguageChanged(GameLanguage newLanguage)
         {
@@ -197,7 +214,7 @@ namespace Hecton.UI.MainMenu
 
         private void RefreshLocalizedTexts()
         {
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             if (loc == null)
                 return;
 
@@ -244,18 +261,28 @@ namespace Hecton.UI.MainMenu
 
         private void BindButtons()
         {
-            BindButton(btnNewGame, OnNewGameClicked);
-            BindButton(btnLoadGame, OnLoadGameClicked);
-            BindButton(btnSettings, OnSettingsClicked);
-            BindButton(btnQuit, OnQuitClicked);
-            BindButton(btnBackFromSaveLoad, OnBackFromSaveLoadClicked);
-            BindButton(btnBackFromSettings, OnBackFromSettingsClicked);
+            BindButton(btnNewGame, _newGameClickAction);
+            BindButton(btnLoadGame, _loadGameClickAction);
+            BindButton(btnSettings, _settingsClickAction);
+            BindButton(btnQuit, _quitClickAction);
+            BindButton(btnBackFromSaveLoad, _backFromSaveLoadClickAction);
+            BindButton(btnBackFromSettings, _backFromSettingsClickAction);
 
             if (btnSettings != null)
                 btnSettings.interactable = _settingsAvailable;
         }
 
-        private static void BindButton(Button button, UnityEngine.Events.UnityAction callback)
+        private void CacheButtonActions()
+        {
+            _newGameClickAction = OnNewGameClicked; // COLD ALLOC: UnityAction[1] - cached main menu new-game listener - owner: MainMenuController
+            _loadGameClickAction = OnLoadGameClicked; // COLD ALLOC: UnityAction[1] - cached main menu load-game listener - owner: MainMenuController
+            _settingsClickAction = OnSettingsClicked; // COLD ALLOC: UnityAction[1] - cached main menu settings listener - owner: MainMenuController
+            _quitClickAction = OnQuitClicked; // COLD ALLOC: UnityAction[1] - cached main menu quit listener - owner: MainMenuController
+            _backFromSaveLoadClickAction = OnBackFromSaveLoadClicked; // COLD ALLOC: UnityAction[1] - cached save-load back listener - owner: MainMenuController
+            _backFromSettingsClickAction = OnBackFromSettingsClicked; // COLD ALLOC: UnityAction[1] - cached settings back listener - owner: MainMenuController
+        }
+
+        private static void BindButton(Button button, UnityAction callback)
         {
             if (button == null)
                 return;
@@ -276,7 +303,7 @@ namespace Hecton.UI.MainMenu
 
         private void OnNewGameClicked()
         {
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             ModalWindow.Show(
                 loc != null ? loc.Get(LocalizationKeys.MODAL_NEW_GAME_TITLE) : "New Game",
                 loc != null ? loc.Get(LocalizationKeys.MODAL_NEW_GAME_MESSAGE) : "Start a new game?",
@@ -298,7 +325,7 @@ namespace Hecton.UI.MainMenu
 
         private void OnQuitClicked()
         {
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             ModalWindow.Show(
                 loc != null ? loc.Get(LocalizationKeys.MODAL_QUIT_TITLE) : "Quit",
                 loc != null ? loc.Get(LocalizationKeys.MODAL_QUIT_MESSAGE) : "Quit the game?",
@@ -513,7 +540,7 @@ namespace Hecton.UI.MainMenu
                 Debug.LogWarning("[MainMenuController] Hecton8.Core.GlobalRegistry.SaveRuntime is null. Save/Load features unavailable.");
 #endif
                 // Display error message to user
-                LocalizationManager loc = LocalizationManager.Instance;
+                LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
                 string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save System Unavailable";
                 string message = loc != null 
                     ? loc.Get(LocalizationKeys.ERROR_SAVE_SYSTEM_UNAVAILABLE_MESSAGE) 
@@ -633,7 +660,7 @@ namespace Hecton.UI.MainMenu
                 return;
             }
 
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             string displaySlotName = BuildSlotDisplayName(loc, slotName);
             string title = loc != null ? loc.Get(LocalizationKeys.MODAL_LOAD_TITLE) : "Load Game";
             string message = loc != null
@@ -667,7 +694,7 @@ namespace Hecton.UI.MainMenu
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogError("[MainMenuController] Hecton8.Core.GlobalRegistry.SaveRuntime is null. Cannot validate save file.");
 #endif
-                    LocalizationManager loc = LocalizationManager.Instance;
+                    LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
                     string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_MANAGER_UNAVAILABLE) : "Save System Unavailable";
                     string message = loc != null
                         ? loc.Get(LocalizationKeys.ERROR_SAVE_SYSTEM_UNAVAILABLE_MESSAGE)
@@ -685,7 +712,7 @@ namespace Hecton.UI.MainMenu
 
                 if (!_saveManager.SaveExists(slotName))
                 {
-                    LocalizationManager loc = LocalizationManager.Instance;
+                    LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
                     string displaySlotName = BuildSlotDisplayName(loc, slotName);
                     string title = loc != null ? loc.Get(LocalizationKeys.MODAL_LOAD_ERROR_TITLE) : "Load Error";
                     string message = loc != null
@@ -742,7 +769,7 @@ namespace Hecton.UI.MainMenu
                     "Ensure it is added to Build Settings!");
 #endif
 
-                LocalizationManager loc = LocalizationManager.Instance;
+                LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
                 string title = loc != null ? loc.Get(LocalizationKeys.MODAL_SCENE_LOAD_ERROR_TITLE) : "Scene Load Error";
                 string message = loc != null
                     ? loc.GetFormatted(LocalizationKeys.MODAL_SCENE_LOAD_ERROR_MESSAGE, targetSceneName)
@@ -1116,7 +1143,7 @@ namespace Hecton.UI.MainMenu
 
         private string ResolveLoadingPercentTemplate()
         {
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             return loc != null ? loc.Get(LocalizationKeys.LOADING_PERCENT) : "{0}%";
         }
 
@@ -1195,7 +1222,7 @@ namespace Hecton.UI.MainMenu
             SetSaveLoadButtonsInteractable(true);
 
             // Display error modal
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             string displaySlotName = BuildSlotDisplayName(loc, slotName);
             string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SAVE_FAILED_TITLE) : "Save Failed";
             string message = loc != null
@@ -1245,7 +1272,7 @@ namespace Hecton.UI.MainMenu
                 _lastLoadUsedBackup = true;
 
                 // Display backup recovery notification
-                LocalizationManager loc = LocalizationManager.Instance;
+                LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
                 string displaySlotName = BuildSlotDisplayName(loc, slotName);
                 string title = loc != null ? loc.Get(LocalizationKeys.WARNING_BACKUP_USED_TITLE) : "Backup Loaded";
                 string message = loc != null
@@ -1281,7 +1308,7 @@ namespace Hecton.UI.MainMenu
             // Check if error indicates corrupt save with no backup
             bool isCorruptNoBackup = IsCorruptNoBackupError(error);
 
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             string displaySlotName = BuildSlotDisplayName(loc, slotName);
             string title = loc != null ? loc.Get(LocalizationKeys.ERROR_LOAD_FAILED_TITLE) : "Load Failed";
             string message;

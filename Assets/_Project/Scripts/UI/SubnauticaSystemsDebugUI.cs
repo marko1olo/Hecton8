@@ -193,7 +193,7 @@ namespace Hecton8.UI
             }
 
             if (Application.isPlaying && persistAcrossSceneLoads)
-                DontDestroyOnLoad(gameObject);
+                GameBootstrapper.PersistRuntimeService(this);
 
             if (!Application.isPlaying)
                 return;
@@ -687,7 +687,7 @@ namespace Hecton8.UI
             if (!_stressApplied)
                 return;
 
-            DynamicResolutionScaler scaler = _resolvedScaler != null ? _resolvedScaler : DynamicResolutionScaler.Instance;
+            DynamicResolutionScaler scaler = _resolvedScaler != null ? _resolvedScaler : GlobalRegistry.DynamicResolution;
             if (scaler != null)
             {
                 scaler.ClearDebugFrameTimeOverride();
@@ -799,9 +799,9 @@ namespace Hecton8.UI
 
             if (_resolvedScaler == null)
             {
-                _resolvedScaler = DynamicResolutionScaler.Instance;
+                _resolvedScaler = GlobalRegistry.DynamicResolution;
                 if (_resolvedScaler == null)
-                    _resolvedScaler = DynamicResolutionScaler.Instance;
+                    _resolvedScaler = GlobalRegistry.DynamicResolution;
             }
 
             if (_resolvedFaunaDirector == null)
@@ -813,15 +813,14 @@ namespace Hecton8.UI
 
             if (_resolvedMusicDirector == null)
             {
-                if (!HectonMusicDirector.TryGetInstance(out _resolvedMusicDirector))
-                    _resolvedMusicDirector = HectonMusicDirector.Instance;
+                _resolvedMusicDirector = GlobalRegistry.MusicDirector;
             }
 
             if (_resolvedSoundscapeSystem == null)
             {
-                _resolvedSoundscapeSystem = SoundscapeSystem.Instance;
+                _resolvedSoundscapeSystem = GlobalRegistry.Soundscape;
                 if (_resolvedSoundscapeSystem == null)
-                    _resolvedSoundscapeSystem = SoundscapeSystem.Instance;
+                    _resolvedSoundscapeSystem = GlobalRegistry.Soundscape;
             }
 
             if (_resolvedUnderwaterVisuals == null)
@@ -833,9 +832,9 @@ namespace Hecton8.UI
 
             if (_resolvedCameraJuiceSystem == null)
             {
-                _resolvedCameraJuiceSystem = CameraJuiceSystem.Instance;
+                _resolvedCameraJuiceSystem = GlobalRegistry.CameraJuice;
                 if (_resolvedCameraJuiceSystem == null)
-                    _resolvedCameraJuiceSystem = CameraJuiceSystem.Instance;
+                    _resolvedCameraJuiceSystem = GlobalRegistry.CameraJuice;
             }
         }
 

@@ -631,14 +631,14 @@ namespace Hecton8.Construction
 
         private void ClearHazardState()
         {
-            HazardZoneManager hazardZoneManager = HazardZoneManager.Instance;
+            HazardZoneManager hazardZoneManager = Hecton8.Core.GlobalRegistry.HazardZones;
             if (hazardZoneManager != null)
                 hazardZoneManager.UnregisterZone(_hazardZoneId);
         }
 
         private void ClearRotHazardState()
         {
-            HazardZoneManager hazardZoneManager = HazardZoneManager.Instance;
+            HazardZoneManager hazardZoneManager = Hecton8.Core.GlobalRegistry.HazardZones;
             if (hazardZoneManager != null)
                 hazardZoneManager.UnregisterZone(_rotHazardZoneId);
         }
@@ -877,7 +877,11 @@ namespace Hecton8.Construction
 
         private ItemCatalog ResolveItemCatalog()
         {
-            return PlayerInventory.Instance != null ? PlayerInventory.Instance.ItemCatalog : null;
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            PlayerInventory inventory = inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
+            return inventory != null ? inventory.ItemCatalog : null;
         }
 
         private static float NormalizeQuality01(float quality01)

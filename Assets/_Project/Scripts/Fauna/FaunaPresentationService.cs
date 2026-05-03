@@ -1,3 +1,4 @@
+using Hecton8.Core;
 using Hecton8.Ecosystem;
 using Hecton8.World;
 using UnityEngine;
@@ -19,8 +20,8 @@ namespace Hecton8.AI
             if (ai == null)
                 return;
 
-            FaunaGeneticsManager.Instance?.ApplyTraits(ai, archetype, biomeIndex, runtimePosition);
-            EcosystemHealthDirector.Instance?.ConfigureSpawnedFauna(ai, archetype, chunkCoord);
+            GlobalRegistry.FaunaGenetics?.ApplyTraits(ai, archetype, biomeIndex, runtimePosition);
+            GlobalRegistry.EcosystemHealth?.ConfigureSpawnedFauna(ai, archetype, chunkCoord);
         }
     }
 }

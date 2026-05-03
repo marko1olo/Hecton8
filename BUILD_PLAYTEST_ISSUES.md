@@ -7,12 +7,13 @@ Ledger Start Date: `2026-04-05`
 
 This file tracks confirmed build and playtest observations.
 
-2026-05-01 current-state boundary:
+2026-05-02 current-state boundary:
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger for current project truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger for current project truth.
 - This ledger records build/playtest observations and coding follow-ups; it is not a global runtime certification report.
 - Items marked `[c]` are code-closed only until build/user proof confirms them.
 - If this file disagrees with current source, console, profiler, or fresh user evidence, the newer evidence wins.
+- Current May 2 dotnet compile evidence is clean for `Hecton8.Core.csproj` only: `0 Error(s)`, `117 Warning(s)`. It is not player-build, Play Mode, profiler, or user-playtest proof.
 
 Rules:
 

@@ -3,9 +3,9 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this fabrication contract as current runtime truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this fabrication contract as current runtime truth.
 - This document is the intended allocation-free fabrication path, not proof of 0 B/frame, complete recipe coverage, or save/logistics integration.
 - Re-open `Fabricator`, `CraftingSystem`, `PlayerInventory`, `BaseLogisticsNetwork`, and `PersistentWorldRegistry` before surgery.
 

@@ -134,11 +134,13 @@ namespace Hecton8.Core
 
         // COLD ALLOC: RegistryBucket<IObjectPoolDiagnosticsListener>[4] - pool diagnostics listeners drained on dispatcher LateUpdate - owner: ObjectPoolDiagnostics
         private static readonly RegistryBucket<IObjectPoolDiagnosticsListener> _listeners = new RegistryBucket<IObjectPoolDiagnosticsListener>(4);
+        private const int PendingEventCapacity = 4;
         // COLD ALLOC: Dictionary<uint,string>[32] - pool names keyed by FNV-1a hash for cold-path diagnostics resolution - owner: ObjectPoolDiagnostics
         private static readonly Dictionary<uint, string> _poolNamesByHash = new Dictionary<uint, string>(32);
         private static NativeQueue<PoolDiagnosticsEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEventCount;
 
         // ════════════════════════════════════════════════════════════
         //  INTERNAL STATE
@@ -170,6 +172,7 @@ namespace Hecton8.Core
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ObjectPoolDiagnostics), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
@@ -177,6 +180,7 @@ namespace Hecton8.Core
             _listeners.Clear();
             _poolNamesByHash.Clear();
             _poolMetrics.Clear();
+            _pendingEventCount = 0;
             _lastDiagnosticsFrame = -1;
             _lastDataBusSaturationWarningFrame = -1;
         }
@@ -210,7 +214,8 @@ namespace Hecton8.Core
                 return;
             }
 
-            while (!_pendingEvents.IsEmpty())
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget > 0 && !_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
@@ -218,11 +223,17 @@ namespace Hecton8.Core
                 if (!_pendingEvents.TryDequeue(out PoolDiagnosticsEventPayload payload))
                     return;
 
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+                scanBudget--;
                 IObjectPoolDiagnosticsListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                     rawArray[i].OnPoolDiagnosticsEvent(in payload);
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         public static bool TryResolvePoolName(uint poolHash, out string poolName)
@@ -237,6 +248,13 @@ namespace Hecton8.Core
 
             EnsureInitialized();
             bool saturated = pendingCount > 128;
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                if (saturated)
+                    PublishDataBusSaturationWarning();
+                return;
+            }
+
             _pendingEvents.Enqueue(new PoolDiagnosticsEventPayload
             {
                 PoolHash = queueHash,
@@ -244,6 +262,7 @@ namespace Hecton8.Core
                 EventType = (ushort)(saturated ? PoolDiagnosticsEventType.DataBusSaturated : PoolDiagnosticsEventType.DataBusDepth),
                 FlagValue = (ushort)(saturated ? 1 : 0)
             });
+            _pendingEventCount++;
 
             if (saturated)
                 PublishDataBusSaturationWarning();
@@ -415,6 +434,12 @@ namespace Hecton8.Core
             if (!_pendingEvents.IsCreated)
             {
                 _pendingEvents = new NativeQueue<PoolDiagnosticsEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<PoolDiagnosticsEventPayload>[4] - deferred pool diagnostics lane flushed by SystemDispatcher LateUpdate - owner: ObjectPoolDiagnostics
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(ObjectPoolDiagnostics),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
             }
         }
 
@@ -438,8 +463,11 @@ namespace Hecton8.Core
             if (poolHash == 0u)
                 return;
 
-            RegisterPoolName(poolName);
             EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+                return;
+
+            RegisterPoolName(poolName);
             _pendingEvents.Enqueue(new PoolDiagnosticsEventPayload
             {
                 PoolHash = poolHash,
@@ -447,6 +475,7 @@ namespace Hecton8.Core
                 EventType = (ushort)type,
                 FlagValue = (ushort)flagValue
             });
+            _pendingEventCount++;
         }
 
         private static void PublishDataBusSaturationWarning()
@@ -464,9 +493,22 @@ namespace Hecton8.Core
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out _))
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget > 0 && !_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out _))
+                    return;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+                scanBudget--;
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         // ════════════════════════════════════════════════════════════

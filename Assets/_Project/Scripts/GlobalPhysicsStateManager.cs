@@ -129,22 +129,60 @@ namespace Hecton8.Physics
     }
 
     /// <summary>
+    /// Listener contract for deferred physics-impact feedback.
+    /// </summary>
+    public interface IPhysicsImpactEventListener
+    {
+        /// <summary>Called once for each queued impact after the fixed-step collision phase.</summary>
+        /// <param name="impactSignal">Impact payload.</param>
+        void OnPhysicsImpact(in PhysicsImpactSignal impactSignal);
+    }
+
+    /// <summary>
     /// Static zero-instance gameplay event bus for deferred physics-impact feedback.
     /// </summary>
     public static class PhysicsEvents
     {
+        private const int ListenerCapacity = 16;
+
+        // COLD ALLOC: RegistryBucket<IPhysicsImpactEventListener>[16] - deferred physics impact listeners - owner: PhysicsEvents
+        private static readonly RegistryBucket<IPhysicsImpactEventListener> _impactListeners = new RegistryBucket<IPhysicsImpactEventListener>(ListenerCapacity);
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            _impactListeners.Clear();
+        }
+
         /// <summary>
-        /// Raised once per queued impact during the late-frame flush.
+        /// Registers one deferred physics-impact listener.
         /// </summary>
-        public static event Action<PhysicsImpactSignal> OnImpact;
+        /// <param name="listener">Listener to register.</param>
+        public static void Register(IPhysicsImpactEventListener listener)
+        {
+            if (listener != null && !_impactListeners.Contains(listener))
+                _impactListeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters one deferred physics-impact listener.
+        /// </summary>
+        /// <param name="listener">Listener to unregister.</param>
+        public static void Unregister(IPhysicsImpactEventListener listener)
+        {
+            if (listener != null && _impactListeners.Contains(listener))
+                _impactListeners.Unregister(listener);
+        }
 
         internal static void RaiseImpact(in PhysicsImpactSignal impactSignal)
         {
-            Action<PhysicsImpactSignal> handler = OnImpact;
-            if (handler == null)
+            int count = _impactListeners.Count;
+            if (count <= 0)
                 return;
 
-            handler(impactSignal);
+            IPhysicsImpactEventListener[] rawArray = _impactListeners.RawArray;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnPhysicsImpact(in impactSignal);
         }
     }
 
@@ -220,6 +258,8 @@ namespace Hecton8.Physics
         private const int MaxTrackedConnections = 128;
         private const int MaxQueuedImpactEvents = 256;
         private const int MaxImpactFlushIterations = MaxQueuedImpactEvents;
+        private const int SceneRootScanCapacity = 128;
+        private const int SceneRigidbodyScanCapacity = MaxTrackedBodies;
         private const float MinMass = 0.0001f;
         private const float MassRatioThreshold = 100f;
         private const float MinImpactForce = 0.01f;
@@ -245,6 +285,10 @@ namespace Hecton8.Physics
         private readonly PhysicsConnection[] _connections = new PhysicsConnection[MaxTrackedConnections];
         // COLD ALLOC: Dictionary<ulong,int>[512 initial] â€” rigidbody entity-id to tracked-index map for O(1) lookups during origin shifts â€” owner: GlobalPhysicsStateManager
         private readonly Dictionary<ulong, int> _trackedBodyIndexByEntityId = new Dictionary<ulong, int>(MaxTrackedBodies);
+        // COLD ALLOC: List<GameObject>[128] - scene-load root scratch for rigidbody registry bootstrap without scene-wide array allocation - owner: GlobalPhysicsStateManager
+        private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(SceneRootScanCapacity);
+        // COLD ALLOC: List<Rigidbody>[512] - scene-load rigidbody scratch for registry bootstrap without scene-wide array allocation - owner: GlobalPhysicsStateManager
+        private readonly List<Rigidbody> _sceneRigidbodyScratch = new List<Rigidbody>(SceneRigidbodyScanCapacity);
 
         private NativeArray<float3> _lastValidPositions;
         private NativeQueue<PhysicsImpactEventData> _impactQueue;
@@ -259,6 +303,14 @@ namespace Hecton8.Physics
         private bool _sceneEventsSubscribed;
         private int _lastKineticAnomalyFrame = -1;
         private Transform _playerTransform;
+
+        internal static GlobalPhysicsStateManager ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
 
         internal static void RegisterTrackedBody(Rigidbody body)
         {
@@ -392,16 +444,30 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             if (!_lastValidPositions.IsCreated)
             {
                 // COLD ALLOC: NativeArray<float3>[512 initial] â€” authoritative last-valid runtime-space body positions for origin-shift-safe recovery â€” owner: GlobalPhysicsStateManager
                 _lastValidPositions = new NativeArray<float3>(_trackedBodies.Length, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _lastValidPositions,
+                    nameof(GlobalPhysicsStateManager),
+                    nameof(_lastValidPositions),
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_impactQueue.IsCreated)
             {
                 // COLD ALLOC: NativeQueue<PhysicsImpactEventData>(Persistent) â€” deferred gameplay physics impact bus â€” owner: GlobalPhysicsStateManager
                 _impactQueue = new NativeQueue<PhysicsImpactEventData>(Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _impactQueue,
+                    MaxQueuedImpactEvents,
+                    nameof(GlobalPhysicsStateManager),
+                    nameof(_impactQueue),
+                    NativeAllocationLifetime.Session);
             }
         }
 
@@ -428,14 +494,6 @@ namespace Hecton8.Physics
 
             TryRegisterService();
 
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
-
             SubscribeSceneEvents();
             ScanLoadedScenesForRigidbodies();
             _isInitialized = true;
@@ -445,6 +503,8 @@ namespace Hecton8.Physics
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
+
             if (!_isInitialized)
                 return;
 
@@ -461,6 +521,9 @@ namespace Hecton8.Physics
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             if (_registeredFixedTick)
             {
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
@@ -487,10 +550,16 @@ namespace Hecton8.Physics
             ClearRuntimeState();
 
             if (_impactQueue.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(GlobalPhysicsStateManager), nameof(_impactQueue));
                 _impactQueue.Dispose();
+            }
 
             if (_lastValidPositions.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_lastValidPositions);
                 _lastValidPositions.Dispose();
+            }
 
             TryUnregisterService();
         }
@@ -538,7 +607,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Core);
-            _registeredFixedTick = true;
+            _registeredFixedTick = GlobalRegistry.FixedTickables.Contains(this);
         }
 
         private void TryRegisterLateFrameTick()
@@ -547,7 +616,9 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
-            _registeredLateFrameTick = true;
+            _registeredLateFrameTick = SystemDispatcher
+                .GetLateFrameLane(PriorityLayer.Core)
+                .Contains(this);
         }
 
         private void TryRegisterOriginShift()
@@ -556,7 +627,7 @@ namespace Hecton8.Physics
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _registeredOriginShift = true;
+            _registeredOriginShift = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         /// <inheritdoc />
@@ -570,8 +641,6 @@ namespace Hecton8.Physics
 
         private void PrepareTrackedBodiesForOriginShiftInternal()
         {
-            RegisterActiveRigidbodiesForOriginShift();
-
             for (int i = _trackedBodyCount - 1; i >= 0; i--)
             {
                 Rigidbody body = _trackedBodies[i];
@@ -724,8 +793,6 @@ namespace Hecton8.Physics
 
         private void ResetTrackedBodiesForSafeTeleportInternal()
         {
-            RegisterActiveRigidbodiesForOriginShift();
-
             for (int i = _trackedBodyCount - 1; i >= 0; i--)
             {
                 Rigidbody body = _trackedBodies[i];
@@ -1590,30 +1657,48 @@ namespace Hecton8.Physics
             for (int i = 0; i < _trackedBodyCount; i++)
                 resizedPositions[i] = _lastValidPositions[i];
 
+            NativeMemorySentinel.UnregisterNativeArray(_lastValidPositions);
             _lastValidPositions.Dispose();
             _lastValidPositions = resizedPositions;
-        }
-
-        private void RegisterActiveRigidbodiesForOriginShift()
-        {
-            // COLD ALLOC: Rigidbody[][active scene body count] â€” one-shot pre-shift sweep so every live dynamic body gets interpolation suspension before AUP teleport â€” owner: GlobalPhysicsStateManager
-            Rigidbody[] bodies = FindObjectsByType<Rigidbody>(FindObjectsInactive.Exclude);
-            EnsureTrackedBodyCapacity(_trackedBodyCount + bodies.Length);
-            for (int i = 0; i < bodies.Length; i++)
-            {
-                Rigidbody body = bodies[i];
-                if (body == null || body.isKinematic)
-                    continue;
-
-                RegisterTrackedBodyInternal(body);
-            }
+            NativeMemorySentinel.RegisterNativeArray(
+                _lastValidPositions,
+                nameof(GlobalPhysicsStateManager),
+                nameof(_lastValidPositions),
+                NativeAllocationLifetime.Session);
         }
 
         private void ScanLoadedScenesForRigidbodies()
         {
-            Rigidbody[] bodies = FindObjectsByType<Rigidbody>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < bodies.Length; i++)
-                RegisterTrackedBodyInternal(bodies[i]);
+            int sceneCount = SceneManager.sceneCount;
+            for (int sceneIndex = 0; sceneIndex < sceneCount; sceneIndex++)
+                ScanSceneForRigidbodies(SceneManager.GetSceneAt(sceneIndex));
+        }
+
+        private void ScanSceneForRigidbodies(Scene scene)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return;
+
+            _sceneRootScratch.Clear();
+            scene.GetRootGameObjects(_sceneRootScratch);
+
+            int rootCount = _sceneRootScratch.Count;
+            for (int rootIndex = 0; rootIndex < rootCount; rootIndex++)
+            {
+                GameObject rootObject = _sceneRootScratch[rootIndex];
+                if (rootObject == null || !rootObject.activeInHierarchy)
+                    continue;
+
+                _sceneRigidbodyScratch.Clear();
+                rootObject.GetComponentsInChildren(false, _sceneRigidbodyScratch);
+                int bodyCount = _sceneRigidbodyScratch.Count;
+                EnsureTrackedBodyCapacity(_trackedBodyCount + bodyCount);
+                for (int bodyIndex = 0; bodyIndex < bodyCount; bodyIndex++)
+                    RegisterTrackedBodyInternal(_sceneRigidbodyScratch[bodyIndex]);
+            }
+
+            _sceneRigidbodyScratch.Clear();
+            _sceneRootScratch.Clear();
         }
 
         private void ClearRuntimeState()
@@ -1692,7 +1777,7 @@ namespace Hecton8.Physics
 
         private void HandleSceneLoaded(Scene scene, LoadSceneMode mode)
         {
-            ScanLoadedScenesForRigidbodies();
+            ScanSceneForRigidbodies(scene);
         }
 
         private static bool IsFinite(Vector3 value)

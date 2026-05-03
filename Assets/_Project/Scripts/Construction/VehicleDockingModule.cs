@@ -78,6 +78,7 @@ namespace Hecton8.Construction
         private bool _isDocked;
         private IPlayerTransportLifecycleOwner _dockedTransport;
         private MonoBehaviour _dockedBehaviour;
+        private Transform _dockedTransform;
         private Rigidbody _dockedBody;
         private bool _cachedBodyWasKinematic;
         private bool _cachedBodyUseGravity;
@@ -88,6 +89,7 @@ namespace Hecton8.Construction
         private Vector3 _dockingAngularVelocityRadians;
         private float _dockingElapsedSeconds;
         private MountablePlayerTransport _mountedTransportLockOwner;
+        private int _lastRejectedDockColliderId;
 
         /// <summary>Continuous draw while charge is actually transferred to a docked transport.</summary>
         public float PowerRating => _activelyCharging ? -chargingPowerDraw : 0f;
@@ -134,6 +136,7 @@ namespace Hecton8.Construction
             _dockingElapsedSeconds = 0f;
             _dockingLinearVelocity = Vector3.zero;
             _dockingAngularVelocityRadians = Vector3.zero;
+            _lastRejectedDockColliderId = 0;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryRegister();
@@ -150,6 +153,7 @@ namespace Hecton8.Construction
             _dockingElapsedSeconds = 0f;
             _dockingLinearVelocity = Vector3.zero;
             _dockingAngularVelocityRadians = Vector3.zero;
+            _lastRejectedDockColliderId = 0;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
             TryUnregister();
@@ -199,6 +203,7 @@ namespace Hecton8.Construction
             if (other == null)
                 return;
 
+            _lastRejectedDockColliderId = 0;
             TryDockFromCollider(other);
         }
 
@@ -207,13 +212,22 @@ namespace Hecton8.Construction
             if (other == null || _dockedTransport != null)
                 return;
 
-            TryDockFromCollider(other);
+            int colliderId = ResolveColliderRuntimeId(other);
+            if (colliderId != 0 && colliderId == _lastRejectedDockColliderId)
+                return;
+
+            if (!TryDockFromCollider(other) && colliderId != 0)
+                _lastRejectedDockColliderId = colliderId;
         }
 
         private void OnTriggerExit(Collider other)
         {
             if (other == null || _dockedBehaviour == null)
                 return;
+
+            int colliderId = ResolveColliderRuntimeId(other);
+            if (colliderId != 0 && colliderId == _lastRejectedDockColliderId)
+                _lastRejectedDockColliderId = 0;
 
             MonoBehaviour ownerBehaviour;
             IPlayerTransportLifecycleOwner owner;
@@ -249,17 +263,18 @@ namespace Hecton8.Construction
             _registered = false;
         }
 
-        private void TryDockFromCollider(Collider other)
+        private bool TryDockFromCollider(Collider other)
         {
             if (_dockedTransport != null)
-                return;
+                return false;
 
             MonoBehaviour ownerBehaviour;
             IPlayerTransportLifecycleOwner owner;
             if (!TryResolveTransportLifecycleOwner(other, out owner, out ownerBehaviour))
-                return;
+                return false;
 
             DockTransport(owner, ownerBehaviour);
+            return true;
         }
 
         private void DockTransport(IPlayerTransportLifecycleOwner transportOwner, MonoBehaviour transportBehaviour)
@@ -269,6 +284,7 @@ namespace Hecton8.Construction
 
             _dockedTransport = transportOwner;
             _dockedBehaviour = transportBehaviour;
+            _dockedTransform = transportBehaviour.transform;
             _debugDockOccupied = true;
             _debugDockedTransportName = transportBehaviour.name;
 
@@ -302,12 +318,14 @@ namespace Hecton8.Construction
             _dockedBody = null;
             _dockedTransport = null;
             _dockedBehaviour = null;
+            _dockedTransform = null;
             _activelyCharging = false;
             _dockingInProgress = false;
             _isDocked = false;
             _dockingElapsedSeconds = 0f;
             _dockingLinearVelocity = Vector3.zero;
             _dockingAngularVelocityRadians = Vector3.zero;
+            _lastRejectedDockColliderId = 0;
             _debugDockOccupied = false;
             _debugDockedTransportName = string.Empty;
         }
@@ -338,7 +356,7 @@ namespace Hecton8.Construction
 
         private void SnapDockedBodyToAnchor()
         {
-            if (_dockedBehaviour == null)
+            if (_dockedBehaviour == null || _dockedTransform == null)
                 return;
 
             Transform anchor = dockAnchor != null ? dockAnchor : _cachedTransform;
@@ -349,8 +367,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            Transform transportTransform = _dockedBehaviour.transform;
-            transportTransform.SetPositionAndRotation(anchor.position, anchor.rotation);
+            _dockedTransform.SetPositionAndRotation(anchor.position, anchor.rotation);
         }
 
         private void AdvanceDockingPose(float fixedDeltaTime)
@@ -361,6 +378,9 @@ namespace Hecton8.Construction
             Transform anchor = dockAnchor != null ? dockAnchor : _cachedTransform;
             Vector3 anchorPosition = anchor.position;
             Quaternion anchorRotation = anchor.rotation;
+            Vector3 evaluatedPosition = anchorPosition;
+            Quaternion evaluatedRotation = anchorRotation;
+            bool hasEvaluatedPose = false;
 
             if (_dockedBody != null)
             {
@@ -382,28 +402,37 @@ namespace Hecton8.Construction
                 _dockedBody.angularVelocity = _dockingAngularVelocityRadians;
                 _dockedBody.MovePosition(nextPosition);
                 _dockedBody.MoveRotation(nextRotation);
+                evaluatedPosition = nextPosition;
+                evaluatedRotation = nextRotation;
+                hasEvaluatedPose = true;
             }
-            else if (_dockedBehaviour != null)
+            else if (_dockedTransform != null)
             {
-                Transform transportTransform = _dockedBehaviour.transform;
-                Vector3 positionError = anchorPosition - transportTransform.position;
+                Vector3 currentPosition = _dockedTransform.position;
+                Quaternion currentRotation = _dockedTransform.rotation;
+                Vector3 positionError = anchorPosition - currentPosition;
                 Vector3 positionForce = (positionError * dockingPositionSpring) - (_dockingLinearVelocity * dockingPositionDamping);
                 Vector3 positionAcceleration = ClampVectorMagnitude(positionForce, maxDockingForce);
                 _dockingLinearVelocity = HectonPlayerMotor.SafeVelocity(_dockingLinearVelocity + (positionAcceleration * safeDeltaTime));
-                Vector3 rotationErrorRadians = ResolveRotationErrorRadians(transportTransform.rotation, anchorRotation);
+                Vector3 rotationErrorRadians = ResolveRotationErrorRadians(currentRotation, anchorRotation);
                 Vector3 angularAcceleration = (rotationErrorRadians * dockingRotationSpring) - (_dockingAngularVelocityRadians * dockingRotationDamping);
                 _dockingAngularVelocityRadians = HectonPlayerMotor.SafeVelocity(_dockingAngularVelocityRadians + (angularAcceleration * safeDeltaTime));
-                transportTransform.SetPositionAndRotation(
-                    transportTransform.position + (_dockingLinearVelocity * safeDeltaTime),
-                    IntegrateAngularVelocity(transportTransform.rotation, _dockingAngularVelocityRadians, safeDeltaTime));
+                Vector3 nextPosition = currentPosition + (_dockingLinearVelocity * safeDeltaTime);
+                Quaternion nextRotation = IntegrateAngularVelocity(currentRotation, _dockingAngularVelocityRadians, safeDeltaTime);
+                _dockedTransform.SetPositionAndRotation(
+                    nextPosition,
+                    nextRotation);
+                evaluatedPosition = nextPosition;
+                evaluatedRotation = nextRotation;
+                hasEvaluatedPose = true;
             }
 
             bool durationElapsed = _dockingElapsedSeconds >= duration - 0.0001f;
-            bool positionCaptured = _dockedBehaviour != null &&
-                                    Vector3.SqrMagnitude(anchorPosition - _dockedBehaviour.transform.position) <=
+            bool positionCaptured = hasEvaluatedPose &&
+                                    Vector3.SqrMagnitude(anchorPosition - evaluatedPosition) <=
                                     dockingCaptureDistanceEpsilon * dockingCaptureDistanceEpsilon;
-            bool rotationCaptured = _dockedBehaviour != null &&
-                                    Quaternion.Angle(_dockedBehaviour.transform.rotation, anchorRotation) <= dockingCaptureAngleEpsilonDegrees;
+            bool rotationCaptured = hasEvaluatedPose &&
+                                    Quaternion.Angle(evaluatedRotation, anchorRotation) <= dockingCaptureAngleEpsilonDegrees;
             if (!durationElapsed && (!positionCaptured || !rotationCaptured))
                 return;
 
@@ -552,6 +581,13 @@ namespace Hecton8.Construction
             lifecycleOwner = null;
             lifecycleBehaviour = null;
             return false;
+        }
+
+        private static int ResolveColliderRuntimeId(Collider collider)
+        {
+            return collider != null
+                ? unchecked((int)EntityId.ToULong(collider.GetEntityId()))
+                : 0;
         }
     }
 }

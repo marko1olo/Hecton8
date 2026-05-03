@@ -91,14 +91,11 @@ namespace Hecton8.Modding
         // COLD ALLOC: Dictionary<string,int>[32] — compound key to setting index lookup — owner: ModSettingsRegistry
         private static readonly Dictionary<uint, int> _entryIndexByHash = new Dictionary<uint, int>(32);
 
-        internal static event Action RegistryChanged;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _entries.Clear();
             _entryIndexByHash.Clear();
-            RegistryChanged = null;
         }
 
         internal static void RegisterToggle(string modId, string settingName, bool defaultValue, Action<bool> onValueChanged)
@@ -106,12 +103,13 @@ namespace Hecton8.Modding
             if (!TryGetCompoundHash(modId, settingName, out uint compoundHash))
                 return;
 
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
             bool value = options != null ? options.GetBool(BuildStorageKey(compoundHash), defaultValue) : defaultValue;
 
             SettingEntry entry = new SettingEntry
             {
                 ModId = modId,
+                ModHash = ModCommandDispatcher.ComputeModHash(modId),
                 SettingName = settingName,
                 DisplayName = settingName,
                 KeyHash = compoundHash,
@@ -122,7 +120,7 @@ namespace Hecton8.Modding
             };
 
             AddOrUpdateEntry(compoundHash, entry);
-            InvokeToggleCallback(entry.ModId, entry.BoolChanged, entry.BoolValue);
+            InvokeToggleCallback(entry.ModId, entry.ModHash, entry.BoolChanged, entry.BoolValue);
         }
 
         internal static void RegisterSlider(string modId, string settingName, float defaultValue, float minValue, float maxValue, Action<float> onValueChanged)
@@ -134,7 +132,7 @@ namespace Hecton8.Modding
             float safeMax = Mathf.Max(minValue, maxValue);
             float safeDefault = Mathf.Clamp(defaultValue, safeMin, safeMax);
 
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
             float value = options != null
                 ? Mathf.Clamp(options.GetFloat(BuildStorageKey(compoundHash), safeDefault), safeMin, safeMax)
                 : safeDefault;
@@ -142,6 +140,7 @@ namespace Hecton8.Modding
             SettingEntry entry = new SettingEntry
             {
                 ModId = modId,
+                ModHash = ModCommandDispatcher.ComputeModHash(modId),
                 SettingName = settingName,
                 DisplayName = settingName,
                 KeyHash = compoundHash,
@@ -154,7 +153,7 @@ namespace Hecton8.Modding
             };
 
             AddOrUpdateEntry(compoundHash, entry);
-            InvokeSliderCallback(entry.ModId, entry.FloatChanged, entry.FloatValue);
+            InvokeSliderCallback(entry.ModId, entry.ModHash, entry.FloatChanged, entry.FloatValue);
         }
 
         internal static void CollectSettings(List<ModSettingView> destination)
@@ -197,15 +196,15 @@ namespace Hecton8.Modding
             entry.BoolValue = value;
             _entries[index] = entry;
 
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
             if (options != null)
             {
                 options.SetBool(BuildStorageKey(entry.KeyHash), value);
                 options.Save();
             }
 
-            InvokeToggleCallback(entry.ModId, entry.BoolChanged, value);
-            RegistryChanged?.Invoke();
+            InvokeToggleCallback(entry.ModId, entry.ModHash, entry.BoolChanged, value);
+            ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
             return true;
         }
 
@@ -225,15 +224,15 @@ namespace Hecton8.Modding
             entry.FloatValue = clamped;
             _entries[index] = entry;
 
-            UserOptionsPersistence options = UserOptionsPersistence.Instance;
+            UserOptionsPersistence options = Hecton8.Core.GlobalRegistry.UserOptions;
             if (options != null)
             {
                 options.SetFloat(BuildStorageKey(entry.KeyHash), clamped);
                 options.Save();
             }
 
-            InvokeSliderCallback(entry.ModId, entry.FloatChanged, clamped);
-            RegistryChanged?.Invoke();
+            InvokeSliderCallback(entry.ModId, entry.ModHash, entry.FloatChanged, clamped);
+            ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
             return true;
         }
 
@@ -242,13 +241,13 @@ namespace Hecton8.Modding
             if (_entryIndexByHash.TryGetValue(compoundHash, out int index))
             {
                 _entries[index] = entry;
-                RegistryChanged?.Invoke();
+                ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
                 return;
             }
 
             _entryIndexByHash.Add(compoundHash, _entries.Count);
             _entries.Add(entry);
-            RegistryChanged?.Invoke();
+            ModRegistryEvents.NotifySettingsRegistryChanged(entry.ModHash, entry.KeyHash);
         }
 
         private static bool TryGetEntry(string modId, string settingName, out int index)
@@ -304,14 +303,14 @@ namespace Hecton8.Modding
             return "Hecton_ModSetting_" + compoundHash.ToString("X8");
         }
 
-        private static void InvokeToggleCallback(string modId, Action<bool> callback, bool value)
+        private static void InvokeToggleCallback(string modId, uint modHash, Action<bool> callback, bool value)
         {
             if (callback == null)
                 return;
 
             try
             {
-                using (ModExecutionScope.Enter(modId))
+                using (ModExecutionScope.Enter(modId, modHash))
                 {
                     callback(value);
                 }
@@ -322,14 +321,14 @@ namespace Hecton8.Modding
             }
         }
 
-        private static void InvokeSliderCallback(string modId, Action<float> callback, float value)
+        private static void InvokeSliderCallback(string modId, uint modHash, Action<float> callback, float value)
         {
             if (callback == null)
                 return;
 
             try
             {
-                using (ModExecutionScope.Enter(modId))
+                using (ModExecutionScope.Enter(modId, modHash))
                 {
                     callback(value);
                 }
@@ -343,6 +342,7 @@ namespace Hecton8.Modding
         private struct SettingEntry
         {
             public string ModId;
+            public uint ModHash;
             public string SettingName;
             public string DisplayName;
             public uint KeyHash;

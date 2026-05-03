@@ -20,6 +20,9 @@ namespace Hecton8.Core
 
         public static void NotifyDispatcherHeartbeat()
         {
+            if (Application.isBatchMode)
+                return;
+
             EnsureInitialized();
             if (_hasActiveLeak)
                 SceneView.RepaintAll();
@@ -27,6 +30,9 @@ namespace Hecton8.Core
 
         public static void ReportLeak(string message)
         {
+            if (Application.isBatchMode)
+                return;
+
             EnsureInitialized();
             _hasActiveLeak = true;
             _activeMessage = message;
@@ -35,6 +41,9 @@ namespace Hecton8.Core
 
         public static void ClearLeak()
         {
+            if (Application.isBatchMode)
+                return;
+
             _hasActiveLeak = false;
             _activeMessage = null;
             SceneView.RepaintAll();
@@ -42,6 +51,9 @@ namespace Hecton8.Core
 
         private static void EnsureInitialized()
         {
+            if (Application.isBatchMode)
+                return;
+
             if (_initialized)
                 return;
 

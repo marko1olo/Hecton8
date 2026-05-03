@@ -46,7 +46,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class Floater : MonoBehaviour, IInteractable, IFixedTickable
+    public sealed class Floater : MonoBehaviour, IInteractable, IFixedTickable, ILocalizationLanguageChangedListener
     {
         private const string DefaultPickupText = "Pick Up Floater";
         private const string DefaultAttachText = "Attach to Object";
@@ -191,14 +191,14 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
             _state = FloaterState.Idle;
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             UnregisterFromFixedTick();
         }
 
@@ -269,6 +269,15 @@ namespace Hecton8.Gameplay
             return ResolveLocalized(localizationKey, defaultText);
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
@@ -276,7 +285,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return fallback;
 

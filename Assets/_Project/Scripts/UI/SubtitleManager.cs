@@ -48,22 +48,11 @@ namespace Hecton8.UI
         }
 
         /// <summary>
-        /// Fired when lore-backed audio playback changes state.
-        /// </summary>
-        public static event Action<PlaybackEvent> OnPlaybackEvent;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            OnPlaybackEvent = null;
-        }
-
-        /// <summary>
         /// Publish a subtitle start event.
         /// </summary>
         public static void RaisePlaybackStarted(uint loreHash, float durationSeconds)
         {
-            OnPlaybackEvent?.Invoke(new PlaybackEvent(PlaybackEventKind.Started, loreHash, durationSeconds));
+            AudioLogEvents.RaisePlaybackStarted(loreHash, durationSeconds);
         }
 
         /// <summary>
@@ -71,7 +60,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void RaisePlaybackStopped(uint loreHash)
         {
-            OnPlaybackEvent?.Invoke(new PlaybackEvent(PlaybackEventKind.Stopped, loreHash, 0f));
+            AudioLogEvents.RaisePlaybackStopped(loreHash);
         }
 
         /// <summary>
@@ -79,7 +68,7 @@ namespace Hecton8.UI
         /// </summary>
         public static void RaisePlaybackCompleted(uint loreHash)
         {
-            OnPlaybackEvent?.Invoke(new PlaybackEvent(PlaybackEventKind.Completed, loreHash, 0f));
+            AudioLogEvents.RaisePlaybackCompleted(loreHash);
         }
     }
 
@@ -88,7 +77,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Subtitle Manager")]
-    public sealed class SubtitleManager : MonoBehaviour, ITickable, INotificationEventListener
+    public sealed class SubtitleManager : MonoBehaviour, ITickable, INotificationEventListener, IAudioLogEventListener
     {
         private enum SubtitleSource
         {
@@ -184,6 +173,7 @@ namespace Hecton8.UI
         private bool _built;
         private bool _isShowing;
         private bool _registeredToTickManager;
+        private bool _serviceRegistered;
         private string _currentMessage;
         private SubtitleSource _currentSource;
         private string _lastEnqueuedMessage;
@@ -254,20 +244,53 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
+            if (Instance == null)
+                Instance = this;
+            if (Instance != this)
+                return;
+
+            TryRegisterToGlobalRegistry();
             font = LocalizedFontResolver.ResolveReadableFont(font);
             NotificationEvents.Register(this);
-            SubtitleEventBus.OnPlaybackEvent += HandleSubtitlePlaybackEvent;
+            AudioLogEvents.Register(this);
             EnsureBuilt();
         }
 
         private void OnDisable()
         {
             NotificationEvents.Unregister(this);
-            SubtitleEventBus.OnPlaybackEvent -= HandleSubtitlePlaybackEvent;
+            AudioLogEvents.Unregister(this);
             UnregisterFromTickManager();
+            TryUnregisterFromGlobalRegistry();
 
             if (Instance == this)
                 Instance = null;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterFromGlobalRegistry();
+
+            if (Instance == this)
+                Instance = null;
+        }
+
+        private void TryRegisterToGlobalRegistry()
+        {
+            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+                return;
+
+            GlobalRegistry.RegisterSubtitleRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Subtitles, this);
+        }
+
+        private void TryUnregisterFromGlobalRegistry()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSubtitleRuntime(this);
+            _serviceRegistered = false;
         }
 
         /// <summary>
@@ -275,7 +298,7 @@ namespace Hecton8.UI
         /// </summary>
         public void DisplaySubtitle(string key, float duration)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             string resolved = manager != null
                 ? manager.GetExpandedOrFallback(manager.CurrentLanguage, key, key)
                 : key;
@@ -342,17 +365,17 @@ namespace Hecton8.UI
             Enqueue(message, defaultDuration, SubtitleSource.Notification, false);
         }
 
-        private void HandleSubtitlePlaybackEvent(SubtitleEventBus.PlaybackEvent playbackEvent)
+        public void OnAudioLogEvent(in AudioLogEventPayload payload)
         {
-            switch (playbackEvent.Kind)
+            switch (payload.Type)
             {
-                case SubtitleEventBus.PlaybackEventKind.Started:
-                    HandleAudioLogPlaybackStarted(playbackEvent.LoreHash, playbackEvent.DurationSeconds);
+                case AudioLogEventType.PlaybackStarted:
+                    HandleAudioLogPlaybackStarted(payload.LogHash, payload.DurationSeconds);
                     return;
 
-                case SubtitleEventBus.PlaybackEventKind.Stopped:
-                case SubtitleEventBus.PlaybackEventKind.Completed:
-                    HandleAudioLogPlaybackEnded(playbackEvent.LoreHash);
+                case AudioLogEventType.PlaybackStopped:
+                case AudioLogEventType.PlaybackCompleted:
+                    HandleAudioLogPlaybackEnded(payload.LogHash);
                     return;
             }
         }
@@ -469,7 +492,7 @@ namespace Hecton8.UI
             if (_currentSource == SubtitleSource.AudioLog)
                 return;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             int stressBucket = manager != null ? manager.GetHullStressCorruptionBucket() : 0;
             if (stressBucket == _lastStressCorruptionBucket)
                 return;
@@ -485,7 +508,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(message))
                 return string.Empty;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return message;
 
@@ -497,7 +520,7 @@ namespace Hecton8.UI
         private bool TryPrepareAudioLogBuffers(uint loreHash, float durationSeconds, out int initialRenderLength)
         {
             initialRenderLength = 0;
-            LoreDatabaseManager database = LoreDatabaseManager.Instance;
+            LoreDatabaseManager database = Hecton8.Core.GlobalRegistry.LoreDatabase;
             if (database == null || loreHash == 0u)
                 return false;
 

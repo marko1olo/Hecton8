@@ -54,7 +54,7 @@ namespace Hecton8.Dev
         private void OnValidate()
         {
             ActiveAuthoringInstance = this;
-            if (!rebuildOnReset || Application.isPlaying)
+            if (!rebuildOnReset || !IsEditorRebuildSafe())
                 return;
 
             if (transform.childCount == 0)
@@ -92,28 +92,28 @@ namespace Hecton8.Dev
         {
             _rebuildQueued = false;
 
-            if (this == null || gameObject == null || Application.isPlaying)
+            if (this == null || gameObject == null || !IsEditorRebuildSafe())
                 return;
-
-            if (EditorApplication.isCompiling ||
-                EditorApplication.isUpdating ||
-                EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                QueueRebuildAfterReset();
-                return;
-            }
 
             RebuildInternal();
         }
 
         private void QueueRebuildAfterReset()
         {
-            if (_rebuildQueued)
+            if (_rebuildQueued || !IsEditorRebuildSafe())
                 return;
 
             _rebuildQueued = true;
             EditorApplication.delayCall -= TryRebuildAfterReset;
             EditorApplication.delayCall += TryRebuildAfterReset;
+        }
+
+        private static bool IsEditorRebuildSafe()
+        {
+            return !Application.isPlaying &&
+                   !EditorApplication.isCompiling &&
+                   !EditorApplication.isUpdating &&
+                   !EditorApplication.isPlayingOrWillChangePlaymode;
         }
 
         private void RebuildInternal()

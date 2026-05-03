@@ -54,7 +54,7 @@ namespace Hecton8.Tools
             }
 
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            GameBootstrapper.PersistRuntimeService(this);
         }
 
         /// <summary>

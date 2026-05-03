@@ -166,7 +166,7 @@ namespace Hecton8.Gameplay
 
         private void PublishCutMask(Vector3 positionWS, Vector3 velocityWS)
         {
-            SargassumCutManager cutManager = SargassumCutManager.Instance;
+            SargassumCutManager cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
             if (cutManager == null)
                 return;
 

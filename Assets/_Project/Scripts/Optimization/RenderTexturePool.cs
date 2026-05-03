@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -37,6 +38,7 @@ namespace Hecton8.Optimization
         
         private int _totalRentCalls;
         private int _totalReuseCount;
+        private bool _registeredService;
         
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextStatsLogTime;
@@ -84,16 +86,19 @@ namespace Hecton8.Optimization
         
         private void OnEnable()
         {
+            TryRegisterService();
             SceneManager.sceneUnloaded += HandleSceneUnloaded;
         }
         
         private void OnDisable()
         {
             SceneManager.sceneUnloaded -= HandleSceneUnloaded;
+            TryUnregisterService();
         }
         
         private void OnDestroy()
         {
+            TryUnregisterService();
             ClearAllPools();
             
             if (_instance == this)
@@ -134,9 +139,10 @@ namespace Hecton8.Optimization
             RenderTexture newRT = new RenderTexture(width, height, 0, format);
             newRT.name = $"Pooled_RT_{width}x{height}_{format}";
             
-            if (RenderTextureLifecycleTracker.Instance != null)
+            RenderTextureLifecycleTracker lifecycle = GlobalRegistry.RenderTextureLifecycle;
+            if (lifecycle != null)
             {
-                RenderTextureLifecycleTracker.Instance.RegisterAllocation(newRT, owner);
+                lifecycle.RegisterAllocation(newRT, owner);
             }
             
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -172,8 +178,9 @@ namespace Hecton8.Optimization
             if (queue.Count >= 16)
             {
                 // Pool full - release immediately
-                if (RenderTextureLifecycleTracker.Instance != null)
-                    RenderTextureLifecycleTracker.Instance.RegisterDisposal(rt);
+                RenderTextureLifecycleTracker lifecycle = GlobalRegistry.RenderTextureLifecycle;
+                if (lifecycle != null)
+                    lifecycle.RegisterDisposal(rt);
 
                 rt.Release();
                 return;
@@ -215,6 +222,24 @@ namespace Hecton8.Optimization
                 _ => _poolRGBA32
             };
         }
+
+        private void TryRegisterService()
+        {
+            if (_registeredService || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterRenderTexturePoolRuntime(this);
+            _registeredService = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_registeredService)
+                return;
+
+            GlobalRegistry.UnregisterRenderTexturePoolRuntime(this);
+            _registeredService = false;
+        }
         
         private void ClearPool(Dictionary<int, Queue<RenderTexture>> pool)
         {
@@ -225,8 +250,9 @@ namespace Hecton8.Optimization
                     RenderTexture rt = kvp.Value.Dequeue();
                     if (rt != null)
                     {
-                        if (RenderTextureLifecycleTracker.Instance != null)
-                            RenderTextureLifecycleTracker.Instance.RegisterDisposal(rt);
+                        RenderTextureLifecycleTracker lifecycle = GlobalRegistry.RenderTextureLifecycle;
+                        if (lifecycle != null)
+                            lifecycle.RegisterDisposal(rt);
 
                         rt.Release();
                     }

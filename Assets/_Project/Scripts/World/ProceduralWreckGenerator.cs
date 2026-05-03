@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.ExceptionServices;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -518,6 +519,7 @@ namespace Hecton8.World
         private const int AsyncGenerationStageYieldThresholdFrames = 1;
         private const int AsyncMeshBuildSliceCheckInterval = 4;
         private const int AsyncJobWaitWatchdogFrames = 600;
+        private const int AsyncMeshBuildYieldWatchdogFrames = 600;
         private const double AsyncMeshBuildMainThreadBudgetSeconds = 0.0045d;
         private const int MaxEditorPreviewCellBudget = 256;
         private const uint FallbackSectionSalt = 0xA511E9B3u;
@@ -641,6 +643,7 @@ namespace Hecton8.World
         private NativeList<WreckModulePlacement> _filteredPlacements;
         private NativeList<WreckDamageDecalStamp> _damageDecalStamps;
         private NativeArray<WreckModuleRuntimeDefinition> _runtimeDefinitions;
+        private string _propagationQueueSentinelLabel;
         private List<NavMeshBuildSource> _navMeshSources;
         private List<WreckNavigationHandle> _activeNavigationHandles;
         private Mesh.MeshDataArray[] _readOnlyMeshSnapshots;
@@ -839,7 +842,10 @@ namespace Hecton8.World
                 _grid.Dispose();
 
             if (_propagationQueue.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ProceduralWreckGenerator), _propagationQueueSentinelLabel);
                 _propagationQueue.Dispose();
+            }
 
             if (_allPlacements.IsCreated)
                 _allPlacements.Dispose();
@@ -890,6 +896,13 @@ namespace Hecton8.World
             _grid = new NativeArray<WreckGridCell>(maxCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             // COLD ALLOC: NativeQueue<int3>(Persistent) - deterministic WFC propagation frontier - owner: ProceduralWreckGenerator
             _propagationQueue = new NativeQueue<int3>(Allocator.Persistent);
+            _propagationQueueSentinelLabel = string.Concat(nameof(_propagationQueue), "_", EntityId.ToULong(GetEntityId()));
+            NativeMemorySentinel.RegisterNativeQueue(
+                _propagationQueue,
+                maxCellCount,
+                nameof(ProceduralWreckGenerator),
+                _propagationQueueSentinelLabel,
+                NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeList<WreckModulePlacement>[maxPlacements] - merged structural placement list - owner: ProceduralWreckGenerator
             _allPlacements = new NativeList<WreckModulePlacement>(maxPlacements, Allocator.Persistent);
             // COLD ALLOC: NativeList<WreckModulePlacement>[maxPlacements] - per-tier mesh merge filter scratch - owner: ProceduralWreckGenerator
@@ -1095,6 +1108,23 @@ namespace Hecton8.World
             await Awaitable.NextFrameAsync();
         }
 
+        private static async Awaitable<bool> YieldMeshBuildFrameAsync(string context, int waitedFrames)
+        {
+            if (!Application.isPlaying)
+                return true;
+
+            if (waitedFrames >= AsyncMeshBuildYieldWatchdogFrames)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError($"[ProceduralWreckGenerator] Async mesh-build yield watchdog tripped in {context} after {waitedFrames} frames. Aborting generated mesh stage.");
+#endif
+                return false;
+            }
+
+            await Awaitable.NextFrameAsync();
+            return true;
+        }
+
         private static bool ShouldYieldMeshBuildSlice(int processedWorkCount, double sliceStartTime)
         {
             if (!Application.isPlaying || processedWorkCount <= 0)
@@ -1114,7 +1144,7 @@ namespace Hecton8.World
                 if (waitFrames >= AsyncJobWaitWatchdogFrames)
                 {
                     Debug.LogError($"[ProceduralWreckGenerator] Async job wait timeout in {context} after {waitFrames} frames. Forcing cleanup completion and aborting stage.");
-                    handle.Complete();
+                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
                     return false;
                 }
 
@@ -1122,7 +1152,7 @@ namespace Hecton8.World
                 await Awaitable.NextFrameAsync();
             }
 
-            handle.Complete();
+            DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
             return true;
         }
 
@@ -1549,16 +1579,12 @@ namespace Hecton8.World
                     Rotation = placement.Rotation
                 };
 
-                _copyHandles[scheduledJobCount] = job.Schedule();
+                job.Run();
                 scheduledJobCount++;
 
                 vertexOffset += sourceMesh.vertexCount;
                 indexOffset += ResolveIndexCount(sourceMesh);
             }
-
-            JobHandle dependency = CombineScheduledCopyHandles(scheduledJobCount);
-            JobHandle.ScheduleBatchedJobs();
-            dependency.Complete();
 
             for (int i = 0; i < scheduledJobCount; i++)
                 _readOnlyMeshSnapshots[i].Dispose();
@@ -1593,6 +1619,7 @@ namespace Hecton8.World
             int totalIndexCount = 0;
             int mergedPlacementCount = 0;
             int sliceWorkCount = 0;
+            int meshYieldFrames = 0;
             double sliceStartTime = Time.realtimeSinceStartupAsDouble;
 
             for (int placementIndex = 0; placementIndex < placementCount; placementIndex++)
@@ -1610,7 +1637,9 @@ namespace Hecton8.World
                 if (!ShouldYieldMeshBuildSlice(sliceWorkCount, sliceStartTime))
                     continue;
 
-                await Awaitable.NextFrameAsync();
+                if (!await YieldMeshBuildFrameAsync("merged mesh source scan", meshYieldFrames++))
+                    return null;
+
                 sliceStartTime = Time.realtimeSinceStartupAsDouble;
                 sliceWorkCount = 0;
             }
@@ -1683,7 +1712,9 @@ namespace Hecton8.World
                     sliceWorkCount++;
                     if (ShouldYieldMeshBuildSlice(sliceWorkCount, sliceStartTime))
                     {
-                        await Awaitable.NextFrameAsync();
+                        if (!await YieldMeshBuildFrameAsync("merged mesh copy scheduling", meshYieldFrames++))
+                            return null;
+
                         sliceStartTime = Time.realtimeSinceStartupAsDouble;
                         sliceWorkCount = 0;
                     }
@@ -1702,7 +1733,9 @@ namespace Hecton8.World
                         _readOnlyMeshSnapshots[snapshotIndex] = default;
                     }
 
-                    await Awaitable.NextFrameAsync();
+                    if (!await YieldMeshBuildFrameAsync("merged mesh post-copy", meshYieldFrames++))
+                        return null;
+
                     sliceStartTime = Time.realtimeSinceStartupAsDouble;
                     sliceWorkCount = 0;
                 }
@@ -1715,7 +1748,8 @@ namespace Hecton8.World
                     vertexCount = totalVertexCount
                 }, MeshUpdateFlags.DontRecalculateBounds | MeshUpdateFlags.DontNotifyMeshUsers | MeshUpdateFlags.DontValidateIndices);
 
-                await Awaitable.NextFrameAsync();
+                if (!await YieldMeshBuildFrameAsync("merged mesh apply", meshYieldFrames++))
+                    return null;
 
                 Mesh result = new Mesh
                 {
@@ -1780,9 +1814,7 @@ namespace Hecton8.World
                 Indices = indices
             };
 
-            JobHandle handle = job.Schedule(proxyPlacementCount, 32);
-            JobHandle.ScheduleBatchedJobs();
-            handle.Complete();
+            job.Run(proxyPlacementCount);
 
             Bounds localBounds = CalculateLocalBounds(_filteredPlacements);
             meshData.subMeshCount = 1;
@@ -1944,9 +1976,7 @@ namespace Hecton8.World
                 Indices = indices
             };
 
-            JobHandle handle = job.Schedule(stampCount, 16);
-            JobHandle.ScheduleBatchedJobs();
-            handle.Complete();
+            job.Run(stampCount);
 
             Bounds localBounds = CalculateDamageDecalBounds(_damageDecalStamps);
             meshData.subMeshCount = 1;

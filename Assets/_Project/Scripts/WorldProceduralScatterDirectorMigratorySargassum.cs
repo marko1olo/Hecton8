@@ -205,7 +205,7 @@ namespace Hecton8.World
 
         private void DisposeMigratorySargassumLane()
         {
-            CompleteMigratorySargassumJobIfNeeded();
+            JobHandle disposeDependency = CancelMigratorySargassumJobForDispose();
 
             if (_migratorySargassumSpatialHash != null)
             {
@@ -213,22 +213,38 @@ namespace Hecton8.World
                 _migratorySargassumSpatialHash = null;
             }
 
-            if (_migratorySargassumIslands.IsCreated)
-                _migratorySargassumIslands.Dispose();
-            if (_migratorySargassumScratchIslands.IsCreated)
-                _migratorySargassumScratchIslands.Dispose();
-            if (_migratorySargassumSelectedSources.IsCreated)
-                _migratorySargassumSelectedSources.Dispose();
-            if (_migratorySargassumFlowSamples.IsCreated)
-                _migratorySargassumFlowSamples.Dispose();
-            if (_migratorySargassumSpatialHandles.IsCreated)
-                _migratorySargassumSpatialHandles.Dispose();
-            if (_migratorySargassumScratchSpatialHandles.IsCreated)
-                _migratorySargassumScratchSpatialHandles.Dispose();
+            DisposeMigratoryNativeArray(ref _migratorySargassumIslands, disposeDependency);
+            DisposeMigratoryNativeArray(ref _migratorySargassumScratchIslands, disposeDependency);
+            DisposeMigratoryNativeArray(ref _migratorySargassumSelectedSources, disposeDependency);
+            DisposeMigratoryNativeArray(ref _migratorySargassumFlowSamples, disposeDependency);
+            DisposeMigratoryNativeArray(ref _migratorySargassumSpatialHandles, disposeDependency);
+            DisposeMigratoryNativeArray(ref _migratorySargassumScratchSpatialHandles, disposeDependency);
+            JobHandle.ScheduleBatchedJobs();
 
             _migratorySargassumIslandCount = 0;
             _lastMigratorySargassumTickTime = 0f;
             _nextMigratorySargassumKillZoneTime = 0f;
+        }
+
+        private JobHandle CancelMigratorySargassumJobForDispose()
+        {
+            if (!_migratorySargassumJobRunning)
+                return default;
+
+            JobHandle disposeDependency = _migratorySargassumJobHandle;
+            _migratorySargassumJobHandle = default;
+            _migratorySargassumJobRunning = false;
+            return disposeDependency;
+        }
+
+        private static void DisposeMigratoryNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            array.Dispose(dependency);
+            array = default;
         }
 
         private void TickMigratorySargassumLane(float now)
@@ -238,7 +254,6 @@ namespace Hecton8.World
 
             using (_migratorySargassumProfilerMarker.Auto())
             {
-                CompleteMigratorySargassumJobIfReady();
                 EnsureMigratorySargassumLane();
                 RefreshMigratorySargassumIslandsFromDesiredPlacements();
                 ApplyMigratorySargassumKillZones(now);
@@ -251,17 +266,9 @@ namespace Hecton8.World
             if (!_migratorySargassumJobRunning || !_migratorySargassumJobHandle.IsCompleted)
                 return;
 
-            _migratorySargassumJobHandle.Complete();
-            _migratorySargassumJobRunning = false;
-            PublishMigratorySargassumSpatialState();
-        }
-
-        private void CompleteMigratorySargassumJobIfNeeded()
-        {
-            if (!_migratorySargassumJobRunning)
+            if (!DispatcherJobSwap.TryComplete(ref _migratorySargassumJobHandle, forceComplete: false))
                 return;
 
-            _migratorySargassumJobHandle.Complete();
             _migratorySargassumJobRunning = false;
             PublishMigratorySargassumSpatialState();
         }

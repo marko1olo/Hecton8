@@ -1,5 +1,6 @@
 using System;
 using Hecton8.AI;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -279,7 +280,9 @@ namespace Hecton8.Systems.AI
         {
             if (_jobScheduled && _activeJobHandle.IsCompleted)
             {
-                _activeJobHandle.Complete();
+                if (!DispatcherJobSwap.TryComplete(ref _activeJobHandle, false))
+                    return;
+
                 _jobScheduled = false;
                 _frontState[0] = _backState[0];
                 ApplyCompletedOutput(faunaDirector, bridge);

@@ -434,7 +434,7 @@ namespace Hecton8.Physics
             if (waterRenderer != null)
                 return waterRenderer.SeaLevel;
 
-            HectonFluidEngine fluidEngine = HectonFluidEngine.Instance;
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
             return fluidEngine != null ? fluidEngine.WaterLevel : DefaultSeaLevel;
         }
 

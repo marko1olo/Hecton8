@@ -46,7 +46,6 @@ namespace Hecton8.Input
         // ═══════════════════════════════════════════════════════════════════════════════════════════
         
         private static InputManager _instance;
-        private static readonly object _lock = new object();
         private static bool _isShuttingDown;
         private HectonInputActions _generatedInputActions;
         private InputActionAsset _runtimeInputActionAsset;
@@ -108,32 +107,7 @@ namespace Hecton8.Input
         {
             get
             {
-                if (_instance == null)
-                {
-                    if (_isShuttingDown || !Application.isPlaying)
-                        return null;
-
-                    lock (_lock)
-                    {
-                        if (_instance == null)
-                        {
-                            if (_isShuttingDown || !Application.isPlaying)
-                                return null;
-
-                            InputManager existing = UnityEngine.Object.FindAnyObjectByType<InputManager>(FindObjectsInactive.Include);
-                            if (existing != null)
-                            {
-                                _instance = existing;
-                                return _instance;
-                            }
-
-                            GameObject go = new GameObject("[InputManager]");
-                            _instance = go.AddComponent<InputManager>();
-                            DontDestroyOnLoad(go);
-                        }
-                    }
-                }
-                return _instance;
+                return _isShuttingDown ? null : _instance;
             }
         }
 
@@ -348,14 +322,6 @@ namespace Hecton8.Input
             
             _instance = this;
             _isShuttingDown = false;
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
-            
             InitializeInputActions();
         }
 

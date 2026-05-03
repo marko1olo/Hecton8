@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.AI;
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.Modding;
 using Hecton8.Narrative;
 using Hecton8.SaveSystem;
@@ -50,6 +51,7 @@ namespace Hecton8.Gameplay
         private readonly Dictionary<uint, byte> _faunaInteractionCounts = new Dictionary<uint, byte>(64);
         private bool _registeredWithSaveManager;
         private bool _registeredWithScanEvents;
+        private bool _serviceRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -105,6 +107,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegisterWithSaveManager();
             TryRegisterWithScanEvents();
         }
@@ -119,6 +122,7 @@ namespace Hecton8.Gameplay
         {
             UnregisterFromSaveManager();
             UnregisterFromScanEvents();
+            TryUnregisterService();
 
             if (Instance == this)
                 Instance = null;
@@ -265,7 +269,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -300,6 +304,24 @@ namespace Hecton8.Gameplay
 
             saveManager.Register(this);
             _registeredWithSaveManager = true;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterDiscoveryRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Discovery, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterDiscoveryRuntime(this);
+            _serviceRegistered = false;
         }
 
         private void TryRegisterWithScanEvents()
@@ -353,7 +375,7 @@ namespace Hecton8.Gameplay
             if (_faunaInteractionCounts.TryGetValue(entryHash, out byte storedCount))
                 currentCount = storedCount;
 
-            LoreDatabaseManager loreDatabase = LoreDatabaseManager.Instance;
+            LoreDatabaseManager loreDatabase = Hecton8.Core.GlobalRegistry.LoreDatabase;
             if (loreDatabase == null)
                 return currentCount;
 
@@ -401,14 +423,15 @@ namespace Hecton8.Gameplay
             if (previousCount >= threshold || nextCount < threshold || !TryResolveFaunaBestiaryLoreHash(in metadata, milestoneIndex, out uint loreHash))
                 return;
 
-            LoreDatabaseManager loreDatabase = LoreDatabaseManager.Instance;
+            LoreDatabaseManager loreDatabase = Hecton8.Core.GlobalRegistry.LoreDatabase;
             if (loreDatabase != null)
             {
                 loreDatabase.TryUnlockByHash(loreHash);
                 return;
             }
 
-            HectonEventBus.Publish(new LoreAcquiredEvent(loreHash));
+            LoreAcquiredEvent loreAcquiredEvent = new LoreAcquiredEvent(loreHash);
+            HectonEventBus.Publish(in loreAcquiredEvent);
         }
     }
 }

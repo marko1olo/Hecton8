@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -24,6 +23,8 @@ namespace Hecton8.Construction
         private const string EmptyPrompt = "Maintenance Station Empty";
         private const string RepairingPrompt = "Tool Under Maintenance";
         private const string ReadyPrompt = "Retrieve Serviced Tool";
+        private const float ReservationRetryIntervalSeconds = 0.5f;
+        private const int RepairReservationCostCapacity = 4;
 
         [Header("── Repair Bay ─────────────────")]
         [Tooltip("Seconds required to fully restore a tool from zero durability to 100%.")]
@@ -61,8 +62,10 @@ namespace Hecton8.Construction
         [SerializeField] private string _debugToolId;
         [SerializeField] private float _debugDurabilityNormalized;
 
-        // COLD ALLOC: Dictionary<string,int>[2] — maintenance session reservation cost buffer — owner: MaintenanceStationModule
-        private readonly Dictionary<string, int> _reservationCostBuffer = new Dictionary<string, int>(2);
+        // COLD ALLOC: int[4] — maintenance repair item hash cost buffer — owner: MaintenanceStationModule
+        private readonly int[] _reservationCostHashIds = new int[RepairReservationCostCapacity];
+        // COLD ALLOC: int[4] — maintenance repair item quantity cost buffer — owner: MaintenanceStationModule
+        private readonly int[] _reservationCostAmounts = new int[RepairReservationCostCapacity];
 
         private PowerNode _powerNode;
         private bool _registered;
@@ -71,6 +74,9 @@ namespace Hecton8.Construction
         private ToolMetadata _slottedToolMetadata;
         private BaseLogisticsNetwork.LogisticsReservation _activeReservation;
         private float _repairTargetDurability;
+        private float _reservationRetryCooldownSeconds;
+        private int _reservationCostCount;
+        private bool _reservationCostOverflowed;
         private bool _isRepairing;
 
         /// <summary>Idle bay draw plus active repair draw when service is in progress.</summary>
@@ -126,6 +132,7 @@ namespace Hecton8.Construction
         {
             _hasPower = true;
             _debugHasPower = true;
+            _reservationRetryCooldownSeconds = 0f;
             ClearSlotState();
             ResolveRuntimeReferences();
             ResolveFallbackItems();
@@ -138,6 +145,7 @@ namespace Hecton8.Construction
             ClearSlotState();
             _hasPower = true;
             _debugHasPower = true;
+            _reservationRetryCooldownSeconds = 0f;
             TryUnregister();
         }
 
@@ -150,7 +158,7 @@ namespace Hecton8.Construction
                 return;
             }
 
-            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (durabilitySystem == null || string.IsNullOrEmpty(_slottedToolMetadata.toolID))
             {
                 _debugIsRepairing = false;
@@ -177,10 +185,21 @@ namespace Hecton8.Construction
                 return;
             }
 
-            if (_activeReservation == null && !TryPrepareRepairReservation(currentDurability, maxDurability))
+            if (_activeReservation == null)
             {
-                _debugIsRepairing = false;
-                return;
+                if (_reservationRetryCooldownSeconds > 0f)
+                {
+                    _reservationRetryCooldownSeconds = Mathf.Max(0f, _reservationRetryCooldownSeconds - deltaTime);
+                    _debugIsRepairing = false;
+                    return;
+                }
+
+                if (!TryPrepareRepairReservation(currentDurability, maxDurability))
+                {
+                    _reservationRetryCooldownSeconds = ReservationRetryIntervalSeconds;
+                    _debugIsRepairing = false;
+                    return;
+                }
             }
 
             float targetDurability = _repairTargetDurability > currentDurability + 0.001f
@@ -211,6 +230,7 @@ namespace Hecton8.Construction
             _hasPower = hasPower;
             _debugHasPower = hasPower;
 
+            _reservationRetryCooldownSeconds = 0f;
             if (!hasPower)
                 _debugIsRepairing = false;
         }
@@ -228,7 +248,9 @@ namespace Hecton8.Construction
             if (interactor == null)
                 return;
 
-            PlayerInventory inventory = interactor.GetComponentInParent<PlayerInventory>() ?? PlayerInventory.Instance;
+            PlayerInventory inventory = interactor.GetComponentInParent<PlayerInventory>();
+            if (inventory == null)
+                inventory = ResolvePlayerInventory();
             if (inventory == null)
                 return;
 
@@ -258,7 +280,7 @@ namespace Hecton8.Construction
             if (!TryResolveToolMetadata(item, out metadata))
                 return false;
 
-            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (durabilitySystem == null || string.IsNullOrEmpty(metadata.toolID))
                 return false;
 
@@ -321,7 +343,7 @@ namespace Hecton8.Construction
             _repairTargetDurability = Mathf.Max(1f, metadata.maxDurability);
             _debugToolId = metadata.toolID;
 
-            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (durabilitySystem != null && !string.IsNullOrEmpty(metadata.toolID))
             {
                 float maxDurability = Mathf.Max(1f, metadata.maxDurability);
@@ -380,7 +402,7 @@ namespace Hecton8.Construction
 
         private void ResolveFallbackItems()
         {
-            PlayerInventory inventory = PlayerInventory.Instance;
+            PlayerInventory inventory = ResolvePlayerInventory();
             ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;
             if (catalog == null)
                 return;
@@ -441,23 +463,39 @@ namespace Hecton8.Construction
         private bool TryPrepareRepairReservation(float currentDurability, float maxDurability)
         {
             PowerGrid grid = _powerNode != null ? _powerNode.Grid : null;
-            PlayerInventory inventory = PlayerInventory.Instance;
+            PlayerInventory inventory = ResolvePlayerInventory();
             ItemCatalog catalog = inventory != null ? inventory.ItemCatalog : null;
             ResolveFallbackItems();
 
             if (grid == null || catalog == null)
                 return false;
 
-            _reservationCostBuffer.Clear();
+            ClearReservationCostBuffer();
             PopulateRepairCosts(currentDurability, maxDurability, catalog);
-            if (_reservationCostBuffer.Count <= 0)
+            if (_reservationCostOverflowed || _reservationCostCount <= 0)
                 return false;
 
-            if (!BaseLogisticsNetwork.TryReserveResources(grid, _reservationCostBuffer, catalog, out _activeReservation))
+            if (!BaseLogisticsNetwork.TryReserveResources(
+                    grid,
+                    _reservationCostHashIds,
+                    _reservationCostAmounts,
+                    _reservationCostCount,
+                    out _activeReservation))
+            {
                 return false;
+            }
 
             _repairTargetDurability = maxDurability;
+            _reservationRetryCooldownSeconds = 0f;
             return true;
+        }
+
+        private static PlayerInventory ResolvePlayerInventory()
+        {
+            IPlayerInventoryService inventoryService = GlobalRegistry.PlayerInventory;
+            return inventoryService != null && inventoryService.IsInitialized
+                ? inventoryService.Inventory
+                : null;
         }
 
         private void PopulateRepairCosts(float currentDurability, float maxDurability, ItemCatalog catalog)
@@ -471,11 +509,51 @@ namespace Hecton8.Construction
                 minimumStructuralCost,
                 Mathf.CeilToInt(Mathf.Max(1f, _slottedToolMetadata != null ? _slottedToolMetadata.repairCostFull : 1f) * missingRatio));
 
-            if (structuralItem != null)
-                _reservationCostBuffer[structuralItem.PersistentId] = structuralCost;
+            AppendRepairCost(structuralItem, structuralCost);
 
             if (lubricantRepairItem != null && lubricantCostPerSession > 0)
-                _reservationCostBuffer[lubricantRepairItem.PersistentId] = lubricantCostPerSession;
+                AppendRepairCost(lubricantRepairItem, lubricantCostPerSession);
+        }
+
+        private void ClearReservationCostBuffer()
+        {
+            for (int i = 0; i < _reservationCostCount; i++)
+            {
+                _reservationCostHashIds[i] = 0;
+                _reservationCostAmounts[i] = 0;
+            }
+
+            _reservationCostCount = 0;
+            _reservationCostOverflowed = false;
+        }
+
+        private void AppendRepairCost(ItemData item, int amount)
+        {
+            if (item == null || amount <= 0 || string.IsNullOrWhiteSpace(item.PersistentId))
+                return;
+
+            int itemHashId = Hecton.Localization.LocHash.Compute(item.PersistentId);
+            if (itemHashId == 0)
+                return;
+
+            for (int i = 0; i < _reservationCostCount; i++)
+            {
+                if (_reservationCostHashIds[i] != itemHashId)
+                    continue;
+
+                _reservationCostAmounts[i] += amount;
+                return;
+            }
+
+            if (_reservationCostCount >= RepairReservationCostCapacity)
+            {
+                _reservationCostOverflowed = true;
+                return;
+            }
+
+            _reservationCostHashIds[_reservationCostCount] = itemHashId;
+            _reservationCostAmounts[_reservationCostCount] = amount;
+            _reservationCostCount++;
         }
 
         private ItemData ResolveStructuralRepairItem(ItemCatalog catalog)
@@ -492,7 +570,7 @@ namespace Hecton8.Construction
 
         private void CompleteActiveRepair()
         {
-            ToolDurabilitySystem durabilitySystem = ToolDurabilitySystem.Instance;
+            ToolDurabilitySystem durabilitySystem = Hecton8.Core.GlobalRegistry.ToolDurability;
             if (durabilitySystem != null && _slottedToolMetadata != null && !string.IsNullOrEmpty(_slottedToolMetadata.toolID))
                 durabilitySystem.RepairToolFull(_slottedToolMetadata.toolID, Mathf.Max(1f, _slottedToolMetadata.maxDurability));
 
@@ -526,6 +604,7 @@ namespace Hecton8.Construction
             _repairTargetDurability = 0f;
             _debugToolId = string.Empty;
             _debugDurabilityNormalized = 0f;
+            _reservationRetryCooldownSeconds = 0f;
             _isRepairing = false;
             _debugIsRepairing = false;
         }

@@ -16,7 +16,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Save Slot Hover Preview")]
-    public sealed class SaveSlotHoverPreview : MonoBehaviour, ITickable, IUpdatable, IPointerEnterHandler, IPointerExitHandler
+    public sealed class SaveSlotHoverPreview : MonoBehaviour, ITickable, IUpdatable, IPointerEnterHandler, IPointerExitHandler, ILocalizationLanguageChangedListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         // INSPECTOR
@@ -82,21 +82,21 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegister();
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             HideImmediate();
         }
 
         private void OnDisable()
         {
             Unregister();
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             HideImmediate();
         }
 
         private void OnDestroy()
         {
             Unregister();
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -213,6 +213,15 @@ namespace Hecton8.UI
             _currentSlotId = string.Empty;
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage newLanguage)
         {
             if (!string.IsNullOrEmpty(_currentSlotId) &&
@@ -230,7 +239,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             if (saveManager == null || !saveManager.TryGetSaveSlotInfo(_currentSlotId, out SaveSlotInfo slotInfo) || slotInfo == null)
             {

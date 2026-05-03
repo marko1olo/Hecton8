@@ -1,6 +1,6 @@
 # HECTON-8 Global Architecture Map
 
-Date: 2026-05-01
+Date: 2026-05-02
 Status: PENDING VERIFICATION
 Scope: source-backed architecture map only, not a profiler capture and not a build-certification report
 
@@ -13,27 +13,27 @@ Mandates followed:
 - `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `AGENTS.md`
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this map as current project truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this map as current project truth.
 - This map is source-backed architecture orientation, not Play Mode proof, profiler proof, console certification, or scene/prefab wiring proof.
 - Line counts and interface counts are orientation data only; source files and fresh verification logs win.
 
 ## 1. Scope
 
 - Audit target: `Assets/_Project/**/*.cs`
-- Current first-party `.cs` inventory under `Assets/_Project`: `1060`
-- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1020`
-- Current script line count under `Assets/_Project/Scripts`: `544728`
-- Average lines per script: `534.05`
-- Scripts still living directly in `Assets/_Project/Scripts` root: `316`
+- Current first-party `.cs` inventory under `Assets/_Project`: `1087`
+- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1047`
+- Current script line count under `Assets/_Project/Scripts`: `571562`
+- Average lines per script: `545.90`
+- Scripts still living directly in `Assets/_Project/Scripts` root: `317`
 
 This file replaces the older generated map whose `808`-script snapshot and some interface conclusions are no longer true.
 
-2026-05-01 correction:
-- Counts above supersede the April 30 `1038/998/444135` and earlier May 1 `1060/1020/466768` snapshots.
-- Current `GlobalRegistryContracts.cs` contains `31` interfaces.
-- `IGlobalRegistryHotSwapListener` currently has no direct implementor and must be treated as an empty extension seam, not as a proven live runtime service.
+2026-05-02 correction:
+- Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, and earlier May 2 `489893` snapshots.
+- Current `GlobalRegistryContracts.cs` contains `33` direct public interfaces.
+- Older interface coverage ratios in this document are stale orientation only; re-open `GlobalRegistryContracts.cs` and implementors before making interface-completion claims.
 
 ## 2. Runtime Topology
 
@@ -80,7 +80,7 @@ Current direct damage contract owner confirmed by source scan:
 - `Hecton8.Core.IDamageReceiver` -> `Gameplay/HabitatIntegrityManager`
 
 This is materially different from older documents that claimed `IAudioService` was ghost, `IUIService` was directly multi-owned, or `IDamageReceiver` had two current implementers.
-It also supersedes the April 30 interface count: source-level interface coverage is now `30/31`, with `IGlobalRegistryHotSwapListener` still empty.
+It also supersedes older interface-count claims. Current direct public interface count is `33`; coverage must be rechecked from source before being used as proof.
 
 ## 4. Event Architecture
 
@@ -110,11 +110,13 @@ Meaning:
 
 ## 5. Current Editor Readback
 
-Current documentation pass editor status:
+Current documentation pass status:
 
-- no fresh Unity console readback was obtained for this May 1 documentation update
+- no fresh Unity console readback was obtained for this May 2 documentation update
 - Play Mode was not launched
-- `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is the current conceptual state anchor
+- `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest documentation/build-evidence addendum
+- `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` remains the stable conceptual state anchor
+- fresh local `dotnet build .\Hecton8.Core.csproj` exited `0` with `136 Warning(s)` and `0 Error(s)`; latest post-restore `--no-restore` rerun exited `0` with `73 Warning(s)` and `0 Error(s)`
 
 Historical Unity Editor readback from the previous recheck:
 
@@ -128,23 +130,23 @@ Latest console slice observed:
 - repeated message pattern: `Failed to convert -1 to a unsigned 32 bit int`
 - affected assets: `Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_*`
 
-This is a historical editor snapshot only and was not refreshed in the 2026-05-01 docset actuality pass.
+This is a historical editor snapshot only and was not refreshed in the 2026-05-02 documentation actuality pass.
 It is not proof of stable play-mode behavior, shipping build health, or zero-GC runtime.
 
 ## 6. Concentration Risks
 
 Largest current first-party owners by line count:
 
-- `World/HectonMapMagicVegetationBridge.cs` - `15598`
-- `WorldProceduralScatterDirector.cs` - `11535`
-- `HectonPlayerMovement.cs` - `9275`
-- `UI/SuitHUDV4CanvasOverlay.cs` - `5659`
-- `HectonUnderwaterVisuals.cs` - `5652`
-- `World/PersistentWorldRegistry.cs` - `5092`
-- `SaveBinaryStorage.cs` - `4871`
-- `HectonVoxelEngine.cs` - `4818`
-- `Audio/PlayerCriticalProceduralAudioRenderer.cs` - `4789`
-- `FaunaDirector.cs` - `4698`
+- `WorldProceduralScatterDirector.cs` - `11340`
+- `HectonPlayerMovement.cs` - `9389`
+- `World/HectonMapMagicVegetationBridge.cs` - `6599`
+- `UI/SuitHUDV4CanvasOverlay.cs` - `5798`
+- `HectonUnderwaterVisuals.cs` - `5708`
+- `SaveBinaryStorage.cs` - `5471`
+- `World/PersistentWorldRegistry.cs` - `5159`
+- `Audio/PlayerCriticalProceduralAudioRenderer.cs` - `5012`
+- `HectonVoxelEngine.cs` - `4855`
+- `FaunaDirector.cs` - `4726`
 
 These are not cosmetic complaints.
 They are risk multipliers because runtime ownership, visuals, simulation, and integration pressure accumulate inside very large files.
@@ -153,7 +155,7 @@ They are risk multipliers because runtime ownership, visuals, simulation, and in
 
 - bootstrap ownership is split between `GameBootstrapper` and `SceneBootstrap`
 - event architecture is mixed between queue-backed and direct static buses
-- root-folder ownership is still noisy with `316` scripts in `Assets/_Project/Scripts`
+- root-folder ownership is still noisy with `317` scripts in `Assets/_Project/Scripts`
 - codebase health is stronger than some old reports claimed, but file-size concentration and ownership spread remain real
 
 ## 8. Regression Model

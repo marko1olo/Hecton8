@@ -1,6 +1,6 @@
 # Reports
 
-Date: `2026-05-01`
+Date: `2026-05-03`
 Status: `PENDING VERIFICATION`
 
 Purpose: canonical drop zone for new reports, audits, and validation writeups that are still active.
@@ -18,19 +18,24 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 
 ## Current High-Authority Reports
 
+- `2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `2026-05-01_CURRENT_PROJECT_STATE.md`
 - `2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
 - `2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`
 - `2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
 - `2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
 - `2026-05-01_EVENT_CASCADE_RECHECK.md`
+- `2026-05-01_ZERO_GC_JOBS_CONTINUATION_DELTA.md`
 - `TOTAL_CODEBASE_AUDIT_V2.md`
 - `OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
 - `AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
 - `DOOMSDAY_FLAW_REPORT.md`
 
 `2026-05-01_CURRENT_PROJECT_STATE.md` is the current conceptual entry point.
-It does not replace source files or runtime verification logs; it defines which active reports should be read first.
+It keeps its stable path but now includes May 2 evidence. It does not replace source files or runtime verification logs; it defines which active reports should be read first.
+
+`2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest documentation-sweep addendum.
+It records the active-doc inventory boundary, dirty-worktree risk, conflicting old logs, fresh local `dotnet build .\Hecton8.Core.csproj` result: `0 Error(s)`, `136 Warning(s)`, elapsed `00:01:24.05`, and latest post-restore `--no-restore` rerun result: `0 Error(s)`, `73 Warning(s)`, elapsed `00:00:23.95`.
 
 `2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` is the current blunt project-level verdict.
 It is source/doc-backed, but still not Play Mode proof.
@@ -40,10 +45,10 @@ It supersedes older same-day statements that the editor console had known C# war
 
 `2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` records the current compile-clean source migration around listener-backed Sargassum/Emergency relay events, the Burst spatial-hash `in` argument fix, and the latest MCP console zero-entry check.
 
-`2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` supersedes the older compile-evidence line numbers after the `VegetationJobRecovery.cs.meta` restoration. It records current `Editor.log` compile/reload success and the remaining stale MCP console internal-build entry.
+`2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` supersedes the older compile-evidence line numbers after the `VegetationJobRecovery.cs.meta` restoration. It records the Bee file-lock/internal-error recovery, current `Editor.log` compile/reload success, and final MCP console zero-entry check.
 
 `2026-05-01_EVENT_CASCADE_RECHECK.md` corrects stale event-bus audit claims.
-It confirms the source-present `HectonEventBus` depth cap and keeps NativeQueue generation split as the remaining event-cascade risk.
+It confirms the source-present `HectonEventBus` depth cap and keeps NativeQueue generation split as the remaining event-cascade risk. As of 2026-05-03, `BootstrapEvents`, `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `SaveEvents`, `InventoryEvents`, `WeatherEvents`, `QuestEvents`, `PowerGridTelemetryEvents`, `NarrativeEvents`, `NotificationEvents`, `FirstHourEvents`, `EndingEvents`, `AtmosphereEvents`, `EclipseGameplayEvents`, `AcousticZoneEvents`, `CelestialEvents`, `MapMagicBiomeEvents`, and `BiomeMatrixEvents` have source-level generation split; remaining lanes still require review and runtime proof.
 
 ## Active Secondary Reports
 

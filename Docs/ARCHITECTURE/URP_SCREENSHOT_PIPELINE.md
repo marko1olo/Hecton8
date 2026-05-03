@@ -3,9 +3,9 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this pipeline as current runtime truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this pipeline as current runtime truth.
 - This document is a save-thumbnail/URP contract, not proof that the renderer feature is assigned, the active camera renders the pass, or thumbnail persistence is runtime-validated.
 - Re-open `SaveThumbnailSystem`, `SaveThumbnailCaptureFeature`, renderer assets, and current console evidence before surgery.
 

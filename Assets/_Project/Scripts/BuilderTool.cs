@@ -18,7 +18,7 @@
 //   • Никаких строковых аллокаций в ToolTick.
 //   • MaterialPropertyBlock — pre-allocated, reused.
 //   • Unity.Mathematics quaternion.slerp — struct math, zero boxing.
-//   • FindWithTag — только в OnSpawn (одноразово).
+//   • Player lookup — SceneBootstrap cached player transform, no scene search.
 //
 // LIFECYCLE:
 //   ObjectPoolManager.Spawn() → OnSpawn() → [PlayerToolManager] → OnEquip()
@@ -137,7 +137,7 @@ namespace Hecton8.Gameplay
         /// Inspector-ссылок на объекты сцены. Находим Player root
         /// по тегу и извлекаем нужные компоненты.
         ///
-        /// Аллокации: FindWithTag (одна строковая проверка, допустимо в OnSpawn).
+        /// Аллокации: SceneBootstrap cached lookup; no scene search in OnSpawn.
         /// </summary>
         private void Awake()
         {

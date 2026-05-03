@@ -2360,6 +2360,8 @@ public struct VoxelSpawnPointJob : IJobParallelFor
 public class HectonVoxelEngine : MonoBehaviour
 {
     private const string DefaultVoxelBakeGhostShaderName = "Hecton8/Environment/Hecton_VoxelBakeGhost";
+    private const string RuntimeCaveVolumeName = "CaveVolume";
+    private const string RuntimeCaveMeshName = "CaveMesh";
     private const int StreamingScratchLeaseTimeoutFrames = 1200;
     private const int VoxelJobWaitWatchdogFrames = 1200;
 
@@ -2404,6 +2406,7 @@ public class HectonVoxelEngine : MonoBehaviour
     const float ABYSSAL_MAX_DEPTH = 5000f;
     const float TerrainVoxelSeamTransitionBand = VoxelSeamDirector.SeamTransitionBandMeters;
     const int JOB_BATCH = 64;
+    const int ActiveVolumeRegistryCapacity = 64;
 
     /// <summary>
     /// MC raw buffer multiplier. 2× totalCells instead of 15× (worst case).
@@ -2426,7 +2429,12 @@ public class HectonVoxelEngine : MonoBehaviour
         _shutdownRequested = 0;
         ActiveRuntimeInstance = null;
     }
-    readonly List<GameObject> _activeVolumes = new List<GameObject>();
+    // COLD ALLOC: List<GameObject>[64] - active voxel volume object registry - owner: HectonVoxelEngine
+    readonly List<GameObject> _activeVolumes = new List<GameObject>(ActiveVolumeRegistryCapacity);
+    // COLD ALLOC: List<HectonVoxelVolume>[64] - active voxel volume component registry - owner: HectonVoxelEngine
+    readonly List<HectonVoxelVolume> _activeVolumeComponents = new List<HectonVoxelVolume>(ActiveVolumeRegistryCapacity);
+    // COLD ALLOC: List<Bounds>[64] - cached local mesh bounds for editor gizmos - owner: HectonVoxelEngine
+    readonly List<Bounds> _activeVolumeLocalBounds = new List<Bounds>(ActiveVolumeRegistryCapacity);
     readonly object _streamingScratchGate = new object();
     bool _registeredLiveEngine;
     bool _teardownStreamingScratchRequested;
@@ -2774,7 +2782,11 @@ public class HectonVoxelEngine : MonoBehaviour
                 return null;
 
             GameObject targetGO = SpawnVolume();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             targetGO.name = $"Cave_{preset.presetType}_{seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
+#else
+            targetGO.name = RuntimeCaveVolumeName;
+#endif
 
             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
@@ -2791,15 +2803,17 @@ public class HectonVoxelEngine : MonoBehaviour
                 pipelineData.VoxelStep,
                 true);
             RegisterEntranceTerrainHoles(targetGO, caveEntrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
-            _activeVolumes.Add(targetGO);
+            RegisterActiveVolume(targetGO);
             RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             int spawnCount = pipelineData.SpawnPointList.IsCreated ? pipelineData.SpawnPointList.Length : 0;
             float reduction = (1f - (float)pipelineData.WeldedCount / pipelineData.RawCount) * 100f;
             float coverageM = gridDim * voxelStep;
             Debug.Log($"[HectonVoxel] Cave '{targetGO.name}': lod={clampedLodLevel} grid={gridDim}^3 voxel={voxelStep}m coverage={coverageM:F0}m | " +
                       $"{pipelineData.RawCount} raw -> {pipelineData.WeldedCount} welded ({reduction:F0}% reduction) | " +
                       $"{pipelineData.RawCount / 3} tris | {spawnCount} spawn points");
+#endif
             return targetGO;
         }
         finally
@@ -2952,7 +2966,11 @@ public class HectonVoxelEngine : MonoBehaviour
             }
 
             GameObject targetGO = SpawnVolume();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             targetGO.name = $"Cave_Data_{caveParams.seed}_{worldCenter.x:F0}_{worldCenter.z:F0}";
+#else
+            targetGO.name = RuntimeCaveVolumeName;
+#endif
 
             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
@@ -2969,7 +2987,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 pipelineData.VoxelStep,
                 buildCollider);
             RegisterEntranceTerrainHoles(targetGO, entrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
-            _activeVolumes.Add(targetGO);
+            RegisterActiveVolume(targetGO);
             RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
 
             if (RuntimeDiagnosticsTrace.IsActive)
@@ -2980,7 +2998,9 @@ public class HectonVoxelEngine : MonoBehaviour
                     $"mesh-build grid={gridDim} voxel={voxelStep:0.00} lod={clampedLodLevel} collider={buildCollider} spawnPoints={pipelineData.SpawnPointList.Length} total={totalMs:0.00}ms");
             }
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.Log($"[HectonVoxel] Data volume generated seed={caveParams.seed} grid={gridDim} voxel={voxelStep:F2} lod={clampedLodLevel}.");
+#endif
             return targetGO;
         }
         finally
@@ -3143,22 +3163,125 @@ public class HectonVoxelEngine : MonoBehaviour
             EndGenerationOperation();
         }
     }
+
+    void RegisterActiveVolume(GameObject volumeObject)
+    {
+        if (volumeObject == null)
+            return;
+
+        HectonVoxelVolume voxelVolume = null;
+        volumeObject.TryGetComponent(out voxelVolume);
+
+        Bounds localBounds = default;
+        bool hasLocalBounds = false;
+        if (volumeObject.TryGetComponent(out MeshFilter meshFilter) &&
+            meshFilter.sharedMesh != null)
+        {
+            localBounds = meshFilter.sharedMesh.bounds;
+            hasLocalBounds = localBounds.size.sqrMagnitude > 0.0001f;
+        }
+
+        if (!hasLocalBounds && voxelVolume != null && voxelVolume.GridDimension > 0 && voxelVolume.VoxelSize > 0f)
+        {
+            float coverage = voxelVolume.GridDimension * voxelVolume.VoxelSize;
+            localBounds = new Bounds(Vector3.zero, new Vector3(coverage, coverage, coverage));
+            hasLocalBounds = true;
+        }
+
+        if (!hasLocalBounds)
+            localBounds = new Bounds(Vector3.zero, Vector3.one);
+
+        _activeVolumes.Add(volumeObject);
+        _activeVolumeComponents.Add(voxelVolume);
+        _activeVolumeLocalBounds.Add(localBounds);
+    }
+
+    void UnregisterActiveVolume(GameObject volumeObject)
+    {
+        for (int i = _activeVolumes.Count - 1; i >= 0; i--)
+        {
+            if (_activeVolumes[i] == volumeObject)
+            {
+                RemoveActiveVolumeAt(i);
+                return;
+            }
+        }
+    }
+
+    void RemoveActiveVolumeAt(int index)
+    {
+        if (index < 0 || index >= _activeVolumes.Count)
+            return;
+
+        int last = _activeVolumes.Count - 1;
+        _activeVolumes[index] = _activeVolumes[last];
+        _activeVolumes.RemoveAt(last);
+
+        if (_activeVolumeComponents.Count > last)
+        {
+            _activeVolumeComponents[index] = _activeVolumeComponents[last];
+            _activeVolumeComponents.RemoveAt(last);
+        }
+        else if (index < _activeVolumeComponents.Count)
+        {
+            _activeVolumeComponents.RemoveAt(index);
+        }
+
+        if (_activeVolumeLocalBounds.Count > last)
+        {
+            _activeVolumeLocalBounds[index] = _activeVolumeLocalBounds[last];
+            _activeVolumeLocalBounds.RemoveAt(last);
+        }
+        else if (index < _activeVolumeLocalBounds.Count)
+        {
+            _activeVolumeLocalBounds.RemoveAt(index);
+        }
+    }
+
+    /// <summary>
+    /// Despawns active voxel volumes whose runtime center lies inside the supplied XZ bounds.
+    /// </summary>
+    internal int DespawnVolumesInsideXZ(float minX, float maxX, float minZ, float maxZ)
+    {
+        int despawned = 0;
+        for (int i = _activeVolumes.Count - 1; i >= 0; i--)
+        {
+            GameObject activeVolume = _activeVolumes[i];
+            if (activeVolume == null)
+            {
+                RemoveActiveVolumeAt(i);
+                continue;
+            }
+
+            Vector3 position = activeVolume.transform.position;
+            if (position.x < minX || position.x > maxX ||
+                position.z < minZ || position.z > maxZ)
+                continue;
+
+            DespawnVolume(activeVolume);
+            despawned++;
+        }
+
+        return despawned;
+    }
+
     /// <summary>Despawns a volume, cleans its mesh, returns to pool.</summary>
     public void DespawnVolume(GameObject volume)
     {
         if (volume == null) return;
-        _activeVolumes.Remove(volume);
+        UnregisterActiveVolume(volume);
         HectonFloatingOrigin.MarkShiftTargetsDirty();
 
         var mf = volume.GetComponent<MeshFilter>();
         var mc = volume.GetComponent<MeshCollider>();
         if (mc != null) mc.sharedMesh = null;
 
-        if (ObjectPoolManager.Instance != null && voxelVolumePrefab != null)
+        ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+        if (pool != null && voxelVolumePrefab != null)
         {
             if (mf != null && mf.sharedMesh != null)
                 mf.sharedMesh.Clear(false);
-            ObjectPoolManager.Instance.Despawn(volume);
+            pool.Despawn(volume);
         }
         else
         {
@@ -3178,11 +3301,7 @@ public class HectonVoxelEngine : MonoBehaviour
         for (int i = _activeVolumes.Count - 1; i >= 0; i--)
         {
             if (_activeVolumes[i] == null)
-            {
-                int last = _activeVolumes.Count - 1;
-                _activeVolumes[i] = _activeVolumes[last];
-                _activeVolumes.RemoveAt(last);
-            }
+                RemoveActiveVolumeAt(i);
         }
     }
 
@@ -3197,11 +3316,12 @@ public class HectonVoxelEngine : MonoBehaviour
                 var mc = _activeVolumes[i].GetComponent<MeshCollider>();
                 if (mc != null) mc.sharedMesh = null;
 
-                if (ObjectPoolManager.Instance != null && voxelVolumePrefab != null)
+                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+                if (pool != null && voxelVolumePrefab != null)
                 {
                     if (mf != null && mf.sharedMesh != null)
                         mf.sharedMesh.Clear(false);
-                    ObjectPoolManager.Instance.Despawn(_activeVolumes[i]);
+                    pool.Despawn(_activeVolumes[i]);
                 }
                 else
                 {
@@ -3216,6 +3336,8 @@ public class HectonVoxelEngine : MonoBehaviour
             }
         }
         _activeVolumes.Clear();
+        _activeVolumeComponents.Clear();
+        _activeVolumeLocalBounds.Clear();
     }
 
     public int ActiveVolumeCount => _activeVolumes.Count;
@@ -3228,10 +3350,11 @@ public class HectonVoxelEngine : MonoBehaviour
         for (int i = 0; i < _activeVolumes.Count; i++)
         {
             GameObject activeVolume = _activeVolumes[i];
+            HectonVoxelVolume volume = i < _activeVolumeComponents.Count ? _activeVolumeComponents[i] : null;
             if (activeVolume == null ||
-                !activeVolume.TryGetComponent(out Hecton8.Caves.HectonVoxelVolume volume) ||
+                volume == null ||
                 !volume.HasRuntimeData ||
-                volume.BakeState != Hecton8.Caves.VoxelBakeState.Complete)
+                volume.BakeState != VoxelBakeState.Complete)
             {
                 continue;
             }
@@ -3322,7 +3445,7 @@ public class HectonVoxelEngine : MonoBehaviour
         }
         finally
         {
-            handle.Complete();
+            DispatcherJobSwap.TryComplete(ref handle, true);
         }
     }
 
@@ -4301,9 +4424,10 @@ public class HectonVoxelEngine : MonoBehaviour
 
     GameObject SpawnVolume()
     {
-        if (ObjectPoolManager.Instance != null && voxelVolumePrefab != null)
+        ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+        if (pool != null && voxelVolumePrefab != null)
         {
-            GameObject pooled = ObjectPoolManager.Instance.Spawn(voxelVolumePrefab, Vector3.zero, Quaternion.identity);
+            GameObject pooled = pool.Spawn(voxelVolumePrefab, Vector3.zero, Quaternion.identity);
             if (pooled != null)
             {
                 PrepareVolumeForBuild(pooled);
@@ -4312,7 +4436,7 @@ public class HectonVoxelEngine : MonoBehaviour
             }
         }
 
-        var go = new GameObject("CaveVolume");
+        var go = new GameObject(RuntimeCaveVolumeName);
         go.AddComponent<MeshFilter>();
         go.AddComponent<MeshRenderer>();
         go.AddComponent<MeshCollider>();
@@ -4340,7 +4464,11 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             mesh = new Mesh
             {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
                 name = $"CaveMesh_{go.name}"
+#else
+                name = RuntimeCaveMeshName
+#endif
             };
             mesh.MarkDynamic();
             mf.sharedMesh = mesh;
@@ -4741,17 +4869,31 @@ public class HectonVoxelEngine : MonoBehaviour
     // ║                GIZMOS                         ║
     // ╚═══════════════════════════════════════════════╝
 
+#if UNITY_EDITOR
     void OnDrawGizmosSelected()
     {
         Gizmos.color = new Color(0f, 1f, 0.5f, 0.3f);
+        Matrix4x4 previousMatrix = Gizmos.matrix;
         for (int i = 0; i < _activeVolumes.Count; i++)
         {
-            if (_activeVolumes[i] == null) continue;
-            var mf = _activeVolumes[i].GetComponent<MeshFilter>();
-            if (mf != null && mf.sharedMesh != null)
-                Gizmos.DrawWireCube(mf.sharedMesh.bounds.center, mf.sharedMesh.bounds.size);
+            GameObject activeVolume = _activeVolumes[i];
+            if (activeVolume == null)
+                continue;
+
+            Bounds localBounds = i < _activeVolumeLocalBounds.Count
+                ? _activeVolumeLocalBounds[i]
+                : new Bounds(Vector3.zero, Vector3.one);
+
+            if (localBounds.size.sqrMagnitude <= 0.0001f)
+                localBounds = new Bounds(Vector3.zero, Vector3.one);
+
+            Gizmos.matrix = activeVolume.transform.localToWorldMatrix;
+            Gizmos.DrawWireCube(localBounds.center, localBounds.size);
         }
+
+        Gizmos.matrix = previousMatrix;
     }
+#endif
 }
 
 #endregion

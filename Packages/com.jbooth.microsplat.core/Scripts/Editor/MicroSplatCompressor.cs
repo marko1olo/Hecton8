@@ -76,7 +76,7 @@ namespace JBooth.MicroSplat
             if (GUILayout.Button ("Compress Scene"))
             {
                MicroSplatCompressor comp = new MicroSplatCompressor ();
-               MicroSplatObject[] objs = GameObject.FindObjectsByType<MicroSplatObject>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+               MicroSplatObject[] objs = UnityEngine.Object.FindObjectsByType<MicroSplatObject>(FindObjectsInactive.Exclude);
                foreach (var obj in objs)
                {
                   comp.Compress (obj, o);
@@ -85,7 +85,7 @@ namespace JBooth.MicroSplat
             if (GUILayout.Button ("Uncompress Scene"))
             {
                MicroSplatCompressor comp = new MicroSplatCompressor ();
-               MicroSplatObject[] objs = GameObject.FindObjectsByType<MicroSplatObject>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+               MicroSplatObject[] objs = UnityEngine.Object.FindObjectsByType<MicroSplatObject>(FindObjectsInactive.Exclude);
                foreach (var obj in objs)
                {
                   comp.Revert (obj);

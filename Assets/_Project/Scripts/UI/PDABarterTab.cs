@@ -103,7 +103,7 @@ namespace Hecton8.UI
         private void AutoResolve()
         {
             if (exchangeSystem == null)
-                exchangeSystem = PDAExchangeSystem.Instance;
+                exchangeSystem = GlobalRegistry.PDAExchange;
             if (playerPDA == null)
             {
                 IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
@@ -142,7 +142,7 @@ namespace Hecton8.UI
         private void RefreshExchangeBinding()
         {
             if (exchangeSystem == null)
-                exchangeSystem = PDAExchangeSystem.Instance;
+                exchangeSystem = GlobalRegistry.PDAExchange;
 
             if (_subscribedExchangeSystem == exchangeSystem)
                 return;
@@ -360,7 +360,7 @@ namespace Hecton8.UI
                 // ZERO-GC: Use StringBuilder to avoid string concatenation allocation
                 _sb.Clear();
                 _sb.Append(CachedToUpperInvariant(offer.offerName)).Append("  //  ").Append(CachedToUpperInvariant(offer.channelName));
-                _cardTitles[i].text = _sb.ToString();
+                _cardTitles[i].SetText(_sb);
                 
                 _sb.Clear();
                 _sb.Append("REQ  ").Append(exchangeSystem.BuildBundleSummary(offer.costs, "NONE")).AppendLine();

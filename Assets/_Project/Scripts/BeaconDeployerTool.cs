@@ -104,7 +104,7 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowInfo(string.Format(
                     ResolveLocalized(LocalizationKeys.BEACON_HUD_DEPLOYED, "BEACON DEPLOYED - {0} // GRID {1}"),
                     assessment.BuildHudMessage(label),
-                    BeaconNetworkSystem.Instance.ActiveCount));
+                    Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount));
                 FieldOperationLogSystem.RecordOperation(
                     ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
                     ResolveLocalized(LocalizationKeys.BEACON_LOG_DEPLOYED_TITLE, "FIELD BEACON DEPLOYED"),
@@ -118,7 +118,7 @@ namespace Hecton8.Gameplay
                         spawnPosition.z,
                         assessment.Summary,
                         assessment.Recommendation,
-                        BeaconNetworkSystem.Instance.ActiveCount),
+                        Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount),
                     "INFO");
                 InvalidateNearestAssessmentCache();
                 _cooldown = deployCooldown;
@@ -132,7 +132,7 @@ namespace Hecton8.Gameplay
             if (!IsEquipped || _cooldown > 0f)
                 return;
 
-            if (BeaconNetworkSystem.Instance == null || BeaconNetworkSystem.Instance.ActiveCount == 0)
+            if (Hecton8.Core.GlobalRegistry.BeaconNetwork == null || Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount == 0)
             {
                 if (Time.time >= _nextFeedbackAt)
                 {
@@ -154,7 +154,7 @@ namespace Hecton8.Gameplay
                         ResolveLocalized(LocalizationKeys.BEACON_HUD_NEAREST, "NEAREST BEACON - {0} // {1:0.0}M // GRID {2}"),
                         assessment.BuildHudMessage(nearestSnapshot.Label),
                         nearestDistance,
-                        BeaconNetworkSystem.Instance.ActiveCount));
+                        Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount));
                     FieldOperationLogSystem.RecordOperation(
                         ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
                         ResolveLocalized(LocalizationKeys.BEACON_LOG_CHECK_TITLE, "BEACON GRID CHECK"),
@@ -180,7 +180,7 @@ namespace Hecton8.Gameplay
                 ToolHitUtility.ShowInfo(string.Format(
                     ResolveLocalized(LocalizationKeys.BEACON_HUD_RETRACTED, "BEACON RETRACTED - {0} // GRID {1}"),
                     label,
-                    BeaconNetworkSystem.Instance.ActiveCount));
+                    Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount));
                 FieldOperationLogSystem.RecordOperation(
                     ResolveLocalized(LocalizationKeys.BEACON_PREFIX, DefaultBeaconPrefix),
                     ResolveLocalized(LocalizationKeys.BEACON_LOG_RETRACTED_TITLE, "FIELD BEACON RETRACTED"),
@@ -193,7 +193,7 @@ namespace Hecton8.Gameplay
                         position.y,
                         position.z,
                         distance,
-                        BeaconNetworkSystem.Instance.ActiveCount),
+                        Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount),
                     "INFO");
                 InvalidateNearestAssessmentCache();
                 _cooldown = deployCooldown;
@@ -205,8 +205,8 @@ namespace Hecton8.Gameplay
             if (_cooldown > 0f)
                 _cooldown = Mathf.Max(0f, _cooldown - deltaTime);
 
-            _debugActiveBeaconCount = BeaconNetworkSystem.Instance != null
-                ? BeaconNetworkSystem.Instance.ActiveCount
+            _debugActiveBeaconCount = Hecton8.Core.GlobalRegistry.BeaconNetwork != null
+                ? Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount
                 : 0;
         }
 
@@ -237,7 +237,7 @@ namespace Hecton8.Gameplay
                     routeAssessment.Recommendation);
             }
 
-            if (BeaconNetworkSystem.Instance == null || BeaconNetworkSystem.Instance.ActiveCount <= 1)
+            if (Hecton8.Core.GlobalRegistry.BeaconNetwork == null || Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount <= 1)
             {
                 return new BeaconAssessment(
                     ResolveLocalized(LocalizationKeys.BEACON_ROLE_ANCHOR, "ANCHOR"),
@@ -365,10 +365,10 @@ namespace Hecton8.Gameplay
             snapshot = default;
             distance = 0f;
 
-            if (BeaconNetworkSystem.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.BeaconNetwork == null)
                 return false;
 
-            int count = BeaconNetworkSystem.Instance.CopySnapshots(_beaconBuffer);
+            int count = Hecton8.Core.GlobalRegistry.BeaconNetwork.CopySnapshots(_beaconBuffer);
             float bestSqr = float.MaxValue;
             bool found = false;
 
@@ -403,7 +403,7 @@ namespace Hecton8.Gameplay
             distance = 0f;
             assessment = default;
 
-            if (BeaconNetworkSystem.Instance == null || BeaconNetworkSystem.Instance.ActiveCount == 0)
+            if (Hecton8.Core.GlobalRegistry.BeaconNetwork == null || Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount == 0)
                 return false;
 
             if (!BeaconNetworkSystem.TryGetNearest(_cachedTransform.position, out BeaconNetworkSystem.BeaconSnapshot nearest, out distance))
@@ -452,7 +452,7 @@ namespace Hecton8.Gameplay
             if (_cachedOperationalTextFrame == currentFrame)
                 return;
 
-            int activeCount = BeaconNetworkSystem.Instance != null ? BeaconNetworkSystem.Instance.ActiveCount : 0;
+            int activeCount = Hecton8.Core.GlobalRegistry.BeaconNetwork != null ? Hecton8.Core.GlobalRegistry.BeaconNetwork.ActiveCount : 0;
             if (_cooldown > 0f)
             {
                 _cachedOperationalSummary = string.Format(
@@ -564,7 +564,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

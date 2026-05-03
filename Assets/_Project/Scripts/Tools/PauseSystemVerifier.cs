@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.UI;
@@ -44,7 +45,7 @@ namespace Hecton8.Tools
             }
 
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            GameBootstrapper.PersistRuntimeService(this);
             ResolvePauseMenu();
             _isPaused = IsGamePaused();
         }

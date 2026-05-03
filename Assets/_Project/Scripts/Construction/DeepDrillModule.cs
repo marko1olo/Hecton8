@@ -110,13 +110,18 @@ namespace Hecton8.Construction
         private int _completedCycleCount;
         private ulong _placementRayRequesterId;
 
-        internal static List<DeepDrillModule> ActiveModules => s_ActiveModules;
+        internal static int ActiveModuleCount => s_ActiveModules.Count;
         internal bool IsOperating => _isOperating;
         internal int CompletedCycleCount => _completedCycleCount;
 
         public float PowerRating => _isOperating ? -activePowerDraw : 0f;
         public int PowerPriority => powerPriority;
         public bool HasPower => _hasPower;
+
+        internal static DeepDrillModule GetActiveModuleAt(int index)
+        {
+            return index >= 0 && index < s_ActiveModules.Count ? s_ActiveModules[index] : null;
+        }
 
         private void Awake()
         {

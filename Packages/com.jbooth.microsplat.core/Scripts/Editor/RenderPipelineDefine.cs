@@ -4,10 +4,10 @@
 //////////////////////////////////////////////////////
 
 using System;
-using System.Linq;
 using System.Reflection;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEngine;
 
 #if UNITY_2019_3_OR_NEWER
 
@@ -28,6 +28,11 @@ namespace JBooth.MicroSplat
       [UnityEditor.Callbacks.DidReloadScripts]
       private static void OnScriptsReloaded()
       {
+         if (Application.isBatchMode)
+         {
+            return;
+         }
+
          IsHDRP = DoesTypeExist(HDRP_PACKAGE);
          IsURP = DoesTypeExist(URP_PACKAGE);
 
@@ -40,28 +45,33 @@ namespace JBooth.MicroSplat
 
       public static bool DoesTypeExist(string className)
       {
-         var foundType = (from assembly in AppDomain.CurrentDomain.GetAssemblies()
-                          from type in GetTypesSafe(assembly)
-                          where type.Name == className
-                          select type).FirstOrDefault();
+         Assembly[] assemblies = AppDomain.CurrentDomain.GetAssemblies();
+         for (int assemblyIndex = 0; assemblyIndex < assemblies.Length; assemblyIndex++)
+         {
+            Type[] types = GetTypesSafe(assemblies[assemblyIndex]);
+            for (int typeIndex = 0; typeIndex < types.Length; typeIndex++)
+            {
+               Type type = types[typeIndex];
+               if (type != null && type.Name == className)
+               {
+                  return true;
+               }
+            }
+         }
 
-         return foundType != null;
+         return false;
       }
 
-      public static IEnumerable<Type> GetTypesSafe(System.Reflection.Assembly assembly)
+      public static Type[] GetTypesSafe(System.Reflection.Assembly assembly)
       {
-         Type[] types;
-
          try
          {
-            types = assembly.GetTypes();
+            return assembly.GetTypes();
          }
          catch (ReflectionTypeLoadException e)
          {
-            types = e.Types;
+            return e.Types;
          }
-
-         return types.Where(x => x != null);
       }
    }
 }

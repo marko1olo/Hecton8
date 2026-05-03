@@ -282,7 +282,7 @@ namespace Hecton8.EditorTools
                     distance);
                 // COLD SYNC JOB: editor-only proxy rebuild uses the same batched down-snap primitive as runtime scatter snapping.
                 JobHandle handle = RaycastCommand.ScheduleBatch(commands, hits, 1, default);
-                handle.Complete();
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 
                 RaycastHit hit = hits[0];
                 if (hit.collider == null)

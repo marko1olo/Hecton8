@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using Hecton8.Core;
 using UnityEngine;
 
 using Den.Tools;
@@ -163,10 +164,10 @@ namespace Hecton8.World
 
             public void Apply(Terrain terrain)
             {
-                HectonRockManager manager = HectonRockManager.Instance;
+                HectonRockManager manager = GlobalRegistry.RockManager;
                 if (manager == null)
                 {
-                    Debug.LogError("[HectonRockOutput] HectonRockManager.Instance is null! " +
+                    Debug.LogError("[HectonRockOutput] GlobalRegistry.RockManager is null. " +
                                    "Cannot register rock chunk.");
                     return;
                 }
@@ -199,7 +200,7 @@ namespace Hecton8.World
 
         public override void ClearApplied(TileData data, Terrain terrain)
         {
-            HectonRockManager manager = HectonRockManager.Instance;
+            HectonRockManager manager = GlobalRegistry.RockManager;
             if (manager == null) return;
 
             // Compute chunk coordinate same way as in Finalize

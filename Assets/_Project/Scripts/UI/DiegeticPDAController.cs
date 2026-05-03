@@ -12,6 +12,7 @@ namespace Hecton8.UI
     public sealed class DiegeticPDAController : MonoBehaviour, ITickable, IUpdatable, IPanelInteractable
     {
         private const string TabletScreenShaderPath = "Assets/_Project/Art/Shaders/Hecton_DiegeticPanelUnlit.shader";
+        private const float ReferenceResolveRetryIntervalSeconds = 0.5f;
         private static readonly string[] s_defaultTabNames =
         {
             "Tab_Inventory",
@@ -69,6 +70,7 @@ namespace Hecton8.UI
         private GameObject _dragTarget;
         private bool _dragInProgress;
         private Material _runtimeTabletScreenMaterial;
+        private float _nextReferenceResolveTime;
 
         private void Awake()
         {
@@ -107,7 +109,7 @@ namespace Hecton8.UI
 
         public void Tick(float deltaTime)
         {
-            ResolveReferences();
+            ResolveReferencesThrottled();
             ConfigureDiegeticPdaShell();
 
             bool openState = PlayerPDA.IsOpen;
@@ -169,6 +171,43 @@ namespace Hecton8.UI
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
             _registeredToTickManager = false;
+        }
+
+        private void ResolveReferencesThrottled()
+        {
+            if (!NeedsReferenceResolve())
+                return;
+
+            float now = Time.unscaledTime;
+            if (now < _nextReferenceResolveTime)
+                return;
+
+            _nextReferenceResolveTime = now + ReferenceResolveRetryIntervalSeconds;
+            ResolveReferences();
+        }
+
+        private bool NeedsReferenceResolve()
+        {
+            if (playerPda == null ||
+                diegeticPanel == null ||
+                diegeticPanelRoot == null ||
+                diegeticPanelCanvasGroup == null ||
+                _panelCanvas == null ||
+                _panelGraphicRaycaster == null)
+            {
+                return true;
+            }
+
+            if (tabletRoot != null && tabletScreenRenderer == null)
+                return true;
+
+            if (reparentTabletToHandAnchorOnAwake && tabletRoot != null && tabletHandAnchor == null)
+                return true;
+
+            return tabletRoot != null &&
+                   tabletHandAnchor != null &&
+                   reparentTabletToHandAnchorOnAwake &&
+                   tabletRoot.transform.parent != tabletHandAnchor;
         }
 
         private void ResolveReferences()

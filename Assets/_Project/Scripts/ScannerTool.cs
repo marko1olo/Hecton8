@@ -14,6 +14,7 @@ using Hecton8.World;
 using Hecton8.Narrative;
 using Hecton.Localization;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -38,6 +39,26 @@ namespace Hecton8.Gameplay
         private const float ScientificSalinityDepthRangeMeters = 1800f;
         private const float ScientificAttractantTraceThreshold01 = 0.1f;
         private const float ScientificGradientSampleStepMultiplier = 0.75f;
+        // COLD ALLOC: Vector3[4] - shared scanner pulse quad vertices - owner: ScannerTool
+        internal static readonly Vector3[] s_pulseQuadVertices =
+        {
+            new Vector3(-0.5f, -0.5f, 0f),
+            new Vector3(0.5f, -0.5f, 0f),
+            new Vector3(0.5f, 0.5f, 0f),
+            new Vector3(-0.5f, 0.5f, 0f)
+        };
+
+        // COLD ALLOC: Vector2[4] - shared scanner pulse quad UVs - owner: ScannerTool
+        internal static readonly Vector2[] s_pulseQuadUvs =
+        {
+            new Vector2(0f, 0f),
+            new Vector2(1f, 0f),
+            new Vector2(1f, 1f),
+            new Vector2(0f, 1f)
+        };
+
+        // COLD ALLOC: int[6] - shared scanner pulse quad indices - owner: ScannerTool
+        internal static readonly int[] s_pulseQuadTriangles = { 0, 2, 1, 0, 3, 2 };
 
         private enum ScanMode
         {
@@ -650,7 +671,7 @@ namespace Hecton8.Gameplay
             float cooldownRemaining = Mathf.Max(0f, (_lastScanTime + effectiveCooldown) - Time.time);
 
             // Сигнал Атлас-6 — показываем силу если обнаружен
-            AtlasSignalSystem signal = AtlasSignalSystem.Instance;
+            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal != null && signal.CurrentRevealStage >= AtlasDetectionRevealStage)
             {
                 float strength = signal.CurrentStrength;
@@ -694,7 +715,7 @@ namespace Hecton8.Gameplay
         public override string GetOperationalDirective()
         {
             // Сигнал Атлас-6 — показываем направление
-            AtlasSignalSystem signal = AtlasSignalSystem.Instance;
+            AtlasSignalSystem signal = Hecton8.Core.GlobalRegistry.AtlasSignal;
             if (signal != null &&
                 signal.CurrentRevealStage >= AtlasNavigationRevealStage &&
                 _cachedTransform != null)
@@ -1285,8 +1306,8 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            return LocalizationManager.Instance != null
-                ? LocalizationManager.Instance.GetOrFallback(LocalizationManager.Instance.CurrentLanguage, key, fallback)
+            return Hecton8.Core.GlobalRegistry.Localization != null
+                ? Hecton8.Core.GlobalRegistry.Localization.GetOrFallback(Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage, key, fallback)
                 : fallback;
         }
 
@@ -1496,8 +1517,8 @@ namespace Hecton8.Gameplay
 
             uint threatPredictionLoreHash = resolvedFauna != null ? resolvedFauna.ThreatPredictionLoreHash : 0u;
             bool threatPredictionUnlocked = threatPredictionLoreHash != 0u &&
-                                            LoreDatabaseManager.Instance != null &&
-                                            LoreDatabaseManager.Instance.IsUnlocked(threatPredictionLoreHash);
+                                            Hecton8.Core.GlobalRegistry.LoreDatabase != null &&
+                                            Hecton8.Core.GlobalRegistry.LoreDatabase.IsUnlocked(threatPredictionLoreHash);
             bool flankingManeuverDetected = resolvedFauna != null &&
                                             resolvedFauna.IsFlankingManeuverDetected &&
                                             threatPredictionUnlocked;
@@ -2162,7 +2183,7 @@ namespace Hecton8.Gameplay
 
             if (_pulseMatrices.IsCreated)
             {
-                _pulseMatrices.Dispose();
+                _pulseMatrices.Dispose(default(JobHandle));
                 _pulseMatrices = default;
             }
 
@@ -2287,26 +2308,9 @@ namespace Hecton8.Gameplay
                 name = "ScannerPulseQuad"
             };
 
-            Vector3[] vertices =
-            {
-                new Vector3(-0.5f, -0.5f, 0f),
-                new Vector3( 0.5f, -0.5f, 0f),
-                new Vector3( 0.5f,  0.5f, 0f),
-                new Vector3(-0.5f,  0.5f, 0f)
-            };
-
-            Vector2[] uv =
-            {
-                new Vector2(0f, 0f),
-                new Vector2(1f, 0f),
-                new Vector2(1f, 1f),
-                new Vector2(0f, 1f)
-            };
-
-            int[] triangles = { 0, 2, 1, 0, 3, 2 };
-            mesh.vertices = vertices;
-            mesh.uv = uv;
-            mesh.triangles = triangles;
+            mesh.vertices = ScannerTool.s_pulseQuadVertices;
+            mesh.uv = ScannerTool.s_pulseQuadUvs;
+            mesh.triangles = ScannerTool.s_pulseQuadTriangles;
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             mesh.UploadMeshData(false);

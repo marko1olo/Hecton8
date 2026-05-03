@@ -52,17 +52,197 @@ using Hecton8.World;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
+using Unity.Collections;
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
 
 namespace Hecton8.Atmosphere
 {
+    /// <summary>
+    /// Main-thread listener for deferred atmosphere state changes.
+    /// </summary>
+    public interface IAtmosphereStateEventListener
+    {
+        /// <summary>Called when the atmosphere state changes.</summary>
+        void OnAtmosphereStateChanged(EnvironmentState state);
+    }
+
+    /// <summary>
+    /// Queue-backed atmosphere state event lane.
+    /// </summary>
+    public static class AtmosphereEvents
+    {
+        private const int ExpectedPendingStateEventCapacity = 8;
+        private const int ListenerCapacity = 8;
+
+        private static readonly RegistryBucket<IAtmosphereStateEventListener> _listeners = new RegistryBucket<IAtmosphereStateEventListener>(ListenerCapacity);
+        private static NativeQueue<EnvironmentState> _pendingStates;
+        private static NativeQueue<EnvironmentState> _nextFrameStates;
+        private static int _pendingStateCount;
+        private static int _nextFrameStateCount;
+        private static bool _isDispatching;
+
+        /// <summary>
+        /// Number of queued atmosphere state changes awaiting dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingStateCount + _nextFrameStateCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingStates.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(AtmosphereEvents), nameof(_pendingStates));
+                _pendingStates.Dispose();
+                _pendingStates = default;
+            }
+
+            if (_nextFrameStates.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(AtmosphereEvents), nameof(_nextFrameStates));
+                _nextFrameStates.Dispose();
+                _nextFrameStates = default;
+            }
+
+            _pendingStateCount = 0;
+            _nextFrameStateCount = 0;
+            _isDispatching = false;
+            _listeners.Clear();
+        }
+
+        /// <summary>
+        /// Registers a main-thread atmosphere listener.
+        /// </summary>
+        public static void Register(IAtmosphereStateEventListener listener)
+        {
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a main-thread atmosphere listener.
+        /// </summary>
+        public static void Unregister(IAtmosphereStateEventListener listener)
+        {
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Queues a new atmosphere state change.
+        /// </summary>
+        public static void RaiseStateChanged(EnvironmentState state)
+        {
+            EnsureInitialized();
+            if (_pendingStateCount + _nextFrameStateCount >= ExpectedPendingStateEventCapacity)
+                return;
+
+            if (_isDispatching)
+            {
+                _nextFrameStates.Enqueue(state);
+                _nextFrameStateCount++;
+                return;
+            }
+
+            _pendingStates.Enqueue(state);
+            _pendingStateCount++;
+        }
+
+        /// <summary>
+        /// Flushes queued atmosphere state changes on the main thread.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingStates.IsCreated)
+                return;
+
+            PromoteNextFrameStatesIfFrontEmpty();
+            int scanBudget = _pendingStateCount > 0 ? _pendingStateCount : ExpectedPendingStateEventCapacity;
+            while (scanBudget > 0 && !_pendingStates.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingStates.TryDequeue(out EnvironmentState state))
+                    return;
+
+                if (_pendingStateCount > 0)
+                    _pendingStateCount--;
+                scanBudget--;
+                IAtmosphereStateEventListener[] rawListeners = _listeners.RawArray;
+                int listenerCount = _listeners.Count;
+                _isDispatching = true;
+                try
+                {
+                    for (int i = listenerCount - 1; i >= 0; i--)
+                    {
+                        IAtmosphereStateEventListener listener = rawListeners[i];
+                        if (listener != null)
+                            listener.OnAtmosphereStateChanged(state);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingStates.IsEmpty())
+            {
+                _pendingStateCount = 0;
+                PromoteNextFrameStatesIfFrontEmpty();
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingStates.IsCreated)
+            {
+                _pendingStates = new NativeQueue<EnvironmentState>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - deferred atmosphere state lane flushed by SystemDispatcher - owner: AtmosphereEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingStates,
+                    ExpectedPendingStateEventCapacity,
+                    nameof(AtmosphereEvents),
+                    nameof(_pendingStates),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameStates.IsCreated)
+            {
+                _nextFrameStates = new NativeQueue<EnvironmentState>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EnvironmentState>[8] - next-frame atmosphere state lane prevents same-frame reentrant dispatch - owner: AtmosphereEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameStates,
+                    ExpectedPendingStateEventCapacity,
+                    nameof(AtmosphereEvents),
+                    nameof(_nextFrameStates),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PromoteNextFrameStatesIfFrontEmpty()
+        {
+            if (!_pendingStates.IsCreated ||
+                !_nextFrameStates.IsCreated ||
+                !_pendingStates.IsEmpty() ||
+                _nextFrameStateCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<EnvironmentState> swap = _pendingStates;
+            _pendingStates = _nextFrameStates;
+            _nextFrameStates = swap;
+            _pendingStateCount = _nextFrameStateCount;
+            _nextFrameStateCount = 0;
+        }
+    }
+
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Atmosphere Manager")]
     [DefaultExecutionOrder(-6000)]  // v4.3: MUST tick before UnderwaterVisuals(-4000)
     [ExecuteAlways]
-    public class HectonAtmosphereManager : MonoBehaviour, ITickable, IUpdatable
+    public class HectonAtmosphereManager : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener, IMapMagicBiomeEventListener
     {
         private const float VisualEnterUnderwaterDepth = 0.01f;
         private const float VisualExitUnderwaterDepth = 0.005f;
@@ -134,7 +314,6 @@ namespace Hecton8.Atmosphere
         private static void ResetStaticState()
         {
             _instance = null;
-            OnStateChanged = null;
         }
 
         public static HectonAtmosphereManager Instance
@@ -145,8 +324,6 @@ namespace Hecton8.Atmosphere
         #endregion
 
         #region ══════════ Events ══════════
-
-        public static event Action<EnvironmentState> OnStateChanged;
 
         #endregion
 
@@ -166,6 +343,7 @@ namespace Hecton8.Atmosphere
         #region ══════════ Inspector ══════════
 
         [Header("═══ Sun & Time Cycle ═══")]
+        [Tooltip("Directional sun controlled by the atmosphere cycle. Falls back to RenderSettings.sun during play-mode validation.")]
         [SerializeField] private Light _sunLight;
 
         [SerializeField, Min(1f)]
@@ -233,6 +411,7 @@ namespace Hecton8.Atmosphere
         private float              _transitionProgress;
 
         private bool _registeredToTickManager;
+        private bool _registeredAtmosphereRuntime;
 
         private AtmosphereProfile _activeBiomeProfile;
         private AtmosphereProfile _activeMatrixProfile;
@@ -355,10 +534,11 @@ namespace Hecton8.Atmosphere
 
             if (Application.isPlaying)
             {
+                TryRegisterService();
                 TryRegister();
 
-                MapMagicBridge.OnBiomeChanged += HandleBiomeChanged;
-                BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
+                MapMagicBiomeEvents.Register(this);
+                BiomeMatrixEvents.Register(this);
                 ResolveBiomeMatrixDirector();
                 ApplyCurrentMatrixAtmosphereOverride();
             }
@@ -400,9 +580,10 @@ namespace Hecton8.Atmosphere
             if (Application.isPlaying)
             {
                 TryUnregister();
+                TryUnregisterService();
 
-                MapMagicBridge.OnBiomeChanged -= HandleBiomeChanged;
-                BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
+                MapMagicBiomeEvents.Unregister(this);
+                BiomeMatrixEvents.Unregister(this);
             }
 #if UNITY_EDITOR
             else
@@ -418,15 +599,18 @@ namespace Hecton8.Atmosphere
         private void OnDestroy()
         {
             if (Application.isPlaying)
+            {
+                MapMagicBiomeEvents.Unregister(this);
+                BiomeMatrixEvents.Unregister(this);
                 TryUnregister();
+                TryUnregisterService();
+            }
 
             if (_instance != this) return;
             _instance = null;
 
             ResetCycleShaderGlobals();
 
-            if (Application.isPlaying)
-                OnStateChanged = null;
         }
 
         private void TryRegister()
@@ -448,6 +632,26 @@ namespace Hecton8.Atmosphere
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registeredToTickManager = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_registeredAtmosphereRuntime || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterAtmosphereRuntime(this);
+            _registeredAtmosphereRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_registeredAtmosphereRuntime)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.Atmosphere, this))
+                GlobalRegistry.UnregisterAtmosphereRuntime(this);
+
+            _registeredAtmosphereRuntime = false;
         }
 
 #if UNITY_EDITOR
@@ -582,15 +786,9 @@ namespace Hecton8.Atmosphere
 
             if (_sunLight == null)
             {
-                var lights = FindObjectsByType<Light>(FindObjectsInactive.Exclude);
-                for (int i = 0; i < lights.Length; i++)
-                {
-                    if (lights[i].type == LightType.Directional)
-                    {
-                        _sunLight = lights[i];
-                        break;
-                    }
-                }
+                Light renderSettingsSun = RenderSettings.sun;
+                if (renderSettingsSun != null && renderSettingsSun.type == LightType.Directional)
+                    _sunLight = renderSettingsSun;
             }
         }
 
@@ -870,7 +1068,7 @@ namespace Hecton8.Atmosphere
             _currentState = newState;
 
             if (Application.isPlaying)
-                OnStateChanged?.Invoke(_currentState);
+                AtmosphereEvents.RaiseStateChanged(_currentState);
         }
 
         #endregion
@@ -985,6 +1183,20 @@ namespace Hecton8.Atmosphere
 
             _transitionOrigin = _currentValues;
             _transitionProgress = 0f;
+        }
+
+        void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            HandleMatrixBiomeChanged(profile);
+        }
+
+        void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
+        {
+        }
+
+        void IMapMagicBiomeEventListener.OnMapMagicBiomeChanged(int biomeId)
+        {
+            HandleBiomeChanged(biomeId);
         }
 
         #endregion

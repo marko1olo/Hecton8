@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -35,7 +36,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/Physics/Submarine Structural Grid")]
-    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IDamageSignalReceiver, ISubmarineHullBreachReadModel
+    public sealed class SubmarineStructuralGrid : MonoBehaviour, IFixedTickable, IPostFixedTickable, IDamageSignalReceiver, ISubmarineHullBreachReadModel
     {
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
         private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
@@ -411,8 +412,6 @@ namespace Hecton8.Physics
                 _recentImpactSeverityNormalized = math.max(
                     0f,
                     _recentImpactSeverityNormalized - math.max(0f, fixedDeltaTime) * RecentImpactSeverityDecayPerSecond);
-                ConsumeCompletedDamageJob();
-                ConsumeCompletedHullDentJob();
                 RefreshCompartmentMapping();
                 ApplyAbyssalCompression();
                 ApplyPressureCycleFatigue();
@@ -423,6 +422,12 @@ namespace Hecton8.Physics
                 if (!_damageJobRunning && _queuedImpactCount > 0)
                     ScheduleDamageJob();
             }
+        }
+
+        public void PostFixedTick(float fixedDeltaTime)
+        {
+            ConsumeCompletedDamageJob();
+            ConsumeCompletedHullDentJob();
         }
 
         /// <summary>
@@ -1031,13 +1036,14 @@ namespace Hecton8.Physics
 
         private void ConsumeCompletedDamageJob()
         {
-            if (!_damageJobRunning || !_damageJobHandle.IsCompleted)
+            if (!_damageJobRunning)
                 return;
 
             using (_damageConsumeProfilerMarker.Auto())
             {
-                _damageJobHandle.Complete();
-                _damageJobHandle = default;
+                if (!DispatcherJobSwap.TryComplete(ref _damageJobHandle, false))
+                    return;
+
                 _damageJobRunning = false;
                 _scheduledImpactCount = 0;
 
@@ -1057,11 +1063,12 @@ namespace Hecton8.Physics
 
         private void ConsumeCompletedHullDentJob()
         {
-            if (!_dentJobRunning || !_dentJobHandle.IsCompleted)
+            if (!_dentJobRunning)
                 return;
 
-            _dentJobHandle.Complete();
-            _dentJobHandle = default;
+            if (!DispatcherJobSwap.TryComplete(ref _dentJobHandle, false))
+                return;
+
             _dentJobRunning = false;
             _scheduledDentCount = 0;
             _hullDentWritableMeshDataApplied = false;
@@ -1146,6 +1153,7 @@ namespace Hecton8.Physics
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -1154,6 +1162,7 @@ namespace Hecton8.Physics
             if (!_registered)
                 return;
 
+            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
         }

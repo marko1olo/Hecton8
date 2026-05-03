@@ -15,13 +15,18 @@ namespace WaveHarmonic.Crest.Editor
         [DidReloadScripts]
         static void OnReloadScripts()
         {
+            if (UnityEngine.Application.isBatchMode)
+            {
+                return;
+            }
+
             EditorApplication.update -= GenerateAfterReloadScripts;
             EditorApplication.update += GenerateAfterReloadScripts;
         }
 
         static async void GenerateAfterReloadScripts()
         {
-            if (EditorApplication.isCompiling)
+            if (UnityEngine.Application.isBatchMode || EditorApplication.isCompiling)
             {
                 return;
             }
@@ -51,7 +56,7 @@ namespace WaveHarmonic.Crest.Editor
                 // Unused.
                 _ = deleted; _ = movedTo; _ = movedFrom; _ = domainReload;
 
-                if (EditorApplication.isCompiling)
+                if (UnityEngine.Application.isBatchMode || EditorApplication.isCompiling)
                 {
                     return;
                 }

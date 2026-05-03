@@ -24,12 +24,30 @@ namespace Hecton8.PDA
 
         public static long PackMortonChunkKey(int chunkX, int chunkY, int chunkZ)
         {
+            if (TryPackMortonChunkKey(chunkX, chunkY, chunkZ, out long key))
+                return key;
+
+            return 0L;
+        }
+
+        public static bool TryPackMortonChunkKey(int chunkX, int chunkY, int chunkZ, out long key)
+        {
             unchecked
             {
-                ulong x = (ulong)ZigZagEncode(chunkX) & MortonAxisMask;
-                ulong y = (ulong)ZigZagEncode(chunkY) & MortonAxisMask;
-                ulong z = (ulong)ZigZagEncode(chunkZ) & MortonAxisMask;
-                return (long)(Part1By2(x) | (Part1By2(y) << 1) | (Part1By2(z) << 2));
+                uint encodedX = ZigZagEncodeUInt(chunkX);
+                uint encodedY = ZigZagEncodeUInt(chunkY);
+                uint encodedZ = ZigZagEncodeUInt(chunkZ);
+                if (encodedX > MortonAxisMask || encodedY > MortonAxisMask || encodedZ > MortonAxisMask)
+                {
+                    key = 0L;
+                    return false;
+                }
+
+                ulong x = encodedX;
+                ulong y = encodedY;
+                ulong z = encodedZ;
+                key = (long)(Part1By2(x) | (Part1By2(y) << 1) | (Part1By2(z) << 2));
+                return true;
             }
         }
 
@@ -59,6 +77,14 @@ namespace Hecton8.PDA
             unchecked
             {
                 return (value << 1) ^ (value >> 31);
+            }
+        }
+
+        private static uint ZigZagEncodeUInt(int value)
+        {
+            unchecked
+            {
+                return (uint)((value << 1) ^ (value >> 31));
             }
         }
 
@@ -105,7 +131,7 @@ namespace Hecton8.PDA
             SaveManager saveManager = Hecton8.Core.GlobalRegistry.SaveRuntime;
             playTimeSeconds = saveManager != null ? saveManager.CurrentPlayTimeSeconds : 0f;
 
-            HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
+            HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
             if (atmosphereManager != null)
             {
                 float cycleDuration = Mathf.Max(1f, atmosphereManager.CycleDuration);

@@ -91,6 +91,7 @@ namespace Hecton8.Tools
         private bool _registeredUpdate;
         private bool _registeredLateFrame;
         private bool _saveRegistered;
+        private bool _serviceRegistered;
 
         public event Action<string, float, float> OnDurabilityChanged;
         public event Action<string> OnToolBroken;
@@ -173,6 +174,7 @@ namespace Hecton8.Tools
             public uint HashId;
         }
 
+#pragma warning disable 0649 // Reserved padding keeps native item-state layout stable for future flags.
         private struct ItemState
         {
             public float durability;
@@ -180,6 +182,7 @@ namespace Hecton8.Tools
             public ushort flags;
             public ushort reserved;
         }
+#pragma warning restore 0649
 
         private void Awake()
         {
@@ -195,6 +198,7 @@ namespace Hecton8.Tools
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegisterSlowTick();
             TryRegisterUpdate();
             TryRegisterLateFrame();
@@ -203,6 +207,7 @@ namespace Hecton8.Tools
 
         private void Start()
         {
+            TryRegisterService();
             TryRegisterSlowTick();
             TryRegisterUpdate();
             TryRegisterLateFrame();
@@ -215,10 +220,12 @@ namespace Hecton8.Tools
             TryUnregisterUpdate();
             TryUnregisterSlowTick();
             TryUnregisterSaveService();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterService();
             DisposeNativeState();
 
             if (Instance == this)
@@ -246,10 +253,12 @@ namespace Hecton8.Tools
 
         public void LateFrameTick()
         {
-            if (!_decayScheduled || !_scheduledDecayHandle.IsCompleted)
+            if (!_decayScheduled)
                 return;
 
-            _scheduledDecayHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _scheduledDecayHandle, forceComplete: false))
+                return;
+
             _decayScheduled = false;
             SyncManagedMirrorsFromNative();
             FlushBreakdownEvents();
@@ -571,19 +580,59 @@ namespace Hecton8.Tools
         private void EnsureNativeState()
         {
             if (!_itemStates.IsCreated)
+            {
                 _itemStates = new NativeArray<ItemState>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ItemState>[32] — authoritative tool durability slots — owner: ToolDurabilitySystem
 
+                NativeMemorySentinel.RegisterNativeArray(
+                    _itemStates,
+                    nameof(ToolDurabilitySystem),
+                    nameof(_itemStates),
+                    NativeAllocationLifetime.Scene);
+            }
+
             if (!_pendingDecayDt.IsCreated)
+            {
                 _pendingDecayDt = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] — pending scaled durability-decay dt per slot — owner: ToolDurabilitySystem
 
+                NativeMemorySentinel.RegisterNativeArray(
+                    _pendingDecayDt,
+                    nameof(ToolDurabilitySystem),
+                    nameof(_pendingDecayDt),
+                    NativeAllocationLifetime.Scene);
+            }
+
             if (!_wearMultipliers.IsCreated)
+            {
                 _wearMultipliers = new NativeArray<float>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] — compiled ItemTemplate wear multipliers per slot — owner: ToolDurabilitySystem
 
+                NativeMemorySentinel.RegisterNativeArray(
+                    _wearMultipliers,
+                    nameof(ToolDurabilitySystem),
+                    nameof(_wearMultipliers),
+                    NativeAllocationLifetime.Scene);
+            }
+
             if (!_slotActive.IsCreated)
+            {
                 _slotActive = new NativeArray<byte>(MaxTrackedTools, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[32] — native slot occupancy mask for durability jobs — owner: ToolDurabilitySystem
 
+                NativeMemorySentinel.RegisterNativeArray(
+                    _slotActive,
+                    nameof(ToolDurabilitySystem),
+                    nameof(_slotActive),
+                    NativeAllocationLifetime.Scene);
+            }
+
             if (!_breakdownEvents.IsCreated)
+            {
                 _breakdownEvents = new NativeQueue<BreakdownEvent>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BreakdownEvent>(Persistent) — deferred tool-breakdown event lane — owner: ToolDurabilitySystem
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _breakdownEvents,
+                    MaxTrackedTools,
+                    nameof(ToolDurabilitySystem),
+                    nameof(_breakdownEvents),
+                    NativeAllocationLifetime.Scene);
+            }
         }
 
         private void DisposeNativeState()
@@ -593,36 +642,66 @@ namespace Hecton8.Tools
                 JobHandle disposeHandle = _scheduledDecayHandle;
 
                 if (_itemStates.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_itemStates);
                     disposeHandle = _itemStates.Dispose(disposeHandle);
+                }
 
                 if (_pendingDecayDt.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_pendingDecayDt);
                     disposeHandle = _pendingDecayDt.Dispose(disposeHandle);
+                }
 
                 if (_wearMultipliers.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_wearMultipliers);
                     disposeHandle = _wearMultipliers.Dispose(disposeHandle);
+                }
 
                 if (_slotActive.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_slotActive);
                     disposeHandle = _slotActive.Dispose(disposeHandle);
+                }
 
                 if (_breakdownEvents.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeQueue(nameof(ToolDurabilitySystem), nameof(_breakdownEvents));
                     disposeHandle = _breakdownEvents.Dispose(disposeHandle);
+                }
             }
             else
             {
                 if (_itemStates.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_itemStates);
                     _itemStates.Dispose();
+                }
 
                 if (_pendingDecayDt.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_pendingDecayDt);
                     _pendingDecayDt.Dispose();
+                }
 
                 if (_wearMultipliers.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_wearMultipliers);
                     _wearMultipliers.Dispose();
+                }
 
                 if (_slotActive.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(_slotActive);
                     _slotActive.Dispose();
+                }
 
                 if (_breakdownEvents.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeQueue(nameof(ToolDurabilitySystem), nameof(_breakdownEvents));
                     _breakdownEvents.Dispose();
+                }
             }
 
             _itemStates = default;
@@ -654,7 +733,8 @@ namespace Hecton8.Tools
                 _slotActive[i] = 0;
             }
 
-            while (_breakdownEvents.IsCreated && _breakdownEvents.TryDequeue(out _))
+            int remainingEvents = MaxTrackedTools;
+            while (remainingEvents-- > 0 && _breakdownEvents.IsCreated && _breakdownEvents.TryDequeue(out _))
             {
             }
         }
@@ -777,8 +857,15 @@ namespace Hecton8.Tools
 
         private void FlushBreakdownEvents()
         {
-            while (_breakdownEvents.IsCreated && _breakdownEvents.TryDequeue(out BreakdownEvent breakdown))
+            int remainingEvents = MaxTrackedTools;
+            while (remainingEvents-- > 0 && _breakdownEvents.IsCreated && !_breakdownEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_breakdownEvents.TryDequeue(out BreakdownEvent breakdown))
+                    break;
+
                 if ((uint)breakdown.SlotIndex >= (uint)_toolIdBySlot.Length)
                     continue;
 
@@ -793,7 +880,7 @@ namespace Hecton8.Tools
             if (!_decayScheduled)
                 return;
 
-            _scheduledDecayHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _scheduledDecayHandle, forceComplete: true);
             _decayScheduled = false;
             SyncManagedMirrorsFromNative();
             FlushBreakdownEvents();
@@ -807,7 +894,7 @@ namespace Hecton8.Tools
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Player);
-            _registeredSlowTick = true;
+            _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterSlowTick()
@@ -827,7 +914,7 @@ namespace Hecton8.Tools
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Player);
-            _registeredUpdate = true;
+            _registeredUpdate = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregisterUpdate()
@@ -847,7 +934,7 @@ namespace Hecton8.Tools
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
-            _registeredLateFrame = true;
+            _registeredLateFrame = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
         }
 
         private void TryUnregisterLateFrame()
@@ -875,6 +962,26 @@ namespace Hecton8.Tools
 
             GlobalRegistry.Save.Unregister(this);
             _saveRegistered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterToolDurabilityRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ToolDurability, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.ToolDurability, this))
+                GlobalRegistry.UnregisterToolDurabilityRuntime(this);
+
+            _serviceRegistered = false;
         }
     }
 }

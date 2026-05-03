@@ -109,7 +109,8 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Force-completes any pending simulation work without running reconciliation.
+        /// Attempts to close pending simulation work without running reconciliation.
+        /// Incomplete backend jobs remain tracked for deferred disposal.
         /// </summary>
         public void ForceComplete()
         {

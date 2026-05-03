@@ -53,22 +53,26 @@ namespace Hecton8.World
 
         private const byte EnteredEventType = 1;
         private const byte ExitedEventType = 2;
+        private const int PendingEventCapacity = 16;
 
         private static readonly RegistryBucket<IDepthZoneEventListener> _listeners = new RegistryBucket<IDepthZoneEventListener>(16);
         private static readonly System.Collections.Generic.Dictionary<uint, DepthZoneProfile> _profilesByHash = new System.Collections.Generic.Dictionary<uint, DepthZoneProfile>(32);
         private static NativeQueue<DepthZoneEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(DepthZoneEvents), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
 
+            _pendingEventCount = 0;
             _listeners.Clear();
             _profilesByHash.Clear();
         }
@@ -97,8 +101,18 @@ namespace Hecton8.World
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out DepthZoneEventPayload payload))
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out DepthZoneEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
                 if (!_profilesByHash.TryGetValue(payload.ZoneHash, out DepthZoneProfile profile) || profile == null)
                     continue;
 
@@ -112,11 +126,14 @@ namespace Hecton8.World
                         rawArray[i].OnDepthZoneExited(profile);
                 }
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         private static void Enqueue(DepthZoneProfile zone, byte eventType)
         {
-            if (zone == null)
+            if (zone == null || _listeners.Count <= 0 || _pendingEventCount >= PendingEventCapacity)
                 return;
 
             EnsureInitialized();
@@ -127,18 +144,27 @@ namespace Hecton8.World
                 ZoneHash = zoneHash,
                 EventType = eventType
             });
+            _pendingEventCount++;
         }
 
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
+            {
                 _pendingEvents = new NativeQueue<DepthZoneEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DepthZoneEventPayload>[16] - depth-zone event lane flushed by SystemDispatcher - owner: DepthZoneEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(DepthZoneEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
     }
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-105)]
-    public sealed class DepthZoneDirector : MonoBehaviour, ISlowTickable
+    public sealed class DepthZoneDirector : MonoBehaviour, ISlowTickable, ILocalizationLanguageChangedListener
     {
         private const string DepthZoneDataRoot = "Assets/_Project/Data/Lore/DepthZones";
 
@@ -173,6 +199,7 @@ namespace Hecton8.World
 
         private DepthZoneProfile _currentZone;
         private bool _registered;
+        private bool _serviceRegistered;
         private bool _hullWarningShown;
         private float _nextZoneNotificationTime;
         // COLD ALLOC: small per-zone message caches avoid string formatting in SlowTick transition path.
@@ -201,23 +228,26 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
 
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             ResolveSurvivalSystem();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
 
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             _nextZoneNotificationTime = 0f;
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (Instance == this)
                 Instance = null;
@@ -314,7 +344,7 @@ namespace Hecton8.World
         {
             if (zone == null || _hullWarningShown) return;
 
-            SuitUpgradeManager upgradeManager = SuitUpgradeManager.Instance;
+            SuitUpgradeManager upgradeManager = Hecton8.Core.GlobalRegistry.SuitUpgrades;
             if (upgradeManager == null) return;
 
             if (upgradeManager.CurrentHullTier < zone.requiredHullTier)
@@ -329,7 +359,7 @@ namespace Hecton8.World
             if (Time.unscaledTime < _nextZoneNotificationTime)
                 return false;
 
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector == null)
                 return true;
 
@@ -358,7 +388,7 @@ namespace Hecton8.World
                 return;
 
             int maxCacheCount = Mathf.Min(zones.Length, _cachedMessageZones.Length);
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             for (int i = 0; i < maxCacheCount; i++)
             {
                 DepthZoneProfile zone = zones[i];
@@ -410,7 +440,7 @@ namespace Hecton8.World
                     return _cachedHullWarningMessages[i];
             }
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_HULL_WARNING, zone != null ? zone.requiredHullTier : 0)
                 : "WARNING: SUIT HULL IS NOT RATED FOR THIS DEPTH.";
@@ -422,6 +452,15 @@ namespace Hecton8.World
             UnityEngine.Debug.Log($"[DepthZone] Entered: {zoneDisplayName} (depth: {depth:F0}m)");
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildZoneMessageCache();
@@ -429,7 +468,7 @@ namespace Hecton8.World
 
         private static string ResolveUnknownZoneLabel()
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, LocalizationKeys.DEPTH_ZONE_UNKNOWN, "UNKNOWN ZONE")
                 : "UNKNOWN ZONE";
@@ -437,7 +476,7 @@ namespace Hecton8.World
 
         private static string ResolveZoneEnterFallback(string zoneLabel)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetFormatted(LocalizationKeys.DEPTH_ZONE_ENTER, zoneLabel)
                 : "ZONE: " + zoneLabel;
@@ -472,7 +511,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -480,9 +519,29 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterDepthZoneRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.DepthZone, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.DepthZone, this))
+                GlobalRegistry.UnregisterDepthZoneRuntime(this);
+
+            _serviceRegistered = false;
         }
 
 #if UNITY_EDITOR

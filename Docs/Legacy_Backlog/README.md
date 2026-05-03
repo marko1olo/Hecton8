@@ -5,9 +5,9 @@ Status: `PENDING VERIFICATION`
 
 Purpose: collect older broad backlog/spec/history documents outside repo root while preserving access.
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using these files.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using these files.
 - This folder is historical/reference material only, not current execution authority.
 - Internal links, paths, encoding, and system ownership may be stale.
 

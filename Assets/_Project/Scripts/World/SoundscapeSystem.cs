@@ -51,6 +51,8 @@ namespace Hecton8.World
 
     public static class SoundscapeEvents
     {
+        private const int PendingEventCapacity = 16;
+
         private struct SoundscapeEventPayload
         {
             public SoundscapeTier OldTier;
@@ -59,18 +61,21 @@ namespace Hecton8.World
 
         private static readonly RegistryBucket<ISoundscapeEventListener> _listeners = new RegistryBucket<ISoundscapeEventListener>(16);
         private static NativeQueue<SoundscapeEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SoundscapeEvents), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
 
+            _pendingEventCount = 0;
             _listeners.Clear();
         }
 
@@ -89,12 +94,16 @@ namespace Hecton8.World
 
         public static void RaiseTierChanged(SoundscapeTier oldTier, SoundscapeTier newTier)
         {
+            if (_listeners.Count <= 0 || _pendingEventCount >= PendingEventCapacity)
+                return;
+
             EnsureInitialized();
             _pendingEvents.Enqueue(new SoundscapeEventPayload
             {
                 OldTier = oldTier,
                 NewTier = newTier
             });
+            _pendingEventCount++;
         }
 
         public static void FlushPending()
@@ -102,19 +111,40 @@ namespace Hecton8.World
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out SoundscapeEventPayload payload))
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out SoundscapeEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
                 ISoundscapeEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
                 for (int i = count - 1; i >= 0; i--)
                     rawArray[i].OnSoundscapeTierChanged(payload.OldTier, payload.NewTier);
             }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
         }
 
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
+            {
                 _pendingEvents = new NativeQueue<SoundscapeEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<SoundscapeEventPayload>[16] - soundscape tier event lane flushed by SystemDispatcher - owner: SoundscapeEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(SoundscapeEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
     }
 
@@ -153,6 +183,7 @@ namespace Hecton8.World
 
         private SoundscapeTier _currentTier = SoundscapeTier.Surface;
         private bool _registered;
+        private bool _serviceRegistered;
 
         private static readonly int _ShaderSoundscapeTier =
             Shader.PropertyToID("_SoundscapeDepthTier");
@@ -175,6 +206,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
 
             ResolveSurvivalSystem();
@@ -185,6 +217,13 @@ namespace Hecton8.World
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+            TryUnregisterService();
         }
 
         private void TryRegister()
@@ -201,9 +240,27 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterSoundscapeRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Soundscape, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSoundscapeRuntime(this);
+            _serviceRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -226,9 +283,7 @@ namespace Hecton8.World
             Shader.SetGlobalInt(_ShaderSoundscapeTier, (int)newTier);
             SoundscapeEvents.RaiseTierChanged(oldTier, newTier);
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log("[Soundscape] Tier changed.");
-#endif
+            LogTierChanged();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -301,6 +356,12 @@ namespace Hecton8.World
                         return SoundscapeTier.DeepAbyss;
                     return SoundscapeTier.Thermal;
             }
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogTierChanged()
+        {
+            Debug.Log("[Soundscape] Tier changed.");
         }
 
         private bool ResolveSurvivalSystem()

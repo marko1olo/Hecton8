@@ -37,11 +37,13 @@ namespace Hecton8.World
         private static readonly int _ModInstanceCountId = Shader.PropertyToID("_HectonModInstanceCount");
         private const int MaxModInstancesPerFrame = 1024;
 
+#pragma warning disable 0649 // GPU buffer layout payload; compute/render code writes these fields outside managed C# assignment.
         private struct ScatterInstanceGpuData
         {
             public Vector4 PositionScale;
             public Vector4 NormalRotation;
         }
+#pragma warning restore 0649
 
         private static GPUScatterDirector _activeInstance;
 

@@ -64,7 +64,7 @@ namespace Hecton8.Optimization.Editor
         {
             var recommendations = new List<FormatOptimizationRecommendation>();
             
-            if (RenderTextureLifecycleTracker.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
             {
                 Debug.LogWarning("[FormatOptimizer] RenderTextureLifecycleTracker not available. Enter Play Mode first.");
                 return recommendations;
@@ -72,7 +72,7 @@ namespace Hecton8.Optimization.Editor
             
             // Query all tracked RTs
             var allRTs = new List<RenderTextureAllocationRecord>();
-            var tracker = RenderTextureLifecycleTracker.Instance;
+            var tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycle;
             
             // Get all allocations via categories
             var categories = new[] { "Visor", "Camera", "PostFX", "UI", "Other" };
@@ -186,9 +186,9 @@ namespace Hecton8.Optimization.Editor
             };
             
             // Get texture/RT memory from VRAMMonitor if available
-            if (VRAMMonitor.Instance != null)
+            if (Hecton8.Core.GlobalRegistry.VRAMMonitor != null)
             {
-                VRAMMonitor.Instance.GetVRAMBreakdown(
+                Hecton8.Core.GlobalRegistry.VRAMMonitor.GetVRAMBreakdown(
                     out report.BeforeTextureMemoryBytes,
                     out report.BeforeRTMemoryBytes,
                     out _);
@@ -209,9 +209,9 @@ namespace Hecton8.Optimization.Editor
             // Capture AFTER VRAM
             report.AfterVRAMBytes = UnityEngine.Profiling.Profiler.GetTotalAllocatedMemoryLong();
             
-            if (VRAMMonitor.Instance != null)
+            if (Hecton8.Core.GlobalRegistry.VRAMMonitor != null)
             {
-                VRAMMonitor.Instance.GetVRAMBreakdown(
+                Hecton8.Core.GlobalRegistry.VRAMMonitor.GetVRAMBreakdown(
                     out report.AfterTextureMemoryBytes,
                     out report.AfterRTMemoryBytes,
                     out _);

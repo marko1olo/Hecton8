@@ -16,6 +16,7 @@
 namespace Hecton8.Gameplay
 {
     using System;
+    using System.Runtime.InteropServices;
     using Hecton8.Bootstrap;
     using Hecton8.Building;
     using Hecton8.Construction;
@@ -30,8 +31,317 @@ namespace Hecton8.Gameplay
     using Hecton8.World;
     using EquipmentInteractionPacket = Hecton8.Interaction.InteractionPacket;
     using EquipmentInteractionSignal = Hecton8.Interaction.InteractionSignal;
+    using Unity.Collections;
     using Unity.Mathematics;
     using UnityEngine;
+
+    /// <summary>
+    /// Laser cutter event kind carried by <see cref="LaserCutterEventPayload"/>.
+    /// </summary>
+    public enum LaserCutterEventType : byte
+    {
+        /// <summary>Normalized heat value changed beyond the publish threshold.</summary>
+        HeatChanged = 0,
+
+        /// <summary>Beam activation state changed.</summary>
+        BeamStateChanged = 1
+    }
+
+    /// <summary>
+    /// Blittable laser cutter event payload queued by <see cref="LaserCutterEvents"/>.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct LaserCutterEventPayload
+    {
+        /// <summary>Normalized heat value [0, 1].</summary>
+        public float Heat01;
+
+        /// <summary>Runtime entity id hash of the cutter source.</summary>
+        public int CutterInstanceId;
+
+        /// <summary>Runtime entity id hash of the cutter root transform.</summary>
+        public int CutterRootInstanceId;
+
+        /// <summary>Serialized <see cref="LaserCutterEventType"/> value.</summary>
+        public ushort EventType;
+
+        /// <summary>Bit flags for event-specific state.</summary>
+        public ushort StateFlags;
+    }
+
+    /// <summary>
+    /// Listener contract for deferred laser cutter events.
+    /// </summary>
+    public interface ILaserCutterEventListener
+    {
+        /// <summary>
+        /// Receives a laser cutter event during <see cref="SystemDispatcher"/> LateUpdate.
+        /// </summary>
+        /// <param name="payload">Blittable cutter event payload.</param>
+        void OnLaserCutterEvent(in LaserCutterEventPayload payload);
+    }
+
+    /// <summary>
+    /// Queue-backed laser cutter event lane with a sidecar source registry for live transform resolution.
+    /// </summary>
+    public static class LaserCutterEvents
+    {
+        private const int PendingEventCapacity = 16;
+        private const int ListenerCapacity = 8;
+        private const int SourceCapacity = 8;
+        private const ushort BeamActiveFlag = 1;
+
+        private struct SourceRecord
+        {
+            public LaserCutter Source;
+            public int CutterInstanceId;
+            public Transform CachedTransform;
+        }
+
+        // COLD ALLOC: RegistryBucket<ILaserCutterEventListener>[8] - cutter listeners drained by SystemDispatcher LateUpdate - owner: LaserCutterEvents
+        private static readonly RegistryBucket<ILaserCutterEventListener> _listeners = new RegistryBucket<ILaserCutterEventListener>(ListenerCapacity);
+        // COLD ALLOC: SourceRecord[8] - cutter source sidecar for live Transform resolution - owner: LaserCutterEvents
+        private static readonly SourceRecord[] _sources = new SourceRecord[SourceCapacity];
+        private static NativeQueue<LaserCutterEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
+        private static int _sourceCount;
+
+        /// <summary>
+        /// Pending payload count in the cutter event lane.
+        /// </summary>
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+
+        /// <summary>
+        /// Registers a cutter event listener.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Register(ILaserCutterEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            _listeners.TryRegister(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a cutter event listener.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Unregister(ILaserCutterEventListener listener)
+        {
+            if (listener == null || !_listeners.Contains(listener))
+                return;
+
+            _listeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Flushes queued cutter events through registered listeners.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out LaserCutterEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                ILaserCutterEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnLaserCutterEvent(in payload);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+
+        /// <summary>
+        /// Resolves a live cutter transform from the sidecar source registry.
+        /// </summary>
+        /// <param name="cutterInstanceId">Runtime entity id hash of the cutter source.</param>
+        /// <param name="cutterTransform">Resolved live transform, if present.</param>
+        /// <returns>True when the source is still registered and has a transform.</returns>
+        public static bool TryResolveCutterTransform(int cutterInstanceId, out Transform cutterTransform)
+        {
+            for (int i = _sourceCount - 1; i >= 0; i--)
+            {
+                SourceRecord record = _sources[i];
+                if (record.Source == null || record.CutterInstanceId != cutterInstanceId)
+                    continue;
+
+                cutterTransform = record.CachedTransform;
+                return cutterTransform != null;
+            }
+
+            cutterTransform = null;
+            return false;
+        }
+
+        internal static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<LaserCutterEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<LaserCutterEventPayload>[16] - deferred cutter event lane flushed by SystemDispatcher LateUpdate - owner: LaserCutterEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(LaserCutterEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        internal static void RegisterSource(LaserCutter source, int cutterInstanceId, Transform cachedTransform)
+        {
+            if (source == null || cutterInstanceId == 0)
+                return;
+
+            EnsureInitialized();
+            for (int i = _sourceCount - 1; i >= 0; i--)
+            {
+                if (_sources[i].Source != source)
+                    continue;
+
+                _sources[i] = new SourceRecord
+                {
+                    Source = source,
+                    CutterInstanceId = cutterInstanceId,
+                    CachedTransform = cachedTransform
+                };
+                return;
+            }
+
+            if (_sourceCount >= SourceCapacity)
+                return;
+
+            _sources[_sourceCount] = new SourceRecord
+            {
+                Source = source,
+                CutterInstanceId = cutterInstanceId,
+                CachedTransform = cachedTransform
+            };
+            _sourceCount++;
+        }
+
+        internal static void UnregisterSource(LaserCutter source)
+        {
+            if (source == null || _sourceCount <= 0)
+                return;
+
+            for (int i = _sourceCount - 1; i >= 0; i--)
+            {
+                if (_sources[i].Source != source)
+                    continue;
+
+                int lastIndex = _sourceCount - 1;
+                _sources[i] = _sources[lastIndex];
+                _sources[lastIndex] = default;
+                _sourceCount = lastIndex;
+                return;
+            }
+        }
+
+        internal static void RaiseHeatChanged(float heat01, int cutterInstanceId, int rootInstanceId)
+        {
+            Enqueue(new LaserCutterEventPayload
+            {
+                Heat01 = math.saturate(heat01),
+                CutterInstanceId = cutterInstanceId,
+                CutterRootInstanceId = rootInstanceId,
+                EventType = (ushort)LaserCutterEventType.HeatChanged,
+                StateFlags = 0
+            });
+        }
+
+        internal static void RaiseBeamStateChanged(int cutterInstanceId, int rootInstanceId, bool isActive)
+        {
+            Enqueue(new LaserCutterEventPayload
+            {
+                Heat01 = 0f,
+                CutterInstanceId = cutterInstanceId,
+                CutterRootInstanceId = rootInstanceId,
+                EventType = (ushort)LaserCutterEventType.BeamStateChanged,
+                StateFlags = isActive ? BeamActiveFlag : (ushort)0
+            });
+        }
+
+        /// <summary>
+        /// Tests the beam-active flag in a cutter event payload.
+        /// </summary>
+        /// <param name="payload">Payload to inspect.</param>
+        /// <returns>True when the payload marks the cutter beam active.</returns>
+        public static bool IsBeamActive(in LaserCutterEventPayload payload)
+        {
+            return (payload.StateFlags & BeamActiveFlag) != 0;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(LaserCutterEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            for (int i = 0; i < _sourceCount; i++)
+                _sources[i] = default;
+
+            _sourceCount = 0;
+            _pendingEventCount = 0;
+        }
+
+        private static void Enqueue(in LaserCutterEventPayload payload)
+        {
+            if (payload.CutterInstanceId == 0 || payload.CutterRootInstanceId == 0)
+                return;
+
+            EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+                return;
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out _))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+    }
 
     [DisallowMultipleComponent]
     public sealed class LaserCutter : PlayerTool, IToolModule
@@ -66,15 +376,6 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  EVENTS
         // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Fires when heat level changes significantly.
-        /// Parameter: normalized heat [0..1].
-        /// Subscribers: HUD heat gauge, warning audio system.
-        /// Throttled: only fires when delta > 0.02 to avoid spam.
-        /// </summary>
-        public static event Action<float> OnHeatChanged;
-        internal static event Action<Transform, bool> OnBeamStateChanged;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — LASER SETTINGS
@@ -202,6 +503,7 @@ namespace Hecton8.Gameplay
 
         /// <summary>Last published heat value (for event throttling).</summary>
         private float _lastPublishedHeat;
+        private bool _lastPublishedBeamActive;
 
         /// <summary>Has the error clip been played this lockout cycle.
         /// Prevents spamming the error sound every frame while locked.</summary>
@@ -316,6 +618,27 @@ namespace Hecton8.Gameplay
             EnsurePlayerBindings();
         }
 
+        private void OnEnable()
+        {
+            if (Application.isPlaying)
+                LaserCutterEvents.RegisterSource(this, ResolveEventCutterId(), ResolveEventTransform());
+        }
+
+        private void OnDisable()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            PublishBeamState(false);
+            LaserCutterEvents.UnregisterSource(this);
+        }
+
+        private void OnDestroy()
+        {
+            if (Application.isPlaying)
+                LaserCutterEvents.UnregisterSource(this);
+        }
+
         private static void EnsureLayerCache()
         {
             if (_WaterLayer == int.MinValue)
@@ -329,6 +652,7 @@ namespace Hecton8.Gameplay
         public override void OnSpawn()
         {
             base.OnSpawn();
+            LaserCutterEvents.RegisterSource(this, ResolveEventCutterId(), ResolveEventTransform());
             CacheToolId();
             CacheRaycastRequesterId();
             ResetAllState();
@@ -338,6 +662,8 @@ namespace Hecton8.Gameplay
         public override void OnDespawn()
         {
             base.OnDespawn();
+            PublishBeamState(false);
+            LaserCutterEvents.UnregisterSource(this);
             ResetAllState();
             SetVisualsActive(false);
         }
@@ -600,7 +926,7 @@ namespace Hecton8.Gameplay
             if (math.abs(_heatLevel - _lastPublishedHeat) > 0.02f)
             {
                 _lastPublishedHeat = _heatLevel;
-                OnHeatChanged?.Invoke(_heatLevel);
+                LaserCutterEvents.RaiseHeatChanged(_heatLevel, ResolveEventCutterId(), ResolveEventRootInstanceId());
             }
         }
 
@@ -673,7 +999,7 @@ namespace Hecton8.Gameplay
             {
                 TryPublishBoilSignal(interactionService, packet, damage, normalizedPower);
 
-                SargassumCutManager cutManager = SargassumCutManager.Instance;
+                SargassumCutManager cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
                 if (cutManager != null)
                 {
                     float terrainDamageRadius = math.lerp(0.2f, 0.75f, normalizedPower);
@@ -859,7 +1185,7 @@ namespace Hecton8.Gameplay
 
         private static void EnsureRecoveryProgressMessages()
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             GameLanguage language = manager != null ? manager.CurrentLanguage : GameLanguage.English;
             if (_recoveryProgressMessages != null && _recoveryProgressMessages.Length == RecoveryProgressMessageCount && _recoveryProgressLanguage == language)
                 return;
@@ -957,7 +1283,7 @@ namespace Hecton8.Gameplay
 
         private static void ArchiveRecoveredModule(BaseModule module)
         {
-            if (module == null || ScanLogSystem.Instance == null)
+            if (module == null || Hecton8.Core.GlobalRegistry.ScanLog == null)
                 return;
 
             ModuleMarker marker = module.GetComponent<ModuleMarker>();
@@ -979,7 +1305,7 @@ namespace Hecton8.Gameplay
                     LocalizationKeys.LASER_ARCHIVE_RECOVERY_SUMMARY,
                     "Laser-assisted recovery completed for {0}. Structural blueprint and salvage profile archived."),
                 data.moduleName);
-            ScanLogSystem.Instance.ArchiveEntry(entryId, title, category, summary);
+            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(entryId, title, category, summary);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1136,7 +1462,28 @@ namespace Hecton8.Gameplay
 
         private void PublishBeamState(bool isActive)
         {
-            OnBeamStateChanged?.Invoke(transform, isActive);
+            if (_lastPublishedBeamActive == isActive)
+                return;
+
+            _lastPublishedBeamActive = isActive;
+            LaserCutterEvents.RaiseBeamStateChanged(ResolveEventCutterId(), ResolveEventRootInstanceId(), isActive);
+        }
+
+        private int ResolveEventCutterId()
+        {
+            return unchecked((int)EntityId.ToULong(GetEntityId()));
+        }
+
+        private int ResolveEventRootInstanceId()
+        {
+            Transform cutterTransform = ResolveEventTransform();
+            Transform rootTransform = cutterTransform != null ? cutterTransform.root : null;
+            return rootTransform != null ? unchecked((int)EntityId.ToULong(rootTransform.GetEntityId())) : 0;
+        }
+
+        private Transform ResolveEventTransform()
+        {
+            return _cachedTransform != null ? _cachedTransform : transform;
         }
 
         private void BuildDiagnosisFromHit(RaycastHit hit, bool didHit, out string severity)
@@ -1372,7 +1719,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 

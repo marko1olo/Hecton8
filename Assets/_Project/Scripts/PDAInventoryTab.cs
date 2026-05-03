@@ -36,7 +36,7 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Inventory Tab")]
-    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, IPDAEventListener
+    public sealed class PDAInventoryTab : MonoBehaviour, IUpdatable, IPDAEventListener, ILocalizationCorruptionVisualStateListener
     {
         private static readonly char[] StackCountTemplateChars = "×{0}".ToCharArray();
         private static readonly char[] DetailWeightStackTemplateChars = "MASS: {0:0.0} kg  |  STACK x{1}  |  TOTAL {2:0.0} kg".ToCharArray();
@@ -62,6 +62,8 @@ namespace Hecton8.UI
         private static readonly char[] PageDigestPrefixChars = "PAGE ".ToCharArray();
         // COLD ALLOC: string[4] — cached PDA tool-slot key labels — owner: PDAInventoryTab
         private static readonly string[] ToolSlotKeyLabels = { "1", "2", "3", "4" };
+        // COLD ALLOC: string[5] — cached PDA tab bar labels — owner: PDAInventoryTab
+        private static readonly string[] TabLabels = { "INVENTORY", "LOADOUT", "CONSTRUCT", "BARTER", "DATA LOG" };
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -440,7 +442,7 @@ namespace Hecton8.UI
                 toolManager.ToolAssignmentsChanged += OnToolAssignmentsChanged;
             }
             PDAEvents.Register(this);
-            LocalizationManager.OnCorruptionVisualStateChanged += OnCorruptionVisualStateChanged;
+            LocalizationEvents.RegisterCorruptionVisualStateListener(this);
         }
 
         private void Unsubscribe()
@@ -453,7 +455,7 @@ namespace Hecton8.UI
                 toolManager.ToolAssignmentsChanged -= OnToolAssignmentsChanged;
             }
             PDAEvents.Unregister(this);
-            LocalizationManager.OnCorruptionVisualStateChanged -= OnCorruptionVisualStateChanged;
+            LocalizationEvents.UnregisterCorruptionVisualStateListener(this);
         }
 
         private void OnInventoryChanged()
@@ -463,6 +465,15 @@ namespace Hecton8.UI
             if (IsTabActive)
                 FlushPendingRefresh();
         }
+
+        public void OnLocalizationCorruptionVisualStateChanged(in LocalizationEventPayload payload)
+
+        {
+
+            OnCorruptionVisualStateChanged();
+
+        }
+
 
         private void OnCorruptionVisualStateChanged()
         {
@@ -572,15 +583,14 @@ namespace Hecton8.UI
             RectTransform parent = transform.parent as RectTransform;
             if (parent == null) return;
 
-            string[] labels = { "INVENTORY", "LOADOUT", "CONSTRUCT", "BARTER", "DATA LOG" };
+            string[] labels = TabLabels;
             Transform existing = parent.Find("PDA_TabBar");
             if (existing != null)
             {
                 _tabBarRoot = existing as RectTransform;
                 HorizontalLayoutGroup existingLayoutGroup = EnsureHorizontalLayout(_tabBarRoot, 6f, TextAnchor.MiddleCenter);
                 LocalizedLayoutMirror.ConfigureRuntime(existingLayoutGroup, _tabBarRoot, true, true, false);
-                _tabButtons = _tabBarRoot.GetComponentsInChildren<PDATabButton>(true);
-                if (_tabButtons != null && _tabButtons.Length == labels.Length)
+                if (TryCacheExistingTabButtons(labels.Length))
                     return;
 
                 for (int i = _tabBarRoot.childCount - 1; i >= 0; i--)
@@ -599,7 +609,7 @@ namespace Hecton8.UI
                        new Vector2(0f, -4f), new Vector2(0f, 36f));
             }
 
-            _tabButtons = new PDATabButton[labels.Length];
+            EnsureTabButtonCache(labels.Length);
             float tabWidth = 126f;
             HorizontalLayoutGroup layoutGroup = EnsureHorizontalLayout(_tabBarRoot, 6f, TextAnchor.MiddleCenter);
             LocalizedLayoutMirror.ConfigureRuntime(layoutGroup, _tabBarRoot, true, true, false);
@@ -614,6 +624,10 @@ namespace Hecton8.UI
                 tabBg.color = i == 0 ? TabBgActive : TabBgInactive;
                 tabBg.raycastTarget = true;
 
+                Button tabButton = tabRect.gameObject.AddComponent<Button>(); // COLD ALLOC: Button[1] — runtime PDA tab click component — owner: PDAInventoryTab
+                tabButton.transition = Selectable.Transition.None;
+                tabButton.targetGraphic = tabBg;
+
                 TextMeshProUGUI tabLabel = CreateText("Label", tabRect, 11f,
                     FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(tabLabel.rectTransform);
@@ -625,6 +639,48 @@ namespace Hecton8.UI
                          TabBgActive, TabBgInactive, TabActive, TabInactive);
                 _tabButtons[i] = btn;
             }
+        }
+
+        private bool TryCacheExistingTabButtons(int expectedCount)
+        {
+            if (_tabBarRoot == null || _tabBarRoot.childCount != expectedCount)
+                return false;
+
+            EnsureTabButtonCache(expectedCount);
+
+            for (int i = 0; i < expectedCount; i++)
+            {
+                Transform child = _tabBarRoot.GetChild(i);
+                if (child == null || !child.TryGetComponent(out PDATabButton button))
+                {
+                    ClearTabButtonCache();
+                    return false;
+                }
+
+                _tabButtons[i] = button;
+            }
+
+            return true;
+        }
+
+        private void EnsureTabButtonCache(int expectedCount)
+        {
+            if (_tabButtons == null || _tabButtons.Length != expectedCount)
+            {
+                _tabButtons = new PDATabButton[expectedCount]; // COLD ALLOC: PDATabButton[5] — PDA tab button cache — owner: PDAInventoryTab
+                return;
+            }
+
+            ClearTabButtonCache();
+        }
+
+        private void ClearTabButtonCache()
+        {
+            if (_tabButtons == null)
+                return;
+
+            for (int i = 0; i < _tabButtons.Length; i++)
+                _tabButtons[i] = null;
         }
 
         // ──────────────────────────────────────────────────────────
@@ -1704,7 +1760,7 @@ namespace Hecton8.UI
                 _detailDesc.text = $"<color=#7FBFBA>[{cat}]</color>\n{desc}";
             }
 
-            LocalizationManager localizationManager = LocalizationManager.Instance;
+            LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
             if (_detailDescMadnessFx != null)
                 _detailDescMadnessFx.SetEffectActive(localizationManager != null && localizationManager.IsMadnessWhisperVisualActive());
 
@@ -2055,7 +2111,7 @@ namespace Hecton8.UI
                 + Vector3.down * 0.3f;
 
             bool dropCommitted = false;
-            PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             if (persistentWorldRegistry != null)
             {
                 dropCommitted = persistentWorldRegistry.TryRegisterDroppedItemWithState(dropped, 1, spawnPos, geneticsMask, qualityMilli);
@@ -2071,7 +2127,7 @@ namespace Hecton8.UI
             {
                 if (dropped.worldPrefab != null)
                 {
-                    ObjectPoolManager pool = ObjectPoolManager.Instance;
+                    ObjectPoolManager pool = GlobalRegistry.ObjectPool;
                     if (pool != null)
                     {
                         GameObject instance = pool.Spawn(dropped.worldPrefab, spawnPos, Quaternion.identity);
@@ -2095,7 +2151,15 @@ namespace Hecton8.UI
                 return;
             }
 
-            HectonEventBus.Publish(new ItemDiscardedEvent(dropped, 1, dropOrigin));
+            bool hasInteractorPosition = dropOrigin != null;
+            ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(dropOrigin.GetEntityId()) : 0ul;
+            Vector3 interactorPosition = hasInteractorPosition ? dropOrigin.position : Vector3.zero;
+            HectonEventBus.Publish(new ItemDiscardedEvent(
+                dropped,
+                1,
+                interactorEntityId,
+                interactorPosition,
+                hasInteractorPosition));
 
             // Проверяем остался ли предмет на этой позиции
             int remainingHashId = playerInventory.GetItemHashAt(_selectedX, _selectedY);
@@ -3252,8 +3316,8 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            return LocalizationManager.Instance != null
-                ? LocalizationManager.Instance.GetOrFallback(LocalizationManager.Instance.CurrentLanguage, key, fallback)
+            return Hecton8.Core.GlobalRegistry.Localization != null
+                ? Hecton8.Core.GlobalRegistry.Localization.GetOrFallback(Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage, key, fallback)
                 : fallback;
         }
 
@@ -3262,7 +3326,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(text))
                 return string.Empty;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return text;
 

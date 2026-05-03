@@ -14,7 +14,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4027)]
-    public sealed class SeamGapDitherRenderer : MonoBehaviour, IUpdatable
+    public sealed class SeamGapDitherRenderer : MonoBehaviour, IUpdatable, ILateFrameTickable
     {
         private static readonly int _MatrixBufferId = Shader.PropertyToID("_HectonSeamDitherMatrices");
         private static readonly int _ColorBufferId = Shader.PropertyToID("_HectonSeamDitherColors");
@@ -118,6 +118,7 @@ namespace Hecton8.World
         private int _scheduledSeamRaycastCount;
         private int _completedSeamRaycastCount;
         private bool _registeredToDispatcher;
+        private bool _registeredLateFrame;
         private bool _seamRaycastScheduled;
         private float _nextLegacyVfxDisableTime = float.NegativeInfinity;
         private bool _loggedMissingSeamDitherMaterial;
@@ -168,7 +169,6 @@ namespace Hecton8.World
         {
             ResolveReferences();
             DisableLegacyGapDitherIfNeeded();
-            CompleteSeamRaycastBatchIfReady();
             if (!EnsureRenderingResources())
             {
                 _debugReady = false;
@@ -214,6 +214,11 @@ namespace Hecton8.World
                 targetCamera);
         }
 
+        public void LateFrameTick()
+        {
+            CompleteSeamRaycastBatchIfReady();
+        }
+
         private void ResolveReferences()
         {
             if (seamRegistry == null)
@@ -235,15 +240,23 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             _registeredToDispatcher = true;
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _registeredLateFrame = true;
         }
 
         private void TryUnregister()
         {
-            if (!_registeredToDispatcher)
-                return;
+            if (_registeredLateFrame)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrame = false;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
-            _registeredToDispatcher = false;
+            if (_registeredToDispatcher)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                _registeredToDispatcher = false;
+            }
         }
 
         private bool EnsureRenderingResources()
@@ -631,10 +644,12 @@ namespace Hecton8.World
 
         private void CompleteSeamRaycastBatchIfReady()
         {
-            if (!_seamRaycastScheduled || !_seamRaycastHandle.IsCompleted)
+            if (!_seamRaycastScheduled)
                 return;
 
-            _seamRaycastHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _seamRaycastHandle, false))
+                return;
+
             _completedSeamRaycastCount = _scheduledSeamRaycastCount;
             _scheduledSeamRaycastCount = 0;
             _seamRaycastScheduled = false;

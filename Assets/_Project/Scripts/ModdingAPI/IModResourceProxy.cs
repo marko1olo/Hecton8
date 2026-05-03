@@ -1,4 +1,5 @@
 using Hecton.Localization;
+using Hecton8.Core;
 using Unity.Collections;
 using UnityEngine;
 
@@ -91,13 +92,17 @@ namespace Hecton8.Modding
         internal static void Initialize()
         {
             if (!_resourceIndexByHash.IsCreated)
+            {
                 _resourceIndexByHash = new NativeHashMap<uint, int>(ResourceCapacity, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[256] - O(1) resource hash to sidecar index - owner: ModResourceRegistry
+                NativeMemorySentinel.RegisterNativeHashMap(_resourceIndexByHash, nameof(ModResourceRegistry), nameof(_resourceIndexByHash), NativeAllocationLifetime.Session);
+            }
         }
 
         internal static void Shutdown()
         {
             if (_resourceIndexByHash.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeHashMap(nameof(ModResourceRegistry), nameof(_resourceIndexByHash));
                 _resourceIndexByHash.Dispose();
                 _resourceIndexByHash = default;
             }

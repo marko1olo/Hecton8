@@ -24,7 +24,7 @@ namespace Hecton8.Optimization.Editor
                 return;
             }
             
-            if (VRAMMonitor.Instance == null || RenderTextureLifecycleTracker.Instance == null)
+            if (Hecton8.Core.GlobalRegistry.VRAMMonitor == null || Hecton8.Core.GlobalRegistry.RenderTextureLifecycle == null)
             {
                 EditorUtility.DisplayDialog("Error", "VRAM Optimization System not initialized.", "OK");
                 return;
@@ -87,7 +87,7 @@ namespace Hecton8.Optimization.Editor
             report.AppendLine("## VRAM Summary");
             report.AppendLine();
             
-            var monitor = VRAMMonitor.Instance;
+            var monitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
             monitor.GetVRAMBreakdown(out long textureMB, out long renderTextureMB, out long totalVRAMMB);
             
             float texturePercent = (textureMB / (float)monitor.TextureMemoryBytes) * 100f;
@@ -142,9 +142,9 @@ namespace Hecton8.Optimization.Editor
             report.AppendLine("## RenderTexture Pool Statistics");
             report.AppendLine();
             
-            if (RenderTexturePool.Instance != null)
+            if (Hecton8.Core.GlobalRegistry.RenderTexturePool != null)
             {
-                var pool = RenderTexturePool.Instance;
+                var pool = Hecton8.Core.GlobalRegistry.RenderTexturePool;
                 
                 report.AppendLine($"**Hit Rate:** {pool.PoolHitRate * 100f:F1}%");
                 report.AppendLine($"**Total Pooled RTs:** {pool.TotalPooledCount}");
@@ -165,7 +165,7 @@ namespace Hecton8.Optimization.Editor
             report.AppendLine("## RenderTexture Lifecycle Audit");
             report.AppendLine();
             
-            var tracker = RenderTextureLifecycleTracker.Instance;
+            var tracker = Hecton8.Core.GlobalRegistry.RenderTextureLifecycle;
             
             report.AppendLine($"**Tracked RenderTextures:** {tracker.TrackedRenderTextureCount}");
             report.AppendLine($"**Total Memory:** {tracker.TrackedRenderTextureMemoryBytes / (1024f * 1024f):F2} MB");

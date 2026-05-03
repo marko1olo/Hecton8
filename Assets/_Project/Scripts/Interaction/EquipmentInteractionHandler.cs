@@ -72,6 +72,14 @@ namespace Hecton8.Interaction
         private bool _dispatcherRegistered;
         private bool _serviceRegistered;
 
+        internal static EquipmentInteractionHandler ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
 
@@ -172,19 +180,48 @@ namespace Hecton8.Interaction
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             EnsureLayerCache();
 
             if (!_signalQueue.IsCreated)
             {
                 _signalQueue = new NativeQueue<InteractionSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<InteractionSignal>(Persistent) - deferred interaction signal bus - owner: EquipmentInteractionHandler
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _signalQueue,
+                    MaxQueuedSignals,
+                    nameof(EquipmentInteractionHandler),
+                    nameof(_signalQueue),
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_scheduledCommands.IsCreated)
             {
                 _scheduledCommands = new NativeArray<RaycastCommand>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[64] - scheduled tool raycast lane - owner: EquipmentInteractionHandler
+                NativeMemorySentinel.RegisterNativeArray(
+                    _scheduledCommands,
+                    nameof(EquipmentInteractionHandler),
+                    nameof(_scheduledCommands),
+                    NativeAllocationLifetime.Session);
                 _scheduledHits = new NativeArray<RaycastHit>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[64] - scheduled tool raycast results - owner: EquipmentInteractionHandler
+                NativeMemorySentinel.RegisterNativeArray(
+                    _scheduledHits,
+                    nameof(EquipmentInteractionHandler),
+                    nameof(_scheduledHits),
+                    NativeAllocationLifetime.Session);
                 _stagingCommands = new NativeArray<RaycastCommand>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[64] - writable tool raycast staging lane - owner: EquipmentInteractionHandler
+                NativeMemorySentinel.RegisterNativeArray(
+                    _stagingCommands,
+                    nameof(EquipmentInteractionHandler),
+                    nameof(_stagingCommands),
+                    NativeAllocationLifetime.Session);
                 _stagingHits = new NativeArray<RaycastHit>(MaxQueuedRayRequests, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[64] - writable tool raycast staging results - owner: EquipmentInteractionHandler
+                NativeMemorySentinel.RegisterNativeArray(
+                    _stagingHits,
+                    nameof(EquipmentInteractionHandler),
+                    nameof(_stagingHits),
+                    NativeAllocationLifetime.Session);
                 ResetCommandLane(_scheduledCommands);
                 ResetCommandLane(_stagingCommands);
             }
@@ -192,6 +229,8 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
+
             if (!_isInitialized)
                 return;
 
@@ -201,6 +240,9 @@ namespace Hecton8.Interaction
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             TryUnregisterFromDispatcher();
             TryUnregisterSignalService();
         }
@@ -239,7 +281,10 @@ namespace Hecton8.Interaction
 
             ClearQueuedSignals();
             if (_signalQueue.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(EquipmentInteractionHandler), nameof(_signalQueue));
                 _signalQueue.Dispose();
+            }
 
             DisposeRaycastBuffers();
         }
@@ -248,9 +293,14 @@ namespace Hecton8.Interaction
         {
             int processedCount = 0;
             while (_queueCount > 0 &&
-                   processedCount < MaxQueuedSignals &&
-                   _signalQueue.TryDequeue(out InteractionSignal signal))
+                   processedCount < MaxQueuedSignals)
             {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_signalQueue.TryDequeue(out InteractionSignal signal))
+                    break;
+
                 processedCount++;
                 Collider targetCollider = _queuedTargetColliders[_queueHead];
                 _queuedTargetColliders[_queueHead] = null;
@@ -712,10 +762,12 @@ namespace Hecton8.Interaction
 
         private void CompleteScheduledRaycasts()
         {
-            if (!_scheduledRaycastActive || !_scheduledRaycastHandle.IsCompleted)
+            if (!_scheduledRaycastActive)
                 return;
 
-            _scheduledRaycastHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _scheduledRaycastHandle, forceComplete: false))
+                return;
+
             _completedResultCount = _scheduledRequestCount;
 
             for (int i = 0; i < _scheduledRequestCount; i++)
@@ -774,6 +826,7 @@ namespace Hecton8.Interaction
         {
             if (_scheduledCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_scheduledCommands);
                 if (_scheduledRaycastActive)
                     _scheduledCommands.Dispose(_scheduledRaycastHandle);
                 else
@@ -784,6 +837,7 @@ namespace Hecton8.Interaction
 
             if (_scheduledHits.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_scheduledHits);
                 if (_scheduledRaycastActive)
                     _scheduledHits.Dispose(_scheduledRaycastHandle);
                 else
@@ -794,12 +848,14 @@ namespace Hecton8.Interaction
 
             if (_stagingCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_stagingCommands);
                 _stagingCommands.Dispose();
                 _stagingCommands = default;
             }
 
             if (_stagingHits.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_stagingHits);
                 _stagingHits.Dispose();
                 _stagingHits = default;
             }

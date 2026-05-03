@@ -1,6 +1,6 @@
 # HECTON-8 INTERFACE HEALTH DASHBOARD
 
-Date: 2026-05-01
+Date: 2026-05-02
 Status: PENDING VERIFICATION
 Source basis: `GlobalRegistryContracts.cs` plus direct first-party class declaration scan in `Assets/_Project/Scripts`, with focused checks of `PDALogbookManager`, `UIStateStore`, and `FluidMathCore`
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
@@ -9,14 +9,16 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 | Metric | Count |
 |---|---:|
-| Total interfaces in `GlobalRegistryContracts.cs` | 31 |
-| Interfaces with at least one direct implementor found in current source scan | 30 |
-| Confirmed empty extension seams in current pass | 1 |
-| Confirmed shadow/conflict cases in current pass | 0 |
+| Direct public interfaces in `GlobalRegistryContracts.cs` | 33 |
+| Interfaces with at least one direct implementor found in the May 1 source scan | stale `30/31`; not valid for the May 2 `33` count |
+| Confirmed empty extension seams in current pass | not recounted |
+| Confirmed shadow/conflict cases in current pass | not recounted |
 | Interfaces with only one narrow direct implementor | not recounted in this pass |
 
-Current interface debt is not "ghost contracts".
-Current debt is stale documentation, narrow single-owner surfaces, one empty hot-swap extension seam, and unresolved runtime verification of actual scene registration order.
+Current interface debt is not proven "ghost contracts".
+Current debt is stale documentation, narrow single-owner surfaces, two unreviewed added contract slots since the May 1 scan, and unresolved runtime verification of actual scene registration order.
+
+May 2 correction: this dashboard's detailed inventory below is a May 1 source scan. It remains useful for named owners, but the interface-count/coverage ratio is superseded by `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.
 
 ## Inventory
 
@@ -58,7 +60,7 @@ Current debt is stale documentation, narrow single-owner surfaces, one empty hot
 
 | Older claim | Current verified state |
 |---|---|
-| `GlobalRegistryContracts.cs` had `19` or `27` interfaces | False now. Current file has `31` interfaces. |
+| `GlobalRegistryContracts.cs` had `19`, `27`, or `31` interfaces | False now. Current file has `33` direct public interfaces. |
 | `IAudioService` had no implementor | False. `SpatialAudioManager` implements `IAudioService` and registers itself. |
 | `IUIService` was fragmented across multiple implementors | False in current source scan. Direct implementor found: `SuitHUDV4CanvasOverlay`. |
 | `IRenderable` had a single owner | False. Current direct implementors include `HectonUnderwaterVisuals`, `HectonSubmarineOS`, and `MissionMarkerSystem`. |
@@ -68,8 +70,8 @@ Current debt is stale documentation, narrow single-owner surfaces, one empty hot
 
 ### No Deletion-Safe Ghost Interface In The Current Pass
 
-The previous dashboard was outdated.
-Current direct source scan found at least one implementor for `30/31` interfaces in `GlobalRegistryContracts.cs`.
+The previous dashboard is now partially outdated.
+The May 1 direct source scan found at least one implementor for `30/31` interfaces in `GlobalRegistryContracts.cs`; May 2 source count is `33` and coverage has not been recounted.
 
 `IGlobalRegistryHotSwapListener` currently has no direct implementor in the source scan.
 It is not deletion-safe because `GlobalRegistry` exposes listener registration infrastructure around it.
@@ -140,7 +142,8 @@ STATUS: PENDING VERIFICATION
 
 ## 2026-05-01 Interface Delta
 
-Current source check against `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` found `31` interfaces, not `27`.
+May 1 source check against `Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs` found `31` interfaces, not `27`.
+May 2 source count supersedes that number: `33` direct public interfaces. The two added/changed slots require a fresh implementor scan before updating coverage ratios.
 
 New / previously unlisted interfaces:
 
@@ -154,7 +157,7 @@ New / previously unlisted interfaces:
 Correction:
 
 - Older dashboard claim "at least one implementor for every interface in `GlobalRegistryContracts.cs`" is now false.
-- Current truthful read: `30/31` interfaces have at least one source-level implementor; `IGlobalRegistryHotSwapListener` is registered infrastructure with no direct implementor.
+- Current truthful read for the May 1 scan: `30/31` interfaces had at least one source-level implementor; `IGlobalRegistryHotSwapListener` was registered infrastructure with no direct implementor. May 2 coverage for `33` interfaces is pending.
 - Live scene presence remains unverified because MCP console/session proof was not available in the current pass.
 
 STATUS: PENDING VERIFICATION

@@ -7,43 +7,240 @@ using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using System.Runtime.InteropServices;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.UI
 {
+    /// <summary>
+    /// Base integrity event identifiers queued by <see cref="BaseIntegrityEvents"/>.
+    /// </summary>
+    public enum BaseIntegrityEventType : byte
+    {
+        /// <summary>Nearest module entered warning integrity range.</summary>
+        IntegrityWarning = 0,
+        /// <summary>Tracked module breached.</summary>
+        Breached = 1,
+        /// <summary>Tracked module entered cascade failure.</summary>
+        Emergency = 2,
+        /// <summary>Tracked inhabited module has low breathable reserve.</summary>
+        AirQualityWarning = 3
+    }
+
+    /// <summary>
+    /// Blittable base integrity event payload flushed during dispatcher LateUpdate.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct BaseIntegrityEventPayload
+    {
+        /// <summary>Integrity or air-quality value in normalized [0..1] range.</summary>
+        public float Value;
+        /// <summary>Failure mode cast from <see cref="BaseModuleFailureMode"/>.</summary>
+        public byte FailureMode;
+        /// <summary>Event type cast from <see cref="BaseIntegrityEventType"/>.</summary>
+        public byte EventType;
+        /// <summary>Reserved padding for future payload expansion.</summary>
+        public ushort Reserved;
+    }
+
+    /// <summary>
+    /// Listener contract for base integrity warning events.
+    /// </summary>
+    public interface IBaseIntegrityEventListener
+    {
+        /// <summary>
+        /// Receives one base integrity event from the LateUpdate queue drain.
+        /// </summary>
+        /// <param name="payload">Blittable base integrity event payload.</param>
+        void OnBaseIntegrityEvent(in BaseIntegrityEventPayload payload);
+    }
+
+    /// <summary>
+    /// Queue-backed base integrity event lane flushed by <see cref="SystemDispatcher"/>.
+    /// </summary>
     public static class BaseIntegrityEvents
     {
+        private const int PendingEventCapacity = 8;
+
+        // COLD ALLOC: RegistryBucket<IBaseIntegrityEventListener>[8] - base integrity listeners drained by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
+        private static readonly RegistryBucket<IBaseIntegrityEventListener> _listeners = new RegistryBucket<IBaseIntegrityEventListener>(8);
+        private static NativeQueue<BaseIntegrityEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
+
+        /// <summary>
+        /// Number of pending payloads waiting for LateUpdate dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            OnModuleIntegrityWarning = null;
-            OnModuleBreached = null;
-            OnModuleEmergency = null;
-            OnModuleAirQualityWarning = null;
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(BaseIntegrityEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
         }
 
-        /// <summary>Integrity warning for the nearest base module. float: integrity [0..1].</summary>
-        public static event System.Action<float> OnModuleIntegrityWarning;
+        /// <summary>
+        /// Registers a listener for base integrity events.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Register(IBaseIntegrityEventListener listener)
+        {
+            if (listener == null)
+                return;
 
-        /// <summary>The tracked base module is considered breached.</summary>
-        public static event System.Action OnModuleBreached;
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
 
-        /// <summary>The tracked base module is in an emergency cascade state.</summary>
-        public static event System.Action<BaseModuleFailureMode, float> OnModuleEmergency;
-        /// <summary>The tracked inhabited base module has degraded breathable reserve. float: normalized air quality [0..1].</summary>
-        public static event System.Action<float> OnModuleAirQualityWarning;
+        /// <summary>
+        /// Unregisters a listener for base integrity events.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Unregister(IBaseIntegrityEventListener listener)
+        {
+            if (listener == null)
+                return;
 
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        /// <summary>
+        /// Reports an editor/development error if a listener remains registered after teardown.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        /// <param name="ownerName">Human-readable owner name.</param>
+        public static void AssertUnregistered(IBaseIntegrityEventListener listener, string ownerName)
+        {
+            if (listener == null || !_listeners.Contains(listener))
+                return;
+
+            Debug.LogError($"[BaseIntegrityEvents] {ownerName} was destroyed while still registered as an IBaseIntegrityEventListener.");
+        }
+
+        /// <summary>
+        /// Queues an integrity warning payload.
+        /// </summary>
+        /// <param name="integrity">Normalized integrity value.</param>
         public static void RaiseIntegrityWarning(float integrity)
-            => OnModuleIntegrityWarning?.Invoke(integrity);
+            => Enqueue(BaseIntegrityEventType.IntegrityWarning, BaseModuleFailureMode.None, integrity);
 
+        /// <summary>
+        /// Queues a module breached payload.
+        /// </summary>
         public static void RaiseBreached()
-            => OnModuleBreached?.Invoke();
+            => Enqueue(BaseIntegrityEventType.Breached, BaseModuleFailureMode.None, 0f);
 
+        /// <summary>
+        /// Queues a base emergency payload.
+        /// </summary>
+        /// <param name="failureMode">Module failure mode.</param>
+        /// <param name="integrity">Normalized integrity value.</param>
         public static void RaiseEmergency(BaseModuleFailureMode failureMode, float integrity)
-            => OnModuleEmergency?.Invoke(failureMode, integrity);
+            => Enqueue(BaseIntegrityEventType.Emergency, failureMode, integrity);
 
+        /// <summary>
+        /// Queues an air-quality warning payload.
+        /// </summary>
+        /// <param name="airQualityNormalized">Normalized breathable reserve.</param>
         public static void RaiseAirQualityWarning(float airQualityNormalized)
-            => OnModuleAirQualityWarning?.Invoke(airQualityNormalized);
+            => Enqueue(BaseIntegrityEventType.AirQualityWarning, BaseModuleFailureMode.None, airQualityNormalized);
+
+        /// <summary>
+        /// Flushes queued base integrity events through registered listeners.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out BaseIntegrityEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                IBaseIntegrityEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnBaseIntegrityEvent(in payload);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+
+        private static void Enqueue(BaseIntegrityEventType eventType, BaseModuleFailureMode failureMode, float value)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount >= PendingEventCapacity)
+                return;
+
+            _pendingEvents.Enqueue(new BaseIntegrityEventPayload
+            {
+                Value = value,
+                FailureMode = (byte)failureMode,
+                EventType = (byte)eventType,
+                Reserved = 0
+            });
+            _pendingEventCount++;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<BaseIntegrityEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BaseIntegrityEventPayload>[8] - deferred base integrity lane flushed by SystemDispatcher LateUpdate - owner: BaseIntegrityEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(BaseIntegrityEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out _))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
     }
 
     [DisallowMultipleComponent]
@@ -299,7 +496,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
     }

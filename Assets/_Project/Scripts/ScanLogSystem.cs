@@ -48,6 +48,7 @@ namespace Hecton8.Gameplay
         private readonly List<ScanEntryRecord> _entries = new List<ScanEntryRecord>(64);
         private readonly List<string> _recentIds = new List<string>(8);
         private bool _saveRegistered;
+        private bool _serviceRegistered;
         private ScanEntrySnapshot[] _recentBuffer;
         private HUDNotification _hudNotification;
 
@@ -85,6 +86,7 @@ namespace Hecton8.Gameplay
             if (Instance == null)
                 Instance = this;
 
+            TryRegisterService();
             TryRegisterSaveParticipant();
             ScanEvents.Register(this);
         }
@@ -97,13 +99,36 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregisterSaveParticipant();
+            TryUnregisterService();
             ScanEvents.Unregister(this);
         }
 
         private void OnDestroy()
         {
+            TryUnregisterService();
+
             if (Instance == this)
                 Instance = null;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterScanLogRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ScanLog, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.ScanLog, this))
+                GlobalRegistry.UnregisterScanLogRuntime(this);
+
+            _serviceRegistered = false;
         }
 
         public int CopyRecentEntries(ScanEntrySnapshot[] buffer)

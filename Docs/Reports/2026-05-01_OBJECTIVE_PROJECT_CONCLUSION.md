@@ -1,8 +1,10 @@
 # HECTON-8 Objective Project Conclusion
 
-Date: `2026-05-01`
+Date: `2026-05-02`
 Status: `PENDING VERIFICATION`
 Scope: documentation/source-backed project conclusion, not Play Mode certification
+
+Path note: filename retained as a stable May 1 verdict path; source counts below were refreshed by the May 2 documentation actuality sweep.
 
 ## Mandates Followed
 
@@ -35,6 +37,7 @@ No runtime code was changed.
 High-authority docs checked:
 
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+- `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOC_AUTHORITY_CLASSIFICATION.md`
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
@@ -45,25 +48,25 @@ High-authority docs checked:
 
 Source scan checked:
 
-- `Assets/_Project/Scripts/` contains `1020` first-party `.cs` files in the current static scan.
+- `Assets/_Project/Scripts/` contains `1047` first-party `.cs` files in the current static scan.
 - The largest files are still operational monoliths, not small adapters.
 - Static scan still finds broad singleton/DDOL/runtime-instance patterns.
-- Static scan still finds `.Complete()`, `Allocator.Persistent`, `Allocator.TempJob`, `StartCoroutine`, `Camera.main`, direct material creation, and broad physics-mask markers across runtime code.
+- Static scan still finds `.Complete()`, `Allocator.Persistent`, `Allocator.TempJob`, `Camera.main`, direct material creation, and broad physics-mask markers across runtime code. Current `StartCoroutine` text hits are editor scanner comments/regex definitions, not direct runtime call sites by grep.
 
 Largest current source files by static line count:
 
 | Lines | File |
 |---:|---|
-| `13550` | `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` |
-| `10321` | `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` |
-| `8091` | `Assets/_Project/Scripts/HectonPlayerMovement.cs` |
-| `4878` | `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` |
-| `4826` | `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs` |
-| `4297` | `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs` |
-| `4288` | `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` |
-| `4258` | `Assets/_Project/Scripts/SaveBinaryStorage.cs` |
-| `4211` | `Assets/_Project/Scripts/HectonVoxelEngine.cs` |
-| `4028` | `Assets/_Project/Scripts/FaunaDirector.cs` |
+| `11340` | `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs` |
+| `9389` | `Assets/_Project/Scripts/HectonPlayerMovement.cs` |
+| `6599` | `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs` |
+| `5798` | `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs` |
+| `5708` | `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs` |
+| `5471` | `Assets/_Project/Scripts/SaveBinaryStorage.cs` |
+| `5159` | `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs` |
+| `5012` | `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs` |
+| `4855` | `Assets/_Project/Scripts/HectonVoxelEngine.cs` |
+| `4726` | `Assets/_Project/Scripts/FaunaDirector.cs` |
 
 ## Brutal Conclusion
 

@@ -108,6 +108,9 @@ namespace Hecton8.Optimization
 #if UNITY_EDITOR
         private static void EnsureEditorRestoreHook()
         {
+            if (Application.isBatchMode)
+                return;
+
             if (_editorRestoreHookRegistered)
                 return;
 
@@ -117,6 +120,9 @@ namespace Hecton8.Optimization
 
         private static void HandleEditorPlayModeStateChanged(PlayModeStateChange state)
         {
+            if (Application.isBatchMode)
+                return;
+
             if (state != PlayModeStateChange.ExitingPlayMode && state != PlayModeStateChange.EnteredEditMode)
                 return;
 

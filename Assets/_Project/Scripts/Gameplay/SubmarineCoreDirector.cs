@@ -58,6 +58,7 @@ namespace Hecton8.Gameplay
         private const float EngineOverdriveTurnMultiplier = 1.08f;
         private const float BallastOptimizerTurnMultiplier = 1.12f;
         private const float AbyssalStabilizerTurnMultiplier = 1.05f;
+        private const int MaxRegisteredSubmarineRoots = 8;
 
         private static readonly int _PressureCompensatorHashId = LocHash.Compute("Comp_PressureCompensator");
         private static readonly int _EngineOverdriveHashId = LocHash.Compute("Comp_EngineOverdriveManifold");
@@ -68,6 +69,8 @@ namespace Hecton8.Gameplay
         private static readonly int _AbyssalStabilizerHashId = LocHash.Compute("Comp_AbyssalStabilizer");
 
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.CoreDirector.FixedTick");
+        // COLD ALLOC: RegistryBucket<SubmarineCoreDirector>[8] - active submarine roots for runtime installers without scene scans - owner: SubmarineCoreDirector
+        private static readonly RegistryBucket<SubmarineCoreDirector> _registeredSubmarineRoots = new RegistryBucket<SubmarineCoreDirector>(MaxRegisteredSubmarineRoots);
 
         [Header("── Vehicle Profile ────────────────")]
         [Tooltip("Authored baseline hull, thrust, turn, depth, and integrity data for this submarine.")]
@@ -99,6 +102,7 @@ namespace Hecton8.Gameplay
 
         private Transform _cachedTransform;
         private bool _registeredFixedTick;
+        private bool _registeredRuntimeRoot;
         private bool _profileMassApplied;
 
         // COLD ALLOC: NativeArray<float>[4] â€” submarine root hull summary buffer for registry-facing readback without crawling child systems â€” owner: SubmarineCoreDirector
@@ -141,6 +145,9 @@ namespace Hecton8.Gameplay
         /// <summary>Baseline authored submarine stat asset.</summary>
         public SubmarineProfile Profile => submarineProfile;
 
+        /// <summary>Number of active submarine roots registered through lifecycle events.</summary>
+        internal static int RegisteredRootCount => _registeredSubmarineRoots.Count;
+
         /// <summary>Resolved submarine hull mass in kilograms after profile evaluation.</summary>
         public float BaseMass => submarineProfile != null ? submarineProfile.BaseMass : DefaultBaseMassKilograms;
 
@@ -155,6 +162,16 @@ namespace Hecton8.Gameplay
 
         /// <summary>Resolved structural integrity ceiling after upgrade modifiers.</summary>
         public float BaseIntegrity => ResolveBaseIntegrity();
+
+        /// <summary>
+        /// Returns the active submarine root at a dense registry index.
+        /// </summary>
+        /// <param name="index">Dense registry index.</param>
+        /// <returns>Registered submarine root, or null when the index is invalid in development builds.</returns>
+        internal static SubmarineCoreDirector GetRegisteredRootAt(int index)
+        {
+            return _registeredSubmarineRoots.GetAt(index);
+        }
 
         private void Awake()
         {
@@ -174,6 +191,7 @@ namespace Hecton8.Gameplay
             ApplyProfileMassToHull();
             EnsureNativeState();
             RefreshNativeState();
+            TryRegisterRuntimeRoot();
             GlobalRegistry.RegisterSubmarine(this);
             TryRegister();
         }
@@ -181,6 +199,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterRuntimeRoot();
             if (ReferenceEquals(GlobalRegistry.Submarine, this))
                 GlobalRegistry.UnregisterSubmarine(this);
             DisposeNativeState();
@@ -189,6 +208,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterRuntimeRoot();
             if (ReferenceEquals(GlobalRegistry.Submarine, this))
                 GlobalRegistry.UnregisterSubmarine(this);
             DisposeNativeState();
@@ -271,6 +291,29 @@ namespace Hecton8.Gameplay
             }
         }
 #endif
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetSubmarineRootRegistry()
+        {
+            _registeredSubmarineRoots.Clear();
+        }
+
+        private void TryRegisterRuntimeRoot()
+        {
+            if (_registeredRuntimeRoot || !Application.isPlaying)
+                return;
+
+            _registeredRuntimeRoot = _registeredSubmarineRoots.TryRegister(this);
+        }
+
+        private void TryUnregisterRuntimeRoot()
+        {
+            if (!_registeredRuntimeRoot)
+                return;
+
+            _registeredSubmarineRoots.Unregister(this);
+            _registeredRuntimeRoot = false;
+        }
 
         private void CacheReferences()
         {

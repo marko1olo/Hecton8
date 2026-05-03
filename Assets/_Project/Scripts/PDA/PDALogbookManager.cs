@@ -56,6 +56,51 @@ namespace Hecton8.PDA
 
         /// <summary>Cold-path source identifier reconstruction is unavailable after hash compaction.</summary>
         public string OriginKey => OriginHash != 0 ? OriginHash.ToString("X8") : string.Empty;
+
+        /// <summary>Resolve the localized title buffer for zero-GC TMP rendering.</summary>
+        public bool TryGetTitleBuffer(out char[] buffer, out int length)
+        {
+            return LocRegistry.TryGetRawBuffer(TitleHash, out buffer, out length);
+        }
+
+        /// <summary>Resolve the localized message buffer for zero-GC TMP rendering.</summary>
+        public bool TryGetMessageBuffer(out char[] buffer, out int length)
+        {
+            return LocRegistry.TryGetRawBuffer(MessageHash, out buffer, out length);
+        }
+
+        /// <summary>Resolve the localized title as a span without heap allocation.</summary>
+        public ReadOnlySpan<char> GetTitleSpan()
+        {
+            return LocRegistry.ResolveRaw(TitleHash);
+        }
+
+        /// <summary>Resolve the localized message as a span without heap allocation.</summary>
+        public ReadOnlySpan<char> GetMessageSpan()
+        {
+            return LocRegistry.ResolveRaw(MessageHash);
+        }
+
+        /// <summary>Write the origin hash as eight uppercase hex chars into a caller-owned buffer.</summary>
+        public bool TryWriteOriginKey(Span<char> buffer, out int length)
+        {
+            if (OriginHash == 0 || buffer.Length < 8)
+            {
+                length = 0;
+                return false;
+            }
+
+            uint value = unchecked((uint)OriginHash);
+            for (int i = 7; i >= 0; i--)
+            {
+                int nibble = (int)(value & 0xFu);
+                buffer[i] = (char)(nibble < 10 ? '0' + nibble : 'A' + (nibble - 10));
+                value >>= 4;
+            }
+
+            length = 8;
+            return true;
+        }
     }
 
     /// <summary>
@@ -353,7 +398,7 @@ namespace Hecton8.PDA
                     _survivalSystem.OnDeath += HandlePlayerDeath;
             }
 
-            ScanLogSystem resolvedScanLog = ScanLogSystem.Instance;
+            ScanLogSystem resolvedScanLog = Hecton8.Core.GlobalRegistry.ScanLog;
             if (!ReferenceEquals(_scanLogSystem, resolvedScanLog))
             {
                 if (_scanLogSystem != null)
@@ -364,7 +409,7 @@ namespace Hecton8.PDA
                     _scanLogSystem.EntryUnlocked += HandleEntryUnlocked;
             }
 
-            HectonDiscoveryManager resolvedDiscoveryManager = HectonDiscoveryManager.Instance;
+            HectonDiscoveryManager resolvedDiscoveryManager = GlobalRegistry.Discovery;
             if (!ReferenceEquals(_discoveryManager, resolvedDiscoveryManager))
             {
                 if (_discoveryManager != null)

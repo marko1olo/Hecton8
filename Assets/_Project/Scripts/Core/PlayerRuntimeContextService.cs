@@ -295,14 +295,6 @@ namespace Hecton8.Core
             if (_instance != this)
                 return;
 
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
-
             _isInitialized = true;
             TryRegisterUpdatable();
             TryRegisterContext();
@@ -608,7 +600,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredUpdatable = true;
+            _registeredUpdatable = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregisterUpdatable()

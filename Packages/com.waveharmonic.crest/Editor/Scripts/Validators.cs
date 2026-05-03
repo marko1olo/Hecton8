@@ -368,7 +368,7 @@ namespace WaveHarmonic.Crest.Editor
                 ValidateMaterialParent(target._VolumeMaterial, target.Material, messenger);
             }
 
-            if (Object.FindObjectsByType<WaterRenderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None).Length > 1)
+            if (Object.FindObjectsByType<WaterRenderer>(FindObjectsInactive.Exclude).Length > 1)
             {
                 messenger
                 (
@@ -563,7 +563,7 @@ namespace WaveHarmonic.Crest.Editor
         {
             var isValid = true;
 
-            if (Object.FindObjectsByType<WaterRenderer>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length == 0)
+            if (Object.FindObjectsByType<WaterRenderer>(FindObjectsInactive.Include).Length == 0)
             {
                 messenger
                 (

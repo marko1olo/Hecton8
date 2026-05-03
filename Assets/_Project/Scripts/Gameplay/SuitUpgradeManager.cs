@@ -69,6 +69,7 @@ namespace Hecton8.Gameplay
 
         // Runtime stats — clone of baseStats with deltas applied
         private SurvivalStats _runtimeStats;
+        private bool _serviceRegistered;
 
         // ══════════════════════════════════════════════════════════
         //  ISaveable
@@ -131,6 +132,8 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryRegisterService();
+
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Register(this);
 
@@ -143,6 +146,33 @@ namespace Hecton8.Gameplay
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
 
             NarrativeEvents.Unregister(this);
+            TryUnregisterService();
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregisterService();
+
+            if (Instance == this)
+                Instance = null;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying || Instance != this)
+                return;
+
+            Hecton8.Core.GlobalRegistry.RegisterSuitUpgradeRuntime(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            Hecton8.Core.GlobalRegistry.UnregisterSuitUpgradeRuntime(this);
+            _serviceRegistered = false;
         }
 
 #if UNITY_EDITOR
@@ -228,7 +258,7 @@ namespace Hecton8.Gameplay
             RebuildRuntimeStats();
 
             string displayName = upgrade.DisplayNameOrFallback;
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             NotificationEvents.PushInfo(localization != null
                 ? localization.GetFormatted(LocalizationKeys.SUIT_UPGRADE_INSTALLED, displayName)
                 : "UPGRADE INSTALLED: " + displayName);
@@ -341,7 +371,7 @@ namespace Hecton8.Gameplay
                     if (_unlockedBlueprints.Add(u.requiredBlueprintId))
                     {
                         string displayName = u.DisplayNameOrFallback;
-                        LocalizationManager localization = LocalizationManager.Instance;
+                        LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
                         NotificationEvents.PushInfo(localization != null
                             ? localization.GetFormatted(LocalizationKeys.SUIT_BLUEPRINT_UNLOCKED, displayName)
                             : "BLUEPRINT UNLOCKED: " + displayName);

@@ -7,7 +7,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 2026-05-01 trust note:
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
 - This file maps presentation ownership; it does not prove UI/audio runtime cost, zero-GC HUD behavior, or clean scene wiring.
 - Presentation-owned gameplay transitions remain a known risk class. Gameplay state must not depend on Camera, UI, or Animator events without a logic-owned fallback.
 

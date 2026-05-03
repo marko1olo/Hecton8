@@ -51,7 +51,7 @@ namespace Hecton8.UI
             if (!_particleInstanceOwnedByPool || _particleInstance == null)
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool != null && _particleInstance.TryGetComponent(out ObjectPoolManager.PoolItemMarker _))
                 pool.Despawn(_particleInstance);
 
@@ -115,7 +115,7 @@ namespace Hecton8.UI
             // Create particle system if prefab provided
             if (particlePrefab != null)
             {
-                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
                 if (pool != null)
                 {
                     _particleInstance = pool.Spawn(particlePrefab, transform.position, transform.rotation);

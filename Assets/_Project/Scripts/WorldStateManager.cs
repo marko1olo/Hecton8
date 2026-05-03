@@ -33,6 +33,7 @@ namespace Hecton8.World
 
         private HashSet<string> _depletedNodeIds;
         private HashSet<long> _depletedPickupKeys;
+        private bool _serviceRegistered;
 
         // COLD ALLOC: Dictionary<long,long>[128] — pickup key-to-chunk lookup for save/load persistence — owner: WorldStateManager
         private readonly Dictionary<long, long> _depletedPickupChunkKeysByPickupKey = new Dictionary<long, long>(128);
@@ -102,7 +103,7 @@ namespace Hecton8.World
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
+            GameBootstrapper.PersistRuntimeService(this);
 
             // COLD ALLOC: HashSet<string>[initialCapacity] — depleted node persistence set — owner: WorldStateManager
             _depletedNodeIds = new HashSet<string>(initialCapacity);
@@ -113,16 +114,20 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            TryRegisterService();
             GlobalRegistry.Save?.Register(this);
         }
 
         private void OnDisable()
         {
             GlobalRegistry.Save?.Unregister(this);
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterService();
+
             if (_instance == this)
                 _instance = null;
         }
@@ -342,6 +347,24 @@ namespace Hecton8.World
                 return chunkCompare;
 
             return left.Key.CompareTo(right.Key);
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterWorldStateRuntime(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterWorldStateRuntime(this);
+            _serviceRegistered = false;
         }
 
         private void PopulatePackedPickupState(ref WorldStateDTO dto)

@@ -192,6 +192,55 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Writes a single direct draw where every bound instance is visible after a coarse bounds pass.
+        /// </summary>
+        public static unsafe void WriteAllVisibleSingleDrawOutput(
+            BatchCullingOutput cullingOutput,
+            int instanceCount,
+            BatchID batchId,
+            BatchMeshID meshId,
+            BatchMaterialID materialId,
+            int layer,
+            int subMeshIndex,
+            ShadowCastingMode shadowCastingMode,
+            bool receiveShadows,
+            MotionVectorGenerationMode motionMode)
+        {
+            if (instanceCount <= 0)
+            {
+                WriteDirectDrawOutput(cullingOutput, AllocateDirectDrawOutput(0, 0, 0));
+                return;
+            }
+
+            BatchCullingOutputDrawCommands output = AllocateDirectDrawOutput(instanceCount, 1, 1);
+            for (int instanceIndex = 0; instanceIndex < instanceCount; instanceIndex++)
+                output.visibleInstances[instanceIndex] = instanceIndex;
+
+            output.drawCommands[0] = new BatchDrawCommand
+            {
+                flags = BatchDrawCommandFlags.None,
+                visibleOffset = 0u,
+                visibleCount = (uint)instanceCount,
+                batchID = batchId,
+                materialID = materialId,
+                splitVisibilityMask = ushort.MaxValue,
+                lightmapIndex = ushort.MaxValue,
+                sortingPosition = 0,
+                meshID = meshId,
+                submeshIndex = (ushort)math.max(0, subMeshIndex)
+            };
+
+            output.drawRanges[0] = CreateDirectDrawRange(
+                0u,
+                layer,
+                shadowCastingMode,
+                receiveShadows,
+                motionMode);
+
+            WriteDirectDrawOutput(cullingOutput, output);
+        }
+
+        /// <summary>
         /// Returns a writable pointer for job-owned BRG output.
         /// </summary>
         public static unsafe BatchCullingOutputDrawCommands* GetDirectDrawOutputPointer(BatchCullingOutput cullingOutput)

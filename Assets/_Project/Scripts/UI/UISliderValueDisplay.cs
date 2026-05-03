@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using TMPro;
 using Hecton.Localization;
@@ -30,6 +31,7 @@ namespace Hecton8.UI
         // ══════════════════════════════════════════════════════════
 
         private Slider _slider;
+        private UnityAction<float> _cachedValueChangedAction;
         private float _cachedValue = float.MinValue;
         private string _resolvedTemplate = "{0:F0}";
         private char[] _resolvedTemplateChars;
@@ -40,7 +42,8 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            _slider = GetComponent<Slider>();
+            TryGetComponent(out _slider);
+            _cachedValueChangedAction = OnValueChanged; // COLD ALLOC: UnityAction<float>[1] - cached slider value listener - owner: UISliderValueDisplay
             RebuildTemplateCache();
         }
 
@@ -48,7 +51,7 @@ namespace Hecton8.UI
         {
             if (_slider != null)
             {
-                _slider.onValueChanged.AddListener(OnValueChanged);
+                _slider.onValueChanged.AddListener(_cachedValueChangedAction);
                 UpdateDisplay(_slider.value);
             }
         }
@@ -56,7 +59,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             if (_slider != null)
-                _slider.onValueChanged.RemoveListener(OnValueChanged);
+                _slider.onValueChanged.RemoveListener(_cachedValueChangedAction);
         }
 
 #if UNITY_EDITOR

@@ -10,6 +10,7 @@ using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
+using Hecton8.World;
 using NASAPunk.Visor;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -289,6 +290,7 @@ namespace Hecton8.Atmosphere
         private float _pendingThunderVolume;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _serviceRegistered;
         private bool _runtimeStateInitialized;
         private bool _bindingsApplied;
         private HectonPlayerMovement _subscribedPlayerMovement;
@@ -367,6 +369,7 @@ namespace Hecton8.Atmosphere
 
         private void OnEnable()
         {
+            TryRegisterService();
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterTickManagers();
             TryResolveDependencies(true);
@@ -384,12 +387,14 @@ namespace Hecton8.Atmosphere
             RefreshPlayerMovementSubscription(null);
             _stormEquipmentPulseTimer = 0f;
             ClearWeatherBindings();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
             TryUnregisterTickManagers();
+            TryUnregisterService();
             RefreshPlayerMovementSubscription(null);
             _stormEquipmentPulseTimer = 0f;
             DisposeWeatherMathBuffers();
@@ -473,6 +478,24 @@ namespace Hecton8.Atmosphere
             }
         }
 
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterSurfaceWeatherRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.SurfaceWeather, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSurfaceWeatherRuntime(this);
+            _serviceRegistered = false;
+        }
+
         private void TryResolveDependencies(bool force)
         {
             if (!Application.isPlaying)
@@ -542,7 +565,7 @@ namespace Hecton8.Atmosphere
                 TryGetComponent(out underwaterVisuals);
 
             if (acousticZoneController == null)
-                acousticZoneController = AcousticZoneController.Instance;
+                acousticZoneController = GlobalRegistry.AcousticZone;
 
             if (acousticZoneController == null)
                 TryGetComponent(out acousticZoneController);
@@ -648,6 +671,11 @@ namespace Hecton8.Atmosphere
                 return;
 
             _weatherJobOutput = new NativeArray<SurfaceWeatherJobOutput>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SurfaceWeatherJobOutput>[1] - persistent Burst weather output buffer - owner: HectonSurfaceWeatherDirector
+            NativeMemorySentinel.RegisterNativeArray(
+                _weatherJobOutput,
+                nameof(HectonSurfaceWeatherDirector),
+                nameof(_weatherJobOutput),
+                NativeAllocationLifetime.Scene);
         }
 
         private void DisposeWeatherMathBuffers()
@@ -655,6 +683,7 @@ namespace Hecton8.Atmosphere
             if (!_weatherJobOutput.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(_weatherJobOutput);
             if (_weatherJobScheduled)
                 _weatherJobOutput.Dispose(_weatherJobHandle);
             else
@@ -684,10 +713,12 @@ namespace Hecton8.Atmosphere
 
         private void TryCompleteWeatherMathJob()
         {
-            if (!_weatherJobScheduled || !_weatherJobHandle.IsCompleted)
+            if (!_weatherJobScheduled)
                 return;
 
-            _weatherJobHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _weatherJobHandle, forceComplete: false))
+                return;
+
             _weatherJobScheduled = false;
             CommitWeatherMathOutput(_weatherJobOutput[0]);
             _weatherJobPrimed = true;

@@ -93,7 +93,7 @@ namespace Hecton8.PDA
                 return;
             }
 
-            PDAMarkerRegistry markerRegistry = PDAMarkerRegistry.Instance;
+            PDAMarkerRegistry markerRegistry = GlobalRegistry.PDAMarkers;
             if (markerRegistry == null)
             {
                 HideAllDisplays();

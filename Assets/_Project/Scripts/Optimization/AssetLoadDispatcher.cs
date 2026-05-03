@@ -38,6 +38,7 @@ namespace Hecton8.Optimization
         [SerializeField] private int maxReadyTicketCount = 32;
 
         private bool _registeredTick;
+        private bool _registeredService;
         private int _nextRequestId = 1;
 
         // COLD ALLOC: List<AssetDispatchRequest>[128] - queued load requests - owner: AssetLoadDispatcher
@@ -89,6 +90,7 @@ namespace Hecton8.Optimization
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
         }
 
@@ -100,16 +102,21 @@ namespace Hecton8.Optimization
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
             _queuedRequests.Clear();
             _readyTickets.Clear();
             _inflightRequests.Clear();
             if (_addressableGroupMap.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(AssetLoadDispatcher), nameof(_addressableGroupMap));
                 _addressableGroupMap.Dispose();
+            }
 
             for (int i = 0; i < _inflightCounts.Length; i++)
                 _inflightCounts[i] = 0;
@@ -243,7 +250,7 @@ namespace Hecton8.Optimization
 
         internal static void ForceDrainDeferredReleases()
         {
-            AssetLifecycleGovernor governor = AssetLifecycleGovernor.Instance;
+            AssetLifecycleGovernor governor = GlobalRegistry.AssetLifecycle;
             if (governor != null)
                 governor.ForceDrainPendingReleaseQueue();
         }
@@ -265,6 +272,7 @@ namespace Hecton8.Optimization
                 return;
 
             _addressableGroupMap = new NativeParallelHashMap<uint, byte>(AddressableGroupMapCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<uint,byte>[512] - addressable asset group map for UI mip gate - owner: AssetLoadDispatcher
+            NativeMemorySentinel.RegisterNativeParallelHashMap(_addressableGroupMap, nameof(AssetLoadDispatcher), nameof(_addressableGroupMap), NativeAllocationLifetime.Scene);
         }
 
         private void RegisterAddressableGroupInternal(uint assetKey, AddressableAssetGroupKind group)
@@ -295,7 +303,7 @@ namespace Hecton8.Optimization
                 return;
             }
 
-            VRAMMonitor monitor = VRAMMonitor.Instance;
+            VRAMMonitor monitor = GlobalRegistry.VRAMMonitor;
             if (monitor == null)
                 return;
 
@@ -349,6 +357,15 @@ namespace Hecton8.Optimization
             _registeredTick = true;
         }
 
+        private void TryRegisterService()
+        {
+            if (_registeredService || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterAssetLoadDispatcherRuntime(this);
+            _registeredService = true;
+        }
+
         private void TryUnregister()
         {
             if (!_registeredTick)
@@ -356,6 +373,15 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = false;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_registeredService)
+                return;
+
+            GlobalRegistry.UnregisterAssetLoadDispatcherRuntime(this);
+            _registeredService = false;
         }
 
         private void AgeQueuedRequests()
@@ -453,7 +479,7 @@ namespace Hecton8.Optimization
         private int ResolveAllowedConcurrentLoads(AssetPriorityTier priority)
         {
             int band = ResolveBand(priority);
-            VRAMPressureMonitor pressureMonitor = VRAMPressureMonitor.Instance;
+            VRAMPressureMonitor pressureMonitor = GlobalRegistry.VRAMPressure;
             float ramPressure = pressureMonitor != null ? pressureMonitor.RamPressureFactor : 0f;
 
             switch (band)

@@ -1,5 +1,6 @@
 using System;
 using Hecton8.AI;
+using Hecton8.Core;
 using Hecton8.Modding;
 using Hecton8.Meta;
 using Hecton8.SaveSystem;
@@ -20,6 +21,7 @@ namespace Hecton8.Ecosystem
         private static FaunaGeneticsManager _instance;
 
         [SerializeField] private int _worldSeed;
+        private bool _serviceRegistered;
 
         /// <summary>Active runtime owner while the gameplay scene is loaded.</summary>
         public static FaunaGeneticsManager Instance => _instance;
@@ -48,19 +50,40 @@ namespace Hecton8.Ecosystem
 
         private void OnEnable()
         {
+            TryRegisterService();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
         }
 
         private void OnDisable()
         {
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Unregister(this);
+            TryUnregisterService();
             if (_instance == this)
                 _instance = null;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterFaunaGeneticsRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.FaunaGenetics, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterFaunaGeneticsRuntime(this);
+            _serviceRegistered = false;
         }
 
         /// <summary>

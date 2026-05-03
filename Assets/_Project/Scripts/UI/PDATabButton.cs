@@ -8,6 +8,7 @@
 using TMPro;
 using Hecton8.Core;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Hecton8.UI
@@ -32,6 +33,8 @@ namespace Hecton8.UI
         private Color _bgInactive;
         private Color _textActive;
         private Color _textInactive;
+        private Button _button;
+        private UnityAction _cachedClickAction;
         private bool _isActive;
 
         // ══════════════════════════════════════════════════════════
@@ -107,19 +110,25 @@ namespace Hecton8.UI
         //  UNITY CALLBACKS
         // ══════════════════════════════════════════════════════════
 
+        private void Awake()
+        {
+            TryGetComponent(out _button);
+            _cachedClickAction = OnClick; // COLD ALLOC: UnityAction[1] — cached PDA tab click listener — owner: PDATabButton
+        }
+
         private void OnEnable()
         {
             // Добавляем обработчик клика если есть Button компонент
-            var button = GetComponent<Button>();
+            Button button = _button;
             if (button != null)
-                button.onClick.AddListener(OnClick);
+                button.onClick.AddListener(_cachedClickAction);
         }
 
         private void OnDisable()
         {
-            var button = GetComponent<Button>();
+            Button button = _button;
             if (button != null)
-                button.onClick.RemoveListener(OnClick);
+                button.onClick.RemoveListener(_cachedClickAction);
         }
 
         private void OnClick()

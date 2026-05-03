@@ -87,6 +87,8 @@ namespace Hecton8.Core
         //  STORAGE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
+        internal static PrefabRegistry ActiveRuntimeInstance => _instance;
+
         /// <summary>Forward mapping: PrefabId â†’ Prefab.</summary>
         // COLD ALLOC: Dictionary[256] â€” prefab registry â€” owner: PrefabRegistry
         private readonly Dictionary<int, GameObject> _idToPrefab = new Dictionary<int, GameObject>(256);
@@ -123,7 +125,6 @@ namespace Hecton8.Core
             }
 
             _instance = this;
-            DontDestroyOnLoad(gameObject);
         }
 
         private void OnDestroy()
@@ -158,7 +159,10 @@ namespace Hecton8.Core
             lock (_nativeMapLock)
             {
                 if (_nativeMap.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeHashMap(nameof(PrefabRegistry), nameof(_nativeMap));
                     _nativeMap.Dispose();
+                }
             }
         }
 
@@ -321,9 +325,13 @@ namespace Hecton8.Core
             lock (_nativeMapLock)
             {
                 if (_nativeMap.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeHashMap(nameof(PrefabRegistry), nameof(_nativeMap));
                     _nativeMap.Dispose();
+                }
 
                 _nativeMap = new NativeHashMap<int, int>(_idToPrefab.Count, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeHashMap(_nativeMap, nameof(PrefabRegistry), nameof(_nativeMap), NativeAllocationLifetime.Session);
 
                 foreach (var kvp in _idToPrefab)
                     _nativeMap.TryAdd(kvp.Key, kvp.Key);

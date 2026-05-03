@@ -777,12 +777,12 @@ namespace Hecton8.Environment
             int capacity = math.max(64, maxParticles);
             float budgetScale = 1f;
 
-            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             float renderScale = scaler != null ? math.saturate(scaler.CurrentRenderScale) : 1f;
             budgetScale *= math.clamp(renderScale, 0.45f, 1f);
             _debugAdaptiveRenderScale = renderScale;
 
-            VRAMMonitor vramMonitor = VRAMMonitor.Instance;
+            VRAMMonitor vramMonitor = Hecton8.Core.GlobalRegistry.VRAMMonitor;
             VRAMMonitor.VRAMPressureState pressureState = vramMonitor != null
                 ? vramMonitor.PressureState
                 : VRAMMonitor.VRAMPressureState.Stable;

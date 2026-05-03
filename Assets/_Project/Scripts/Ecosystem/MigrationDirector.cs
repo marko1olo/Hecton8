@@ -103,7 +103,8 @@ namespace Hecton8.Ecosystem
                 return 1f;
             }
 
-            int worldSeed = FaunaGeneticsManager.Instance != null ? FaunaGeneticsManager.Instance.WorldSeed : 0;
+            FaunaGeneticsManager geneticsManager = GlobalRegistry.FaunaGenetics;
+            int worldSeed = geneticsManager != null ? geneticsManager.WorldSeed : 0;
             uint hash = Hash((uint)worldSeed ^ (uint)_currentDayIndex * 0x9E3779B9u ^ (uint)biomeIndex * 0x85EBCA6Bu ^ HashString(archetype.creatureId));
             if ((hash & 0x3u) != 0u)
                 return 1f;

@@ -48,8 +48,8 @@ namespace Hecton.Localization
         /// </summary>
         public AudioClip Resolve()
         {
-            GameLanguage language = LocalizationManager.Instance != null
-                ? LocalizationManager.Instance.CurrentLanguage
+            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
+                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
                 : GameLanguage.English;
 
             return Resolve(language);

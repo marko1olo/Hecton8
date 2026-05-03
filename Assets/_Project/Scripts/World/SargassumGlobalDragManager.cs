@@ -32,7 +32,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-104)]
-    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ISargassumMassiveDisplacementReceiver, IOriginShiftListener, ISaveable
+    public sealed class SargassumGlobalDragManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, ISargassumMassiveDisplacementReceiver, IOriginShiftListener, ISaveable
     {
         private static readonly int _GlobalDriftOffsetId = Shader.PropertyToID("_SargassumGlobalDriftOffset");
         private static readonly int _SinkTextureId = Shader.PropertyToID("_SargassumBuoyancySinkRT");
@@ -49,6 +49,8 @@ namespace Hecton8.World
         private const int ExternalSiteChunkSizeMeters = 64;
         private const float ExternalSiteQuantizationMeters = 0.5f;
         private const byte CollapseChunkBurstSpawnedFlag = 1 << 0;
+        private const int EntanglementStrainEventCapacity = 16;
+        private const int MassiveDisplacementEventCapacity = 16;
 
         internal struct SargassumFieldSample
         {
@@ -234,10 +236,12 @@ namespace Hecton8.World
         private static readonly RegistryBucket<ISargassumGlobalDragEventListener> _listeners = new RegistryBucket<ISargassumGlobalDragEventListener>(16);
         private static NativeQueue<EntanglementStrainSignal> _pendingEntanglementStrain;
         private static NativeQueue<MassiveDisplacementSignal> _pendingMassiveDisplacement;
+        private static int _pendingEntanglementStrainCount;
+        private static int _pendingMassiveDisplacementCount;
 
         public static int PendingEventCount =>
-            (_pendingEntanglementStrain.IsCreated ? _pendingEntanglementStrain.Count : 0) +
-            (_pendingMassiveDisplacement.IsCreated ? _pendingMassiveDisplacement.Count : 0);
+            (_pendingEntanglementStrain.IsCreated ? _pendingEntanglementStrainCount : 0) +
+            (_pendingMassiveDisplacement.IsCreated ? _pendingMassiveDisplacementCount : 0);
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -245,16 +249,20 @@ namespace Hecton8.World
             _instance = null;
             if (_pendingEntanglementStrain.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_pendingEntanglementStrain));
                 _pendingEntanglementStrain.Dispose();
                 _pendingEntanglementStrain = default;
             }
 
             if (_pendingMassiveDisplacement.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(SargassumGlobalDragManager), nameof(_pendingMassiveDisplacement));
                 _pendingMassiveDisplacement.Dispose();
                 _pendingMassiveDisplacement = default;
             }
 
+            _pendingEntanglementStrainCount = 0;
+            _pendingMassiveDisplacementCount = 0;
             _listeners.Clear();
         }
 
@@ -664,6 +672,7 @@ namespace Hecton8.World
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
         private bool _saveRegistered;
         private int _editorValidateDepth;
         private bool _hasFieldData;
@@ -674,6 +683,7 @@ namespace Hecton8.World
         private NativeArray<DensitySourceData> _densityBuildSources;
         private NativeParallelMultiHashMap<long, DensityContributionData> _densityContributions;
         private JobHandle _densityBuildHandle;
+        private bool _serviceRegistered;
         private bool _densityBuildScheduled;
         private int _pendingDensityTrackedInstances;
         private Bounds _pendingDensityFieldBounds;
@@ -744,8 +754,12 @@ namespace Hecton8.World
         /// </summary>
         public static void RaiseEntanglementStrain(EntanglementStrainSignal signal)
         {
+            if (_listeners.Count <= 0 || _pendingEntanglementStrainCount >= EntanglementStrainEventCapacity)
+                return;
+
             EnsureEventQueues();
             _pendingEntanglementStrain.Enqueue(signal);
+            _pendingEntanglementStrainCount++;
         }
 
         /// <summary>
@@ -754,42 +768,92 @@ namespace Hecton8.World
         /// <param name="signal">Displacement payload.</param>
         public static void RaiseMassiveDisplacement(MassiveDisplacementSignal signal)
         {
+            if (_listeners.Count <= 0 || _pendingMassiveDisplacementCount >= MassiveDisplacementEventCapacity)
+                return;
+
             EnsureEventQueues();
             _pendingMassiveDisplacement.Enqueue(signal);
+            _pendingMassiveDisplacementCount++;
         }
 
         public static void FlushPendingEvents()
         {
             if (_pendingEntanglementStrain.IsCreated)
             {
-                while (_pendingEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
+                int scanBudget = _pendingEntanglementStrainCount > 0
+                    ? _pendingEntanglementStrainCount
+                    : EntanglementStrainEventCapacity;
+                while (scanBudget-- > 0 && !_pendingEntanglementStrain.IsEmpty())
                 {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
+
+                    if (!_pendingEntanglementStrain.TryDequeue(out EntanglementStrainSignal signal))
+                        break;
+
+                    if (_pendingEntanglementStrainCount > 0)
+                        _pendingEntanglementStrainCount--;
+
                     ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
                     int count = _listeners.Count;
                     for (int i = count - 1; i >= 0; i--)
                         rawArray[i].OnSargassumEntanglementStrain(in signal);
                 }
+
+                if (_pendingEntanglementStrain.IsEmpty())
+                    _pendingEntanglementStrainCount = 0;
             }
 
             if (_pendingMassiveDisplacement.IsCreated)
             {
-                while (_pendingMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
+                int scanBudget = _pendingMassiveDisplacementCount > 0
+                    ? _pendingMassiveDisplacementCount
+                    : MassiveDisplacementEventCapacity;
+                while (scanBudget-- > 0 && !_pendingMassiveDisplacement.IsEmpty())
                 {
+                    if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                        return;
+
+                    if (!_pendingMassiveDisplacement.TryDequeue(out MassiveDisplacementSignal signal))
+                        break;
+
+                    if (_pendingMassiveDisplacementCount > 0)
+                        _pendingMassiveDisplacementCount--;
+
                     ISargassumGlobalDragEventListener[] rawArray = _listeners.RawArray;
                     int count = _listeners.Count;
                     for (int i = count - 1; i >= 0; i--)
                         rawArray[i].OnSargassumMassiveDisplacement(in signal);
                 }
+
+                if (_pendingMassiveDisplacement.IsEmpty())
+                    _pendingMassiveDisplacementCount = 0;
             }
         }
 
         private static void EnsureEventQueues()
         {
             if (!_pendingEntanglementStrain.IsCreated)
+            {
                 _pendingEntanglementStrain = new NativeQueue<EntanglementStrainSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EntanglementStrainSignal>[16] - sargassum strain event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEntanglementStrain,
+                    EntanglementStrainEventCapacity,
+                    nameof(SargassumGlobalDragManager),
+                    nameof(_pendingEntanglementStrain),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_pendingMassiveDisplacement.IsCreated)
+            {
                 _pendingMassiveDisplacement = new NativeQueue<MassiveDisplacementSignal>(Allocator.Persistent); // COLD ALLOC: NativeQueue<MassiveDisplacementSignal>[16] - sargassum displacement event lane flushed by SystemDispatcher - owner: SargassumGlobalDragManager
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingMassiveDisplacement,
+                    MassiveDisplacementEventCapacity,
+                    nameof(SargassumGlobalDragManager),
+                    nameof(_pendingMassiveDisplacement),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private void Awake()
@@ -829,12 +893,14 @@ namespace Hecton8.World
             EnsureScavengerRenderResources();
             HectonFloatingOrigin.RegisterListener(this);
             PublishShaderGlobals();
+            TryRegisterService();
             TryRegister();
         }
 
         private void OnDisable()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterService();
             TryUnregister();
             ClearField();
             ClearNestedAttachments();
@@ -862,6 +928,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             HectonFloatingOrigin.UnregisterListener(this);
+            TryUnregisterService();
             TryUnregister();
             ReleaseNestedAttachmentStorage();
             ReleaseFallbackNestingResources();
@@ -889,6 +956,14 @@ namespace Hecton8.World
             RefreshDynamicTextures(incrementRevision: true);
             RebuildNestedAttachments();
             PublishShaderGlobals();
+        }
+
+        /// <summary>
+        /// Recovers completed density build jobs in the dispatcher-owned late-frame swap window.
+        /// </summary>
+        public void LateFrameTick()
+        {
+            CompleteDensityFieldBuildIfReady();
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1038,7 +1113,7 @@ namespace Hecton8.World
                 massiveDisplacementFadeDuration,
                 DisruptionZoneMode.MassiveDisplacement);
 
-            SargassumCutManager cutManager = SargassumCutManager.Instance;
+            SargassumCutManager cutManager = GlobalRegistry.SargassumCut;
             if (cutManager != null)
                 cutManager.RegisterExternalCut(position, clampedRadius, massiveDisplacementCutStrength, Vector3.up, 1.15f);
 
@@ -1291,15 +1366,7 @@ namespace Hecton8.World
         private void RebuildDensityField()
         {
             if (_densityBuildScheduled)
-            {
-                if (!_densityBuildHandle.IsCompleted)
-                    return;
-
-                _densityBuildHandle.Complete();
-                _densityBuildScheduled = false;
-                ApplyDensityFieldBuildResults();
-                _densityBuildHandle = default;
-            }
+                return;
 
             if (mapMagicVegetationBridge == null)
             {
@@ -1389,6 +1456,18 @@ namespace Hecton8.World
             _pendingDensityTrackedInstances = trackedInstances;
             _pendingDensityFieldBounds = fieldBounds;
             _pendingDensityFieldBoundsInitialized = boundsInitialized;
+        }
+
+        private void CompleteDensityFieldBuildIfReady()
+        {
+            if (!_densityBuildScheduled)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _densityBuildHandle, forceComplete: false))
+                return;
+
+            _densityBuildScheduled = false;
+            ApplyDensityFieldBuildResults();
         }
 
         private void ApplyDensityFieldBuildResults()
@@ -1587,7 +1666,7 @@ namespace Hecton8.World
 
         private void EvaluateBuoyancyCollapseZones()
         {
-            SargassumCutManager cutManager = SargassumCutManager.Instance;
+            SargassumCutManager cutManager = GlobalRegistry.SargassumCut;
             if (cutManager == null || _densityCells.Count == 0)
                 return;
 
@@ -1724,7 +1803,7 @@ namespace Hecton8.World
             if (accumulatedCutAreaWS < catastrophicAreaThreshold)
                 return;
 
-            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
             if (poolManager == null)
                 return;
 
@@ -1801,7 +1880,7 @@ namespace Hecton8.World
                 return;
             }
 
-            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
             if (poolManager == null)
                 return;
 
@@ -2801,64 +2880,18 @@ namespace Hecton8.World
                 return default;
             }
 
-            bool canCullPerInstance = _scavengerMatricesNative.IsCreated && _scavengerMatricesNative.Length >= instanceCount;
-            NativeArray<byte> visibilityMask = new NativeArray<byte>(instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<float4> cullingPlanes = default;
-            int planeCount = 0;
-            if (canCullPerInstance)
-            {
-                planeCount = cullingContext.cullingPlanes.IsCreated ? cullingContext.cullingPlanes.Length : 0;
-                if (planeCount > 0)
-                {
-                    cullingPlanes = new NativeArray<float4>(planeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                    for (int planeIndex = 0; planeIndex < planeCount; planeIndex++)
-                    {
-                        Plane plane = cullingContext.cullingPlanes[planeIndex];
-                        cullingPlanes[planeIndex] = new float4(plane.normal.x, plane.normal.y, plane.normal.z, plane.distance);
-                    }
-                }
-            }
-
-            unsafe
-            {
-                BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(instanceCount, 1, 1);
-                JobHandle visibilityHandle = new HectonBatchRendererGroupUtility.BuildMatrixVisibilityMaskJob
-                {
-                    Matrices = _scavengerMatricesNative,
-                    CullingPlanes = cullingPlanes,
-                    VisibilityMask = visibilityMask,
-                    InstanceCount = instanceCount,
-                    PlaneCount = planeCount,
-                    EnableCpuCulling = canCullPerInstance,
-                    GlobalOffset = float3.zero,
-                    RadiusScale = 1.5f,
-                    MinRadius = 0.25f
-                }.Schedule(instanceCount, 64);
-
-                JobHandle finalizeHandle = new HectonBatchRendererGroupUtility.FinalizeSingleDrawCommandOutputJob
-                {
-                    VisibilityMask = visibilityMask,
-                    InstanceCount = instanceCount,
-                    BatchId = _scavengerBatchId,
-                    MeshId = _scavengerBatchMeshId,
-                    MaterialId = _scavengerBatchMaterialId,
-                    Layer = gameObject.layer,
-                    SubMeshIndex = 0,
-                    ShadowCastingMode = ShadowCastingMode.Off,
-                    ReceiveShadows = false,
-                    MotionMode = MotionVectorGenerationMode.Camera,
-                    VisibleInstances = output.visibleInstances,
-                    DrawCommands = output.drawCommands,
-                    DrawRanges = output.drawRanges,
-                    OutputCommands = HectonBatchRendererGroupUtility.GetDirectDrawOutputPointer(cullingOutput)
-                }.Schedule(visibilityHandle);
-
-                JobHandle disposeHandle = visibilityMask.Dispose(finalizeHandle);
-                if (cullingPlanes.IsCreated)
-                    disposeHandle = cullingPlanes.Dispose(disposeHandle);
-
-                return disposeHandle;
-            }
+            HectonBatchRendererGroupUtility.WriteAllVisibleSingleDrawOutput(
+                cullingOutput,
+                instanceCount,
+                _scavengerBatchId,
+                _scavengerBatchMeshId,
+                _scavengerBatchMaterialId,
+                gameObject.layer,
+                subMeshIndex: 0,
+                ShadowCastingMode.Off,
+                receiveShadows: false,
+                MotionVectorGenerationMode.Camera);
+            return default;
         }
 
         private Mesh BuildFallbackScavengerMesh()
@@ -2956,7 +2989,7 @@ namespace Hecton8.World
             for (int i = 0; i < _nestedMatrixCounts.Length; i++)
                 _nestedMatrixCounts[i] = 0;
 
-            SargassumCutManager cutManager = SargassumCutManager.Instance;
+            SargassumCutManager cutManager = GlobalRegistry.SargassumCut;
             bool boundsInitialized = false;
             Bounds drawBounds = default;
             int totalVisible = 0;
@@ -3115,14 +3148,38 @@ namespace Hecton8.World
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = true;
+                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
             }
+
+            if (!_registeredLateFrameTick)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            }
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterSargassumDragRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.SargassumDrag, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSargassumDragRuntime(this);
+            _serviceRegistered = false;
         }
 
         private void TryUnregister()
@@ -3137,6 +3194,12 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = false;
+            }
+
+            if (_registeredLateFrameTick)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = false;
             }
 
             if (_saveRegistered)

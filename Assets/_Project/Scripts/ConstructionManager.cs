@@ -41,6 +41,14 @@ namespace Hecton8.Construction
     {
         private const float SlowTickDeltaTime = 0.5f;
 
+        internal static ConstructionManager ActiveRuntimeInstance { get; private set; }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  SERVICE STATE
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -120,8 +128,16 @@ namespace Hecton8.Construction
         /// <summary>Read-only Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº ÑÐ¿Ð¸ÑÐºÑƒ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ (Ð´Ð»Ñ UI, minimap).</summary>
         public IReadOnlyList<GameObject> SpawnedModules => _spawnedModules;
 
-        /// <summary>Cached BaseModule view for hot-path gameplay systems that must not scan components.</summary>
-        internal IReadOnlyList<BaseModule> SpawnedBaseModules => _spawnedBaseModules;
+        /// <summary>Cached BaseModule count for hot-path gameplay systems that must not scan components.</summary>
+        internal int SpawnedBaseModuleCount => _spawnedBaseModules != null ? _spawnedBaseModules.Count : 0;
+
+        /// <summary>Indexed cached BaseModule access for hot-path gameplay systems that must not scan components.</summary>
+        internal BaseModule GetSpawnedBaseModuleAt(int index)
+        {
+            return _spawnedBaseModules != null && index >= 0 && index < _spawnedBaseModules.Count
+                ? _spawnedBaseModules[index]
+                : null;
+        }
 
         /// <summary>Read-only Ð´Ð¾ÑÑ‚ÑƒÐ¿ Ðº ÐºÐ°Ñ‚Ð°Ð»Ð¾Ð³Ñƒ Ð¼Ð¾Ð´ÑƒÐ»ÐµÐ¹ Ð´Ð»Ñ build tools/UI.</summary>
         public ModuleCatalog Catalog => catalog;
@@ -160,6 +176,7 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            ActiveRuntimeInstance = this;
             _slowTickAccumulator = 0f;
             if (!_isInitialized)
                 return;
@@ -172,6 +189,9 @@ namespace Hecton8.Construction
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             TryUnregisterTick();
             TryUnregisterLateFrameTick();
             TryUnregisterLogisticsService();
@@ -181,6 +201,9 @@ namespace Hecton8.Construction
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             TryUnregisterTick();
             TryUnregisterLateFrameTick();
             TryUnregisterLogisticsService();

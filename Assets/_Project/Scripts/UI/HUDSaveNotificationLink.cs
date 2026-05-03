@@ -74,7 +74,7 @@ namespace Hecton8.UI
             if (string.IsNullOrEmpty(slotName))
                 return string.Empty;
 
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             string slotPrefix = manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, LocalizationKeys.SLOT_PREFIX, "SLOT")
                 : "SLOT";
@@ -93,7 +93,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

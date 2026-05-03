@@ -14,9 +14,9 @@ MANDATES FOLLOWED:
 - `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`
 - `VOX_Voxel_World_Logic_Carving_Persistence.txt`
 
-## 2026-05-01 Current-State Boundary
+## 2026-05-02 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger as current project truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this ledger as current project truth.
 - `Assets/_Project/Data/Scavenging/ResourceNodes/` remains the authored data source for this ledger, but this document is not proof that all resource nodes, hash IDs, layers, or runtime spawn paths are scene-validated.
 - Re-open current assets and source before changing IDs or layer contracts.
 

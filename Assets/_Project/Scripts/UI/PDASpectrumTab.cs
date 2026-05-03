@@ -27,7 +27,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/PDA Spectrum Tab")]
-    public sealed class PDASpectrumTab : MonoBehaviour, IPDAEventListener
+    public sealed class PDASpectrumTab : MonoBehaviour, IPDAEventListener, ISpectrumModeEventListener, ISonarSnapshotEventListener, IBiomeMatrixEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -107,31 +107,28 @@ namespace Hecton8.UI
         {
             if (!_built) EnsureBuilt();
 
-            SpectrumEvents.OnModeChanged += HandleModeChanged;
-            SpectrumEvents.OnSonarSnapshotUpdated += HandleSonarSnapshotUpdated;
+            SpectrumEvents.RegisterModeListener(this);
+            SpectrumEvents.RegisterSonarSnapshotListener(this);
             PDAEvents.Register(this);
-            BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
-            BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
+            BiomeMatrixEvents.Register(this);
 
             RefreshModeDisplay();
         }
 
         private void OnDisable()
         {
-            SpectrumEvents.OnModeChanged -= HandleModeChanged;
-            SpectrumEvents.OnSonarSnapshotUpdated -= HandleSonarSnapshotUpdated;
+            SpectrumEvents.UnregisterModeListener(this);
+            SpectrumEvents.UnregisterSonarSnapshotListener(this);
             PDAEvents.Unregister(this);
-            BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
-            BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
+            BiomeMatrixEvents.Unregister(this);
         }
 
         private void OnDestroy()
         {
-            SpectrumEvents.OnModeChanged -= HandleModeChanged;
-            SpectrumEvents.OnSonarSnapshotUpdated -= HandleSonarSnapshotUpdated;
+            SpectrumEvents.UnregisterModeListener(this);
+            SpectrumEvents.UnregisterSonarSnapshotListener(this);
             PDAEvents.Unregister(this);
-            BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
-            BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
+            BiomeMatrixEvents.Unregister(this);
             PDAEvents.AssertUnregistered(this, nameof(PDASpectrumTab));
         }
 
@@ -148,6 +145,26 @@ namespace Hecton8.UI
         private void HandlePDAOpened(int tab) => RefreshModeDisplay();
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile) => RefreshModeDisplay();
         private void HandleDepthTierChanged(int tier, float depthMeters) => RefreshModeDisplay();
+
+        void ISpectrumModeEventListener.OnSpectrumModeChanged(SpectrumMode mode)
+        {
+            HandleModeChanged(mode);
+        }
+
+        void ISonarSnapshotEventListener.OnSonarSnapshotUpdated(in SpatialSonarSnapshot snapshot)
+        {
+            HandleSonarSnapshotUpdated(snapshot);
+        }
+
+        void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            HandleMatrixBiomeChanged(profile);
+        }
+
+        void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
+        {
+            HandleDepthTierChanged(depthTier, depthMeters);
+        }
 
         public void OnPDAEvent(in PDAEventPayload payload)
         {
@@ -192,7 +209,7 @@ namespace Hecton8.UI
             hBg.color = new Color(0.04f, 0.08f, 0.06f, 1f);
 
             TextMeshProUGUI title = CreateText("Title", header, 13f, colorAccent, TextAlignmentOptions.MidlineLeft);
-            title.text = "SPECTRUM — УПРАВЛЕНИЕ ВИЗОРОМ";
+            title.SetText("SPECTRUM — УПРАВЛЕНИЕ ВИЗОРОМ");
             title.fontStyle = FontStyles.Bold;
             Anchor(title.rectTransform, new Vector2(0, 0), new Vector2(1, 1),
                 new Vector2(12, 0), new Vector2(-12, 0));
@@ -225,13 +242,13 @@ namespace Hecton8.UI
 
                 TextMeshProUGUI modeLabel = CreateText("ModeLabel", btn, 12f, colorText, TextAlignmentOptions.Midline);
                 modeLabel.fontStyle = FontStyles.Bold;
-                modeLabel.text = ModeNames[i];
+                modeLabel.SetText(ModeNames[i]);
                 Anchor(modeLabel.rectTransform, new Vector2(0, 0.5f), new Vector2(1, 1),
                     new Vector2(8, 0), new Vector2(-8, 0));
 
                 TextMeshProUGUI descLabel = CreateText("Desc", btn, 8.5f, colorDim, TextAlignmentOptions.TopLeft);
                 descLabel.textWrappingMode = TMPro.TextWrappingModes.Normal;
-                descLabel.text = ModeDescriptions[i];
+                descLabel.SetText(ModeDescriptions[i]);
                 Anchor(descLabel.rectTransform, new Vector2(0, 0), new Vector2(1, 0.5f),
                     new Vector2(8, 4), new Vector2(-8, 0));
 
@@ -304,7 +321,7 @@ namespace Hecton8.UI
 
         private void RefreshModeDisplay()
         {
-            SpectrumSystem sys = SpectrumSystem.Instance;
+            SpectrumSystem sys = GlobalRegistry.Spectrum;
             SpectrumMode active = sys != null ? sys.CurrentMode : SpectrumMode.Normal;
 
             // Обновляем кнопки
@@ -371,7 +388,7 @@ namespace Hecton8.UI
 
         public void ActivateMode(SpectrumMode mode)
         {
-            SpectrumSystem sys = SpectrumSystem.Instance;
+            SpectrumSystem sys = GlobalRegistry.Spectrum;
             if (sys != null)
                 sys.SetMode(mode);
         }
@@ -720,14 +737,14 @@ namespace Hecton8.UI
 
             public void OnPointerEnter(UnityEngine.EventSystems.PointerEventData e)
             {
-                SpectrumSystem sys = SpectrumSystem.Instance;
+                SpectrumSystem sys = GlobalRegistry.Spectrum;
                 bool isActive = sys != null && sys.CurrentMode == _mode;
                 if (_bg != null && !isActive) _bg.color = _hover;
             }
 
             public void OnPointerExit(UnityEngine.EventSystems.PointerEventData e)
             {
-                SpectrumSystem sys = SpectrumSystem.Instance;
+                SpectrumSystem sys = GlobalRegistry.Spectrum;
                 bool isActive = sys != null && sys.CurrentMode == _mode;
                 if (_bg != null && !isActive) _bg.color = _normal;
             }
@@ -763,10 +780,8 @@ namespace Hecton8.UI
 
         private static void SetLabelText(TextMeshProUGUI label, string value)
         {
-            if (label != null && label.text != value)
-            {
-                label.text = value;
-            }
+            if (label != null)
+                label.SetText(value);
         }
 
         private static void Anchor(RectTransform r, Vector2 amin, Vector2 amax,

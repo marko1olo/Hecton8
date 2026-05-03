@@ -1066,13 +1066,14 @@ namespace Hecton8.Caves
 
         private void TryCommitScheduledCarve()
         {
-            if (!_scheduledCarveRunning || !_scheduledCarveHandle.IsCompleted)
+            if (!_scheduledCarveRunning)
                 return;
 
             using (_carveCommitProfilerMarker.Auto())
             {
-                _scheduledCarveHandle.Complete();
-                _scheduledCarveHandle = default;
+                if (!DispatcherJobSwap.TryComplete(ref _scheduledCarveHandle, false))
+                    return;
+
                 _scheduledCarveRunning = false;
 
                 HectonVoxelVolume volume = _scheduledCarveRequest.Volume;
@@ -1375,7 +1376,7 @@ namespace Hecton8.Caves
             if (carveDebrisItem == null || carveDebrisPerCubicMeter <= 0f || carveDebrisMaxCount <= 0 || radius <= 0f)
                 return;
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return;
 

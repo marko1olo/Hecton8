@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Hecton8.Building;
 using Hecton8.Inventory;
 using Hecton8.Items;
+using Hecton8.World;
 using Hecton.Localization;
 using Unity.Burst;
 using Unity.Collections;
@@ -91,8 +92,9 @@ namespace Hecton8.Construction
 
         public void Dispose()
         {
-            CompletePendingValidation();
-            DisposeNativeBuffers();
+            JobHandle teardownDependency = CancelPendingValidationForTeardown();
+            DisposeNativeBuffers(teardownDependency);
+            JobHandle.ScheduleBatchedJobs();
         }
 
         public void ResetValidation()
@@ -273,10 +275,12 @@ namespace Hecton8.Construction
 
         public bool TryConsumeCompletedValidation()
         {
-            if (!_validationPending || !_validationHandle.IsCompleted)
+            if (!_validationPending)
                 return false;
 
-            _validationHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _validationHandle, false))
+                return false;
+
             _validationPending = false;
 
             IntegrityValidationResult result = _resultBuffer[0];
@@ -577,23 +581,50 @@ namespace Hecton8.Construction
 
         private void DisposeNativeBuffers()
         {
+            DisposeNativeBuffers(default);
+        }
+
+        private JobHandle DisposeNativeBuffers(JobHandle dependency)
+        {
+            JobHandle disposeHandle = dependency;
+
             if (_nodeBuffer.IsCreated)
-                _nodeBuffer.Dispose();
+            {
+                disposeHandle = _nodeBuffer.Dispose(disposeHandle);
+                _nodeBuffer = default;
+            }
 
             if (_adjacencyRanges.IsCreated)
-                _adjacencyRanges.Dispose();
+            {
+                disposeHandle = _adjacencyRanges.Dispose(disposeHandle);
+                _adjacencyRanges = default;
+            }
 
             if (_adjacency.IsCreated)
-                _adjacency.Dispose();
+            {
+                disposeHandle = _adjacency.Dispose(disposeHandle);
+                _adjacency = default;
+            }
 
             if (_queueBuffer.IsCreated)
-                _queueBuffer.Dispose();
+            {
+                disposeHandle = _queueBuffer.Dispose(disposeHandle);
+                _queueBuffer = default;
+            }
 
             if (_depthBuffer.IsCreated)
-                _depthBuffer.Dispose();
+            {
+                disposeHandle = _depthBuffer.Dispose(disposeHandle);
+                _depthBuffer = default;
+            }
 
             if (_resultBuffer.IsCreated)
-                _resultBuffer.Dispose();
+            {
+                disposeHandle = _resultBuffer.Dispose(disposeHandle);
+                _resultBuffer = default;
+            }
+
+            return disposeHandle;
         }
 
         private void CompletePendingValidation()
@@ -601,8 +632,19 @@ namespace Hecton8.Construction
             if (!_validationPending)
                 return;
 
-            _validationHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _validationHandle, true);
             _validationPending = false;
+        }
+
+        private JobHandle CancelPendingValidationForTeardown()
+        {
+            if (!_validationPending)
+                return _validationHandle;
+
+            JobHandle dependency = _validationHandle;
+            _validationHandle = default;
+            _validationPending = false;
+            return dependency;
         }
 
         private static int NextPowerOfTwo(int value)

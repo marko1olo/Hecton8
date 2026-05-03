@@ -414,7 +414,7 @@ namespace Hecton8.Gameplay
 
         private void ArchiveTargetIntel(RaycastHit hit, AnalyzerAssessment assessment)
         {
-            if (ScanLogSystem.Instance == null || hit.collider == null)
+            if (Hecton8.Core.GlobalRegistry.ScanLog == null || hit.collider == null)
                 return;
 
             Collider collider = hit.collider;
@@ -432,7 +432,7 @@ namespace Hecton8.Gameplay
                 if (string.IsNullOrWhiteSpace(itemId))
                     return;
 
-                ScanLogSystem.Instance.ArchiveEntry(
+                Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
                     $"analyzer.item.{itemId}".ToLowerInvariant(),
                     $"{item.Data.itemName.ToUpperInvariant()} PROFILE",
                     assessment.Category,
@@ -460,7 +460,7 @@ namespace Hecton8.Gameplay
                     return;
 
                 string entryId = $"analyzer.module.{moduleId}".ToLowerInvariant();
-                ScanLogSystem.Instance.ArchiveEntry(
+                Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
                     entryId,
                     $"{moduleLabel.ToUpperInvariant()} ANALYSIS",
                     assessment.Category,
@@ -474,7 +474,7 @@ namespace Hecton8.Gameplay
 
             if (ai != null)
             {
-                ScanLogSystem.Instance.ArchiveEntry(
+                Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
                     $"analyzer.bioform.{ai.GetType().Name}".ToLowerInvariant(),
                     $"{ai.GetType().Name.ToUpperInvariant()} SIGNATURE",
                     assessment.Category,
@@ -484,7 +484,7 @@ namespace Hecton8.Gameplay
 
             if (collider.TryGetComponent(out ResourceNode _) || collider.GetComponentInParent<ResourceNode>() != null)
             {
-                ScanLogSystem.Instance.ArchiveEntry(
+                Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
                     "analyzer.resource_node",
                     "RESOURCE NODE ANALYSIS",
                     assessment.Category,
@@ -492,7 +492,7 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            ScanLogSystem.Instance.ArchiveEntry(
+            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
                 $"analyzer.misc.{collider.gameObject.name}".ToLowerInvariant(),
                 $"{collider.gameObject.name.ToUpperInvariant()} ANALYSIS",
                 assessment.Category,
@@ -501,10 +501,10 @@ namespace Hecton8.Gameplay
 
         private void ArchiveSuitDiagnostic(AnalyzerAssessment assessment)
         {
-            if (ScanLogSystem.Instance == null || _survival == null)
+            if (Hecton8.Core.GlobalRegistry.ScanLog == null || _survival == null)
                 return;
 
-            ScanLogSystem.Instance.ArchiveEntry(
+            Hecton8.Core.GlobalRegistry.ScanLog.ArchiveEntry(
                 "analyzer.suit_status",
                 assessment.Headline,
                 assessment.Category,

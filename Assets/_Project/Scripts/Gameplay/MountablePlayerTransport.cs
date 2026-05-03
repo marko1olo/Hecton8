@@ -1850,7 +1850,7 @@ namespace Hecton8.Gameplay
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _registeredOriginShiftListener = true;
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void TryUnregisterOriginShiftListener()

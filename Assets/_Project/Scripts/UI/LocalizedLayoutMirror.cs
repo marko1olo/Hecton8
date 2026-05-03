@@ -11,7 +11,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton/UI/Localized Layout Mirror")]
-    public sealed class LocalizedLayoutMirror : MonoBehaviour, IUpdatable
+    public sealed class LocalizedLayoutMirror : MonoBehaviour, IUpdatable, ILocalizationLanguageChangedListener
     {
         private static bool s_isRebuildingLayout;
 
@@ -67,14 +67,14 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             QueueApplyMirroring();
             TryRegisterForTick();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregisterFromTick();
         }
 
@@ -88,6 +88,15 @@ namespace Hecton8.UI
                 QueueApplyMirroring();
         }
 #endif
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void HandleLanguageChanged(GameLanguage language)
         {
@@ -129,8 +138,8 @@ namespace Hecton8.UI
 
             CaptureDefaults();
 
-            GameLanguage language = LocalizationManager.Instance != null
-                ? LocalizationManager.Instance.CurrentLanguage
+            GameLanguage language = Hecton8.Core.GlobalRegistry.Localization != null
+                ? Hecton8.Core.GlobalRegistry.Localization.CurrentLanguage
                 : GameLanguage.English;
             bool rtl = LocalizedMeasurementFormatter.IsRightToLeft(language);
             if (_isAppliedRtl == rtl && Application.isPlaying)

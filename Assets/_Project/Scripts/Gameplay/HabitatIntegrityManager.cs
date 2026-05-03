@@ -105,7 +105,7 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     [RequireComponent(typeof(BaseModule))]
     [DefaultExecutionOrder(-5600)] // Core-lane registration resolves rupture state before environment-lane power balance.
-    public sealed class HabitatIntegrityManager : MonoBehaviour, IUpdatable, ISlowTickable, Hecton8.Core.IDamageReceiver, IDamageSignalReceiver, IDamageSignalEmitter
+    public sealed class HabitatIntegrityManager : MonoBehaviour, IUpdatable, ISlowTickable, Hecton8.Core.IDamageReceiver, IDamageSignalReceiver, IDamageSignalEmitter, IToolEffectListener
     {
         private const float HabitatStepInterval = 0.1f;
         private const float DefaultSlowTickInterval = 0.5f;
@@ -223,7 +223,7 @@ namespace Hecton8.Gameplay
         private void OnEnable()
         {
             ResolveReferences();
-            ToolEffectEvents.OnEffectApplied += HandleToolEffectApplied;
+            ToolEffectEvents.Register(this);
             TryRegister();
             _slowTickAccumulator = 0f;
             _stepAccumulator = 0f;
@@ -233,7 +233,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            ToolEffectEvents.OnEffectApplied -= HandleToolEffectApplied;
+            ToolEffectEvents.Unregister(this);
             ClearNodeCompromise();
             ClearToxicityHazard();
             RemoveOxygenContribution();
@@ -246,7 +246,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
-            ToolEffectEvents.OnEffectApplied -= HandleToolEffectApplied;
+            ToolEffectEvents.Unregister(this);
             ClearNodeCompromise();
             ClearToxicityHazard();
             RemoveOxygenContribution();
@@ -565,11 +565,12 @@ namespace Hecton8.Gameplay
             Vector3 breachPoint = new Vector3(localPoint.x, localPoint.y, localPoint.z);
             _baseModule.EmitHullBreachJet(breachPoint, pressureDelta);
 
-            if (!emitFluidDecals || AbyssalFluidDecalManager.Instance == null || depth < HighPressureJetDepthMeters)
+            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            if (!emitFluidDecals || fluidDecals == null || depth < HighPressureJetDepthMeters)
                 return;
 
             float radiusScale = Mathf.Clamp01(pressureDelta * 0.25f);
-            AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(
+            fluidDecals.RegisterRuptureFluid(
                 _cachedTransform.TransformPoint(breachPoint),
                 radiusScale);
         }
@@ -714,7 +715,7 @@ namespace Hecton8.Gameplay
                 _fullyFloodedDurationSeconds = StructuralMemoryDwellSeconds;
         }
 
-        private void HandleToolEffectApplied(ToolEffectSignal signal)
+        public void OnToolEffectApplied(in ToolEffectSignal signal)
         {
             if (signal.EffectType != EffectType.Weld || _baseModule == null || !ReferenceEquals(signal.Module, _baseModule))
                 return;
@@ -765,7 +766,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveDryAmbientTemperatureCelsius()
         {
-            HectonAtmosphereManager atmosphereManager = HectonAtmosphereManager.Instance;
+            HectonAtmosphereManager atmosphereManager = Hecton8.Core.GlobalRegistry.Atmosphere;
             return atmosphereManager != null
                 ? atmosphereManager.CurrentTemperature
                 : DefaultDryAmbientTemperatureCelsius;
@@ -790,8 +791,8 @@ namespace Hecton8.Gameplay
             MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
             if (mapMagicBridge != null)
                 seaLevelY = mapMagicBridge.WaterSurfaceLevel;
-            else if (HectonAtmosphereManager.Instance != null)
-                seaLevelY = HectonAtmosphereManager.Instance.SeaLevelY;
+            else if (Hecton8.Core.GlobalRegistry.Atmosphere != null)
+                seaLevelY = Hecton8.Core.GlobalRegistry.Atmosphere.SeaLevelY;
 
             return Mathf.Max(0f, seaLevelY - _cachedTransform.position.y);
         }

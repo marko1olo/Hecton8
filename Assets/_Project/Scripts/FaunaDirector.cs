@@ -65,7 +65,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ISaveable
+    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable
     {
         private const int CreaturePoolMinimumReserve = 8;
         private const int CreaturePoolBurstReserveMultiplier = 2;
@@ -403,6 +403,7 @@ namespace Hecton8.AI
         private Transform _playerViewTransform;
         private HectonMapMagicVegetationBridge _vegetationThreatBridge;
         private bool _dispatcherRegistered;
+        private bool _lateFrameRegistered;
         private float _slowTickAccumulator;
 
         /// <summary>ÐšÐ²Ð°Ð´Ñ€Ð°Ñ‚ killDistance Ð´Ð»Ñ sqrMagnitude.</summary>
@@ -577,6 +578,12 @@ namespace Hecton8.AI
                 _dispatcherRegistered = true;
             }
 
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = true;
+            }
+
             if (_playerTransform == null)
                 FindPlayer(true);
             else
@@ -609,12 +616,18 @@ namespace Hecton8.AI
 
             GlobalRegistry.Save?.Unregister(this);
             TryUnregisterFaunaSimulationService();
-            CompleteResidentDataOnlySimulation(forceComplete: true);
+            CompleteResidentDataOnlySimulation(forceComplete: false);
 
             if (_dispatcherRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _dispatcherRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
             }
 
             _slowTickAccumulator = 0f;
@@ -626,12 +639,17 @@ namespace Hecton8.AI
                 GlobalRegistry.Save?.Unregister(this);
 
             TryUnregisterFaunaSimulationService();
-            CompleteResidentDataOnlySimulation(forceComplete: true);
 
             if (_dispatcherRegistered)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 _dispatcherRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
             }
 
             DisposeDehydrationResidencyState();
@@ -649,11 +667,20 @@ namespace Hecton8.AI
             InitializeDehydrationResidencyState();
             TryRegisterFaunaSimulationService();
 
-            if (!Application.isPlaying || _dispatcherRegistered || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _dispatcherRegistered = true;
+            if (!_dispatcherRegistered)
+            {
+                GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+                _dispatcherRegistered = true;
+            }
+
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = true;
+            }
         }
 
         private void TryRegisterFaunaSimulationService()
@@ -697,8 +724,6 @@ namespace Hecton8.AI
             if (deltaTime <= 0f)
                 return;
 
-            CompleteResidentDataOnlySimulation(forceComplete: false);
-
             _slowTickAccumulator += deltaTime;
             if (_slowTickAccumulator < DirectorSlowTickIntervalSeconds)
             {
@@ -706,8 +731,6 @@ namespace Hecton8.AI
                     ScheduleResidentDataOnlySimulation(_playerTransform.position, deltaTime);
                 return;
             }
-
-            CompleteResidentDataOnlySimulation(forceComplete: false);
 
             _slowTickAccumulator -= DirectorSlowTickIntervalSeconds;
             if (_slowTickAccumulator > DirectorSlowTickIntervalSeconds)
@@ -717,6 +740,11 @@ namespace Hecton8.AI
 
             if (_playerTransform != null)
                 ScheduleResidentDataOnlySimulation(_playerTransform.position, deltaTime);
+        }
+
+        public void LateFrameTick()
+        {
+            CompleteResidentDataOnlySimulation(forceComplete: false);
         }
 
         /// <summary>
@@ -869,7 +897,7 @@ namespace Hecton8.AI
                 return 0;
 
             int culled = 0;
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPos);
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
@@ -926,7 +954,7 @@ namespace Hecton8.AI
                 return 0;
 
             int dehydrated = 0;
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPos);
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
@@ -996,7 +1024,7 @@ namespace Hecton8.AI
             ref int anchorBasedSpawns,
             ref int fallbackRingSpawns)
         {
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null) return 0;
 
             int biomeIdx = biomeData.biomeIndex;
@@ -1869,15 +1897,27 @@ namespace Hecton8.AI
 
         private void DisposeDehydrationResidencyState()
         {
-            CompleteResidentDataOnlySimulation(forceComplete: true);
+            JobHandle disposeDependency = CancelResidentDataOnlySimulationForDispose();
 
             _faunaSimulationEngine?.Shutdown();
-            _faunaSimulationMemory.Dispose();
+            _faunaSimulationMemory.Dispose(disposeDependency);
+            JobHandle.ScheduleBatchedJobs();
 
             _dehydratedCreatureStates = null;
             _activeDehydrationSlots = null;
             _activeDehydrationSlotCount = 0;
             _residentDataOnlyLodScheduled = false;
+        }
+
+        private JobHandle CancelResidentDataOnlySimulationForDispose()
+        {
+            if (!_residentDataOnlyLodScheduled)
+                return default;
+
+            JobHandle disposeDependency = _residentDataOnlyLodHandle;
+            _residentDataOnlyLodHandle = default;
+            _residentDataOnlyLodScheduled = false;
+            return disposeDependency;
         }
 
         private void ResetDehydrationResidencyState()
@@ -2043,10 +2083,9 @@ namespace Hecton8.AI
             if (!_residentDataOnlyLodScheduled)
                 return;
 
-            if (!forceComplete && !_residentDataOnlyLodHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _residentDataOnlyLodHandle, forceComplete))
                 return;
 
-            _residentDataOnlyLodHandle.Complete();
             _residentDataOnlyLodScheduled = false;
 
             if (_dehydratedCreatureStates == null || !_faunaSimulationMemory.LinearVelocities.IsCreated)
@@ -2323,7 +2362,7 @@ namespace Hecton8.AI
             if (_activeDehydrationSlotCount <= 0 || _activeCreatures == null)
                 return 0;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return 0;
 
@@ -2427,7 +2466,7 @@ namespace Hecton8.AI
             if (_activeDehydrationSlotCount <= 0)
                 return;
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2480,7 +2519,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2490,7 +2529,7 @@ namespace Hecton8.AI
 
         private void RestorePersistedTier2Fauna(Vector3 playerPos)
         {
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2658,7 +2697,7 @@ namespace Hecton8.AI
             if (!isLargeThreat)
                 return;
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return;
 
@@ -2980,7 +3019,7 @@ namespace Hecton8.AI
         private void ResolveDepthZoneDirector()
         {
             if (depthZoneDirector == null)
-                depthZoneDirector = DepthZoneDirector.Instance;
+                depthZoneDirector = GlobalRegistry.DepthZone;
         }
 
         private void ResolveVegetationThreatBridge()
@@ -3027,7 +3066,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             if (scaler == null || !scaler.Enabled)
             {
                 ApplyAdaptiveBudgetResponse(1f, 1f);
@@ -3468,7 +3507,7 @@ namespace Hecton8.AI
             if (_creaturePoolsWarmed || biomeDatasets == null || biomeDatasets.Length == 0)
                 return;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return;
 
@@ -3558,7 +3597,7 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             ResolvePlayerViewTransform();
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return false;
 
@@ -3682,7 +3721,7 @@ namespace Hecton8.AI
             if (instanceId == 0 || _activeCreatures == null || _activeCreatures.Count <= 0)
                 return false;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
                 ActiveCreature creature = _activeCreatures[i];
@@ -3719,7 +3758,7 @@ namespace Hecton8.AI
         public void DespawnAll()
         {
             CompleteResidentDataOnlySimulation(forceComplete: true);
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
 
             for (int i = _activeCreatures.Count - 1; i >= 0; i--)
             {
@@ -4050,7 +4089,7 @@ namespace Hecton8.AI
 
             ResolvePlayerViewTransform();
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return;
 
@@ -4261,7 +4300,8 @@ namespace Hecton8.AI
             _debugEffectiveGlobalMaxCount = _currentEffectiveGlobalMaxCount;
             _debugEffectiveSpawnsPerTick = _currentEffectiveSpawnsPerTick;
             _debugEffectiveBiomeMaxCount = _cachedBiomeIndex >= 0 ? _currentEffectiveBiomeMaxCount : 0;
-            _debugAdaptiveRenderScale = DynamicResolutionScaler.Instance != null ? DynamicResolutionScaler.Instance.CurrentRenderScale : 1f;
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            _debugAdaptiveRenderScale = scaler != null ? scaler.CurrentRenderScale : 1f;
             _debugAdaptiveBudgetNormalized = _adaptiveBudgetNormalized;
             _debugAdaptiveGlobalBudgetScale = _adaptiveGlobalBudgetScale;
             _debugAdaptiveBiomeBudgetScale = _adaptiveBiomeBudgetScale;

@@ -194,7 +194,7 @@ namespace Hecton8.UI
 
         private void TrySubscribeToSubtitleManager()
         {
-            SubtitleManager manager = SubtitleManager.Instance;
+            SubtitleManager manager = GlobalRegistry.Subtitles;
             if (manager == null)
                 return;
 

@@ -16,7 +16,7 @@ namespace Hecton8.Interaction
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class SaveStation : MonoBehaviour, IInteractable
+    public sealed class SaveStation : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
         [Header("── Settings ──────────────────────────────")]
         [Tooltip("Отображаемое имя терминала в подсказке взаимодействия.")]
@@ -42,13 +42,13 @@ namespace Hecton8.Interaction
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RefreshCachedInteractText();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
 
         /// <inheritdoc />
@@ -129,6 +129,15 @@ namespace Hecton8.Interaction
             _cachedInteractText = actionLabel + " (" + stationName + ")";
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RefreshCachedInteractText();
@@ -136,7 +145,7 @@ namespace Hecton8.Interaction
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

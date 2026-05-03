@@ -33,22 +33,23 @@ namespace Hecton8.Modding
         /// <summary>
         /// Creates a new player-spawn payload.
         /// </summary>
-        /// <param name="playerObject">Live player GameObject published by bootstrap.</param>
-        internal PlayerSpawnedEvent(GameObject playerObject)
+        /// <param name="playerEntityId">Stable runtime entity identifier for the spawned player root.</param>
+        /// <param name="playerPosition">Frame-space player position sampled by the bootstrap boundary.</param>
+        internal PlayerSpawnedEvent(ulong playerEntityId, Vector3 playerPosition)
         {
-            PlayerObject = playerObject;
-            PlayerTransform = playerObject != null ? playerObject.transform : null;
+            PlayerEntityId = playerEntityId;
+            PlayerPosition = playerPosition;
         }
 
         /// <summary>
-        /// Live player GameObject published by bootstrap.
+        /// Stable runtime entity identifier for the spawned player root.
         /// </summary>
-        internal GameObject PlayerObject { get; }
+        internal ulong PlayerEntityId { get; }
 
         /// <summary>
-        /// Cached player transform for systems that only need the transform contract.
+        /// Frame-space player position sampled at publish time.
         /// </summary>
-        internal Transform PlayerTransform { get; }
+        internal Vector3 PlayerPosition { get; }
     }
 
     /// <summary>
@@ -81,15 +82,24 @@ namespace Hecton8.Modding
         /// </summary>
         /// <param name="item">Collected item asset.</param>
         /// <param name="quantity">Successfully added quantity.</param>
-        /// <param name="interactor">Interactor responsible for the pickup flow.</param>
-        internal ItemCollectedEvent(ItemData item, int quantity, Transform interactor)
+        /// <param name="interactorEntityId">Stable runtime entity identifier for the interactor.</param>
+        /// <param name="interactorPosition">Frame-space interactor position sampled at publish time.</param>
+        /// <param name="hasInteractorPosition">True when <paramref name="interactorPosition"/> is valid.</param>
+        internal ItemCollectedEvent(
+            ItemData item,
+            int quantity,
+            ulong interactorEntityId,
+            Vector3 interactorPosition,
+            bool hasInteractorPosition)
             : this(
                 item,
                 item != null && !string.IsNullOrWhiteSpace(item.PersistentId)
                     ? Hecton.Localization.LocHash.Compute(item.PersistentId)
                     : 0,
                 quantity,
-                interactor)
+                interactorEntityId,
+                interactorPosition,
+                hasInteractorPosition)
         {
         }
 
@@ -99,13 +109,23 @@ namespace Hecton8.Modding
         /// <param name="item">Collected item asset when the caller already has a visual/presentation reference.</param>
         /// <param name="itemHashId">Logic-tier item hash identifier.</param>
         /// <param name="quantity">Successfully added quantity.</param>
-        /// <param name="interactor">Interactor responsible for the pickup flow.</param>
-        internal ItemCollectedEvent(ItemData item, int itemHashId, int quantity, Transform interactor)
+        /// <param name="interactorEntityId">Stable runtime entity identifier for the interactor.</param>
+        /// <param name="interactorPosition">Frame-space interactor position sampled at publish time.</param>
+        /// <param name="hasInteractorPosition">True when <paramref name="interactorPosition"/> is valid.</param>
+        internal ItemCollectedEvent(
+            ItemData item,
+            int itemHashId,
+            int quantity,
+            ulong interactorEntityId,
+            Vector3 interactorPosition,
+            bool hasInteractorPosition)
         {
             Item = item;
             ItemHashId = itemHashId;
             Quantity = quantity < 0 ? 0 : quantity;
-            Interactor = interactor;
+            InteractorEntityId = interactorEntityId;
+            InteractorPosition = interactorPosition;
+            HasInteractorPosition = hasInteractorPosition;
         }
 
         /// <summary>
@@ -124,9 +144,19 @@ namespace Hecton8.Modding
         public int ItemHashId { get; }
 
         /// <summary>
-        /// Interactor that initiated the pickup flow.
+        /// Stable runtime entity identifier for the interactor that initiated the pickup flow.
         /// </summary>
-        internal Transform Interactor { get; }
+        internal ulong InteractorEntityId { get; }
+
+        /// <summary>
+        /// Frame-space interactor position sampled when the event was published.
+        /// </summary>
+        internal Vector3 InteractorPosition { get; }
+
+        /// <summary>
+        /// True when the interactor snapshot contains a valid sampled position.
+        /// </summary>
+        internal bool HasInteractorPosition { get; }
     }
 
     /// <summary>
@@ -173,12 +203,21 @@ namespace Hecton8.Modding
         /// </summary>
         /// <param name="item">Discarded item asset.</param>
         /// <param name="quantity">Number of discarded units.</param>
-        /// <param name="interactor">Player transform responsible for the discard flow when available.</param>
-        internal ItemDiscardedEvent(ItemData item, int quantity, Transform interactor)
+        /// <param name="interactorEntityId">Stable runtime entity identifier for the interactor.</param>
+        /// <param name="interactorPosition">Frame-space interactor position sampled at publish time.</param>
+        /// <param name="hasInteractorPosition">True when <paramref name="interactorPosition"/> is valid.</param>
+        internal ItemDiscardedEvent(
+            ItemData item,
+            int quantity,
+            ulong interactorEntityId,
+            Vector3 interactorPosition,
+            bool hasInteractorPosition)
         {
             Item = item;
             Quantity = quantity < 0 ? 0 : quantity;
-            Interactor = interactor;
+            InteractorEntityId = interactorEntityId;
+            InteractorPosition = interactorPosition;
+            HasInteractorPosition = hasInteractorPosition;
         }
 
         /// <summary>
@@ -192,9 +231,19 @@ namespace Hecton8.Modding
         public int Quantity { get; }
 
         /// <summary>
-        /// Player transform responsible for the discard flow when available.
+        /// Stable runtime entity identifier for the interactor that initiated the discard flow.
         /// </summary>
-        internal Transform Interactor { get; }
+        internal ulong InteractorEntityId { get; }
+
+        /// <summary>
+        /// Frame-space interactor position sampled when the event was published.
+        /// </summary>
+        internal Vector3 InteractorPosition { get; }
+
+        /// <summary>
+        /// True when the interactor snapshot contains a valid sampled position.
+        /// </summary>
+        internal bool HasInteractorPosition { get; }
     }
 
     /// <summary>
@@ -268,12 +317,22 @@ namespace Hecton8.Modding
         /// Creates a placement payload for a newly placed base module.
         /// </summary>
         /// <param name="buildableData">Authoring asset that describes the placed module.</param>
-        /// <param name="moduleObject">Live spawned GameObject that entered the construction registry.</param>
-        internal BaseModulePlacedEvent(BuildableData buildableData, GameObject moduleObject)
+        /// <param name="moduleEntityId">Stable runtime entity identifier for the placed module.</param>
+        /// <param name="modulePosition">Frame-space module position sampled at publish time.</param>
+        /// <param name="moduleRotation">Frame-space module rotation sampled at publish time.</param>
+        /// <param name="hasModulePose">True when the module pose snapshot is valid.</param>
+        internal BaseModulePlacedEvent(
+            BuildableData buildableData,
+            ulong moduleEntityId,
+            Vector3 modulePosition,
+            Quaternion moduleRotation,
+            bool hasModulePose)
         {
             BuildableData = buildableData;
-            ModuleObject = moduleObject;
-            ModuleTransform = moduleObject != null ? moduleObject.transform : null;
+            ModuleEntityId = moduleEntityId;
+            ModulePosition = modulePosition;
+            ModuleRotation = moduleRotation;
+            HasModulePose = hasModulePose;
         }
 
         /// <summary>
@@ -282,14 +341,24 @@ namespace Hecton8.Modding
         public BuildableData BuildableData { get; }
 
         /// <summary>
-        /// Live spawned GameObject registered by the construction owner.
+        /// Stable runtime entity identifier for the placed module.
         /// </summary>
-        internal GameObject ModuleObject { get; }
+        internal ulong ModuleEntityId { get; }
 
         /// <summary>
-        /// Cached transform for placement-aware mods that only need spatial data.
+        /// Frame-space module position sampled when the event was published.
         /// </summary>
-        internal Transform ModuleTransform { get; }
+        internal Vector3 ModulePosition { get; }
+
+        /// <summary>
+        /// Frame-space module rotation sampled when the event was published.
+        /// </summary>
+        internal Quaternion ModuleRotation { get; }
+
+        /// <summary>
+        /// True when the module pose snapshot contains valid sampled data.
+        /// </summary>
+        internal bool HasModulePose { get; }
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Hecton8.Bootstrap;
+using Hecton8.Core;
 using UnityEngine;
 
 namespace Hecton8.Optimization
@@ -13,9 +14,14 @@ namespace Hecton8.Optimization
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
         private static void Initialize()
         {
-            if (!Application.isPlaying)
+            if (!Application.isPlaying || !GameBootstrapper.HasRuntimeInstance)
                 return;
 
+            EnsureRuntimeManagers();
+        }
+
+        internal static void EnsureRuntimeManagers()
+        {
             GameObject bootstrap = null;
 
             FindOrCreateManager<AssetLifecycleGovernor>(ref bootstrap);
@@ -40,34 +46,35 @@ namespace Hecton8.Optimization
             if (bootstrap == null)
             {
                 bootstrap = new GameObject("__VRAMOptimizationBootstrap");
-                DontDestroyOnLoad(bootstrap);
             }
 
-            return bootstrap.AddComponent<T>();
+            T manager = bootstrap.AddComponent<T>();
+            GameBootstrapper.PersistRuntimeService(manager);
+            return manager;
         }
 
         private static T ResolveExistingManager<T>() where T : Component
         {
             if (typeof(T) == typeof(AssetLifecycleGovernor))
-                return AssetLifecycleGovernor.Instance as T;
+                return GlobalRegistry.AssetLifecycle as T;
             if (typeof(T) == typeof(AssetLoadDispatcher))
-                return AssetLoadDispatcher.Instance as T;
+                return GlobalRegistry.AssetLoadDispatcher as T;
             if (typeof(T) == typeof(VRAMMonitor))
-                return VRAMMonitor.Instance as T;
+                return GlobalRegistry.VRAMMonitor as T;
             if (typeof(T) == typeof(VRAMPressureMonitor))
-                return VRAMPressureMonitor.Instance as T;
+                return GlobalRegistry.VRAMPressure as T;
             if (typeof(T) == typeof(RenderTextureLifecycleTracker))
-                return RenderTextureLifecycleTracker.Instance as T;
+                return GlobalRegistry.RenderTextureLifecycle as T;
             if (typeof(T) == typeof(RenderTexturePool))
-                return RenderTexturePool.Instance as T;
+                return GlobalRegistry.RenderTexturePool as T;
             if (typeof(T) == typeof(VisorRTManager))
-                return VisorRTManager.Instance as T;
+                return GlobalRegistry.VisorRT as T;
             if (typeof(T) == typeof(CameraRTManager))
-                return CameraRTManager.Instance as T;
+                return GlobalRegistry.CameraRT as T;
             if (typeof(T) == typeof(PostFXRTManager))
-                return PostFXRTManager.Instance as T;
+                return GlobalRegistry.PostFXRT as T;
             if (typeof(T) == typeof(UIRTManager))
-                return UIRTManager.Instance as T;
+                return GlobalRegistry.UIRT as T;
             if (typeof(T) == typeof(SceneInstantiationGate))
                 return SceneInstantiationGate.Instance as T;
 

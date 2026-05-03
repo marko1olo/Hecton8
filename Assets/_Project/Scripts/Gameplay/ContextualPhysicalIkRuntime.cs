@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.World;
 using System.Runtime.InteropServices;
 using Unity.Burst;
 using Unity.Collections;
@@ -355,7 +356,7 @@ namespace Hecton8.Gameplay
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-9920)]
-    internal sealed class ContextualPhysicalIkRuntime : MonoBehaviour, IUpdatable, IOriginShiftListener
+    internal sealed class ContextualPhysicalIkRuntime : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener
     {
         private const int MaxEntities = 128;
         internal const int RaysPerEntity = 5;
@@ -381,6 +382,7 @@ namespace Hecton8.Gameplay
         private Transform _cameraTransform;
         private bool _groundResponseScheduled;
         private bool _registered;
+        private bool _registeredLateFrame;
         private bool _registeredOriginShiftListener;
         private int _freeSlotCount;
         private float _cameraResolveRetryTimer;
@@ -414,14 +416,6 @@ namespace Hecton8.Gameplay
             }
 
             _instance = this;
-            if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
-
-                DontDestroyOnLoad(gameObject);
-            }
-
             InitializeFreeSlots();
             EnsurePersistentBuffers();
         }
@@ -472,13 +466,6 @@ namespace Hecton8.Gameplay
             _frameIndex++;
             bool hasViewerPosition = TryResolveViewerPosition(deltaTime, out float3 viewerPosition);
 
-            if (_groundResponseScheduled && _pendingGroundResponseHandle.IsCompleted)
-            {
-                SwapTargetBuffers();
-                PublishFrontTargetBuffer();
-                _groundResponseScheduled = false;
-            }
-
             if (_groundResponseScheduled)
                 return;
 
@@ -486,6 +473,20 @@ namespace Hecton8.Gameplay
                 return;
 
             ScheduleGroundPipeline();
+        }
+
+        /// <inheritdoc />
+        public void LateFrameTick()
+        {
+            if (!_groundResponseScheduled)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: false))
+                return;
+
+            SwapTargetBuffers();
+            PublishFrontTargetBuffer();
+            _groundResponseScheduled = false;
         }
 
         internal bool RegisterRig(ContextualPhysicalIkRig rig, out int slotIndex)
@@ -599,7 +600,9 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.UI);
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
             _registered = true;
+            _registeredLateFrame = true;
         }
 
         private void TryUnregister()
@@ -608,7 +611,11 @@ namespace Hecton8.Gameplay
                 return;
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.UI);
+            if (_registeredLateFrame)
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+
             _registered = false;
+            _registeredLateFrame = false;
         }
 
         private void TryRegisterOriginShiftListener()
@@ -617,7 +624,7 @@ namespace Hecton8.Gameplay
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _registeredOriginShiftListener = true;
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void TryUnregisterOriginShiftListener()
@@ -635,11 +642,10 @@ namespace Hecton8.Gameplay
                 return;
 
             // COLD SYNC JOB: floating-origin rebasing must not race pending IK target writes.
-            _pendingGroundResponseHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _pendingGroundResponseHandle, forceComplete: true);
             SwapTargetBuffers();
             PublishFrontTargetBuffer();
             _groundResponseScheduled = false;
-            _pendingGroundResponseHandle = default;
         }
 
         private void RebaseScheduledEntityStates(float3 shiftOffset)

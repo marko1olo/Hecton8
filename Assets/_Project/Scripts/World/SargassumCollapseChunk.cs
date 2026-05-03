@@ -228,7 +228,7 @@ namespace Hecton8.World
             if (_remainingLifetime > 0f)
                 return;
 
-            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
             if (poolManager != null)
                 poolManager.Despawn(gameObject);
         }
@@ -340,7 +340,7 @@ namespace Hecton8.World
             if (_cascadeImpactConsumed)
                 return;
 
-            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
             if (dragManager != null)
                 dragManager.RegisterCollapseChunkImpact(contact.point, contact.normal, impactSpeed, _fragmentDepth + 1);
 
@@ -752,7 +752,7 @@ namespace Hecton8.World
             if (_registeredScavengerHost)
                 return;
 
-            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
             if (dragManager == null)
                 return;
 
@@ -764,7 +764,7 @@ namespace Hecton8.World
             if (!_registeredScavengerHost)
                 return;
 
-            SargassumGlobalDragManager dragManager = SargassumGlobalDragManager.Instance;
+            SargassumGlobalDragManager dragManager = Hecton8.Core.GlobalRegistry.SargassumDrag;
             if (dragManager != null)
                 dragManager.UnregisterSettledCollapseChunk(this);
 
@@ -778,7 +778,7 @@ namespace Hecton8.World
 
             _disintegrating = true;
             TryUnregisterScavengerHost();
-            ObjectPoolManager poolManager = ObjectPoolManager.Instance;
+            ObjectPoolManager poolManager = GlobalRegistry.ObjectPool;
             if (poolManager != null && scrapPickupPrefab != null)
             {
                 Vector3 origin = transform.position;

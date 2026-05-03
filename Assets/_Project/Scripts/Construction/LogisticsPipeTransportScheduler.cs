@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -18,12 +19,12 @@ namespace Hecton8.Construction
         private const float CycleWarningCadenceSeconds = 5f;
         // COLD ALLOC: List<LogisticsPipeNode>[32] — active pipe-node registry for shared DAG transport scheduling — owner: LogisticsPipeTransportScheduler
         private static readonly List<LogisticsPipeNode> _activeNodes = new List<LogisticsPipeNode>(InitialNodeCapacity);
-        // COLD ALLOC: int[32] — visited-mark scratch for ordered fallback replay without heap churn — owner: LogisticsPipeTransportScheduler
-        private static int[] _visitMarks = new int[InitialNodeCapacity];
-        // COLD ALLOC: int[32] — cycle-repair suppressed edge source scratch for deterministic Kahn recovery — owner: LogisticsPipeTransportScheduler
-        private static int[] _suppressedEdgeSources = new int[InitialNodeCapacity];
-        // COLD ALLOC: int[32] — cycle-repair suppressed edge destination scratch for deterministic Kahn recovery — owner: LogisticsPipeTransportScheduler
-        private static int[] _suppressedEdgeDestinations = new int[InitialNodeCapacity];
+        // COLD ALLOC: NativeArray<int>[capacity] — visited-mark scratch for ordered fallback replay without managed heap churn — owner: LogisticsPipeTransportScheduler
+        private static NativeArray<int> _visitMarks;
+        // COLD ALLOC: NativeArray<int>[capacity] — cycle-repair suppressed edge source scratch for deterministic Kahn recovery — owner: LogisticsPipeTransportScheduler
+        private static NativeArray<int> _suppressedEdgeSources;
+        // COLD ALLOC: NativeArray<int>[capacity] — cycle-repair suppressed edge destination scratch for deterministic Kahn recovery — owner: LogisticsPipeTransportScheduler
+        private static NativeArray<int> _suppressedEdgeDestinations;
 
         private static NativeArray<int> _edgeOffsets;
         private static NativeArray<int> _edgeDestinations;
@@ -94,14 +95,18 @@ namespace Hecton8.Construction
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            CompletePendingSort();
-            DisposeNativeArray(ref _edgeOffsets);
-            DisposeNativeArray(ref _edgeDestinations);
-            DisposeNativeArray(ref _inputIndegrees);
-            DisposeNativeArray(ref _workIndegrees);
-            DisposeNativeArray(ref _queue);
-            DisposeNativeArray(ref _sortedOrder);
-            DisposeNativeArray(ref _sortedCount);
+            JobHandle teardownDependency = CancelPendingSortForTeardown();
+            teardownDependency = DisposeNativeArray(ref _edgeOffsets, teardownDependency);
+            teardownDependency = DisposeNativeArray(ref _edgeDestinations, teardownDependency);
+            teardownDependency = DisposeNativeArray(ref _inputIndegrees, teardownDependency);
+            teardownDependency = DisposeNativeArray(ref _workIndegrees, teardownDependency);
+            teardownDependency = DisposeNativeArray(ref _queue, teardownDependency);
+            teardownDependency = DisposeNativeArray(ref _sortedOrder, teardownDependency);
+            teardownDependency = DisposeNativeArray(ref _sortedCount, teardownDependency);
+            teardownDependency = DisposeNativeArray(ref _visitMarks, teardownDependency);
+            teardownDependency = DisposeNativeArray(ref _suppressedEdgeSources, teardownDependency);
+            DisposeNativeArray(ref _suppressedEdgeDestinations, teardownDependency);
+            JobHandle.ScheduleBatchedJobs();
             _activeNodes.Clear();
             _scheduledSortedCount = 0;
             _scheduledNodeCount = 0;
@@ -160,9 +165,10 @@ namespace Hecton8.Construction
             if (activeCount <= 0)
                 return true;
 
-            CompletePendingSort();
+            CompletePendingSort(forceComplete: false);
             ReplayCurrentOrder(activeCount);
-            ScheduleNextOrder(activeCount);
+            if (!_pendingSort)
+                ScheduleNextOrder(activeCount);
             return true;
         }
 
@@ -185,7 +191,7 @@ namespace Hecton8.Construction
             _visitStamp++;
             if (_visitStamp == int.MaxValue)
             {
-                System.Array.Clear(_visitMarks, 0, _visitMarks.Length);
+                ClearVisitMarks();
                 _visitStamp = 1;
             }
 
@@ -331,42 +337,87 @@ namespace Hecton8.Construction
             return edgeCount;
         }
 
-        private static void CompletePendingSort()
+        private static void CompletePendingSort(bool forceComplete)
         {
             if (!_pendingSort)
                 return;
 
-            _pendingSortHandle.Complete();
-            _pendingSortHandle = default;
+            if (!DispatcherJobSwap.TryComplete(ref _pendingSortHandle, forceComplete))
+                return;
+
             _pendingSort = false;
             _scheduledSortedCount = _sortedCount.IsCreated ? _sortedCount[0] : 0;
             if (_scheduledSortedCount < _scheduledNodeCount)
                 RepairCycleOrder(_scheduledNodeCount);
         }
 
-        private static void EnsureVisitCapacity(int requiredCount)
+        private static JobHandle CancelPendingSortForTeardown()
         {
-            if (_visitMarks != null && _visitMarks.Length >= requiredCount)
+            if (!_pendingSort)
+                return _pendingSortHandle;
+
+            JobHandle dependency = _pendingSortHandle;
+            _pendingSortHandle = default;
+            _pendingSort = false;
+            _scheduledSortedCount = 0;
+            _scheduledNodeCount = 0;
+            return dependency;
+        }
+
+        private static void ClearVisitMarks()
+        {
+            if (!_visitMarks.IsCreated)
                 return;
 
-            int nextCapacity = _visitMarks != null ? _visitMarks.Length : InitialNodeCapacity;
+            for (int i = 0; i < _visitMarks.Length; i++)
+                _visitMarks[i] = 0;
+        }
+
+        private static void EnsureVisitCapacity(int requiredCount)
+        {
+            if (_visitMarks.IsCreated && _visitMarks.Length >= requiredCount)
+                return;
+
+            int currentCapacity = _visitMarks.IsCreated ? _visitMarks.Length : 0;
+            int nextCapacity = math.max(currentCapacity, InitialNodeCapacity);
             while (nextCapacity < requiredCount)
                 nextCapacity <<= 1;
 
-            _visitMarks = new int[nextCapacity];
+            NativeArray<int> nextVisitMarks = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[capacity] - visited-mark scratch for ordered pipe replay - owner: LogisticsPipeTransportScheduler
+            for (int i = 0; i < currentCapacity; i++)
+                nextVisitMarks[i] = _visitMarks[i];
+
+            DisposeNativeArray(ref _visitMarks);
+            _visitMarks = nextVisitMarks;
         }
 
         private static void EnsureSuppressionCapacity(int requiredCount)
         {
-            if (_suppressedEdgeSources != null && _suppressedEdgeSources.Length >= requiredCount)
+            if (_suppressedEdgeSources.IsCreated &&
+                _suppressedEdgeDestinations.IsCreated &&
+                _suppressedEdgeSources.Length >= requiredCount &&
+                _suppressedEdgeDestinations.Length >= requiredCount)
                 return;
 
-            int nextCapacity = _suppressedEdgeSources != null ? _suppressedEdgeSources.Length : InitialNodeCapacity;
+            int currentCapacity = _suppressedEdgeSources.IsCreated ? _suppressedEdgeSources.Length : 0;
+            int nextCapacity = math.max(currentCapacity, InitialNodeCapacity);
             while (nextCapacity < requiredCount)
                 nextCapacity <<= 1;
 
-            _suppressedEdgeSources = new int[nextCapacity];
-            _suppressedEdgeDestinations = new int[nextCapacity];
+            NativeArray<int> nextSources = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[capacity] - cycle-repair suppressed edge sources - owner: LogisticsPipeTransportScheduler
+            NativeArray<int> nextDestinations = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[capacity] - cycle-repair suppressed edge destinations - owner: LogisticsPipeTransportScheduler
+            int destinationCapacity = _suppressedEdgeDestinations.IsCreated ? _suppressedEdgeDestinations.Length : 0;
+            int copyCount = math.min(currentCapacity, destinationCapacity);
+            for (int i = 0; i < copyCount; i++)
+            {
+                nextSources[i] = _suppressedEdgeSources[i];
+                nextDestinations[i] = _suppressedEdgeDestinations[i];
+            }
+
+            DisposeNativeArray(ref _suppressedEdgeSources);
+            DisposeNativeArray(ref _suppressedEdgeDestinations);
+            _suppressedEdgeSources = nextSources;
+            _suppressedEdgeDestinations = nextDestinations;
         }
 
         private static void EnsureNativeCapacity(int nodeCount, int edgeCount)
@@ -425,7 +476,7 @@ namespace Hecton8.Construction
             _visitStamp++;
             if (_visitStamp == int.MaxValue)
             {
-                System.Array.Clear(_visitMarks, 0, _visitMarks.Length);
+                ClearVisitMarks();
                 _visitStamp = 1;
             }
 
@@ -548,6 +599,16 @@ namespace Hecton8.Construction
 
             array.Dispose();
             array = default;
+        }
+
+        private static JobHandle DisposeNativeArray(ref NativeArray<int> array, JobHandle dependency)
+        {
+            if (!array.IsCreated)
+                return dependency;
+
+            JobHandle disposeHandle = array.Dispose(dependency);
+            array = default;
+            return disposeHandle;
         }
     }
 }

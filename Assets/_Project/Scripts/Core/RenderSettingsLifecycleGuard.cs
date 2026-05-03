@@ -188,6 +188,9 @@ namespace Hecton8.Core
 #if UNITY_EDITOR
         private static void RegisterEditorLifecycleHooks()
         {
+            if (Application.isBatchMode)
+                return;
+
             if (_editorHooksRegistered)
                 return;
 
@@ -213,6 +216,9 @@ namespace Hecton8.Core
 
         private static void HandlePlayModeStateChanged(PlayModeStateChange state)
         {
+            if (Application.isBatchMode)
+                return;
+
             if (state == PlayModeStateChange.ExitingEditMode ||
                 state == PlayModeStateChange.ExitingPlayMode ||
                 state == PlayModeStateChange.EnteredEditMode)
@@ -223,11 +229,17 @@ namespace Hecton8.Core
 
         private static void HandleBeforeAssemblyReload()
         {
+            if (Application.isBatchMode)
+                return;
+
             ForceRestore();
         }
 
         private static void HandleEditorQuitting()
         {
+            if (Application.isBatchMode)
+                return;
+
             ForceRestore();
         }
 #endif

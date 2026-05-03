@@ -53,23 +53,32 @@ namespace Hecton8.Core
         private static bool _isShuttingDown;
         private static bool _isEditorExitingPlayMode;
 
+        internal static GameTickManager ActiveRuntimeInstance { get; private set; }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _isShuttingDown = false;
             _isEditorExitingPlayMode = false;
+            ActiveRuntimeInstance = null;
         }
 
 #if UNITY_EDITOR
         [UnityEditor.InitializeOnLoadMethod]
         private static void RegisterEditorPlayModeHooks()
         {
+            if (Application.isBatchMode)
+                return;
+
             UnityEditor.EditorApplication.playModeStateChanged -= HandleEditorPlayModeStateChanged;
             UnityEditor.EditorApplication.playModeStateChanged += HandleEditorPlayModeStateChanged;
         }
 
         private static void HandleEditorPlayModeStateChanged(UnityEditor.PlayModeStateChange state)
         {
+            if (Application.isBatchMode)
+                return;
+
             switch (state)
             {
                 case UnityEditor.PlayModeStateChange.ExitingPlayMode:
@@ -142,6 +151,9 @@ namespace Hecton8.Core
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             EnsureInitialized();
         }
 
@@ -182,6 +194,9 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (enableSlowTickProfiling && ShouldLogUnexpectedDisable())
             {

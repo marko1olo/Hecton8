@@ -1,4 +1,5 @@
 using Hecton8.Building;
+using Hecton8.Core;
 using Hecton8.Crafting;
 using Hecton8.Inventory;
 using Hecton8.Items;
@@ -21,6 +22,7 @@ namespace Hecton8.Economy
         private const float EquipmentRecoveryRatio = 0.25f;
 
         private static ScrapManager _instance;
+        private bool _serviceRegistered;
 
         /// <summary>
         /// Active runtime owner while the gameplay scene is loaded.
@@ -38,10 +40,40 @@ namespace Hecton8.Economy
             _instance = this;
         }
 
+        private void OnEnable()
+        {
+            TryRegisterToGlobalRegistry();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterFromGlobalRegistry();
+        }
+
         private void OnDestroy()
         {
+            TryUnregisterFromGlobalRegistry();
+
             if (_instance == this)
                 _instance = null;
+        }
+
+        private void TryRegisterToGlobalRegistry()
+        {
+            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+                return;
+
+            GlobalRegistry.RegisterScrapRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Scrap, this);
+        }
+
+        private void TryUnregisterFromGlobalRegistry()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterScrapRuntime(this);
+            _serviceRegistered = false;
         }
 
         /// <summary>
@@ -50,7 +82,7 @@ namespace Hecton8.Economy
         /// <param name="itemId">Stable item identifier stored in the runtime item catalog.</param>
         public bool ProcessRecycle(string itemId)
         {
-            PlayerInventory inventory = PlayerInventory.Instance;
+            PlayerInventory inventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
             if (inventory == null || inventory.ItemCatalog == null || string.IsNullOrWhiteSpace(itemId))
                 return false;
 
@@ -66,7 +98,7 @@ namespace Hecton8.Economy
             if (sourceItem == null)
                 return false;
 
-            PlayerInventory inventory = PlayerInventory.Instance;
+            PlayerInventory inventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
             if (inventory == null)
                 return false;
 

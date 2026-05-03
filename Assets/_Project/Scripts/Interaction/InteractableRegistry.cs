@@ -3,7 +3,6 @@ using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Tools;
 using UnityEngine;
-using UnityEngine.SceneManagement;
 
 namespace Hecton8.Interaction
 {
@@ -14,7 +13,6 @@ namespace Hecton8.Interaction
     {
         // COLD ALLOC: Dictionary<ulong,TargetInfo>[512] - collider entity id to interaction target cache - owner: InteractableRegistry
         private static readonly Dictionary<ulong, TargetInfo> s_targets = new Dictionary<ulong, TargetInfo>(512);
-        private static int s_cachedSceneHandle = -1;
 
         internal readonly struct TargetInfo
         {
@@ -53,32 +51,6 @@ namespace Hecton8.Interaction
         private static void ResetStaticState()
         {
             s_targets.Clear();
-            s_cachedSceneHandle = -1;
-        }
-
-        internal static void WarmSceneCache()
-        {
-            Scene activeScene = SceneManager.GetActiveScene();
-            int sceneHandle = unchecked((int)activeScene.handle.GetRawData());
-            if (sceneHandle == s_cachedSceneHandle && s_targets.Count > 0)
-                return;
-
-            s_targets.Clear();
-            s_cachedSceneHandle = sceneHandle;
-
-            Collider[] colliders = Object.FindObjectsByType<Collider>(FindObjectsInactive.Exclude);
-            for (int i = 0; i < colliders.Length; i++)
-            {
-                Collider collider = colliders[i];
-                if (collider == null)
-                    continue;
-
-                TargetInfo info = ResolveTargetInfo(collider);
-                if (!info.HasAny)
-                    continue;
-
-                s_targets[EntityId.ToULong(collider.GetEntityId())] = info;
-            }
         }
 
         internal static bool TryResolve(Collider collider, out TargetInfo info)

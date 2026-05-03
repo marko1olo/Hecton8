@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.Scavenging;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -108,10 +109,17 @@ namespace Hecton8.Construction
         private bool _scheduledJobActive;
         private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
+        private bool _serviceRegistered;
         private int _scheduledModuleCount;
 
         /// <summary>Returns the current runtime owner when one exists.</summary>
         public static AutonomousExtractorSystem Instance => _instance;
+
+        internal static bool TryGetActiveRuntime(out AutonomousExtractorSystem runtime)
+        {
+            runtime = _instance;
+            return runtime != null;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -124,6 +132,10 @@ namespace Hecton8.Construction
         /// </summary>
         public static AutonomousExtractorSystem EnsureRuntimeInstance()
         {
+            AutonomousExtractorSystem registryRuntime = GlobalRegistry.AutonomousExtractors;
+            if (registryRuntime != null)
+                return registryRuntime;
+
             if (_instance != null)
                 return _instance;
 
@@ -144,6 +156,8 @@ namespace Hecton8.Construction
 
         private void OnEnable()
         {
+            TryRegisterToGlobalRegistry();
+
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
 
@@ -162,7 +176,13 @@ namespace Hecton8.Construction
 
         private void OnDisable()
         {
-            CompleteScheduledJob();
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            {
+                _slowTickRegistered = false;
+                _lateFrameRegistered = false;
+                TryUnregisterFromGlobalRegistry();
+                return;
+            }
 
             if (_slowTickRegistered)
             {
@@ -175,15 +195,37 @@ namespace Hecton8.Construction
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
                 _lateFrameRegistered = false;
             }
+
+            TryUnregisterFromGlobalRegistry();
         }
 
         private void OnDestroy()
         {
-            CompleteScheduledJob();
-            DisposeNativeBuffers();
+            TryUnregisterFromGlobalRegistry();
+            JobHandle teardownDependency = CancelScheduledJobForTeardown();
+            DisposeNativeBuffers(teardownDependency);
+            JobHandle.ScheduleBatchedJobs();
 
             if (_instance == this)
                 _instance = null;
+        }
+
+        private void TryRegisterToGlobalRegistry()
+        {
+            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+                return;
+
+            GlobalRegistry.RegisterAutonomousExtractorRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.AutonomousExtractors, this);
+        }
+
+        private void TryUnregisterFromGlobalRegistry()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterAutonomousExtractorRuntime(this);
+            _serviceRegistered = false;
         }
 
         /// <summary>
@@ -249,10 +291,12 @@ namespace Hecton8.Construction
         /// </summary>
         public void LateFrameTick()
         {
-            if (!_scheduledJobActive || !_scheduledJobHandle.IsCompleted)
+            if (!_scheduledJobActive)
                 return;
 
-            _scheduledJobHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _scheduledJobHandle, forceComplete: false))
+                return;
+
             for (int i = 0; i < _scheduledModuleCount; i++)
             {
                 ExtractorJobResult result = _jobResults[i];
@@ -263,7 +307,10 @@ namespace Hecton8.Construction
                 AutonomousExtractorModule module = i < _modules.Count ? _modules[i] : null;
                 if (module == null)
                 {
-                    _bufferedUnitCounts[i] = result.NextBufferedUnitCount;
+                    _cycleTimers[i] = 0f;
+                    _bufferedItemHashIds[i] = 0;
+                    _bufferedUnitCounts[i] = 0;
+                    _completedCycleCounts[i] = 0;
                     continue;
                 }
 
@@ -301,7 +348,7 @@ namespace Hecton8.Construction
                 if (ReferenceEquals(_modules[i], module))
                     return i;
 
-                if (_modules[i] != null)
+                if (_modules[i] != null || (_scheduledJobActive && i < _scheduledModuleCount))
                     continue;
 
                 _modules[i] = module;
@@ -343,6 +390,9 @@ namespace Hecton8.Construction
 
             if (_cycleTimers.IsCreated && index < _cycleTimers.Length)
             {
+                if (_scheduledJobActive && index < _scheduledModuleCount)
+                    return;
+
                 _cycleTimers[index] = 0f;
                 _bufferedItemHashIds[index] = 0;
                 _bufferedUnitCounts[index] = 0;
@@ -441,35 +491,64 @@ namespace Hecton8.Construction
             _completedCycleCounts = nextCompletedCounts;
         }
 
-        private void CompleteScheduledJob()
+        private JobHandle CancelScheduledJobForTeardown()
         {
             if (!_scheduledJobActive)
-                return;
+                return _scheduledJobHandle;
 
-            _scheduledJobHandle.Complete();
+            JobHandle dependency = _scheduledJobHandle;
+            _scheduledJobHandle = default;
             _scheduledJobActive = false;
             _scheduledModuleCount = 0;
+            return dependency;
         }
 
-        private void DisposeNativeBuffers()
+        private JobHandle DisposeNativeBuffers()
         {
+            return DisposeNativeBuffers(default);
+        }
+
+        private JobHandle DisposeNativeBuffers(JobHandle dependency)
+        {
+            JobHandle disposeHandle = dependency;
+
             if (_jobInputs.IsCreated)
-                _jobInputs.Dispose();
+            {
+                disposeHandle = _jobInputs.Dispose(disposeHandle);
+                _jobInputs = default;
+            }
 
             if (_jobResults.IsCreated)
-                _jobResults.Dispose();
+            {
+                disposeHandle = _jobResults.Dispose(disposeHandle);
+                _jobResults = default;
+            }
 
             if (_cycleTimers.IsCreated)
-                _cycleTimers.Dispose();
+            {
+                disposeHandle = _cycleTimers.Dispose(disposeHandle);
+                _cycleTimers = default;
+            }
 
             if (_bufferedItemHashIds.IsCreated)
-                _bufferedItemHashIds.Dispose();
+            {
+                disposeHandle = _bufferedItemHashIds.Dispose(disposeHandle);
+                _bufferedItemHashIds = default;
+            }
 
             if (_bufferedUnitCounts.IsCreated)
-                _bufferedUnitCounts.Dispose();
+            {
+                disposeHandle = _bufferedUnitCounts.Dispose(disposeHandle);
+                _bufferedUnitCounts = default;
+            }
 
             if (_completedCycleCounts.IsCreated)
-                _completedCycleCounts.Dispose();
+            {
+                disposeHandle = _completedCycleCounts.Dispose(disposeHandle);
+                _completedCycleCounts = default;
+            }
+
+            return disposeHandle;
         }
     }
 
@@ -680,7 +759,9 @@ namespace Hecton8.Construction
             if (!_registered)
                 return;
 
-            AutonomousExtractorSystem runtime = AutonomousExtractorSystem.Instance;
+            AutonomousExtractorSystem runtime = GlobalRegistry.AutonomousExtractors;
+            if (runtime == null)
+                AutonomousExtractorSystem.TryGetActiveRuntime(out runtime);
             if (runtime != null)
                 runtime.UnregisterModule(this);
 

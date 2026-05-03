@@ -1,6 +1,6 @@
 # Root Docs Reference
 
-Date: `2026-05-01`
+Date: `2026-05-02`
 Status: `PENDING VERIFICATION`
 
 Purpose: explain what still remains in repository root versus `Docs/` after the current documentation cleanup.
@@ -59,3 +59,9 @@ Current canonical bundle entry points:
 
 The repository root text surface is now limited to active anchors.
 If new root text files appear, classify them before treating them as current authority.
+
+## 2026-05-02 Check
+
+Root documentation anchors remain the same: `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, and `BUILD_PLAYTEST_ISSUES.md`.
+Root `.log` files and `.codex-artifacts/**` are evidence artifacts, not documentation authority.
+Latest documentation sweep: `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.

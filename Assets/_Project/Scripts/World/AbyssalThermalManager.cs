@@ -20,7 +20,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-102)]
-    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsService
+    public sealed class AbyssalThermalManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IThermodynamicsService, IRandomEventListener, ILaserCutterEventListener
     {
         public struct ThermalFlowSample
         {
@@ -715,9 +715,8 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            LaserCutter.OnBeamStateChanged += HandleCutterBeamStateChanged;
-            RandomEventEvents.OnSeismicShockwave += HandleSeismicShockwave;
-            RandomEventEvents.OnEventStarted += HandleRandomEventStarted;
+            LaserCutterEvents.Register(this);
+            RandomEventEvents.Register(this);
             HectonFloatingOrigin.RegisterListener(this);
             ResolveDependencies();
             EnsureStorage();
@@ -729,9 +728,8 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
-            LaserCutter.OnBeamStateChanged -= HandleCutterBeamStateChanged;
-            RandomEventEvents.OnSeismicShockwave -= HandleSeismicShockwave;
-            RandomEventEvents.OnEventStarted -= HandleRandomEventStarted;
+            LaserCutterEvents.Unregister(this);
+            RandomEventEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
             _cutterBeamActive = false;
             _activeCutterTransform = null;
@@ -749,9 +747,8 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            LaserCutter.OnBeamStateChanged -= HandleCutterBeamStateChanged;
-            RandomEventEvents.OnSeismicShockwave -= HandleSeismicShockwave;
-            RandomEventEvents.OnEventStarted -= HandleRandomEventStarted;
+            LaserCutterEvents.Unregister(this);
+            RandomEventEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
             ClearHazardSources();
             ReleaseBuffers();
@@ -1191,8 +1188,9 @@ namespace Hecton8.World
             if (!_crystallizationJobActive || !_crystallizationJobHandle.IsCompleted)
                 return;
 
-            _crystallizationJobHandle.Complete();
-            _crystallizationJobHandle = default;
+            if (!DispatcherJobSwap.TryComplete(ref _crystallizationJobHandle, forceComplete: false))
+                return;
+
             _crystallizationJobActive = false;
 
             ResourceDistributionDirector director = resourceDistributionDirector != null
@@ -1277,7 +1275,7 @@ namespace Hecton8.World
                 WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref vegetationBridge);
 
             if (cutManager == null)
-                cutManager = SargassumCutManager.Instance;
+                cutManager = Hecton8.Core.GlobalRegistry.SargassumCut;
 
             if (playerTransform == null)
                 WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
@@ -2262,6 +2260,23 @@ namespace Hecton8.World
             }
         }
 
+        /// <summary>
+        /// Receives deferred laser cutter beam-state events used for abyssal cable cutting.
+        /// </summary>
+        /// <param name="payload">Blittable cutter event payload.</param>
+        public void OnLaserCutterEvent(in LaserCutterEventPayload payload)
+        {
+            if ((LaserCutterEventType)payload.EventType != LaserCutterEventType.BeamStateChanged)
+                return;
+
+            bool isActive = LaserCutterEvents.IsBeamActive(in payload);
+            Transform cutterTransform = null;
+            if (isActive)
+                LaserCutterEvents.TryResolveCutterTransform(payload.CutterInstanceId, out cutterTransform);
+
+            HandleCutterBeamStateChanged(cutterTransform, isActive);
+        }
+
         private void HandleCutterBeamStateChanged(Transform cutterTransform, bool isActive)
         {
             _activeCutterTransform = isActive ? cutterTransform : null;
@@ -2398,7 +2413,7 @@ namespace Hecton8.World
             if (hitPlayerTransport)
             {
                 mantaScooter.ApplyEmpDisruption(empMisfireDuration);
-                LocalizationManager manager = LocalizationManager.Instance;
+                LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
                 if (manager != null)
                     manager.RequestExternalPdaCorrosion(1f, empPdaCorrosionDuration);
             }
@@ -2725,6 +2740,20 @@ namespace Hecton8.World
             return IsThermalBiomeFamily(family);
         }
 
+        void IRandomEventListener.OnRandomEventStarted(RandomEventType type, float intensity)
+        {
+            HandleRandomEventStarted(type, intensity);
+        }
+
+        void IRandomEventListener.OnRandomEventEnded(RandomEventType type)
+        {
+        }
+
+        void IRandomEventListener.OnSeismicShockwave(in SeismicShockwaveEvent payload)
+        {
+            HandleSeismicShockwave(in payload);
+        }
+
         private void HandleRandomEventStarted(RandomEventType type, float intensity)
         {
             if (type != RandomEventType.ThermalEruption)
@@ -2733,7 +2762,7 @@ namespace Hecton8.World
             TriggerSeismicEruption(Mathf.Clamp01(intensity), ventHeatIntensity * Mathf.Max(1f, intensity));
         }
 
-        private void HandleSeismicShockwave(SeismicShockwaveEvent payload)
+        private void HandleSeismicShockwave(in SeismicShockwaveEvent payload)
         {
             if (_runtimeVentRegistrations.Count <= 0 && _activeVentCount <= 0)
                 return;
@@ -2806,7 +2835,7 @@ namespace Hecton8.World
             if (!_registeredThermodynamicsRuntime && Application.isPlaying)
             {
                 GlobalRegistry.RegisterThermodynamicsRuntime(this);
-                _registeredThermodynamicsRuntime = true;
+                _registeredThermodynamicsRuntime = ReferenceEquals(GlobalRegistry.Thermodynamics, this);
             }
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -2815,19 +2844,19 @@ namespace Hecton8.World
             if (!_registeredTick)
             {
                 GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-                _registeredTick = true;
+                _registeredTick = GlobalRegistry.Updatables.Contains(this);
             }
 
             if (!_registeredSlowTick)
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-                _registeredSlowTick = true;
+                _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
             }
 
             if (!_registeredLateFrameTick)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-                _registeredLateFrameTick = true;
+                _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
         }
 

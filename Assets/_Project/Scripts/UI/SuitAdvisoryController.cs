@@ -8,7 +8,7 @@ namespace Hecton8.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit Advisory Controller")]
-    public sealed class SuitAdvisoryController : MonoBehaviour
+    public sealed class SuitAdvisoryController : MonoBehaviour, IBaseIntegrityEventListener
     {
         [Header("References")]
         [SerializeField] private HectonSurvivalSystem survival;
@@ -86,6 +86,12 @@ namespace Hecton8.UI
             Unsubscribe();
         }
 
+        private void OnDestroy()
+        {
+            Unsubscribe();
+            BaseIntegrityEvents.AssertUnregistered(this, nameof(SuitAdvisoryController));
+        }
+
         private void ResolveReferences()
         {
             if (survival == null)
@@ -106,9 +112,7 @@ namespace Hecton8.UI
 
         private void Subscribe()
         {
-            BaseIntegrityEvents.OnModuleBreached += HandleModuleBreached;
-            BaseIntegrityEvents.OnModuleEmergency += HandleModuleEmergency;
-            BaseIntegrityEvents.OnModuleAirQualityWarning += HandleModuleAirQualityWarning;
+            BaseIntegrityEvents.Register(this);
 
             if (survival == null)
                 return;
@@ -137,9 +141,26 @@ namespace Hecton8.UI
                 survival.InjuryStateChanged -= HandleInjuryStateChanged;
             }
 
-            BaseIntegrityEvents.OnModuleBreached -= HandleModuleBreached;
-            BaseIntegrityEvents.OnModuleEmergency -= HandleModuleEmergency;
-            BaseIntegrityEvents.OnModuleAirQualityWarning -= HandleModuleAirQualityWarning;
+            BaseIntegrityEvents.Unregister(this);
+        }
+
+        /// <inheritdoc />
+        public void OnBaseIntegrityEvent(in BaseIntegrityEventPayload payload)
+        {
+            switch ((BaseIntegrityEventType)payload.EventType)
+            {
+                case BaseIntegrityEventType.Breached:
+                    HandleModuleBreached();
+                    break;
+
+                case BaseIntegrityEventType.Emergency:
+                    HandleModuleEmergency((BaseModuleFailureMode)payload.FailureMode, payload.Value);
+                    break;
+
+                case BaseIntegrityEventType.AirQualityWarning:
+                    HandleModuleAirQualityWarning(payload.Value);
+                    break;
+            }
         }
 
         private void EvaluateAll()

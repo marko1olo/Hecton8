@@ -2,6 +2,7 @@ using System;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Hecton8.Modding
@@ -20,22 +21,24 @@ namespace Hecton8.Modding
 
         private string _modId;
         private string _settingName;
+        private UnityAction<float> _cachedValueChangedAction;
         // COLD ALLOC: char[16] — cached slider value formatting buffer — owner: ModMenuSettingSliderView
         private readonly char[] _valueLabelBuffer = new char[16];
 
         private void Awake()
         {
+            _cachedValueChangedAction = HandleValueChanged; // COLD ALLOC: UnityAction<float>[1] - cached mod slider listener - owner: ModMenuSettingSliderView
             if (slider != null)
             {
-                slider.onValueChanged.RemoveListener(HandleValueChanged);
-                slider.onValueChanged.AddListener(HandleValueChanged);
+                slider.onValueChanged.RemoveListener(_cachedValueChangedAction);
+                slider.onValueChanged.AddListener(_cachedValueChangedAction);
             }
         }
 
         private void OnDestroy()
         {
             if (slider != null)
-                slider.onValueChanged.RemoveListener(HandleValueChanged);
+                slider.onValueChanged.RemoveListener(_cachedValueChangedAction);
         }
 
         /// <summary>

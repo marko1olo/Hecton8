@@ -21,7 +21,7 @@ namespace Hecton8.Biolum
     /// - Floor zones (FloorBiolumZone)
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class HectonBiolumManager : MonoBehaviour, ITickable, IUpdatable
+    public sealed class HectonBiolumManager : MonoBehaviour, ITickable, IUpdatable, ISonarPulseEventListener
     {
         private static readonly int _FloraOceanBiolumColorId = Shader.PropertyToID("_HectonOceanBiolumColor");
         private static readonly int _FloraOceanBiolumStrengthId = Shader.PropertyToID("_HectonOceanBiolumStrength");
@@ -87,6 +87,7 @@ namespace Hecton8.Biolum
         private bool _initialized = false;
         private Camera _cachedCamera = null;
         private Transform _cachedCameraTransform = null;
+        private bool _serviceRegistered = false;
         private bool _tickRegistered = false;
         private float _floraGlobalUpdateTimer = 0f;
         private float _nextCameraResolveTime = 0f;
@@ -133,14 +134,16 @@ namespace Hecton8.Biolum
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
-            SpectrumEvents.OnSonarPulse += HandleSonarPulse;
+            SpectrumEvents.RegisterSonarPulseListener(this);
         }
 
         private void OnDisable()
         {
+            TryUnregisterService();
             TryUnregister();
-            SpectrumEvents.OnSonarPulse -= HandleSonarPulse;
+            SpectrumEvents.UnregisterSonarPulseListener(this);
             _sonarPulseBoost = 0f;
 
             ResetFloraShaderGlobals();
@@ -148,8 +151,9 @@ namespace Hecton8.Biolum
 
         private void OnDestroy()
         {
+            TryUnregisterService();
             TryUnregister();
-            SpectrumEvents.OnSonarPulse -= HandleSonarPulse;
+            SpectrumEvents.UnregisterSonarPulseListener(this);
             _sonarPulseBoost = 0f;
 
             ResetFloraShaderGlobals();
@@ -524,6 +528,24 @@ namespace Hecton8.Biolum
             Shader.SetGlobalFloat(_FloraFloorBiolumStrengthId, 0f);
         }
 
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterBiolumManagerRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.BiolumManager, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterBiolumManagerRuntime(this);
+            _serviceRegistered = false;
+        }
+
         private void HandleSonarPulse(float radius)
         {
             float normalizedRadius = Mathf.Clamp01(radius / Mathf.Max(1f, _sonarReferenceRadius));
@@ -543,6 +565,11 @@ namespace Hecton8.Biolum
             UpdateFloraShaderGlobals();
         }
 
+        void ISonarPulseEventListener.OnSonarPulse(float radius)
+        {
+            HandleSonarPulse(radius);
+        }
+
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // EDITOR
         // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -553,7 +580,7 @@ namespace Hecton8.Biolum
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _tickRegistered = true;
+            _tickRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

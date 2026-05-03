@@ -45,13 +45,6 @@ namespace Hecton8.World
                             return false;
                         }
 
-                        if (!_samplingJobHandle.IsCompleted)
-                            return true;
-
-                        _samplingJobHandle.Complete();
-                        _isSamplingJobRunning = false;
-                        _scatterState = ScatterState.Processing;
-                        ProcessCompletedScatterSampling();
                         return true;
                     case ScatterState.Processing:
                         ProcessCompletedScatterSampling();
@@ -271,7 +264,7 @@ namespace Hecton8.World
             if (_isSamplingJobRunning)
             {
                 // COLD SYNC JOB: editor preview and bootstrap prime require immediate scatter output before continuing.
-                _samplingJobHandle.Complete();
+                DispatcherJobSwap.TryComplete(ref _samplingJobHandle, forceComplete: true);
                 _isSamplingJobRunning = false;
                 _scatterState = ScatterState.Processing;
                 ProcessCompletedScatterSampling();
@@ -285,11 +278,23 @@ namespace Hecton8.World
                 return true;
 
             // COLD SYNC JOB: editor preview and bootstrap prime require immediate scatter output before continuing.
-            _samplingJobHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _samplingJobHandle, forceComplete: true);
             _isSamplingJobRunning = false;
             _scatterState = ScatterState.Processing;
             ProcessCompletedScatterSampling();
             return true;
+        }
+
+        private void CompleteScatterSamplingJobIfReady()
+        {
+            if (!_isSamplingJobRunning)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _samplingJobHandle, forceComplete: false))
+                return;
+
+            _isSamplingJobRunning = false;
+            _scatterState = ScatterState.Processing;
         }
 
         private void ProcessCompletedScatterSampling()

@@ -7,6 +7,7 @@
 
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Hecton8.UI
@@ -32,6 +33,8 @@ namespace Hecton8.UI
         private Color _textActive;
         private Color _textInactive;
         private bool _isActive;
+        private Button _button;
+        private UnityAction _clickAction;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -109,18 +112,25 @@ namespace Hecton8.UI
         //  UNITY CALLBACKS
         // ══════════════════════════════════════════════════════════
 
+        private void Awake()
+        {
+            TryGetComponent(out _button);
+            _clickAction = OnClick; // COLD ALLOC: UnityAction[1] - cached PDA inventory filter click listener - owner: PDAInventoryFilterButton
+        }
+
         private void OnEnable()
         {
-            var button = GetComponent<Button>();
-            if (button != null)
-                button.onClick.AddListener(OnClick);
+            if (_button != null)
+            {
+                _button.onClick.RemoveListener(_clickAction);
+                _button.onClick.AddListener(_clickAction);
+            }
         }
 
         private void OnDisable()
         {
-            var button = GetComponent<Button>();
-            if (button != null)
-                button.onClick.RemoveListener(OnClick);
+            if (_button != null)
+                _button.onClick.RemoveListener(_clickAction);
         }
 
         private void OnClick()

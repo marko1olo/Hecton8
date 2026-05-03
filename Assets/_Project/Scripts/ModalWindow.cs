@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using TMPro;
 using Hecton.Localization;
@@ -12,7 +13,7 @@ namespace Hecton.UI.MainMenu
     /// Button labels auto-update on language change.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ModalWindow : MonoBehaviour
+    public sealed class ModalWindow : MonoBehaviour, ILocalizationLanguageChangedListener
     {
         // ──────────────────────────────────────────────
         // SINGLETON
@@ -44,6 +45,8 @@ namespace Hecton.UI.MainMenu
         // Cached delegates
         private Action _cachedOnConfirm;
         private Action _cachedOnCancel;
+        private UnityAction _confirmClickAction;
+        private UnityAction _cancelClickAction;
 
         // ══════════════════════════════════════════════
         // LIFECYCLE
@@ -61,18 +64,20 @@ namespace Hecton.UI.MainMenu
             }
 
             _instance = this;
+            _confirmClickAction = OnConfirmClicked; // COLD ALLOC: UnityAction[1] - cached modal confirm listener - owner: ModalWindow
+            _cancelClickAction = OnCancelClicked; // COLD ALLOC: UnityAction[1] - cached modal cancel listener - owner: ModalWindow
             AutoWireSceneReferences();
 
             if (btnConfirm != null)
             {
                 btnConfirm.onClick.RemoveAllListeners();
-                btnConfirm.onClick.AddListener(OnConfirmClicked);
+                btnConfirm.onClick.AddListener(_confirmClickAction);
             }
 
             if (btnCancel != null)
             {
                 btnCancel.onClick.RemoveAllListeners();
-                btnCancel.onClick.AddListener(OnCancelClicked);
+                btnCancel.onClick.AddListener(_cancelClickAction);
             }
 
             Hide();
@@ -163,17 +168,23 @@ namespace Hecton.UI.MainMenu
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += OnLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RefreshButtonLabels();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
 
         private void OnDestroy()
         {
+            if (btnConfirm != null)
+                btnConfirm.onClick.RemoveListener(_confirmClickAction);
+
+            if (btnCancel != null)
+                btnCancel.onClick.RemoveListener(_cancelClickAction);
+
             if (_instance == this)
             {
                 _instance = null;
@@ -184,6 +195,15 @@ namespace Hecton.UI.MainMenu
         // LOCALIZATION
         // ══════════════════════════════════════════════
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            OnLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void OnLanguageChanged(GameLanguage newLanguage)
         {
             RefreshButtonLabels();
@@ -191,7 +211,7 @@ namespace Hecton.UI.MainMenu
 
         private void RefreshButtonLabels()
         {
-            LocalizationManager loc = LocalizationManager.Instance;
+            LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
             if (loc == null) return;
 
             if (confirmButtonLabel != null)

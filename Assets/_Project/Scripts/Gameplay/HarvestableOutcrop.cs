@@ -17,7 +17,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class HarvestableOutcrop : MonoBehaviour, ICuttable, IInteractable, IInteractionSignalConsumer
+    public sealed class HarvestableOutcrop : MonoBehaviour, ICuttable, IInteractable, IInteractionSignalConsumer, ILocalizationLanguageChangedListener
     {
         private const string DefaultInteractText = "Break Rock";
         private const float MinimumToolPower = 0.05f;
@@ -133,14 +133,14 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
             ResetState();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
 
         /// <inheritdoc />
@@ -259,16 +259,26 @@ namespace Hecton8.Gameplay
             if (quantity <= 0)
                 return;
 
-            PlayerInventory playerInventory = PlayerInventory.Instance;
+            PlayerInventory playerInventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
             int rejectedQuantity = quantity;
             if (playerInventory != null)
             {
                 int itemHashId = LocHash.Compute(item.PersistentId);
-                PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(itemHashId, quantity, playerInventory.transform);
+                Transform inventoryTransform = playerInventory.transform;
+                PlayerInventory.ScavengeAttemptResult result = playerInventory.ScavengeAttempt(itemHashId, quantity, inventoryTransform);
                 if (result.AnyAdded)
                 {
-                    InteractionEvents.RaiseItemCollected(item, result.AddedQuantity, playerInventory.transform);
-                    HectonEventBus.Publish(new ItemCollectedEvent(item, itemHashId, result.AddedQuantity, playerInventory.transform));
+                    InteractionEvents.RaiseItemCollected(item, result.AddedQuantity, inventoryTransform);
+                    bool hasInteractorPosition = inventoryTransform != null;
+                    ulong interactorEntityId = hasInteractorPosition ? EntityId.ToULong(inventoryTransform.GetEntityId()) : 0ul;
+                    Vector3 interactorPosition = hasInteractorPosition ? inventoryTransform.position : Vector3.zero;
+                    HectonEventBus.Publish(new ItemCollectedEvent(
+                        item,
+                        itemHashId,
+                        result.AddedQuantity,
+                        interactorEntityId,
+                        interactorPosition,
+                        hasInteractorPosition));
                 }
 
                 if (result.IsSuccess)
@@ -277,7 +287,7 @@ namespace Hecton8.Gameplay
                 rejectedQuantity = result.RejectedQuantity;
             }
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry != null && rejectedQuantity > 0)
                 registry.TryRegisterDroppedItem(item, rejectedQuantity, dropPoint);
         }
@@ -324,7 +334,7 @@ namespace Hecton8.Gameplay
 
             if (hitParticlePrefab != null)
             {
-                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
                 if (pool != null)
                     pool.Spawn(hitParticlePrefab, hitPoint, Quaternion.identity);
             }
@@ -338,7 +348,7 @@ namespace Hecton8.Gameplay
 
             if (breakParticlePrefab != null)
             {
-                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
                 if (pool != null)
                     pool.Spawn(breakParticlePrefab, position, Quaternion.identity);
             }
@@ -448,6 +458,15 @@ namespace Hecton8.Gameplay
             _cachedInteractText = ResolveLocalized(LocalizationKeys.INTERACT_BREAK_ROCK, DefaultInteractText);
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
@@ -455,7 +474,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return fallback;
 

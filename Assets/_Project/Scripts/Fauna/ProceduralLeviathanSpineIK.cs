@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
@@ -18,7 +19,7 @@ namespace Hecton8.AI
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(FaunaBrain))]
-    internal sealed class ProceduralLeviathanSpineIK : MonoBehaviour, IUpdatable, IOriginShiftListener
+    internal sealed class ProceduralLeviathanSpineIK : MonoBehaviour, IUpdatable, ILateFrameTickable, IOriginShiftListener
     {
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct SolveSpineJob : IJobParallelForTransform
@@ -302,7 +303,7 @@ namespace Hecton8.AI
             if (deltaTime <= 0f || _faunaBrain == null || _vertebraAccessArray.length <= 0)
                 return;
 
-            if (!CompletePendingJob(force: false))
+            if (_jobScheduled)
                 return;
 
             if (!TryResolveHeadPose(out float3 headPosition, out float3 headForward, out float speedNormalized))
@@ -413,6 +414,11 @@ namespace Hecton8.AI
             _jobScheduled = true;
         }
 
+        public void LateFrameTick()
+        {
+            CompletePendingJob(force: false);
+        }
+
         public void OnOriginShift(in OriginShiftEventData shiftData)
         {
             CompletePendingJob();
@@ -433,6 +439,7 @@ namespace Hecton8.AI
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -441,6 +448,7 @@ namespace Hecton8.AI
             if (!_registered)
                 return;
 
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _registered = false;
         }
@@ -451,7 +459,7 @@ namespace Hecton8.AI
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _registeredOriginShiftListener = true;
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void TryUnregisterOriginShiftListener()
@@ -468,11 +476,9 @@ namespace Hecton8.AI
             if (!_jobScheduled)
                 return true;
 
-            if (!force && !_pendingSpineHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _pendingSpineHandle, force))
                 return false;
 
-            _pendingSpineHandle.Complete();
-            _pendingSpineHandle = default;
             _jobScheduled = false;
             ApplySolvedRotations();
             return true;

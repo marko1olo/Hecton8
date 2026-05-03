@@ -1,6 +1,6 @@
 # HECTON-8 Doc Authority Classification
 
-Date: 2026-05-01
+Date: 2026-05-02
 Status: PENDING VERIFICATION
 Scope: active documentation importance and authority sorting across repository root and `Docs/`
 
@@ -24,13 +24,14 @@ These files are the current navigation spine.
 | 1 | `AGENTS.md` | PRIMARY OPERATING CONTRACT | Defines current rules, architecture constraints, verification discipline, and rejection conditions. |
 | 2 | `.agents-skills/*` | PRIMARY MANDATES | Task-specific rules. Must be read selectively before code or technical reports. |
 | 3 | `Docs/README.md` | PRIMARY DOC ENTRY | Current doc entry point and archive/deprecated routing. |
-| 4 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY CURRENT STATE | Best conceptual current-state summary; explicitly refuses runtime-certification claims. |
-| 5 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY PROJECT VERDICT | Blunt source/doc-backed project-level conclusion; explicitly not runtime proof. |
-| 6 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` | PRIMARY WORKSPACE ATLAS | Current workspace orientation, active maps, and source-count deltas. |
-| 7 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | PRIMARY CONCEPT MAP | Current load-bearing/transitional/presentation/experimental system classification. |
-| 8 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md` | PRIMARY COVERAGE MAP | Domain-by-domain map of which docs to trust first. |
-| 9 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md` | PRIMARY RISK MATRIX | Current broad subsystem reality map. |
-| 10 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | PRIMARY ACTION QUEUE | Current high-risk work queue and verification caveats. |
+| 4 | `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | PRIMARY DOCSET ACTUALITY | Latest root/`Docs` read-pass, source-count sync, link-integrity update, and local build-evidence addendum. |
+| 5 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY CURRENT STATE | Stable current-state anchor; now carries May 2 evidence and still refuses runtime-certification claims. |
+| 6 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY PROJECT VERDICT | Blunt source/doc-backed project-level conclusion; explicitly not runtime proof. |
+| 7 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` | PRIMARY WORKSPACE ATLAS | Current workspace orientation, active maps, and source-count deltas. |
+| 8 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | PRIMARY CONCEPT MAP | Current load-bearing/transitional/presentation/experimental system classification. |
+| 9 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md` | PRIMARY COVERAGE MAP | Domain-by-domain map of which docs to trust first. |
+| 10 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md` | PRIMARY RISK MATRIX | Current broad subsystem reality map. |
+| 11 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | PRIMARY ACTION QUEUE | Current high-risk work queue and verification caveats. |
 
 ## 2. New / High-Value Reports
 
@@ -38,10 +39,11 @@ These are new enough and important enough to stay active.
 
 | File | Authority class | Keep active? | Notes |
 |---|---|---|---|
-| `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY CURRENT STATE | yes | First report to read for current system shape. |
+| `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY CURRENT STATE | yes | First conceptual system-shape report after the May 2 sweep; stable path now includes May 2 evidence. |
+| `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | PRIMARY DOCSET ACTUALITY | yes | Latest documentation read-pass, source-count sync, broken-link patch, and dotnet build-evidence addendum. |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY PROJECT VERDICT | yes | Honest project-level verdict after current docs/source scan; not Play Mode proof. |
 | `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | ACTIVE COMPILE DELTA | yes | Latest editor compile/MCP console evidence for Sargassum/Emergency relay listener migration and spatial-hash fix. |
-| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | ACTIVE COMPILE DELTA | yes | Supersedes latest compile line numbers after `VegetationJobRecovery.cs.meta` restoration; records MCP console caveat. |
+| `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | ACTIVE COMPILE DELTA | yes | Supersedes latest compile line numbers after `VegetationJobRecovery.cs.meta` restoration; records Bee/backend recovery and final MCP console zero-entry check. |
 | `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` | ACTIVE HIGH-RISK REPORT | yes | Current concurrency/headless/memory/raycast/event-risk map. |
 | `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md` | ACTIVE SURGERY REPORT | yes | Current coroutine/pool/telemetry surgery state; not runtime proof. |
 | `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md` | ACTIVE COMPLIANCE REPORT WITH CAUTION | yes | Important because it rejects fake `MCP VERIFIED` status and records remaining compile/console limits. |
@@ -111,11 +113,12 @@ When a task asks "what is current":
 1. Read `AGENTS.md`.
 2. Read relevant `.agents-skills/` mandates.
 3. Read `Docs/README.md`.
-4. Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
-5. Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`.
-6. Read `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`.
-7. Read domain-specific current maps.
-8. Open source files.
+4. Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+5. Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+6. Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`.
+7. Read `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`.
+8. Read domain-specific current maps.
+9. Open source files.
 
 Do not start from archive, deprecated folders, copied external prompts, patch files, or old root artifacts.
 

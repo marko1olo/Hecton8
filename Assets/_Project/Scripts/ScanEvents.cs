@@ -81,25 +81,42 @@ namespace Hecton8.Gameplay
 
     public static class ScanEvents
     {
+        private const int PendingEventCapacity = 16;
+
         // COLD ALLOC: RegistryBucket<IScanEventListener>[16] - scan event listener registry drained on dispatcher LateUpdate - owner: ScanEvents
         private static readonly RegistryBucket<IScanEventListener> _listeners = new RegistryBucket<IScanEventListener>(16);
         // COLD ALLOC: Dictionary<uint,ScanEntryMetadata>[128] - hashed scan entry metadata cache for queue listeners that still own authored strings - owner: ScanEvents
         private static readonly Dictionary<uint, ScanEntryMetadata> _entryMetadataByHash = new Dictionary<uint, ScanEntryMetadata>(128);
         private static NativeQueue<ScanEventPayload> _pendingEvents;
+        private static NativeQueue<ScanEventPayload> _nextFrameEvents;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ScanEvents), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
             }
 
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ScanEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
             _listeners.Clear();
             _entryMetadataByHash.Clear();
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         public static void Register(IScanEventListener listener)
@@ -127,18 +144,37 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            while (!_pendingEvents.IsEmpty())
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                     return;
 
                 if (!_pendingEvents.TryDequeue(out ScanEventPayload payload))
-                    return;
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
 
                 IScanEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnScanEvent(in payload);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                        rawArray[i].OnScanEvent(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
             }
         }
 
@@ -156,8 +192,7 @@ namespace Hecton8.Gameplay
 
         public static void RaiseScanTriggered(float3 center, float radius)
         {
-            EnsureInitialized();
-            _pendingEvents.Enqueue(new ScanEventPayload
+            Enqueue(new ScanEventPayload
             {
                 Position = center,
                 Radius = radius,
@@ -173,8 +208,7 @@ namespace Hecton8.Gameplay
 
         public static void RaiseNodeFound(float3 worldPos)
         {
-            EnsureInitialized();
-            _pendingEvents.Enqueue(new ScanEventPayload
+            Enqueue(new ScanEventPayload
             {
                 Position = worldPos,
                 Radius = 0f,
@@ -203,19 +237,7 @@ namespace Hecton8.Gameplay
             uint categoryHash = string.IsNullOrWhiteSpace(category) ? 0u : unchecked((uint)LocHash.Compute(category));
             uint summaryHash = string.IsNullOrWhiteSpace(summary) ? 0u : unchecked((uint)LocHash.Compute(summary));
 
-            _entryMetadataByHash[entryHash] = new ScanEntryMetadata(
-                entryId,
-                title,
-                category,
-                summary,
-                kind,
-                entryHash,
-                titleHash,
-                categoryHash,
-                summaryHash);
-
-            EnsureInitialized();
-            _pendingEvents.Enqueue(new ScanEventPayload
+            if (!Enqueue(new ScanEventPayload
             {
                 Position = default,
                 Radius = 0f,
@@ -226,7 +248,21 @@ namespace Hecton8.Gameplay
                 EventType = (ushort)ScanEventType.EntryDiscovered,
                 EntryKind = (byte)kind,
                 Reserved = 0
-            });
+            }))
+            {
+                return;
+            }
+
+            _entryMetadataByHash[entryHash] = new ScanEntryMetadata(
+                entryId,
+                title,
+                category,
+                summary,
+                kind,
+                entryHash,
+                titleHash,
+                categoryHash,
+                summaryHash);
         }
 
         public static void RaiseFaunaFeedingObserved(uint entryHash, float3 worldPos)
@@ -234,8 +270,7 @@ namespace Hecton8.Gameplay
             if (entryHash == 0u)
                 return;
 
-            EnsureInitialized();
-            _pendingEvents.Enqueue(new ScanEventPayload
+            Enqueue(new ScanEventPayload
             {
                 Position = worldPos,
                 Radius = 0f,
@@ -254,8 +289,7 @@ namespace Hecton8.Gameplay
             if (entryHash == 0u)
                 return;
 
-            EnsureInitialized();
-            _pendingEvents.Enqueue(new ScanEventPayload
+            Enqueue(new ScanEventPayload
             {
                 Position = worldPos,
                 Radius = 0f,
@@ -269,11 +303,46 @@ namespace Hecton8.Gameplay
             });
         }
 
+        private static bool Enqueue(in ScanEventPayload payload)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return false;
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return true;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
+        }
+
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
             {
                 _pendingEvents = new NativeQueue<ScanEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ScanEventPayload>[16] - deferred scan event lane flushed by SystemDispatcher LateUpdate - owner: ScanEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(ScanEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<ScanEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ScanEventPayload>[16] - next-frame scan event lane prevents same-frame reentrant dispatch - owner: ScanEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(ScanEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
             }
         }
 
@@ -282,9 +351,60 @@ namespace Hecton8.Gameplay
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out _))
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                return;
+
+            if (_pendingEvents.IsEmpty())
+                PromoteNextFrameEventsIfFrontEmpty();
+
+            if (_pendingEventCount > 0 &&
+                !DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
             {
+                return;
             }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<ScanEventPayload> queue,
+            ref int pendingCount)
+        {
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<ScanEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
     }
 }

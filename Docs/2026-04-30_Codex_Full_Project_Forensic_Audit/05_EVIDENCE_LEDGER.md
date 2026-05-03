@@ -13,54 +13,57 @@ Status: PENDING VERIFICATION
 
 ## Project Surface Counts
 
-- First-party C# files under `Assets/_Project/`: 1060
-- First-party C# files under `Assets/_Project/Scripts`: 1020
-- First-party C# LOC under `Assets/_Project/Scripts`: 544728
-- `GlobalRegistry.` usage count: 1770
-- Jobs/native collection broad matches: 4878
-- `BurstCompile` attribute matches: 163
-- `Update` / `LateUpdate` / `FixedUpdate` method-name matches in first-party scripts: 30
-- `StartCoroutine` / `yield return` broad matches: 149
-- strict `StartCoroutine(` call sites: 15
-- `.Complete()` / `JobHandle.Complete()` matches: 150
-- Scene-search / `Resources.Load` style matches: 159
-- Addressables load/release matches: 1
-- Static `Instance`-style broad occurrences: 514
-- `DontDestroyOnLoad` occurrences: 64
+2026-05-02 refresh source: `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+
+- First-party C# files under `Assets/_Project/`: 1087
+- First-party C# files under `Assets/_Project/Scripts`: 1047
+- First-party C# LOC under `Assets/_Project/Scripts`: 571562
+- `GlobalRegistry.` usage count: 2023
+- Jobs/native collection broad matches: 5230
+- `BurstCompile` attribute matches: 162
+- `Update` / `LateUpdate` / `FixedUpdate` method-name matches in first-party scripts: 28
+- `StartCoroutine` / `yield return` broad matches: 5
+- strict `StartCoroutine(` call sites: 0
+- `.Complete(` matches: 6
+- Scene-search / `Resources.Load` style matches: 51
+- Addressables load/release matches: 2
+- Static `Instance`-style broad occurrences: 616
+- `DontDestroyOnLoad` occurrences: 66
 
 ## Script Area Density
 
 Top script folders by file count:
-- `Editor`: 129
-- `World`: 115
-- `Gameplay`: 106
+- `Root`: 317
+- `Editor`: 130
+- `World`: 130
+- `Gameplay`: 107
 - `UI`: 79
-- `Core`: 35
+- `Core`: 39
 - `Construction`: 25
 - `Optimization`: 22
 - `Visor`: 19
 - `Fauna`: 17
-- `ModdingAPI`: 16
+- `ModdingAPI`: 20
 - `Tools`: 15
 - `Audio`: 13
 
 Interpretation:
 - The project is system-heavy, world-heavy, and UI-heavy.
 - Runtime complexity is not concentrated in one clean vertical slice.
-- The `Editor` folder is now the largest file-count area; editor tooling has become a major maintenance surface, not a side note.
+- The root `Assets/_Project/Scripts` surface is now the largest file-count area; root-script sprawl is a major ownership signal, not a side note.
 
 ## Largest First-Party Owners
 
-- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`
-- `Assets/_Project/Scripts/HectonPlayerMovement.cs`
 - `Assets/_Project/Scripts/WorldProceduralScatterDirector.cs`
-- `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs`
+- `Assets/_Project/Scripts/HectonPlayerMovement.cs`
+- `Assets/_Project/Scripts/World/HectonMapMagicVegetationBridge.cs`
 - `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`
-- `Assets/_Project/Scripts/FaunaDirector.cs`
+- `Assets/_Project/Scripts/HectonUnderwaterVisuals.cs`
+- `Assets/_Project/Scripts/SaveBinaryStorage.cs`
 - `Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs`
-- `Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs`
+- `Assets/_Project/Scripts/World/PersistentWorldRegistry.cs`
 - `Assets/_Project/Scripts/HectonVoxelEngine.cs`
-- `Assets/_Project/Scripts/WorldProceduralFieldSampler.cs`
+- `Assets/_Project/Scripts/FaunaDirector.cs`
 
 ## Build And Scene Reality
 

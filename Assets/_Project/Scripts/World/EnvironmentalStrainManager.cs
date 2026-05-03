@@ -28,6 +28,7 @@ namespace Hecton8.World
         private HectonEventSubscription _itemCollectedSubscription;
         private HectonEventSubscription _itemRecycledSubscription;
         private HectonEventSubscription _itemDiscardedSubscription;
+        private bool _serviceRegistered;
 
         // COLD ALLOC: long[128] — packed 1 km sector keys for local ecological strain lookup — owner: EnvironmentalStrainManager
         private readonly long[] _sectorStrainKeys = new long[MaxTrackedSectorStrainSlots];
@@ -103,6 +104,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            TryRegisterService();
             GlobalRegistry.Save?.Register(this);
 
             if (_itemCollectedSubscription == null)
@@ -124,6 +126,7 @@ namespace Hecton8.World
             _itemRecycledSubscription = null;
             _itemDiscardedSubscription?.Dispose();
             _itemDiscardedSubscription = null;
+            TryUnregisterService();
         }
 
         private void OnDestroy()
@@ -135,9 +138,28 @@ namespace Hecton8.World
             _itemRecycledSubscription = null;
             _itemDiscardedSubscription?.Dispose();
             _itemDiscardedSubscription = null;
+            TryUnregisterService();
 
             if (_instance == this)
                 _instance = null;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterEnvironmentalStrainRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.EnvironmentalStrain, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterEnvironmentalStrainRuntime(this);
+            _serviceRegistered = false;
         }
 
         private void HandleItemCollected(ItemCollectedEvent itemCollectedEvent)
@@ -145,7 +167,7 @@ namespace Hecton8.World
             if (itemCollectedEvent == null || itemCollectedEvent.Item == null || itemCollectedEvent.Quantity <= 0)
                 return;
 
-            if (itemCollectedEvent.Interactor == null)
+            if (!itemCollectedEvent.HasInteractorPosition)
                 return;
 
             ItemData item = itemCollectedEvent.Item;
@@ -153,7 +175,7 @@ namespace Hecton8.World
                 return;
 
             AccumulateSectorStrain(
-                itemCollectedEvent.Interactor.position,
+                itemCollectedEvent.InteractorPosition,
                 itemCollectedEvent.Quantity * HarvestedResourceSectorStrainPerUnit);
         }
 

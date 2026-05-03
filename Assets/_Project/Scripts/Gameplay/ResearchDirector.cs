@@ -124,8 +124,8 @@ namespace Hecton8.Gameplay
 
         private static void ResolveNode(XenoBiologyTree.Node node)
         {
-            if (node.LoreUnlockBits != 0UL && LoreDatabaseManager.Instance != null)
-                LoreDatabaseManager.Instance.UnlockByPackedBits(node.LoreUnlockBits);
+            if (node.LoreUnlockBits != 0UL && Hecton8.Core.GlobalRegistry.LoreDatabase != null)
+                Hecton8.Core.GlobalRegistry.LoreDatabase.UnlockByPackedBits(node.LoreUnlockBits);
 
             QuestManager questManager = GlobalRegistry.Quest;
             if (!string.IsNullOrWhiteSpace(node.UnlockQuestId) && questManager != null)

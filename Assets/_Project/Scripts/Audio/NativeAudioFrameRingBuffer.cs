@@ -1,5 +1,6 @@
 using System;
 using System.Threading;
+using Hecton8.Core;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
 using Unity.Mathematics;
@@ -63,6 +64,8 @@ namespace Hecton8.Audio
             Dispose();
             _frames = new NativeArray<float>(resolvedCapacity * resolvedChannels, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[capacityFrames*channels] - lock-free procedural audio frame ring buffer storage - owner: AudioFrameSpscRingBuffer
             _sharedState = new NativeArray<int>(NativeAudioKernelRingBufferDescriptor.SharedStateSlotCount, Allocator.AudioKernel, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[6] - shared SPSC read/write state and native bridge guards - owner: AudioFrameSpscRingBuffer
+            NativeMemorySentinel.RegisterNativeArray(_frames, nameof(AudioFrameSpscRingBuffer), nameof(_frames), NativeAllocationLifetime.Session);
+            NativeMemorySentinel.RegisterNativeArray(_sharedState, nameof(AudioFrameSpscRingBuffer), nameof(_sharedState), NativeAllocationLifetime.Session);
             _capacityFrames = resolvedCapacity;
             _capacityMask = resolvedCapacity - 1;
             _sourceChannels = resolvedChannels;
@@ -214,10 +217,16 @@ namespace Hecton8.Audio
         public void Dispose()
         {
             if (_frames.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_frames);
                 _frames.Dispose();
+            }
 
             if (_sharedState.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_sharedState);
                 _sharedState.Dispose();
+            }
 
             _frames = default;
             _sharedState = default;

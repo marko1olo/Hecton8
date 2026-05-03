@@ -26,6 +26,7 @@ namespace Hecton8.Optimization
         [SerializeField] private int maxDeferredReleasesPerFrame = 8;
 
         private bool _registeredTick;
+        private bool _registeredService;
         private long _frameSequence;
         private Texture2D _checkerboardTexture;
         private Material _checkerboardMaterial;
@@ -64,6 +65,7 @@ namespace Hecton8.Optimization
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
         }
 
@@ -75,11 +77,13 @@ namespace Hecton8.Optimization
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
             DisposeFallbackAssets();
             _registry.Clear();
             _pendingRelease.Clear();
@@ -174,7 +178,7 @@ namespace Hecton8.Optimization
 
             if (record.ActiveRequestId != 0)
             {
-                AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+                AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
                 if (dispatcher != null)
                     dispatcher.Complete(record.ActiveRequestId, true);
 
@@ -270,7 +274,7 @@ namespace Hecton8.Optimization
 
             if (record.ActiveRequestId != 0)
             {
-                AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+                AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
                 if (dispatcher != null)
                     dispatcher.Complete(record.ActiveRequestId, false);
 
@@ -312,6 +316,15 @@ namespace Hecton8.Optimization
             _registeredTick = true;
         }
 
+        private void TryRegisterService()
+        {
+            if (_registeredService || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterAssetLifecycleRuntime(this);
+            _registeredService = true;
+        }
+
         private void TryUnregister()
         {
             if (!_registeredTick)
@@ -319,6 +332,15 @@ namespace Hecton8.Optimization
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
             _registeredTick = false;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_registeredService)
+                return;
+
+            GlobalRegistry.UnregisterAssetLifecycleRuntime(this);
+            _registeredService = false;
         }
 
         private void PumpRetries()
@@ -354,7 +376,7 @@ namespace Hecton8.Optimization
             if (record.ActiveRequestId != 0)
                 return;
 
-            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
             if (dispatcher == null)
                 return;
 
@@ -398,7 +420,7 @@ namespace Hecton8.Optimization
             if (record.RefCount > 0)
                 return false;
 
-            AssetLoadDispatcher dispatcher = AssetLoadDispatcher.Instance;
+            AssetLoadDispatcher dispatcher = GlobalRegistry.AssetLoadDispatcher;
             if (dispatcher != null)
             {
                 dispatcher.CancelByAssetKey(key);

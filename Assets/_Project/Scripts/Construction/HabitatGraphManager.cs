@@ -207,9 +207,7 @@ namespace Hecton8.Construction
                 if (baseModule == null || !baseModule.isActiveAndEnabled || baseModule.IsBreached)
                     continue;
 
-                Transform moduleTransform = baseModule.transform;
-                Vector3 runtimePosition = moduleTransform.position;
-                if (!bridge.TrySampleAbyssalFlow(runtimePosition, out Vector3 flowVector))
+                if (!bridge.TrySampleAbyssalFlow(module.Position, out Vector3 flowVector))
                     continue;
 
                 float flowSpeedSquared = flowVector.sqrMagnitude;
@@ -241,7 +239,8 @@ namespace Hecton8.Construction
         {
             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
             {
-                BaseModule baseModule = _moduleBuffer[moduleIndex].BaseModule;
+                ModuleRecord module = _moduleBuffer[moduleIndex];
+                BaseModule baseModule = module.BaseModule;
                 if (baseModule == null || !baseModule.isActiveAndEnabled)
                     continue;
 
@@ -251,7 +250,7 @@ namespace Hecton8.Construction
                 if (structuralMassKilograms <= 0f || !math.isfinite(structuralMassKilograms))
                     continue;
 
-                baseModule.QueueHydroStructuralLoad(structuralMassKilograms, baseModule.transform.position, deltaTime);
+                baseModule.QueueHydroStructuralLoad(structuralMassKilograms, module.Position, deltaTime);
             }
         }
 
@@ -287,7 +286,8 @@ namespace Hecton8.Construction
                 while (queueHead < queueTail)
                 {
                     int currentNodeIndex = _anchorTraversalQueue[queueHead++];
-                    BaseModule currentModule = _moduleBuffer[currentNodeIndex].BaseModule;
+                    ModuleRecord currentRecord = _moduleBuffer[currentNodeIndex];
+                    BaseModule currentModule = currentRecord.BaseModule;
                     if (currentModule != null && currentModule.isActiveAndEnabled)
                     {
                         float floodMassKilograms = currentModule.ResolveFloodWaterMassKilograms();
@@ -296,7 +296,7 @@ namespace Hecton8.Construction
                         if (structuralMassKilograms > 0f && math.isfinite(structuralMassKilograms))
                         {
                             totalFloodMassKilograms += structuralMassKilograms;
-                            weightedFloodCentroid += currentModule.transform.position * structuralMassKilograms;
+                            weightedFloodCentroid += (Vector3)currentRecord.Position * structuralMassKilograms;
                         }
                     }
 
@@ -522,19 +522,22 @@ namespace Hecton8.Construction
 
                 ModuleMarker marker = moduleObject.TryGetComponent(out ModuleMarker resolvedMarker) ? resolvedMarker : null;
                 BaseModule baseModule = moduleObject.TryGetComponent(out BaseModule resolvedBaseModule) ? resolvedBaseModule : null;
+                EntityId entityId = moduleObject.GetEntityId();
+                uint nodeId = unchecked((uint)EntityId.ToULong(entityId));
+                Vector3 modulePosition = moduleObject.transform.position;
 
                 _moduleBuffer.Add(new ModuleRecord
                 {
                     ModuleObject = moduleObject,
                     Marker = marker,
                     BaseModule = baseModule,
-                    Position = moduleObject.transform.position,
-                    NodeId = unchecked((uint)EntityId.ToULong(moduleObject.GetEntityId())),
+                    Position = modulePosition,
+                    NodeId = nodeId,
                     IsAnchorNode = ResolveStructuralAnchorState(baseModule, marker),
                     IsEmergencyAirlock = ResolveEmergencyAirlockState(baseModule, marker)
                 });
 
-                _moduleIndexByNodeId[unchecked((uint)EntityId.ToULong(moduleObject.GetEntityId()))] = _moduleBuffer.Count - 1;
+                _moduleIndexByNodeId[nodeId] = _moduleBuffer.Count - 1;
             }
         }
 
@@ -625,8 +628,12 @@ namespace Hecton8.Construction
             if (_temporaryBypassBuffer.Count >= _temporaryBypassBuffer.Capacity)
                 return false;
 
-            Vector3 sourcePosition = sourceModule.transform.position;
-            Vector3 destinationPosition = destinationModule.transform.position;
+            if (!TryResolveModuleGraphPosition(sourceNodeId, sourceModule, out Vector3 sourcePosition) ||
+                !TryResolveModuleGraphPosition(destinationNodeId, destinationModule, out Vector3 destinationPosition))
+            {
+                return false;
+            }
+
             Vector3 lowPosition = sourceNodeId == lowNodeId ? sourcePosition : destinationPosition;
             Vector3 highPosition = sourceNodeId == lowNodeId ? destinationPosition : sourcePosition;
             _temporaryBypassBuffer.Add(new TemporaryBypassRecord
@@ -638,6 +645,26 @@ namespace Hecton8.Construction
             });
 
             injectedDirectly = TryInjectTemporaryBypassIntoLiveCsr(lowNodeId, highNodeId, lowPosition, highPosition);
+            return true;
+        }
+
+        private bool TryResolveModuleGraphPosition(uint nodeId, GameObject fallbackModule, out Vector3 position)
+        {
+            if (_moduleIndexByNodeId.TryGetValue(nodeId, out int moduleIndex) &&
+                moduleIndex >= 0 &&
+                moduleIndex < _moduleBuffer.Count)
+            {
+                position = _moduleBuffer[moduleIndex].Position;
+                return true;
+            }
+
+            if (fallbackModule == null)
+            {
+                position = default;
+                return false;
+            }
+
+            position = fallbackModule.transform.position;
             return true;
         }
 

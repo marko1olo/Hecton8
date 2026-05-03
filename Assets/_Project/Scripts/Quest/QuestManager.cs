@@ -28,6 +28,8 @@ namespace Hecton8.Quest
         private static uint[] s_stagedLoadedPackedState;
         private static QuestSaveHeader s_stagedLoadedQuestHeader;
 
+        internal static QuestManager ActiveRuntimeInstance { get; private set; }
+
         // COLD ALLOC: Dictionary<string,QuestData>[64] - authored quest lookup by stable questId - owner: QuestManager
         private readonly Dictionary<string, QuestData> _questLookup = new Dictionary<string, QuestData>(64);
         // COLD ALLOC: Dictionary<uint,QuestData>[64] - authored quest lookup by stable FNV quest hash - owner: QuestManager
@@ -46,6 +48,7 @@ namespace Hecton8.Quest
         {
             s_stagedLoadedPackedState = null;
             s_stagedLoadedQuestHeader = default;
+            ActiveRuntimeInstance = null;
         }
 
         public int SavePriority => 7;
@@ -73,6 +76,7 @@ namespace Hecton8.Quest
                 return;
             }
 
+            ActiveRuntimeInstance = this;
             GlobalRegistry.RegisterQuestRuntime(this);
             _serviceRegistered = true;
 
@@ -83,6 +87,9 @@ namespace Hecton8.Quest
 
         private void OnDisable()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             _graphEvaluator?.Unbind();
 
             _registeredSaveService?.Unregister(this);
@@ -97,6 +104,9 @@ namespace Hecton8.Quest
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             _registeredSaveService?.Unregister(this);
             _registeredSaveService = null;
 

@@ -47,7 +47,7 @@ namespace Hecton8.Gameplay
     /// Implements IInteractable for scanner tool integration.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ScannableFragment : MonoBehaviour, IInteractable
+    public sealed class ScannableFragment : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
         // ══════════════════════════════════════════════════════════
         //  SHADER PROPERTY IDs — cached once, zero GC
@@ -227,14 +227,14 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
             ResetState();
         }
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -533,6 +533,15 @@ namespace Hecton8.Gameplay
                    !string.Equals(interactText, DefaultInteractText, System.StringComparison.Ordinal);
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
@@ -540,7 +549,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
@@ -575,7 +584,7 @@ namespace Hecton8.Gameplay
 
         private void TryUnlockLoreStages(float previousProgressNormalized, float currentProgressNormalized)
         {
-            if (researchData == null || LoreDatabaseManager.Instance == null)
+            if (researchData == null || Hecton8.Core.GlobalRegistry.LoreDatabase == null)
                 return;
 
             TryUnlockLoreStage(previousProgressNormalized, currentProgressNormalized, 0.25f, QuarterLoreStageBit, 0);
@@ -602,7 +611,7 @@ namespace Hecton8.Gameplay
                 researchData.TryGetLoreUnlockMask(stageIndex, out ulong packedBits) &&
                 packedBits != 0UL)
             {
-                LoreDatabaseManager.Instance.UnlockByPackedBits(packedBits);
+                Hecton8.Core.GlobalRegistry.LoreDatabase.UnlockByPackedBits(packedBits);
             }
         }
     }

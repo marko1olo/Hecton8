@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Hecton8.AI;
 using Hecton8.Core;
@@ -804,7 +804,7 @@ namespace Hecton8.World
             if (!_hlodCullScheduled)
                 return;
 
-            if (!VegetationLateFrameJobSwap.TryComplete(ref _hlodCullHandle, forceComplete))
+            if (!DispatcherJobSwap.TryComplete(ref _hlodCullHandle, forceComplete))
                 return;
 
             _hlodCullScheduled = false;
@@ -917,7 +917,7 @@ namespace Hecton8.World
             if (!_abyssalPathScheduled)
                 return;
 
-            if (!VegetationLateFrameJobSwap.TryComplete(ref _abyssalPathHandle, forceComplete))
+            if (!DispatcherJobSwap.TryComplete(ref _abyssalPathHandle, forceComplete))
                 return;
 
             _abyssalPathScheduled = false;

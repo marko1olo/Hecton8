@@ -65,6 +65,7 @@ namespace Hecton8.Physics
         private float _farDistanceSqr;
         private float _cullDistanceSqr;
         private bool _tickRegistered;
+        private bool _serviceRegistered;
 
         // â”€â”€ Observer resolve cooldown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Ð•ÑÐ»Ð¸ observer Ð½Ðµ Ð½Ð°Ð·Ð½Ð°Ñ‡ÐµÐ½ Ð¸ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½ â€” Ð½Ðµ Ð´Ñ‘Ñ€Ð³Ð°ÐµÐ¼ bootstrap ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€.
@@ -94,16 +95,19 @@ namespace Hecton8.Physics
         private void OnEnable()
         {
             TryRegister();
+            TryRegisterService();
         }
 
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (_instance == this)
                 _instance = null;
@@ -342,6 +346,24 @@ namespace Hecton8.Physics
 
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
             _tickRegistered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+                return;
+
+            GlobalRegistry.RegisterAmbientWaterMotionRuntime(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterAmbientWaterMotionRuntime(this);
+            _serviceRegistered = false;
         }
 
 #if UNITY_EDITOR

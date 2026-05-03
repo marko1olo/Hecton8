@@ -82,6 +82,9 @@ namespace JBooth.MicroSplat
       [UnityEditor.Callbacks.DidReloadScripts]
       private static void OnScriptsReloaded()
       {
+         if (Application.isBatchMode)
+            return;
+
          MicroSplatObject.SyncAll();
       }
       private void OnSceneSave(Scene scene)

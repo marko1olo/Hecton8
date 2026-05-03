@@ -23,7 +23,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class EndingTerminalInteractable : MonoBehaviour, IInteractable
+    public sealed class EndingTerminalInteractable : MonoBehaviour, IInteractable, IEndingEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -50,15 +50,13 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            EndingEvents.OnEndingConditionMet += HandleConditionMet;
-            EndingEvents.OnEndingChosen       += HandleEndingChosen;
+            EndingEvents.Register(this);
             UpdateActiveIndicator();
         }
 
         private void OnDisable()
         {
-            EndingEvents.OnEndingConditionMet -= HandleConditionMet;
-            EndingEvents.OnEndingChosen       -= HandleEndingChosen;
+            EndingEvents.Unregister(this);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -79,7 +77,7 @@ namespace Hecton8.Gameplay
 
         public void Interact(Transform interactor)
         {
-            EndingSystem ending = EndingSystem.Instance;
+            EndingSystem ending = GlobalRegistry.Ending;
             if (ending == null) return;
 
             if (ending.IsEndingComplete)
@@ -101,7 +99,7 @@ namespace Hecton8.Gameplay
 
         public string GetInteractText()
         {
-            EndingSystem ending = EndingSystem.Instance;
+            EndingSystem ending = GlobalRegistry.Ending;
             if (ending == null) return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_INACTIVE, TextInactive);
             if (ending.IsEndingComplete) return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_COMPLETE, TextComplete);
             if (!ending.IsConditionMet)  return ResolveLocalized(LocalizationKeys.ENDING_TERMINAL_INACTIVE, TextInactive);
@@ -130,6 +128,22 @@ namespace Hecton8.Gameplay
             LogChoiceUiOpened();
         }
 
+        public void OnEndingEvent(in EndingEventPayload payload)
+        {
+            switch ((EndingEventType)payload.EventType)
+            {
+                case EndingEventType.ConditionMet:
+                    HandleConditionMet();
+                    break;
+                case EndingEventType.Chosen:
+                    HandleEndingChosen((EndingChoice)payload.Choice);
+                    break;
+                case EndingEventType.SequenceComplete:
+                    HandleEndingChosen((EndingChoice)payload.Choice);
+                    break;
+            }
+        }
+
         private void HandleConditionMet()
         {
             UpdateActiveIndicator();
@@ -145,7 +159,7 @@ namespace Hecton8.Gameplay
         {
             if (activeIndicator == null) return;
 
-            EndingSystem ending = EndingSystem.Instance;
+            EndingSystem ending = GlobalRegistry.Ending;
             bool active = ending != null && ending.IsConditionMet && !ending.IsEndingComplete;
             activeIndicator.SetActive(active);
         }
@@ -160,12 +174,12 @@ namespace Hecton8.Gameplay
         private static void LogChoiceUiOpened()
         {
             Debug.Log("[EndingTerminal] Choice UI opened. " +
-                      "Use EndingSystem.Instance.ChooseEnding(EndingChoice.X) to select.");
+                      "Use GlobalRegistry.Ending.ChooseEnding(EndingChoice.X) to select.");
         }
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return fallback;
 

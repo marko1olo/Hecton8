@@ -1,6 +1,7 @@
 using TMPro;
 using Hecton8.Modding;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 using Hecton.Localization;
 
@@ -13,7 +14,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Settings Panel")]
-    public sealed class SettingsPanel : MonoBehaviour
+    public sealed class SettingsPanel : MonoBehaviour, ILocalizationLanguageChangedListener
     {
         // ══════════════════════════════════════════════════════════
         // INSPECTOR
@@ -89,6 +90,7 @@ namespace Hecton8.UI
 
         private SettingsManager _settings;
         private bool _initialized;
+        private bool _slidersBound;
 
         // Performance guards
         private float _nextApplyTime;
@@ -109,6 +111,33 @@ namespace Hecton8.UI
         private bool _cachedBloom;
         private bool _cachedMotionBlur;
         private int _cachedTextureQuality = -1;
+
+        private UnityAction _presetLowAction;
+        private UnityAction _presetMediumAction;
+        private UnityAction _presetHighAction;
+        private UnityAction _presetUltraAction;
+        private UnityAction _qualityDecreaseAction;
+        private UnityAction _qualityIncreaseAction;
+        private UnityAction _shadowQualityDecreaseAction;
+        private UnityAction _shadowQualityIncreaseAction;
+        private UnityAction _antiAliasingDecreaseAction;
+        private UnityAction _antiAliasingIncreaseAction;
+        private UnityAction _textureQualityDecreaseAction;
+        private UnityAction _textureQualityIncreaseAction;
+        private UnityAction _resetDefaultsAction;
+        private UnityAction _applyAction;
+        private UnityAction _cancelAction;
+        private UnityAction<bool> _vsyncChangedAction;
+        private UnityAction<bool> _fullscreenChangedAction;
+        private UnityAction<bool> _ambientOcclusionChangedAction;
+        private UnityAction<bool> _bloomChangedAction;
+        private UnityAction<bool> _motionBlurChangedAction;
+        private UnityAction<float> _masterVolumeChangedAction;
+        private UnityAction<float> _musicVolumeChangedAction;
+        private UnityAction<float> _sfxVolumeChangedAction;
+        private UnityAction<float> _ambientVolumeChangedAction;
+        private UnityAction<float> _fieldOfViewChangedAction;
+        private UnityAction<float> _shadowDistanceChangedAction;
 
         private static readonly string[] ShadowQualityNames = { "Off", "Low", "Medium", "High" };
         private static readonly string[] AntiAliasingNames = { "None", "FXAA", "SMAA", "TAA" };
@@ -159,6 +188,7 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            CacheListenerActions();
             BindButtons();
         }
 
@@ -166,8 +196,10 @@ namespace Hecton8.UI
         {
             if (!_initialized)
                 Initialize();
+            else
+                BindSliders();
 
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             LoadCurrentSettings();
             RefreshAllUI();
             RefreshLocalizedLabels();
@@ -184,7 +216,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             UnbindSliders();
 
             // Fade out animation (if supported)
@@ -217,169 +249,227 @@ namespace Hecton8.UI
             _initialized = true;
         }
 
+        private void CacheListenerActions()
+        {
+            _presetLowAction = OnPresetLow; // COLD ALLOC: UnityAction[1] - cached low preset listener - owner: SettingsPanel
+            _presetMediumAction = OnPresetMedium; // COLD ALLOC: UnityAction[1] - cached medium preset listener - owner: SettingsPanel
+            _presetHighAction = OnPresetHigh; // COLD ALLOC: UnityAction[1] - cached high preset listener - owner: SettingsPanel
+            _presetUltraAction = OnPresetUltra; // COLD ALLOC: UnityAction[1] - cached ultra preset listener - owner: SettingsPanel
+            _qualityDecreaseAction = OnQualityDecrease; // COLD ALLOC: UnityAction[1] - cached quality decrease listener - owner: SettingsPanel
+            _qualityIncreaseAction = OnQualityIncrease; // COLD ALLOC: UnityAction[1] - cached quality increase listener - owner: SettingsPanel
+            _shadowQualityDecreaseAction = OnShadowQualityDecrease; // COLD ALLOC: UnityAction[1] - cached shadow quality decrease listener - owner: SettingsPanel
+            _shadowQualityIncreaseAction = OnShadowQualityIncrease; // COLD ALLOC: UnityAction[1] - cached shadow quality increase listener - owner: SettingsPanel
+            _antiAliasingDecreaseAction = OnAntiAliasingDecrease; // COLD ALLOC: UnityAction[1] - cached anti-aliasing decrease listener - owner: SettingsPanel
+            _antiAliasingIncreaseAction = OnAntiAliasingIncrease; // COLD ALLOC: UnityAction[1] - cached anti-aliasing increase listener - owner: SettingsPanel
+            _textureQualityDecreaseAction = OnTextureQualityDecrease; // COLD ALLOC: UnityAction[1] - cached texture quality decrease listener - owner: SettingsPanel
+            _textureQualityIncreaseAction = OnTextureQualityIncrease; // COLD ALLOC: UnityAction[1] - cached texture quality increase listener - owner: SettingsPanel
+            _resetDefaultsAction = OnResetDefaults; // COLD ALLOC: UnityAction[1] - cached reset defaults listener - owner: SettingsPanel
+            _applyAction = OnApply; // COLD ALLOC: UnityAction[1] - cached apply listener - owner: SettingsPanel
+            _cancelAction = OnCancel; // COLD ALLOC: UnityAction[1] - cached cancel listener - owner: SettingsPanel
+            _vsyncChangedAction = OnVsyncChanged; // COLD ALLOC: UnityAction<bool>[1] - cached vsync listener - owner: SettingsPanel
+            _fullscreenChangedAction = OnFullscreenChanged; // COLD ALLOC: UnityAction<bool>[1] - cached fullscreen listener - owner: SettingsPanel
+            _ambientOcclusionChangedAction = OnAmbientOcclusionChanged; // COLD ALLOC: UnityAction<bool>[1] - cached ambient occlusion listener - owner: SettingsPanel
+            _bloomChangedAction = OnBloomChanged; // COLD ALLOC: UnityAction<bool>[1] - cached bloom listener - owner: SettingsPanel
+            _motionBlurChangedAction = OnMotionBlurChanged; // COLD ALLOC: UnityAction<bool>[1] - cached motion blur listener - owner: SettingsPanel
+            _masterVolumeChangedAction = OnMasterVolumeChanged; // COLD ALLOC: UnityAction<float>[1] - cached master volume listener - owner: SettingsPanel
+            _musicVolumeChangedAction = OnMusicVolumeChanged; // COLD ALLOC: UnityAction<float>[1] - cached music volume listener - owner: SettingsPanel
+            _sfxVolumeChangedAction = OnSfxVolumeChanged; // COLD ALLOC: UnityAction<float>[1] - cached sfx volume listener - owner: SettingsPanel
+            _ambientVolumeChangedAction = OnAmbientVolumeChanged; // COLD ALLOC: UnityAction<float>[1] - cached ambient volume listener - owner: SettingsPanel
+            _fieldOfViewChangedAction = OnFieldOfViewChanged; // COLD ALLOC: UnityAction<float>[1] - cached field of view listener - owner: SettingsPanel
+            _shadowDistanceChangedAction = OnShadowDistanceChanged; // COLD ALLOC: UnityAction<float>[1] - cached shadow distance listener - owner: SettingsPanel
+        }
+
         private void BindButtons()
         {
             if (btnPresetLow != null)
             {
                 btnPresetLow.onClick.RemoveAllListeners();
-                btnPresetLow.onClick.AddListener(OnPresetLow);
+                btnPresetLow.onClick.AddListener(_presetLowAction);
             }
 
             if (btnPresetMedium != null)
             {
                 btnPresetMedium.onClick.RemoveAllListeners();
-                btnPresetMedium.onClick.AddListener(OnPresetMedium);
+                btnPresetMedium.onClick.AddListener(_presetMediumAction);
             }
 
             if (btnPresetHigh != null)
             {
                 btnPresetHigh.onClick.RemoveAllListeners();
-                btnPresetHigh.onClick.AddListener(OnPresetHigh);
+                btnPresetHigh.onClick.AddListener(_presetHighAction);
             }
 
             if (btnPresetUltra != null)
             {
                 btnPresetUltra.onClick.RemoveAllListeners();
-                btnPresetUltra.onClick.AddListener(OnPresetUltra);
+                btnPresetUltra.onClick.AddListener(_presetUltraAction);
             }
 
             if (btnQualityDecrease != null)
             {
                 btnQualityDecrease.onClick.RemoveAllListeners();
-                btnQualityDecrease.onClick.AddListener(OnQualityDecrease);
+                btnQualityDecrease.onClick.AddListener(_qualityDecreaseAction);
             }
 
             if (btnQualityIncrease != null)
             {
                 btnQualityIncrease.onClick.RemoveAllListeners();
-                btnQualityIncrease.onClick.AddListener(OnQualityIncrease);
+                btnQualityIncrease.onClick.AddListener(_qualityIncreaseAction);
             }
 
             if (toggleVsync != null)
             {
                 toggleVsync.onValueChanged.RemoveAllListeners();
-                toggleVsync.onValueChanged.AddListener(OnVsyncChanged);
+                toggleVsync.onValueChanged.AddListener(_vsyncChangedAction);
             }
 
             if (toggleFullscreen != null)
             {
                 toggleFullscreen.onValueChanged.RemoveAllListeners();
-                toggleFullscreen.onValueChanged.AddListener(OnFullscreenChanged);
+                toggleFullscreen.onValueChanged.AddListener(_fullscreenChangedAction);
             }
 
             if (btnShadowQualityDecrease != null)
             {
                 btnShadowQualityDecrease.onClick.RemoveAllListeners();
-                btnShadowQualityDecrease.onClick.AddListener(OnShadowQualityDecrease);
+                btnShadowQualityDecrease.onClick.AddListener(_shadowQualityDecreaseAction);
             }
 
             if (btnShadowQualityIncrease != null)
             {
                 btnShadowQualityIncrease.onClick.RemoveAllListeners();
-                btnShadowQualityIncrease.onClick.AddListener(OnShadowQualityIncrease);
+                btnShadowQualityIncrease.onClick.AddListener(_shadowQualityIncreaseAction);
             }
 
             if (btnAntiAliasingDecrease != null)
             {
                 btnAntiAliasingDecrease.onClick.RemoveAllListeners();
-                btnAntiAliasingDecrease.onClick.AddListener(OnAntiAliasingDecrease);
+                btnAntiAliasingDecrease.onClick.AddListener(_antiAliasingDecreaseAction);
             }
 
             if (btnAntiAliasingIncrease != null)
             {
                 btnAntiAliasingIncrease.onClick.RemoveAllListeners();
-                btnAntiAliasingIncrease.onClick.AddListener(OnAntiAliasingIncrease);
+                btnAntiAliasingIncrease.onClick.AddListener(_antiAliasingIncreaseAction);
             }
 
             if (btnTextureQualityDecrease != null)
             {
                 btnTextureQualityDecrease.onClick.RemoveAllListeners();
-                btnTextureQualityDecrease.onClick.AddListener(OnTextureQualityDecrease);
+                btnTextureQualityDecrease.onClick.AddListener(_textureQualityDecreaseAction);
             }
 
             if (btnTextureQualityIncrease != null)
             {
                 btnTextureQualityIncrease.onClick.RemoveAllListeners();
-                btnTextureQualityIncrease.onClick.AddListener(OnTextureQualityIncrease);
+                btnTextureQualityIncrease.onClick.AddListener(_textureQualityIncreaseAction);
             }
 
             if (toggleAmbientOcclusion != null)
             {
                 toggleAmbientOcclusion.onValueChanged.RemoveAllListeners();
-                toggleAmbientOcclusion.onValueChanged.AddListener(OnAmbientOcclusionChanged);
+                toggleAmbientOcclusion.onValueChanged.AddListener(_ambientOcclusionChangedAction);
             }
 
             if (toggleBloom != null)
             {
                 toggleBloom.onValueChanged.RemoveAllListeners();
-                toggleBloom.onValueChanged.AddListener(OnBloomChanged);
+                toggleBloom.onValueChanged.AddListener(_bloomChangedAction);
             }
 
             if (toggleMotionBlur != null)
             {
                 toggleMotionBlur.onValueChanged.RemoveAllListeners();
-                toggleMotionBlur.onValueChanged.AddListener(OnMotionBlurChanged);
+                toggleMotionBlur.onValueChanged.AddListener(_motionBlurChangedAction);
             }
 
             if (btnResetDefaults != null)
             {
                 btnResetDefaults.onClick.RemoveAllListeners();
-                btnResetDefaults.onClick.AddListener(OnResetDefaults);
+                btnResetDefaults.onClick.AddListener(_resetDefaultsAction);
             }
 
             if (btnApply != null)
             {
                 btnApply.onClick.RemoveAllListeners();
-                btnApply.onClick.AddListener(OnApply);
+                btnApply.onClick.AddListener(_applyAction);
             }
 
             if (btnCancel != null)
             {
                 btnCancel.onClick.RemoveAllListeners();
-                btnCancel.onClick.AddListener(OnCancel);
+                btnCancel.onClick.AddListener(_cancelAction);
             }
         }
 
         private void BindSliders()
         {
+            if (_slidersBound)
+                return;
+
             if (sliderMasterVolume != null)
-                sliderMasterVolume.onValueChanged.AddListener(OnMasterVolumeChanged);
+            {
+                sliderMasterVolume.onValueChanged.RemoveListener(_masterVolumeChangedAction);
+                sliderMasterVolume.onValueChanged.AddListener(_masterVolumeChangedAction);
+            }
 
             if (sliderMusicVolume != null)
-                sliderMusicVolume.onValueChanged.AddListener(OnMusicVolumeChanged);
+            {
+                sliderMusicVolume.onValueChanged.RemoveListener(_musicVolumeChangedAction);
+                sliderMusicVolume.onValueChanged.AddListener(_musicVolumeChangedAction);
+            }
 
             if (sliderSfxVolume != null)
-                sliderSfxVolume.onValueChanged.AddListener(OnSfxVolumeChanged);
+            {
+                sliderSfxVolume.onValueChanged.RemoveListener(_sfxVolumeChangedAction);
+                sliderSfxVolume.onValueChanged.AddListener(_sfxVolumeChangedAction);
+            }
 
             if (sliderAmbientVolume != null)
-                sliderAmbientVolume.onValueChanged.AddListener(OnAmbientVolumeChanged);
+            {
+                sliderAmbientVolume.onValueChanged.RemoveListener(_ambientVolumeChangedAction);
+                sliderAmbientVolume.onValueChanged.AddListener(_ambientVolumeChangedAction);
+            }
 
             if (sliderFieldOfView != null)
-                sliderFieldOfView.onValueChanged.AddListener(OnFieldOfViewChanged);
+            {
+                sliderFieldOfView.onValueChanged.RemoveListener(_fieldOfViewChangedAction);
+                sliderFieldOfView.onValueChanged.AddListener(_fieldOfViewChangedAction);
+            }
 
             if (sliderShadowDistance != null)
-                sliderShadowDistance.onValueChanged.AddListener(OnShadowDistanceChanged);
+            {
+                sliderShadowDistance.onValueChanged.RemoveListener(_shadowDistanceChangedAction);
+                sliderShadowDistance.onValueChanged.AddListener(_shadowDistanceChangedAction);
+            }
+
+            _slidersBound = true;
         }
 
         private void UnbindSliders()
         {
+            if (!_slidersBound)
+                return;
+
             if (sliderMasterVolume != null)
-                sliderMasterVolume.onValueChanged.RemoveListener(OnMasterVolumeChanged);
+                sliderMasterVolume.onValueChanged.RemoveListener(_masterVolumeChangedAction);
 
             if (sliderMusicVolume != null)
-                sliderMusicVolume.onValueChanged.RemoveListener(OnMusicVolumeChanged);
+                sliderMusicVolume.onValueChanged.RemoveListener(_musicVolumeChangedAction);
 
             if (sliderSfxVolume != null)
-                sliderSfxVolume.onValueChanged.RemoveListener(OnSfxVolumeChanged);
+                sliderSfxVolume.onValueChanged.RemoveListener(_sfxVolumeChangedAction);
 
             if (sliderAmbientVolume != null)
-                sliderAmbientVolume.onValueChanged.RemoveListener(OnAmbientVolumeChanged);
+                sliderAmbientVolume.onValueChanged.RemoveListener(_ambientVolumeChangedAction);
 
             if (sliderFieldOfView != null)
-                sliderFieldOfView.onValueChanged.RemoveListener(OnFieldOfViewChanged);
+                sliderFieldOfView.onValueChanged.RemoveListener(_fieldOfViewChangedAction);
 
             if (sliderShadowDistance != null)
-                sliderShadowDistance.onValueChanged.RemoveListener(OnShadowDistanceChanged);
+                sliderShadowDistance.onValueChanged.RemoveListener(_shadowDistanceChangedAction);
+
+            _slidersBound = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -770,6 +860,15 @@ namespace Hecton8.UI
                 SetValueTextIfChanged(txtTextureQuality, ResolveLocalizedTextureQualityName(_cachedTextureQuality), ref _prevTextureQualityText);
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RefreshAllUI();
@@ -832,7 +931,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return fallback;
 
@@ -1040,7 +1139,7 @@ namespace Hecton8.UI
             if (!success)
             {
                 // Show error modal with retry/revert options (localized)
-                LocalizationManager loc = LocalizationManager.Instance;
+                LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
                 string title = loc != null ? loc.Get(LocalizationKeys.ERROR_SETTINGS_APPLY_FAILED) : "Settings Apply Failed";
                 string message = loc != null ? loc.Get(LocalizationKeys.ERROR_SETTINGS_UNAVAILABLE) : "Some settings failed to apply. Check console for details.\n\nRetry or revert to defaults?";
                 

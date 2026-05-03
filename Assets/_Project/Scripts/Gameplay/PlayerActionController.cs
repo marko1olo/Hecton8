@@ -99,6 +99,7 @@ namespace Hecton8.Gameplay
         private float _actionDuration;
         private int _lastToolSlotIndex = -1;
         private bool _registered;
+        private bool _serviceRegistered;
         private float _cameraBobPhase;
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -221,6 +222,8 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            TryUnregisterService();
+
             if (_instance == this)
                 _instance = null;
         }
@@ -232,6 +235,7 @@ namespace Hecton8.Gameplay
                 TryGetComponent(out _survivalSystem);
 
             TryRegister();
+            TryRegisterService();
         }
 
         private void OnDisable()
@@ -240,6 +244,7 @@ namespace Hecton8.Gameplay
                 CancelAction();
 
             TryUnregister();
+            TryUnregisterService();
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -376,7 +381,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void RemoveItemFromInventory(int anchorX, int anchorY)
         {
-            PlayerInventory inventory = PlayerInventory.Instance;
+            PlayerInventory inventory = Hecton8.Core.GlobalRegistry.PlayerInventoryRuntime;
             if (inventory == null) return;
 
             inventory.RemoveOneItem(anchorX, anchorY);
@@ -447,6 +452,23 @@ namespace Hecton8.Gameplay
             GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Player);
             _registered = false;
         }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+                return;
+
+            GlobalRegistry.RegisterPlayerActionRuntime(this);
+            _serviceRegistered = true;
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterPlayerActionRuntime(this);
+            _serviceRegistered = false;
+        }
     }
 }
-

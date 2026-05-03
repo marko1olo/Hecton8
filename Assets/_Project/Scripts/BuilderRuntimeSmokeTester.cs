@@ -38,6 +38,11 @@ namespace Hecton8.Dev
         [SerializeField] private float lateralStep = 2.25f;
         [SerializeField] private float depthStep = 1.5f;
 
+        private const int BuildCostSnapshotCapacity = 32;
+        private const int PlacementCandidateCount = 7;
+
+        // COLD ALLOC: int[32] - build-cost inventory snapshot reused by builder smoke pass - owner: BuilderRuntimeSmokeTester
+        private readonly int[] _buildCostCountSnapshot = new int[BuildCostSnapshotCapacity];
         private bool _isRunning;
         private float _nextWaitHeartbeatAt;
 
@@ -144,7 +149,10 @@ namespace Hecton8.Dev
                 }
 
                 int moduleCountBefore = constructionManager.ModuleCount;
-                int[] countsBefore = SnapshotBuildCosts(buildable);
+                int countSnapshotLength = CaptureBuildCosts(buildable, _buildCostCountSnapshot);
+                if (countSnapshotLength < 0)
+                    return;
+
                 LogVerbose(
                     $"STATE active={buildable.moduleName} registryBefore={moduleCountBefore} inventoryWeight={playerInventory.TotalWeight:0.0}");
 
@@ -179,7 +187,7 @@ namespace Hecton8.Dev
                 LogVerbose($"MODULE spawned={spawnedModule.name}");
 
                 if (consumeBuildCostOnDeploy)
-                    ValidateCostConsumption(buildable, countsBefore);
+                    ValidateCostConsumption(buildable, _buildCostCountSnapshot, countSnapshotLength);
 
                 if (recoverDelay > 0f)
                 {
@@ -297,22 +305,11 @@ namespace Hecton8.Dev
             Vector3 right = Vector3.Cross(Vector3.up, forward).normalized;
             Vector3 basePos = reference.position + forward * forwardDistance + Vector3.up * verticalOffset;
 
-            Vector3[] offsets =
-            {
-                Vector3.zero,
-                right * lateralStep,
-                -right * lateralStep,
-                forward * depthStep,
-                -forward * depthStep,
-                right * lateralStep + forward * depthStep,
-                -right * lateralStep + forward * depthStep,
-            };
-
             rotation = Quaternion.LookRotation(forward, Vector3.up);
 
-            for (int i = 0; i < offsets.Length; i++)
+            for (int i = 0; i < PlacementCandidateCount; i++)
             {
-                Vector3 candidate = basePos + offsets[i];
+                Vector3 candidate = basePos + ResolvePlacementOffset(i, right, forward);
                 if (!UnityEngine.Physics.CheckSphere(candidate, 0.75f, Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask, QueryTriggerInteraction.Ignore))
                 {
                     position = candidate;
@@ -343,27 +340,33 @@ namespace Hecton8.Dev
             return null;
         }
 
-        private int[] SnapshotBuildCosts(BuildableData buildable)
+        private int CaptureBuildCosts(BuildableData buildable, int[] counts)
         {
             if (buildable == null || buildable.buildCost == null || buildable.buildCost.Count == 0)
-                return System.Array.Empty<int>();
+                return 0;
 
-            int[] counts = new int[buildable.buildCost.Count];
+            if (counts == null || buildable.buildCost.Count > counts.Length)
+            {
+                Debug.LogWarning(
+                    $"[BuilderSmoke] Build cost count {buildable.buildCost.Count} exceeds snapshot capacity {BuildCostSnapshotCapacity}.");
+                return -1;
+            }
+
             for (int i = 0; i < buildable.buildCost.Count; i++)
             {
                 InventoryCost cost = buildable.buildCost[i];
                 counts[i] = cost.item != null ? playerInventory.CountTotal(Hecton.Localization.LocHash.Compute(cost.item.PersistentId)) : 0;
             }
 
-            return counts;
+            return buildable.buildCost.Count;
         }
 
-        private void ValidateCostConsumption(BuildableData buildable, int[] countsBefore)
+        private void ValidateCostConsumption(BuildableData buildable, int[] countsBefore, int countSnapshotLength)
         {
             if (buildable == null || buildable.buildCost == null)
                 return;
 
-            for (int i = 0; i < buildable.buildCost.Count && i < countsBefore.Length; i++)
+            for (int i = 0; i < buildable.buildCost.Count && i < countSnapshotLength; i++)
             {
                 InventoryCost cost = buildable.buildCost[i];
                 if (cost.item == null)
@@ -380,6 +383,27 @@ namespace Hecton8.Dev
 
                 LogVerbose(
                     $"COST {cost.item.itemName}: before={before} after={after} expected<={expectedUpperBound}");
+            }
+        }
+
+        private Vector3 ResolvePlacementOffset(int index, Vector3 right, Vector3 forward)
+        {
+            switch (index)
+            {
+                case 1:
+                    return right * lateralStep;
+                case 2:
+                    return -right * lateralStep;
+                case 3:
+                    return forward * depthStep;
+                case 4:
+                    return -forward * depthStep;
+                case 5:
+                    return right * lateralStep + forward * depthStep;
+                case 6:
+                    return -right * lateralStep + forward * depthStep;
+                default:
+                    return Vector3.zero;
             }
         }
 

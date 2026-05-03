@@ -131,7 +131,7 @@ namespace Hecton8.Bootstrap
                 return false;
             }
 
-            VRAMPressureMonitor pressureMonitor = VRAMPressureMonitor.Instance;
+            VRAMPressureMonitor pressureMonitor = Hecton8.Core.GlobalRegistry.VRAMPressure;
             if (pressureMonitor == null || !pressureMonitor.HasSample)
             {
                 failureReason = "PRESSURE_SAMPLE_PENDING";

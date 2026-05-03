@@ -38,6 +38,7 @@ using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -54,14 +55,258 @@ namespace Hecton8.Gameplay
 
     public static class FirstHourEvents
     {
+        private const int ListenerCapacity = 8;
+        private const int PendingEventCapacity = 16;
+
+        // COLD ALLOC: RegistryBucket<IFirstHourEventListener>[8] - first-hour milestone listeners drained by SystemDispatcher LateUpdate - owner: FirstHourEvents
+        private static readonly RegistryBucket<IFirstHourEventListener> _listeners = new RegistryBucket<IFirstHourEventListener>(ListenerCapacity);
+        private static NativeQueue<FirstHourEventPayload> _pendingEvents;
+        private static NativeQueue<FirstHourEventPayload> _nextFrameEvents;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
+
+        /// <summary>
+        /// Number of queued first-hour milestone events awaiting LateUpdate dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => OnMilestoneReached = null;
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(FirstHourEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
 
-        /// <summary>Достигнут milestone первого часа.</summary>
-        public static event Action<FirstHourMilestone> OnMilestoneReached;
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(FirstHourEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
 
+            _listeners.Clear();
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
+        }
+
+        /// <summary>
+        /// Registers a listener for deferred first-hour milestone events.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Register(IFirstHourEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            EnsureInitialized();
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a listener from deferred first-hour milestone events.
+        /// </summary>
+        /// <param name="listener">Listener instance.</param>
+        public static void Unregister(IFirstHourEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Enqueues a first-hour milestone event.
+        /// </summary>
+        /// <param name="milestone">Reached milestone.</param>
         public static void RaiseMilestone(FirstHourMilestone milestone)
-            => OnMilestoneReached?.Invoke(milestone);
+        {
+            if (_listeners.Count <= 0)
+                return;
+
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return;
+
+            FirstHourEventPayload payload = new FirstHourEventPayload
+            {
+                Milestone = (byte)milestone,
+                Reserved0 = 0,
+                Reserved1 = 0,
+                Reserved2 = 0
+            };
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+        }
+
+        /// <summary>
+        /// Flushes queued first-hour milestone events to registered listeners.
+        /// Called by <see cref="SystemDispatcher"/> from LateUpdate.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated || _listeners.Count <= 0)
+            {
+                DrainWithoutDispatch();
+                return;
+            }
+
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out FirstHourEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                IFirstHourEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                        rawArray[i].OnFirstHourMilestoneReached(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<FirstHourEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] - deferred first-hour milestone lane flushed by SystemDispatcher LateUpdate - owner: FirstHourEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(FirstHourEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<FirstHourEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FirstHourEventPayload>[16] - next-frame first-hour milestone lane prevents same-frame reentrant dispatch - owner: FirstHourEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(FirstHourEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void DrainWithoutDispatch()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                return;
+
+            if (_pendingEvents.IsEmpty())
+                PromoteNextFrameEventsIfFrontEmpty();
+
+            if (_pendingEventCount > 0 &&
+                !DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+            {
+                return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<FirstHourEventPayload> queue,
+            ref int pendingCount)
+        {
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out _))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<FirstHourEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
+        }
+    }
+
+    /// <summary>
+    /// Unmanaged first-hour milestone event payload.
+    /// </summary>
+    public struct FirstHourEventPayload
+    {
+        public byte Milestone;
+        public byte Reserved0;
+        public byte Reserved1;
+        public byte Reserved2;
+    }
+
+    /// <summary>
+    /// Listener contract for first-hour milestone events.
+    /// </summary>
+    public interface IFirstHourEventListener
+    {
+        /// <summary>
+        /// Consumes one queue-drained first-hour milestone event.
+        /// </summary>
+        /// <param name="payload">Unmanaged milestone payload.</param>
+        void OnFirstHourMilestoneReached(in FirstHourEventPayload payload);
     }
 
     [DisallowMultipleComponent]
@@ -143,6 +388,7 @@ namespace Hecton8.Gameplay
         private float _sessionTime;
         private int   _completedMilestones; // битовая маска
         private bool  _registered;
+        private bool  _serviceRegistered;
         private bool  _firstModuleHintIssued;
         private bool  _firstResourceReminderIssued;
         private bool  _firstDepthReminderIssued;
@@ -216,6 +462,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
@@ -236,6 +483,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
@@ -252,6 +500,15 @@ namespace Hecton8.Gameplay
             _lastContextResourceCompleted = false;
             _lastContextDepthCompleted = false;
             _lastContextLoreContact = false;
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+            TryUnregisterService();
+
+            if (Instance == this)
+                Instance = null;
         }
 
         private void Start()
@@ -282,6 +539,26 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterFirstHourRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.FirstHour, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.FirstHour, this))
+                GlobalRegistry.UnregisterFirstHourRuntime(this);
+
+            _serviceRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -389,7 +666,7 @@ namespace Hecton8.Gameplay
             if (string.IsNullOrEmpty(discoveryId))
                 return;
 
-            EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
+            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
             if (relayDirector != null && relayDirector.IsRelayDiscoveryId(discoveryId))
                 _hasLoreRouteContact = true;
 
@@ -535,11 +812,11 @@ namespace Hecton8.Gameplay
 
         private void SynchronizeContextFromRuntimeSystems()
         {
-            AudioLogSystem audioLogSystem = AudioLogSystem.Instance;
+            AudioLogSystem audioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
             if (audioLogSystem != null && audioLogSystem.DiscoveredCount > 0)
                 _hasLoreRouteContact = true;
 
-            EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
+            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
             if (relayDirector != null && relayDirector.HasDiscoveredRelayInDrivenChain())
                 _hasLoreRouteContact = true;
         }
@@ -711,7 +988,7 @@ namespace Hecton8.Gameplay
 
         private int GetCurrentAtlasRevealStage()
         {
-            AtlasSignalSystem atlasSignalSystem = AtlasSignalSystem.Instance;
+            AtlasSignalSystem atlasSignalSystem = Hecton8.Core.GlobalRegistry.AtlasSignal;
             return atlasSignalSystem != null ? atlasSignalSystem.CurrentRevealStage : 0;
         }
 
@@ -908,7 +1185,7 @@ namespace Hecton8.Gameplay
 
         private bool TryIssueServiceRelayGuidance()
         {
-            EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
+            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
             if (relayDirector == null ||
                 !relayDirector.TryBuildContextualGuidanceMessage(out string relayMessage))
             {
@@ -1214,7 +1491,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             return localization != null ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback) : fallback;
         }
 

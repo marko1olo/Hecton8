@@ -17,7 +17,7 @@
 //
 //   [FIX] DetectAndPublishBiome: если TryGetBiomeIndex возвращает false,
 //     биом фиксируется на 0. Если _lastBiomeID == -1 (первый вызов),
-//     OnBiomeChanged(0) вызывается принудительно, чтобы подписчики
+//     MapMagicBiomeEvents.RaiseBiomeChanged(0) вызывается принудительно, чтобы подписчики
 //     (UnderwaterVisuals, AtmosphereManager) получили начальное значение.
 //     Без этого при отсутствии биомов подписчики НИКОГДА не получают
 //     событие → UnderwaterVisuals не инициализирует профиль → крэш/артефакты.
@@ -46,6 +46,162 @@ using MapMagic.Terrains;
 
 namespace Hecton8.Core
 {
+    public interface IMapMagicBiomeEventListener
+    {
+        void OnMapMagicBiomeChanged(int biomeId);
+    }
+
+    public static class MapMagicBiomeEvents
+    {
+        private const int ExpectedPendingBiomeEventCapacity = 8;
+
+        private static readonly RegistryBucket<IMapMagicBiomeEventListener> _listeners = new RegistryBucket<IMapMagicBiomeEventListener>(8);
+        private static NativeQueue<int> _pendingBiomeIds;
+        private static NativeQueue<int> _nextFrameBiomeIds;
+        private static int _pendingBiomeIdCount;
+        private static int _nextFrameBiomeIdCount;
+        private static bool _isDispatching;
+
+        public static int PendingCount => _pendingBiomeIdCount + _nextFrameBiomeIdCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingBiomeIds.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicBiomeEvents), nameof(_pendingBiomeIds));
+                _pendingBiomeIds.Dispose();
+                _pendingBiomeIds = default;
+            }
+
+            if (_nextFrameBiomeIds.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(MapMagicBiomeEvents), nameof(_nextFrameBiomeIds));
+                _nextFrameBiomeIds.Dispose();
+                _nextFrameBiomeIds = default;
+            }
+
+            _pendingBiomeIdCount = 0;
+            _nextFrameBiomeIdCount = 0;
+            _isDispatching = false;
+            _listeners.Clear();
+        }
+
+        public static void Register(IMapMagicBiomeEventListener listener)
+        {
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        public static void Unregister(IMapMagicBiomeEventListener listener)
+        {
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        public static void RaiseBiomeChanged(int biomeId)
+        {
+            EnsureInitialized();
+            if (_pendingBiomeIdCount + _nextFrameBiomeIdCount >= ExpectedPendingBiomeEventCapacity)
+                return;
+
+            if (_isDispatching)
+            {
+                _nextFrameBiomeIds.Enqueue(biomeId);
+                _nextFrameBiomeIdCount++;
+                return;
+            }
+
+            _pendingBiomeIds.Enqueue(biomeId);
+            _pendingBiomeIdCount++;
+        }
+
+        public static void FlushPending()
+        {
+            if (!_pendingBiomeIds.IsCreated)
+                return;
+
+            PromoteNextFrameBiomeIdsIfFrontEmpty();
+            int scanBudget = _pendingBiomeIdCount > 0 ? _pendingBiomeIdCount : ExpectedPendingBiomeEventCapacity;
+            while (scanBudget > 0 && !_pendingBiomeIds.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingBiomeIds.TryDequeue(out int biomeId))
+                    break;
+
+                if (_pendingBiomeIdCount > 0)
+                    _pendingBiomeIdCount--;
+                scanBudget--;
+                IMapMagicBiomeEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        IMapMagicBiomeEventListener listener = rawArray[i];
+                        if (listener != null)
+                            listener.OnMapMagicBiomeChanged(biomeId);
+                    }
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingBiomeIds.IsEmpty())
+            {
+                _pendingBiomeIdCount = 0;
+                PromoteNextFrameBiomeIdsIfFrontEmpty();
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingBiomeIds.IsCreated)
+            {
+                _pendingBiomeIds = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[8] - deferred MapMagic biome events flushed by SystemDispatcher - owner: MapMagicBiomeEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingBiomeIds,
+                    ExpectedPendingBiomeEventCapacity,
+                    nameof(MapMagicBiomeEvents),
+                    nameof(_pendingBiomeIds),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameBiomeIds.IsCreated)
+            {
+                _nextFrameBiomeIds = new NativeQueue<int>(Allocator.Persistent); // COLD ALLOC: NativeQueue<int>[8] - next-frame MapMagic biome event lane prevents same-frame reentrant dispatch - owner: MapMagicBiomeEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameBiomeIds,
+                    ExpectedPendingBiomeEventCapacity,
+                    nameof(MapMagicBiomeEvents),
+                    nameof(_nextFrameBiomeIds),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PromoteNextFrameBiomeIdsIfFrontEmpty()
+        {
+            if (!_pendingBiomeIds.IsCreated ||
+                !_nextFrameBiomeIds.IsCreated ||
+                !_pendingBiomeIds.IsEmpty() ||
+                _nextFrameBiomeIdCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<int> swap = _pendingBiomeIds;
+            _pendingBiomeIds = _nextFrameBiomeIds;
+            _nextFrameBiomeIds = swap;
+            _pendingBiomeIdCount = _nextFrameBiomeIdCount;
+            _nextFrameBiomeIdCount = 0;
+        }
+    }
+
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-7000)]
     public sealed class MapMagicBridge : MonoBehaviour, ISlowTickable
@@ -64,7 +220,6 @@ namespace Hecton8.Core
         private static void ResetStaticState()
         {
             _instance = null;
-            OnBiomeChanged = null;
         }
 
         public static MapMagicBridge Instance
@@ -82,23 +237,6 @@ namespace Hecton8.Core
         // ══════════════════════════════════════════════════════════
         //  GLOBAL EVENT — BIOME CHANGE
         // ══════════════════════════════════════════════════════════
-
-        /// <summary>
-        /// Fires when the player enters a new biome zone.
-        /// Parameter: biome index (matches terrain splat layer index
-        /// from MapMagic Biomes Set node).
-        ///
-        /// v3.1: Guaranteed to fire at least once with biomeIndex=0
-        /// during Start(), even if MapMagic has no biomes configured.
-        /// This ensures all subscribers get an initial value.
-        ///
-        /// Subscribers:
-        ///   - HectonAtmosphereManager → switches atmosphere profile.
-        ///   - HectonUnderwaterVisuals → switches ocean profile.
-        ///   - Future: ambient sound, music, fauna density, etc.
-        /// </summary>
-        public static event Action<int> OnBiomeChanged;
-
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -264,7 +402,6 @@ namespace Hecton8.Core
             if (_instance == this)
             {
                 _instance = null;
-                OnBiomeChanged = null;
             }
         }
 
@@ -277,7 +414,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregisterFromTickManager()
@@ -358,7 +495,7 @@ namespace Hecton8.Core
                 _initialBiomePublished = true;
                 _lastBiomeID = biomeID;
 
-                OnBiomeChanged?.Invoke(biomeID);
+                MapMagicBiomeEvents.RaiseBiomeChanged(biomeID);
 
                 UpdateBiomeDiagnostics(biomeID);
                 return;
@@ -370,7 +507,7 @@ namespace Hecton8.Core
 
             _lastBiomeID = biomeID;
 
-            OnBiomeChanged?.Invoke(biomeID);
+            MapMagicBiomeEvents.RaiseBiomeChanged(biomeID);
 
             UpdateBiomeDiagnostics(biomeID);
         }

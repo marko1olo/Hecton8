@@ -15,9 +15,6 @@ namespace Hecton8.Narrative
     [AddComponentMenu("Hecton8/Narrative/Procedural Lore Director")]
     public sealed class ProceduralLoreDirector : MonoBehaviour, ISlowTickable, ISaveable
     {
-        private const float CatalogFallbackRetryIntervalSeconds = 2f;
-        private const float PickupTemplateFallbackRetryIntervalSeconds = 2f;
-
         private struct ActiveLorePlacement
         {
             public string discoveryId;
@@ -45,6 +42,12 @@ namespace Hecton8.Narrative
         [Tooltip("Additional lateral spread applied inside the target chunk so drops do not stack on the exact chunk center.")]
         [SerializeField, Min(0f)] private float chunkPlacementRadius = 8f;
 
+        [Header("Runtime References")]
+        [Tooltip("Preferred PDA data-log catalog source. When unset, active PDA catalog registries are used.")]
+        [SerializeField] private PDADataLogTab catalogSource;
+        [Tooltip("Preferred audio-log pickup template for procedural frontier drops. When unset, active pickup registries are used.")]
+        [SerializeField] private AudioLogPickup pickupTemplate;
+
         // COLD ALLOC: List<ActiveLorePlacement>[12] - active frontier lore placements - owner: ProceduralLoreDirector
         private readonly List<ActiveLorePlacement> _activePlacements = new List<ActiveLorePlacement>(ProceduralLoreStateDTO.MaxActivePlacements);
         // COLD ALLOC: HashSet<long>[12] - occupied frontier chunk keys - owner: ProceduralLoreDirector
@@ -56,7 +59,6 @@ namespace Hecton8.Narrative
 
         private PlayerExplorationTracker _explorationTracker;
         private AudioLogSystem _audioLogSystem;
-        private AudioLogPickup _pickupTemplate;
         private float _spawnCheckTimer;
         private int _catalogCount;
         private int _nextCatalogIndex;
@@ -65,9 +67,6 @@ namespace Hecton8.Narrative
         private bool _registeredToSave;
         private bool _poolWarmed;
         private bool _needsRespawn;
-        private float _nextCatalogResolveTime;
-        private float _nextPickupTemplateResolveTime;
-
         /// <inheritdoc />
         public int SavePriority => 208;
 
@@ -267,7 +266,8 @@ namespace Hecton8.Narrative
 
         private bool TrySpawnInstance(ref ActiveLorePlacement placement)
         {
-            if (_pickupTemplate == null || _audioLogSystem == null || ObjectPoolManager.Instance == null)
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pickupTemplate == null || _audioLogSystem == null || pool == null)
                 return false;
 
             AudioLogData logData = FindCatalogEntry(placement.logId);
@@ -276,18 +276,18 @@ namespace Hecton8.Narrative
 
             if (!_poolWarmed)
             {
-                ObjectPoolManager.Instance.Warmup(_pickupTemplate.gameObject, Mathf.Clamp(maxActiveDrops, 1, ProceduralLoreStateDTO.MaxActivePlacements));
+                pool.Warmup(pickupTemplate.gameObject, Mathf.Clamp(maxActiveDrops, 1, ProceduralLoreStateDTO.MaxActivePlacements));
                 _poolWarmed = true;
             }
 
-            GameObject spawnedObject = ObjectPoolManager.Instance.Spawn(_pickupTemplate.gameObject, placement.position, Quaternion.identity);
+            GameObject spawnedObject = pool.Spawn(pickupTemplate.gameObject, placement.position, Quaternion.identity);
             if (spawnedObject == null)
                 return false;
 
             AudioLogPickup pickup = spawnedObject.GetComponent<AudioLogPickup>();
             if (pickup == null)
             {
-                ObjectPoolManager.Instance.Despawn(spawnedObject);
+                pool.Despawn(spawnedObject);
                 return false;
             }
 
@@ -311,8 +311,9 @@ namespace Hecton8.Narrative
             if (placement.instance == null)
                 return;
 
-            if (ObjectPoolManager.Instance != null)
-                ObjectPoolManager.Instance.Despawn(placement.instance);
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool != null)
+                pool.Despawn(placement.instance);
             else
                 placement.instance.SetActive(false);
 
@@ -322,10 +323,10 @@ namespace Hecton8.Narrative
         private bool ResolveOwners()
         {
             if (_explorationTracker == null)
-                _explorationTracker = PlayerExplorationTracker.Instance;
+                _explorationTracker = GlobalRegistry.PlayerExploration;
 
             if (_audioLogSystem == null)
-                _audioLogSystem = AudioLogSystem.Instance;
+                _audioLogSystem = Hecton8.Core.GlobalRegistry.AudioLogs;
 
             return _explorationTracker != null && _audioLogSystem != null;
         }
@@ -335,54 +336,28 @@ namespace Hecton8.Narrative
             if (_catalogCount > 0)
                 return true;
 
-            if (Time.unscaledTime < _nextCatalogResolveTime)
-                return false;
-
-            _nextCatalogResolveTime = Time.unscaledTime + CatalogFallbackRetryIntervalSeconds;
-            PDADataLogTab[] tabs = UnityEngine.Object.FindObjectsByType<PDADataLogTab>(FindObjectsInactive.Include);
-            if (tabs == null || tabs.Length == 0)
-                return false;
-
-            for (int i = 0; i < tabs.Length; i++)
+            if (catalogSource != null)
             {
-                PDADataLogTab tab = tabs[i];
-                if (tab == null)
-                    continue;
-
-                _catalogCount = tab.CopyCatalog(_catalogBuffer);
+                _catalogCount = catalogSource.CopyCatalog(_catalogBuffer);
                 if (_catalogCount > 0)
                 {
-                    _nextCatalogResolveTime = 0f;
                     return true;
                 }
             }
+
+            if (PDADataLogTab.TryCopyRegisteredCatalog(_catalogBuffer, out _catalogCount))
+                return true;
 
             return false;
         }
 
         private bool ResolvePickupTemplate()
         {
-            if (_pickupTemplate != null)
+            if (pickupTemplate != null)
                 return true;
 
-            if (Time.unscaledTime < _nextPickupTemplateResolveTime)
-                return false;
-
-            _nextPickupTemplateResolveTime = Time.unscaledTime + PickupTemplateFallbackRetryIntervalSeconds;
-            AudioLogPickup[] pickups = UnityEngine.Object.FindObjectsByType<AudioLogPickup>(FindObjectsInactive.Include);
-            if (pickups == null || pickups.Length == 0)
-                return false;
-
-            for (int i = 0; i < pickups.Length; i++)
-            {
-                AudioLogPickup pickup = pickups[i];
-                if (pickup == null || pickup.gameObject == null)
-                    continue;
-
-                _pickupTemplate = pickup;
-                _nextPickupTemplateResolveTime = 0f;
+            if (AudioLogPickup.TryGetRegisteredTemplate(out pickupTemplate))
                 return true;
-            }
 
             return false;
         }

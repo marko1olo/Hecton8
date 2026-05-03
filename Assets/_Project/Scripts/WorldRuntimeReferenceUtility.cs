@@ -37,6 +37,15 @@ namespace Hecton8.World
             if (target != null)
                 return true;
 
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform registryPlayer = playerContext != null ? playerContext.PlayerTransform : null;
+            if (registryPlayer != null)
+            {
+                _CachedPlayerTransform = registryPlayer;
+                target = registryPlayer;
+                return true;
+            }
+
             if (BootstrapState.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer))
             {
                 _CachedPlayerTransform = bootstrapPlayer;
@@ -61,8 +70,8 @@ namespace Hecton8.World
             if (string.IsNullOrWhiteSpace(relativePath))
                 return false;
 
-            if (!BootstrapState.TryGetCurrentPlayerTransform(out Transform bootstrapPlayer) ||
-                bootstrapPlayer == null)
+            Transform bootstrapPlayer = null;
+            if (!TryResolvePlayerTransform(ref bootstrapPlayer) || bootstrapPlayer == null)
             {
                 return false;
             }

@@ -14,7 +14,7 @@ namespace Hecton8.Audio
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3900)] // Consumes zone/acoustic state resolved by earlier managers.
-    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IDepthZoneEventListener
+    public sealed class HectonMusicDirector : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IDepthZoneEventListener, IAcousticZoneEventListener, IBiomeMatrixEventListener, IDirectorAIEventListener
     {
         private enum PlaybackState : byte
         {
@@ -265,6 +265,7 @@ namespace Hecton8.Audio
         private AudioSource _stingerSource;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _serviceRegistered;
         private PlaybackState _playbackState = PlaybackState.Silent;
         private HectonMusicBiomeProfile _resolvedProfile;
         private HectonMusicBiomeProfile _manualProfile;
@@ -401,20 +402,19 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
+            TryRegisterToGlobalRegistry();
             TryRegisterTickHandlers();
-            AcousticZoneController.OnAcousticZoneChanged += HandleAcousticZoneChanged;
-            BiomeMatrixDirector.OnMatrixBiomeChanged += HandleMatrixBiomeChanged;
-            BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
+            AcousticZoneEvents.Register(this);
+            BiomeMatrixEvents.Register(this);
             DepthZoneEvents.Register(this);
-            HectonDirectorAI.OnRequestRareDiscovery += HandleRareDiscoveryRequested;
-            HectonDirectorAI.OnRequestSpawnHorde += HandleSpawnHordeRequested;
-            HectonDirectorAI.OnPredatorPressureChanged += HandlePredatorPressureChanged;
+            DirectorAIEvents.Register(this);
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
             _pendingImmediateSelection = true;
         }
 
         private void Start()
         {
+            TryRegisterToGlobalRegistry();
             TryRegisterTickHandlers();
             ResolveDependencies();
             ReevaluateContext(true);
@@ -424,20 +424,23 @@ namespace Hecton8.Audio
         {
             StopMusicInternal(0f);
             SceneManager.activeSceneChanged -= HandleActiveSceneChanged;
-            HectonDirectorAI.OnPredatorPressureChanged -= HandlePredatorPressureChanged;
-            HectonDirectorAI.OnRequestSpawnHorde -= HandleSpawnHordeRequested;
-            HectonDirectorAI.OnRequestRareDiscovery -= HandleRareDiscoveryRequested;
+            DirectorAIEvents.Unregister(this);
             DepthZoneEvents.Unregister(this);
-            BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
-            BiomeMatrixDirector.OnMatrixBiomeChanged -= HandleMatrixBiomeChanged;
-            AcousticZoneController.OnAcousticZoneChanged -= HandleAcousticZoneChanged;
+            BiomeMatrixEvents.Unregister(this);
+            AcousticZoneEvents.Unregister(this);
             TryUnregisterTickHandlers();
+            TryUnregisterFromGlobalRegistry();
         }
 
         private void OnDestroy()
         {
             StopMusicInternal(0f);
+            DirectorAIEvents.Unregister(this);
+            DepthZoneEvents.Unregister(this);
+            AcousticZoneEvents.Unregister(this);
+            BiomeMatrixEvents.Unregister(this);
             TryUnregisterTickHandlers();
+            TryUnregisterFromGlobalRegistry();
 
             if (_instance == this)
                 _instance = null;
@@ -704,6 +707,24 @@ namespace Hecton8.Audio
             }
         }
 
+        private void TryRegisterToGlobalRegistry()
+        {
+            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+                return;
+
+            GlobalRegistry.RegisterMusicDirectorRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.MusicDirector, this);
+        }
+
+        private void TryUnregisterFromGlobalRegistry()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterMusicDirectorRuntime(this);
+            _serviceRegistered = false;
+        }
+
         private static bool TryInstantiateConfiguredRuntimeDirector()
         {
             Scene activeScene = SceneManager.GetActiveScene();
@@ -722,7 +743,7 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            ObjectPoolManager pool = Hecton8.Core.ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -797,7 +818,7 @@ namespace Hecton8.Audio
                 _biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
 
             if (_depthZoneDirector == null)
-                _depthZoneDirector = DepthZoneDirector.Instance;
+                _depthZoneDirector = GlobalRegistry.DepthZone;
 
             if (_directorAI == null)
                 _directorAI = HectonDirectorAI.ActiveRuntimeInstance;
@@ -937,7 +958,7 @@ namespace Hecton8.Audio
 
         private float ResolveStormPressure01(float depthMeters)
         {
-            HectonSurfaceWeatherDirector weatherDirector = HectonSurfaceWeatherDirector.Instance;
+            HectonSurfaceWeatherDirector weatherDirector = GlobalRegistry.SurfaceWeather;
             if (weatherDirector == null || depthMeters > 120f)
                 return 0f;
 
@@ -1146,7 +1167,7 @@ namespace Hecton8.Audio
 
         private bool ResolveBaseContext()
         {
-            AcousticZoneController acoustic = AcousticZoneController.Instance;
+            AcousticZoneController acoustic = GlobalRegistry.AcousticZone;
             if (acoustic != null && acoustic.IsInterior)
                 return true;
 
@@ -2130,6 +2151,21 @@ namespace Hecton8.Audio
             ReevaluateContext(true);
         }
 
+        void IAcousticZoneEventListener.OnAcousticZoneChanged(in AcousticZoneChangedEvent payload)
+        {
+            HandleAcousticZoneChanged(payload.IsInterior);
+        }
+
+        void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            HandleMatrixBiomeChanged(profile);
+        }
+
+        void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
+        {
+            HandleDepthTierChanged(depthTier, depthMeters);
+        }
+
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
             ReevaluateContext(true);
@@ -2147,7 +2183,7 @@ namespace Hecton8.Audio
             if (zone == null || _currentBaseContext)
                 return;
 
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector != null && !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.Orientation))
                 return;
 
@@ -2183,7 +2219,7 @@ namespace Hecton8.Audio
 
         private void HandleRareDiscoveryRequested(Vector3 position)
         {
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector != null &&
                 !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
             {
@@ -2206,6 +2242,33 @@ namespace Hecton8.Audio
                 PlayRecoveryStinger();
 
             ReevaluateContext(true);
+        }
+
+        void IDirectorAIEventListener.OnDirectorSpawnHordeRequested(Vector3 position)
+        {
+            HandleSpawnHordeRequested(position);
+        }
+
+        void IDirectorAIEventListener.OnDirectorEquipmentGlitchRequested(float intensity)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorRareDiscoveryRequested(Vector3 position)
+        {
+            HandleRareDiscoveryRequested(position);
+        }
+
+        void IDirectorAIEventListener.OnDirectorWeatherShiftRequested(float intensity)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorMissionTriggerRequested(Vector3 position)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorPredatorPressureChanged(bool pressureEnabled)
+        {
+            HandlePredatorPressureChanged(pressureEnabled);
         }
 
         private void HandleActiveSceneChanged(Scene previousScene, Scene nextScene)
@@ -2244,7 +2307,7 @@ namespace Hecton8.Audio
             if (zone == null || _combatLatched || _overrideActive)
                 return false;
 
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector != null &&
                 !firstHourDirector.IsMilestoneComplete(FirstHourMilestone.FirstCraft))
             {
@@ -2482,7 +2545,7 @@ namespace Hecton8.Audio
 
         private static float ResolveFirstHourPressureBoost01(HectonBiomeMatrixProfile matrixProfile, WorldZoneAnchor currentZone)
         {
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector == null || firstHourDirector.IsFirstHourComplete)
                 return 0f;
 

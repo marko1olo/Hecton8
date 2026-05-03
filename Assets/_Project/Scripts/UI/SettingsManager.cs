@@ -5,6 +5,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.Input;
 using Hecton8.World;
 
@@ -13,7 +14,7 @@ namespace Hecton8.UI
     /// <summary>
     /// Unified owner for user settings (graphics, audio, video).
     /// Persists via UserOptionsPersistence (PlayerPrefs backend).
-    /// Singleton DontDestroyOnLoad.
+    /// Bootstrap-owned persistent runtime settings service.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-30990)]
@@ -73,7 +74,7 @@ namespace Hecton8.UI
 
                 GameObject go = new GameObject("[SettingsManager]");
                 _instance = go.AddComponent<SettingsManager>();
-                DontDestroyOnLoad(go);
+                GameBootstrapper.PersistRuntimeService(_instance);
                 return _instance;
             }
         }
@@ -137,14 +138,9 @@ namespace Hecton8.UI
             _isShuttingDown = false;
             SceneManager.sceneLoaded += HandleSceneLoaded;
             if (Application.isPlaying)
-            {
-                if (transform.parent != null)
-                    transform.SetParent(null, true);
+                GameBootstrapper.PersistRuntimeService(this);
 
-                DontDestroyOnLoad(gameObject);
-            }
-
-            _persistence = UserOptionsPersistence.Instance;
+            _persistence = Hecton8.Core.GlobalRegistry.UserOptions;
 
             TryResolveMainCameraReference();
             TryResolveVolumeProfileReference();
@@ -1008,15 +1004,17 @@ namespace Hecton8.UI
         {
             LODQualityPreset worldPreset = ResolveWorldQualityPreset(graphicsPreset);
 
-            if (LODSystemManager.Instance != null)
+            LODSystemManager lodSystem = GlobalRegistry.LODSystem;
+            if (lodSystem != null)
             {
-                LODSystemManager.Instance.SetQualityPreset(worldPreset);
+                lodSystem.SetQualityPreset(worldPreset);
                 return;
             }
 
-            if (DynamicResolutionScaler.Instance != null)
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
+            if (scaler != null)
             {
-                DynamicResolutionScaler.Instance.SetQualityPreset(worldPreset);
+                scaler.SetQualityPreset(worldPreset);
             }
         }
 
@@ -1097,41 +1095,52 @@ namespace Hecton8.UI
             if (_cachedVolumeProfile != null)
                 return true;
 
-            if (urpVolume != null && urpVolume.profile != null)
+            if (TryCacheVolumeProfile(urpVolume))
+                return true;
+
+            if (mainCamera != null &&
+                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(mainCamera.transform)))
             {
-                _cachedVolumeProfile = urpVolume.profile;
                 return true;
             }
 
-            Volume[] volumes = UnityEngine.Object.FindObjectsByType<Volume>(FindObjectsInactive.Include);
-            Volume fallback = null;
-
-            for (int i = 0; i < volumes.Length; i++)
+            if (_cachedMainCamera != null &&
+                _cachedMainCamera != mainCamera &&
+                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(_cachedMainCamera.transform)))
             {
-                Volume candidate = volumes[i];
-                if (candidate == null ||
-                    candidate.profile == null ||
-                    !candidate.gameObject.scene.IsValid())
-                {
-                    continue;
-                }
-
-                if (candidate.isGlobal)
-                {
-                    urpVolume = candidate;
-                    _cachedVolumeProfile = candidate.profile;
-                    return true;
-                }
-
-                if (fallback == null)
-                    fallback = candidate;
+                return true;
             }
 
-            if (fallback == null)
+            if (Hecton8.Core.GlobalRegistry.Player != null &&
+                Hecton8.Core.GlobalRegistry.Player.PlayerCamera != null &&
+                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(Hecton8.Core.GlobalRegistry.Player.PlayerCamera.transform)))
+            {
+                return true;
+            }
+
+            if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) &&
+                playerTransform != null &&
+                TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(playerTransform)))
+            {
+                return true;
+            }
+
+            if (TryGetComponent(out Volume localVolume) && TryCacheVolumeProfile(localVolume))
+                return true;
+
+            if (TryCacheVolumeProfile(Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Volume>(transform)))
+                return true;
+
+            return TryCacheVolumeProfile(GetComponentInParent<Volume>());
+        }
+
+        private bool TryCacheVolumeProfile(Volume candidate)
+        {
+            if (candidate == null || candidate.profile == null)
                 return false;
 
-            urpVolume = fallback;
-            _cachedVolumeProfile = fallback.profile;
+            urpVolume = candidate;
+            _cachedVolumeProfile = candidate.profile;
             return true;
         }
 

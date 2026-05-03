@@ -51,7 +51,7 @@ namespace Hecton8.Gameplay
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class StorageCrate : MonoBehaviour, IInteractable
+    public sealed class StorageCrate : MonoBehaviour, IInteractable, ILocalizationLanguageChangedListener
     {
         private const string DefaultOpenText = "Open Crate";
         private const string DefaultAccessText = "Access Crate";
@@ -215,7 +215,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             RebuildLocalizedTextCache();
             BaseLogisticsNetwork.RegisterStorage(this, _logisticsPowerNode);
             // Reset to initial state if needed
@@ -227,7 +227,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             BaseLogisticsNetwork.UnregisterStorage(this);
         }
 
@@ -379,6 +379,15 @@ namespace Hecton8.Gameplay
             return ResolveLocalized(key, legacyDefault);
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             RebuildLocalizedTextCache();
@@ -386,7 +395,7 @@ namespace Hecton8.Gameplay
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;

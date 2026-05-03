@@ -1,4 +1,3 @@
-using System;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using UnityEngine;
@@ -9,7 +8,9 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4200)]
     public sealed class ScatterBudgetController : MonoBehaviour, ISlowTickable
     {
-        private static readonly string[] BudgetBandLabels = Enum.GetNames(typeof(BudgetBand));
+        private const string SurfaceBudgetBandLabel = "Surface";
+        private const string MidDepthBudgetBandLabel = "MidDepth";
+        private const string DeepBudgetBandLabel = "Deep";
 
         internal static ScatterBudgetController ActiveRuntimeInstance { get; private set; }
 
@@ -171,7 +172,7 @@ namespace Hecton8.World
 
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -365,8 +366,15 @@ namespace Hecton8.World
 
         private static string ResolveBudgetBandLabel(BudgetBand band)
         {
-            int index = (int)band;
-            return (uint)index < (uint)BudgetBandLabels.Length ? BudgetBandLabels[index] : BudgetBandLabels[0];
+            switch (band)
+            {
+                case BudgetBand.MidDepth:
+                    return MidDepthBudgetBandLabel;
+                case BudgetBand.Deep:
+                    return DeepBudgetBandLabel;
+                default:
+                    return SurfaceBudgetBandLabel;
+            }
         }
 
         private void ResolveReferences()

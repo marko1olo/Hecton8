@@ -78,6 +78,7 @@ namespace Hecton8.Crafting
     public static class CraftingEvents
     {
         private const int ListenerCapacity = 32;
+        private const int PendingEventCapacity = 128;
         private const int ReferenceSlotCapacity = 128;
 
         private struct CraftingReferenceSlot
@@ -103,24 +104,39 @@ namespace Hecton8.Crafting
         // COLD ALLOC: int[128] - reference slots released only after LateUpdate dispatch resolves listeners - owner: CraftingEvents
         private static readonly int[] _referenceSlotsPendingRelease = new int[ReferenceSlotCapacity];
         private static NativeQueue<CraftingEventPayload> _pendingEvents;
+        private static NativeQueue<CraftingEventPayload> _nextFrameEvents;
         private static int _referenceWriteIndex;
         private static int _referencePendingCount;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
 
-        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEvents.Count : 0;
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             if (_pendingEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(CraftingEvents), nameof(_pendingEvents));
                 _pendingEvents.Dispose();
                 _pendingEvents = default;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(CraftingEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
             }
 
             _listeners.Clear();
             ClearReferenceSlots();
             _referenceWriteIndex = 0;
             _referencePendingCount = 0;
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
         }
 
         /// <summary>
@@ -161,7 +177,9 @@ namespace Hecton8.Crafting
             }
 
             int releaseCount = 0;
-            while (!_pendingEvents.IsEmpty())
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
             {
                 if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
                 {
@@ -175,10 +193,21 @@ namespace Hecton8.Crafting
                     return;
                 }
 
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
                 ICraftingEventListener[] rawArray = _listeners.RawArray;
                 int count = _listeners.Count;
-                for (int i = count - 1; i >= 0; i--)
-                    rawArray[i].OnCraftingEvent(in payload);
+                _isDispatching = true;
+                try
+                {
+                    for (int i = count - 1; i >= 0; i--)
+                        rawArray[i].OnCraftingEvent(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
 
                 if (IsValidReferenceSlot(payload.ReferenceSlot) && releaseCount < ReferenceSlotCapacity)
                 {
@@ -188,6 +217,11 @@ namespace Hecton8.Crafting
             }
 
             ReleaseProcessedReferenceSlots(releaseCount);
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
         }
 
         /// <summary>
@@ -366,13 +400,46 @@ namespace Hecton8.Crafting
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)
+            {
                 _pendingEvents = new NativeQueue<CraftingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CraftingEventPayload>[128] - deferred crafting event lane flushed by SystemDispatcher LateUpdate - owner: CraftingEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(CraftingEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<CraftingEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CraftingEventPayload>[128] - next-frame crafting event lane prevents same-frame reentrant dispatch - owner: CraftingEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(CraftingEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void Enqueue(in CraftingEventPayload payload)
         {
             EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+            {
+                ReleaseReferenceSlot(payload.ReferenceSlot);
+                return;
+            }
+
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
             _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
         }
 
         private static bool TryReserveReferenceSlot(out int referenceSlot)
@@ -434,8 +501,62 @@ namespace Hecton8.Crafting
             if (!_pendingEvents.IsCreated)
                 return;
 
-            while (_pendingEvents.TryDequeue(out CraftingEventPayload payload))
+            if (!DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+                return;
+
+            if (_pendingEvents.IsEmpty())
+                PromoteNextFrameEventsIfFrontEmpty();
+
+            if (_pendingEventCount > 0 &&
+                !DrainQueueWithoutDispatch(ref _pendingEvents, ref _pendingEventCount))
+            {
+                return;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+                DrainQueueWithoutDispatch(ref _nextFrameEvents, ref _nextFrameEventCount);
+        }
+
+        private static bool DrainQueueWithoutDispatch(
+            ref NativeQueue<CraftingEventPayload> queue,
+            ref int pendingCount)
+        {
+            int scanBudget = pendingCount > 0 ? pendingCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !queue.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return false;
+
+                if (!queue.TryDequeue(out CraftingEventPayload payload))
+                    break;
+
+                if (pendingCount > 0)
+                    pendingCount--;
+
                 ReleaseReferenceSlot(payload.ReferenceSlot);
+            }
+
+            if (queue.IsEmpty())
+                pendingCount = 0;
+
+            return true;
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<CraftingEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
         }
 
         private static void ClearReferenceSlots()

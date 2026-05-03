@@ -1,4 +1,3 @@
-using Hecton8.Modding;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -6,7 +5,7 @@ namespace Hecton8.Construction
     /// <summary>
     /// Raised when a logistics pipe ruptures from sustained downstream blockage.
     /// </summary>
-    internal sealed class LogisticsPipeOverpressureLeakEvent : HectonEvent
+    internal readonly struct LogisticsPipeOverpressureLeakEvent
     {
         public LogisticsPipeOverpressureLeakEvent(int pipeInstanceId, Vector3 worldPosition, float overpressureStress, int itemHashId)
         {

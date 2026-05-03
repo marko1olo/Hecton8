@@ -7,6 +7,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using Hecton8.World;
 
 namespace Hecton8.Core
 {
@@ -16,7 +17,7 @@ namespace Hecton8.Core
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("")]
-    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, ILateFrameTickable
+    public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener
     {
         private const int SamplesPerLink = 8;
         private const int NearPipeRadialSegments = 8;
@@ -209,6 +210,7 @@ namespace Hecton8.Core
             public JobHandle VertexBuildHandle;
             public JobHandle IndexBuildHandle;
             public bool BuildPending;
+            public bool DiscardPendingBuild;
             public bool Dirty;
             public int GeneratedVertexCount;
             public int GeneratedIndexCount;
@@ -224,12 +226,15 @@ namespace Hecton8.Core
 
         private static ConnectionSplineBatchRenderer _instance;
         private bool _registeredLateFrameTick;
+        private bool _registeredOriginShiftListener;
 
         // COLD ALLOC: BatchState[5] — persistent shared tube/line render batches for pipes and relay cables — owner: ConnectionSplineBatchRenderer
         private readonly BatchState[] _batches = new BatchState[5];
         // COLD ALLOC: Dictionary<long,SplineDescriptor>[100] — master logistics-pipe registry for distance-based batch reassignment — owner: ConnectionSplineBatchRenderer
         private readonly Dictionary<long, SplineDescriptor> _pipeRegistrations = new Dictionary<long, SplineDescriptor>(DefaultBatchCapacity);
+        // COLD ALLOC: HashSet<uint>[100] — ruptured logistics-pipe endpoint flags — owner: ConnectionSplineBatchRenderer
         private readonly HashSet<uint> _rupturedPipeNodes = new HashSet<uint>();
+        // COLD ALLOC: List<long>[100] — shared dictionary-key scratch for rupture and origin-shift rebases — owner: ConnectionSplineBatchRenderer
         private readonly List<long> _pipeRuptureUpdateScratch = new List<long>(DefaultBatchCapacity);
 
         private bool _pipeLodDirty = true;
@@ -250,6 +255,7 @@ namespace Hecton8.Core
         internal static void SubmitPipeLink(long linkId, SplineDescriptor descriptor, Color color)
         {
             ConnectionSplineBatchRenderer instance = ResolveInstance();
+            instance.EnsureRuntimeRegistrations();
             instance.UpsertPipeLink(linkId, descriptor, color);
         }
 
@@ -276,6 +282,7 @@ namespace Hecton8.Core
         public static void SubmitRelayLink(long linkId, Vector3 start, Vector3 end, bool hasPower, Color poweredColor, Color unpoweredColor)
         {
             ConnectionSplineBatchRenderer instance = ResolveInstance();
+            instance.EnsureRuntimeRegistrations();
             instance._batches[(int)BatchKind.RelayPowered].Color = poweredColor;
             instance._batches[(int)BatchKind.RelayUnpowered].Color = unpoweredColor;
 
@@ -336,20 +343,76 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
-            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            EnsureRuntimeRegistrations();
+        }
+
+        private void OnDisable()
+        {
+            TryUnregisterOriginShiftListener();
+            TryUnregisterLateFrameTickable();
+        }
+
+        /// <inheritdoc />
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            Vector3 shiftOffset = shiftData.ShiftOffset;
+            float3 shiftOffset3 = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
+            if (!math.all(math.isfinite(shiftOffset3)) || math.lengthsq(shiftOffset3) <= 0.000001f)
+                return;
+
+            if (_hasLastPipeObserverPosition)
+                _lastPipeObserverPosition -= shiftOffset3;
+
+            RebaseRegistrationDictionary(_pipeRegistrations, shiftOffset3);
+            for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
+                RebaseBatchForOriginShift(_batches[batchIndex], shiftOffset, shiftOffset3);
+
+            _pipeLodDirty = true;
+        }
+
+        private void EnsureRuntimeRegistrations()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            TryRegisterLateFrameTickable();
+            TryRegisterOriginShiftListener();
+        }
+
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrameTick || GlobalRegistry.Dispatcher == null)
                 return;
 
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
             _registeredLateFrameTick = true;
         }
 
-        private void OnDisable()
+        private void TryUnregisterLateFrameTickable()
         {
             if (!_registeredLateFrameTick)
                 return;
 
             GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             _registeredLateFrameTick = false;
+        }
+
+        private void TryRegisterOriginShiftListener()
+        {
+            if (_registeredOriginShiftListener)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
+        }
+
+        private void TryUnregisterOriginShiftListener()
+        {
+            if (!_registeredOriginShiftListener)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _registeredOriginShiftListener = false;
         }
 
         /// <inheritdoc />
@@ -606,6 +669,12 @@ namespace Hecton8.Core
                     return;
 
                 CompletePendingBuildIfNeeded(batch);
+                if (batch.DiscardPendingBuild)
+                {
+                    batch.DiscardPendingBuild = false;
+                    batch.Dirty = true;
+                    return;
+                }
 
                 NativeArray<TubeVertex> swap = batch.VertexFront;
                 batch.VertexFront = batch.VertexBack;
@@ -715,6 +784,8 @@ namespace Hecton8.Core
         private void UploadBatchMesh(BatchState batch)
         {
             ApplyMaterialColor(batch.Material, batch.Color);
+            if (batch.Filter != null)
+                batch.Filter.transform.localPosition = Vector3.zero;
 
             int vertexCount = batch.GeneratedVertexCount;
             int indexCount = batch.GeneratedIndexCount;
@@ -800,6 +871,44 @@ namespace Hecton8.Core
             float3 size = math.max(max - min, new float3(0.02f, 0.02f, 0.02f));
             float3 center = (min + max) * 0.5f;
             return new Bounds(new Vector3(center.x, center.y, center.z), new Vector3(size.x, size.y, size.z));
+        }
+
+        private void RebaseRegistrationDictionary(Dictionary<long, SplineDescriptor> registrations, float3 shiftOffset)
+        {
+            if (registrations == null || registrations.Count <= 0)
+                return;
+
+            _pipeRuptureUpdateScratch.Clear();
+            Dictionary<long, SplineDescriptor>.Enumerator enumerator = registrations.GetEnumerator();
+            while (enumerator.MoveNext())
+                _pipeRuptureUpdateScratch.Add(enumerator.Current.Key);
+
+            int keyCount = _pipeRuptureUpdateScratch.Count;
+            for (int i = 0; i < keyCount; i++)
+            {
+                long linkId = _pipeRuptureUpdateScratch[i];
+                if (!registrations.TryGetValue(linkId, out SplineDescriptor descriptor))
+                    continue;
+
+                descriptor.Start -= shiftOffset;
+                descriptor.End -= shiftOffset;
+                registrations[linkId] = descriptor;
+            }
+
+            _pipeRuptureUpdateScratch.Clear();
+        }
+
+        private void RebaseBatchForOriginShift(BatchState batch, Vector3 shiftOffset, float3 shiftOffset3)
+        {
+            if (batch == null)
+                return;
+
+            RebaseRegistrationDictionary(batch.Registrations, shiftOffset3);
+            if (batch.Filter != null)
+                batch.Filter.transform.localPosition -= shiftOffset;
+
+            batch.DiscardPendingBuild |= batch.BuildPending;
+            batch.Dirty = true;
         }
 
         private static void EnsureBatchCapacity(BatchState batch, int linkCapacity)
@@ -903,67 +1012,46 @@ namespace Hecton8.Core
             if (batch == null)
                 return;
 
-            CompletePendingBuildIfNeeded(batch);
-
-            if (batch.Descriptors.IsCreated)
+            bool deferDisposal = batch.BuildPending;
+            JobHandle disposalDependency = default;
+            if (deferDisposal)
             {
-                NativeMemorySentinel.UnregisterNativeArray(batch.Descriptors);
-                batch.Descriptors.Dispose();
+                disposalDependency = JobHandle.CombineDependencies(batch.FrameBuildHandle, batch.VertexBuildHandle);
+                disposalDependency = JobHandle.CombineDependencies(disposalDependency, batch.IndexBuildHandle);
             }
 
-            if (batch.SampleCenters.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(batch.SampleCenters);
-                batch.SampleCenters.Dispose();
-            }
-
-            if (batch.SampleNormals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(batch.SampleNormals);
-                batch.SampleNormals.Dispose();
-            }
-
-            if (batch.SampleBinormals.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(batch.SampleBinormals);
-                batch.SampleBinormals.Dispose();
-            }
-
-            if (batch.VertexFront.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(batch.VertexFront);
-                batch.VertexFront.Dispose();
-            }
-
-            if (batch.VertexBack.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(batch.VertexBack);
-                batch.VertexBack.Dispose();
-            }
-
-            if (batch.LineFront.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(batch.LineFront);
-                batch.LineFront.Dispose();
-            }
-
-            if (batch.LineBack.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(batch.LineBack);
-                batch.LineBack.Dispose();
-            }
-
-            if (batch.Indices.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(batch.Indices);
-                batch.Indices.Dispose();
-            }
+            DisposeNativeArray(ref batch.Descriptors, disposalDependency, deferDisposal);
+            DisposeNativeArray(ref batch.SampleCenters, disposalDependency, deferDisposal);
+            DisposeNativeArray(ref batch.SampleNormals, disposalDependency, deferDisposal);
+            DisposeNativeArray(ref batch.SampleBinormals, disposalDependency, deferDisposal);
+            DisposeNativeArray(ref batch.VertexFront, disposalDependency, deferDisposal);
+            DisposeNativeArray(ref batch.VertexBack, disposalDependency, deferDisposal);
+            DisposeNativeArray(ref batch.LineFront, disposalDependency, deferDisposal);
+            DisposeNativeArray(ref batch.LineBack, disposalDependency, deferDisposal);
+            DisposeNativeArray(ref batch.Indices, disposalDependency, deferDisposal);
+            batch.BuildPending = false;
+            batch.DiscardPendingBuild = false;
 
             if (batch.Mesh != null)
                 Destroy(batch.Mesh);
 
             if (batch.Material != null)
                 Destroy(batch.Material);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency, bool deferDisposal)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            if (deferDisposal)
+                array.Dispose(dependency);
+            else
+                array.Dispose();
+
+            array = default;
         }
 
         private static bool IsBatchBuildCompleted(BatchState batch)
@@ -978,23 +1066,18 @@ namespace Hecton8.Core
             if (batch == null || !batch.BuildPending)
                 return;
 
-            CompleteBuildHandle(ref batch.FrameBuildHandle);
-            CompleteBuildHandle(ref batch.VertexBuildHandle);
-            CompleteBuildHandle(ref batch.IndexBuildHandle);
+            bool frameComplete = CompleteBuildHandle(ref batch.FrameBuildHandle);
+            bool vertexComplete = CompleteBuildHandle(ref batch.VertexBuildHandle);
+            bool indexComplete = CompleteBuildHandle(ref batch.IndexBuildHandle);
+            if (!frameComplete || !vertexComplete || !indexComplete)
+                return;
+
             batch.BuildPending = false;
         }
 
-        private static void CompleteBuildHandle(ref JobHandle handle)
+        private static bool CompleteBuildHandle(ref JobHandle handle)
         {
-            if (!handle.IsCompleted)
-            {
-                handle.Complete();
-                handle = default;
-                return;
-            }
-
-            handle.Complete();
-            handle = default;
+            return DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
         }
     }
 }

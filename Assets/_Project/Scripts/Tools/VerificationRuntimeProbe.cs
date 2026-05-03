@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Hecton.UI;
 using Hecton.UI.MainMenu;
 using Hecton8.UI;
@@ -10,24 +11,35 @@ namespace Hecton8.Tools
 {
     internal static class VerificationRuntimeProbe
     {
+        // COLD ALLOC: List<GameObject>[512] - loaded-scene root traversal scratch for runtime verification probes - owner: VerificationRuntimeProbe
+        private static readonly List<GameObject> _sceneRootScratch = new List<GameObject>(512);
+
         public static T FindSceneObjectIncludingInactive<T>() where T : Component
         {
-            T[] all = Resources.FindObjectsOfTypeAll<T>();
-            for (int i = 0; i < all.Length; i++)
+            _sceneRootScratch.Clear();
+
+            for (int sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
             {
-                T candidate = all[i];
-                if (candidate == null)
-                    continue;
-
-                GameObject go = candidate.gameObject;
-                if (go == null)
-                    continue;
-
-                Scene scene = go.scene;
+                Scene scene = SceneManager.GetSceneAt(sceneIndex);
                 if (!scene.IsValid() || !scene.isLoaded)
                     continue;
 
-                return candidate;
+                scene.GetRootGameObjects(_sceneRootScratch);
+                for (int rootIndex = 0; rootIndex < _sceneRootScratch.Count; rootIndex++)
+                {
+                    GameObject root = _sceneRootScratch[rootIndex];
+                    if (root == null)
+                        continue;
+
+                    T candidate = FindComponentInChildrenIncludingInactive<T>(root.transform);
+                    if (candidate != null)
+                    {
+                        _sceneRootScratch.Clear();
+                        return candidate;
+                    }
+                }
+
+                _sceneRootScratch.Clear();
             }
 
             return null;
@@ -108,6 +120,24 @@ namespace Hecton8.Tools
             for (int i = 0; i < root.childCount; i++)
             {
                 T match = FindChildComponentByName<T>(root.GetChild(i), childName);
+                if (match != null)
+                    return match;
+            }
+
+            return null;
+        }
+
+        private static T FindComponentInChildrenIncludingInactive<T>(Transform root) where T : Component
+        {
+            if (root == null)
+                return null;
+
+            if (root.TryGetComponent(out T candidate))
+                return candidate;
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                T match = FindComponentInChildrenIncludingInactive<T>(root.GetChild(i));
                 if (match != null)
                     return match;
             }

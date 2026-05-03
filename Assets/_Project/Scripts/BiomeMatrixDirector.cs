@@ -4,6 +4,7 @@ using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Physics;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
 #if UNITY_EDITOR
 using UnityEditor;
@@ -11,19 +12,274 @@ using UnityEditor;
 
 namespace Hecton8.Environment
 {
+    public interface IBiomeMatrixEventListener
+    {
+        void OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile);
+        void OnDepthTierChanged(int depthTier, float depthMeters);
+    }
+
+    public static class BiomeMatrixEvents
+    {
+        private struct BiomeMatrixEventPayload
+        {
+            public byte EventType;
+            public int ProfileSlot;
+            public int DepthTier;
+            public float DepthMeters;
+        }
+
+        private const byte MatrixBiomeChangedEventType = 1;
+        private const byte DepthTierChangedEventType = 2;
+        private const int PendingEventCapacity = 32;
+        private const int MatrixProfileCacheCapacity = 128;
+
+        private static readonly RegistryBucket<IBiomeMatrixEventListener> _listeners = new RegistryBucket<IBiomeMatrixEventListener>(16);
+        private static readonly HectonBiomeMatrixProfile[] _profilesBySlot = new HectonBiomeMatrixProfile[MatrixProfileCacheCapacity]; // COLD ALLOC: HectonBiomeMatrixProfile[128] - stable profile lookup for deferred biome matrix payloads - owner: BiomeMatrixEvents
+        private static NativeQueue<BiomeMatrixEventPayload> _pendingEvents;
+        private static NativeQueue<BiomeMatrixEventPayload> _nextFrameEvents;
+        private static int _profileSlotCount;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
+
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(BiomeMatrixEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(BiomeMatrixEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
+            _listeners.Clear();
+            Array.Clear(_profilesBySlot, 0, _profileSlotCount);
+            _profileSlotCount = 0;
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
+        }
+
+        public static void Register(IBiomeMatrixEventListener listener)
+        {
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        public static void Unregister(IBiomeMatrixEventListener listener)
+        {
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        public static void RaiseMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return;
+
+            int profileSlot = ResolveProfileSlot(profile);
+
+            Enqueue(new BiomeMatrixEventPayload
+            {
+                EventType = MatrixBiomeChangedEventType,
+                ProfileSlot = profileSlot
+            });
+        }
+
+        public static void RaiseDepthTierChanged(int depthTier, float depthMeters)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= PendingEventCapacity)
+                return;
+
+            Enqueue(new BiomeMatrixEventPayload
+            {
+                EventType = DepthTierChangedEventType,
+                DepthTier = depthTier,
+                DepthMeters = depthMeters
+            });
+        }
+
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out BiomeMatrixEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                _isDispatching = true;
+                try
+                {
+                    Dispatch(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
+        }
+
+        private static void Enqueue(in BiomeMatrixEventPayload payload)
+        {
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+        }
+
+        private static void Dispatch(in BiomeMatrixEventPayload payload)
+        {
+            IBiomeMatrixEventListener[] listenerBuffer = _listeners.RawArray;
+            int listenerCount = _listeners.Count;
+            if (payload.EventType == MatrixBiomeChangedEventType)
+            {
+                HectonBiomeMatrixProfile profile = null;
+                if ((uint)payload.ProfileSlot < (uint)_profileSlotCount)
+                    profile = _profilesBySlot[payload.ProfileSlot];
+
+                for (int i = listenerCount - 1; i >= 0; i--)
+                {
+                    IBiomeMatrixEventListener listener = listenerBuffer[i];
+                    if (listener != null)
+                        listener.OnMatrixBiomeChanged(profile);
+                }
+
+                return;
+            }
+
+            if (payload.EventType == DepthTierChangedEventType)
+            {
+                for (int i = listenerCount - 1; i >= 0; i--)
+                {
+                    IBiomeMatrixEventListener listener = listenerBuffer[i];
+                    if (listener != null)
+                        listener.OnDepthTierChanged(payload.DepthTier, payload.DepthMeters);
+                }
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (!_pendingEvents.IsCreated)
+            {
+                _pendingEvents = new NativeQueue<BiomeMatrixEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BiomeMatrixEventPayload>[32] - deferred biome matrix event lane flushed by SystemDispatcher - owner: BiomeMatrixEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    PendingEventCapacity,
+                    nameof(BiomeMatrixEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<BiomeMatrixEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<BiomeMatrixEventPayload>[32] - next-frame biome matrix event lane prevents same-frame reentrant dispatch - owner: BiomeMatrixEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    PendingEventCapacity,
+                    nameof(BiomeMatrixEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<BiomeMatrixEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
+        }
+
+        private static int ResolveProfileSlot(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null)
+                return -1;
+
+            for (int i = 0; i < _profileSlotCount; i++)
+            {
+                if (ReferenceEquals(_profilesBySlot[i], profile))
+                    return i;
+            }
+
+            if (_profileSlotCount >= _profilesBySlot.Length)
+                return -1;
+
+            int slot = _profileSlotCount++;
+            _profilesBySlot[slot] = profile;
+            return slot;
+        }
+    }
+
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4035)]
     [ExecuteAlways]
     public sealed class BiomeMatrixDirector : MonoBehaviour, ISlowTickable
     {
         private const string MissingProfileLabel = "No biome profile";
-        private static readonly string[] CardinalRegionLabels = Enum.GetNames(typeof(HectonBiomeMatrixProfile.CardinalRegion));
-        private static readonly string[] ClusterFocusLabels = Enum.GetNames(typeof(WorldProceduralClusterFocus));
-        private static readonly string[] StructureFocusLabels = Enum.GetNames(typeof(WorldProceduralStructureFocus));
-        private static readonly string[] FaunaMoodLabels = Enum.GetNames(typeof(WorldProceduralFaunaMood));
-
-        public static event Action<HectonBiomeMatrixProfile> OnMatrixBiomeChanged;
-        public static event Action<int, float> OnDepthTierChanged;
+        private const string NorthCardinalRegionLabel = "North";
+        private const string SouthCardinalRegionLabel = "South";
+        private const string EastCardinalRegionLabel = "East";
+        private const string WestCardinalRegionLabel = "West";
+        private const string NoneClusterFocusLabel = "None";
+        private const string FertileGrowthClusterFocusLabel = "FertileGrowth";
+        private const string BiologicalNestClusterFocusLabel = "BiologicalNest";
+        private const string ResourcePocketClusterFocusLabel = "ResourcePocket";
+        private const string ShelterPocketClusterFocusLabel = "ShelterPocket";
+        private const string HazardPocketClusterFocusLabel = "HazardPocket";
+        private const string DebrisFieldClusterFocusLabel = "DebrisField";
+        private const string RockCoverClusterFocusLabel = "RockCover";
+        private const string NoneStructureFocusLabel = "None";
+        private const string NaturalLandmarkStructureFocusLabel = "NaturalLandmark";
+        private const string TechFragmentStructureFocusLabel = "TechFragment";
+        private const string CaveReadStructureFocusLabel = "CaveRead";
+        private const string BiologicalSilhouetteStructureFocusLabel = "BiologicalSilhouette";
+        private const string NoneFaunaMoodLabel = "None";
+        private const string CalmFaunaMoodLabel = "Calm";
+        private const string LivelyFaunaMoodLabel = "Lively";
+        private const string MixedFaunaMoodLabel = "Mixed";
+        private const string HostileFaunaMoodLabel = "Hostile";
 
         [Header("References")]
         [SerializeField] private Transform playerTransform;
@@ -305,7 +561,7 @@ namespace Hecton8.Environment
                 _currentDepthTier = 1;
                 _debugResolutionMode = evaluationTransform == null ? "Missing evaluation transform" : "Missing catalog";
                 if (hadProfile && Application.isPlaying)
-                    OnMatrixBiomeChanged?.Invoke(null);
+                    BiomeMatrixEvents.RaiseMatrixBiomeChanged(null);
                 UpdateDiagnostics(null, 1, HectonBiomeMatrixProfile.CardinalRegion.North);
                 return;
             }
@@ -324,7 +580,7 @@ namespace Hecton8.Environment
             _debugResolutionMode = next == null ? MissingProfileLabel : usedFallback ? "Fallback" : "Exact";
 
             if (depthTierChanged && Application.isPlaying)
-                OnDepthTierChanged?.Invoke(_currentDepthTier, _currentDepthMeters);
+                BiomeMatrixEvents.RaiseDepthTierChanged(_currentDepthTier, _currentDepthMeters);
 
             if (forcePublish || next != _currentProfile)
             {
@@ -332,7 +588,7 @@ namespace Hecton8.Environment
                 if (Application.isPlaying)
                 {
                     GlobalTelemetryBus.PublishBiomeVisited(next != null ? next.biomeName : string.Empty, tier, depth);
-                    OnMatrixBiomeChanged?.Invoke(_currentProfile);
+                    BiomeMatrixEvents.RaiseMatrixBiomeChanged(_currentProfile);
                 }
             }
 
@@ -432,9 +688,7 @@ namespace Hecton8.Environment
 
             if (_resolvedFluidEngine == null)
             {
-                _resolvedFluidEngine = Application.isPlaying
-                    ? HectonFluidEngine.Instance
-                    : HectonFluidEngine.Instance;
+                _resolvedFluidEngine = GlobalRegistry.Fluid;
             }
 
             if (_resolvedFluidEngine != null)
@@ -459,8 +713,8 @@ namespace Hecton8.Environment
             if (_resolvedAtmosphereManager == null)
             {
                 _resolvedAtmosphereManager = Application.isPlaying
-                    ? HectonAtmosphereManager.Instance
-                    : HectonAtmosphereManager.Instance;
+                    ? Hecton8.Core.GlobalRegistry.Atmosphere
+                    : Hecton8.Core.GlobalRegistry.Atmosphere;
             }
 
             if (_resolvedAtmosphereManager != null)
@@ -603,26 +857,74 @@ namespace Hecton8.Environment
 
         private static string ResolveCardinalRegionLabel(HectonBiomeMatrixProfile.CardinalRegion region)
         {
-            int index = (int)region;
-            return (uint)index < (uint)CardinalRegionLabels.Length ? CardinalRegionLabels[index] : CardinalRegionLabels[0];
+            switch (region)
+            {
+                case HectonBiomeMatrixProfile.CardinalRegion.South:
+                    return SouthCardinalRegionLabel;
+                case HectonBiomeMatrixProfile.CardinalRegion.East:
+                    return EastCardinalRegionLabel;
+                case HectonBiomeMatrixProfile.CardinalRegion.West:
+                    return WestCardinalRegionLabel;
+                default:
+                    return NorthCardinalRegionLabel;
+            }
         }
 
         private static string ResolveClusterFocusLabel(WorldProceduralClusterFocus focus)
         {
-            int index = (int)focus;
-            return (uint)index < (uint)ClusterFocusLabels.Length ? ClusterFocusLabels[index] : ClusterFocusLabels[0];
+            switch (focus)
+            {
+                case WorldProceduralClusterFocus.FertileGrowth:
+                    return FertileGrowthClusterFocusLabel;
+                case WorldProceduralClusterFocus.BiologicalNest:
+                    return BiologicalNestClusterFocusLabel;
+                case WorldProceduralClusterFocus.ResourcePocket:
+                    return ResourcePocketClusterFocusLabel;
+                case WorldProceduralClusterFocus.ShelterPocket:
+                    return ShelterPocketClusterFocusLabel;
+                case WorldProceduralClusterFocus.HazardPocket:
+                    return HazardPocketClusterFocusLabel;
+                case WorldProceduralClusterFocus.DebrisField:
+                    return DebrisFieldClusterFocusLabel;
+                case WorldProceduralClusterFocus.RockCover:
+                    return RockCoverClusterFocusLabel;
+                default:
+                    return NoneClusterFocusLabel;
+            }
         }
 
         private static string ResolveStructureFocusLabel(WorldProceduralStructureFocus focus)
         {
-            int index = (int)focus;
-            return (uint)index < (uint)StructureFocusLabels.Length ? StructureFocusLabels[index] : StructureFocusLabels[0];
+            switch (focus)
+            {
+                case WorldProceduralStructureFocus.NaturalLandmark:
+                    return NaturalLandmarkStructureFocusLabel;
+                case WorldProceduralStructureFocus.TechFragment:
+                    return TechFragmentStructureFocusLabel;
+                case WorldProceduralStructureFocus.CaveRead:
+                    return CaveReadStructureFocusLabel;
+                case WorldProceduralStructureFocus.BiologicalSilhouette:
+                    return BiologicalSilhouetteStructureFocusLabel;
+                default:
+                    return NoneStructureFocusLabel;
+            }
         }
 
         private static string ResolveFaunaMoodLabel(WorldProceduralFaunaMood mood)
         {
-            int index = (int)mood;
-            return (uint)index < (uint)FaunaMoodLabels.Length ? FaunaMoodLabels[index] : FaunaMoodLabels[0];
+            switch (mood)
+            {
+                case WorldProceduralFaunaMood.Calm:
+                    return CalmFaunaMoodLabel;
+                case WorldProceduralFaunaMood.Lively:
+                    return LivelyFaunaMoodLabel;
+                case WorldProceduralFaunaMood.Mixed:
+                    return MixedFaunaMoodLabel;
+                case WorldProceduralFaunaMood.Hostile:
+                    return HostileFaunaMoodLabel;
+                default:
+                    return NoneFaunaMoodLabel;
+            }
         }
     }
 }

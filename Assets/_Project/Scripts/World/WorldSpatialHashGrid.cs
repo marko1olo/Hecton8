@@ -4,7 +4,6 @@ using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Interaction;
-using Hecton8.Modding;
 using Hecton8.Scavenging;
 using Unity.Burst;
 using Unity.Collections;
@@ -83,32 +82,6 @@ namespace Hecton8.World
         public SpatialTargetKind Kind { get; }
         public FieldTargetRole SignalRole { get; }
         public int SpeciesId { get; }
-        public int Layer { get; }
-    }
-
-    internal sealed class SpatialHashEntryUnloadedEvent : HectonEvent
-    {
-        public SpatialHashEntryUnloadedEvent(
-            int handle,
-            SpatialTargetKind kind,
-            Component owner,
-            Vector3 runtimePosition,
-            double3 absolutePosition,
-            int layer)
-        {
-            Handle = handle;
-            Kind = kind;
-            Owner = owner;
-            RuntimePosition = runtimePosition;
-            AbsolutePosition = absolutePosition;
-            Layer = layer;
-        }
-
-        public int Handle { get; }
-        public SpatialTargetKind Kind { get; }
-        public Component Owner { get; }
-        public Vector3 RuntimePosition { get; }
-        public double3 AbsolutePosition { get; }
         public int Layer { get; }
     }
 
@@ -257,9 +230,13 @@ namespace Hecton8.World
         private static void ResetStaticState()
         {
             _entries.Clear();
-            DisposeValidationBuffers();
-            DisposeOriginShiftBuffers();
-            DisposeFarUnloadBuffers();
+            JobHandle teardownDependency = JobHandle.CombineDependencies(
+                CancelValidationForTeardown(),
+                JobHandle.CombineDependencies(CancelOriginShiftForTeardown(), CancelFarUnloadForTeardown()));
+            teardownDependency = DisposeValidationBuffers(teardownDependency);
+            teardownDependency = DisposeOriginShiftBuffers(teardownDependency);
+            teardownDependency = DisposeFarUnloadBuffers(teardownDependency);
+            JobHandle.ScheduleBatchedJobs();
             DisposeAcousticDensityMap();
             _farUnloadHandleScratch.Clear();
             if (_queryHandles.IsCreated)
@@ -430,24 +407,46 @@ namespace Hecton8.World
             out SpatialQueryHit hit)
         {
             hit = default;
-            return TryGetNearestMatch(
-                origin,
-                radius,
-                SpatialTargetKind.Bioform,
-                layerMask,
-                ignoreTransform,
-                entry =>
-                {
-                    if (excludedSpeciesId >= 0 && entry.SpeciesId == excludedSpeciesId)
-                        return false;
+            bool found = false;
+            float bestDistanceSqr = radius * radius;
+            int handleCount = CollectCandidateHandles(origin, radius, SpatialTargetKind.Bioform);
+            for (int i = 0; i < handleCount; i++)
+            {
+                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                    continue;
 
-                    if (!requirePreyTag)
-                        return true;
+                Transform candidateTransform = entry.Transform;
+                if (candidateTransform == null || candidateTransform == ignoreTransform)
+                    continue;
 
-                    Transform candidateTransform = entry.Transform;
-                    return candidateTransform != null && candidateTransform.CompareTag("Prey");
-                },
-                out hit);
+                if (!MatchesLayer(entry.Layer, layerMask))
+                    continue;
+
+                if (excludedSpeciesId >= 0 && entry.SpeciesId == excludedSpeciesId)
+                    continue;
+
+                if (requirePreyTag && !candidateTransform.CompareTag("Prey"))
+                    continue;
+
+                Vector3 position = candidateTransform.position;
+                float distanceSqr = (position - origin).sqrMagnitude;
+                if (distanceSqr > bestDistanceSqr)
+                    continue;
+
+                bestDistanceSqr = distanceSqr;
+                hit = new SpatialQueryHit(
+                    candidateTransform,
+                    entry.Owner,
+                    position,
+                    distanceSqr,
+                    entry.Kind,
+                    entry.SignalRole,
+                    entry.SpeciesId,
+                    entry.Layer);
+                found = true;
+            }
+
+            return found;
         }
 
         public static bool TryGetNearestAggressiveBioform(
@@ -458,20 +457,43 @@ namespace Hecton8.World
             out SpatialQueryHit hit)
         {
             hit = default;
-            return TryGetNearestMatch(
-                origin,
-                radius,
-                SpatialTargetKind.Bioform,
-                layerMask,
-                ignoreTransform,
-                entry =>
-                {
-                    if (!(entry.Owner is FaunaBrain brain))
-                        return false;
+            bool found = false;
+            float bestDistanceSqr = radius * radius;
+            int handleCount = CollectCandidateHandles(origin, radius, SpatialTargetKind.Bioform);
+            for (int i = 0; i < handleCount; i++)
+            {
+                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
+                    continue;
 
-                    return brain.isAggressive;
-                },
-                out hit);
+                Transform candidateTransform = entry.Transform;
+                if (candidateTransform == null || candidateTransform == ignoreTransform)
+                    continue;
+
+                if (!MatchesLayer(entry.Layer, layerMask))
+                    continue;
+
+                if (!(entry.Owner is FaunaBrain brain) || !brain.isAggressive)
+                    continue;
+
+                Vector3 position = candidateTransform.position;
+                float distanceSqr = (position - origin).sqrMagnitude;
+                if (distanceSqr > bestDistanceSqr)
+                    continue;
+
+                bestDistanceSqr = distanceSqr;
+                hit = new SpatialQueryHit(
+                    candidateTransform,
+                    entry.Owner,
+                    position,
+                    distanceSqr,
+                    entry.Kind,
+                    entry.SignalRole,
+                    entry.SpeciesId,
+                    entry.Layer);
+                found = true;
+            }
+
+            return found;
         }
 
         public static void BuildSonarSnapshot(Vector3 origin, float radius, out SpatialSonarSnapshot snapshot)
@@ -794,6 +816,14 @@ namespace Hecton8.World
         {
             EnsureInitialized();
             ClearAcousticDensityMapForOriginShift();
+            if (_originShiftRefreshScheduled)
+            {
+                // [BLOCKING_SYNC_POINT] Origin shift is a simulation barrier; shared refresh buffers must not be overwritten while a prior job reads them.
+                DispatcherJobSwap.TryComplete(ref _originShiftRefreshHandle, forceComplete: true);
+                _originShiftRefreshScheduled = false;
+                _originShiftRefreshCount = 0;
+            }
+
             int count = _entries.Count;
             if (count <= 0)
                 return;
@@ -937,55 +967,6 @@ namespace Hecton8.World
             return CollectCandidateHandles(origin, radius, kindMask, (ulong)interactionFilter);
         }
 
-        private static bool TryGetNearestMatch(
-            Vector3 origin,
-            float radius,
-            SpatialTargetKind kindMask,
-            int layerMask,
-            Transform ignoreTransform,
-            System.Predicate<Entry> predicate,
-            out SpatialQueryHit hit)
-        {
-            hit = default;
-            bool found = false;
-            float bestDistanceSqr = radius * radius;
-            int handleCount = CollectCandidateHandles(origin, radius, kindMask);
-            for (int i = 0; i < handleCount; i++)
-            {
-                if (!_entries.TryGetValue(_queryHandles[i], out Entry entry) || entry == null)
-                    continue;
-
-                Transform candidateTransform = entry.Transform;
-                if (candidateTransform == null || candidateTransform == ignoreTransform)
-                    continue;
-
-                if (!MatchesLayer(entry.Layer, layerMask))
-                    continue;
-
-                if (predicate != null && !predicate(entry))
-                    continue;
-
-                Vector3 position = candidateTransform.position;
-                float distanceSqr = (position - origin).sqrMagnitude;
-                if (distanceSqr > bestDistanceSqr)
-                    continue;
-
-                bestDistanceSqr = distanceSqr;
-                hit = new SpatialQueryHit(
-                    candidateTransform,
-                    entry.Owner,
-                    position,
-                    distanceSqr,
-                    entry.Kind,
-                    entry.SignalRole,
-                    entry.SpeciesId,
-                    entry.Layer);
-                found = true;
-            }
-
-            return found;
-        }
-
         private static void ScheduleValidation(int currentFrame)
         {
             EnsureInitialized();
@@ -1035,8 +1016,9 @@ namespace Hecton8.World
 
         private static void ConsumeCompletedValidation()
         {
-            _validationHandle.Complete();
-            _validationHandle = default;
+            if (!DispatcherJobSwap.TryComplete(ref _validationHandle, forceComplete: false))
+                return;
+
             _validationScheduled = false;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -1117,8 +1099,9 @@ namespace Hecton8.World
 
         private static void ConsumeCompletedFarUnload()
         {
-            _farUnloadHandle.Complete();
-            _farUnloadHandle = default;
+            if (!DispatcherJobSwap.TryComplete(ref _farUnloadHandle, forceComplete: false))
+                return;
+
             _farUnloadScheduled = false;
             _farUnloadHandleScratch.Clear();
 
@@ -1141,14 +1124,6 @@ namespace Hecton8.World
 
                 _nativeHash.Evict(handle);
                 entry.IsResidentInNativeHash = false;
-                AbsoluteUniversePosition entryAup = AbsoluteUniversePosition.FromRuntimePosition(entry.RuntimePosition);
-                HectonEventBus.Publish(new SpatialHashEntryUnloadedEvent(
-                    handle,
-                    entry.Kind,
-                    entry.Owner,
-                    entry.RuntimePosition,
-                    entryAup.ToAbsoluteDouble3(),
-                    entry.Layer));
             }
 
             _farUnloadCount = 0;
@@ -1157,8 +1132,9 @@ namespace Hecton8.World
 
         private static void ConsumeCompletedOriginShiftRefresh()
         {
-            _originShiftRefreshHandle.Complete();
-            _originShiftRefreshHandle = default;
+            if (!DispatcherJobSwap.TryComplete(ref _originShiftRefreshHandle, forceComplete: false))
+                return;
+
             _originShiftRefreshScheduled = false;
 
             for (int i = 0; i < _originShiftRefreshCount; i++)
@@ -1205,7 +1181,7 @@ namespace Hecton8.World
         {
             if (_validationScheduled)
             {
-                _validationHandle.Complete();
+                DispatcherJobSwap.TryComplete(ref _validationHandle, forceComplete: true);
                 _validationScheduled = false;
             }
 
@@ -1230,11 +1206,49 @@ namespace Hecton8.World
             _validationCount = 0;
         }
 
+        private static JobHandle CancelValidationForTeardown()
+        {
+            if (!_validationScheduled)
+                return _validationHandle;
+
+            JobHandle dependency = _validationHandle;
+            _validationHandle = default;
+            _validationScheduled = false;
+            _validationCount = 0;
+            return dependency;
+        }
+
+        private static JobHandle DisposeValidationBuffers(JobHandle dependency)
+        {
+            JobHandle disposeHandle = dependency;
+
+            if (_validationAbsolutePositions.IsCreated)
+            {
+                disposeHandle = _validationAbsolutePositions.Dispose(disposeHandle);
+                _validationAbsolutePositions = default;
+            }
+
+            if (_validationRuntimePositions.IsCreated)
+            {
+                disposeHandle = _validationRuntimePositions.Dispose(disposeHandle);
+                _validationRuntimePositions = default;
+            }
+
+            if (_validationInvalidMask.IsCreated)
+            {
+                disposeHandle = _validationInvalidMask.Dispose(disposeHandle);
+                _validationInvalidMask = default;
+            }
+
+            _validationCount = 0;
+            return disposeHandle;
+        }
+
         private static void DisposeOriginShiftBuffers()
         {
             if (_originShiftRefreshScheduled)
             {
-                _originShiftRefreshHandle.Complete();
+                DispatcherJobSwap.TryComplete(ref _originShiftRefreshHandle, forceComplete: true);
                 _originShiftRefreshScheduled = false;
             }
 
@@ -1259,6 +1273,44 @@ namespace Hecton8.World
             _originShiftRefreshCount = 0;
         }
 
+        private static JobHandle CancelOriginShiftForTeardown()
+        {
+            if (!_originShiftRefreshScheduled)
+                return _originShiftRefreshHandle;
+
+            JobHandle dependency = _originShiftRefreshHandle;
+            _originShiftRefreshHandle = default;
+            _originShiftRefreshScheduled = false;
+            _originShiftRefreshCount = 0;
+            return dependency;
+        }
+
+        private static JobHandle DisposeOriginShiftBuffers(JobHandle dependency)
+        {
+            JobHandle disposeHandle = dependency;
+
+            if (_originShiftHandles.IsCreated)
+            {
+                disposeHandle = _originShiftHandles.Dispose(disposeHandle);
+                _originShiftHandles = default;
+            }
+
+            if (_originShiftRuntimePositions.IsCreated)
+            {
+                disposeHandle = _originShiftRuntimePositions.Dispose(disposeHandle);
+                _originShiftRuntimePositions = default;
+            }
+
+            if (_originShiftAbsolutePositions.IsCreated)
+            {
+                disposeHandle = _originShiftAbsolutePositions.Dispose(disposeHandle);
+                _originShiftAbsolutePositions = default;
+            }
+
+            _originShiftRefreshCount = 0;
+            return disposeHandle;
+        }
+
         private static void EnsureFarUnloadCapacity(int requiredCapacity)
         {
             int safeCapacity = math.max(1, requiredCapacity);
@@ -1276,7 +1328,7 @@ namespace Hecton8.World
         {
             if (_farUnloadScheduled)
             {
-                _farUnloadHandle.Complete();
+                DispatcherJobSwap.TryComplete(ref _farUnloadHandle, forceComplete: true);
                 _farUnloadScheduled = false;
             }
 
@@ -1305,6 +1357,50 @@ namespace Hecton8.World
             }
 
             _farUnloadCount = 0;
+        }
+
+        private static JobHandle CancelFarUnloadForTeardown()
+        {
+            if (!_farUnloadScheduled)
+                return _farUnloadHandle;
+
+            JobHandle dependency = _farUnloadHandle;
+            _farUnloadHandle = default;
+            _farUnloadScheduled = false;
+            _farUnloadCount = 0;
+            return dependency;
+        }
+
+        private static JobHandle DisposeFarUnloadBuffers(JobHandle dependency)
+        {
+            JobHandle disposeHandle = dependency;
+
+            if (_farUnloadHandles.IsCreated)
+            {
+                disposeHandle = _farUnloadHandles.Dispose(disposeHandle);
+                _farUnloadHandles = default;
+            }
+
+            if (_farUnloadAbsolutePositions.IsCreated)
+            {
+                disposeHandle = _farUnloadAbsolutePositions.Dispose(disposeHandle);
+                _farUnloadAbsolutePositions = default;
+            }
+
+            if (_farUnloadEligibilityMask.IsCreated)
+            {
+                disposeHandle = _farUnloadEligibilityMask.Dispose(disposeHandle);
+                _farUnloadEligibilityMask = default;
+            }
+
+            if (_farUnloadResultMask.IsCreated)
+            {
+                disposeHandle = _farUnloadResultMask.Dispose(disposeHandle);
+                _farUnloadResultMask = default;
+            }
+
+            _farUnloadCount = 0;
+            return disposeHandle;
         }
 
         private static void EnsureAcousticDensityMap()

@@ -1,8 +1,11 @@
+using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.Atmosphere;
 using Hecton8.Core;
 using Hecton8.Physics;
 using Hecton8.Power;
 using Hecton8.World;
+using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -29,16 +32,181 @@ namespace Hecton8.Gameplay
         public float RadiusMeters { get; }
     }
 
+    /// <summary>
+    /// NativeQueue-backed electrolysis acoustic event lane.
+    /// </summary>
     public static class ElectrolysisAcousticEvents
     {
-        public delegate void ElectrolysisAcousticEventHandler(in ElectrolysisAcousticEvent acousticEvent);
+        private const int ListenerCapacity = 8;
+        private const int PendingEventCapacity = 32;
 
-        public static event ElectrolysisAcousticEventHandler OnElectrolysisAcoustic;
+        private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("ElectrolysisAcousticEvents.Overflow"));
+        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("ElectrolysisAcousticEvents"));
 
+        // COLD ALLOC: RegistryBucket<IElectrolysisAcousticEventListener>[8] - electrolysis acoustic listeners drained by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
+        private static readonly RegistryBucket<IElectrolysisAcousticEventListener> _listeners = new RegistryBucket<IElectrolysisAcousticEventListener>(ListenerCapacity);
+
+        private static NativeQueue<ElectrolysisAcousticPayload> _pendingEvents;
+        private static int _pendingEventCount;
+        private static int _lastOverflowWarningFrame = -1;
+
+        /// <summary>
+        /// Number of pending electrolysis acoustic payloads waiting for late-frame dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingEventCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(ElectrolysisAcousticEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+            _lastOverflowWarningFrame = -1;
+        }
+
+        /// <summary>
+        /// Registers an electrolysis acoustic listener.
+        /// </summary>
+        public static void Register(IElectrolysisAcousticEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters an electrolysis acoustic listener.
+        /// </summary>
+        public static void Unregister(IElectrolysisAcousticEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>
+        /// Publishes one electrolysis acoustic payload to the deferred event lane.
+        /// </summary>
         public static void Notify(in ElectrolysisAcousticEvent acousticEvent)
         {
-            OnElectrolysisAcoustic?.Invoke(acousticEvent);
+            Enqueue(new ElectrolysisAcousticPayload
+            {
+                Position = acousticEvent.Position,
+                DumpedPowerWatts = acousticEvent.DumpedPowerWatts,
+                OxygenUnits = acousticEvent.OxygenUnits,
+                ThreatStrength = acousticEvent.ThreatStrength,
+                RadiusMeters = acousticEvent.RadiusMeters
+            });
         }
+
+        /// <summary>
+        /// Flushes pending electrolysis acoustic events to registered listeners.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out ElectrolysisAcousticPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                ElectrolysisAcousticEvent acousticEvent = new ElectrolysisAcousticEvent(
+                    payload.Position,
+                    payload.DumpedPowerWatts,
+                    payload.OxygenUnits,
+                    payload.ThreatStrength,
+                    payload.RadiusMeters);
+
+                IElectrolysisAcousticEventListener[] rawArray = _listeners.RawArray;
+                int count = _listeners.Count;
+                for (int i = count - 1; i >= 0; i--)
+                    rawArray[i].OnElectrolysisAcoustic(in acousticEvent);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<ElectrolysisAcousticPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<ElectrolysisAcousticPayload>[32] - deferred electrolysis acoustic lane flushed by SystemDispatcher LateUpdate - owner: ElectrolysisAcousticEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(ElectrolysisAcousticEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        private static bool Enqueue(in ElectrolysisAcousticPayload payload)
+        {
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                ReportOverflowOncePerFrame();
+                return false;
+            }
+
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
+        }
+
+        private static void ReportOverflowOncePerFrame()
+        {
+            int frame = Time.frameCount;
+            if (_lastOverflowWarningFrame == frame)
+                return;
+
+            _lastOverflowWarningFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
+        }
+    }
+
+    /// <summary>
+    /// Listener for deferred electrolysis acoustic events.
+    /// </summary>
+    public interface IElectrolysisAcousticEventListener
+    {
+        /// <summary>
+        /// Receives one late-frame electrolysis acoustic payload.
+        /// </summary>
+        void OnElectrolysisAcoustic(in ElectrolysisAcousticEvent acousticEvent);
+    }
+
+    /// <summary>
+    /// Blittable queued payload for electrolysis acoustic events.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ElectrolysisAcousticPayload
+    {
+        public Vector3 Position;
+        public float DumpedPowerWatts;
+        public float OxygenUnits;
+        public float ThreatStrength;
+        public float RadiusMeters;
     }
 
     /// <summary>

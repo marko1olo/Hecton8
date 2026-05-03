@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Hecton8.AtlasSignal;
 using Hecton8.Bootstrap;
+using Hecton8.Core;
 using Hecton8.Inventory;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
@@ -59,6 +60,7 @@ namespace Hecton8.Gameplay
         private readonly Dictionary<string, int> _executionCounts = new Dictionary<string, int>(StringComparer.Ordinal);
         private readonly List<TransactionSnapshot> _recentTransactions = new List<TransactionSnapshot>(8);
         private readonly StringBuilder _sb = new StringBuilder(256);
+        private bool _serviceRegistered;
 
         public static PDAExchangeSystem Instance { get; private set; }
 
@@ -89,6 +91,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
+            TryRegisterService();
             AutoResolve();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             if (playerInventory != null)
@@ -104,8 +107,27 @@ namespace Hecton8.Gameplay
                 playerInventory.InventoryChanged -= HandleInventoryChanged;
             if (scanLogSystem != null)
                 scanLogSystem.ScanLogChanged -= HandleScanLogChanged;
+            TryUnregisterService();
             if (Instance == this)
                 Instance = null;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterPDAExchangeRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.PDAExchange, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterPDAExchangeRuntime(this);
+            _serviceRegistered = false;
         }
 
         public BarterOfferData GetOfferAt(int index)
@@ -200,7 +222,7 @@ namespace Hecton8.Gameplay
             ExchangeStateChanged?.Invoke();
 
             // Уведомляем Atlas6DirectiveSystem — бартер = рост доверия
-            Atlas6DirectiveSystem directive = Atlas6DirectiveSystem.Instance;
+            Atlas6DirectiveSystem directive = Hecton8.Core.GlobalRegistry.Atlas6Directive;
             if (directive != null)
                 directive.RegisterBarterTransaction();
 
@@ -368,7 +390,7 @@ namespace Hecton8.Gameplay
                 }
             }
             if (scanLogSystem == null)
-                scanLogSystem = ScanLogSystem.Instance;
+                scanLogSystem = Hecton8.Core.GlobalRegistry.ScanLog;
             if (hudNotification == null)
                 HUDNotification.TryGetActive(out hudNotification);
         }

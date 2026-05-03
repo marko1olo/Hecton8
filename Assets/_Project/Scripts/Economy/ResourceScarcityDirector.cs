@@ -38,6 +38,7 @@ namespace Hecton8.Economy
         private static readonly int _TitaniumDirectiveHashId = LocHash.Compute(DefaultTitaniumDirectiveItemId);
 
         [Serializable]
+#pragma warning disable 0649 // Unity serializes scarcity directive definitions from authoring data.
         private struct DirectiveResourceDefinition
         {
             [Tooltip("Essential resource monitored by the Atlas scarcity directive owner.")]
@@ -64,6 +65,7 @@ namespace Hecton8.Economy
             [Tooltip("Optional narrative phase gate applied to the generated directive.")]
             public QuestPhaseGateType phaseGate;
         }
+#pragma warning restore 0649
 
         private struct ResourceClusterRecord
         {
@@ -118,6 +120,7 @@ namespace Hecton8.Economy
 
         private HectonEventSubscription _itemCollectedSubscription;
         private bool _registeredSlowTickable;
+        private bool _serviceRegistered;
         private int _cachedDirectiveCount;
 
         /// <summary>
@@ -149,6 +152,7 @@ namespace Hecton8.Economy
 
         private void OnEnable()
         {
+            TryRegisterService();
             Hecton8.Core.GlobalRegistry.SaveRuntime?.Register(this);
             TryRegisterSlowTickable();
             CacheDirectiveDefinitions();
@@ -163,6 +167,7 @@ namespace Hecton8.Economy
             TryUnregisterSlowTickable();
             _itemCollectedSubscription?.Dispose();
             _itemCollectedSubscription = null;
+            TryUnregisterService();
         }
 
         private void OnDestroy()
@@ -171,6 +176,7 @@ namespace Hecton8.Economy
             TryUnregisterSlowTickable();
             _itemCollectedSubscription?.Dispose();
             _itemCollectedSubscription = null;
+            TryUnregisterService();
 
             if (_instance == this)
                 _instance = null;
@@ -326,9 +332,9 @@ namespace Hecton8.Economy
 
             _itemIdsByHash[itemHashId] = item.PersistentId;
 
-            if (itemCollectedEvent.Interactor != null)
+            if (itemCollectedEvent.HasInteractorPosition)
             {
-                Vector3 position = itemCollectedEvent.Interactor.position;
+                Vector3 position = itemCollectedEvent.InteractorPosition;
                 TrackKnownCluster(itemHashId, position);
                 AccumulateSectorExtraction(itemHashId, position, itemCollectedEvent.Quantity);
             }
@@ -751,6 +757,24 @@ namespace Hecton8.Economy
             _directiveHarvestUnits[index] = Mathf.Max(1, directiveHarvestUnits);
             _directiveMarkerHeightOffsets[index] = Mathf.Max(0f, markerHeightOffset);
             _directivePhaseGates[index] = phaseGate;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterResourceScarcityRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.ResourceScarcity, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterResourceScarcityRuntime(this);
+            _serviceRegistered = false;
         }
     }
 }

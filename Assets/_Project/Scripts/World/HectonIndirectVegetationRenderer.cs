@@ -2070,6 +2070,19 @@ namespace Hecton8.World
             float lod1MaxDistance = Mathf.Max(_farLodDistance, _nearLodDistance) + lodTransition;
             Vector4 floatingOffset = ResolveVegetationFloatingOffset();
 
+            if (!enableCpuCulling)
+            {
+                WriteAllVisibleVegetationOutput(
+                    cullingOutput,
+                    useFarPass,
+                    useDepthPass,
+                    useDepthFarPass,
+                    useShadowPass,
+                    useMotionPass,
+                    useMotionFarPass);
+                return default;
+            }
+
             NativeArray<byte> visibilityMask = new NativeArray<byte>(_instanceCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<float4> cullingPlanes = default;
             NativeArray<float4> headlightPositionsWs = default;
@@ -2131,10 +2144,21 @@ namespace Hecton8.World
 
             unsafe
             {
+                int visibleInstanceCapacity = CalculateVegetationVisibleInstanceCapacity(
+                    _instanceCount,
+                    useFarPass,
+                    useShadowPass);
+                int drawCommandCapacity = CalculateVegetationDrawCommandCapacity(
+                    useFarPass,
+                    useDepthPass,
+                    useDepthFarPass,
+                    useShadowPass,
+                    useMotionPass,
+                    useMotionFarPass);
                 BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(
-                    _instanceCount * MaxVegetationVisibilityPasses,
-                    MaxVegetationDrawCommands,
-                    MaxVegetationDrawCommands);
+                    visibleInstanceCapacity,
+                    drawCommandCapacity,
+                    drawCommandCapacity);
 
                 JobHandle visibilityHandle = new BuildVegetationVisibilityMaskJob
                 {
@@ -2201,6 +2225,195 @@ namespace Hecton8.World
                     disposeHandle = headlightConeData.Dispose(disposeHandle);
                 return disposeHandle;
             }
+        }
+
+        private unsafe void WriteAllVisibleVegetationOutput(
+            BatchCullingOutput cullingOutput,
+            bool useFarPass,
+            bool useDepthPass,
+            bool useDepthFarPass,
+            bool useShadowPass,
+            bool useMotionPass,
+            bool useMotionFarPass)
+        {
+            int nearOffset = 0;
+            int farOffset = _instanceCount;
+            int shadowOffset = _instanceCount + (useFarPass ? _instanceCount : 0);
+            int visibleInstanceCount = CalculateVegetationVisibleInstanceCapacity(
+                _instanceCount,
+                useFarPass,
+                useShadowPass);
+            int drawCommandCapacity = CalculateVegetationDrawCommandCapacity(
+                useFarPass,
+                useDepthPass,
+                useDepthFarPass,
+                useShadowPass,
+                useMotionPass,
+                useMotionFarPass);
+
+            BatchCullingOutputDrawCommands output = HectonBatchRendererGroupUtility.AllocateDirectDrawOutput(
+                visibleInstanceCount,
+                drawCommandCapacity,
+                drawCommandCapacity);
+
+            for (int instanceIndex = 0; instanceIndex < _instanceCount; instanceIndex++)
+                output.visibleInstances[nearOffset + instanceIndex] = instanceIndex;
+
+            if (useFarPass)
+            {
+                for (int instanceIndex = 0; instanceIndex < _instanceCount; instanceIndex++)
+                    output.visibleInstances[farOffset + instanceIndex] = instanceIndex;
+            }
+
+            if (useShadowPass)
+            {
+                for (int instanceIndex = 0; instanceIndex < _instanceCount; instanceIndex++)
+                    output.visibleInstances[shadowOffset + instanceIndex] = instanceIndex;
+            }
+
+            int commandIndex = 0;
+            commandIndex = WriteVegetationDrawCommand(
+                output,
+                commandIndex,
+                nearOffset,
+                _instanceCount,
+                _nearBatchMaterialId,
+                _nearBatchMeshId,
+                shadowCasting: false,
+                receiveShadows: false,
+                MotionVectorGenerationMode.Camera);
+
+            if (useFarPass)
+            {
+                commandIndex = WriteVegetationDrawCommand(
+                    output,
+                    commandIndex,
+                    farOffset,
+                    _instanceCount,
+                    _farBatchMaterialId,
+                    _farBatchMeshId,
+                    shadowCasting: false,
+                    receiveShadows: false,
+                    MotionVectorGenerationMode.Camera);
+            }
+
+            if (useDepthPass)
+            {
+                commandIndex = WriteVegetationDrawCommand(
+                    output,
+                    commandIndex,
+                    nearOffset,
+                    _instanceCount,
+                    _depthNearBatchMaterialId,
+                    _nearBatchMeshId,
+                    shadowCasting: false,
+                    receiveShadows: false,
+                    MotionVectorGenerationMode.Camera);
+
+                if (useDepthFarPass)
+                {
+                    commandIndex = WriteVegetationDrawCommand(
+                        output,
+                        commandIndex,
+                        farOffset,
+                        _instanceCount,
+                        _depthFarBatchMaterialId,
+                        _farBatchMeshId,
+                        shadowCasting: false,
+                        receiveShadows: false,
+                        MotionVectorGenerationMode.Camera);
+                }
+            }
+
+            if (useShadowPass)
+            {
+                commandIndex = WriteVegetationDrawCommand(
+                    output,
+                    commandIndex,
+                    shadowOffset,
+                    _instanceCount,
+                    _shadowBatchMaterialId,
+                    _nearBatchMeshId,
+                    shadowCasting: true,
+                    receiveShadows: false,
+                    MotionVectorGenerationMode.Camera);
+            }
+
+            if (useMotionPass)
+            {
+                commandIndex = WriteVegetationDrawCommand(
+                    output,
+                    commandIndex,
+                    nearOffset,
+                    _instanceCount,
+                    _motionNearBatchMaterialId,
+                    _nearBatchMeshId,
+                    shadowCasting: false,
+                    receiveShadows: false,
+                    MotionVectorGenerationMode.Object);
+
+                if (useMotionFarPass)
+                {
+                    commandIndex = WriteVegetationDrawCommand(
+                        output,
+                        commandIndex,
+                        farOffset,
+                        _instanceCount,
+                        _motionFarBatchMaterialId,
+                        _farBatchMeshId,
+                        shadowCasting: false,
+                        receiveShadows: false,
+                        MotionVectorGenerationMode.Object);
+                }
+            }
+
+            output.visibleInstanceCount = visibleInstanceCount;
+            output.drawCommandCount = commandIndex;
+            output.drawRangeCount = commandIndex;
+            HectonBatchRendererGroupUtility.WriteDirectDrawOutput(cullingOutput, output);
+        }
+
+        private static int CalculateVegetationVisibleInstanceCapacity(
+            int instanceCount,
+            bool useFarPass,
+            bool useShadowPass)
+        {
+            int visibleInstanceCount = instanceCount;
+            if (useFarPass)
+                visibleInstanceCount += instanceCount;
+            if (useShadowPass)
+                visibleInstanceCount += instanceCount;
+
+            return visibleInstanceCount;
+        }
+
+        private static int CalculateVegetationDrawCommandCapacity(
+            bool useFarPass,
+            bool useDepthPass,
+            bool useDepthFarPass,
+            bool useShadowPass,
+            bool useMotionPass,
+            bool useMotionFarPass)
+        {
+            int drawCommandCapacity = 1;
+            if (useFarPass)
+                drawCommandCapacity++;
+            if (useDepthPass)
+            {
+                drawCommandCapacity++;
+                if (useDepthFarPass)
+                    drawCommandCapacity++;
+            }
+            if (useShadowPass)
+                drawCommandCapacity++;
+            if (useMotionPass)
+            {
+                drawCommandCapacity++;
+                if (useMotionFarPass)
+                    drawCommandCapacity++;
+            }
+
+            return drawCommandCapacity;
         }
 
         private unsafe int WriteVegetationDrawCommand(
@@ -2849,7 +3062,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
-            _isRegistered = true;
+            _isRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

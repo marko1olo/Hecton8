@@ -3,6 +3,7 @@
 // Basic networking manager for multiplayer prep.
 // ============================================================================
 
+using Hecton8.Bootstrap;
 using UnityEngine;
 
 namespace Hecton8.Networking
@@ -27,7 +28,7 @@ namespace Hecton8.Networking
             }
 
             Instance = this;
-            DontDestroyOnLoad(gameObject);
+            GameBootstrapper.PersistRuntimeService(this);
         }
 
         private void Start()

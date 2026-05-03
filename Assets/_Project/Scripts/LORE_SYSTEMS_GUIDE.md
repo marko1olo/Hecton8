@@ -8,7 +8,7 @@
 - `AudioLogData` — ScriptableObject: данные одного дневника (клип, субтитры, автор, категория)
 - `AudioLogSystem` — singleton: воспроизведение, архив, ISaveable
 - `AudioLogPickup` — IInteractable: объект в мире, воспроизводит лог при взаимодействии
-- `AudioLogEvents` — static event bus
+- `AudioLogEvents` — NativeQueue-backed event lane
 
 **Как использовать:**
 1. Create → Hecton8/Narrative/Audio Log Data → заполнить поля
@@ -23,7 +23,7 @@
 
 - `QuestData` — ScriptableObject: квест с триггером и условием завершения
 - `QuestManager` — singleton: слушает события, ISaveable
-- `QuestEvents` — static event bus
+- `QuestEvents` — NativeQueue-backed event lane
 
 **Типы триггеров:** OnItemCollected, OnDepthReached, OnBiomeEntered, OnDiscoveryMade, OnAudioLogFound, OnEclipseStart, OnSignalDetected, Manual
 
@@ -40,8 +40,8 @@
 - `AtlasSignalSystem` — singleton: пульс каждые 683с, сила по расстоянию
 - `AtlasSignalDecoder` — 4-фазная расшифровка по силе сигнала
 - `Atlas6DirectiveSystem` — статус игрока с точки зрения Атлас-6
-- `AtlasSignalEvents` — static event bus
-- `Atlas6Events` — static event bus
+- `AtlasSignalEvents` — NativeQueue-backed event lane
+- `Atlas6Events` — NativeQueue-backed event lane
 
 **Shader globals:** `_AtlasSignalStrength`, `_BiolumPulseTime`
 
@@ -78,7 +78,7 @@
 
 - `DepthZoneProfile` — ScriptableObject: зона с глубиной, атмосферой, требованиями
 - `DepthZoneDirector` — singleton: отслеживает зону игрока, hull warnings
-- `DepthZoneEvents` — static event bus
+- `DepthZoneEvents` — NativeQueue-backed event lane
 
 **Зоны из лора:**
 - THE SPINE: 0-100м (стартовая)
@@ -96,7 +96,7 @@
 **Геймплейные последствия Великого Затмения.**
 
 - `EclipseGameplaySystem` — singleton: температура -8°C/мин, ночные хищники через 60с
-- `EclipseGameplayEvents` — static event bus
+- `EclipseGameplayEvents` — NativeQueue-backed event lane
 
 **Shader globals:** `_EclipseBiolumMultiplier`
 
@@ -109,7 +109,7 @@
 
 - `SpectrumSystem` — singleton: Normal/Thermal/Sonar/Echolocation
 - `PDASpectrumTab` — UI вкладка в PDA (индекс 5)
-- `SpectrumEvents` — static event bus
+- `SpectrumEvents` — NativeQueue-backed event lane
 
 **Shader globals:** `_SpectrumMode`, `_SonarRadius`, `_SonarPulseTime`
 
@@ -168,7 +168,7 @@
 **Звуковые тиры по глубине.**
 
 - `SoundscapeSystem` — singleton: 7 тиров (Surface→Thermal)
-- `SoundscapeEvents` — static event bus
+- `SoundscapeEvents` — NativeQueue-backed event lane
 
 **Shader globals:** `_SoundscapeDepthTier`
 
@@ -181,7 +181,7 @@
 
 - `EndingSystem` — singleton: условия активации, выбор концовки, ISaveable
 - `EndingTerminalInteractable` — IInteractable: терминал у ядра Атлас-6
-- `EndingEvents` — static event bus
+- `EndingEvents` — NativeQueue-backed event lane
 
 **Концовки:** ShutDown (выключить), Leave (оставить), Amplify (усилить сигнал)
 

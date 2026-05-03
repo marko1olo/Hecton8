@@ -9,7 +9,7 @@ namespace Hecton8.Modding
     /// This view is inactive until a scene prefab wires the template references.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class ModMenuUIController : MonoBehaviour
+    public sealed class ModMenuUIController : MonoBehaviour, IModRegistryEventListener
     {
         [Header("Mod List")]
         [SerializeField] private Transform modListContainer;
@@ -36,15 +36,13 @@ namespace Hecton8.Modding
 
         private void OnEnable()
         {
-            ModLoader.RuntimeRegistryChanged += HandleRegistryChanged;
-            ModSettingsRegistry.RegistryChanged += HandleRegistryChanged;
+            ModRegistryEvents.Register(this);
             RefreshView();
         }
 
         private void OnDisable()
         {
-            ModLoader.RuntimeRegistryChanged -= HandleRegistryChanged;
-            ModSettingsRegistry.RegistryChanged -= HandleRegistryChanged;
+            ModRegistryEvents.Unregister(this);
         }
 
         /// <summary>
@@ -67,8 +65,19 @@ namespace Hecton8.Modding
             }
         }
 
-        private void HandleRegistryChanged()
+        /// <summary>
+        /// Handles deferred mod registry invalidation events.
+        /// </summary>
+        /// <param name="payload">Unmanaged mod registry payload.</param>
+        public void OnModRegistryEvent(in ModRegistryEventPayload payload)
         {
+            ModRegistryEventType eventType = (ModRegistryEventType)payload.EventType;
+            if (eventType != ModRegistryEventType.RuntimeRegistryChanged &&
+                eventType != ModRegistryEventType.SettingsRegistryChanged)
+            {
+                return;
+            }
+
             RefreshView();
         }
 

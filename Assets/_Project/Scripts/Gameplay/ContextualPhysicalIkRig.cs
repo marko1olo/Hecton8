@@ -585,6 +585,7 @@ namespace Hecton8.Gameplay
         private static readonly int MuscleBulgeShaderId = Shader.PropertyToID("_MuscleBulge");
 
         [System.Serializable]
+#pragma warning disable 0649 // Unity serializes IK authoring chains from character rig data.
         private struct AppendageChainAuthoring
         {
             [Tooltip("Parent transform that owns the first chain bone. Used to convert solved world rotations into local space.")]
@@ -620,8 +621,10 @@ namespace Hecton8.Gameplay
             [Range(0.0f, 1.0f)]
             public float blend;
         }
+#pragma warning restore 0649
 
         [System.Serializable]
+#pragma warning disable 0649 // Unity serializes IK authoring chains from character rig data.
         private struct SpineChainAuthoring
         {
             [Tooltip("Parent transform for the first spine bone.")]
@@ -643,8 +646,10 @@ namespace Hecton8.Gameplay
             [Range(0.0f, 1.0f)]
             public float blend;
         }
+#pragma warning restore 0649
 
         [System.Serializable]
+#pragma warning disable 0649 // Unity serializes IK authoring chains from character rig data.
         private struct SecondaryChainAuthoring
         {
             [Tooltip("Parent transform for the first secondary-motion bone.")]
@@ -665,6 +670,7 @@ namespace Hecton8.Gameplay
             [Range(0.0f, 1.0f)]
             public float blend;
         }
+#pragma warning restore 0649
 
         [Header("── Core References ──────────────────")]
         [Tooltip("Animator owning the live playable graph that will be wrapped by the IK job.")]
@@ -1596,7 +1602,7 @@ namespace Hecton8.Gameplay
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _registeredOriginShiftListener = true;
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void TryUnregisterOriginShiftListener()

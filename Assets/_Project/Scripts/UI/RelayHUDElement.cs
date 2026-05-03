@@ -134,7 +134,7 @@ namespace Hecton8.UI
                 return;
             }
 
-            EmergencyServiceRelayDirector relayDirector = EmergencyServiceRelayDirector.Instance;
+            EmergencyServiceRelayDirector relayDirector = Hecton8.Core.GlobalRegistry.EmergencyRelay;
             EmergencyServiceRelay routeTarget = relayDirector != null
                 ? relayDirector.GetActiveRouteTarget()
                 : null;
@@ -216,7 +216,7 @@ namespace Hecton8.UI
 
             _cameraRetryTime = Time.time + CameraRetryInterval;
 
-            // Resolve via SceneBootstrap player hierarchy (explicit ownership, no Camera.main)
+            // Resolve via registry-owned player hierarchy.
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             if (playerContext != null && playerContext.PlayerTransform != null)
             {

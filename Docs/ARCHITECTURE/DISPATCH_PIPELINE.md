@@ -1,6 +1,6 @@
 # Dispatch Pipeline
 
-Date: `2026-05-01`
+Date: `2026-05-03`
 Status: `PENDING VERIFICATION`
 
 ## Scope
@@ -10,8 +10,8 @@ Current-state boundary:
 
 - This document defines the required dispatch contract.
 - It is not proof that all current sources comply.
-- `Docs/Reports/DOOMSDAY_FLAW_REPORT.md` still identifies cadence-sensitive local `.Complete()` ownership in `ProximityColliderSystem.Tick`, `SaveManager.Tick`, and `HectonFluidEngine.PostFixedTick`.
-- Any future edit must move local barriers into explicit dispatcher-owned swap windows or document why the owner is a permitted end-window.
+- `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` supersedes the older literal `.Complete()` call-site list. Current strict grep finds dispatcher request completion callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs` and one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`.
+- Any future edit must keep job barriers inside explicit dispatcher-owned swap windows or document why the owner is a permitted end-window.
 
 ## Core Rule
 `Tick()` and `FixedTick()` may schedule jobs and read already-published front buffers.
@@ -70,8 +70,14 @@ This is deliberate one-step latency. The main thread never blocks mid-step for p
 
 - Dispatcher deferred raycasts via `_scheduledDispatcherRaycastHandle.Complete()`.
 - Foveated simulation completion through `FoveatedSimulationManager.CompleteFrameJobs()`.
+- `DispatcherJobSwap.BeginLateFrameSwapWindow()` / `EndLateFrameSwapWindow()` wrap the `ILateFrameTickable` recovery lane and static late-frame recovery helpers.
+- `DispatcherJobSwap.BeginPostFixedSwapWindow()` / `EndPostFixedSwapWindow()` wrap the `IPostFixedTickable` recovery lane.
 
 Both are profiled. If either barrier takes more than `1.0ms`, the dispatcher emits a warning naming the subsystem that stalled and publishes the stall to `GlobalTelemetryBus`.
+
+In editor/development builds, non-forced `DispatcherJobSwap.TryComplete(...)` calls outside those dispatcher-owned swap windows emit a throttled warning. This is diagnostic only; release builds do not log.
+
+`HectonWorldGenerator.StopStreaming()` is a teardown-only exception: pending chunk generation jobs are completed before LUT/native buffer disposal, and pending PhysX bake jobs are completed before chunk collider destruction. These call sites must stay annotated as `[BLOCKING_SYNC_POINT]` and must not be used as a normal residency-retirement path.
 
 ## ThreadSafeCommandQueue
 `ThreadSafeCommandQueue` exists for structural intent only.
@@ -90,6 +96,16 @@ Current supported commands:
 - `ModifyVoxel`
 
 If a future system needs another structural mutation, add a new opcode and keep the payload blittable.
+
+## NativeQueue Event Generations
+`BootstrapEvents`, `InteractionEvents`, `CraftingEvents`, `ScanEvents`, `SaveEvents`, `InventoryEvents`, `WeatherEvents`, `QuestEvents`, `PowerGridTelemetryEvents`, `NarrativeEvents`, `NotificationEvents`, `FirstHourEvents`, `EndingEvents`, `AtmosphereEvents`, `EclipseGameplayEvents`, `AcousticZoneEvents`, `CelestialEvents`, `MapMagicBiomeEvents`, and `BiomeMatrixEvents` are the current source-level references for generation-split queue flushing.
+
+- Front queue: current generation drained by `SystemDispatcher.LateUpdate()`.
+- Back queue: payloads raised by listeners during dispatch.
+- Promotion: back queue becomes front only after the current front queue is empty.
+- Budget trip: current front generation keeps priority; reentrant back-generation events wait.
+
+This prevents same-frame listener reenqueue from extending the listed lanes until the global late-frame budget trips. Other NativeQueue-backed lanes still need one-by-one migration and Play Mode proof before claiming generation-split event architecture globally.
 
 ## Shame List
 These systems were explicitly moved off mid-tick `Complete()` patterns and into dispatcher-controlled swap windows:

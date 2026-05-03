@@ -2,16 +2,17 @@
 
 Status: `ACTIVE`
 Verification: `PENDING VERIFICATION`
-Date: `2026-05-01`
+Date: `2026-05-02`
 
 This document defines the only valid DOTS scope for scatter in HECTON-8.
 
-2026-05-01 current-state boundary:
+2026-05-02 current-state boundary:
 
-- Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this scope as current project truth.
+- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this scope as current project truth.
 - DOTS remains placeholder/seam-only unless package, define, profiler parity, and runtime validation prove otherwise.
 - Current source/package check: `com.unity.entities` is absent from `Packages/manifest.json`.
 - `Assets/_Project/Scripts/World/Dots` exists as a gated optional assembly lane, but the current files are placeholder/fallback scaffolding.
+- Current strict source grep found `0` active `Unity.Entities`, `IComponentData`, `SystemBase`, or `ISystem` references under `Assets/_Project/Scripts`.
 - This document constrains future DOTS work; it is not proof that DOTS packages, jobs, or live scatter ownership are production-ready.
 
 ## 1. Owner Rule

@@ -17,6 +17,9 @@ namespace JBooth.MicroSplat
 
         public void OnActiveBuildTargetChanged(BuildTarget previousTarget, BuildTarget newTarget)
         {
+            if (Application.isBatchMode)
+               return;
+
             var guids = AssetDatabase.FindAssets("t: TextureArrayConfig");
             foreach (var guid in guids)
             {
@@ -72,6 +75,9 @@ namespace JBooth.MicroSplat
 
       static void OnPostprocessAllAssets (string[] importedAssets, string[] deletedAssets, string[] movedAssets, string[] movedFromAssetPaths)
       {
+         if (Application.isBatchMode)
+            return;
+
          var updates = new HashSet<TextureArrayConfig>();
          AddChangedConfigsToHashSet(updates, importedAssets);
          AddChangedConfigsToHashSet(updates, movedAssets);

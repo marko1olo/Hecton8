@@ -26,7 +26,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4037)]
-    public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, IEcosystemDirectorService
+    public sealed class EcosystemDirector : MonoBehaviour, ISlowTickable, ILateFrameTickable, IEcosystemDirectorService
     {
         internal static EcosystemDirector ActiveRuntimeInstance { get; private set; }
 
@@ -396,6 +396,7 @@ namespace Hecton8.World
         private int _pendingPredationEventCount;
         private bool _registeredService;
         private bool _registeredSlowTickable;
+        private bool _registeredLateFrameTickable;
         private bool _diffusionScheduled;
         private bool _solveScheduled;
         private bool _populationSolvePendingHibernationSync;
@@ -661,7 +662,7 @@ namespace Hecton8.World
             for (int sectorIndex = 0; sectorIndex < _activeSectorCount; sectorIndex++)
             {
                 SectorPopulationState state = _sectorFrontStates[sectorIndex];
-                _saveSnapshotSectors.Add(new EcosystemSectorSaveRecord
+                _saveSnapshotSectors.AddNoResize(new EcosystemSectorSaveRecord
                 {
                     SectorCoord = state.SectorCoord,
                     PackedPopulations = PackPopulationCounts(state.PreyPopulationRounded, state.PredatorPopulationRounded),
@@ -749,6 +750,7 @@ namespace Hecton8.World
             AllocateRuntimeState();
             TryRegisterService();
             TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
         }
 
         private void OnDisable()
@@ -757,6 +759,7 @@ namespace Hecton8.World
                 ActiveRuntimeInstance = null;
 
             TryUnregisterSlowTickable();
+            TryUnregisterLateFrameTickable();
             TryUnregisterService();
             DisposeRuntimeState();
         }
@@ -771,6 +774,7 @@ namespace Hecton8.World
             AllocateRuntimeState();
             TryRegisterService();
             TryRegisterSlowTickable();
+            TryRegisterLateFrameTickable();
         }
 
         /// <summary>
@@ -782,7 +786,6 @@ namespace Hecton8.World
                 return;
 
             DecayBiomeHostility();
-            CompleteScheduledSimulation(forceComplete: false);
             SyncPendingHibernatedFaunaPopulationRecords();
             EnsurePlayerSectorRegistered();
             EnsureMigrationNeighborSectorsRegistered();
@@ -791,9 +794,11 @@ namespace Hecton8.World
             _diffusionTickAccumulator += DefaultSlowTickIntervalSeconds;
             if (_coldTickAccumulator >= coldTickIntervalSeconds)
             {
+                if (HasPendingSimulationJob())
+                    return;
+
                 _coldTickAccumulator -= coldTickIntervalSeconds;
                 _diffusionTickAccumulator = 0f;
-                CompleteScheduledSimulation(forceComplete: true);
                 SyncPendingHibernatedFaunaPopulationRecords();
                 ApplyPendingPredationEvents();
                 ScheduleSectorSolve();
@@ -803,11 +808,18 @@ namespace Hecton8.World
             if (_diffusionTickAccumulator < diffusionTickIntervalSeconds)
                 return;
 
+            if (HasPendingSimulationJob())
+                return;
+
             _diffusionTickAccumulator -= diffusionTickIntervalSeconds;
-            CompleteScheduledSimulation(forceComplete: true);
             SyncPendingHibernatedFaunaPopulationRecords();
             ApplyPendingPredationEvents();
             SchedulePopulationDiffusion();
+        }
+
+        public void LateFrameTick()
+        {
+            CompleteScheduledSimulation(forceComplete: false);
         }
 
         /// <summary>
@@ -822,7 +834,6 @@ namespace Hecton8.World
             if (HasPendingSimulationJob())
                 return false;
 
-            CompleteScheduledSimulation(forceComplete: false);
             int2 sectorCoord = QuantizeSector(worldPosition);
             int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
             if (slotIndex < 0)
@@ -847,7 +858,7 @@ namespace Hecton8.World
             if (!IsInitialized || preyConsumed <= 0)
                 return;
 
-            EnvironmentalStrainManager.Instance?.AccumulatePredationStrain(worldPosition, preyConsumed);
+            GlobalRegistry.EnvironmentalStrain?.AccumulatePredationStrain(worldPosition, preyConsumed);
 
             int2 sectorCoord = QuantizeSector(worldPosition);
             long packedSectorKey = PackSectorKey(sectorCoord);
@@ -962,7 +973,7 @@ namespace Hecton8.World
         {
             _cachedVegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (_cachedPersistentWorldRegistry == null)
-                _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
+                _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
         }
 
         private static bool RequiresThermalEnvelope(CreatureArchetypeData archetype)
@@ -1022,7 +1033,7 @@ namespace Hecton8.World
         private static float ResolveCombinedCorpseSpawnInfluence01(Vector3 worldPosition, float radiusMeters)
         {
             float liveCorpseInfluence01 = ResolveCorpseSpawnInfluence01(worldPosition, radiusMeters);
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             float persistentWhaleFallInfluence01 = registry != null
                 ? registry.ResolveWhaleFallSpawnInfluence01(worldPosition, Time.time, radiusMeters)
                 : 0f;
@@ -1270,6 +1281,27 @@ namespace Hecton8.World
             _registeredSlowTickable = false;
         }
 
+        private void TryRegisterLateFrameTickable()
+        {
+            if (_registeredLateFrameTickable || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrameTickable = true;
+        }
+
+        private void TryUnregisterLateFrameTickable()
+        {
+            if (!_registeredLateFrameTickable)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.UI);
+            _registeredLateFrameTickable = false;
+        }
+
         private void EnsurePlayerSectorRegistered()
         {
             if (HasPendingSimulationJob())
@@ -1409,10 +1441,7 @@ namespace Hecton8.World
 
         private bool HasPendingSimulationJob()
         {
-            if (_solveScheduled && !_scheduledSolveHandle.IsCompleted)
-                return true;
-
-            return _diffusionScheduled && !_scheduledDiffusionHandle.IsCompleted;
+            return _solveScheduled || _diffusionScheduled;
         }
 
         private void CompleteScheduledSimulation(bool forceComplete)
@@ -1426,14 +1455,12 @@ namespace Hecton8.World
             if (!_diffusionScheduled)
                 return;
 
-            if (!forceComplete && !_scheduledDiffusionHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _scheduledDiffusionHandle, forceComplete))
                 return;
 
-            _scheduledDiffusionHandle.Complete();
             NativeArray<SectorPopulationState> swap = _sectorFrontStates;
             _sectorFrontStates = _sectorBackStates;
             _sectorBackStates = swap;
-            _scheduledDiffusionHandle = default;
             _diffusionScheduled = false;
             RefreshStarvationPressure();
         }
@@ -1443,14 +1470,12 @@ namespace Hecton8.World
             if (!_solveScheduled)
                 return;
 
-            if (!forceComplete && !_scheduledSolveHandle.IsCompleted)
+            if (!DispatcherJobSwap.TryComplete(ref _scheduledSolveHandle, forceComplete))
                 return;
 
-            _scheduledSolveHandle.Complete();
             NativeArray<SectorPopulationState> swap = _sectorFrontStates;
             _sectorFrontStates = _sectorBackStates;
             _sectorBackStates = swap;
-            _scheduledSolveHandle = default;
             _solveScheduled = false;
             RefreshStarvationPressure();
             _populationSolvePendingHibernationSync = true;
@@ -1471,7 +1496,7 @@ namespace Hecton8.World
                 return;
 
             if (_cachedPersistentWorldRegistry == null)
-                _cachedPersistentWorldRegistry = PersistentWorldRegistry.Instance;
+                _cachedPersistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
 
             if (_cachedPersistentWorldRegistry == null)
                 return;

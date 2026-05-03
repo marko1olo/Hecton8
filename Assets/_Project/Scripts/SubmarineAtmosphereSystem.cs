@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.AI;
 using Hecton8.Construction;
 using Hecton8.Core;
@@ -57,20 +58,175 @@ namespace Hecton8.Atmosphere
     }
 
     /// <summary>
-    /// Static high-pressure warning bus for submarine bulkhead events.
+    /// Unmanaged high-pressure warning payload carried by the deferred event lane.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct HighPressureEventPayload
+    {
+        public Vector3 RuntimePosition;
+        public float PressureAKPa;
+        public float PressureBKPa;
+        public int DoorIndex;
+        public int RoomA;
+        public int RoomB;
+    }
+
+    /// <summary>
+    /// Listener for deferred high-pressure warnings.
+    /// </summary>
+    public interface IHighPressureEventListener
+    {
+        void OnHighPressure(in HighPressureEvent pressureEvent);
+    }
+
+    /// <summary>
+    /// NativeQueue-backed high-pressure warning bus for submarine bulkhead events.
     /// </summary>
     public static class HighPressureEvents
     {
-        /// <summary>Delegate used by high-pressure subscribers.</summary>
-        public delegate void HighPressureEventHandler(in HighPressureEvent pressureEvent);
+        private const int ListenerCapacity = 16;
+        private const int PendingEventCapacity = 32;
+        private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("HighPressureEvents.Overflow"));
+        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("HighPressureEvents"));
 
-        /// <summary>Fired when a sealed bulkhead opens into unequal room pressures.</summary>
-        public static event HighPressureEventHandler OnHighPressure;
+        // COLD ALLOC: RegistryBucket<IHighPressureEventListener>[16] - high-pressure listeners drained by SystemDispatcher LateUpdate - owner: HighPressureEvents
+        private static readonly RegistryBucket<IHighPressureEventListener> _listeners = new RegistryBucket<IHighPressureEventListener>(ListenerCapacity);
+        private static NativeQueue<HighPressureEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
+        private static int _lastOverflowWarningFrame = -1;
+
+        /// <summary>Number of high-pressure payloads waiting for late-frame dispatch.</summary>
+        public static int PendingCount => _pendingEventCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(HighPressureEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+            _lastOverflowWarningFrame = -1;
+        }
+
+        /// <summary>Registers one high-pressure warning listener.</summary>
+        public static void Register(IHighPressureEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>Unregisters one high-pressure warning listener.</summary>
+        public static void Unregister(IHighPressureEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>Flushes queued high-pressure warnings.</summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out HighPressureEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                Dispatch(in payload);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
 
         /// <summary>Emits a high-pressure warning payload.</summary>
         public static void Notify(in HighPressureEvent pressureEvent)
         {
-            OnHighPressure?.Invoke(pressureEvent);
+            Enqueue(new HighPressureEventPayload
+            {
+                RuntimePosition = pressureEvent.RuntimePosition,
+                PressureAKPa = pressureEvent.PressureAKPa,
+                PressureBKPa = pressureEvent.PressureBKPa,
+                DoorIndex = pressureEvent.DoorIndex,
+                RoomA = pressureEvent.RoomA,
+                RoomB = pressureEvent.RoomB
+            });
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<HighPressureEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<HighPressureEventPayload>[32] - deferred submarine high-pressure warning lane flushed by SystemDispatcher LateUpdate - owner: HighPressureEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(HighPressureEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        private static bool Enqueue(in HighPressureEventPayload payload)
+        {
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                ReportOverflowOncePerFrame();
+                return false;
+            }
+
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
+        }
+
+        private static void Dispatch(in HighPressureEventPayload payload)
+        {
+            int count = _listeners.Count;
+            if (count <= 0)
+                return;
+
+            HighPressureEvent pressureEvent = new HighPressureEvent(
+                payload.DoorIndex,
+                payload.RoomA,
+                payload.RoomB,
+                payload.PressureAKPa,
+                payload.PressureBKPa,
+                payload.RuntimePosition);
+
+            IHighPressureEventListener[] rawArray = _listeners.RawArray;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnHighPressure(in pressureEvent);
+        }
+
+        private static void ReportOverflowOncePerFrame()
+        {
+            int frame = Time.frameCount;
+            if (_lastOverflowWarningFrame == frame)
+                return;
+
+            _lastOverflowWarningFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
         }
     }
 
@@ -94,17 +250,168 @@ namespace Hecton8.Atmosphere
     }
 
     /// <summary>
-    /// Static fatal-implosion bus for catastrophic overload failures.
+    /// Unmanaged fatal pressure implosion payload carried by the deferred event lane.
+    /// </summary>
+    [StructLayout(LayoutKind.Sequential)]
+    public struct FatalPressureImplosionEventPayload
+    {
+        public Vector3 RuntimePosition;
+        public float TemperatureCelsius;
+        public uint NodeId;
+        public int RoomIndex;
+    }
+
+    /// <summary>
+    /// Listener for deferred fatal pressure implosion events.
+    /// </summary>
+    public interface IFatalPressureImplosionEventListener
+    {
+        void OnFatalPressureImplosion(in FatalPressureImplosionEvent implosionEvent);
+    }
+
+    /// <summary>
+    /// NativeQueue-backed fatal-implosion bus for catastrophic overload failures.
     /// </summary>
     public static class FatalPressureImplosionEvents
     {
-        public delegate void FatalPressureImplosionEventHandler(in FatalPressureImplosionEvent implosionEvent);
+        private const int ListenerCapacity = 16;
+        private const int PendingEventCapacity = 8;
+        private static readonly uint _overflowWarningHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents.Overflow"));
+        private static readonly uint _queueHash = unchecked((uint)LocHash.Compute("FatalPressureImplosionEvents"));
 
-        public static event FatalPressureImplosionEventHandler OnFatalPressureImplosion;
+        // COLD ALLOC: RegistryBucket<IFatalPressureImplosionEventListener>[16] - fatal implosion listeners drained by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
+        private static readonly RegistryBucket<IFatalPressureImplosionEventListener> _listeners = new RegistryBucket<IFatalPressureImplosionEventListener>(ListenerCapacity);
+        private static NativeQueue<FatalPressureImplosionEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
+        private static int _lastOverflowWarningFrame = -1;
+
+        /// <summary>Number of fatal implosion payloads waiting for late-frame dispatch.</summary>
+        public static int PendingCount => _pendingEventCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(FatalPressureImplosionEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+            _lastOverflowWarningFrame = -1;
+        }
+
+        /// <summary>Registers one fatal pressure implosion listener.</summary>
+        public static void Register(IFatalPressureImplosionEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (!_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>Unregisters one fatal pressure implosion listener.</summary>
+        public static void Unregister(IFatalPressureImplosionEventListener listener)
+        {
+            if (listener == null)
+                return;
+
+            if (_listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>Flushes queued fatal pressure implosion payloads.</summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : PendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out FatalPressureImplosionEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                Dispatch(in payload);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
 
         public static void Notify(in FatalPressureImplosionEvent implosionEvent)
         {
-            OnFatalPressureImplosion?.Invoke(implosionEvent);
+            Enqueue(new FatalPressureImplosionEventPayload
+            {
+                RuntimePosition = implosionEvent.RuntimePosition,
+                TemperatureCelsius = implosionEvent.TemperatureCelsius,
+                NodeId = implosionEvent.NodeId,
+                RoomIndex = implosionEvent.RoomIndex
+            });
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<FatalPressureImplosionEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<FatalPressureImplosionEventPayload>[8] - deferred fatal pressure implosion lane flushed by SystemDispatcher LateUpdate - owner: FatalPressureImplosionEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                PendingEventCapacity,
+                nameof(FatalPressureImplosionEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+
+        private static bool Enqueue(in FatalPressureImplosionEventPayload payload)
+        {
+            if (_pendingEventCount >= PendingEventCapacity)
+            {
+                ReportOverflowOncePerFrame();
+                return false;
+            }
+
+            EnsureInitialized();
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
+        }
+
+        private static void Dispatch(in FatalPressureImplosionEventPayload payload)
+        {
+            int count = _listeners.Count;
+            if (count <= 0)
+                return;
+
+            FatalPressureImplosionEvent implosionEvent = new FatalPressureImplosionEvent(
+                payload.NodeId,
+                payload.RoomIndex,
+                payload.TemperatureCelsius,
+                payload.RuntimePosition);
+
+            IFatalPressureImplosionEventListener[] rawArray = _listeners.RawArray;
+            for (int i = count - 1; i >= 0; i--)
+                rawArray[i].OnFatalPressureImplosion(in implosionEvent);
+        }
+
+        private static void ReportOverflowOncePerFrame()
+        {
+            int frame = Time.frameCount;
+            if (_lastOverflowWarningFrame == frame)
+                return;
+
+            _lastOverflowWarningFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _queueHash, PendingEventCapacity);
         }
     }
 
@@ -115,7 +422,7 @@ namespace Hecton8.Atmosphere
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SubmarineFluidDynamics))]
     [AddComponentMenu("Hecton/Atmosphere/Submarine Atmosphere System")]
-    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IFixedTickable, IInteractionSignalConsumer
+    public sealed class SubmarineAtmosphereSystem : MonoBehaviour, IFixedTickable, IPostFixedTickable, IInteractionSignalConsumer
     {
         private const int RoomCapacity = 8;
         private const int DoorCapacity = 7;
@@ -191,6 +498,7 @@ namespace Hecton8.Atmosphere
         }
 
         [System.Serializable]
+#pragma warning disable 0649 // Unity serializes room definitions from submarine authoring data.
         private struct RoomDefinition
         {
             [Tooltip("Override for gas capacity in cubic meters. Zero uses the linked flood-compartment capacity.")]
@@ -223,6 +531,7 @@ namespace Hecton8.Atmosphere
             [Tooltip("Primary structural material used to scale thermal fatigue once the room overheats.")]
             public RoomStructuralMaterial primaryStructuralMaterial;
         }
+#pragma warning restore 0649
 
         private struct FabricatorHeatEmitter
         {
@@ -1147,7 +1456,6 @@ namespace Hecton8.Atmosphere
                 return;
 
             EnsureNativeState();
-            ConsumeCompletedJob();
             SyncFluidSnapshot();
             ApplyAbyssalBlackoutFreeze(fixedDeltaTime);
             DecayExplosivePockets(fixedDeltaTime);
@@ -1169,6 +1477,11 @@ namespace Hecton8.Atmosphere
 
             ScheduleAtmosphereJob(fixedDeltaTime, thermalConductionDeltaTime);
             RefreshDebugState();
+        }
+
+        public void PostFixedTick(float fixedDeltaTime)
+        {
+            ConsumeCompletedJob();
         }
 
         private void ApplyAbyssalBlackoutFreeze(float fixedDeltaTime)
@@ -1496,6 +1809,7 @@ namespace Hecton8.Atmosphere
                 return;
 
             GlobalRegistry.RegisterFixedTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Environment);
             _registered = true;
         }
 
@@ -1504,6 +1818,7 @@ namespace Hecton8.Atmosphere
             if (!_registered)
                 return;
 
+            GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Environment);
             GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Environment);
             _registered = false;
         }
@@ -2062,10 +2377,12 @@ namespace Hecton8.Atmosphere
 
         private void ConsumeCompletedJob()
         {
-            if (!_atmosphereJobRunning || !_atmosphereJobHandle.IsCompleted)
+            if (!_atmosphereJobRunning)
                 return;
 
-            _atmosphereJobHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _atmosphereJobHandle, false))
+                return;
+
             _atmosphereJobRunning = false;
 
             SwapBuffers(ref _o2Front, ref _o2Back);
@@ -2181,7 +2498,7 @@ namespace Hecton8.Atmosphere
             if (!_atmosphereJobRunning)
                 return;
 
-            _atmosphereJobHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _atmosphereJobHandle, true);
             _atmosphereJobRunning = false;
             SwapBuffers(ref _o2Front, ref _o2Back);
             SwapBuffers(ref _co2Front, ref _co2Back);

@@ -59,7 +59,7 @@ namespace Hecton8.World
         public bool IsJobCompleted => _hasActiveJob && _activeHandle.IsCompleted;
 
         /// <summary>Number of valid candidates from the last completed evaluation.</summary>
-        public int LastCandidateCount => _initialized && _candidateCount.IsCreated ? _candidateCount[0] : 0;
+        public int LastCandidateCount => _initialized && _candidateCount.IsCreated ? math.min(_candidateCount[0], _candidates.Length) : 0;
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -117,14 +117,22 @@ namespace Hecton8.World
             if (_hasActiveJob)
                 return _activeHandle;
 
+            config.CellSize = math.max(0.001f, config.CellSize);
+            config.RadiusCells = math.max(0, config.RadiusCells);
+            config.GroundPlacementsPerCell = math.max(0, config.GroundPlacementsPerCell);
+            config.ClusterPlacementsPerCell = math.max(0, config.ClusterPlacementsPerCell);
+            config.StructureCellStride = math.max(1, config.StructureCellStride);
+            config.SpawnCellStride = math.max(1, config.SpawnCellStride);
+
             // Reset counter.
             _candidateCount[0] = 0;
 
             // Copy height data if provided externally.
+            int heightSampleCount = 0;
             if (heightSamples.IsCreated && heightSamples.Length > 0)
             {
-                int copyLength = math.min(heightSamples.Length, _heightSamples.Length);
-                NativeArray<float>.Copy(heightSamples, _heightSamples, copyLength);
+                heightSampleCount = math.min(heightSamples.Length, _heightSamples.Length);
+                NativeArray<float>.Copy(heightSamples, _heightSamples, heightSampleCount);
             }
 
             int diameter = config.RadiusCells * 2 + 1;
@@ -134,6 +142,7 @@ namespace Hecton8.World
             {
                 Config = config,
                 HeightSamples = _heightSamples,
+                HeightSampleCount = heightSampleCount,
                 Candidates = _candidates,
                 CandidateCount = _candidateCount,
                 MaxCandidates = MaxCandidatesPerEvaluation,
@@ -162,19 +171,24 @@ namespace Hecton8.World
             if (!_activeHandle.IsCompleted)
                 return 0;
 
-            _activeHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: false))
+                return 0;
+
             _hasActiveJob = false;
 
-            return _candidateCount[0];
+            return math.min(_candidateCount[0], _candidates.Length);
         }
 
         /// <summary>
-        /// Force-completes any pending job. Safe to call multiple times.
+        /// Attempts to complete pending work without blocking. Safe to call multiple times.
         /// </summary>
         public void ForceComplete()
         {
             if (!_hasActiveJob) return;
-            _activeHandle.Complete();
+
+            if (!DispatcherJobSwap.TryComplete(ref _activeHandle, forceComplete: false))
+                return;
+
             _hasActiveJob = false;
         }
 
@@ -185,10 +199,11 @@ namespace Hecton8.World
         {
             if (_disposed) return;
 
-            JobHandle activeHandle = _hasActiveJob ? _activeHandle : default;
-            DisposeNativeArray(ref _candidates, activeHandle);
-            DisposeNativeArray(ref _heightSamples, activeHandle);
-            DisposeNativeArray(ref _candidateCount, activeHandle);
+            bool hasActiveJob = _hasActiveJob;
+            JobHandle activeHandle = hasActiveJob ? _activeHandle : default;
+            DisposeNativeArray(ref _candidates, activeHandle, hasActiveJob);
+            DisposeNativeArray(ref _heightSamples, activeHandle, hasActiveJob);
+            DisposeNativeArray(ref _candidateCount, activeHandle, hasActiveJob);
 
             _disposed = true;
             _initialized = false;
@@ -196,16 +211,16 @@ namespace Hecton8.World
             _hasActiveJob = false;
         }
 
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency)
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency, bool hasDependency)
             where T : struct
         {
             if (!array.IsCreated)
                 return;
 
-            if (dependency.IsCompleted)
-                array.Dispose();
-            else
+            if (hasDependency)
                 array.Dispose(dependency);
+            else
+                array.Dispose();
 
             array = default;
         }
@@ -228,6 +243,7 @@ namespace Hecton8.World
         {
             [ReadOnly] public ScatterSimulationConfig Config;
             [ReadOnly] public NativeArray<float> HeightSamples;
+            [ReadOnly] public int HeightSampleCount;
             [NativeDisableParallelForRestriction]
             public NativeArray<ScatterSimulationCandidate> Candidates;
             [NativeDisableParallelForRestriction]
@@ -267,7 +283,7 @@ namespace Hecton8.World
                 float distanceFactor = 1.0f - math.saturate(distSq / math.max(maxDistSq, 0.001f));
 
                 // Height from pre-sampled terrain data.
-                float terrainHeight = index < HeightSamples.Length ? HeightSamples[index] : 0f;
+                float terrainHeight = index < HeightSampleCount ? HeightSamples[index] : 0f;
 
                 // Ground placement candidates.
                 for (int g = 0; g < Config.GroundPlacementsPerCell; g++)

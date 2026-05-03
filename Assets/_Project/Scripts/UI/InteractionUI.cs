@@ -32,7 +32,7 @@ namespace Hecton8.UI
     /// Shows different prompts based on looked-at object and held tool.
     /// Uses ITickable for updates. Zero GC in hot paths.
     /// </summary>
-    public class InteractionUI : MonoBehaviour, ITickable, IUpdatable
+    public class InteractionUI : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  INSPECTOR
@@ -135,7 +135,6 @@ namespace Hecton8.UI
         {
             _cachedTransform = transform;
             _cameraRetryTime = 0f; // Allow immediate first resolve in Tick
-            InteractableRegistry.WarmSceneCache();
             ConfigurePromptText();
             RefreshLocalizedPromptCache();
             SetVisible(false);
@@ -143,9 +142,8 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            InteractableRegistry.WarmSceneCache();
             ResolvePlayerReferences();
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             if (InputManager.Instance != null)
                 InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
             ConfigurePromptText();
@@ -155,7 +153,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             if (InputManager.Instance != null)
                 InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
             UnregisterFromTick();
@@ -169,7 +167,7 @@ namespace Hecton8.UI
         public void Tick(float deltaTime)
         {
             // â”€â”€ Check if action is in progress â”€â”€
-            PlayerActionController actionController = PlayerActionController.Instance;
+            PlayerActionController actionController = GlobalRegistry.PlayerActions;
             if (actionController != null && actionController.IsActionInProgress)
             {
                 // Show action in progress prompt, hide interaction prompt
@@ -378,7 +376,7 @@ namespace Hecton8.UI
                 int fuelCount = reactor.CountFuelInInventory(_inventory);
                 if (fuelCount > 0)
                 {
-                    LocalizationManager localization = LocalizationManager.Instance;
+                    LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
                     if (localization != null)
                     {
                         return localization.GetPluralFormatted(
@@ -410,7 +408,7 @@ namespace Hecton8.UI
 
         private void UpdatePrompt(string prompt)
         {
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             string expandedPrompt = localization != null ? localization.ExpandText(prompt) : prompt;
             if (_currentPrompt == expandedPrompt)
                 return;
@@ -476,6 +474,15 @@ namespace Hecton8.UI
                 _mainCamera = playerContext.PlayerCamera;
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             ConfigurePromptText();
@@ -529,7 +536,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             return localization != null
                 ? localization.GetOrFallback(localization.CurrentLanguage, key, fallback)
                 : fallback;
@@ -537,7 +544,7 @@ namespace Hecton8.UI
 
         private static string ResolveLocalizedExpanded(string key, string fallback)
         {
-            LocalizationManager localization = LocalizationManager.Instance;
+            LocalizationManager localization = Hecton8.Core.GlobalRegistry.Localization;
             return localization != null
                 ? localization.GetExpandedOrFallback(localization.CurrentLanguage, key, fallback)
                 : fallback;

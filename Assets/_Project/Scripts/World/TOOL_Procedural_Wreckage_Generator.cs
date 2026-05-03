@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -65,21 +66,46 @@ namespace Hecton8.World
                 PropagationQueue = new NativeQueue<int3>(allocator);
                 RngState = new NativeArray<uint4>(1, allocator, NativeArrayOptions.ClearMemory);
                 CollapseOrder = new NativeParallelHashMap<int3, byte>(safeCollapseCapacity, allocator);
+
+                NativeAllocationLifetime lifetime = ResolveLifetime(allocator);
+                NativeMemorySentinel.RegisterNativeArray(Grid, nameof(TOOL_Procedural_Wreckage_Generator), nameof(Grid), lifetime);
+                NativeMemorySentinel.RegisterNativeQueue(PropagationQueue, safeCellCount, nameof(TOOL_Procedural_Wreckage_Generator), nameof(PropagationQueue), lifetime);
+                NativeMemorySentinel.RegisterNativeArray(RngState, nameof(TOOL_Procedural_Wreckage_Generator), nameof(RngState), lifetime);
+                NativeMemorySentinel.RegisterNativeParallelHashMap(CollapseOrder, nameof(TOOL_Procedural_Wreckage_Generator), nameof(CollapseOrder), lifetime);
             }
 
             public void Dispose()
             {
                 if (Grid.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(Grid);
                     Grid.Dispose();
+                }
 
                 if (PropagationQueue.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeQueue(nameof(TOOL_Procedural_Wreckage_Generator), nameof(PropagationQueue));
                     PropagationQueue.Dispose();
+                }
 
                 if (RngState.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(RngState);
                     RngState.Dispose();
+                }
 
                 if (CollapseOrder.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeParallelHashMap(nameof(TOOL_Procedural_Wreckage_Generator), nameof(CollapseOrder));
                     CollapseOrder.Dispose();
+                }
+            }
+
+            private static NativeAllocationLifetime ResolveLifetime(Allocator allocator)
+            {
+                return allocator == Allocator.Persistent
+                    ? NativeAllocationLifetime.Session
+                    : NativeAllocationLifetime.TransientArena;
             }
         }
 

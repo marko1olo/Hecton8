@@ -81,6 +81,7 @@ namespace NASAPunk.Visor
 #if UNITY_EDITOR
         private const double EditorProjectionPreviewInterval = 1.0 / 15.0;
         private double _nextEditorProjectionPreviewAt;
+        private bool _editorPreviewBootstrapQueued;
 #endif
 
         private void OnEnable()
@@ -123,10 +124,16 @@ namespace NASAPunk.Visor
         {
             _pendingApply = true;
 #if UNITY_EDITOR
-            if (!Application.isPlaying && IsEditorPreviewSafe())
-                EvaluateEditorTickRegistration();
-            else if (!Application.isPlaying)
-                QueueEditorPreviewBootstrap();
+            if (Application.isPlaying)
+                return;
+
+            if (!IsEditorPreviewSafe())
+            {
+                UnregisterEditorTick();
+                return;
+            }
+
+            EvaluateEditorTickRegistration();
 #endif
         }
 
@@ -178,18 +185,24 @@ namespace NASAPunk.Visor
 
         private void QueueEditorPreviewBootstrap()
         {
+            if (_editorPreviewBootstrapQueued || !IsEditorPreviewSafe())
+                return;
+
+            _editorPreviewBootstrapQueued = true;
             EditorApplication.delayCall -= DelayedEditorPreviewBootstrap;
             EditorApplication.delayCall += DelayedEditorPreviewBootstrap;
         }
 
         private void DelayedEditorPreviewBootstrap()
         {
+            _editorPreviewBootstrapQueued = false;
+
             if (this == null || !this)
                 return;
 
             if (!IsEditorPreviewSafe())
             {
-                QueueEditorPreviewBootstrap();
+                UnregisterEditorTick();
                 return;
             }
 
@@ -898,6 +911,8 @@ namespace NASAPunk.Visor
         private void UnregisterEditorTick()
         {
             EditorApplication.update -= EditorTick;
+            EditorApplication.delayCall -= DelayedEditorPreviewBootstrap;
+            _editorPreviewBootstrapQueued = false;
         }
 
         private static bool IsEditorPreviewSafe()

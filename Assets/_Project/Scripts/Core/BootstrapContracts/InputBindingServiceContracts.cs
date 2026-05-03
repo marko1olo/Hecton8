@@ -66,4 +66,12 @@ namespace Hecton8.Core
         /// <summary>Clears persisted binding overrides.</summary>
         void ClearOverrides(bool clearPlayerPrefs = true);
     }
+
+    /// <summary>
+    /// Rebind-specific alias for the registry-owned input binding service.
+    /// Existing binding callers use <see cref="IInputBindingService"/>; mod and facade code can depend on this narrower name.
+    /// </summary>
+    public interface IInputRebindService : IInputBindingService
+    {
+    }
 }

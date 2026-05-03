@@ -1,27 +1,256 @@
-using System;
 using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Visor;
 using Hecton8.World;
+using Unity.Collections;
 using UnityEngine;
 
 namespace Hecton8.Systems.AI
 {
     /// <summary>
+    /// Main-thread listener for deferred director encounter events.
+    /// </summary>
+    public interface IDirectorAIEventListener
+    {
+        /// <summary>Called when the director requests a swarm/horde response.</summary>
+        void OnDirectorSpawnHordeRequested(Vector3 position);
+
+        /// <summary>Called when the director requests an equipment glitch.</summary>
+        void OnDirectorEquipmentGlitchRequested(float intensity);
+
+        /// <summary>Called when the director requests rare-discovery routing.</summary>
+        void OnDirectorRareDiscoveryRequested(Vector3 position);
+
+        /// <summary>Called when the director requests a weather-pressure shift.</summary>
+        void OnDirectorWeatherShiftRequested(float intensity);
+
+        /// <summary>Called when the director requests mission routing.</summary>
+        void OnDirectorMissionTriggerRequested(Vector3 position);
+
+        /// <summary>Called when predator pressure enters or exits active pressure.</summary>
+        void OnDirectorPredatorPressureChanged(bool pressureEnabled);
+    }
+
+    /// <summary>
+    /// Queue-backed event lane for DirectorAI outputs.
+    /// </summary>
+    public static class DirectorAIEvents
+    {
+        private struct DirectorAIEventPayload
+        {
+            public byte EventType;
+            public Vector3 Position;
+            public float Value;
+            public byte BoolValue;
+        }
+
+        private const byte SpawnHordeEventType = 1;
+        private const byte EquipmentGlitchEventType = 2;
+        private const byte RareDiscoveryEventType = 3;
+        private const byte WeatherShiftEventType = 4;
+        private const byte MissionTriggerEventType = 5;
+        private const byte PredatorPressureEventType = 6;
+        private const int ExpectedPendingEventCapacity = 16;
+        private const int ListenerCapacity = 16;
+
+        private static readonly RegistryBucket<IDirectorAIEventListener> _listeners = new RegistryBucket<IDirectorAIEventListener>(ListenerCapacity);
+        private static NativeQueue<DirectorAIEventPayload> _pendingEvents;
+        private static int _pendingEventCount;
+
+        /// <summary>
+        /// Number of queued director events awaiting LateUpdate dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingEvents.IsCreated ? _pendingEventCount : 0;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(DirectorAIEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+        }
+
+        /// <summary>
+        /// Registers a main-thread DirectorAI event listener.
+        /// </summary>
+        public static void Register(IDirectorAIEventListener listener)
+        {
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a main-thread DirectorAI event listener.
+        /// </summary>
+        public static void Unregister(IDirectorAIEventListener listener)
+        {
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>Queues a horde request.</summary>
+        public static void RaiseSpawnHordeRequested(Vector3 position)
+        {
+            EnqueuePosition(SpawnHordeEventType, position);
+        }
+
+        /// <summary>Queues an equipment glitch request.</summary>
+        public static void RaiseEquipmentGlitchRequested(float intensity)
+        {
+            EnqueueValue(EquipmentGlitchEventType, intensity);
+        }
+
+        /// <summary>Queues a rare-discovery request.</summary>
+        public static void RaiseRareDiscoveryRequested(Vector3 position)
+        {
+            EnqueuePosition(RareDiscoveryEventType, position);
+        }
+
+        /// <summary>Queues a weather shift request.</summary>
+        public static void RaiseWeatherShiftRequested(float intensity)
+        {
+            EnqueueValue(WeatherShiftEventType, intensity);
+        }
+
+        /// <summary>Queues a mission trigger request.</summary>
+        public static void RaiseMissionTriggerRequested(Vector3 position)
+        {
+            EnqueuePosition(MissionTriggerEventType, position);
+        }
+
+        /// <summary>Queues a predator pressure state change.</summary>
+        public static void RaisePredatorPressureChanged(bool pressureEnabled)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount >= ExpectedPendingEventCapacity)
+                return;
+
+            _pendingEvents.Enqueue(new DirectorAIEventPayload
+            {
+                EventType = PredatorPressureEventType,
+                BoolValue = pressureEnabled ? (byte)1 : (byte)0
+            });
+            _pendingEventCount++;
+        }
+
+        /// <summary>
+        /// Flushes queued director events on the main thread.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : ExpectedPendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out DirectorAIEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                Dispatch(in payload);
+            }
+
+            if (_pendingEvents.IsEmpty())
+                _pendingEventCount = 0;
+        }
+
+        private static void EnqueuePosition(byte eventType, Vector3 position)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount >= ExpectedPendingEventCapacity)
+                return;
+
+            _pendingEvents.Enqueue(new DirectorAIEventPayload
+            {
+                EventType = eventType,
+                Position = position
+            });
+            _pendingEventCount++;
+        }
+
+        private static void EnqueueValue(byte eventType, float value)
+        {
+            EnsureInitialized();
+            if (_pendingEventCount >= ExpectedPendingEventCapacity)
+                return;
+
+            _pendingEvents.Enqueue(new DirectorAIEventPayload
+            {
+                EventType = eventType,
+                Value = value
+            });
+            _pendingEventCount++;
+        }
+
+        private static void Dispatch(in DirectorAIEventPayload payload)
+        {
+            IDirectorAIEventListener[] rawListeners = _listeners.RawArray;
+            int listenerCount = _listeners.Count;
+            for (int i = listenerCount - 1; i >= 0; i--)
+            {
+                IDirectorAIEventListener listener = rawListeners[i];
+                if (listener == null)
+                    continue;
+
+                switch (payload.EventType)
+                {
+                    case SpawnHordeEventType:
+                        listener.OnDirectorSpawnHordeRequested(payload.Position);
+                        break;
+                    case EquipmentGlitchEventType:
+                        listener.OnDirectorEquipmentGlitchRequested(payload.Value);
+                        break;
+                    case RareDiscoveryEventType:
+                        listener.OnDirectorRareDiscoveryRequested(payload.Position);
+                        break;
+                    case WeatherShiftEventType:
+                        listener.OnDirectorWeatherShiftRequested(payload.Value);
+                        break;
+                    case MissionTriggerEventType:
+                        listener.OnDirectorMissionTriggerRequested(payload.Position);
+                        break;
+                    case PredatorPressureEventType:
+                        listener.OnDirectorPredatorPressureChanged(payload.BoolValue != 0);
+                        break;
+                }
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+                return;
+
+            _pendingEvents = new NativeQueue<DirectorAIEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<DirectorAIEventPayload>[16] - deferred DirectorAI event lane flushed by SystemDispatcher - owner: DirectorAIEvents
+            NativeMemorySentinel.RegisterNativeQueue(
+                _pendingEvents,
+                ExpectedPendingEventCapacity,
+                nameof(DirectorAIEvents),
+                nameof(_pendingEvents),
+                NativeAllocationLifetime.Session);
+        }
+    }
+
+    /// <summary>
     /// Scene-facing compatibility owner for the encounter pacing director.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4500)]
-    public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable, IEncounterDirectorService
+    public sealed class HectonDirectorAI : MonoBehaviour, IUpdatable, IEncounterDirectorService, ISonarPingEventListener
     {
-        public static event Action<Vector3> OnRequestSpawnHorde;
-        public static event Action<float> OnRequestEquipmentGlitch;
-        public static event Action<Vector3> OnRequestRareDiscovery;
-        public static event Action<float> OnRequestWeatherShift;
-        public static event Action<Vector3> OnRequestMissionTrigger;
-        public static event Action<bool> OnPredatorPressureChanged;
-
         internal static HectonDirectorAI ActiveRuntimeInstance { get; private set; }
 
         [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
@@ -146,7 +375,7 @@ namespace Hecton8.Systems.AI
             _externalPeakPressure01 = 0f;
             _externalPeakHoldSeconds = 0f;
             _hunterSquadCooldown = 0f;
-            SpectrumEvents.OnSonarPingSent += HandleSonarPingSent;
+            SpectrumEvents.RegisterSonarPingListener(this);
             PublishPredatorPressure(true);
         }
 
@@ -167,7 +396,7 @@ namespace Hecton8.Systems.AI
                 _dispatcherRegistered = false;
             }
 
-            SpectrumEvents.OnSonarPingSent -= HandleSonarPingSent;
+            SpectrumEvents.UnregisterSonarPingListener(this);
             _recentSonarStress = 0f;
             _externalPeakPressure01 = 0f;
             _externalPeakHoldSeconds = 0f;
@@ -183,6 +412,7 @@ namespace Hecton8.Systems.AI
 
         private void OnDestroy()
         {
+            SpectrumEvents.UnregisterSonarPingListener(this);
             GlobalRegistry.UnregisterEncounterDirectorService(this);
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -330,16 +560,16 @@ namespace Hecton8.Systems.AI
             switch (newPhase)
             {
                 case EncounterPhase.Peak:
-                    SafeInvoke(OnRequestEquipmentGlitch, Mathf.Lerp(0.35f, 0.85f, _encounterDirector.IntensityLevel));
-                    SafeInvoke(OnRequestMissionTrigger, eventPosition);
+                    DirectorAIEvents.RaiseEquipmentGlitchRequested(Mathf.Lerp(0.35f, 0.85f, _encounterDirector.IntensityLevel));
+                    DirectorAIEvents.RaiseMissionTriggerRequested(eventPosition);
                     break;
 
                 case EncounterPhase.Decay:
-                    SafeInvoke(OnRequestWeatherShift, Mathf.Lerp(0.2f, 0.6f, _encounterDirector.StressLevel));
+                    DirectorAIEvents.RaiseWeatherShiftRequested(Mathf.Lerp(0.2f, 0.6f, _encounterDirector.StressLevel));
                     break;
 
                 case EncounterPhase.Relax:
-                    SafeInvoke(OnRequestRareDiscovery, eventPosition);
+                    DirectorAIEvents.RaiseRareDiscoveryRequested(eventPosition);
                     break;
             }
         }
@@ -347,14 +577,14 @@ namespace Hecton8.Systems.AI
         internal void HandleThreatSpawned(EncounterThreatClass threatClass, Vector3 spawnPosition)
         {
             if (threatClass == EncounterThreatClass.Swarm)
-                SafeInvoke(OnRequestSpawnHorde, spawnPosition);
+                DirectorAIEvents.RaiseSpawnHordeRequested(spawnPosition);
         }
 
         private void ResolveDependencies(bool force)
         {
             if (!force && _resolveRetryTimer > 0f)
             {
-                _resolveRetryTimer -= Time.unscaledDeltaTime;
+                _resolveRetryTimer -= SystemDispatcher.CurrentFrameUnscaledDeltaTime;
                 return;
             }
 
@@ -485,6 +715,11 @@ namespace Hecton8.Systems.AI
             _recentSonarStress = Mathf.Max(_recentSonarStress, clampedIntensity);
         }
 
+        void ISonarPingEventListener.OnSonarPingSent(float intensity)
+        {
+            HandleSonarPingSent(intensity);
+        }
+
         private void ApplyExternalPeakPressure(float deltaTime, ref float internalStress, ref float acousticThreatLevel)
         {
             if (_externalPeakHoldSeconds <= 0f || _externalPeakPressure01 <= 0f)
@@ -525,7 +760,7 @@ namespace Hecton8.Systems.AI
             if (faunaDirector != null)
                 faunaDirector.SetPredatorPressure(enabled);
 
-            SafeInvoke(OnPredatorPressureChanged, enabled);
+            DirectorAIEvents.RaisePredatorPressureChanged(enabled);
         }
 
         private Vector3 ResolveDeterministicOffsetPosition(Vector3 origin, uint seed, float radius)
@@ -534,21 +769,6 @@ namespace Hecton8.Systems.AI
             float distance = Mathf.Lerp(radius * 0.4f, radius, EncounterDirector.HashToUnit01(seed ^ 0x6C8E9CF5u));
             Vector3 offset = new Vector3(Mathf.Cos(angle) * distance, 0f, Mathf.Sin(angle) * distance);
             return origin + offset;
-        }
-
-        private static void SafeInvoke<T>(Action<T> action, T arg)
-        {
-            if (action == null)
-                return;
-
-            try
-            {
-                action.Invoke(arg);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogException(exception);
-            }
         }
     }
 }

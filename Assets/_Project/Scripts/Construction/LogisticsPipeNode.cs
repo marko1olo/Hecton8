@@ -595,16 +595,18 @@ namespace Hecton8.Construction
 
             Vector3 rupturePosition = _cachedTransform != null ? _cachedTransform.position : Vector3.zero;
             int leakedItemHashId = _inFlightItemHashId;
-            HectonEventBus.Publish(new LogisticsPipeOverpressureLeakEvent(
+            LogisticsPipeOverpressureLeakEvent leakEvent = new LogisticsPipeOverpressureLeakEvent(
                 _pipeLinkId,
                 rupturePosition,
                 _overpressureStress,
-                leakedItemHashId));
+                leakedItemHashId);
+            HectonEventBus.Publish(in leakEvent);
 
-            if (AbyssalFluidDecalManager.Instance != null)
+            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals != null)
             {
                 float radiusScale = math.saturate(_overpressureStress / math.max(0.1f, ruptureStressThreshold));
-                AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(rupturePosition, radiusScale);
+                fluidDecals.RegisterRuptureFluid(rupturePosition, radiusScale);
             }
 
             ResolveInFlightLossToWorldOrRollback(rupturePosition);
@@ -634,11 +636,12 @@ namespace Hecton8.Construction
 
         internal void RegisterEmergencyVentVisual(float normalizedIntensity)
         {
-            if (AbyssalFluidDecalManager.Instance == null)
+            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals == null)
                 return;
 
             float radiusScale = math.clamp(normalizedIntensity, 0.1f, 1f);
-            AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(ResolveVentRuntimePosition(), radiusScale);
+            fluidDecals.RegisterRuptureFluid(ResolveVentRuntimePosition(), radiusScale);
         }
 
         private void ResolveInFlightLossToWorldOrRollback(Vector3 spillPosition)
@@ -654,7 +657,7 @@ namespace Hecton8.Construction
             if (_inFlightItem == null)
                 return false;
 
-            PersistentWorldRegistry persistentWorldRegistry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry persistentWorldRegistry = GlobalRegistry.PersistentWorldRegistry;
             if (persistentWorldRegistry == null)
                 return false;
 

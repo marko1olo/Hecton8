@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -10,8 +9,22 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4060)]
     public sealed class WorldZoneDirector : MonoBehaviour, ISlowTickable
     {
-        private static readonly string[] ZoneKindLabels = Enum.GetNames(typeof(WorldZoneAnchor.ZoneKind));
-        private static readonly string[] ZoneTierLabels = Enum.GetNames(typeof(WorldZoneAnchor.ZoneTier));
+        private const string GenericZoneKindLabel = "Generic";
+        private const string ResourcesZoneKindLabel = "Resources";
+        private const string FabricationZoneKindLabel = "Fabrication";
+        private const string TrialZoneKindLabel = "Trial";
+        private const string ConstructionZoneKindLabel = "Construction";
+        private const string PowerZoneKindLabel = "Power";
+        private const string ServiceZoneKindLabel = "Service";
+        private const string ProgressionZoneKindLabel = "Progression";
+        private const string CombatZoneKindLabel = "Combat";
+        private const string NavigationZoneKindLabel = "Navigation";
+
+        private const string StarterZoneTierLabel = "Starter";
+        private const string EarlyZoneTierLabel = "Early";
+        private const string MidZoneTierLabel = "Mid";
+        private const string LateZoneTierLabel = "Late";
+        private const string EndgameZoneTierLabel = "Endgame";
 
         internal static WorldZoneDirector ActiveRuntimeInstance { get; private set; }
 
@@ -175,7 +188,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registeredToTickManager = true;
+            _registeredToTickManager = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -453,14 +466,46 @@ namespace Hecton8.World
 
         private static string ResolveZoneKindLabel(WorldZoneAnchor.ZoneKind kind)
         {
-            int index = (int)kind;
-            return (uint)index < (uint)ZoneKindLabels.Length ? ZoneKindLabels[index] : ZoneKindLabels[0];
+            switch (kind)
+            {
+                case WorldZoneAnchor.ZoneKind.Resources:
+                    return ResourcesZoneKindLabel;
+                case WorldZoneAnchor.ZoneKind.Fabrication:
+                    return FabricationZoneKindLabel;
+                case WorldZoneAnchor.ZoneKind.Trial:
+                    return TrialZoneKindLabel;
+                case WorldZoneAnchor.ZoneKind.Construction:
+                    return ConstructionZoneKindLabel;
+                case WorldZoneAnchor.ZoneKind.Power:
+                    return PowerZoneKindLabel;
+                case WorldZoneAnchor.ZoneKind.Service:
+                    return ServiceZoneKindLabel;
+                case WorldZoneAnchor.ZoneKind.Progression:
+                    return ProgressionZoneKindLabel;
+                case WorldZoneAnchor.ZoneKind.Combat:
+                    return CombatZoneKindLabel;
+                case WorldZoneAnchor.ZoneKind.Navigation:
+                    return NavigationZoneKindLabel;
+                default:
+                    return GenericZoneKindLabel;
+            }
         }
 
         private static string ResolveZoneTierLabel(WorldZoneAnchor.ZoneTier tier)
         {
-            int index = (int)tier;
-            return (uint)index < (uint)ZoneTierLabels.Length ? ZoneTierLabels[index] : ZoneTierLabels[0];
+            switch (tier)
+            {
+                case WorldZoneAnchor.ZoneTier.Early:
+                    return EarlyZoneTierLabel;
+                case WorldZoneAnchor.ZoneTier.Mid:
+                    return MidZoneTierLabel;
+                case WorldZoneAnchor.ZoneTier.Late:
+                    return LateZoneTierLabel;
+                case WorldZoneAnchor.ZoneTier.Endgame:
+                    return EndgameZoneTierLabel;
+                default:
+                    return StarterZoneTierLabel;
+            }
         }
 
         private void UpdateDiagnostics()

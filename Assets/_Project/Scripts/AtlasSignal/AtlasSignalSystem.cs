@@ -98,6 +98,7 @@ namespace Hecton8.AtlasSignal
         private bool _signalEverDetected;
         private int _maxRevealStageUnlocked;
         private bool _registered;
+        private bool _serviceRegistered;
         private bool _ghostManifestationAnnounced;
         private bool _identityDiscoverySynchronized;
 
@@ -162,6 +163,7 @@ namespace Hecton8.AtlasSignal
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
@@ -173,6 +175,7 @@ namespace Hecton8.AtlasSignal
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (Hecton8.Core.GlobalRegistry.SaveRuntime != null)
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
@@ -181,6 +184,7 @@ namespace Hecton8.AtlasSignal
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterService();
 
             if (Instance == this)
                 Instance = null;
@@ -346,9 +350,29 @@ namespace Hecton8.AtlasSignal
             _registered = false;
         }
 
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterAtlasSignalRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.AtlasSignal, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.AtlasSignal, this))
+                GlobalRegistry.UnregisterAtlasSignalRuntime(this);
+
+            _serviceRegistered = false;
+        }
+
         private bool CanManifestAtlas()
         {
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector == null)
                 return true;
 
@@ -357,7 +381,7 @@ namespace Hecton8.AtlasSignal
 
         private bool CanManifestGhostBeat()
         {
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector == null)
                 return false;
 
@@ -418,7 +442,7 @@ namespace Hecton8.AtlasSignal
             if (_identityDiscoverySynchronized || _maxRevealStageUnlocked < IdentityRevealStage)
                 return;
 
-            HectonNarrativeDirector narrativeDirector = HectonNarrativeDirector.Instance;
+            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
             if (narrativeDirector == null)
                 return;
 
@@ -458,7 +482,7 @@ namespace Hecton8.AtlasSignal
 
         private static string ResolveLocalized(string key, string fallback)
         {
-            LocalizationManager manager = LocalizationManager.Instance;
+            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 

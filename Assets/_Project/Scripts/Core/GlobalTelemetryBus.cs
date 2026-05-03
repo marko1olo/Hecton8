@@ -9,6 +9,7 @@ using Hecton.Localization;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Collections.LowLevel.Unsafe;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -100,37 +101,40 @@ namespace Hecton8.Core
 
         private static void DisposeStaticState()
         {
-            if (_ringBuffer.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_ringBuffer);
-                _ringBuffer.Dispose();
-            }
+            bool workerOwnsExportState =
+                Volatile.Read(ref _exportInFlight) != 0 ||
+                Volatile.Read(ref _mmfWriteInProgress) != 0;
+            JobHandle noDependency = default;
+            DisposeNativeArray(ref _ringBuffer, noDependency);
+            DisposeNativeArray(ref _snapshotBuffer, noDependency);
 
-            if (_snapshotBuffer.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_snapshotBuffer);
-                _snapshotBuffer.Dispose();
-            }
-
-            _ringBuffer = default;
-            _snapshotBuffer = default;
-            _exportBytes = null;
             _writeCursor = 0;
             _nextDrainTimeSeconds = DrainIntervalSeconds;
-            _exportInFlight = 0;
-            _mmfWriteInProgress = 0;
-            _pendingEventCount = 0;
-            _pendingByteCount = 0;
-            _pendingBinaryPath = null;
-            _pendingJsonPath = null;
-            _pendingTelemetryDirectory = null;
-            _pendingGeneratedUtcTicks = 0L;
             _snapshotInProgress = false;
             _snapshotStartIndex = 0;
             _snapshotTotalCount = 0;
             _snapshotCopiedCount = 0;
+
+            if (!workerOwnsExportState)
+            {
+                _exportBytes = null;
+                _exportInFlight = 0;
+                _mmfWriteInProgress = 0;
+                ClearPendingExportState();
+            }
+
             Interlocked.Exchange(ref _nativeCopyByteCount, 0L);
             Interlocked.Exchange(ref _nativeCopyOperationCount, 0);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose(dependency);
+            array = default;
         }
 
         public static void PublishPlayerDeath(Vector3 worldPosition)

@@ -19,6 +19,7 @@ namespace Hecton8.Visor
         private const float DefaultShadowMinStep = 0.12f;
         private const float DefaultShadowSoftness = 6.5f;
         private const float DefaultShadowStepCount = 24f;
+        private const float LightResolveRetryIntervalSeconds = 0.5f;
 
         private static readonly int _FlashlightActiveId = Shader.PropertyToID("_HectonFlashlightActive");
         private static readonly int _FlashlightVoxelActiveId = Shader.PropertyToID("_HectonFlashlightVoxelActive");
@@ -99,13 +100,14 @@ namespace Hecton8.Visor
         private Matrix4x4 _publishedWorldToLocal = Matrix4x4.identity;
         private Vector3 _publishedHalfExtents;
         private float _publishedSdfRange;
+        private float _nextLightResolveTime;
 
         private void Awake()
         {
             _flashlight = GetComponent<PlayerFlashlight>();
             _playerRoot = transform.root;
             EnsureResources();
-            TryResolveFlashlightLight();
+            TryResolveFlashlightLight(force: true);
             PublishInactiveGlobals();
         }
 
@@ -292,10 +294,19 @@ namespace Hecton8.Visor
             _restartQueued = false;
         }
 
-        private bool TryResolveFlashlightLight()
+        private bool TryResolveFlashlightLight(bool force = false)
         {
             if (_flashlightLight != null)
                 return true;
+
+            if (!force)
+            {
+                float now = Time.unscaledTime;
+                if (now < _nextLightResolveTime)
+                    return false;
+
+                _nextLightResolveTime = now + LightResolveRetryIntervalSeconds;
+            }
 
             if (_flashlight == null)
                 _flashlight = GetComponent<PlayerFlashlight>();

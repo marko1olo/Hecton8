@@ -1513,8 +1513,7 @@ namespace Hecton8.World
                 MaxPoissonRejectionAttempts = PoissonDiskMaxRejectionAttempts
             };
 
-            JobHandle handle = job.Schedule();
-            handle.Complete();
+            job.Run();
             return true;
         }
 
@@ -1673,8 +1672,7 @@ namespace Hecton8.World
                 MaxPoissonRejectionAttempts = PoissonDiskMaxRejectionAttempts
             };
 
-            JobHandle handle = job.Schedule();
-            handle.Complete();
+            job.Run();
             return true;
         }
 
@@ -1856,8 +1854,7 @@ namespace Hecton8.World
                 FloraDensityClampEnabled = enableFloraDensityClamp ? (byte)1 : (byte)0
             };
 
-            JobHandle jobHandle = job.Schedule();
-            jobHandle.Complete();
+            job.Run();
             return _memory.CandidateAcceptanceResult[0] != 0;
         }
     }

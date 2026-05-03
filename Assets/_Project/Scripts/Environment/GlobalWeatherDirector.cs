@@ -419,7 +419,7 @@ namespace Hecton8.Environment
         private void ResolveDependencies()
         {
             if (fluidEngine == null)
-                fluidEngine = HectonFluidEngine.Instance;
+                fluidEngine = GlobalRegistry.Fluid;
         }
 
         private void InitializeRuntimeStateIfNeeded()

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Economy;
@@ -167,7 +166,7 @@ namespace Hecton8.World
             _currentNoiseLevel = _currentNoiseLevel * noiseRetention + emittedNoise;
             _currentMicroplasticLevel = _currentMicroplasticLevel * microplasticRetention + emittedMicroplastic;
 
-            EnvironmentalStrainManager strainManager = EnvironmentalStrainManager.Instance;
+            EnvironmentalStrainManager strainManager = GlobalRegistry.EnvironmentalStrain;
             if (strainManager != null)
             {
                 strainManager.AccumulateIndustrialStrain(
@@ -193,7 +192,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -207,14 +206,10 @@ namespace Hecton8.World
 
         private static void CollectPowerTelemetry(ref float totalConsumption, ref int deficitGridCount)
         {
-            List<PowerGrid> grids = PowerGridManager.RuntimeGrids;
-            if (grids == null)
-                return;
-
-            int gridCount = grids.Count;
+            int gridCount = PowerGridManager.RuntimeGridCount;
             for (int i = 0; i < gridCount; i++)
             {
-                PowerGrid grid = grids[i];
+                PowerGrid grid = PowerGridManager.GetRuntimeGridAt(i);
                 if (grid == null || grid.NodeCount <= 0)
                     continue;
 
@@ -226,11 +221,10 @@ namespace Hecton8.World
 
         private static void CollectRepairDroneTelemetry(ref int activeDroneCount, ref int totalLaunchCount)
         {
-            List<RepairDroneHub> hubs = RepairDroneHub.ActiveHubs;
-            int hubCount = hubs.Count;
+            int hubCount = RepairDroneHub.ActiveHubCount;
             for (int i = 0; i < hubCount; i++)
             {
-                RepairDroneHub hub = hubs[i];
+                RepairDroneHub hub = RepairDroneHub.GetActiveHubAt(i);
                 if (hub == null || !hub.isActiveAndEnabled)
                     continue;
 
@@ -241,11 +235,10 @@ namespace Hecton8.World
 
         private static void CollectRecyclerTelemetry(ref int activeRecyclerCount, ref int totalProcessedRecycleBatches)
         {
-            List<ResourceRecyclerModule> recyclers = ResourceRecyclerModule.ActiveModules;
-            int recyclerCount = recyclers.Count;
+            int recyclerCount = ResourceRecyclerModule.ActiveModuleCount;
             for (int i = 0; i < recyclerCount; i++)
             {
-                ResourceRecyclerModule recycler = recyclers[i];
+                ResourceRecyclerModule recycler = ResourceRecyclerModule.GetActiveModuleAt(i);
                 if (recycler == null || !recycler.isActiveAndEnabled)
                     continue;
 
@@ -258,11 +251,10 @@ namespace Hecton8.World
 
         private static void CollectDeepDrillTelemetry(ref int activeDrillCount, ref int totalCompletedDrillCycles)
         {
-            List<DeepDrillModule> drills = DeepDrillModule.ActiveModules;
-            int drillCount = drills.Count;
+            int drillCount = DeepDrillModule.ActiveModuleCount;
             for (int i = 0; i < drillCount; i++)
             {
-                DeepDrillModule drill = drills[i];
+                DeepDrillModule drill = DeepDrillModule.GetActiveModuleAt(i);
                 if (drill == null || !drill.isActiveAndEnabled)
                     continue;
 

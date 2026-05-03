@@ -64,6 +64,7 @@ using Hecton8.Physics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using Unity.Mathematics;
+using Unity.Collections;
 using Hecton8.Atmosphere;
 using Hecton8.World;
 #if UNITY_EDITOR
@@ -72,6 +73,294 @@ using UnityEditor;
 
 namespace Hecton8.Celestial
 {
+    /// <summary>
+    /// Main-thread listener for deferred celestial events.
+    /// </summary>
+    public interface ICelestialEventListener
+    {
+        /// <summary>Called when an eclipse begins.</summary>
+        void OnCelestialEclipseStarted();
+
+        /// <summary>Called when an eclipse ends.</summary>
+        void OnCelestialEclipseEnded();
+
+        /// <summary>Called with the latest sun orbital angle in degrees.</summary>
+        void OnCelestialSunAngleChanged(float angleDegrees);
+
+        /// <summary>Called with the latest planet phase value.</summary>
+        void OnCelestialPlanetPhaseChanged(float phase);
+    }
+
+    /// <summary>
+    /// Queue-backed celestial event lane.
+    /// </summary>
+    public static class CelestialEvents
+    {
+        private struct CelestialEventPayload
+        {
+            public byte EventType;
+        }
+
+        private const byte EclipseStartedEventType = 1;
+        private const byte EclipseEndedEventType = 2;
+        private const byte SunAngleChangedEventType = 3;
+        private const byte PlanetPhaseChangedEventType = 4;
+        private const int ExpectedPendingEventCapacity = 8;
+        private const int ListenerCapacity = 8;
+
+        private static readonly RegistryBucket<ICelestialEventListener> _listeners = new RegistryBucket<ICelestialEventListener>(ListenerCapacity);
+        private static NativeQueue<CelestialEventPayload> _pendingEvents;
+        private static NativeQueue<CelestialEventPayload> _nextFrameEvents;
+        private static int _pendingEventCount;
+        private static int _nextFrameEventCount;
+        private static bool _isDispatching;
+        private static bool _sunAngleQueued;
+        private static bool _planetPhaseQueued;
+        private static float _latestSunAngleDegrees;
+        private static float _latestPlanetPhase;
+
+        /// <summary>
+        /// Number of queued celestial event payloads awaiting dispatch.
+        /// </summary>
+        public static int PendingCount => _pendingEventCount + _nextFrameEventCount;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(CelestialEvents), nameof(_pendingEvents));
+                _pendingEvents.Dispose();
+                _pendingEvents = default;
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeQueue(nameof(CelestialEvents), nameof(_nextFrameEvents));
+                _nextFrameEvents.Dispose();
+                _nextFrameEvents = default;
+            }
+
+            _listeners.Clear();
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
+            _sunAngleQueued = false;
+            _planetPhaseQueued = false;
+            _latestSunAngleDegrees = 0f;
+            _latestPlanetPhase = 0f;
+        }
+
+        /// <summary>
+        /// Registers a main-thread celestial listener.
+        /// </summary>
+        public static void Register(ICelestialEventListener listener)
+        {
+            if (listener != null && !_listeners.Contains(listener))
+                _listeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Unregisters a main-thread celestial listener.
+        /// </summary>
+        public static void Unregister(ICelestialEventListener listener)
+        {
+            if (listener != null && _listeners.Contains(listener))
+                _listeners.Unregister(listener);
+        }
+
+        /// <summary>Queues an eclipse-start signal.</summary>
+        public static void RaiseEclipseStarted()
+        {
+            Enqueue(EclipseStartedEventType);
+        }
+
+        /// <summary>Queues an eclipse-end signal.</summary>
+        public static void RaiseEclipseEnded()
+        {
+            Enqueue(EclipseEndedEventType);
+        }
+
+        /// <summary>Queues or coalesces a sun-angle signal.</summary>
+        public static void RaiseSunAngleChanged(float angleDegrees)
+        {
+            if (_listeners.Count <= 0)
+                return;
+
+            _latestSunAngleDegrees = angleDegrees;
+            if (_sunAngleQueued)
+                return;
+
+            if (Enqueue(SunAngleChangedEventType))
+                _sunAngleQueued = true;
+        }
+
+        /// <summary>Queues or coalesces a planet-phase signal.</summary>
+        public static void RaisePlanetPhaseChanged(float phase)
+        {
+            if (_listeners.Count <= 0)
+                return;
+
+            _latestPlanetPhase = phase;
+            if (_planetPhaseQueued)
+                return;
+
+            if (Enqueue(PlanetPhaseChangedEventType))
+                _planetPhaseQueued = true;
+        }
+
+        /// <summary>
+        /// Flushes queued celestial events on the main thread.
+        /// </summary>
+        public static void FlushPending()
+        {
+            if (!_pendingEvents.IsCreated)
+                return;
+
+            PromoteNextFrameEventsIfFrontEmpty();
+            int scanBudget = _pendingEventCount > 0 ? _pendingEventCount : ExpectedPendingEventCapacity;
+            while (scanBudget-- > 0 && !_pendingEvents.IsEmpty())
+            {
+                if (!SystemDispatcher.TryConsumeLateFrameEventDispatch())
+                    return;
+
+                if (!_pendingEvents.TryDequeue(out CelestialEventPayload payload))
+                    break;
+
+                if (_pendingEventCount > 0)
+                    _pendingEventCount--;
+
+                _isDispatching = true;
+                try
+                {
+                    Dispatch(in payload);
+                }
+                finally
+                {
+                    _isDispatching = false;
+                }
+            }
+
+            if (_pendingEvents.IsEmpty())
+            {
+                _pendingEventCount = 0;
+                PromoteNextFrameEventsIfFrontEmpty();
+            }
+        }
+
+        private static bool Enqueue(byte eventType)
+        {
+            if (_listeners.Count <= 0)
+                return false;
+
+            EnsureInitialized();
+            if (_pendingEventCount + _nextFrameEventCount >= ExpectedPendingEventCapacity)
+                return false;
+
+            CelestialEventPayload payload = new CelestialEventPayload { EventType = eventType };
+            if (_isDispatching)
+            {
+                _nextFrameEvents.Enqueue(payload);
+                _nextFrameEventCount++;
+                return true;
+            }
+
+            _pendingEvents.Enqueue(payload);
+            _pendingEventCount++;
+            return true;
+        }
+
+        private static void Dispatch(in CelestialEventPayload payload)
+        {
+            ICelestialEventListener[] rawListeners = _listeners.RawArray;
+            int listenerCount = _listeners.Count;
+            switch (payload.EventType)
+            {
+                case EclipseStartedEventType:
+                    for (int i = listenerCount - 1; i >= 0; i--)
+                    {
+                        ICelestialEventListener listener = rawListeners[i];
+                        if (listener != null)
+                            listener.OnCelestialEclipseStarted();
+                    }
+                    break;
+                case EclipseEndedEventType:
+                    for (int i = listenerCount - 1; i >= 0; i--)
+                    {
+                        ICelestialEventListener listener = rawListeners[i];
+                        if (listener != null)
+                            listener.OnCelestialEclipseEnded();
+                    }
+                    break;
+                case SunAngleChangedEventType:
+                    _sunAngleQueued = false;
+                    for (int i = listenerCount - 1; i >= 0; i--)
+                    {
+                        ICelestialEventListener listener = rawListeners[i];
+                        if (listener != null)
+                            listener.OnCelestialSunAngleChanged(_latestSunAngleDegrees);
+                    }
+                    break;
+                case PlanetPhaseChangedEventType:
+                    _planetPhaseQueued = false;
+                    for (int i = listenerCount - 1; i >= 0; i--)
+                    {
+                        ICelestialEventListener listener = rawListeners[i];
+                        if (listener != null)
+                            listener.OnCelestialPlanetPhaseChanged(_latestPlanetPhase);
+                    }
+                    break;
+            }
+        }
+
+        private static void EnsureInitialized()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                if (_nextFrameEvents.IsCreated)
+                    return;
+            }
+            else
+            {
+                _pendingEvents = new NativeQueue<CelestialEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CelestialEventPayload>[8] - deferred celestial event lane flushed by SystemDispatcher - owner: CelestialEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _pendingEvents,
+                    ExpectedPendingEventCapacity,
+                    nameof(CelestialEvents),
+                    nameof(_pendingEvents),
+                    NativeAllocationLifetime.Session);
+            }
+
+            if (!_nextFrameEvents.IsCreated)
+            {
+                _nextFrameEvents = new NativeQueue<CelestialEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<CelestialEventPayload>[8] - next-frame celestial event lane prevents same-frame reentrant dispatch - owner: CelestialEvents
+                NativeMemorySentinel.RegisterNativeQueue(
+                    _nextFrameEvents,
+                    ExpectedPendingEventCapacity,
+                    nameof(CelestialEvents),
+                    nameof(_nextFrameEvents),
+                    NativeAllocationLifetime.Session);
+            }
+        }
+
+        private static void PromoteNextFrameEventsIfFrontEmpty()
+        {
+            if (!_pendingEvents.IsCreated ||
+                !_nextFrameEvents.IsCreated ||
+                !_pendingEvents.IsEmpty() ||
+                _nextFrameEventCount <= 0)
+            {
+                return;
+            }
+
+            NativeQueue<CelestialEventPayload> swap = _pendingEvents;
+            _pendingEvents = _nextFrameEvents;
+            _nextFrameEvents = swap;
+            _pendingEventCount = _nextFrameEventCount;
+            _nextFrameEventCount = 0;
+        }
+    }
+
     [Serializable]
     public struct SkyColorProfile
     {
@@ -101,7 +390,7 @@ namespace Hecton8.Celestial
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-3000)]  // v5.1: MUST tick AFTER UnderwaterVisuals(-4000)
-public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
+public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener
     {
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
         public static HectonCelestialEngine ActiveRuntimeInstance { get; private set; }
@@ -301,11 +590,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
         // ─────────────────────────────────────────────
         // СОБЫТИЯ
         // ─────────────────────────────────────────────
-
-        public static event Action OnEclipseStart;
-        public static event Action OnEclipseEnd;
-        public static event Action<float> OnSunAngleChanged;
-        public static event Action<float> OnPlanetPhaseChanged;
 
         // ─────────────────────────────────────────────
         // RUNTIME STATE
@@ -644,8 +928,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
 
             if (Application.isPlaying)
             {
-                BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
-                BiomeMatrixDirector.OnDepthTierChanged += HandleDepthTierChanged;
+                BiomeMatrixEvents.Unregister(this);
+                BiomeMatrixEvents.Register(this);
                 TryRegisterToTickManager();
 
                 BiomeMatrixDirector director = BiomeMatrixDirector.ActiveRuntimeInstance;
@@ -685,7 +969,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             _hasAtmosphericLightingState = false;
 
             if (Application.isPlaying)
-                BiomeMatrixDirector.OnDepthTierChanged -= HandleDepthTierChanged;
+                BiomeMatrixEvents.Unregister(this);
 
             ReleaseCelestialAtmosphereLut();
             RestoreCelestialTextureDefaults();
@@ -719,10 +1003,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             }
 
             ReleaseCelestialAtmosphereLut();
-            OnEclipseStart = null;
-            OnEclipseEnd = null;
-            OnSunAngleChanged = null;
-            OnPlanetPhaseChanged = null;
             TryUnregisterFromTickManager();
         }
 
@@ -879,7 +1159,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             // It MULTIPLIES whatever UnderwaterVisuals wrote.
             ApplySunOcclusion();
 
-            OnSunAngleChanged?.Invoke(_currentSunAngle);
+            CelestialEvents.RaiseSunAngleChanged(_currentSunAngle);
         }
 
         /// <summary>
@@ -2085,10 +2365,19 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             UpdateDeepTextureResidencyState();
         }
 
+        void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+        }
+
+        void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
+        {
+            HandleDepthTierChanged(depthTier, depthMeters);
+        }
+
         private void UpdateDeepTextureResidencyState()
         {
             float depthMeters = Mathf.Max(0f, _currentDepthMeters);
-            DynamicResolutionScaler scaler = DynamicResolutionScaler.Instance;
+            DynamicResolutionScaler scaler = GlobalRegistry.DynamicResolution;
             _currentAdaptiveRenderScale = scaler != null
                 ? Mathf.Clamp01(scaler.CurrentRenderScale)
                 : 1f;
@@ -2906,7 +3195,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
 
             aegirRenderer.SetPropertyBlock(_aegirMPB);
 
-            OnPlanetPhaseChanged?.Invoke(_currentPhase);
+            CelestialEvents.RaisePlanetPhaseChanged(_currentPhase);
         }
 
         // ─────────────────────────────────────────────
@@ -2984,12 +3273,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable
             if (sunOccluded && !_isEclipseActive)
             {
                 _isEclipseActive = true;
-                OnEclipseStart?.Invoke();
+                CelestialEvents.RaiseEclipseStarted();
             }
             else if (!sunOccluded && _isEclipseActive && angleDeg > exitThreshold)
             {
                 _isEclipseActive = false;
-                OnEclipseEnd?.Invoke();
+                CelestialEvents.RaiseEclipseEnded();
             }
         }
 

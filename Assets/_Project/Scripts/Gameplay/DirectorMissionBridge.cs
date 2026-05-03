@@ -3,9 +3,9 @@
 // Мост между HectonDirectorAI и MissionManager.
 //
 // РОЛЬ:
-//   • Слушает HectonDirectorAI.OnRequestMissionTrigger.
+//   • Слушает DirectorAIEvents mission trigger lane.
 //   • При получении события — активирует случайную доступную миссию.
-//   • Слушает HectonDirectorAI.OnRequestRareDiscovery.
+//   • Слушает DirectorAIEvents rare discovery lane.
 //   • При получении — регистрирует discovery через NarrativeEvents.
 //
 // АРХИТЕКТУРА:
@@ -21,7 +21,7 @@ namespace Hecton8.Gameplay
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Gameplay/Director Mission Bridge")]
-    public sealed class DirectorMissionBridge : MonoBehaviour
+    public sealed class DirectorMissionBridge : MonoBehaviour, IDirectorAIEventListener
     {
         [Header("── Mission IDs ─────────────────────────────")]
         [Tooltip("ID миссий которые Director может активировать случайно.")]
@@ -38,14 +38,17 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            HectonDirectorAI.OnRequestMissionTrigger += HandleMissionTrigger;
-            HectonDirectorAI.OnRequestRareDiscovery  += HandleRareDiscovery;
+            DirectorAIEvents.Register(this);
         }
 
         private void OnDisable()
         {
-            HectonDirectorAI.OnRequestMissionTrigger -= HandleMissionTrigger;
-            HectonDirectorAI.OnRequestRareDiscovery  -= HandleRareDiscovery;
+            DirectorAIEvents.Unregister(this);
+        }
+
+        private void OnDestroy()
+        {
+            DirectorAIEvents.Unregister(this);
         }
 
 #if UNITY_EDITOR
@@ -97,7 +100,7 @@ namespace Hecton8.Gameplay
             if (directorMissionIds == null || directorMissionIds.Length == 0)
                 return;
 
-            MissionManager mm = MissionManager.Instance;
+            MissionManager mm = GlobalRegistry.Missions;
             if (mm == null) return;
 
             // Циклически активируем миссии
@@ -132,9 +135,35 @@ namespace Hecton8.Gameplay
                 NarrativeEvents.RaiseDiscoveryMade(rareDiscoveryId);
         }
 
+        void IDirectorAIEventListener.OnDirectorSpawnHordeRequested(Vector3 position)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorEquipmentGlitchRequested(float intensity)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorRareDiscoveryRequested(Vector3 position)
+        {
+            HandleRareDiscovery(position);
+        }
+
+        void IDirectorAIEventListener.OnDirectorWeatherShiftRequested(float intensity)
+        {
+        }
+
+        void IDirectorAIEventListener.OnDirectorMissionTriggerRequested(Vector3 position)
+        {
+            HandleMissionTrigger(position);
+        }
+
+        void IDirectorAIEventListener.OnDirectorPredatorPressureChanged(bool pressureEnabled)
+        {
+        }
+
         private bool CanServeDirectorContent()
         {
-            FirstHourDirector firstHourDirector = FirstHourDirector.Instance;
+            FirstHourDirector firstHourDirector = Hecton8.Core.GlobalRegistry.FirstHour;
             if (firstHourDirector == null)
                 return true;
 

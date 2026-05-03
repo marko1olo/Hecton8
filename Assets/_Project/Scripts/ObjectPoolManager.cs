@@ -31,12 +31,21 @@ namespace Hecton8.Core
         private Dictionary<int, Pool> _pools;
         private bool _serviceRegistered;
 
+        internal static ObjectPoolManager ActiveRuntimeInstance { get; private set; }
+
         /// <summary>
         /// Runtime pool service resolved through <see cref="GlobalRegistry"/>.
         /// </summary>
         public static ObjectPoolManager Instance => GlobalRegistry.ObjectPool;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticState()
+        {
+            ActiveRuntimeInstance = null;
+        }
+
         [System.Serializable]
+#pragma warning disable 0649 // Unity serializes warmup presets from scene/prefab authoring data.
         private struct WarmupEntry
         {
             [Tooltip("Prefab to prewarm into the runtime pool.")]
@@ -45,6 +54,7 @@ namespace Hecton8.Core
             [Tooltip("How many inactive instances to allocate during warmup.")]
             public int count;
         }
+#pragma warning restore 0649
 
         private sealed class Pool
         {
@@ -56,6 +66,9 @@ namespace Hecton8.Core
 
         private void Awake()
         {
+            if (ActiveRuntimeInstance == null)
+                ActiveRuntimeInstance = this;
+
             EnsurePrefabRegistry();
 
             // COLD ALLOC: Dictionary<int, Pool>[32] — prefab id to pool lookup — owner: ObjectPoolManager
@@ -77,6 +90,9 @@ namespace Hecton8.Core
 
         private void OnDestroy()
         {
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                ActiveRuntimeInstance = null;
+
             if (_pools != null)
             {
                 ClearAllPools();

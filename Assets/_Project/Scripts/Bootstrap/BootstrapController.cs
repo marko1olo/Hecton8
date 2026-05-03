@@ -1,4 +1,3 @@
-using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -18,15 +17,6 @@ namespace Hecton8.Bootstrap
         /// Legacy read-only compatibility accessor. Do not use for new systems.
         /// </summary>
         public static BootstrapController Instance => _instance;
-
-        /// <summary>
-        /// Compatibility event forwarded to <see cref="GameBootstrapper.OnBootstrapComplete"/>.
-        /// </summary>
-        public static event Action OnBootstrapComplete
-        {
-            add => GameBootstrapper.OnBootstrapComplete += value;
-            remove => GameBootstrapper.OnBootstrapComplete -= value;
-        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()

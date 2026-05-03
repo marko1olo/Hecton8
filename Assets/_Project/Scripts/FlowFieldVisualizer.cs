@@ -27,6 +27,7 @@ using UnityEngine;
 using System.Globalization;
 using Unity.Mathematics;
 using Hecton8.Core;
+using Hecton8.World;
 
 namespace Hecton8.Physics
 {
@@ -197,6 +198,7 @@ namespace Hecton8.Physics
         /// <summary>Profiler marker для Recalculate</summary>
         private static readonly ProfilerMarker RecalculateMarker
             = new ProfilerMarker("FlowFieldVisualizer.Recalculate");
+        private HectonFluidEngine _subscribedFluidEngine;
 
         /// <summary>Object pool для particle effects (editor-only)</summary>
         private class ParticlePool
@@ -807,7 +809,7 @@ namespace Hecton8.Physics
             }
 
             _nativeVolumeData = BuildVolumeJobData(Allocator.Persistent);
-            HectonFluidEngine engine = HectonFluidEngine.Instance;
+            HectonFluidEngine engine = GlobalRegistry.Fluid;
             bool includeGlobalCurrent = showGlobalCurrent && engine != null;
 
             var job = new FlowSamplingJob
@@ -851,7 +853,9 @@ namespace Hecton8.Physics
                 Debug.LogWarning("[FlowFieldVisualizer] Async flow calculation exceeded timeout. Completing on main thread.", this);
             }
 
-            _calculationJobHandle.Complete();
+            if (!DispatcherJobSwap.TryComplete(ref _calculationJobHandle, timedOut))
+                return;
+
             int totalPoints = _samplePositions.Length;
 
             if (_flowVectors == null || _flowVectors.Length != totalPoints ||
@@ -889,7 +893,7 @@ namespace Hecton8.Physics
 
                 if (useJobSystem && useBurstSampling)
                 {
-                    HectonFluidEngine engine = HectonFluidEngine.Instance;
+                    HectonFluidEngine engine = GlobalRegistry.Fluid;
                     bool includeGlobalCurrent = showGlobalCurrent && engine != null;
 
                     var positions = new NativeArray<float3>(totalPoints, Allocator.TempJob);
@@ -920,7 +924,7 @@ namespace Hecton8.Physics
                         };
 
                         JobHandle handle = samplingJob.Schedule(totalPoints, Mathf.Max(1, totalPoints / 8));
-                        handle.Complete();
+                        DispatcherJobSwap.TryComplete(ref handle, true);
 
                         for (int i = 0; i < totalPoints; i++)
                         {
@@ -1120,9 +1124,9 @@ namespace Hecton8.Physics
             Vector3 totalFlow = Vector3.zero;
 
             // Глобальное phantom течение
-            if (showGlobalCurrent && HectonFluidEngine.Instance != null)
+            HectonFluidEngine engine = GlobalRegistry.Fluid;
+            if (showGlobalCurrent && engine != null)
             {
-                var engine = HectonFluidEngine.Instance;
                 float3 pos = new float3(worldPos.x, worldPos.y, worldPos.z);
 
                 float3 sampledFlow = CurrentManager.SampleCurrent(
@@ -1319,9 +1323,10 @@ namespace Hecton8.Physics
             _instance = this;
 
             // Подписываемся на изменения настроек течений
-            if (HectonFluidEngine.Instance != null)
+            _subscribedFluidEngine = GlobalRegistry.Fluid;
+            if (_subscribedFluidEngine != null)
             {
-                HectonFluidEngine.Instance.OnCurrentSettingsChangedEvent += OnCurrentSettingsChanged;
+                _subscribedFluidEngine.OnCurrentSettingsChangedEvent += OnCurrentSettingsChanged;
             }
         }
 
@@ -1331,14 +1336,15 @@ namespace Hecton8.Physics
                 _instance = null;
 
             // Отписываемся от событий
-            if (HectonFluidEngine.Instance != null)
+            if (_subscribedFluidEngine != null)
             {
-                HectonFluidEngine.Instance.OnCurrentSettingsChangedEvent -= OnCurrentSettingsChanged;
+                _subscribedFluidEngine.OnCurrentSettingsChangedEvent -= OnCurrentSettingsChanged;
+                _subscribedFluidEngine = null;
             }
 
             if (_isCalculationJobRunning)
             {
-                _calculationJobHandle.Complete();
+                DispatcherJobSwap.TryComplete(ref _calculationJobHandle, true);
             }
 
             DisposeNativeJobBuffers();

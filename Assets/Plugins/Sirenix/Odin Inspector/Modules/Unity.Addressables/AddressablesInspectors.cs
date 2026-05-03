@@ -801,7 +801,9 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
                     searchFilter += $"t:{filterType.Name} ";
                 }
 
+#pragma warning disable 0618
                 IEnumerator<HierarchyProperty> enumerator = AssetDatabase_Internals.EnumerateAllAssets(searchFilter, false, AssetDatabaseSearchArea.InAssetsOnly);
+#pragma warning restore 0618
 
                 if (enumerator.MoveNext())
                 {
@@ -823,7 +825,9 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
 
                     do
                     {
+#pragma warning disable 0618
                         HierarchyProperty current = enumerator.Current;
+#pragma warning restore 0618
 
                         if (addedGuids.Contains(current.guid) || !current.isMainRepresentation)
                         {
@@ -840,7 +844,9 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
                         }
                         else
                         {
+#pragma warning disable 0618
                             string path = AssetDatabase.GetAssetPath(current.instanceID);
+#pragma warning restore 0618
 
                             if (!current.isFolder)
                             {
@@ -1245,6 +1251,9 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
 
         static AssetReferenceConverter()
         {
+            if (Application.isBatchMode)
+                return;
+
             ConvertUtility.AddCustomConverter(new AssetReferenceConverter());
         }
 
@@ -1505,7 +1514,9 @@ namespace Sirenix.OdinInspector.Modules.Addressables.Editor
     public static class OdinAddressableUtility
     {
         private readonly static Action openAddressableWindowAction;
+#pragma warning disable 0414
         private static bool hasLoggedPackablesMissingError = false;
+#pragma warning restore 0414
         
         static OdinAddressableUtility()
         {

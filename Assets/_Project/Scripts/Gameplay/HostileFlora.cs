@@ -327,7 +327,7 @@ namespace Hecton8.Gameplay
             float randomAngle = Random.Range(-inaccuracy, inaccuracy);
             spawnRot = Quaternion.AngleAxis(randomAngle, Vector3.up) * spawnRot;
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
             {
                 if (!_poolMissingLogged)

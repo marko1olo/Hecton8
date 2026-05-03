@@ -19,6 +19,7 @@ Unity/Bee reported a sequence of compile blockers while multiple dirty source ed
 - a transient duplicate-method state in `HectonFluidEngine.TrySampleModAbyssalFlow`
 - repeated `CS2001` for `Assets/_Project/Scripts/World/VegetationJobRecovery.cs`
 - an internal Bee/Tundra backend error without a clean `BuildFinishedMessage`
+- a later file-lock/internal build failure while Bee still held `Library/Bee/.../Hecton8.Core.dll`
 
 Current source recheck showed the mod/audio/fluid API surfaces are now present as single definitions.
 The remaining concrete source/import mismatch was the tracked `VegetationJobRecovery.cs.meta` deletion while `VegetationJobRecovery.cs` still existed.
@@ -53,14 +54,13 @@ Evidence source:
 C:\Users\danat\AppData\Local\Unity\Editor\Editor.log
 ```
 
-Latest local scan:
+Final local scan after waiting for Bee/backend recovery:
 
 ```text
-time: 2026-05-01 17:38:12
-total_lines: 92367
-latest Tundra build success: line 91784
-latest Begin MonoManager ReloadAssembly: line 91826
-latest Mono reload success: line 91935
+time: 2026-05-01 17:52
+latest Tundra build success: line 103944
+latest Begin MonoManager ReloadAssembly: line 103987
+latest Mono reload success: line 104086
 strict lines after latest success: 0
 ```
 
@@ -82,16 +82,15 @@ MCP editor state after the compile/reload reports:
 - domain reload pending: `false`
 - active scene: `Assets/_Project/Scenes/00_BOOTSTRAP.unity`
 
-MCP console is not clean as an evidence surface.
-After clearing Unity Console UI, `read_console` still returned one exception entry:
+MCP console initially kept one stale internal-build entry:
 
 ```text
 Internal build system error. Read the full binlog without getting a BuildFinishedMessage.
 The backend process appears to still be running.
 ```
 
-That entry predates the latest successful `Tundra build success` and `Mono: successfully reloaded assembly` lines in `Editor.log`, but it remains visible to MCP.
-Therefore the current status is compile-clean by local `Editor.log`, not globally MCP-clean.
+After waiting for Bee/backend recovery and the later successful reload, MCP `read_console` returned `0` error/warning entries.
+This is editor/script evidence only, not Play Mode or profiler proof.
 
 ## Regression Model
 

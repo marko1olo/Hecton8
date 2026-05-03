@@ -16,7 +16,7 @@ namespace Hecton8.Interaction
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Interaction UI")]
-    public sealed class InteractionUI : MonoBehaviour, IInteractionEventListener
+    public sealed class InteractionUI : MonoBehaviour, IInteractionEventListener, ILocalizationLanguageChangedListener
     {
         [Header("UI References")]
         [SerializeField, Tooltip("The TextMeshProUGUI label that displays the interaction prompt.")]
@@ -59,7 +59,7 @@ namespace Hecton8.Interaction
             if (InputManager.Instance != null)
                 InputManager.Instance.OnInputDisplayStyleChanged += HandleInputDisplayStyleChanged;
 
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
 
             InitializePromptContainer();
             ConfigurePromptLabel();
@@ -83,7 +83,7 @@ namespace Hecton8.Interaction
             if (InputManager.Instance != null)
                 InputManager.Instance.OnInputDisplayStyleChanged -= HandleInputDisplayStyleChanged;
 
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
 
             HidePrompt();
         }
@@ -161,6 +161,15 @@ namespace Hecton8.Interaction
             RefreshCurrentPrompt();
         }
 
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
+
         private void HandleLanguageChanged(GameLanguage language)
         {
             ConfigurePromptLabel();
@@ -181,7 +190,7 @@ namespace Hecton8.Interaction
             if (promptLabel != null)
             {
                 string interactText = target.GetInteractText();
-                LocalizationManager localizationManager = LocalizationManager.Instance;
+                LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
                 if (localizationManager != null && ContainsExpansionToken(interactText))
                     interactText = localizationManager.ExpandText(interactText);
 
@@ -205,7 +214,7 @@ namespace Hecton8.Interaction
         {
             if (!Application.isPlaying)
             {
-                LocalizationManager manager = LocalizationManager.Instance;
+                LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
                 string template = manager != null
                     ? manager.GetExpandedOrFallback(manager.CurrentLanguage, LocalizationKeys.INTERACT_DEFAULT_PROMPT_FORMAT, inputPrefix + "{0} {1}")
                     : inputPrefix + "{0} {1}";
@@ -221,7 +230,7 @@ namespace Hecton8.Interaction
                 return;
             }
 
-            LocalizationManager localizationManager = LocalizationManager.Instance;
+            LocalizationManager localizationManager = Hecton8.Core.GlobalRegistry.Localization;
             if (localizationManager != null)
             {
                 string template = localizationManager.GetExpandedOrFallback(

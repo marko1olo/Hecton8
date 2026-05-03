@@ -688,7 +688,7 @@ namespace Hecton8.Building
             }
             else
             {
-                ObjectPoolManager pool = ObjectPoolManager.Instance;
+                ObjectPoolManager pool = GlobalRegistry.ObjectPool;
                 if (pool != null)
                     pool.Despawn(_currentGhostObj);
                 else
@@ -1042,7 +1042,17 @@ namespace Hecton8.Building
                 _snappedSocket.SetOccupied(true);
             }
 
-            HectonEventBus.Publish(new BaseModulePlacedEvent(activeBuildable, placedModule));
+            bool hasModulePose = placedModule != null;
+            ulong moduleEntityId = hasModulePose ? EntityId.ToULong(placedModule.GetEntityId()) : 0ul;
+            Transform moduleTransform = hasModulePose ? placedModule.transform : null;
+            Vector3 modulePosition = moduleTransform != null ? moduleTransform.position : Vector3.zero;
+            Quaternion moduleRotation = moduleTransform != null ? moduleTransform.rotation : Quaternion.identity;
+            HectonEventBus.Publish(new BaseModulePlacedEvent(
+                activeBuildable,
+                moduleEntityId,
+                modulePosition,
+                moduleRotation,
+                hasModulePose));
             PlaySound(buildSound);
             NotifyBuildPlaced(activeBuildable);
 
@@ -1219,7 +1229,7 @@ namespace Hecton8.Building
 
         private bool TryGetObjectPool(out ObjectPoolManager pool)
         {
-            pool = ObjectPoolManager.Instance;
+            pool = GlobalRegistry.ObjectPool;
             return pool != null;
         }
 

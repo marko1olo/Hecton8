@@ -14,7 +14,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Font Streaming Manager")]
-    public sealed class FontStreamingManager : MonoBehaviour, ITickable, IUpdatable
+    public sealed class FontStreamingManager : MonoBehaviour, ITickable, IUpdatable, ILocalizationLanguageChangedListener
     {
         private const string RootName = "FontStreamingStatus";
         private const string DefaultStatusText = "[REBOOTING LANG_MODULE...]";
@@ -55,7 +55,7 @@ namespace Hecton8.UI
 
         private void OnEnable()
         {
-            LocalizationManager.OnLanguageChanged += HandleLanguageChanged;
+            LocalizationEvents.RegisterLanguageListener(this);
             SceneManager.sceneLoaded += HandleSceneLoaded;
             EnsureRegistryNodes(SceneManager.GetActiveScene());
             RegisterToTickManager();
@@ -68,7 +68,7 @@ namespace Hecton8.UI
 
         private void OnDisable()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             UnregisterFromTickManager();
             ResetSwapState();
@@ -77,7 +77,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
-            LocalizationManager.OnLanguageChanged -= HandleLanguageChanged;
+            LocalizationEvents.UnregisterLanguageListener(this);
             SceneManager.sceneLoaded -= HandleSceneLoaded;
             UnregisterFromTickManager();
             ReleaseTrackedFontData();
@@ -107,6 +107,15 @@ namespace Hecton8.UI
             if (_visibleAlpha > 0.001f)
                 ApplyVisibleAlpha(Mathf.MoveTowards(_visibleAlpha, 0f, dt * StatusFadeOutSpeed));
         }
+
+        public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
+
+        {
+
+            HandleLanguageChanged((GameLanguage)payload.Language);
+
+        }
+
 
         private void HandleLanguageChanged(GameLanguage language)
         {

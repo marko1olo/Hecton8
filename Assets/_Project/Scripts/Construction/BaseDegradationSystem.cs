@@ -523,8 +523,9 @@ namespace Hecton8.Construction
                 baseModule.EmitHullBreachJet(localRupturePoint, DefaultPressureDelta);
             }
 
-            if (AbyssalFluidDecalManager.Instance != null)
-                AbyssalFluidDecalManager.Instance.RegisterRuptureFluid(ruptureWorldPosition, DefaultFluidRadiusScale);
+            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals != null)
+                fluidDecals.RegisterRuptureFluid(ruptureWorldPosition, DefaultFluidRadiusScale);
 
             ApplyAuthoringDecal(moduleObject, ruptureWorldPosition, decalMatrix, LeakStripeDecalChildName);
             ApplyAuthoringDecal(moduleObject, ruptureWorldPosition, decalMatrix, LeakScuffDecalChildName);

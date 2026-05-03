@@ -5,6 +5,7 @@ using Hecton8.Input;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace Hecton8.UI
@@ -54,6 +55,9 @@ namespace Hecton8.UI
         private Image[] _rowBackgrounds = Array.Empty<Image>();
         private Image[] _rowAccentBars = Array.Empty<Image>();
         private Image[] _bindingBackgrounds = Array.Empty<Image>();
+        private UnityAction _applyClickAction;
+        private UnityAction _cancelClickAction;
+        private UnityAction _resetClickAction;
 
         // ZERO-GC: Cached strings for status messages
         private static readonly string StatusRebindingUnavailable = "REBINDING SERVICE UNAVAILABLE.";
@@ -105,6 +109,10 @@ namespace Hecton8.UI
 
         private void Awake()
         {
+            _applyClickAction = OnApplyClicked; // COLD ALLOC: UnityAction[1] - cached controls apply listener - owner: PauseControlsPanel
+            _cancelClickAction = OnCancelClicked; // COLD ALLOC: UnityAction[1] - cached controls cancel listener - owner: PauseControlsPanel
+            _resetClickAction = OnResetToDefaultsClicked; // COLD ALLOC: UnityAction[1] - cached controls reset listener - owner: PauseControlsPanel
+
             if (pauseMenu == null)
                 pauseMenu = GetComponentInParent<PauseMenuController>();
             labelFont = LocalizedFontResolver.ResolveReadableFont(labelFont);
@@ -120,19 +128,19 @@ namespace Hecton8.UI
             if (applyButton != null)
             {
                 applyButton.onClick.RemoveAllListeners();
-                applyButton.onClick.AddListener(OnApplyClicked);
+                applyButton.onClick.AddListener(_applyClickAction);
             }
 
             if (cancelButton != null)
             {
                 cancelButton.onClick.RemoveAllListeners();
-                cancelButton.onClick.AddListener(OnCancelClicked);
+                cancelButton.onClick.AddListener(_cancelClickAction);
             }
 
             if (resetButton != null)
             {
                 resetButton.onClick.RemoveAllListeners();
-                resetButton.onClick.AddListener(OnResetToDefaultsClicked);
+                resetButton.onClick.AddListener(_resetClickAction);
             }
         }
 
@@ -152,6 +160,18 @@ namespace Hecton8.UI
             {
                 rebinding.SaveOverrides();
             }
+        }
+
+        private void OnDestroy()
+        {
+            if (applyButton != null)
+                applyButton.onClick.RemoveListener(_applyClickAction);
+
+            if (cancelButton != null)
+                cancelButton.onClick.RemoveListener(_cancelClickAction);
+
+            if (resetButton != null)
+                resetButton.onClick.RemoveListener(_resetClickAction);
         }
 
         /// <summary>
@@ -286,7 +306,7 @@ namespace Hecton8.UI
                 _statusBuilder.Clear();
                 _statusBuilder.Append(StatusFailedToStartPrefix);
                 _statusBuilder.Append(row.label);
-                SetStatus(_statusBuilder.ToString());
+                SetStatus(_statusBuilder);
             }
         }
 
@@ -356,7 +376,7 @@ namespace Hecton8.UI
             _statusBuilder.Append(actionName);
             _statusBuilder.Append(']');
             
-            SetStatus(_statusBuilder.ToString(), StatusColorPressKey, StatusBgPressKey);
+            SetStatus(_statusBuilder, StatusColorPressKey, StatusBgPressKey);
         }
 
         private void HandleRebindCompleted(string actionName, string actionMap, int bindingIndex, string display)
@@ -370,7 +390,7 @@ namespace Hecton8.UI
             _statusBuilder.Append(": ");
             _statusBuilder.Append(display);
             
-            SetStatus(_statusBuilder.ToString(), StatusColorComplete, StatusBgComplete);
+            SetStatus(_statusBuilder, StatusColorComplete, StatusBgComplete);
         }
 
         private void HandleRebindCanceled(string actionName, string actionMap, int bindingIndex)
@@ -396,7 +416,7 @@ namespace Hecton8.UI
 
             try
             {
-                // ZERO-GC: Build message without allocation
+                // ModalWindow currently requires a managed string payload.
                 _statusBuilder.Append("The binding '");
                 _statusBuilder.Append(newBinding);
                 _statusBuilder.Append("' is already assigned to '");
@@ -434,7 +454,7 @@ namespace Hecton8.UI
                 _statusBuilder.Append(StatusConflictMiddle);
                 _statusBuilder.Append(conflictingAction);
                 
-                SetStatus(_statusBuilder.ToString(), StatusColorConflict, StatusBgConflict);
+                SetStatus(_statusBuilder, StatusColorConflict, StatusBgConflict);
             }
             finally
             {
@@ -732,7 +752,7 @@ namespace Hecton8.UI
                 _statusBuilder.Append(resolutionMessage);
                 _statusBuilder.Append(']');
                 _statusBuilder.Append(StatusRebindSuffix);
-                SetStatus(_statusBuilder.ToString());
+                SetStatus(_statusBuilder);
                 return;
             }
 
@@ -744,7 +764,24 @@ namespace Hecton8.UI
             SetStatus(value, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
         }
 
+        private void SetStatus(System.Text.StringBuilder value)
+        {
+            SetStatus(value, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
+        }
+
         private void SetStatus(string value, Color textColor, Color backgroundColor)
+        {
+            if (_statusText != null)
+            {
+                _statusText.SetText(value);
+                _statusText.color = textColor;
+            }
+
+            if (_statusBackground != null)
+                _statusBackground.color = backgroundColor;
+        }
+
+        private void SetStatus(System.Text.StringBuilder value, Color textColor, Color backgroundColor)
         {
             if (_statusText != null)
             {

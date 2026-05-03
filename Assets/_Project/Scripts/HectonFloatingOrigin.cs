@@ -64,9 +64,10 @@ namespace Hecton8.Core
 
         private static readonly int _HectonFloatingOriginOffsetId = Shader.PropertyToID("_HectonFloatingOriginOffset");
         private static readonly int _TotalUniverseOffsetId = Shader.PropertyToID("_TotalUniverseOffset");
-        private static readonly List<IOriginShiftListener> _originShiftListeners = new List<IOriginShiftListener>(16);
+        private const int OriginShiftListenerCapacity = 128;
+        private static readonly RegistryBucket<IOriginShiftListener> _originShiftListeners = new RegistryBucket<IOriginShiftListener>(OriginShiftListenerCapacity);
         private const int PrecisionWatchdogIntervalFrames = 300;
-        private const int ShiftStabilityWatchdogFrames = 50000;
+        private const int ShiftStabilityWatchdogFrames = 1200;
         private const float PrecisionWatchdogSafeRadiusMeters = 5000f;
         private const float PrecisionWatchdogSafeRadiusSq = PrecisionWatchdogSafeRadiusMeters * PrecisionWatchdogSafeRadiusMeters;
         private const float MinimumShiftThresholdMeters = 5000f;
@@ -122,9 +123,6 @@ namespace Hecton8.Core
         /// <summary>Singleton instance.</summary>
         public static HectonFloatingOrigin Instance => _instance;
 
-        /// <summary>Legacy shift event. Offset equals the world-space shift applied to roots.</summary>
-        public static event Action<Vector3> OnWorldShift;
-
         /// <summary>Cumulative absolute-universe offset committed since startup.</summary>
         public Vector3 TotalOffset { get; private set; }
 
@@ -158,10 +156,6 @@ namespace Hecton8.Core
             if (_instance != null)
                 return _instance;
 
-            HectonFloatingOrigin existing = UnityEngine.Object.FindAnyObjectByType<HectonFloatingOrigin>();
-            if (existing != null)
-                return existing;
-
             GameObject runtimeRoot = new GameObject("[HectonFloatingOrigin]"); // COLD ALLOC: GameObject[1] - bootstrap-owned AUP/floating-origin authority - owner: HectonFloatingOrigin
             return runtimeRoot.AddComponent<HectonFloatingOrigin>();
         }
@@ -191,7 +185,6 @@ namespace Hecton8.Core
             _instance = null;
             _lastShiftEvent = default;
             _originShiftListeners.Clear();
-            OnWorldShift = null;
             Shader.SetGlobalVector(_HectonFloatingOriginOffsetId, Vector4.zero);
             Shader.SetGlobalVector(_TotalUniverseOffsetId, Vector4.zero);
         }
@@ -239,13 +232,20 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            for (int i = 0; i < _originShiftListeners.Count; i++)
-            {
-                if (ReferenceEquals(_originShiftListeners[i], listener))
-                    return;
-            }
+            if (_originShiftListeners.Contains(listener))
+                return;
 
-            _originShiftListeners.Add(listener);
+            _originShiftListeners.Register(listener);
+        }
+
+        /// <summary>
+        /// Checks whether a listener is currently registered in the fixed origin-shift bucket.
+        /// </summary>
+        /// <param name="listener">Listener instance to test.</param>
+        /// <returns>True when the listener is present.</returns>
+        internal static bool IsListenerRegistered(IOriginShiftListener listener)
+        {
+            return listener != null && _originShiftListeners.Contains(listener);
         }
 
         /// <summary>
@@ -257,14 +257,10 @@ namespace Hecton8.Core
             if (listener == null)
                 return;
 
-            for (int i = 0; i < _originShiftListeners.Count; i++)
-            {
-                if (!ReferenceEquals(_originShiftListeners[i], listener))
-                    continue;
+            if (!_originShiftListeners.Contains(listener))
+                return;
 
-                _originShiftListeners.RemoveAt(i);
-                break;
-            }
+            _originShiftListeners.Unregister(listener);
         }
 
         /// <summary>
@@ -357,7 +353,6 @@ namespace Hecton8.Core
                 }
 
                 _originShiftListeners.Clear();
-                OnWorldShift = null;
                 _instance = null;
             }
         }
@@ -397,7 +392,7 @@ namespace Hecton8.Core
             if (_shiftTargetsDirty || _pendingLoadedScenes.Count > 0)
                 ProcessPendingSceneSynchronization();
 
-            if (_driftCheckScheduled && _driftCheckHandle.IsCompleted && ConsumeCompletedDriftCheck())
+            if (_driftCheckScheduled && ConsumeCompletedDriftCheck())
                 return;
 
             UpdateCriticalEntityTrackers();
@@ -497,7 +492,6 @@ namespace Hecton8.Core
                 trackedBodiesFinalized = true;
                 WorldSpatialHashGrid.HandleOriginShift(_lastShiftEvent);
                 await BroadcastOriginShiftAsync(_lastShiftEvent, cancellationToken);
-                OnWorldShift?.Invoke(shiftOffset);
             }
             catch (OperationCanceledException)
             {
@@ -603,7 +597,7 @@ namespace Hecton8.Core
             }
             finally
             {
-                handle.Complete();
+                DispatcherJobSwap.TryComplete(ref handle, true);
             }
         }
 
@@ -682,20 +676,21 @@ namespace Hecton8.Core
 
         private async Awaitable BroadcastNonSceneOriginShiftListenersAsync(OriginShiftEventData shiftData, CancellationToken cancellationToken)
         {
+            IOriginShiftListener[] listeners = _originShiftListeners.RawArray;
             for (int i = _originShiftListeners.Count - 1; i >= 0; i--)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                IOriginShiftListener listener = _originShiftListeners[i];
+                IOriginShiftListener listener = listeners[i];
                 if (listener == null)
                 {
-                    _originShiftListeners.RemoveAt(i);
+                    _originShiftListeners.Unregister(listener);
                     continue;
                 }
 
                 UnityEngine.Object unityListener = listener as UnityEngine.Object;
                 if (!ReferenceEquals(unityListener, null) && unityListener == null)
                 {
-                    _originShiftListeners.RemoveAt(i);
+                    _originShiftListeners.Unregister(listener);
                     continue;
                 }
 
@@ -852,8 +847,9 @@ namespace Hecton8.Core
 
         private bool ConsumeCompletedDriftCheck()
         {
-            _driftCheckHandle.Complete();
-            _driftCheckHandle = default;
+            if (!DispatcherJobSwap.TryComplete(ref _driftCheckHandle, false))
+                return false;
+
             _driftCheckScheduled = false;
 
             bool hasInvalidEntity = false;
@@ -1078,7 +1074,7 @@ namespace Hecton8.Core
                 return;
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _isRegistered = true;
+            _isRegistered = GlobalRegistry.Updatables.Contains(this);
         }
 
         private void TryUnregister()

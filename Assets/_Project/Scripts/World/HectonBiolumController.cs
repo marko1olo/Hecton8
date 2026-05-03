@@ -24,7 +24,7 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-85)]
-    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IDepthZoneEventListener
+    public sealed class HectonBiolumController : MonoBehaviour, ISlowTickable, IAtlasSignalEventListener, IDepthZoneEventListener, ISonarPulseEventListener, IEclipseGameplayEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -100,10 +100,10 @@ namespace Hecton8.World
 
             ResolveSurvivalSystem();
 
-            EclipseGameplayEvents.OnEclipsePhaseChanged += HandleEclipsePhase;
+            EclipseGameplayEvents.Register(this);
             AtlasSignalEvents.Register(this);
             DepthZoneEvents.Register(this);
-            SpectrumEvents.OnSonarPulse                 += HandleSonarPulse;
+            SpectrumEvents.RegisterSonarPulseListener(this);
 
             _currentIntensity = baseIntensity;
             _atlasPulseBurst = 0f;
@@ -115,10 +115,10 @@ namespace Hecton8.World
         {
             TryUnregister();
 
-            EclipseGameplayEvents.OnEclipsePhaseChanged -= HandleEclipsePhase;
+            EclipseGameplayEvents.Unregister(this);
             AtlasSignalEvents.Unregister(this);
             DepthZoneEvents.Unregister(this);
-            SpectrumEvents.OnSonarPulse                 -= HandleSonarPulse;
+            SpectrumEvents.UnregisterSonarPulseListener(this);
 
             Shader.SetGlobalFloat(_ShaderBiolumIntensity, baseIntensity);
             Shader.SetGlobalFloat(_ShaderBiolumPulseTime, 0f);
@@ -127,6 +127,8 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             TryUnregister();
+            EclipseGameplayEvents.Unregister(this);
+            SpectrumEvents.UnregisterSonarPulseListener(this);
 
             if (Instance == this)
                 Instance = null;
@@ -185,6 +187,19 @@ namespace Hecton8.World
             _eclipseActive = active;
         }
 
+        void IEclipseGameplayEventListener.OnEclipseGameplayPhaseChanged(bool active)
+        {
+            HandleEclipsePhase(active);
+        }
+
+        void IEclipseGameplayEventListener.OnNightPredatorsRising(float intensity)
+        {
+        }
+
+        void IEclipseGameplayEventListener.OnEclipseTemperatureDelta(float delta)
+        {
+        }
+
         public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
         {
             if ((AtlasSignalEventType)payload.EventType == AtlasSignalEventType.Pulse)
@@ -209,6 +224,11 @@ namespace Hecton8.World
             _sonarPulseBurst = Mathf.Max(_sonarPulseBurst, sonarPulseBoost * normalizedRadius);
             Shader.SetGlobalFloat(_ShaderBiolumPulseTime, Time.time);
             ApplyShader();
+        }
+
+        void ISonarPulseEventListener.OnSonarPulse(float radius)
+        {
+            HandleSonarPulse(radius);
         }
 
         private void HandleDepthZoneEntered(DepthZoneProfile zone)

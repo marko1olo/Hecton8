@@ -20,11 +20,14 @@ namespace Hecton8.World
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4036)]
-    public sealed partial class WorldProceduralScatterDirector : MonoBehaviour, ITickable, ISlowTickable, IUpdatable, ISceneBootstrapEventListener, IWorldGenService, IOriginShiftListener
+    public sealed partial class WorldProceduralScatterDirector : MonoBehaviour, ITickable, ISlowTickable, IUpdatable, ILateFrameTickable, ISceneBootstrapEventListener, IWorldGenService, IOriginShiftListener
     {
         private const float StartupScatterStabilizationDelaySeconds = 2f;
+        private const int MaxRegisteredScatterDirectors = 4;
 
         internal static WorldProceduralScatterDirector ActiveRuntimeInstance { get; private set; }
+        // COLD ALLOC: RegistryBucket<WorldProceduralScatterDirector>[4] - active scatter directors for bootstrap lookup without scene scans - owner: WorldProceduralScatterDirector
+        private static readonly RegistryBucket<WorldProceduralScatterDirector> _registeredScatterDirectors = new RegistryBucket<WorldProceduralScatterDirector>(MaxRegisteredScatterDirectors);
         /// <summary>
         /// True once the world-generation owner is registered in the global registry.
         /// </summary>
@@ -68,8 +71,8 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private static bool _assemblyReloadHookRegistered;
 #endif
-        private static readonly int _ClusterAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.ClusterAccentRole)).Length;
-        private static readonly int _StructureAccentRoleCount = Enum.GetValues(typeof(WorldPrefabFamilyProfile.StructureAccentRole)).Length;
+        private const int _ClusterAccentRoleCount = 8;
+        private const int _StructureAccentRoleCount = 5;
         private static readonly WorldPrefabFamilyProfile.StructureAccentRole[] _PatternAccentPriorityDefault =
         {
             WorldPrefabFamilyProfile.StructureAccentRole.NaturalLandmark,
@@ -453,6 +456,8 @@ namespace Hecton8.World
             _emergencyCanopyGeologyProfile = null;
             _emergencyLandmarkGeologyProfile = null;
             _emergencyCaveGeologyProfile = null;
+            ActiveRuntimeInstance = null;
+            _registeredScatterDirectors.Clear();
         }
         private Transform _scatterRootTransform;
         private readonly List<GameObject> _sceneRootScratch = new List<GameObject>(32); // COLD ALLOC: scene root scan for scatter root resolve.
@@ -466,6 +471,7 @@ namespace Hecton8.World
         private ScatterWorkingMemory _memory;
         private ScatterInstancingService _instancingService;
         private bool _originShiftListenerRegistered;
+        private bool _registeredRuntimeDirector;
         private ref CandidateMap _groundRescueCandidates => ref _memory.GroundRescueCandidates;
         private ref CandidateMap _clusterRescueCandidates => ref _memory.ClusterRescueCandidates;
         private ref CandidateMap _clusterFertileCandidates => ref _memory.ClusterFertileCandidates;
@@ -593,14 +599,10 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
-            CompleteMigratorySargassumJobIfReady();
-
             if (ShouldDeferUntilBootstrapReady())
                 return;
 
-            PumpScatterBackendShadowPass();
-
-            if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning && !_samplingJobHandle.IsCompleted)
+            if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning)
                 return;
 
             if (Time.unscaledTime < _lifecycleRuntimeState.NextTickDrivenScatterAttemptTime)
@@ -651,6 +653,7 @@ namespace Hecton8.World
         private void OnEnable()
         {
             GlobalRegistry.RegisterWorldGenService(this);
+            TryRegisterRuntimeDirector();
             EnsureWorkingMemory();
             ResolveReferences();
             RegisterProceduralStateRegistryCallbacks();
@@ -687,6 +690,7 @@ namespace Hecton8.World
         private void OnDisable()
         {
             GlobalRegistry.UnregisterWorldGenService(this);
+            TryUnregisterRuntimeDirector();
             UnsubscribeFromBootstrap();
             UnregisterOriginShiftListener();
             UnregisterProceduralStateRegistryCallbacks();
@@ -700,6 +704,7 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
 
                 _lifecycleRuntimeState.RegisteredToTickManager = false;
             }
@@ -711,6 +716,7 @@ namespace Hecton8.World
         private void OnDestroy()
         {
             GlobalRegistry.UnregisterWorldGenService(this);
+            TryUnregisterRuntimeDirector();
             if (ActiveRuntimeInstance == this)
                 ActiveRuntimeInstance = null;
             UnregisterOriginShiftListener();
@@ -719,10 +725,42 @@ namespace Hecton8.World
             DisposeScatterBackendFacade();
             ClearFloraGpuiVisibility();
 
+            if (_lifecycleRuntimeState.RegisteredToTickManager)
+            {
+                GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lifecycleRuntimeState.RegisteredToTickManager = false;
+            }
+
             DisposeCellSamplingArrays();
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
 #endif
+        }
+
+        internal static int RegisteredDirectorCount => _registeredScatterDirectors.Count;
+
+        internal static WorldProceduralScatterDirector GetRegisteredDirectorAt(int index)
+        {
+            return _registeredScatterDirectors.GetAt(index);
+        }
+
+        private void TryRegisterRuntimeDirector()
+        {
+            if (_registeredRuntimeDirector || !Application.isPlaying)
+                return;
+
+            _registeredRuntimeDirector = _registeredScatterDirectors.TryRegister(this);
+        }
+
+        private void TryUnregisterRuntimeDirector()
+        {
+            if (!_registeredRuntimeDirector)
+                return;
+
+            _registeredScatterDirectors.Unregister(this);
+            _registeredRuntimeDirector = false;
         }
 
 #if UNITY_EDITOR
@@ -779,6 +817,7 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
             }
             _lifecycleRuntimeState.RegisteredToTickManager = false;
         }
@@ -814,7 +853,7 @@ namespace Hecton8.World
                 return;
             }
 
-            _samplingJobHandle.Complete();
+            DispatcherJobSwap.TryComplete(ref _samplingJobHandle, forceComplete: true);
             if (fieldSampler != null)
                 fieldSampler.EndScatterSamplingFrame();
             _isSamplingJobRunning = false;
@@ -837,22 +876,17 @@ namespace Hecton8.World
             {
                 _lifecycleRuntimeState.LoggedFirstSlowTick = true;
                 _nextScatterLifecycleLogTime = Time.unscaledTime + 5f;
-                UnityEngine.Debug.Log(
-                    "[WorldScatterRuntime] First slow tick reached.",
-                    this);
+                LogFirstSlowTick(this);
             }
 #endif
             using (_scatterSlowTickProfilerMarker.Auto())
             {
-                PumpScatterBackendShadowPass();
-                CompleteMigratorySargassumJobIfReady();
-
                 if (ShouldDeferUntilBootstrapReady())
                     return;
 
                 TickMigratorySargassumLane(Time.unscaledTime);
 
-                if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning && !_samplingJobHandle.IsCompleted)
+                if (_scatterState == ScatterState.Sampling && _isSamplingJobRunning)
                     return;
 
                 if (_scatterState != ScatterState.Idle)
@@ -872,6 +906,22 @@ namespace Hecton8.World
 
                 RebuildScatterPreview();
             }
+        }
+
+        [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+        private static void LogFirstSlowTick(UnityEngine.Object context)
+        {
+            UnityEngine.Debug.Log("[WorldScatterRuntime] First slow tick reached.", context);
+        }
+
+        public void LateFrameTick()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            PumpScatterBackendShadowPass();
+            CompleteScatterSamplingJobIfReady();
+            CompleteMigratorySargassumJobIfReady();
         }
 
         public void SetChunkStreamingProfile(WorldChunkStreamingProfile profile)
@@ -1431,7 +1481,11 @@ namespace Hecton8.World
 
             GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _lifecycleRuntimeState.RegisteredToTickManager = true;
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+            _lifecycleRuntimeState.RegisteredToTickManager =
+                GlobalRegistry.Updatables.Contains(this) &&
+                GlobalRegistry.SlowTickables.Contains(this) &&
+                SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
         }
 
         private bool TryGetScatterCenterCell(out int centerCellX, out int centerCellZ)
@@ -2591,7 +2645,7 @@ namespace Hecton8.World
             Dictionary<int, int> prefabCreateAllowances = _memory.PrefabCreateAllowances;
             prefabCreateAllowances.Clear();
 
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool == null)
                 return false;
 
@@ -7226,7 +7280,7 @@ namespace Hecton8.World
 
             if (prefab != null)
             {
-                pool = ObjectPoolManager.Instance;
+                pool = GlobalRegistry.ObjectPool;
                 if (pool != null)
                 {
                     instance = pool.Spawn(prefab, runtimePosition, placement.Rotation, !Application.isPlaying);
@@ -7288,7 +7342,7 @@ namespace Hecton8.World
                 return;
 
             GameObject instance = proxy.gameObject;
-            ObjectPoolManager pool = ObjectPoolManager.Instance;
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool != null && proxy.IsPoolManaged)
             {
                 pool.Despawn(instance);
@@ -10752,11 +10806,12 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveWorldProceduralStateRegistry(ref proceduralStateRegistry);
             WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyService(ref generativeGeologyService);
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref environmentalVegetationBridge);
+            HectonRockManager rockManager = GlobalRegistry.RockManager;
             if (floraGpuiManager == null &&
-                HectonRockManager.Instance != null &&
-                HectonRockManager.Instance.GpuInstancerManager != null)
+                rockManager != null &&
+                rockManager.GpuInstancerManager != null)
             {
-                floraGpuiManager = HectonRockManager.Instance.GpuInstancerManager;
+                floraGpuiManager = rockManager.GpuInstancerManager;
             }
 
             if (faunaSpawnRegistry != null)
@@ -10823,7 +10878,7 @@ namespace Hecton8.World
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _originShiftListenerRegistered = true;
+            _originShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void UnregisterOriginShiftListener()

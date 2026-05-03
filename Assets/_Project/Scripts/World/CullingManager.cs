@@ -10,7 +10,7 @@
 //   • Hysteresis to prevent activation thrashing
 //
 // ARCHITECTURE:
-//   • Singleton via CullingManager.Instance
+//   • GlobalRegistry.Culling is the authoritative runtime lookup.
 //   • ISlowTickable — runs ~0.5s interval (not per-frame)
 //   • Zero-GC — pre-allocated collections, struct-based data
 //   • O(1) operations where possible
@@ -144,6 +144,7 @@ namespace Hecton8.World
         private Camera _mainCamera;
         private bool _layerCullDistancesApplied;
         private bool _registered;
+        private bool _serviceRegistered;
 
         private int _frustumCulledCount;
         private int _distanceCulledCount;
@@ -215,6 +216,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            TryRegisterService();
             TryRegister();
         }
 
@@ -222,12 +224,14 @@ namespace Hecton8.World
         {
             RestoreTrackedCullStates();
             TryUnregister();
+            TryUnregisterService();
         }
 
         private void OnDestroy()
         {
             RestoreTrackedCullStates();
             TryUnregister();
+            TryUnregisterService();
 
             // Clear singleton
             if (_instance == this)
@@ -240,7 +244,7 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
-            _registered = true;
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
         private void TryUnregister()
@@ -248,9 +252,29 @@ namespace Hecton8.World
             if (!_registered)
                 return;
 
-                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
 
             _registered = false;
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterCullingRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.Culling, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.Culling, this))
+                GlobalRegistry.UnregisterCullingRuntime(this);
+
+            _serviceRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════

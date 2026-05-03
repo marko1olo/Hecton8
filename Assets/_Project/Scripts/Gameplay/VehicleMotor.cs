@@ -535,13 +535,14 @@ namespace Hecton8.Gameplay
             wasBlocked = false;
             blockingHit = default;
             resolvedPosition = _body != null ? _body.position : Vector3.zero;
-            if (!_scheduledSweepPending || !_scheduledSweepHandle.IsCompleted)
+            if (!_scheduledSweepPending)
                 return false;
 
             using (_consumeProfilerMarker.Auto())
             {
-                _scheduledSweepHandle.Complete();
-                _scheduledSweepHandle = default;
+                if (!DispatcherJobSwap.TryComplete(ref _scheduledSweepHandle, forceComplete: false))
+                    return false;
+
                 _scheduledSweepPending = false;
 
                 float nearestDistance = float.MaxValue;
@@ -990,7 +991,7 @@ namespace Hecton8.Gameplay
                 return;
 
             HectonFloatingOrigin.RegisterListener(this);
-            _registeredOriginShiftListener = true;
+            _registeredOriginShiftListener = HectonFloatingOrigin.IsListenerRegistered(this);
         }
 
         private void TryUnregisterOriginShiftListener()
@@ -1057,7 +1058,7 @@ namespace Hecton8.Gameplay
             if (!math.all(math.isfinite(currentPosition)) || !math.all(math.isfinite(currentRotation.value)))
                 return;
 
-            float alpha = math.saturate(Time.deltaTime * math.max(0.01f, headlessVisualInterpolationSharpness));
+            float alpha = math.saturate(SystemDispatcher.CurrentFrameDeltaTime * math.max(0.01f, headlessVisualInterpolationSharpness));
             float3 nextPosition = math.lerp(currentPosition, targetPosition, alpha);
             quaternion nextRotation = math.slerp(currentRotation, targetRotation, alpha);
             headlessVisualRoot.SetPositionAndRotation(

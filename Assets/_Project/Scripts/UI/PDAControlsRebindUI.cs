@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using Hecton8.Core;
 using Hecton8.Input;
 using TMPro;
@@ -90,6 +91,8 @@ namespace Hecton8.UI
         private Image[] _bindingBackgrounds = Array.Empty<Image>();
         private Image _statusBackground;
         private TextMeshProUGUI _headerHintText;
+        private readonly StringBuilder _headerHintBuilder = new StringBuilder(128); // COLD ALLOC: StringBuilder[128] — controls header hint formatting buffer — owner: PDAControlsRebindUI
+        private readonly StringBuilder _statusBuilder = new StringBuilder(192); // COLD ALLOC: StringBuilder[192] — controls status formatting buffer — owner: PDAControlsRebindUI
 
         private bool IsControlsTabActive =>
             isActiveAndEnabled &&
@@ -245,14 +248,14 @@ namespace Hecton8.UI
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
             if (action == null)
             {
-                SetStatus($"Action not found: {row.actionMap}/{row.actionName}");
+                SetStatusActionNotFound(row);
                 return;
             }
 
             int bindingIndex = ResolveBindingIndex(action, row.actionName, row.actionMap, row.bindingIndex);
             if (bindingIndex < 0)
             {
-                SetStatus($"No rebindable binding: {row.label}");
+                SetStatusNoRebindableBinding(row.label);
                 return;
             }
 
@@ -265,7 +268,7 @@ namespace Hecton8.UI
 
             if (!started)
             {
-                SetStatus($"Failed to start: {row.label}");
+                SetStatusFailedToStart(row.label);
             }
         }
 
@@ -301,8 +304,15 @@ namespace Hecton8.UI
         private void HandleRebindStarted(string actionName, string actionMap, int bindingIndex)
         {
             if (!IsControlsTabActive) return;
+            _statusBuilder.Clear();
+            _statusBuilder.Append(rebindingPrefix)
+                .Append("  [")
+                .Append(actionMap)
+                .Append('/')
+                .Append(actionName)
+                .Append(']');
             SetStatus(
-                $"{rebindingPrefix}  [{actionMap}/{actionName}]",
+                _statusBuilder,
                 new Color(0.82f, 0.98f, 1f, 0.96f),
                 new Color(0.08f, 0.22f, 0.34f, 0.9f));
         }
@@ -311,8 +321,12 @@ namespace Hecton8.UI
         {
             RefreshAllBindings();
             if (!IsControlsTabActive) return;
+            _statusBuilder.Clear();
+            _statusBuilder.Append(actionName)
+                .Append(": ")
+                .Append(display);
             SetStatus(
-                $"{actionName}: {display}",
+                _statusBuilder,
                 new Color(0.76f, 0.98f, 0.94f, 0.96f),
                 new Color(0.08f, 0.2f, 0.18f, 0.88f));
         }
@@ -377,14 +391,14 @@ namespace Hecton8.UI
             InputAction action = InputManager.Instance.GetAction(row.actionName, row.actionMap);
             if (action == null)
             {
-                SetStatus($"Action not found: {row.actionMap}/{row.actionName}");
+                SetStatusActionNotFound(row);
                 return;
             }
 
             int bindingIndex = ResolveBindingIndex(action, row.actionName, row.actionMap, row.bindingIndex);
             if (bindingIndex < 0)
             {
-                SetStatus($"No rebindable binding: {row.actionName}");
+                SetStatusNoRebindableBinding(row.actionName);
                 return;
             }
 
@@ -675,7 +689,7 @@ namespace Hecton8.UI
 
                 if (row.labelText != null)
                 {
-                    row.labelText.text = row.label;
+                    row.labelText.SetText(row.label);
                 }
             }
         }
@@ -707,11 +721,11 @@ namespace Hecton8.UI
                 : -1;
             if (action == null || bindingIndex < 0)
             {
-                row.bindingText.text = "--";
+                row.bindingText.SetText("--");
                 return;
             }
 
-            row.bindingText.text = GetBindingDisplaySafe(action, bindingIndex);
+            row.bindingText.SetText(GetBindingDisplaySafe(action, bindingIndex));
         }
 
         private void RefreshSelectionVisuals()
@@ -786,7 +800,15 @@ namespace Hecton8.UI
                 }
             }
 
-            SetStatus($"{readyPrefix}: {row.label} [{binding}]  |  {BuildResetHintText()}");
+            _statusBuilder.Clear();
+            _statusBuilder.Append(readyPrefix)
+                .Append(": ")
+                .Append(row.label)
+                .Append(" [")
+                .Append(binding)
+                .Append("]  |  ");
+            AppendResetHintText(_statusBuilder);
+            SetStatus(_statusBuilder);
         }
 
         private bool TryGetSelectedRow(out RebindRow row, out int rowIndex)
@@ -933,18 +955,27 @@ namespace Hecton8.UI
                 : "--";
         }
 
-        private string BuildResetHintText()
+        private void AppendResetHintText(StringBuilder builder)
         {
             InputManager inputManager = InputManager.Instance;
             if (inputManager == null)
-                return resetHint;
+            {
+                builder.Append(resetHint);
+                return;
+            }
 
             string resetOne = inputManager.GetBindingDisplayString("TabNext", "UI", -1);
             string resetAll = inputManager.GetBindingDisplayString("TabPrevious", "UI", -1);
             if (string.IsNullOrWhiteSpace(resetOne) || string.IsNullOrWhiteSpace(resetAll))
-                return resetHint;
+            {
+                builder.Append(resetHint);
+                return;
+            }
 
-            return $"{resetOne} = reset selected, {resetAll} = reset all";
+            builder.Append(resetOne)
+                .Append(" = reset selected, ")
+                .Append(resetAll)
+                .Append(" = reset all");
         }
 
         private void UpdateHeaderHintText()
@@ -970,10 +1001,22 @@ namespace Hecton8.UI
                 return;
             }
 
-            _headerHintText.SetText($"{submit} = rebind  |  {resetOne} = reset one  |  {resetAll} = reset all");
+            _headerHintBuilder.Clear();
+            _headerHintBuilder.Append(submit)
+                .Append(" = rebind  |  ")
+                .Append(resetOne)
+                .Append(" = reset one  |  ")
+                .Append(resetAll)
+                .Append(" = reset all");
+            _headerHintText.SetText(_headerHintBuilder);
         }
 
         private void SetStatus(string value)
+        {
+            SetStatus(value, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
+        }
+
+        private void SetStatus(StringBuilder value)
         {
             SetStatus(value, HintColor, new Color(0.05f, 0.1f, 0.12f, 0.82f));
         }
@@ -982,7 +1025,7 @@ namespace Hecton8.UI
         {
             if (statusText != null)
             {
-                statusText.text = value;
+                statusText.SetText(value);
                 statusText.color = textColor;
             }
 
@@ -990,6 +1033,46 @@ namespace Hecton8.UI
             {
                 _statusBackground.color = backgroundColor;
             }
+        }
+
+        private void SetStatus(StringBuilder value, Color textColor, Color backgroundColor)
+        {
+            if (statusText != null)
+            {
+                statusText.SetText(value);
+                statusText.color = textColor;
+            }
+
+            if (_statusBackground != null)
+            {
+                _statusBackground.color = backgroundColor;
+            }
+        }
+
+        private void SetStatusActionNotFound(RebindRow row)
+        {
+            _statusBuilder.Clear();
+            _statusBuilder.Append("Action not found: ")
+                .Append(row.actionMap)
+                .Append('/')
+                .Append(row.actionName);
+            SetStatus(_statusBuilder);
+        }
+
+        private void SetStatusNoRebindableBinding(string label)
+        {
+            _statusBuilder.Clear();
+            _statusBuilder.Append("No rebindable binding: ")
+                .Append(label);
+            SetStatus(_statusBuilder);
+        }
+
+        private void SetStatusFailedToStart(string label)
+        {
+            _statusBuilder.Clear();
+            _statusBuilder.Append("Failed to start: ")
+                .Append(label);
+            SetStatus(_statusBuilder);
         }
 
         private static int WrapIndex(int value, int max)
