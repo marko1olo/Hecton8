@@ -439,6 +439,9 @@ public struct MCRawVertex
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelDensityJob : IJobParallelFor
 {
+    private const byte DeltaModeAdditive = 1 << 0;
+    private const byte DeltaModeReplace = 1 << 1;
+
     // ── Grid dimensions ──
     public int ptsX, ptsY, ptsZ;
     public float3 volumeOrigin;
@@ -550,7 +553,12 @@ public struct VoxelDensityJob : IJobParallelFor
             if (modifiedCells.TryGetValue(absoluteCell, out VoxelModifiedCell storedCell))
             {
                 float deltaDensity = (float)storedCell.Density;
-                if ((storedCell.Flags & 0x01) != 0)
+                if ((storedCell.Flags & DeltaModeReplace) != 0)
+                {
+                    smoothDensityValue = deltaDensity;
+                    finalDensityValue = deltaDensity;
+                }
+                else if ((storedCell.Flags & DeltaModeAdditive) != 0)
                 {
                     smoothDensityValue = math.max(smoothDensityValue, deltaDensity);
                     finalDensityValue = math.max(finalDensityValue, deltaDensity);
@@ -644,7 +652,7 @@ public struct VoxelDensityJob : IJobParallelFor
         for (int i = 0; i < caveEntrances.Length; i++)
         {
             CaveEntrance entrance = caveEntrances[i];
-            float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
+            float3 direction = ResolveEntranceDirection(entrance);
             float3 innerPoint = entrance.surfacePosition + direction * entrance.funnelLength;
             float embedDepth = math.max(5f, math.max(voxelStep * 1.5f, entrance.radius * 0.35f));
             float transitionZone = math.clamp(math.max(2.5f, entrance.radius * 0.18f), 2f, 3.5f);
@@ -674,6 +682,18 @@ public struct VoxelDensityJob : IJobParallelFor
         }
 
         return skirtDist;
+    }
+
+    float3 ResolveEntranceDirection(CaveEntrance entrance)
+    {
+        float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
+        float normalBlend = math.saturate(entrance.terrainNormalBlend);
+        if (normalBlend <= 0f)
+            return direction;
+
+        float3 terrainNormal = math.normalizesafe(entrance.terrainNormal, new float3(0f, 1f, 0f));
+        float3 terrainInward = math.normalizesafe(-terrainNormal, direction);
+        return math.normalizesafe(math.lerp(direction, terrainInward, normalBlend * 0.55f), direction);
     }
 
 
@@ -989,7 +1009,7 @@ public struct VoxelDensityJob : IJobParallelFor
 
     float EvaluateEntrance(float3 warpedPos, CaveEntrance entrance)
     {
-        float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
+        float3 direction = ResolveEntranceDirection(entrance);
         float3 innerPoint = entrance.surfacePosition + direction * entrance.funnelLength;
         float core = SDCapsuleConic(
             warpedPos,
@@ -1007,7 +1027,19 @@ public struct VoxelDensityJob : IJobParallelFor
             entrance.radius * 1.3f,
             math.max(entrance.innerRadius, entrance.radius * 0.85f));
 
-        return SmoothMinExp(core, flare, caveParams.entranceBlendK * 0.4f);
+        float mouth = SmoothMinExp(core, flare, caveParams.entranceBlendK * 0.4f);
+        float normalBlend = math.saturate(entrance.terrainNormalBlend);
+        if (normalBlend <= 0f)
+            return mouth;
+
+        float3 terrainNormal = math.normalizesafe(entrance.terrainNormal, new float3(0f, 1f, 0f));
+        return mouth + VoxelSeamDirector.ComputeCaveMouthDensityPerturbation(
+            warpedPos,
+            entrance.surfacePosition,
+            terrainNormal,
+            normalBlend,
+            entrance.radius,
+            voxelStep);
     }
 
     void EvaluateStructuresSDF(float3 wp, out float smoothStructDist, out float finalStructDist)
@@ -1884,6 +1916,7 @@ public struct VoxelNormalJob : IJobParallelFor
     [ReadOnly] public NativeArray<float3> positions;
     [WriteOnly] public NativeArray<float3> normals;
     [WriteOnly] public NativeArray<float> curvatureValues;
+    [WriteOnly] public NativeArray<float> ambientOcclusionValues;
 
     public void Execute(int idx)
     {
@@ -1905,7 +1938,8 @@ public struct VoxelNormalJob : IJobParallelFor
         float dz = samplePosZ - sampleNegZ;
 
         float3 gradient = new float3(dx, dy, dz);
-        normals[idx] = math.normalizesafe(-gradient, new float3(0f, 1f, 0f));
+        float3 normal = math.normalizesafe(-gradient, new float3(0f, 1f, 0f));
+        normals[idx] = normal;
 
         float invEpsilonSq = 1f / math.max(epsilon * epsilon, 0.0001f);
         float centerDensity = SampleField(smoothDensityField, wp);
@@ -1921,7 +1955,17 @@ public struct VoxelNormalJob : IJobParallelFor
             (smoothPosZ + smoothNegZ - (2f * centerDensity));
 
         float signedCurvature = (laplacian * invEpsilonSq) * epsilon;
-        curvatureValues[idx] = math.saturate(0.5f + signedCurvature * 0.35f);
+        float curvature01 = math.saturate(0.5f + signedCurvature * 0.35f);
+        curvatureValues[idx] = curvature01;
+
+        float inwardDensity = SampleField(smoothDensityField, wp - normal * epsilon);
+        float outwardDensity = SampleField(smoothDensityField, wp + normal * epsilon);
+        float gradientMagnitude = math.length(gradient) / math.max(epsilon * 2f, 0.0001f);
+        float solidBackfill = math.saturate(inwardDensity / math.max(epsilon, 0.0001f));
+        float openForward = math.saturate((-outwardDensity) / math.max(epsilon, 0.0001f));
+        float cavityFold = math.saturate((0.5f - curvature01) * 2f);
+        float gradientOcclusion = math.saturate(1f - gradientMagnitude * 0.18f);
+        ambientOcclusionValues[idx] = math.saturate(1f - solidBackfill * 0.42f - cavityFold * 0.26f - openForward * gradientOcclusion * 0.14f);
     }
 
     float SampleField(NativeArray<float> field, float3 worldPosition)
@@ -2376,6 +2420,16 @@ public class HectonVoxelEngine : MonoBehaviour
     private const string RuntimeCaveMeshName = "CaveMesh";
     private const int StreamingScratchLeaseTimeoutFrames = 1200;
     private const int VoxelJobWaitWatchdogFrames = 1200;
+    private const int DeferredVoxelPhysicsBakeTeardownDrainBudget = 8;
+    private const int DeferredVoxelPhysicsBakeTeardownBackpressureDrainBudget = 32;
+    private const int DeferredVoxelPhysicsBakeTeardownInspectionBudget = 128;
+    private const int DeferredVoxelPhysicsBakeTeardownBackpressureInspectionBudget = 512;
+    private const int DeferredVoxelPhysicsBakeBackpressureThreshold = 64;
+    private const int DeferredVoxelPhysicsBakeBackpressureReleaseThreshold = 32;
+    private const int DeferredVoxelPhysicsBakeTeardownCapacity = 2048;
+    private const byte DeferredVoxelBakeDestroyOwner = 1 << 0;
+    private const byte DeltaModeAdditive = 1 << 0;
+    private const byte DeltaModeReplace = 1 << 1;
     private const string NativeMemoryOwner = nameof(HectonVoxelEngine);
     private const string ModifiedCellsNativeMemoryLabelPrefix = "VoxelPipelineData.ModifiedCells.";
     private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
@@ -2443,7 +2497,37 @@ public class HectonVoxelEngine : MonoBehaviour
         _activeGenerationOperations = 0;
         _shutdownRequested = 0;
         ActiveRuntimeInstance = null;
+        _deferredVoxelPhysicsBakeTeardowns.Clear();
+        _deferredVoxelPhysicsBakeTeardownRegistered = false;
+        _deferredVoxelPhysicsBakeBackpressureActive = false;
+        _deferredVoxelPhysicsBakeTeardownScanCursor = 0;
     }
+    // COLD ALLOC: List<DeferredVoxelPhysicsBakeTeardown>[2048] - deferred voxel collider PhysX bake teardown queue - owner: HectonVoxelEngine
+    private static readonly List<DeferredVoxelPhysicsBakeTeardown> _deferredVoxelPhysicsBakeTeardowns = new List<DeferredVoxelPhysicsBakeTeardown>(DeferredVoxelPhysicsBakeTeardownCapacity);
+    // COLD ALLOC: DeferredVoxelPhysicsBakeTeardownDriver[1] - dispatcher late-frame adapter for voxel bake teardown - owner: HectonVoxelEngine
+    private static readonly DeferredVoxelPhysicsBakeTeardownDriver _deferredVoxelPhysicsBakeTeardownDriver = new DeferredVoxelPhysicsBakeTeardownDriver();
+    private static bool _deferredVoxelPhysicsBakeTeardownRegistered;
+    private static bool _deferredVoxelPhysicsBakeBackpressureActive;
+    private static int _deferredVoxelPhysicsBakeTeardownScanCursor;
+
+    private struct DeferredVoxelPhysicsBakeTeardown
+    {
+        public Mesh Mesh;
+        public GameObject Owner;
+        public MeshRenderer Renderer;
+        public MeshCollider Collider;
+        public JobHandle Handle;
+        public byte Flags;
+    }
+
+    private sealed class DeferredVoxelPhysicsBakeTeardownDriver : ILateFrameTickable
+    {
+        public void LateFrameTick()
+        {
+            DrainDeferredVoxelPhysicsBakeTeardowns();
+        }
+    }
+
     // COLD ALLOC: List<GameObject>[64] - active voxel volume object registry - owner: HectonVoxelEngine
     readonly List<GameObject> _activeVolumes = new List<GameObject>(ActiveVolumeRegistryCapacity);
     // COLD ALLOC: List<HectonVoxelVolume>[64] - active voxel volume component registry - owner: HectonVoxelEngine
@@ -2568,6 +2652,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<int> EdgeVertexZ;
         public NativeArray<float3> Normals;
         public NativeArray<float> CurvatureValues;
+        public NativeArray<float> AmbientOcclusionValues;
         public NativeArray<float> BiomeValues;
         public NativeArray<Color> Colors;
         public NativeList<CaveSpawnData> SpawnPointList;
@@ -2604,6 +2689,7 @@ public class HectonVoxelEngine : MonoBehaviour
             HectonVoxelEngine.DisposeTrackedNativeArray(ref EdgeVertexZ);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref Normals);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref CurvatureValues);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref AmbientOcclusionValues);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref BiomeValues);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref Colors);
             if (SpawnPointList.IsCreated) SpawnPointList.Dispose();
@@ -2855,6 +2941,41 @@ public class HectonVoxelEngine : MonoBehaviour
             EndGenerationOperation();
         }
     }
+    /// <summary>
+    /// Overload accepting pre-built cave data.
+    /// Use when you want to generate the graph externally (e.g. custom editor tool)
+    /// and pass raw NativeArrays directly.
+    ///
+    /// Caller is responsible for disposing input NativeArrays AFTER this method completes.
+    /// </summary>
+    internal async Awaitable<GameObject> GenerateVolumeFromDataAsync(
+        AbsoluteUniversePosition worldCenterAup,
+        int gridDimension,
+        float voxelSize,
+        NativeArray<CaveNode> nodes,
+        NativeArray<CaveTunnel> tunnels,
+        NativeArray<CaveEntrance> entrances,
+        NativeArray<CaveStructure> structures,
+        CaveGenerationParams caveParams,
+        int lodLevel,
+        bool buildCollider = true,
+        CancellationToken ct = default)
+    {
+        Vector3 runtimeCenter = (Vector3)worldCenterAup.ToRuntimeFloat3();
+        return await GenerateVolumeFromDataAsync(
+            runtimeCenter,
+            gridDimension,
+            voxelSize,
+            nodes,
+            tunnels,
+            entrances,
+            structures,
+            caveParams,
+            lodLevel,
+            buildCollider,
+            ct);
+    }
+
     /// <summary>
     /// Overload accepting pre-built cave data.
     /// Use when you want to generate the graph externally (e.g. custom editor tool)
@@ -3495,10 +3616,256 @@ public class HectonVoxelEngine : MonoBehaviour
         }
     }
 
+    static async Awaitable<bool> AwaitForPhysicsBakeCompletionOrDeferAsync(
+        JobHandle handle,
+        CancellationToken ct,
+        string context,
+        Mesh mesh,
+        GameObject owner,
+        MeshRenderer renderer,
+        MeshCollider collider,
+        byte flags)
+    {
+        int waitFrames = 0;
+        while (!handle.IsCompleted)
+        {
+            if (ct.IsCancellationRequested)
+            {
+                EnqueueDeferredVoxelPhysicsBakeTeardown(handle, mesh, owner, renderer, collider, flags);
+                return false;
+            }
+
+            if (waitFrames >= VoxelJobWaitWatchdogFrames)
+            {
+                LogVoxelJobWaitWatchdog(context, waitFrames);
+                EnqueueDeferredVoxelPhysicsBakeTeardown(handle, mesh, owner, renderer, collider, flags);
+                return false;
+            }
+
+            waitFrames++;
+            try
+            {
+                await Awaitable.NextFrameAsync(cancellationToken: ct);
+            }
+            catch (OperationCanceledException)
+            {
+                EnqueueDeferredVoxelPhysicsBakeTeardown(handle, mesh, owner, renderer, collider, flags);
+                return false;
+            }
+        }
+
+        return DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
+    }
+
+    private static void EnqueueDeferredVoxelPhysicsBakeTeardown(
+        JobHandle handle,
+        Mesh mesh,
+        GameObject owner,
+        MeshRenderer renderer,
+        MeshCollider collider,
+        byte flags)
+    {
+        DisableDeferredVoxelBakePresentation(owner, renderer, collider);
+        _deferredVoxelPhysicsBakeTeardowns.Add(new DeferredVoxelPhysicsBakeTeardown
+        {
+            Mesh = mesh,
+            Owner = owner,
+            Renderer = renderer,
+            Collider = collider,
+            Handle = handle,
+            Flags = flags
+        });
+
+        EnsureDeferredVoxelPhysicsBakeTeardownRegistered();
+        UpdateDeferredVoxelPhysicsBakeBackpressure();
+    }
+
+    private static void DisableDeferredVoxelBakePresentation(GameObject owner, MeshRenderer renderer, MeshCollider collider)
+    {
+        if (renderer == null && owner != null)
+            owner.TryGetComponent(out renderer);
+
+        if (renderer != null)
+            renderer.enabled = false;
+
+        if (collider != null)
+        {
+            collider.enabled = false;
+            collider.sharedMesh = null;
+        }
+    }
+
+    private static void EnsureDeferredVoxelPhysicsBakeTeardownRegistered()
+    {
+        if (_deferredVoxelPhysicsBakeTeardownRegistered ||
+            !Application.isPlaying ||
+            GlobalRegistry.Dispatcher == null)
+        {
+            return;
+        }
+
+        GlobalRegistry.RegisterLateFrameTickable(_deferredVoxelPhysicsBakeTeardownDriver, PriorityLayer.Environment);
+        _deferredVoxelPhysicsBakeTeardownRegistered = SystemDispatcher
+            .GetLateFrameLane(PriorityLayer.Environment)
+            .Contains(_deferredVoxelPhysicsBakeTeardownDriver);
+    }
+
+    private static void DrainDeferredVoxelPhysicsBakeTeardowns()
+    {
+        int pendingCount = _deferredVoxelPhysicsBakeTeardowns.Count;
+        if (pendingCount <= 0)
+        {
+            _deferredVoxelPhysicsBakeTeardownScanCursor = 0;
+            UnregisterDeferredVoxelPhysicsBakeTeardownDriver();
+            UpdateDeferredVoxelPhysicsBakeBackpressure();
+            return;
+        }
+
+        int drainBudget = _deferredVoxelPhysicsBakeBackpressureActive
+            ? DeferredVoxelPhysicsBakeTeardownBackpressureDrainBudget
+            : DeferredVoxelPhysicsBakeTeardownDrainBudget;
+        int inspectionBudget = _deferredVoxelPhysicsBakeBackpressureActive
+            ? DeferredVoxelPhysicsBakeTeardownBackpressureInspectionBudget
+            : DeferredVoxelPhysicsBakeTeardownInspectionBudget;
+        if (inspectionBudget > pendingCount)
+            inspectionBudget = pendingCount;
+
+        if (_deferredVoxelPhysicsBakeTeardownScanCursor < 0 ||
+            _deferredVoxelPhysicsBakeTeardownScanCursor >= pendingCount)
+        {
+            _deferredVoxelPhysicsBakeTeardownScanCursor = pendingCount - 1;
+        }
+
+        int drained = 0;
+        int inspected = 0;
+        int index = _deferredVoxelPhysicsBakeTeardownScanCursor;
+        while (pendingCount > 0 && inspected < inspectionBudget && drained < drainBudget)
+        {
+            if (index < 0)
+                index = pendingCount - 1;
+            else if (index >= pendingCount)
+                index = pendingCount - 1;
+
+            DeferredVoxelPhysicsBakeTeardown pending = _deferredVoxelPhysicsBakeTeardowns[index];
+            inspected++;
+            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: false))
+            {
+                index--;
+                continue;
+            }
+
+            if (pending.Collider != null)
+            {
+                pending.Collider.enabled = false;
+                if (pending.Collider.sharedMesh == pending.Mesh)
+                    pending.Collider.sharedMesh = null;
+            }
+
+            if (pending.Mesh != null)
+            {
+                pending.Mesh.Clear(false);
+                DestroyDeferredVoxelObject(pending.Mesh);
+            }
+
+            if ((pending.Flags & DeferredVoxelBakeDestroyOwner) != 0 && pending.Owner != null)
+                DestroyDeferredVoxelObject(pending.Owner);
+
+            RemoveDeferredVoxelPhysicsBakeTeardownAt(index);
+            drained++;
+            pendingCount = _deferredVoxelPhysicsBakeTeardowns.Count;
+            if (pendingCount == 0)
+                break;
+
+            if (index >= pendingCount)
+                index = pendingCount - 1;
+        }
+
+        if (pendingCount > 0)
+        {
+            if (index < 0)
+                index = pendingCount - 1;
+            else if (index >= pendingCount)
+                index = pendingCount - 1;
+        }
+
+        _deferredVoxelPhysicsBakeTeardownScanCursor = pendingCount > 0 ? index : 0;
+        if (_deferredVoxelPhysicsBakeTeardowns.Count == 0)
+            UnregisterDeferredVoxelPhysicsBakeTeardownDriver();
+
+        UpdateDeferredVoxelPhysicsBakeBackpressure();
+    }
+
+    private static void RemoveDeferredVoxelPhysicsBakeTeardownAt(int index)
+    {
+        int lastIndex = _deferredVoxelPhysicsBakeTeardowns.Count - 1;
+        if (index != lastIndex)
+            _deferredVoxelPhysicsBakeTeardowns[index] = _deferredVoxelPhysicsBakeTeardowns[lastIndex];
+
+        _deferredVoxelPhysicsBakeTeardowns.RemoveAt(lastIndex);
+    }
+
+    private static void UnregisterDeferredVoxelPhysicsBakeTeardownDriver()
+    {
+        if (!_deferredVoxelPhysicsBakeTeardownRegistered)
+            return;
+
+        GlobalRegistry.UnregisterLateFrameTickable(_deferredVoxelPhysicsBakeTeardownDriver, PriorityLayer.Environment);
+        _deferredVoxelPhysicsBakeTeardownRegistered = false;
+    }
+
+    private static void UpdateDeferredVoxelPhysicsBakeBackpressure()
+    {
+        int pendingCount = _deferredVoxelPhysicsBakeTeardowns.Count;
+        bool nextActive = ResolveDeferredVoxelPhysicsBakeBackpressureState(
+            pendingCount,
+            _deferredVoxelPhysicsBakeBackpressureActive);
+
+        if (nextActive == _deferredVoxelPhysicsBakeBackpressureActive)
+        {
+            if (nextActive)
+                SystemDispatcher.SetVoxelTeardownBackpressure(true, pendingCount);
+            return;
+        }
+
+        _deferredVoxelPhysicsBakeBackpressureActive = nextActive;
+        SystemDispatcher.SetVoxelTeardownBackpressure(nextActive, pendingCount);
+    }
+
+    internal static bool DebugResolveDeferredVoxelPhysicsBakeBackpressureState(int pendingCount, bool currentlyActive)
+    {
+        return ResolveDeferredVoxelPhysicsBakeBackpressureState(pendingCount, currentlyActive);
+    }
+
+    private static bool ResolveDeferredVoxelPhysicsBakeBackpressureState(int pendingCount, bool currentlyActive)
+    {
+        bool nextActive = currentlyActive;
+        if (!nextActive && pendingCount > DeferredVoxelPhysicsBakeBackpressureThreshold)
+            nextActive = true;
+        else if (nextActive && pendingCount <= DeferredVoxelPhysicsBakeBackpressureReleaseThreshold)
+            nextActive = false;
+
+        return nextActive;
+    }
+
+    private static void DestroyDeferredVoxelObject(UnityEngine.Object obj)
+    {
+        if (obj == null)
+            return;
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying)
+            DestroyImmediate(obj);
+        else
+            Destroy(obj);
+#else
+        Destroy(obj);
+#endif
+    }
+
     static void LogVoxelJobWaitWatchdog(string context, int waitFrames)
     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-        Debug.LogError($"[HectonVoxel] Job wait watchdog tripped. Context={context}. Frames={waitFrames}. Forcing completion as cleanup barrier.");
+        Debug.LogError($"[HectonVoxel] Job wait watchdog tripped. Context={context}. Frames={waitFrames}. Cleanup barrier required.");
 #endif
     }
 
@@ -3783,10 +4150,12 @@ public class HectonVoxelEngine : MonoBehaviour
 
         data.Normals = new NativeArray<float3>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         data.CurvatureValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        data.AmbientOcclusionValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         data.BiomeValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         data.Colors = new NativeArray<Color>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         RegisterTrackedNativeArray(data.Normals, nameof(data.Normals));
         RegisterTrackedNativeArray(data.CurvatureValues, nameof(data.CurvatureValues));
+        RegisterTrackedNativeArray(data.AmbientOcclusionValues, nameof(data.AmbientOcclusionValues));
         RegisterTrackedNativeArray(data.BiomeValues, nameof(data.BiomeValues));
         RegisterTrackedNativeArray(data.Colors, nameof(data.Colors));
         if (data.ExtractSpawnPoints)
@@ -3819,7 +4188,8 @@ public class HectonVoxelEngine : MonoBehaviour
             smoothDensityField = smoothDensityField,
             positions = data.WeldedPositions,
             normals = data.Normals,
-            curvatureValues = data.CurvatureValues
+            curvatureValues = data.CurvatureValues,
+            ambientOcclusionValues = data.AmbientOcclusionValues
         }.Schedule(data.WeldedCount, JOB_BATCH, seamSnapHandle);
 
         JobHandle seamNormalHandle = new VoxelSeamNormalBlendJob
@@ -4333,6 +4703,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public Vector3 Position;
         public Vector3 Normal;
         public Color32 Color;
+        public Vector4 BakedOcclusionUv1;
         public Vector3 AbsolutePositionWS;
     }
 
@@ -4429,6 +4800,7 @@ public class HectonVoxelEngine : MonoBehaviour
         NativeArray<float3> positions,
         NativeArray<float3> normals,
         NativeArray<Color> colors,
+        NativeArray<float> ambientOcclusionValues,
         NativeArray<int> triangleIndices,
         int vertexCount,
         int triangleIndexCount,
@@ -4441,6 +4813,7 @@ public class HectonVoxelEngine : MonoBehaviour
             new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
             new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
             new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 4),
             new VertexAttributeDescriptor(VertexAttribute.TexCoord3, VertexAttributeFormat.Float32, 3));
 
         meshData.SetIndexBufferParams(triangleIndexCount, IndexFormat.UInt32);
@@ -4453,6 +4826,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 Position = positions[i],
                 Normal = normals[i],
                 Color = (Color32)colors[i],
+                BakedOcclusionUv1 = new Vector4(0f, 0f, 0f, ambientOcclusionValues.IsCreated && i < ambientOcclusionValues.Length ? ambientOcclusionValues[i] : 1f),
                 AbsolutePositionWS = positions[i] + absolutePositionOffset
             };
         }
@@ -4536,6 +4910,7 @@ public class HectonVoxelEngine : MonoBehaviour
                                NativeArray<float3> positions,
                                NativeArray<float3> normals,
                                NativeArray<Color> colors,
+                               NativeArray<float> ambientOcclusionValues,
                                NativeArray<int> triangleIndices,
                                int triIndexCount,
                                int vertCount,
@@ -4564,7 +4939,7 @@ public class HectonVoxelEngine : MonoBehaviour
             mesh.Clear();
         }
 
-        UploadSurfaceMesh(mesh, positions, normals, colors, triangleIndices, vertCount, triIndexCount, absolutePositionOffset);
+        UploadSurfaceMesh(mesh, positions, normals, colors, ambientOcclusionValues, triangleIndices, vertCount, triIndexCount, absolutePositionOffset);
 
         var mr = go.GetComponent<MeshRenderer>();
         if (mr == null) mr = go.AddComponent<MeshRenderer>();
@@ -4598,6 +4973,7 @@ public class HectonVoxelEngine : MonoBehaviour
                     meshLocalPositions,
                     data.Normals,
                     data.Colors,
+                    data.AmbientOcclusionValues,
                     data.TriangleIndices,
                     data.RawCount,
                     data.WeldedCount,
@@ -4627,7 +5003,18 @@ public class HectonVoxelEngine : MonoBehaviour
                         Convex = false
                     }.Schedule();
 
-                    await AwaitForJobCompletionAsync(fallbackBakeHandle, ct, "fallback collider bake");
+                    if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
+                            fallbackBakeHandle,
+                            ct,
+                            "fallback collider bake",
+                            mesh,
+                            go,
+                            go.GetComponent<MeshRenderer>(),
+                            mcol,
+                            DeferredVoxelBakeDestroyOwner))
+                    {
+                        return;
+                    }
 
                     ct.ThrowIfCancellationRequested();
                     mcol.sharedMesh = mesh;
@@ -4680,6 +5067,7 @@ public class HectonVoxelEngine : MonoBehaviour
         NativeArray<int> bucketWriteHeads = default;
         NativeArray<int> chunkTriangleIndices = default;
         bool completed = false;
+        bool deferredBakeTeardown = false;
 
         try
         {
@@ -4791,7 +5179,20 @@ public class HectonVoxelEngine : MonoBehaviour
                     Convex = false
                 }.Schedule();
 
-                await AwaitForJobCompletionAsync(bakeHandle, ct, "collider chunk bake");
+                if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
+                        bakeHandle,
+                        ct,
+                        "collider chunk bake",
+                        chunkMesh,
+                        volume.gameObject,
+                        null,
+                        chunkCollider,
+                        0))
+                {
+                    volume.DetachColliderChunkBakeMesh(chunkIndex);
+                    deferredBakeTeardown = true;
+                    return;
+                }
 
                 ct.ThrowIfCancellationRequested();
                 volume.PublishColliderChunkMesh(chunkIndex);
@@ -4805,7 +5206,7 @@ public class HectonVoxelEngine : MonoBehaviour
         }
         finally
         {
-            if (!completed)
+            if (!completed && !deferredBakeTeardown)
                 volume.ClearColliderChunkBakeMeshes();
 
             DisposeTrackedNativeArray(ref triangleBuckets);

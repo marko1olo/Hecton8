@@ -364,6 +364,9 @@ namespace Hecton8.Core
             if (_syncInProgress)
                 return;
 
+            if (!GlobalRegistry.TryBeginResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerContext))
+                return;
+
             _syncInProgress = true;
             try
             {
@@ -372,6 +375,7 @@ namespace Hecton8.Core
             finally
             {
                 _syncInProgress = false;
+                GlobalRegistry.EndResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerContext);
             }
         }
 
@@ -512,42 +516,82 @@ namespace Hecton8.Core
 
         private void RefreshDynamicContextReferences()
         {
-            IPlayerInventoryService playerInventoryService = GlobalRegistry.PlayerInventory;
+            IPlayerInventoryService playerInventoryService = GlobalRegistry.RegisteredPlayerInventory;
             if (playerInventoryService != null)
             {
-                if (_toolManager == null)
-                    _toolManager = playerInventoryService.ToolManager;
+                if (playerInventoryService is PlayerInventoryManager playerInventoryManager)
+                {
+                    if (_toolManager == null)
+                        _toolManager = playerInventoryManager.CachedToolManager;
 
-                if (_inventory == null)
-                    _inventory = playerInventoryService.Inventory;
+                    if (_inventory == null)
+                        _inventory = playerInventoryManager.CachedInventory;
 
-                if (_playerBuilder == null)
-                    _playerBuilder = playerInventoryService.PlayerBuilder;
+                    if (_playerBuilder == null)
+                        _playerBuilder = playerInventoryManager.CachedPlayerBuilder;
 
-                if (_handAnchor == null)
-                    _handAnchor = playerInventoryService.HandAnchor;
+                    if (_handAnchor == null)
+                        _handAnchor = playerInventoryManager.CachedHandAnchor;
+                }
+                else
+                {
+                    if (_toolManager == null)
+                        _toolManager = playerInventoryService.ToolManager;
+
+                    if (_inventory == null)
+                        _inventory = playerInventoryService.Inventory;
+
+                    if (_playerBuilder == null)
+                        _playerBuilder = playerInventoryService.PlayerBuilder;
+
+                    if (_handAnchor == null)
+                        _handAnchor = playerInventoryService.HandAnchor;
+                }
             }
 
-            IPlayerSensoryService playerSensoryService = GlobalRegistry.PlayerSensory;
+            IPlayerSensoryService playerSensoryService = GlobalRegistry.RegisteredPlayerSensory;
             if (playerSensoryService != null)
             {
-                if (_playerCamera == null)
-                    _playerCamera = playerSensoryService.PlayerCamera;
+                if (playerSensoryService is PlayerSensoryManager playerSensoryManager)
+                {
+                    if (_playerCamera == null)
+                        _playerCamera = playerSensoryManager.CachedPlayerCamera;
 
-                if (_flashlight == null)
-                    _flashlight = playerSensoryService.Flashlight;
+                    if (_flashlight == null)
+                        _flashlight = playerSensoryManager.CachedFlashlight;
 
-                if (_thrusterAudio == null)
-                    _thrusterAudio = playerSensoryService.ThrusterAudio;
+                    if (_thrusterAudio == null)
+                        _thrusterAudio = playerSensoryManager.CachedThrusterAudio;
 
-                if (_underwaterVisuals == null)
-                    _underwaterVisuals = playerSensoryService.UnderwaterVisuals;
+                    if (_underwaterVisuals == null)
+                        _underwaterVisuals = playerSensoryManager.CachedUnderwaterVisuals;
 
-                if (_visorController == null)
-                    _visorController = playerSensoryService.VisorController;
+                    if (_visorController == null)
+                        _visorController = playerSensoryManager.CachedVisorController;
 
-                if (_hudNotification == null)
-                    _hudNotification = playerSensoryService.HudNotification;
+                    if (_hudNotification == null)
+                        _hudNotification = playerSensoryManager.CachedHudNotification;
+                }
+                else
+                {
+                    if (_playerCamera == null)
+                        _playerCamera = playerSensoryService.PlayerCamera;
+
+                    if (_flashlight == null)
+                        _flashlight = playerSensoryService.Flashlight;
+
+                    if (_thrusterAudio == null)
+                        _thrusterAudio = playerSensoryService.ThrusterAudio;
+
+                    if (_underwaterVisuals == null)
+                        _underwaterVisuals = playerSensoryService.UnderwaterVisuals;
+
+                    if (_visorController == null)
+                        _visorController = playerSensoryService.VisorController;
+
+                    if (_hudNotification == null)
+                        _hudNotification = playerSensoryService.HudNotification;
+                }
             }
 
             if (_toolManager != null)

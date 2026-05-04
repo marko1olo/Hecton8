@@ -1,13 +1,5 @@
 fileFormatVersion: 2
 guid: 6699eb5224f1e6e4b80bd3fca9a99958
-ScriptedImporter:
-  internalIDToNameTable: []
-  externalObjects: {}
-  serializedVersion: 2
-  userData: 
-  assetBundleName: 
-  assetBundleVariant: 
-  script: {fileID: 11500000, guid: 625f186215c104763be7675aa2d941aa, type: 3}
 AssetOrigin:
   serializedVersion: 1
   productId: 191256
@@ -15,3 +7,19 @@ AssetOrigin:
   packageVersion: 2020.3.0
   assetPath: Assets/ShaderGraph_Dissolve/URP/ShaderGraph/DoubleSide/Dissolve_Metallic_DoubleSide.shadergraph
   uploadId: 533539
+ScriptedImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 2
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+  script: {instanceID: 0}
+  useAsTemplate: 0
+  exposeTemplateAsShader: 0
+  template:
+    name: 
+    category: 
+    description: 
+    icon: {instanceID: 0}
+    thumbnail: {instanceID: 0}

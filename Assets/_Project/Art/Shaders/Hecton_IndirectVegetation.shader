@@ -168,6 +168,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             StructuredBuffer<float> _HectonFloraPhaseSeeds;
             StructuredBuffer<uint> _HectonVisibleInstanceIndices;
             StructuredBuffer<float2> _MarineSnowFlowField;
+            StructuredBuffer<float4> _AbyssalFlowFieldResult;
+            StructuredBuffer<float4> _PredatorAUPBuffer;
             float4 _ChunkWorldOffset;
             float4 _GlobalFloatingOffset;
             StructuredBuffer<FloraInteractionPointGpuData> _HectonFloraInteractionPoints;
@@ -185,6 +187,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonPlayerRuntimePosition;
             float4 _HectonPlayerFloraInteractionParams;
             float4 _HectonFloraPredatorThreatParams;
+            float4 _HectonFloraPredatorThreatPositionRadius;
+            float4 _PredatorAUPParams;
             float4 _HectonFloraLifecycleParams;
             float4 _HectonFloraCascadeParams;
             float4 _HectonSubmarineWashSphere;
@@ -192,6 +196,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonSubmarineWashAupGrid;
             float4 _HectonSubmarineWashAupLocal;
             float4 _HectonFlowSynchronyParams;
+            float4 _AbyssalGridResolution;
+            float4 _AbyssalFlowCenter;
+            float4 _AbyssalFlowSpacing;
             float _HectonSeasonCycle;
             float _SeasonCycle;
             float _HectonVegetationDepth;
@@ -207,11 +214,15 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             int _HectonFloraFlowFieldResolution;
             int _HectonFloraInteractionCount;
             int _HectonImpactSphereCount;
+            int _PredatorAUPCount;
 
             TEXTURE2D(_SargassumCutMaskRT);
             SAMPLER(sampler_SargassumCutMaskRT);
             TEXTURE2D(_HectonShallowWaterFieldRT);
             SAMPLER(sampler_HectonShallowWaterFieldRT);
+            TEXTURE2D(_BlueNoiseTex);
+            SAMPLER(sampler_BlueNoiseTex);
+            float4 _BlueNoiseTex_TexelSize;
 
             struct Attributes
             {
@@ -332,6 +343,32 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return float3(flowXZ.x, 0.0, flowXZ.y);
             }
 
+            float3 ResolveAbyssalFlowField(float3 positionWS)
+            {
+                int resolutionX = (int)max(_AbyssalGridResolution.x, 0.0);
+                int resolutionY = (int)max(_AbyssalGridResolution.y, 0.0);
+                int resolutionZ = (int)max(_AbyssalGridResolution.z, 0.0);
+                int nodeCount = (int)max(_AbyssalGridResolution.w, 0.0);
+                if (resolutionX <= 1 || resolutionY <= 1 || resolutionZ <= 1 || nodeCount <= 0)
+                    return float3(0.0, 0.0, 0.0);
+
+                float horizontalCellSize = max(_AbyssalFlowSpacing.x, 0.001);
+                float verticalCellSize = max(_AbyssalFlowSpacing.y, 0.001);
+                int3 halfExtent = int3(resolutionX >> 1, resolutionY >> 1, resolutionZ >> 1);
+                float3 localPosition = positionWS - _AbyssalFlowCenter.xyz;
+                int3 coord = int3(round(float3(
+                    localPosition.x / horizontalCellSize,
+                    localPosition.y / verticalCellSize,
+                    localPosition.z / horizontalCellSize))) + halfExtent;
+                coord = clamp(coord, int3(0, 0, 0), int3(resolutionX - 1, resolutionY - 1, resolutionZ - 1));
+
+                int index = coord.y * resolutionX * resolutionZ + coord.z * resolutionX + coord.x;
+                if (index < 0 || index >= nodeCount)
+                    return float3(0.0, 0.0, 0.0);
+
+                return _AbyssalFlowFieldResult[index].xyz;
+            }
+
             float3 SafeNormalize3(float3 value);
 
             float ResolveFlowSynchronyPhase(float3 positionWS, float instanceNoise)
@@ -344,7 +381,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 if (bendMask <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
 
-                float3 flowSample = ResolveMarineSnowFlowField(positionWS);
+                float3 flowSample = ResolveMarineSnowFlowField(positionWS) + ResolveAbyssalFlowField(positionWS);
                 float flowMagnitude = length(flowSample.xz) * max(_HectonFlowSynchronyParams.x, 1.0);
                 if (flowMagnitude <= 0.0001)
                     return float3(0.0, 0.0, 0.0);
@@ -391,6 +428,23 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 float2 pixel = floor(positionCS);
                 return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float ResolveVegetationBlueNoise(float4 positionCS)
+            {
+                float2 pixel = floor(positionCS.xy);
+                float fallback = InterleavedGradientNoise(pixel);
+                float useBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
+                float2 r2Offset = frac(floor(_Time.y * 60.0) * float2(0.75487766, 0.56984029));
+                float2 texelScale = lerp(float2(1.0 / 64.0, 1.0 / 64.0), _BlueNoiseTex_TexelSize.xy, useBlueNoise);
+                float2 blueNoiseUV = frac(pixel * texelScale + r2Offset);
+                float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
+                return lerp(fallback, sampled, useBlueNoise);
+            }
+
+            half ResolveVegetationVisibilityGate(half signal, half threshold, half feather)
+            {
+                return saturate((signal - threshold) / max(feather, 0.0001h));
             }
 
             float3 TransformPoint(float4x4 matrixValue, float3 localPosition)
@@ -774,8 +828,10 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             {
                 float currentTimeScale = max(_HectonVegetationCurrentTimeScale, 0.05);
                 float currentNoiseScale = max(_HectonVegetationCurrentNoiseScale, 0.002);
-                float3 sampledFlow = ResolveMarineSnowFlowField(basePositionWS);
+                float3 abyssalFlow = ResolveAbyssalFlowField(basePositionWS);
+                float3 sampledFlow = ResolveMarineSnowFlowField(basePositionWS) + abyssalFlow;
                 float2 localFlowVector = sampledFlow.xz;
+                float abyssalFlowMagnitude = length(abyssalFlow.xz);
                 bool hasLocalFlow = dot(localFlowVector, localFlowVector) > 0.0001;
                 float2 resolvedCurrentVector = hasLocalFlow ? localFlowVector : currentVector;
                 float currentMagnitude = max(currentStrength, length(resolvedCurrentVector));
@@ -808,6 +864,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                     currentPerpendicular * (curl * 0.42);
                 if (hasLocalFlow)
                     flowXZ += localFlowVector * 0.65;
+                if (abyssalFlowMagnitude > 0.0001)
+                {
+                    float abyssalPhase = timeValue * max(_KelpCurrentFrequency, 0.01) +
+                        dot(basePositionWS.xz, float2(0.071, -0.053)) +
+                        instanceNoise * 6.28318;
+                    flowXZ += SafeNormalize2(abyssalFlow.xz) * (sin(abyssalPhase) * abyssalFlowMagnitude);
+                }
 
                 float verticalFlow = (gustNoise * 0.35 + surge * 0.18) * _HectonVegetationCurrentVerticalFactor;
                 float3 flowVector = float3(flowXZ.x, verticalFlow, flowXZ.y);
@@ -879,13 +942,40 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             half ResolveBiolumPredatorDim(float3 positionWS)
             {
                 half threatExposure = saturate(_HectonFloraPredatorThreatParams.x);
-                if (threatExposure <= 0.0001h)
-                    return 1.0h;
-
-                half dimRadius = max(_HectonFloraPredatorThreatParams.y, 0.001h);
-                half playerProximity = saturate(1.0h - (distance(positionWS, _HectonPlayerRuntimePosition.xyz) / dimRadius));
                 half dimStrength = saturate(_HectonFloraPredatorThreatParams.z);
-                return saturate(1.0h - (threatExposure * playerProximity * dimStrength));
+                half legacyDim = 1.0h;
+                if (threatExposure > 0.0001h && dimStrength > 0.0001h)
+                {
+                    float4 predatorThreat = _HectonFloraPredatorThreatPositionRadius;
+                    half dimRadius = max(max((half)predatorThreat.w, (half)_HectonFloraPredatorThreatParams.y), 15.0h);
+                    half predatorProximity = 1.0h;
+                    if (predatorThreat.w > 0.001)
+                        predatorProximity = saturate(1.0h - (distance(positionWS, predatorThreat.xyz) / dimRadius));
+                    legacyDim = saturate(1.0h - (threatExposure * predatorProximity * dimStrength));
+                }
+
+                int predatorCount = min(max(_PredatorAUPCount, 0), 32);
+                if (predatorCount <= 0)
+                    return legacyDim;
+
+                half bufferDimStrength = saturate((half)_PredatorAUPParams.y);
+                if (bufferDimStrength <= 0.0001h)
+                    return legacyDim;
+
+                half baseRadius = max((half)_PredatorAUPParams.x, 15.0h);
+                half predatorGate = 0.0h;
+                [loop]
+                for (int predatorIndex = 0; predatorIndex < predatorCount; predatorIndex++)
+                {
+                    float4 predatorAup = _PredatorAUPBuffer[predatorIndex];
+                    half dimRadius = max(max((half)predatorAup.w, baseRadius), 15.0h);
+                    half distanceToPredator = (half)distance(positionWS, predatorAup.xyz);
+                    half gate = 1.0h - smoothstep(dimRadius * 0.55h, dimRadius, distanceToPredator);
+                    predatorGate = max(predatorGate, gate);
+                }
+
+                half bufferDim = saturate(1.0h - predatorGate * bufferDimStrength);
+                return min(legacyDim, bufferDim);
             }
 
             half ResolveSeasonalBloomEmissionScale()
@@ -1023,7 +1113,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
 
                 float3 basePositionWS = TransformPoint(instanceMatrix, localPosition) + driftOffsetWS + floatingOriginOffsetWS;
                 float2 fallbackCurrentVector = dot(_GlobalOceanFlow.xz, _GlobalOceanFlow.xz) > 0.0001 ? _GlobalOceanFlow.xz : _HectonVegetationCurrentVector.xz;
-                float3 sampledFlowVector = ResolveMarineSnowFlowField(basePositionWS);
+                float3 sampledFlowVector = ResolveMarineSnowFlowField(basePositionWS) + ResolveAbyssalFlowField(basePositionWS);
                 float2 sampledCurrentVector = sampledFlowVector.xz;
                 float flowMagnitude = length(sampledCurrentVector);
                 float2 currentVector = dot(sampledCurrentVector, sampledCurrentVector) > 0.0001 ? sampledCurrentVector : fallbackCurrentVector;
@@ -1230,15 +1320,15 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             half4 Frag(Varyings input) : SV_Target
             {
                 half cutMask = ResolveVegetationCutMask(input.instanceType, input.positionWS);
-                clip(0.08h - cutMask);
+                half coverageVisibility = ResolveVegetationVisibilityGate(0.08h - cutMask, 0.0h, 0.025h);
 
                 half porousCoverageMask = input.instanceType > 1.5h ? ResolveSargassumPorousCoverage(input.positionWS, input.heightMask) : 1.0h;
                 if (input.instanceType > 1.5h)
-                    clip(porousCoverageMask - 0.16h);
+                    coverageVisibility *= ResolveVegetationVisibilityGate(porousCoverageMask, 0.16h, 0.08h);
 
                 half entropyCoverage = 1.0h - input.entropyProgress * saturate(lerp(0.28h, 1.0h, input.heightMask) * lerp(0.35h, 1.0h, input.curvatureMask));
                 half coverage = saturate(_Opacity) * porousCoverageMask * entropyCoverage;
-                clip(coverage - ResolveBayer4x4(floor(input.positionCS.xy)));
+                coverageVisibility *= (half)step(ResolveBayer4x4(floor(input.positionCS.xy)), coverage);
 
                 half3 normalWS = SafeNormalize3(input.normalWS);
                 half3 viewDirectionWS = SafeNormalize(GetWorldSpaceViewDir(input.positionWS));
@@ -1283,7 +1373,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         input.positionWS * 4.7 +
                         float3(input.cascadeSeed * 11.0h, _Time.y * 0.021h, input.pulseFrequency * 3.0h));
                     half inwardThreshold = saturate(1.0h - saturate(input.health01) + necrosisClipNoise * 0.22h);
-                    clip(edgeSignal - inwardThreshold);
+                    coverageVisibility *= (half)step(inwardThreshold, edgeSignal);
                 }
                 half necrosisNoise = (half)ValueNoise3D(input.positionWS * 5.6 + float3(0.0, input.cascadeSeed * 7.0h, _Time.y * 0.025));
                 half3 necrosisColor = lerp(half3(0.025h, 0.018h, 0.012h), half3(0.20h, 0.10h, 0.035h), necrosisNoise);
@@ -1410,7 +1500,13 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half3 abyssFogColor = lerp(_HectonVegetationFogColor.rgb, half3(0.01h, 0.03h, 0.045h), abyssFactor);
                 half fogBlend = saturate(input.fogFactor * lerp(1.0h, 1.25h, abyssFactor));
                 finalColor = lerp(finalColor, abyssFogColor, fogBlend);
-                return half4(finalColor, 1.0h);
+#if defined(_QUALITY_MX350)
+                half ditherOffset = (half)((ResolveVegetationBlueNoise(input.positionCS) - 0.5) * (1.0 / 255.0));
+                finalColor = max(finalColor + ditherOffset, half3(0.0015h, 0.0023h, 0.0031h));
+#endif
+                coverageVisibility = saturate(coverageVisibility);
+                finalColor = lerp(half3(0.0015h, 0.0023h, 0.0031h), finalColor, coverageVisibility);
+                return half4(finalColor, coverageVisibility);
             }
             ENDHLSL
         }

@@ -1,3 +1,4 @@
+using Hecton8.Audio;
 using Hecton8.World;
 using UnityEngine;
 
@@ -50,10 +51,21 @@ namespace Hecton8.Environment
 
         [Header("Future Integration")]
         public HectonBiomeProfile runtimeVisualProfile;
+        public HectonMusicBiomeProfile musicBiomeProfile;
         public string familyId = string.Empty;
         public HectonBiomeFamilyProfile familyProfile;
         public string suggestedZoneFamily = string.Empty;
         public string progressionRole = string.Empty;
+
+        [Header("Biome Flow Override")]
+        public bool hasAmbientFlowOverride;
+        public Vector3 ambientFlowOverride = Vector3.zero;
+        [Range(0f, 1f)] public float ambientFlowOverrideWeight = 1f;
+
+        [Header("Transition VFX")]
+        public bool emitsSeismicDustOnEntry;
+        [Range(0.1f, 1f)] public float seismicDustRadiusScale = 0.35f;
+        [Range(0f, 2f)] public float seismicDustSeafloorOffsetMeters = 0.18f;
 
         [Header("Procedural Memory")]
         public WorldProceduralClusterFocus primaryClusterFocus = WorldProceduralClusterFocus.None;

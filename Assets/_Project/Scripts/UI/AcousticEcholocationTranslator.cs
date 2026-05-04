@@ -88,6 +88,10 @@ namespace Hecton8.UI
         private const string DefaultClassificationPrefix = "CLASSIFICATION";
         private const string DefaultLeviathanClass = "UNKNOWN BIOMASS // LEVIATHAN";
         private const string DefaultWreckageClass = "WRECKAGE // ANCHOR RETURN";
+        private static readonly int ContactHeaderKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CONTACT_HEADER);
+        private static readonly int ClassificationPrefixKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CLASSIFICATION_PREFIX);
+        private static readonly int LeviathanClassKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CLASS_LEVIATHAN);
+        private static readonly int WreckageClassKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CLASS_WRECKAGE);
 
         private static readonly Color FrameColor = new Color(0.08f, 0.14f, 0.16f, 0.78f);
         private static readonly Color HeaderColor = new Color(0.72f, 0.96f, 0.88f, 0.96f);
@@ -119,12 +123,8 @@ namespace Hecton8.UI
         private Image _background;
         private TextMeshProUGUI _headerLabel;
         private TextMeshProUGUI _classificationLabel;
-        private string _lastHeaderText = string.Empty;
-        private string _lastClassificationText = string.Empty;
-        private string _localizedContactHeader = DefaultContactHeader;
-        private string _localizedClassificationPrefix = DefaultClassificationPrefix;
-        private string _localizedLeviathanClass = DefaultLeviathanClass;
-        private string _localizedWreckageClass = DefaultWreckageClass;
+        private bool _headerDirty = true;
+        private bool _plainClassificationDirty = true;
         private ContactClassification _lastRenderedClassification = ContactClassification.None;
         private int _lastRenderedDistanceMeters = int.MinValue;
 
@@ -188,8 +188,8 @@ namespace Hecton8.UI
             }
 
             ApplyRootAlpha(0f);
-            _lastHeaderText = string.Empty;
-            _lastClassificationText = string.Empty;
+            _headerDirty = true;
+            _plainClassificationDirty = true;
             _lastRenderedClassification = ContactClassification.None;
             _lastRenderedDistanceMeters = int.MinValue;
             UnregisterFromTickManager();
@@ -240,8 +240,8 @@ namespace Hecton8.UI
         private void HandleLanguageChanged(GameLanguage _)
         {
             RefreshLocalizedCache();
-            _lastHeaderText = string.Empty;
-            _lastClassificationText = string.Empty;
+            _headerDirty = true;
+            _plainClassificationDirty = true;
             _lastRenderedClassification = ContactClassification.None;
             _lastRenderedDistanceMeters = int.MinValue;
         }
@@ -337,9 +337,9 @@ namespace Hecton8.UI
 
         private void ShowClassification(ContactClassification classification, int distanceMeters)
         {
-            string classText = classification == ContactClassification.Leviathan
-                ? _localizedLeviathanClass
-                : _localizedWreckageClass;
+            ReadOnlySpan<char> classText = classification == ContactClassification.Leviathan
+                ? ResolveLocalizedSpan(LeviathanClassKeyHash, DefaultLeviathanClass.AsSpan())
+                : ResolveLocalizedSpan(WreckageClassKeyHash, DefaultWreckageClass.AsSpan());
 
             LocalizationManager localization = GlobalRegistry.Localization;
             bool useStressMutation = ShouldUseStressMutation(localization);
@@ -359,36 +359,36 @@ namespace Hecton8.UI
             RegisterToTickManager();
         }
 
-        private void ApplyPlainClassification(ContactClassification classification, string classText, int distanceMeters)
+        private void ApplyPlainClassification(ContactClassification classification, ReadOnlySpan<char> classText, int distanceMeters)
         {
-            if (!string.Equals(_lastHeaderText, _localizedContactHeader, System.StringComparison.Ordinal))
+            if (_headerDirty)
             {
-                int headerLength = CopyStringToBuffer(_localizedContactHeader, _headerTextBuffer);
+                int headerLength = CopySpanToBuffer(ResolveLocalizedSpan(ContactHeaderKeyHash, DefaultContactHeader.AsSpan()), _headerTextBuffer);
                 _headerLabel.SetCharArray(_headerTextBuffer, 0, headerLength);
-                _lastHeaderText = _localizedContactHeader;
+                _headerDirty = false;
             }
 
             if (_lastRenderedClassification != classification ||
                 _lastRenderedDistanceMeters != distanceMeters ||
-                _lastClassificationText.Length != 0)
+                _plainClassificationDirty)
             {
                 int classificationLength = WriteClassificationText(classText, distanceMeters, _classificationTextBuffer);
                 _classificationLabel.SetCharArray(_classificationTextBuffer, 0, classificationLength);
-                _lastClassificationText = string.Empty;
+                _plainClassificationDirty = false;
                 _lastRenderedClassification = classification;
                 _lastRenderedDistanceMeters = distanceMeters;
             }
         }
 
-        private void ApplyStressMutatedClassification(LocalizationManager localization, string classText, int distanceMeters)
+        private void ApplyStressMutatedClassification(LocalizationManager localization, ReadOnlySpan<char> classText, int distanceMeters)
         {
             if (localization.TryApplyHullStressCorruptionIfNeeded(
-                    _localizedContactHeader.AsSpan(),
+                    ResolveLocalizedSpan(ContactHeaderKeyHash, DefaultContactHeader.AsSpan()),
                     _headerTextBuffer,
                     out int headerLength))
             {
                 _headerLabel.SetCharArray(_headerTextBuffer, 0, headerLength);
-                _lastHeaderText = string.Empty;
+                _headerDirty = true;
             }
 
             int sourceLength = WriteClassificationText(classText, distanceMeters, _classificationTextBuffer);
@@ -398,7 +398,7 @@ namespace Hecton8.UI
                     out int classificationLength))
             {
                 _classificationLabel.SetCharArray(_classificationStressTextBuffer, 0, classificationLength);
-                _lastClassificationText = string.Empty;
+                _plainClassificationDirty = true;
                 _lastRenderedClassification = ContactClassification.None;
                 _lastRenderedDistanceMeters = int.MinValue;
             }
@@ -411,12 +411,12 @@ namespace Hecton8.UI
                     localization.IsMadnessWhisperVisualActive());
         }
 
-        private int WriteClassificationText(string classText, int distanceMeters, char[] buffer)
+        private int WriteClassificationText(ReadOnlySpan<char> classText, int distanceMeters, char[] buffer)
         {
-            int cursor = AppendStringToBuffer(_localizedClassificationPrefix, buffer, 0);
+            int cursor = AppendSpanToBuffer(ResolveLocalizedSpan(ClassificationPrefixKeyHash, DefaultClassificationPrefix.AsSpan()), buffer, 0);
             cursor = AppendCharToBuffer(':', buffer, cursor);
             cursor = AppendCharToBuffer(' ', buffer, cursor);
-            cursor = AppendStringToBuffer(classText, buffer, cursor);
+            cursor = AppendSpanToBuffer(classText, buffer, cursor);
             cursor = AppendCharToBuffer(' ', buffer, cursor);
             cursor = AppendCharToBuffer('/', buffer, cursor);
             cursor = AppendCharToBuffer('/', buffer, cursor);
@@ -431,14 +431,14 @@ namespace Hecton8.UI
             return AppendCharToBuffer('M', buffer, cursor);
         }
 
-        private static int CopyStringToBuffer(string source, char[] buffer)
+        private static int CopySpanToBuffer(ReadOnlySpan<char> source, char[] buffer)
         {
-            return AppendStringToBuffer(source, buffer, 0);
+            return AppendSpanToBuffer(source, buffer, 0);
         }
 
-        private static int AppendStringToBuffer(string source, char[] buffer, int offset)
+        private static int AppendSpanToBuffer(ReadOnlySpan<char> source, char[] buffer, int offset)
         {
-            if (string.IsNullOrEmpty(source) || offset >= buffer.Length)
+            if (source.Length == 0 || offset >= buffer.Length)
                 return offset;
 
             int available = buffer.Length - offset;
@@ -479,10 +479,8 @@ namespace Hecton8.UI
 
         private void RefreshLocalizedCache()
         {
-            _localizedContactHeader = ResolveLocalized(LocalizationKeys.SONAR_CONTACT_HEADER, DefaultContactHeader);
-            _localizedClassificationPrefix = ResolveLocalized(LocalizationKeys.SONAR_CLASSIFICATION_PREFIX, DefaultClassificationPrefix);
-            _localizedLeviathanClass = ResolveLocalized(LocalizationKeys.SONAR_CLASS_LEVIATHAN, DefaultLeviathanClass);
-            _localizedWreckageClass = ResolveLocalized(LocalizationKeys.SONAR_CLASS_WRECKAGE, DefaultWreckageClass);
+            _headerDirty = true;
+            _plainClassificationDirty = true;
         }
 
         private void EnsureUiBuilt()
@@ -572,12 +570,10 @@ namespace Hecton8.UI
             return (SuitHUDV4CanvasOverlay.ActiveRuntimeInstance != null ? SuitHUDV4CanvasOverlay.ActiveRuntimeInstance.GetComponent<Canvas>() : null);
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+            return manager != null ? manager.GetRawSpanOrFallback(keyHash, fallback) : fallback;
         }
 
         private void CreateRule(Vector2 leftOffset, Vector2 rightOffset)

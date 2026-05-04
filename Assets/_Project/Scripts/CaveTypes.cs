@@ -266,7 +266,7 @@ namespace Hecton8.Caves
     /// Implemented as a conic capsule from surface point inward.
     /// The terrain mesh should have a hole at this location.
     ///
-    /// Size: 36 bytes.
+    /// Size: 52 bytes.
     /// </summary>
     public struct CaveEntrance
     {
@@ -287,6 +287,12 @@ namespace Hecton8.Caves
         /// <summary>Radius at the inner end of the funnel. Typically radius * 0.5.
         /// Creates a narrowing entrance that opens into a larger space.</summary>
         public float innerRadius;
+
+        /// <summary>Terrain normal sampled at the cave mouth when MapMagic terrain is available.</summary>
+        public float3 terrainNormal;
+
+        /// <summary>0..1 blend weight used to conform the mouth SDF to the terrain normal.</summary>
+        public float terrainNormalBlend;
     }
 
     /// <summary>

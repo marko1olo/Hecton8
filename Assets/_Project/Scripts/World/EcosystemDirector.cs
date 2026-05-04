@@ -10,6 +10,7 @@ using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace Hecton8.World
 {
@@ -48,11 +49,27 @@ namespace Hecton8.World
         private const float CorpseSpawnSelectionScale = 2.6f;
         private const int PredatorSpawnValidationHitCapacity = 64;
         private const int HibernationPopulationSyncsPerColdSolve = 8;
+        private const int ApexTerritoryOverlapCandidateCapacity = 16;
+        private const int ApexTerritoryOverlapHitCapacity = 64;
+        private const float ApexTerritoryOverlapQueryRadiusMeters = 1400f;
+        private const float ApexTerritoryOverlapRetreatThreshold01 = 0.30f;
+        private const int FloraPredatorAupBufferCapacity = 32;
+        private const int FloraPredatorAupHitCapacity = 64;
+        private const float FloraPredatorAupQueryRadiusMeters = 700f;
+        private const float FloraPredatorStealthRadiusMeters = 15f;
+        private const float FloraPredatorStealthDimStrength = 0.82f;
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
         private static readonly string[] SharkSpawnTokens = { "shark", "hunter", "stalker" };
         private static readonly string[] ScavengerSpawnTokens = { "scavenger", "crab", "eel", "carrion", "cleaner" };
         // COLD ALLOC: SpatialQueryHit[64] — non-alloc predator diet validation scratch for spawn gating — owner: EcosystemDirector
         private static readonly SpatialQueryHit[] _predatorSpawnValidationHits = new SpatialQueryHit[PredatorSpawnValidationHitCapacity];
+        // COLD ALLOC: SpatialQueryHit[64] - non-alloc Apex territory candidate query scratch - owner: EcosystemDirector
+        private static readonly SpatialQueryHit[] _apexTerritoryOverlapHits = new SpatialQueryHit[ApexTerritoryOverlapHitCapacity];
+        // COLD ALLOC: SpatialQueryHit[64] - non-alloc flora predator AUP upload query scratch - owner: EcosystemDirector
+        private static readonly SpatialQueryHit[] _floraPredatorAupHits = new SpatialQueryHit[FloraPredatorAupHitCapacity];
+        private static readonly int _PredatorAUPBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
+        private static readonly int _PredatorAUPCountId = Shader.PropertyToID("_PredatorAUPCount");
+        private static readonly int _PredatorAUPParamsId = Shader.PropertyToID("_PredatorAUPParams");
 
         [StructLayout(LayoutKind.Sequential)]
         private struct SectorPopulationState
@@ -73,6 +90,118 @@ namespace Hecton8.World
         {
             public long SectorKey;
             public int PreyConsumed;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct ApexTerritorySample
+        {
+            public float3 Position;
+            public float Radius;
+            public float MassScore;
+            public int BrainIndex;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct ApexTerritoryOverlapResult
+        {
+            public int RetreatBrainIndex;
+            public int RivalBrainIndex;
+            public float Overlap01;
+            public float Padding;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ApexTerritoryOverlapJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<ApexTerritorySample> Samples;
+            public NativeArray<ApexTerritoryOverlapResult> Results;
+            public int Count;
+            public float OverlapThreshold01;
+
+            public void Execute(int index)
+            {
+                ApexTerritoryOverlapResult result = default;
+                result.RetreatBrainIndex = -1;
+                result.RivalBrainIndex = -1;
+                if (index < 0 || index >= Count)
+                {
+                    Results[index] = result;
+                    return;
+                }
+
+                ApexTerritorySample sample = Samples[index];
+                if (sample.Radius <= 0.001f)
+                {
+                    Results[index] = result;
+                    return;
+                }
+
+                float bestOverlap01 = 0f;
+                int bestRivalIndex = -1;
+                for (int otherIndex = 0; otherIndex < Count; otherIndex++)
+                {
+                    if (otherIndex == index)
+                        continue;
+
+                    ApexTerritorySample rival = Samples[otherIndex];
+                    if (rival.Radius <= 0.001f)
+                        continue;
+
+                    bool sampleIsSmaller =
+                        sample.MassScore < rival.MassScore ||
+                        (math.abs(sample.MassScore - rival.MassScore) <= 0.001f &&
+                         (sample.Radius < rival.Radius ||
+                          (math.abs(sample.Radius - rival.Radius) <= 0.001f && sample.BrainIndex > rival.BrainIndex)));
+                    if (!sampleIsSmaller)
+                        continue;
+
+                    float overlap01 = ComputeSmallerSphereOverlap01(sample.Position, sample.Radius, rival.Position, rival.Radius);
+                    if (overlap01 <= OverlapThreshold01 || overlap01 <= bestOverlap01)
+                        continue;
+
+                    bestOverlap01 = overlap01;
+                    bestRivalIndex = rival.BrainIndex;
+                }
+
+                if (bestRivalIndex >= 0)
+                {
+                    result.RetreatBrainIndex = sample.BrainIndex;
+                    result.RivalBrainIndex = bestRivalIndex;
+                    result.Overlap01 = bestOverlap01;
+                }
+
+                Results[index] = result;
+            }
+
+            private static float ComputeSmallerSphereOverlap01(float3 positionA, float radiusA, float3 positionB, float radiusB)
+            {
+                float safeRadiusA = math.max(0.001f, radiusA);
+                float safeRadiusB = math.max(0.001f, radiusB);
+                float centerDistance = math.distance(positionA, positionB);
+                float smallerRadius = math.min(safeRadiusA, safeRadiusB);
+                float smallerVolume = SphereVolume(smallerRadius);
+                if (smallerVolume <= 0.0001f)
+                    return 0f;
+
+                if (centerDistance >= safeRadiusA + safeRadiusB)
+                    return 0f;
+
+                if (centerDistance <= math.abs(safeRadiusA - safeRadiusB))
+                    return 1f;
+
+                float sum = safeRadiusA + safeRadiusB;
+                float diff = safeRadiusA - safeRadiusB;
+                float cap = sum - centerDistance;
+                float numerator = math.PI * cap * cap *
+                                  (centerDistance * centerDistance + 2f * centerDistance * sum - 3f * diff * diff);
+                float overlapVolume = numerator / math.max(0.001f, 12f * centerDistance);
+                return math.saturate(overlapVolume / smallerVolume);
+            }
+
+            private static float SphereVolume(float radius)
+            {
+                return (4f * math.PI * radius * radius * radius) * (1f / 3f);
+            }
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -353,6 +482,19 @@ namespace Hecton8.World
         [Tooltip("Scale applied when converting starvation pressure into director hostility.")]
         [SerializeField, Range(0f, 1f)] private float starvationHostilityWeight = 0.85f;
 
+        [Header("Eclipse Predator Migration")]
+        [SerializeField, Min(0f)] private float eclipsePredatorTier0DepthMaxMeters = 40f;
+        [SerializeField, Range(0f, 40f)] private float eclipsePredatorTier0TargetDepthMeters = 24f;
+        [SerializeField, Range(0f, 1f)] private float eclipsePredatorLightSuppression = 1f;
+        [SerializeField, Range(0f, 1f)] private float eclipsePredatorHostilityBoost = 0.35f;
+        [SerializeField, Min(1f)] private float eclipsePredatorMigrationRadiusMeters = 1800f;
+        [SerializeField, Min(1f)] private float eclipsePredatorMigrationStepMeters = 320f;
+        [SerializeField, Min(0.5f)] private float eclipsePredatorMigrationIntervalSeconds = 2f;
+        [SerializeField, Range(1f, 6f)] private float eclipsePredatorTier0SelectionBoost = 3f;
+        [SerializeField] private float _debugEclipsePredatorMigrationTimeRemaining;
+        [SerializeField] private float _debugEclipsePredatorMigrationIntensity;
+        [SerializeField] private int _debugEclipsePredatorMigratedCount;
+
         [Header("Fauna Ecology Chains")]
         [Tooltip("Species IDs treated as herbivores for flora grazing and migration redirection.")]
         [SerializeField] private int[] herbivoreSpeciesIds;
@@ -387,18 +529,26 @@ namespace Hecton8.World
         private NativeArray<SectorPopulationState> _sectorBackStates;
         private NativeHashMap<long, int> _sectorIndexByKey;
         private NativeArray<PredationEvent> _pendingPredationEvents;
+        private NativeArray<ApexTerritorySample> _apexTerritorySamples;
+        private NativeArray<ApexTerritoryOverlapResult> _apexTerritoryOverlapResults;
+        private NativeArray<float4> _floraPredatorAupUpload;
         private NativeList<EcosystemSectorSaveRecord> _saveSnapshotSectors;
+        private FaunaBrain[] _apexTerritoryBrains;
+        private GraphicsBuffer _floraPredatorAupBuffer;
         private JobHandle _scheduledDiffusionHandle;
         private JobHandle _scheduledSolveHandle;
+        private JobHandle _scheduledApexTerritoryOverlapHandle;
         private float _coldTickAccumulator;
         private float _diffusionTickAccumulator;
         private int _activeSectorCount;
         private int _pendingPredationEventCount;
+        private int _scheduledApexTerritoryOverlapCount;
         private bool _registeredService;
         private bool _registeredSlowTickable;
         private bool _registeredLateFrameTickable;
         private bool _diffusionScheduled;
         private bool _solveScheduled;
+        private bool _apexTerritoryOverlapScheduled;
         private bool _populationSolvePendingHibernationSync;
         private float _biomeHostility01;
         private float _starvationAggressionPressure01;
@@ -406,6 +556,9 @@ namespace Hecton8.World
         private int _nextHibernationPopulationSyncIndex;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
+        private float _eclipsePredatorMigrationTimer;
+        private float _eclipsePredatorMigrationIntensity01;
+        private float _eclipsePredatorMigrationAccumulator;
 
         /// <summary>
         /// True once the runtime-native state is allocated and registered.
@@ -450,6 +603,10 @@ namespace Hecton8.World
                 normalizedChannels = float4.zero;
 
             float lightExposure01 = math.saturate(1f - (depthMeters / math.max(1f, LightFalloffDepthMeters)));
+            float eclipseSuppression01 = ResolveEclipsePredatorLightSuppression01(worldPosition);
+            if (eclipseSuppression01 > 0f)
+                lightExposure01 *= 1f - eclipseSuppression01;
+
             envelope = new EcosystemEnvelope(
                 temperatureCelsius,
                 depthMeters,
@@ -485,12 +642,21 @@ namespace Hecton8.World
             if (IsSharkLikePredator(archetype))
             {
                 selectionMultiplier = math.lerp(0.65f, 1.85f, scentPressure01);
+                if (TryResolveEclipsePredatorTier0SelectionBoost(worldPosition, out float sharkEclipseSelectionBoost))
+                    selectionMultiplier *= sharkEclipseSelectionBoost;
+
                 return selectionMultiplier > 0f;
             }
 
             if (archetype.isAggressive || archetype.roleType == CreatureRoleType.Hunter || archetype.roleType == CreatureRoleType.Leviathan)
             {
                 selectionMultiplier = math.lerp(0.9f, 1.35f, scentPressure01);
+            }
+
+            if (IsPredatorOrApex(archetype) &&
+                TryResolveEclipsePredatorTier0SelectionBoost(worldPosition, out float eclipseSelectionBoost))
+            {
+                selectionMultiplier *= eclipseSelectionBoost;
             }
 
             if (RespondsToCorpseFalls(archetype))
@@ -616,6 +782,53 @@ namespace Hecton8.World
         {
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             return organicManager != null && organicManager.TryConsumeCorpseResourceNode(corpseNodeId, consumeUnits);
+        }
+
+        internal bool TryResolveNearestOrganicMass(Vector3 worldPosition, out Vector3 organicPosition)
+        {
+            organicPosition = default;
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            if (organicManager == null)
+                return false;
+
+            float searchRadius = math.max(scavengerCorpseSearchRadiusMeters, herbivoreGrazeSearchRadiusMeters);
+            bool found = false;
+            float bestDistanceSq = float.MaxValue;
+            if (organicManager.TryResolveNearestCorpseResourceNode(worldPosition, searchRadius, out Vector3 corpsePosition, out _))
+            {
+                organicPosition = corpsePosition;
+                bestDistanceSq = (corpsePosition - worldPosition).sqrMagnitude;
+                found = true;
+            }
+
+            if (organicManager.TryResolveNearestConsumableFlora(worldPosition, searchRadius, out Vector3 floraPosition, out _))
+            {
+                float floraDistanceSq = (floraPosition - worldPosition).sqrMagnitude;
+                if (floraDistanceSq < bestDistanceSq)
+                {
+                    organicPosition = floraPosition;
+                    bestDistanceSq = floraDistanceSq;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
+        internal bool TryConsumeOrganicMassAtPosition(Vector3 worldPosition, float searchRadius)
+        {
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            if (organicManager == null)
+                return false;
+
+            float safeSearchRadius = math.max(0.1f, searchRadius);
+            if (organicManager.TryConsumeFloraAtPosition(worldPosition, safeSearchRadius, out _))
+                return true;
+
+            if (!organicManager.TryResolveNearestCorpseResourceNode(worldPosition, safeSearchRadius, out _, out uint corpseNodeId))
+                return false;
+
+            return organicManager.TryConsumeCorpseResourceNode(corpseNodeId, scavengerConsumeUnitsPerSecond);
         }
 
         internal bool DoesSpeciesRespondToBait(FaunaBrain faunaBrain)
@@ -789,6 +1002,16 @@ namespace Hecton8.World
             SyncPendingHibernatedFaunaPopulationRecords();
             EnsurePlayerSectorRegistered();
             EnsureMigrationNeighborSectorsRegistered();
+            TickEclipsePredatorShallowMigration(DefaultSlowTickIntervalSeconds);
+            if (TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
+            {
+                PublishFloraPredatorAupBuffer(playerPosition);
+                ScheduleApexTerritoryOverlap(playerPosition);
+            }
+            else
+            {
+                Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+            }
 
             _coldTickAccumulator += DefaultSlowTickIntervalSeconds;
             _diffusionTickAccumulator += DefaultSlowTickIntervalSeconds;
@@ -820,6 +1043,7 @@ namespace Hecton8.World
         public void LateFrameTick()
         {
             CompleteScheduledSimulation(forceComplete: false);
+            CompleteScheduledApexTerritoryOverlap(forceComplete: false);
         }
 
         /// <summary>
@@ -931,6 +1155,52 @@ namespace Hecton8.World
             ApplyDirectorHostilityPressure();
         }
 
+        /// <summary>
+        /// Opens a cold-path eclipse migration window for large predators and clears it when intensity or hold time reaches zero.
+        /// </summary>
+        public void ApplyEclipsePredatorShallowMigration(float intensity01, float holdSeconds)
+        {
+            float clampedIntensity = math.saturate(intensity01);
+            if (clampedIntensity <= 0f || holdSeconds <= 0f)
+            {
+                _eclipsePredatorMigrationTimer = 0f;
+                _eclipsePredatorMigrationIntensity01 = 0f;
+                _eclipsePredatorMigrationAccumulator = 0f;
+                _debugEclipsePredatorMigrationTimeRemaining = 0f;
+                _debugEclipsePredatorMigrationIntensity = 0f;
+                return;
+            }
+
+            _eclipsePredatorMigrationTimer = math.max(_eclipsePredatorMigrationTimer, holdSeconds);
+            _eclipsePredatorMigrationIntensity01 = math.max(_eclipsePredatorMigrationIntensity01, clampedIntensity);
+            _eclipsePredatorMigrationAccumulator = math.max(
+                _eclipsePredatorMigrationAccumulator,
+                eclipsePredatorMigrationIntervalSeconds);
+            _debugEclipsePredatorMigrationTimeRemaining = _eclipsePredatorMigrationTimer;
+            _debugEclipsePredatorMigrationIntensity = _eclipsePredatorMigrationIntensity01;
+
+            SetBiomeHostility(math.max(_biomeHostility01, clampedIntensity * eclipsePredatorHostilityBoost));
+            ApplyDirectorHostilityPressure();
+        }
+
+        /// <summary>
+        /// Suppresses predator light reaction in the upper forty meters during eclipse migration.
+        /// </summary>
+        public float ResolveEclipsePredatorLightSuppression01(Vector3 worldPosition)
+        {
+            if (_eclipsePredatorMigrationTimer <= 0f || _eclipsePredatorMigrationIntensity01 <= 0f)
+                return 0f;
+
+            float depthMeters = ResolveDepthMeters(worldPosition);
+            if (depthMeters > eclipsePredatorTier0DepthMaxMeters)
+                return 0f;
+
+            return math.saturate(math.lerp(
+                _eclipsePredatorMigrationIntensity01,
+                1f,
+                eclipsePredatorLightSuppression));
+        }
+
         private void SanitizeSettings()
         {
             maxTrackedSectors = math.max(MinimumSectorCapacity, maxTrackedSectors);
@@ -956,6 +1226,17 @@ namespace Hecton8.World
             starvationComfortPreyPerPredator = math.max(1f, starvationComfortPreyPerPredator);
             starvationHarvestWeight = math.max(0f, starvationHarvestWeight);
             starvationHostilityWeight = math.clamp(starvationHostilityWeight, 0f, 1f);
+            eclipsePredatorTier0DepthMaxMeters = math.max(0f, eclipsePredatorTier0DepthMaxMeters);
+            eclipsePredatorTier0TargetDepthMeters = math.clamp(
+                eclipsePredatorTier0TargetDepthMeters,
+                0f,
+                math.max(0f, eclipsePredatorTier0DepthMaxMeters));
+            eclipsePredatorLightSuppression = math.clamp(eclipsePredatorLightSuppression, 0f, 1f);
+            eclipsePredatorHostilityBoost = math.clamp(eclipsePredatorHostilityBoost, 0f, 1f);
+            eclipsePredatorMigrationRadiusMeters = math.max(1f, eclipsePredatorMigrationRadiusMeters);
+            eclipsePredatorMigrationStepMeters = math.max(1f, eclipsePredatorMigrationStepMeters);
+            eclipsePredatorMigrationIntervalSeconds = math.max(0.5f, eclipsePredatorMigrationIntervalSeconds);
+            eclipsePredatorTier0SelectionBoost = math.max(1f, eclipsePredatorTier0SelectionBoost);
             herbivoreGrazeHungerThreshold = math.clamp(herbivoreGrazeHungerThreshold, 0f, 1f);
             herbivoreGrazeSearchRadiusMeters = math.max(1f, herbivoreGrazeSearchRadiusMeters);
             herbivoreConsumeDistanceMeters = math.max(0.1f, herbivoreConsumeDistanceMeters);
@@ -1187,19 +1468,40 @@ namespace Hecton8.World
             _sectorIndexByKey = new NativeHashMap<long, int>(maxTrackedSectors, Allocator.Persistent);
             // COLD ALLOC: NativeArray<PredationEvent>[maxBufferedPredationEvents] - predation event ring for next cold solve consumption - owner: EcosystemDirector
             _pendingPredationEvents = new NativeArray<PredationEvent>(maxBufferedPredationEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<ApexTerritorySample>[16] - active Apex territory overlap job inputs - owner: EcosystemDirector
+            _apexTerritorySamples = new NativeArray<ApexTerritorySample>(ApexTerritoryOverlapCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<ApexTerritoryOverlapResult>[16] - active Apex territory overlap job outputs - owner: EcosystemDirector
+            _apexTerritoryOverlapResults = new NativeArray<ApexTerritoryOverlapResult>(ApexTerritoryOverlapCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float4>[32] - global flora predator AUP upload staging buffer - owner: EcosystemDirector
+            _floraPredatorAupUpload = new NativeArray<float4>(FloraPredatorAupBufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeList<EcosystemSectorSaveRecord>[maxTrackedSectors] - packed ecosystem persistence snapshot staging buffer - owner: EcosystemDirector
             _saveSnapshotSectors = new NativeList<EcosystemSectorSaveRecord>(maxTrackedSectors, Allocator.Persistent);
+            // COLD ALLOC: FaunaBrain[16] - managed Apex brain lookup paired with Burst overlap result indices - owner: EcosystemDirector
+            _apexTerritoryBrains = new FaunaBrain[ApexTerritoryOverlapCandidateCapacity];
+            _floraPredatorAupBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer - owner: EcosystemDirector
+            Shader.SetGlobalBuffer(_PredatorAUPBufferId, _floraPredatorAupBuffer);
+            Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+            Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(FloraPredatorStealthRadiusMeters, FloraPredatorStealthDimStrength, 0f, 0f));
             _activeSectorCount = 0;
             _pendingPredationEventCount = 0;
+            _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
             _diffusionTickAccumulator = 0f;
             _scheduledDiffusionHandle = default;
             _scheduledSolveHandle = default;
+            _scheduledApexTerritoryOverlapHandle = default;
             _diffusionScheduled = false;
             _solveScheduled = false;
+            _apexTerritoryOverlapScheduled = false;
             _populationSolvePendingHibernationSync = false;
             _biomeHostility01 = 0f;
             _starvationAggressionPressure01 = 0f;
+            _eclipsePredatorMigrationTimer = 0f;
+            _eclipsePredatorMigrationIntensity01 = 0f;
+            _eclipsePredatorMigrationAccumulator = 0f;
+            _debugEclipsePredatorMigrationTimeRemaining = 0f;
+            _debugEclipsePredatorMigrationIntensity = 0f;
+            _debugEclipsePredatorMigratedCount = 0;
             _hostilityTier = 0;
         }
 
@@ -1212,6 +1514,8 @@ namespace Hecton8.World
                 disposeDependency = _scheduledSolveHandle;
             else if (_diffusionScheduled)
                 disposeDependency = _scheduledDiffusionHandle;
+            if (_apexTerritoryOverlapScheduled)
+                disposeDependency = JobHandle.CombineDependencies(disposeDependency, _scheduledApexTerritoryOverlapHandle);
 
             if (_sectorFrontStates.IsCreated)
                 _sectorFrontStates.Dispose(disposeDependency);
@@ -1221,22 +1525,37 @@ namespace Hecton8.World
                 _sectorIndexByKey.Dispose(disposeDependency);
             if (_pendingPredationEvents.IsCreated)
                 _pendingPredationEvents.Dispose(disposeDependency);
+            if (_apexTerritorySamples.IsCreated)
+                _apexTerritorySamples.Dispose(disposeDependency);
+            if (_apexTerritoryOverlapResults.IsCreated)
+                _apexTerritoryOverlapResults.Dispose(disposeDependency);
+            if (_floraPredatorAupUpload.IsCreated)
+                _floraPredatorAupUpload.Dispose(disposeDependency);
             if (_saveSnapshotSectors.IsCreated)
                 _saveSnapshotSectors.Dispose(disposeDependency);
+            ReleaseBuffer(ref _floraPredatorAupBuffer);
+            Shader.SetGlobalInt(_PredatorAUPCountId, 0);
 
             _sectorFrontStates = default;
             _sectorBackStates = default;
             _sectorIndexByKey = default;
             _pendingPredationEvents = default;
+            _apexTerritorySamples = default;
+            _apexTerritoryOverlapResults = default;
+            _floraPredatorAupUpload = default;
             _saveSnapshotSectors = default;
+            _apexTerritoryBrains = null;
             _activeSectorCount = 0;
             _pendingPredationEventCount = 0;
+            _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
             _diffusionTickAccumulator = 0f;
             _scheduledDiffusionHandle = default;
             _scheduledSolveHandle = default;
+            _scheduledApexTerritoryOverlapHandle = default;
             _diffusionScheduled = false;
             _solveScheduled = false;
+            _apexTerritoryOverlapScheduled = false;
             _biomeHostility01 = 0f;
             _starvationAggressionPressure01 = 0f;
             _hostilityTier = 0;
@@ -1341,6 +1660,91 @@ namespace Hecton8.World
 
                 ResolveOrCreateSectorSlot(sectorCoord + new int2(0, -1), seedWithBaseline: false);
             }
+        }
+
+        private void TickEclipsePredatorShallowMigration(float dt)
+        {
+            if (_eclipsePredatorMigrationTimer <= 0f || _eclipsePredatorMigrationIntensity01 <= 0f)
+            {
+                _debugEclipsePredatorMigrationTimeRemaining = 0f;
+                _debugEclipsePredatorMigrationIntensity = 0f;
+                return;
+            }
+
+            _eclipsePredatorMigrationTimer = math.max(0f, _eclipsePredatorMigrationTimer - math.max(0f, dt));
+            _debugEclipsePredatorMigrationTimeRemaining = _eclipsePredatorMigrationTimer;
+            _debugEclipsePredatorMigrationIntensity = _eclipsePredatorMigrationIntensity01;
+
+            if (_eclipsePredatorMigrationTimer <= 0f)
+            {
+                _eclipsePredatorMigrationIntensity01 = 0f;
+                _eclipsePredatorMigrationAccumulator = 0f;
+                _debugEclipsePredatorMigrationIntensity = 0f;
+                return;
+            }
+
+            _eclipsePredatorMigrationAccumulator += dt;
+            if (_eclipsePredatorMigrationAccumulator < eclipsePredatorMigrationIntervalSeconds)
+                return;
+
+            _eclipsePredatorMigrationAccumulator = 0f;
+            if (!TryResolveEclipseTier0Attractor(out Vector3 attractorPosition))
+                return;
+
+            PersistentWorldRegistry registry = _cachedPersistentWorldRegistry != null
+                ? _cachedPersistentWorldRegistry
+                : GlobalRegistry.PersistentWorldRegistry;
+            if (registry == null)
+                return;
+
+            float stepMeters = eclipsePredatorMigrationStepMeters * math.max(0.1f, _eclipsePredatorMigrationIntensity01);
+            int migratedCount = registry.MigrateApexFaunaHibernationStatesToward(
+                attractorPosition,
+                eclipsePredatorMigrationRadiusMeters,
+                stepMeters);
+            _debugEclipsePredatorMigratedCount += migratedCount;
+        }
+
+        private bool TryResolveEclipseTier0Attractor(out Vector3 attractorPosition)
+        {
+            attractorPosition = default;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                return false;
+
+            attractorPosition = playerTransform.position;
+            float waterLevel = ResolveWaterSurfaceLevel(attractorPosition);
+            attractorPosition.y = waterLevel - eclipsePredatorTier0TargetDepthMeters;
+            return true;
+        }
+
+        private bool TryResolveEclipsePredatorTier0SelectionBoost(Vector3 worldPosition, out float selectionBoost)
+        {
+            selectionBoost = 1f;
+            if (_eclipsePredatorMigrationTimer <= 0f || _eclipsePredatorMigrationIntensity01 <= 0f)
+                return false;
+
+            float depthMeters = ResolveDepthMeters(worldPosition);
+            if (depthMeters > eclipsePredatorTier0DepthMaxMeters)
+                return false;
+
+            selectionBoost = math.lerp(1f, eclipsePredatorTier0SelectionBoost, _eclipsePredatorMigrationIntensity01);
+            return selectionBoost > 1f;
+        }
+
+        private static float ResolveDepthMeters(Vector3 worldPosition)
+        {
+            return math.max(0f, ResolveWaterSurfaceLevel(worldPosition) - worldPosition.y);
+        }
+
+        private static float ResolveWaterSurfaceLevel(Vector3 worldPosition)
+        {
+            MapMagicBridge bridge = MapMagicBridge.Instance;
+            if (bridge != null)
+                return bridge.WaterSurfaceLevel;
+
+            return worldPosition.y;
         }
 
         private void ApplyPendingPredationEvents()
@@ -1481,6 +1885,146 @@ namespace Hecton8.World
             _populationSolvePendingHibernationSync = true;
         }
 
+        private void ScheduleApexTerritoryOverlap(Vector3 queryOrigin)
+        {
+            if (_apexTerritoryOverlapScheduled ||
+                !_apexTerritorySamples.IsCreated ||
+                !_apexTerritoryOverlapResults.IsCreated ||
+                _apexTerritoryBrains == null)
+            {
+                return;
+            }
+
+            int hitCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                queryOrigin,
+                ApexTerritoryOverlapQueryRadiusMeters,
+                SpatialTargetKind.Bioform,
+                _apexTerritoryOverlapHits);
+            int sampleCount = 0;
+            for (int hitIndex = 0; hitIndex < hitCount && sampleCount < ApexTerritoryOverlapCandidateCapacity; hitIndex++)
+            {
+                SpatialQueryHit hit = _apexTerritoryOverlapHits[hitIndex];
+                FaunaBrain brain = hit.Owner as FaunaBrain;
+                if (brain == null || brain.IsDead || !brain.IsApexPredatorRuntime)
+                    continue;
+
+                _apexTerritoryBrains[sampleCount] = brain;
+                _apexTerritorySamples[sampleCount] = new ApexTerritorySample
+                {
+                    Position = new float3(hit.Position.x, hit.Position.y, hit.Position.z),
+                    Radius = brain.ApexTerritoryRadiusMeters,
+                    MassScore = brain.ApexTerritoryMassScore,
+                    BrainIndex = sampleCount
+                };
+                _apexTerritoryOverlapResults[sampleCount] = default;
+                sampleCount++;
+            }
+
+            if (sampleCount < 2)
+            {
+                for (int i = 0; i < sampleCount; i++)
+                    _apexTerritoryBrains[i] = null;
+                return;
+            }
+
+            var overlapJob = new ApexTerritoryOverlapJob
+            {
+                Samples = _apexTerritorySamples,
+                Results = _apexTerritoryOverlapResults,
+                Count = sampleCount,
+                OverlapThreshold01 = ApexTerritoryOverlapRetreatThreshold01
+            };
+
+            _scheduledApexTerritoryOverlapHandle = overlapJob.Schedule(sampleCount, 4);
+            _scheduledApexTerritoryOverlapCount = sampleCount;
+            _apexTerritoryOverlapScheduled = true;
+        }
+
+        private void CompleteScheduledApexTerritoryOverlap(bool forceComplete)
+        {
+            if (!_apexTerritoryOverlapScheduled)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _scheduledApexTerritoryOverlapHandle, forceComplete))
+                return;
+
+            int count = math.min(_scheduledApexTerritoryOverlapCount, ApexTerritoryOverlapCandidateCapacity);
+            for (int i = 0; i < count; i++)
+            {
+                ApexTerritoryOverlapResult result = _apexTerritoryOverlapResults[i];
+                if (result.RetreatBrainIndex < 0 ||
+                    result.RetreatBrainIndex >= count ||
+                    result.RivalBrainIndex < 0 ||
+                    result.RivalBrainIndex >= count ||
+                    result.Overlap01 <= ApexTerritoryOverlapRetreatThreshold01)
+                {
+                    continue;
+                }
+
+                FaunaBrain retreatBrain = _apexTerritoryBrains[result.RetreatBrainIndex];
+                if (retreatBrain == null || retreatBrain.IsDead)
+                    continue;
+
+                retreatBrain.ForceApexRetreat(ToVector3(_apexTerritorySamples[result.RivalBrainIndex].Position));
+            }
+
+            for (int i = 0; i < count; i++)
+            {
+                _apexTerritoryBrains[i] = null;
+                _apexTerritoryOverlapResults[i] = default;
+            }
+
+            _scheduledApexTerritoryOverlapHandle = default;
+            _scheduledApexTerritoryOverlapCount = 0;
+            _apexTerritoryOverlapScheduled = false;
+        }
+
+        private void PublishFloraPredatorAupBuffer(Vector3 queryOrigin)
+        {
+            if (!_floraPredatorAupUpload.IsCreated || _floraPredatorAupBuffer == null)
+                return;
+
+            int hitCount = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
+                queryOrigin,
+                FloraPredatorAupQueryRadiusMeters,
+                SpatialTargetKind.Bioform,
+                _floraPredatorAupHits);
+            int uploadCount = 0;
+            for (int hitIndex = 0; hitIndex < hitCount && uploadCount < FloraPredatorAupBufferCapacity; hitIndex++)
+            {
+                SpatialQueryHit hit = _floraPredatorAupHits[hitIndex];
+                FaunaBrain brain = hit.Owner as FaunaBrain;
+                if (brain == null || brain.IsDead || !brain.IsApexPredatorRuntime)
+                    continue;
+
+                _floraPredatorAupUpload[uploadCount] = new float4(
+                    hit.Position.x,
+                    hit.Position.y,
+                    hit.Position.z,
+                    FloraPredatorStealthRadiusMeters);
+                uploadCount++;
+            }
+
+            if (uploadCount > 0)
+                GraphicsBufferUploadUtility.UploadNativeArray(_floraPredatorAupBuffer, _floraPredatorAupUpload, uploadCount);
+
+            Shader.SetGlobalBuffer(_PredatorAUPBufferId, _floraPredatorAupBuffer);
+            Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);
+            Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(FloraPredatorStealthRadiusMeters, FloraPredatorStealthDimStrength, 0f, 0f));
+        }
+
+        private static bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)
+        {
+            playerPosition = default;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null)
+                return false;
+
+            playerPosition = playerTransform.position;
+            return true;
+        }
+
         private void SyncPendingHibernatedFaunaPopulationRecords()
         {
             if (!_populationSolvePendingHibernationSync)
@@ -1568,6 +2112,20 @@ namespace Hecton8.World
         {
             float2 scaled = new float2(worldPosition.x, worldPosition.z) / SectorEdgeLengthMeters;
             return (int2)math.floor(scaled);
+        }
+
+        private static Vector3 ToVector3(float3 value)
+        {
+            return new Vector3(value.x, value.y, value.z);
+        }
+
+        private static void ReleaseBuffer(ref GraphicsBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
         }
 
         private static long PackSectorKey(int2 sectorCoord)

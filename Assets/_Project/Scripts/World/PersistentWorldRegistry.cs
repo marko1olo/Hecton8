@@ -336,7 +336,8 @@ namespace Hecton8.World
         public static PersistentWorldDeltaRecord CreateDeletedTombstone(in PersistentWorldItemRecord record, int chunkSizeMeters)
         {
             PersistentWorldDeltaRecord tombstone = FromRecord(in record, chunkSizeMeters);
-            tombstone.ItemPersistentIdHash = 0UL;
+            if ((record.Flags & PersistentWorldItemFlags.ResourceNodeDestroyed) == 0)
+                tombstone.ItemPersistentIdHash = 0UL;
             tombstone.Quantity = 1;
             tombstone.ItemFlags = (byte)(record.Flags | PersistentWorldItemFlags.Deleted);
             return tombstone;
@@ -400,7 +401,7 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5850)]
-    public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable
+    public sealed class PersistentWorldRegistry : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable
     {
         private sealed class SectorOverrideState
         {
@@ -584,6 +585,7 @@ namespace Hecton8.World
         private ItemCatalog _resolvedItemCatalog;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
+        private bool _lateFrameRegistered;
         private bool _serviceRegistered;
         private bool _hydrationSessionRunning;
         private bool _playerChunkValid;
@@ -936,8 +938,12 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             _resolvedItemCatalog?.DrainDeferredWorldPrefabReleases(4);
-            DrainPendingEntityStateTempWrites(MaxEntityStateTempWriteCompletionsPerTick);
             DrainDehydrateQueue(MaxDehydrationsPerTick);
+        }
+
+        public void LateFrameTick()
+        {
+            DrainPendingEntityStateTempWrites(MaxEntityStateTempWriteCompletionsPerTick);
         }
 
         public void SlowTick()
@@ -1627,6 +1633,7 @@ namespace Hecton8.World
                 return;
 
             SyncAllHydratedRecords();
+            StageResourceNodeTombstonesForSave();
             _saveSnapshotDeltas.Clear();
             for (int i = 0; i < _deltaRecords.Length; i++)
             {
@@ -1677,6 +1684,7 @@ namespace Hecton8.World
             {
                 uint maxObservedInstanceSequence = 0u;
                 int restoreCount = math.min(loadedRecords.Length, _records.Capacity);
+                PreRegisterLoadedRecordTombstones(loadedRecords, restoreCount);
                 for (int i = 0; i < restoreCount; i++)
                 {
                     PersistentWorldDeltaRecord deltaRecord = loadedRecords[i];
@@ -1691,7 +1699,12 @@ namespace Hecton8.World
                     {
                         RegisterDeletedInstanceUid(deltaRecord.InstanceUid);
                         if (deltaRecord.IsResourceNodeDestroyed)
-                            RegisterResourceNodeTombstone(ComputeResourceNodeTombstoneId(deltaRecord.UnpackPosition(chunkSizeMeters)));
+                        {
+                            ulong tombstoneId = ResolveResourceNodeTombstoneId(in deltaRecord);
+                            deltaRecord.ItemPersistentIdHash = tombstoneId;
+                            RegisterResourceNodeTombstone(tombstoneId);
+                            StageLoadedResourceNodeTombstoneRecord(in deltaRecord, tombstoneId);
+                        }
 
                         if (TryBuildCompactDeltaRecord(deltaRecord, out PersistentWorldCompactDeltaRecord deletedCompactRecord))
                         {
@@ -1792,7 +1805,14 @@ namespace Hecton8.World
             if (loadedRecords == null || loadedRecords.Length <= 0)
                 return;
 
-            int restoreCount = math.min(loadedRecords.Length, maxTrackedItems);
+            PreRegisterLoadedRecordTombstones(loadedRecords, math.min(loadedRecords.Length, maxTrackedItems));
+        }
+
+        private void PreRegisterLoadedRecordTombstones(PersistentWorldDeltaRecord[] loadedRecords, int restoreCount)
+        {
+            if (loadedRecords == null || restoreCount <= 0)
+                return;
+
             for (int i = 0; i < restoreCount; i++)
             {
                 PersistentWorldDeltaRecord deltaRecord = loadedRecords[i];
@@ -1803,7 +1823,7 @@ namespace Hecton8.World
                 {
                     RegisterDeletedInstanceUid(deltaRecord.InstanceUid);
                     if (deltaRecord.IsResourceNodeDestroyed)
-                        RegisterResourceNodeTombstone(ComputeResourceNodeTombstoneId(deltaRecord.UnpackPosition(chunkSizeMeters)));
+                        RegisterResourceNodeTombstone(ResolveResourceNodeTombstoneId(in deltaRecord));
                 }
                 else if (deltaRecord.IsResourceNodeMetamorphosed)
                 {
@@ -1994,7 +2014,7 @@ namespace Hecton8.World
 
         private void TryRegisterRuntimeLoops()
         {
-            if (_tickRegistered && _slowTickRegistered)
+            if (_tickRegistered && _slowTickRegistered && _lateFrameRegistered)
                 return;
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -2011,6 +2031,12 @@ namespace Hecton8.World
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
             }
+
+            if (!_lateFrameRegistered)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
+            }
         }
 
         private void TryUnregisterRuntimeLoops()
@@ -2025,6 +2051,12 @@ namespace Hecton8.World
             {
                 GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                 _slowTickRegistered = false;
+            }
+
+            if (_lateFrameRegistered)
+            {
+                GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                _lateFrameRegistered = false;
             }
         }
 
@@ -2750,7 +2782,7 @@ namespace Hecton8.World
                         try
                         {
                             string entityStateTempPath = ResolveSectorEntityStateTempPath(pair.Key);
-                            if (!SaveBinaryStorage.TryWriteIndexedSectorEntityStateOverride(entityStateTempPath, pair.Key, sectorStates, chunkSizeMeters, out string entityStateError))
+                            if (!SaveBinaryStorage.TryScheduleIndexedSectorEntityStateOverrideWrite(entityStateTempPath, pair.Key, sectorStates, chunkSizeMeters, out _, out string entityStateError))
                             {
                                 Debug.LogError($"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{pair.Key:X16}: {entityStateError}");
                             }
@@ -3532,6 +3564,7 @@ namespace Hecton8.World
                 _entityStateByInstanceUid.Remove(entityState.InstanceUid);
 
             TryRegisterFaunaTombstone(entityState.InstanceUid);
+            RegisterResourceNodeTombstone(entityState.InstanceUid);
         }
 
         private static uint ResolveHibernatedPredationVictimUid(
@@ -5009,7 +5042,7 @@ namespace Hecton8.World
             int count = 0;
             for (int i = 0; i < _records.Length; i++)
             {
-                if (!_records[i].IsCollected)
+                if (!_records[i].IsCollected && !_records[i].IsDeleted)
                     count++;
             }
 
@@ -5035,6 +5068,49 @@ namespace Hecton8.World
                 return;
 
             _resourceNodeTombstoneIds.Add(tombstoneId);
+        }
+
+        private ulong ResolveResourceNodeTombstoneId(in PersistentWorldDeltaRecord deltaRecord)
+        {
+            return deltaRecord.ItemPersistentIdHash != 0UL
+                ? deltaRecord.ItemPersistentIdHash
+                : ComputeResourceNodeTombstoneId(deltaRecord.UnpackPosition(chunkSizeMeters));
+        }
+
+        private void StageLoadedResourceNodeTombstoneRecord(in PersistentWorldDeltaRecord deltaRecord, ulong tombstoneId)
+        {
+            if (tombstoneId == 0UL ||
+                !_records.IsCreated ||
+                !_recordsByChunk.IsCreated ||
+                _records.Length >= _records.Capacity ||
+                deltaRecord.InstanceUid == 0u ||
+                TryFindRecordIndexByInstanceUid(deltaRecord.InstanceUid, out _))
+            {
+                return;
+            }
+
+            PersistentWorldItemRecord record = deltaRecord.ToRecord(chunkSizeMeters);
+            record.ItemPersistentIdHash = tombstoneId;
+            record.Quantity = 0;
+            record.Flags = PersistentWorldItemFlags.Deleted | PersistentWorldItemFlags.ResourceNodeDestroyed;
+            _records.AddNoResize(record);
+            _recordsByChunk.Add(record.ChunkId, _records.Length - 1);
+        }
+
+        private void StageResourceNodeTombstonesForSave()
+        {
+            if (!_records.IsCreated)
+                return;
+
+            for (int i = 0; i < _records.Length; i++)
+            {
+                PersistentWorldItemRecord record = _records[i];
+                if (!record.IsResourceNodeDestroyed || record.ItemPersistentIdHash == 0UL)
+                    continue;
+
+                RegisterResourceNodeTombstone(record.ItemPersistentIdHash);
+                UpsertDeletedTombstone(in record);
+            }
         }
 
         private void RegisterResourceNodeMetamorphosis(ulong tombstoneId)

@@ -46,6 +46,7 @@
 //   CelestialEngine(-3000)   Ã¢â€ â€™ sunLight.intensity *= (1 - eclipseOcclusion)
 // ============================================================================
 
+using System;
 using Hecton8.Core;
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
@@ -56,6 +57,8 @@ using Hecton8.VFX;
 using Hecton8.World;
 using NASAPunk.Visor;
 using UnityEngine;
+using Unity.Collections;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using Unity.Mathematics;
@@ -73,6 +76,10 @@ namespace Hecton8.Environment
     [DefaultExecutionOrder(-4000)]
     public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IRenderable, ISoundscapeEventListener, IBiomeMatrixEventListener, IMapMagicBiomeEventListener
     {
+#if UNITY_EDITOR
+        private const string HudFogLuminanceComputeAssetPath = "Assets/_Project/Art/Shaders/HectonHudFogLuminance.compute";
+#endif
+
         internal static HectonUnderwaterVisuals ActiveRuntimeInstance { get; private set; }
         internal static Material RuntimeSkyMaterialReference { get; private set; }
 
@@ -105,6 +112,8 @@ namespace Hecton8.Environment
         private const float UnderwaterBiomeFogInfluenceShallow = 0.18f;
         private const float UnderwaterBiomeFogInfluenceDeep = 0.34f;
         private const float UnderwaterBiomeFogInfluenceDepth = 90f;
+        private const float HudFogLuminanceReadbackIntervalSeconds = 0.1f;
+        private const float HudFogVolumetricScatterBoost = 0.14f;
         private const float WeatherFlowResponseSeconds = 2.4f;
         private const float CalmFlowVelocityMultiplier = 1f;
         private const float StormFlowVelocityMultiplier = 3f;
@@ -145,6 +154,12 @@ namespace Hecton8.Environment
 
         private float _hudFogTargetLuminance01;
         private float _hudFogSmoothedLuminance01;
+        private float _hudFogDownsampledLuminance01;
+        private float _nextHudFogLuminanceReadbackTime;
+        private RenderTexture _hudFogLuminanceTexture;
+        private int _hudFogLuminanceKernel = -1;
+        private bool _hudFogLuminanceReady;
+        private bool _hudFogReadbackPending;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  INSPECTOR Ã¢â‚¬â€ REFERENCES
@@ -154,6 +169,7 @@ namespace Hecton8.Environment
         [SerializeField] private Transform playerCamera;
         [SerializeField] private Light sunLight;
         [SerializeField] private LensFlareComponentSRP sunFlare;
+        [SerializeField] private ComputeShader hudFogLuminanceCompute;
         [SerializeField] private Transform sunVisualTransform;
         [SerializeField] private Camera mainCamera;
         [SerializeField] private DepthZoneDirector depthZoneDirector;
@@ -616,8 +632,18 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_HectonNoirCaveAttenuation");
         private static readonly int _HectonHudFogPerturbationId =
             Shader.PropertyToID("_HectonHudFogPerturbation");
+        private static readonly int _FogScatteringCoeffId =
+            Shader.PropertyToID("_FogScatteringCoeff");
+        private static readonly int _HectonHudFogSourceId =
+            Shader.PropertyToID("_HectonHudFogSource");
+        private static readonly int _HectonHudFogLuminanceOutputId =
+            Shader.PropertyToID("_HectonHudFogLuminanceOutput");
+        private static readonly int _HectonHudFogLuminanceParamsId =
+            Shader.PropertyToID("_HectonHudFogLuminanceParams");
         private static readonly int _HectonFlowSynchronyParamsId =
             Shader.PropertyToID("_HectonFlowSynchronyParams");
+        private static readonly Action<AsyncGPUReadbackRequest> s_HudFogLuminanceReadbackCompleted =
+            HandleHudFogLuminanceReadbackCompleted;
         private static readonly int _ID_SunSize =
             Shader.PropertyToID("_SunSize");
         private static readonly int _ID_SunEdgeSoftness =
@@ -1168,6 +1194,7 @@ namespace Hecton8.Environment
             RestoreCameraDefaults();
             RestoreSkyMaterialDefaults();
             ReleaseRuntimeSkyboxMaterial();
+            ReleaseHudFogLuminanceResources();
             Shader.SetGlobalVector(_SargassumCanopyShadowParamsId, Vector4.zero);
             Shader.SetGlobalVector(_SargassumCanopyLightingParamsId, new Vector4(0f, 0f, 1f, 0f));
             ResetNoirResolveGlobals();
@@ -1209,6 +1236,7 @@ namespace Hecton8.Environment
                 _renderSettingsGuardAcquired = false;
             }
 
+            ReleaseHudFogLuminanceResources();
         }
 
 #if UNITY_EDITOR
@@ -4375,6 +4403,111 @@ namespace Hecton8.Environment
 #endif
         }
 
+        private void UpdateHudFogLuminanceDownsample()
+        {
+            Texture sourceTexture = VisorHUDController.ActiveHudRenderTexture;
+            if (sourceTexture == null || sourceTexture.width <= 0 || sourceTexture.height <= 0)
+                return;
+
+            EnsureHudFogLuminanceResources();
+            if (!_hudFogLuminanceReady || _hudFogLuminanceTexture == null || _hudFogReadbackPending)
+                return;
+
+            float now = Time.unscaledTime;
+            if (now < _nextHudFogLuminanceReadbackTime)
+                return;
+
+            _nextHudFogLuminanceReadbackTime = now + HudFogLuminanceReadbackIntervalSeconds;
+            hudFogLuminanceCompute.SetTexture(_hudFogLuminanceKernel, _HectonHudFogSourceId, sourceTexture);
+            hudFogLuminanceCompute.SetTexture(_hudFogLuminanceKernel, _HectonHudFogLuminanceOutputId, _hudFogLuminanceTexture);
+            hudFogLuminanceCompute.SetVector(
+                _HectonHudFogLuminanceParamsId,
+                new Vector4(
+                    sourceTexture.width,
+                    sourceTexture.height,
+                    1f / math.max(1f, sourceTexture.width),
+                    1f / math.max(1f, sourceTexture.height)));
+            hudFogLuminanceCompute.Dispatch(_hudFogLuminanceKernel, 1, 1, 1);
+
+            _hudFogReadbackPending = true;
+            AsyncGPUReadback.Request(_hudFogLuminanceTexture, 0, s_HudFogLuminanceReadbackCompleted);
+        }
+
+        private void EnsureHudFogLuminanceResources()
+        {
+#if UNITY_EDITOR
+            if (hudFogLuminanceCompute == null)
+                hudFogLuminanceCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(HudFogLuminanceComputeAssetPath);
+#endif
+
+            if (hudFogLuminanceCompute == null)
+            {
+                _hudFogLuminanceReady = false;
+                return;
+            }
+
+            if (_hudFogLuminanceKernel < 0)
+                _hudFogLuminanceKernel = hudFogLuminanceCompute.FindKernel("ResolveHudFogLuminance");
+
+            if (_hudFogLuminanceTexture == null)
+            {
+                RenderTextureDescriptor descriptor = new RenderTextureDescriptor(1, 1)
+                {
+                    dimension = TextureDimension.Tex2D,
+                    graphicsFormat = GraphicsFormat.R32_SFloat,
+                    depthBufferBits = 0,
+                    msaaSamples = 1,
+                    useMipMap = false,
+                    autoGenerateMips = false,
+                    enableRandomWrite = true,
+                    sRGB = false
+                };
+
+                _hudFogLuminanceTexture = new RenderTexture(descriptor)
+                {
+                    name = "__HectonHudFogLuminance",
+                    wrapMode = TextureWrapMode.Clamp,
+                    filterMode = FilterMode.Point,
+                    hideFlags = HideFlags.HideAndDontSave
+                }; // COLD ALLOC: RenderTexture[1x1 R32F] - throttled HUD luminance reduction target - owner: HectonUnderwaterVisuals
+                _hudFogLuminanceTexture.Create();
+            }
+
+            _hudFogLuminanceReady = _hudFogLuminanceKernel >= 0;
+        }
+
+        private void ReleaseHudFogLuminanceResources()
+        {
+            _hudFogReadbackPending = false;
+            _hudFogLuminanceReady = false;
+            _hudFogLuminanceKernel = -1;
+
+            if (_hudFogLuminanceTexture == null)
+                return;
+
+            _hudFogLuminanceTexture.Release();
+            Destroy(_hudFogLuminanceTexture);
+            _hudFogLuminanceTexture = null;
+        }
+
+        private static void HandleHudFogLuminanceReadbackCompleted(AsyncGPUReadbackRequest request)
+        {
+            HectonUnderwaterVisuals instance = ActiveRuntimeInstance;
+            if (instance == null)
+                return;
+
+            instance._hudFogReadbackPending = false;
+            if (request.hasError)
+                return;
+
+            NativeArray<float> luminance = request.GetData<float>();
+            if (!luminance.IsCreated || luminance.Length <= 0)
+                return;
+
+            float resolved = luminance[0];
+            instance._hudFogDownsampledLuminance01 = math.isfinite(resolved) ? math.saturate(resolved) : 0f;
+        }
+
         private void ApplyNoirResolveGlobals()
         {
             float causticsGate = enableShallowCaustics && _cachedVisualIsUnderwater
@@ -4393,14 +4526,22 @@ namespace Hecton8.Environment
                 CalmTurbulenceFrequency,
                 StormTurbulenceFrequency,
                 _weatherStormFlowBlend);
+            if (Application.isPlaying)
+                UpdateHudFogLuminanceDownsample();
+
+            float hudFogTargetLuminance01 = math.max(_hudFogTargetLuminance01, _hudFogDownsampledLuminance01);
             float hudDeltaTime = Application.isPlaying ? math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime) : 0.0166667f;
             float hudAlpha = 1f - math.exp(-HudFogPerturbationResponse * hudDeltaTime);
             _hudFogSmoothedLuminance01 = math.lerp(
                 _hudFogSmoothedLuminance01,
-                _hudFogTargetLuminance01,
+                hudFogTargetLuminance01,
                 hudAlpha);
             float hudFogDensityBoost = _cachedVisualIsUnderwater
                 ? _hudFogSmoothedLuminance01 * HudFogPerturbationMaxDensityBoost
+                : 0f;
+            float fogScatteringCoeff = math.max(0.0001f, _cachedFogDensity + hudFogDensityBoost);
+            float hudVolumetricScatterBoost = _cachedVisualIsUnderwater
+                ? _hudFogSmoothedLuminance01 * HudFogVolumetricScatterBoost
                 : 0f;
 
             Shader.SetGlobalVector(
@@ -4417,14 +4558,15 @@ namespace Hecton8.Environment
                     waterLevel,
                     1f / verticalFogSpan,
                     math.max(0f, abyssalDensityBoost),
-                    math.max(0.0001f, _cachedFogDensity + hudFogDensityBoost)));
+                    fogScatteringCoeff));
+            Shader.SetGlobalFloat(_FogScatteringCoeffId, fogScatteringCoeff);
             Shader.SetGlobalVector(
                 _HectonHudFogPerturbationId,
                 new Vector4(
                     _hudFogSmoothedLuminance01,
                     hudFogDensityBoost,
-                    0f,
-                    0f));
+                    hudVolumetricScatterBoost,
+                    fogScatteringCoeff));
             Shader.SetGlobalVector(
                 _HectonNoirDitherParamsId,
                 new Vector4(
@@ -4481,6 +4623,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_HectonNoirCaveAttenuationId, new Vector4(0.9f, 0f, 0f, 0f));
             Shader.SetGlobalVector(_HectonFlowSynchronyParamsId, new Vector4(1f, 0.26f, 0f, 0f));
             Shader.SetGlobalVector(_HectonHudFogPerturbationId, Vector4.zero);
+            Shader.SetGlobalFloat(_FogScatteringCoeffId, 0f);
         }
 
         private void UpdateFlowSynchronyState(float deltaTime)

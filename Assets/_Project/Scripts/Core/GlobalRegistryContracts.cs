@@ -1605,6 +1605,18 @@ namespace Hecton8.Core
         /// <param name="worldPosition">Runtime-space world position where the apex predator was killed.</param>
         /// <param name="hostilityDelta">Hostility increase applied before clamping.</param>
         void ReportApexPredatorKilled(Vector3 worldPosition, float hostilityDelta);
+
+        /// <summary>
+        /// Opens or clears the eclipse predator migration window that suppresses shallow light aversion.
+        /// </summary>
+        /// <param name="intensity01">Normalized predator migration pressure.</param>
+        /// <param name="holdSeconds">Seconds to keep the migration window active.</param>
+        void ApplyEclipsePredatorShallowMigration(float intensity01, float holdSeconds);
+
+        /// <summary>
+        /// Returns normalized eclipse suppression applied to predator light reactions at the supplied position.
+        /// </summary>
+        float ResolveEclipsePredatorLightSuppression01(Vector3 worldPosition);
     }
 
     /// <summary>

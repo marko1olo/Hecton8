@@ -318,7 +318,7 @@ namespace Hecton8.World
             }
         }
 
-        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 672)]
+        [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 736)]
         private struct SimulationFrameConstants
         {
             public float4 Simulation0;
@@ -359,10 +359,14 @@ namespace Hecton8.World
             public float4 ThreatVoxelCellSize;
             public float4 TransportCapsule0;
             public float4 TransportCapsule1;
+            public float4 SubmarineWake0;
+            public float4 SubmarineWake1;
             public float4 Ecosystem0;
             public float4 Fragmentation0;
             public float4 Fragmentation1;
             public float4 SonarScatter0;
+            public float4 AcousticPanic0;
+            public float4 AcousticPanic1;
         }
 
         private const int BoidStride = 32;
@@ -403,9 +407,16 @@ namespace Hecton8.World
         private const float WakeFlowStrength = 0.35f;
         private const float WakeFlowRadius = 6f;
         private const float WakeFlowLifetimeSeconds = 1.25f;
+        private const float SubmarineWakeMinimumSpeedMetersPerSecond = 1.5f;
+        private const float SubmarineWakeBaseRadiusMeters = 14f;
+        private const float SubmarineWakeMaxRadiusMeters = 34f;
+        private const float SubmarineWakeRadiusSpeedScale = 0.85f;
+        private const float SubmarineWakeBaseHalfLengthMeters = 18f;
+        private const float SubmarineWakeMaxHalfLengthMeters = 55f;
+        private const float SubmarineWakeHalfLengthSpeedScale = 1.6f;
         private const uint HashSeed = 0x9E3779B9u;
         private const float SimulationPhaseWrapSeconds = 60f;
-        private const int SimulationFrameConstantsStride = 672;
+        private const int SimulationFrameConstantsStride = 736;
         private const int BoidDataPositionOffsetBytes = 0;
         private const int BoidDataVelocityOffsetBytes = 12;
         private const int BoidDataPanicOffsetBytes = 24;
@@ -497,6 +508,7 @@ namespace Hecton8.World
         private static readonly int _CutMaskActiveId = Shader.PropertyToID("_CutMaskActive");
         private static readonly int _GlobalDriftOffsetId = Shader.PropertyToID("_GlobalDriftOffset");
         private static readonly int _GlobalDriftDeltaId = Shader.PropertyToID("_GlobalDriftDelta");
+        private static readonly int _AbyssalFlowWeatherCurrentId = Shader.PropertyToID("_AbyssalFlowWeatherCurrent");
         private static readonly int _DeepModeId = Shader.PropertyToID("_DeepMode");
         private static readonly int _DeepClusterWeightId = Shader.PropertyToID("_DeepClusterWeight");
         private static readonly int _HeadlightPanicId = Shader.PropertyToID("_HeadlightPanic");
@@ -1291,6 +1303,11 @@ namespace Hecton8.World
         private float _sonarScatterWaveFrontWS;
         private float _sonarScatterStrength01;
         private float _sonarScatterExpireTime = float.NegativeInfinity;
+        private Vector3 _acousticPanicOriginWS;
+        private float _acousticPanicRadiusWS;
+        private float _acousticPanicStrength01;
+        private float _acousticPanicExpireTime = float.NegativeInfinity;
+        private uint _acousticPanicSeed;
         private int _threatGridResolution;
         private Vector3 _threatGridCenterWS = Vector3.zero;
         private float _threatGridCellSizeWS = 1f;
@@ -1404,6 +1421,11 @@ namespace Hecton8.World
             _sonarScatterExpireTime = float.NegativeInfinity;
             _sonarScatterWaveFrontWS = 0f;
             _sonarScatterStrength01 = 0f;
+            _acousticPanicExpireTime = float.NegativeInfinity;
+            _acousticPanicRadiusWS = 0f;
+            _acousticPanicStrength01 = 0f;
+            _acousticPanicOriginWS = Vector3.zero;
+            _acousticPanicSeed = 0u;
             ResetThreatVoxelSnapshot();
             _lastDeepLeviathanMode = false;
             TryUnregister();
@@ -2914,12 +2936,45 @@ namespace Hecton8.World
                                  cutManager.TryGetCutMask(out cutMaskTexture, out cutMaskWorldRect);
             Texture densityTexture = !_deepModeActive && dragManager != null ? dragManager.DensityFieldTexture : Texture2D.blackTexture;
             Vector3 cameraPosition = viewCamera != null ? viewCamera.transform.position : playerPosition;
+            Vector3 abyssalFlowWeatherCurrent = Vector3.zero;
+            HectonFluidEngine fluidRuntime = GlobalRegistry.Fluid;
+            if (fluidRuntime != null &&
+                fluidRuntime.TrySampleModAbyssalFlow(_fieldCenter, out float3 resolvedAbyssalFlow))
+            {
+                abyssalFlowWeatherCurrent = new Vector3(resolvedAbyssalFlow.x, resolvedAbyssalFlow.y, resolvedAbyssalFlow.z);
+            }
+
             float transportCapsuleRadius = 0f;
             float transportCapsuleHalfLength = 0f;
             if (_playerTransportCoordinator != null && _playerTransportCoordinator.IsTransportActive())
             {
                 transportCapsuleRadius = Mathf.Max(boidBodyRadius * 6f, panicPlayerRadius * panicPlayerRadiusScale);
                 transportCapsuleHalfLength = Mathf.Max(transportCapsuleRadius, playerSpeed * 0.35f);
+            }
+
+            Vector3 submarineWakePosition = Vector3.zero;
+            Vector3 submarineWakeVelocity = Vector3.zero;
+            float submarineWakeRadius = 0f;
+            float submarineWakeHalfLength = 0f;
+            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            Rigidbody submarineHull = submarine != null ? submarine.HullRigidbody : null;
+            if (submarineHull != null)
+            {
+                submarineWakeVelocity = submarineHull.linearVelocity;
+                float submarineSpeedSq = submarineWakeVelocity.sqrMagnitude;
+                if (submarineSpeedSq > SubmarineWakeMinimumSpeedMetersPerSecond * SubmarineWakeMinimumSpeedMetersPerSecond)
+                {
+                    float submarineSpeed = Mathf.Sqrt(submarineSpeedSq);
+                    submarineWakePosition = submarineHull.worldCenterOfMass;
+                    submarineWakeRadius = Mathf.Clamp(
+                        SubmarineWakeBaseRadiusMeters + submarineSpeed * SubmarineWakeRadiusSpeedScale,
+                        SubmarineWakeBaseRadiusMeters,
+                        SubmarineWakeMaxRadiusMeters);
+                    submarineWakeHalfLength = Mathf.Clamp(
+                        SubmarineWakeBaseHalfLengthMeters + submarineSpeed * SubmarineWakeHalfLengthSpeedScale,
+                        SubmarineWakeBaseHalfLengthMeters,
+                        SubmarineWakeMaxHalfLengthMeters);
+                }
             }
 
             float absoluteSimulationTime = GetAbsoluteSimulationTime();
@@ -2929,6 +2984,15 @@ namespace Hecton8.World
             float sonarScatterStrength01 = absoluteSimulationTime < _sonarScatterExpireTime
                 ? Mathf.Clamp01(_sonarScatterStrength01)
                 : 0f;
+            float acousticPanicStrength01 = absoluteSimulationTime < _acousticPanicExpireTime
+                ? Mathf.Clamp01(_acousticPanicStrength01)
+                : 0f;
+            if (acousticPanicStrength01 <= 0f)
+            {
+                _acousticPanicRadiusWS = 0f;
+                _acousticPanicStrength01 = 0f;
+            }
+            float acousticPanicTimeRemaining = Mathf.Max(0f, _acousticPanicExpireTime - absoluteSimulationTime);
 
             SimulationFrameConstants frameConstants = default;
             frameConstants.Simulation0 = new float4(simulationDt, waterLevel, minDepthBelowSurface, maxDepthBelowSurface);
@@ -3036,6 +3100,16 @@ namespace Hecton8.World
                 playerVelocity.y,
                 playerVelocity.z,
                 transportCapsuleHalfLength);
+            frameConstants.SubmarineWake0 = new float4(
+                submarineWakePosition.x,
+                submarineWakePosition.y,
+                submarineWakePosition.z,
+                submarineWakeRadius);
+            frameConstants.SubmarineWake1 = new float4(
+                submarineWakeVelocity.x,
+                submarineWakeVelocity.y,
+                submarineWakeVelocity.z,
+                submarineWakeHalfLength);
             frameConstants.Ecosystem0 = new float4(
                 fragmentationWeight * ecosystemFitnessScale,
                 sonarScatterStrength01,
@@ -3056,12 +3130,23 @@ namespace Hecton8.World
                 _sonarScatterOriginWS.y,
                 _sonarScatterOriginWS.z,
                 _sonarScatterWaveFrontWS);
+            frameConstants.AcousticPanic0 = new float4(
+                _acousticPanicOriginWS.x,
+                _acousticPanicOriginWS.y,
+                _acousticPanicOriginWS.z,
+                acousticPanicStrength01 > 0f ? _acousticPanicRadiusWS : 0f);
+            frameConstants.AcousticPanic1 = new float4(
+                _acousticPanicSeed,
+                acousticPanicStrength01,
+                acousticPanicTimeRemaining,
+                0f);
 
             try
             {
                 _simulationFrameNative[0] = frameConstants;
                 GraphicsBufferUploadUtility.UploadNativeArray(_simulationFrameBuffer, _simulationFrameNative, 1);
                 boidCompute.SetBuffer(_kernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
+                boidCompute.SetVector(_AbyssalFlowWeatherCurrentId, new Vector4(abyssalFlowWeatherCurrent.x, abyssalFlowWeatherCurrent.y, abyssalFlowWeatherCurrent.z, 0f));
 
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferReadId, readBuffer);
                 boidCompute.SetBuffer(_kernelIndex, _BoidsBufferWriteId, writeBuffer);
@@ -3464,6 +3549,27 @@ namespace Hecton8.World
             HandleSonarPingSent(intensity);
         }
 
+        internal void RegisterAcousticPanicBurst(
+            Vector3 originWS,
+            float radiusWS,
+            float durationSeconds,
+            float strength01,
+            uint seed)
+        {
+            float clampedStrength = Mathf.Clamp01(strength01);
+            if (radiusWS <= 0.001f || durationSeconds <= 0.001f || clampedStrength <= 0.0001f)
+                return;
+
+            float absoluteSimulationTime = GetAbsoluteSimulationTime();
+            _acousticPanicOriginWS = originWS;
+            _acousticPanicRadiusWS = Mathf.Max(1f, radiusWS);
+            _acousticPanicStrength01 = Mathf.Max(_acousticPanicStrength01, clampedStrength);
+            _acousticPanicExpireTime = Mathf.Max(
+                _acousticPanicExpireTime,
+                absoluteSimulationTime + Mathf.Max(0.1f, durationSeconds));
+            _acousticPanicSeed = seed != 0u ? seed : 0x9E3779B9u;
+        }
+
         private float ResolveHeadlightPanic01()
         {
             if (!_deepModeActive || deepHeadlightPanicDuration <= 0.0001f)
@@ -3855,7 +3961,7 @@ namespace Hecton8.World
 
         private void UpdateSpatialGridLayout()
         {
-            float baseCellSize = Mathf.Max(0.5f, Mathf.Max(perceptionRadius, separationRadius));
+            float baseCellSize = 2f;
             Vector3 fieldSize = Vector3.Max(_fieldExtents * 2f, Vector3.one * baseCellSize);
             float axisClampCellSize = Mathf.Max(
                 fieldSize.x / SpatialGridMaxAxisResolution,

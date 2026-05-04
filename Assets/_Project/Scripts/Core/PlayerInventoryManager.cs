@@ -22,6 +22,7 @@ namespace Hecton8.Core
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
+        private bool _syncInProgress;
         private GameObject _playerObject;
         private PlayerToolManager _toolManager;
         private PlayerInventory _inventory;
@@ -31,6 +32,10 @@ namespace Hecton8.Core
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
         internal float CarryCapacityKilograms => Mathf.Max(1f, carryCapacityKilograms);
+        internal PlayerToolManager CachedToolManager => _toolManager;
+        internal PlayerInventory CachedInventory => _inventory;
+        internal PlayerBuilder CachedPlayerBuilder => _playerBuilder;
+        internal Transform CachedHandAnchor => _handAnchor;
 
         /// <inheritdoc />
         public PlayerToolManager ToolManager
@@ -162,33 +167,48 @@ namespace Hecton8.Core
 
         private void SyncInventoryContext()
         {
-            GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject;
-            if (!ReferenceEquals(_playerObject, currentPlayerObject))
+            if (_syncInProgress)
+                return;
+
+            if (!GlobalRegistry.TryBeginResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerInventory))
+                return;
+
+            _syncInProgress = true;
+            try
             {
-                _playerObject = currentPlayerObject;
-                _toolManager = null;
-                _inventory = null;
-                _playerBuilder = null;
-                _handAnchor = null;
+                GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject;
+                if (!ReferenceEquals(_playerObject, currentPlayerObject))
+                {
+                    _playerObject = currentPlayerObject;
+                    _toolManager = null;
+                    _inventory = null;
+                    _playerBuilder = null;
+                    _handAnchor = null;
+                }
+
+                if (_playerObject == null)
+                    return;
+
+                if (_toolManager == null)
+                    _playerObject.TryGetComponent(out _toolManager);
+
+                if (_inventory == null)
+                    _playerObject.TryGetComponent(out _inventory);
+
+                if (_toolManager == null)
+                    return;
+
+                if (_inventory == null)
+                    _inventory = _toolManager.Inventory;
+
+                _handAnchor = _toolManager.HandAnchor;
+                _playerBuilder = _toolManager.CurrentTool as PlayerBuilder;
             }
-
-            if (_playerObject == null)
-                return;
-
-            if (_toolManager == null)
-                _playerObject.TryGetComponent(out _toolManager);
-
-            if (_inventory == null)
-                _playerObject.TryGetComponent(out _inventory);
-
-            if (_toolManager == null)
-                return;
-
-            if (_inventory == null)
-                _inventory = _toolManager.Inventory;
-
-            _handAnchor = _toolManager.HandAnchor;
-            _playerBuilder = _toolManager.CurrentTool as PlayerBuilder;
+            finally
+            {
+                _syncInProgress = false;
+                GlobalRegistry.EndResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerInventory);
+            }
         }
 
         private void TryRegisterUpdatable()

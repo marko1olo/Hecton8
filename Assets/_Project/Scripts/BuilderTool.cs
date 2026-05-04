@@ -317,7 +317,8 @@ namespace Hecton8.Gameplay
             // ── 3. LCD-экран (skip если модуль не изменился) ──
             BuildableData current = _playerBuilder.ActiveBuildable;
             PlayerBuilder.BuildReadiness readiness = _playerBuilder.ActiveBuildReadiness;
-            if (!ReferenceEquals(current, _lastDisplayedBuildable) || readiness != _lastReadinessState)
+            bool brownoutActive = TryGetToolBrownoutFlicker(out _);
+            if (brownoutActive || !ReferenceEquals(current, _lastDisplayedBuildable) || readiness != _lastReadinessState)
             {
                 UpdateScreen();
             }
@@ -478,6 +479,13 @@ namespace Hecton8.Gameplay
             else
             {
                 _lastReadinessState = PlayerBuilder.BuildReadiness.Offline;
+            }
+
+            if (TryGetToolBrownoutFlicker(out float brownoutFlicker))
+            {
+                float alpha = screenColor.a;
+                screenColor *= Mathf.Clamp01(brownoutFlicker);
+                screenColor.a = alpha;
             }
 
             _screenPropBlock.SetColor(PropScreenColor, screenColor);

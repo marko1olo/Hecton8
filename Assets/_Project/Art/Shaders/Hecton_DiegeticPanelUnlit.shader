@@ -131,7 +131,10 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                     {
                         float2 screenPixel = floor(input.positionCS.xy);
                         float bayer = Bayer4x4(screenPixel);
-                        clip((alpha * 0.25) - bayer);
+                        float ditherGate = step(bayer, 0.3125);
+                        float weakProjection = lerp(0.08, 0.46, ditherGate);
+                        emissive *= weakProjection;
+                        alpha *= lerp(0.035, 0.18, ditherGate);
                     }
                 }
 

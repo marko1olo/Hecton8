@@ -88,5 +88,10 @@ namespace Hecton8.Environment
                  "Свет управляется глобальной кривой в UnderwaterVisuals.")]
         [Range(0.5f, 2.0f)]
         public float turbidityMultiplier = 1.0f;
+
+        [Header("Absorption")]
+        [Tooltip("Biome absorption scalar for transition jobs and shader-facing ecology blends.")]
+        [Range(0f, 1f)]
+        public float absorption = 0.9f;
     }
 }

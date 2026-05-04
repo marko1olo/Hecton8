@@ -120,6 +120,7 @@ namespace Hecton8.Power
         private bool _isDirty = true;
         private bool _hasEvaluatedAtLeastOnce;
         private bool _slowTickEvaluationPending;
+        private bool _splitCheckPending;
         private SlowTickEvaluationPhase _slowTickEvaluationPhase;
 
         /// <summary>Number of registered nodes in this grid.</summary>
@@ -250,6 +251,32 @@ namespace Hecton8.Power
             _isDirty = true;
         }
 
+        internal void RequestSplitCheck()
+        {
+            _splitCheckPending = true;
+            _isDirty = true;
+        }
+
+        internal bool TryConsumePendingSplitCheck(out LogisticsNetworkGraph.TopologySummary topology)
+        {
+            topology = default;
+            if (!_splitCheckPending)
+                return false;
+
+            if (_slowTickEvaluationPending || _logisticsGraph.HasPendingEvaluation || _logisticsGraph.HasPendingNodeStatePublish)
+                return false;
+
+            if (!_hasEvaluatedAtLeastOnce)
+            {
+                BeginSlowTickEvaluation();
+                return false;
+            }
+
+            topology = _logisticsGraph.GetScheduledTopologySummary();
+            _splitCheckPending = false;
+            return true;
+        }
+
         /// <summary>Adds a node to this grid and updates its owner reference.</summary>
         public void AddNode(PowerNode node)
         {
@@ -302,12 +329,8 @@ namespace Hecton8.Power
         /// </summary>
         public void UpdateBalance()
         {
-            if (_slowTickEvaluationPending)
-                EndSlowTickEvaluation();
-
-            EvaluateBalanceViaScheduledJob();
-            _isDirty = false;
-            _hasEvaluatedAtLeastOnce = true;
+            _isDirty = true;
+            BeginSlowTickEvaluation();
         }
 
         /// <summary>Schedules a graph evaluation for the manager-owned SlowTick cadence.</summary>
@@ -320,7 +343,8 @@ namespace Hecton8.Power
                 return;
 
             ResetBatteryDispatchPlans();
-            BuildGraphSnapshot();
+            if (!BuildGraphSnapshot())
+                return;
 
             if (_topologyNodes.Count <= 0)
             {
@@ -352,28 +376,7 @@ namespace Hecton8.Power
         /// <summary>Completes the pending node-state publication pass and applies consumer power states.</summary>
         public void EndSlowTickEvaluation()
         {
-            if (!_slowTickEvaluationPending)
-                return;
-
-            while (_slowTickEvaluationPending)
-            {
-                if (_slowTickEvaluationPhase == SlowTickEvaluationPhase.InitialEvaluation)
-                {
-                    _logisticsGraph.CompleteEvaluation();
-                    ScheduleFinalSlowTickEvaluationPass();
-                    continue;
-                }
-
-                if (_slowTickEvaluationPhase == SlowTickEvaluationPhase.FinalEvaluation)
-                {
-                    _logisticsGraph.CompleteEvaluation();
-                    _logisticsGraph.CompleteNodeStatePublish();
-                    CommitSlowTickEvaluation();
-                    return;
-                }
-
-                _slowTickEvaluationPending = false;
-            }
+            TryEndSlowTickEvaluation();
         }
 
         /// <summary>
@@ -410,10 +413,10 @@ namespace Hecton8.Power
         /// <summary>Rebuilds the topology-only snapshot and returns current connectivity analysis.</summary>
         internal LogisticsNetworkGraph.TopologySummary AnalyzeTopology()
         {
-            BuildGraphSnapshot();
-            _logisticsGraph.ScheduleEvaluation();
-            _logisticsGraph.CompleteEvaluation();
-            LogisticsNetworkGraph.TopologySummary topology = _logisticsGraph.GetScheduledTopologySummary();
+            if (!BuildGraphSnapshot())
+                return _logisticsGraph.GetScheduledTopologySummary();
+
+            LogisticsNetworkGraph.TopologySummary topology = _logisticsGraph.AnalyzeTopology();
             _islandCount = topology.IslandCount;
             _cycleCount = topology.CycleCount;
             return topology;
@@ -424,7 +427,8 @@ namespace Hecton8.Power
             LogisticsNetworkGraph.DistributionSummary rawDistribution = _logisticsGraph.GetScheduledDistributionSummary();
             ResolveBatteryDispatch(rawDistribution);
 
-            BuildGraphSnapshot();
+            if (!BuildGraphSnapshot())
+                return;
             JobHandle finalEvaluationHandle = _logisticsGraph.ScheduleEvaluation();
             _logisticsGraph.ScheduleNodeStatePublish(finalEvaluationHandle);
             _slowTickEvaluationPhase = SlowTickEvaluationPhase.FinalEvaluation;
@@ -449,7 +453,8 @@ namespace Hecton8.Power
             _slowTickEvaluationPending = false;
             _slowTickEvaluationPhase = SlowTickEvaluationPhase.Idle;
             ResetBatteryDispatchPlans();
-            BuildGraphSnapshot();
+            if (!BuildGraphSnapshot())
+                return;
 
             if (_topologyNodes.Count <= 0)
             {
@@ -487,8 +492,11 @@ namespace Hecton8.Power
             return _logisticsGraph.GetComponentSize(componentIndex);
         }
 
-        private void BuildGraphSnapshot()
+        private bool BuildGraphSnapshot()
         {
+            if (_logisticsGraph.HasPendingEvaluation || _logisticsGraph.HasPendingNodeStatePublish)
+                return false;
+
             _consumerRefs.Clear();
             _batteryRefs.Clear();
             _topologyNodes.Clear();
@@ -499,7 +507,7 @@ namespace Hecton8.Power
             {
                 _logisticsGraph.BeginBuild(LogisticsNetworkType.PowerDc, 1, 1, 1);
                 _logisticsGraph.FinalizeBuild();
-                return;
+                return true;
             }
 
             _graphBuildVersion++;
@@ -523,7 +531,7 @@ namespace Hecton8.Power
             {
                 _logisticsGraph.BeginBuild(LogisticsNetworkType.PowerDc, 1, 1, 1);
                 _logisticsGraph.FinalizeBuild();
-                return;
+                return true;
             }
 
             int edgeCount = 0;
@@ -682,6 +690,7 @@ namespace Hecton8.Power
             }
 
             _logisticsGraph.FinalizeBuild();
+            return true;
         }
 
         private void ApplyConsumerStates()

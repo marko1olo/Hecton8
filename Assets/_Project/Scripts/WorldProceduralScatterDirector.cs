@@ -32,6 +32,16 @@ namespace Hecton8.World
         /// True once the world-generation owner is registered in the global registry.
         /// </summary>
         public bool IsInitialized => ReferenceEquals(GlobalRegistry.WorldGen, this);
+
+        /// <summary>
+        /// Number of packed biome influence cells published to the global scatter shader buffer.
+        /// </summary>
+        public int DebugBiomeInfluenceGridCells => _debugBiomeInfluenceGridCells;
+
+        /// <summary>
+        /// Current capacity of the packed biome influence GPU buffer.
+        /// </summary>
+        public int DebugBiomeInfluenceGpuBufferCapacity => _debugBiomeInfluenceGpuBufferCapacity;
         internal float CurrentSpawnBudgetScale => Mathf.Max(0.35f, _debugPatternSpawnBudgetScale);
         internal float CurrentFaunaActivationScale
         {
@@ -66,6 +76,7 @@ namespace Hecton8.World
         private const string ScatterLayerLargeThreatsLabel = "LargeThreats";
         // Bump when the reconcile-signature field contract changes.
         private const int ScatterPlacementSyncSignatureVersion = 2;
+        private const int MaxFloraInstancesPerStreamCellPerBiome = 4096;
         private static bool _candidateMapCapacityExceededWarningLogged;
         private static bool _candidateMapNearCapacityWarningLogged;
 #if UNITY_EDITOR
@@ -217,6 +228,10 @@ namespace Hecton8.World
         private static readonly ProfilerMarker _scatterReconcileCleanupProfilerMarker = new("WorldScatter.Reconcile.Cleanup");
         private static readonly ProfilerMarker _scatterReconcileSpawnProfilerMarker = new("WorldScatter.Reconcile.Spawn");
         private static readonly ProfilerMarker _scatterReconcileFaunaProfilerMarker = new("WorldScatter.Reconcile.Fauna");
+        private static readonly int _ScatterBiomeInfluenceGridId = Shader.PropertyToID("_HectonScatterBiomeInfluenceGrid");
+        private static readonly int _ScatterBiomeInfluenceGridCountId = Shader.PropertyToID("_HectonScatterBiomeInfluenceGridCount");
+        private static readonly int _ScatterBiomeInfluenceGridOriginId = Shader.PropertyToID("_HectonScatterBiomeInfluenceGridOrigin");
+        private static readonly int _ScatterBiomeInfluenceGridParamsId = Shader.PropertyToID("_HectonScatterBiomeInfluenceGridParams");
         private enum ScatterState
         {
             Idle,
@@ -302,6 +317,10 @@ namespace Hecton8.World
         [SerializeField] private int _debugResidencyPassedCandidates;
         [SerializeField] private int _debugPostBuildGateRejectedCandidates;
         [SerializeField] private int _debugQueuedCandidates;
+        [SerializeField] private int _debugBiomeInfluenceGridCells;
+        [SerializeField] private int _debugBiomeInfluenceGpuBufferCapacity;
+        [SerializeField] private int _debugBiomeInfluenceTransitionCells;
+        [SerializeField] private int _debugFloraQuotaRejectedCandidates;
         [SerializeField] private string _debugRejectedResidencyFamily = "None";
         [SerializeField] private float _debugRejectedResidencyDistance;
         [SerializeField] private float _debugRejectedResidencyRadius;
@@ -1953,6 +1972,10 @@ namespace Hecton8.World
             _debugResidencyPassedCandidates = 0;
             _debugPostBuildGateRejectedCandidates = 0;
             _debugQueuedCandidates = 0;
+            _debugBiomeInfluenceGridCells = 0;
+            _debugBiomeInfluenceGpuBufferCapacity = 0;
+            _debugBiomeInfluenceTransitionCells = 0;
+            _debugFloraQuotaRejectedCandidates = 0;
             _debugRejectedResidencyFamily = "None";
             _debugRejectedResidencyDistance = 0f;
             _debugRejectedResidencyRadius = 0f;
@@ -2131,6 +2154,8 @@ namespace Hecton8.World
         private static bool MatchesScatter(
             in ScatterRuntimeRuleEntry runtimeRule,
             HectonBiomeFamilyProfile biomeFamily,
+            HectonBiomeFamilyProfile secondaryBiomeFamily,
+            bool hasSecondaryBiome,
             WorldZoneAnchor zone,
             WorldZoneAnchor.ZoneKind zoneKindHint,
             float depthMeters,
@@ -2146,18 +2171,11 @@ namespace Hecton8.World
                 runtimeRule.PreferredBiomeFamilies != null &&
                 runtimeRule.PreferredBiomeFamilies.Length > 0)
             {
-                bool biomeMatched = false;
-                for (int i = 0; i < runtimeRule.PreferredBiomeFamilies.Length; i++)
-                {
-                    HectonBiomeFamilyProfile preferredBiomeFamily = runtimeRule.PreferredBiomeFamilies[i];
-                    if (preferredBiomeFamily == null || preferredBiomeFamily != biomeFamily)
-                        continue;
-
-                    biomeMatched = true;
-                    break;
-                }
-
-                if (!biomeMatched)
+                bool primaryMatched = MatchesPreferredBiomeFamily(runtimeRule.PreferredBiomeFamilies, biomeFamily);
+                bool secondaryMatched = hasSecondaryBiome &&
+                                        secondaryBiomeFamily != null &&
+                                        MatchesPreferredBiomeFamily(runtimeRule.PreferredBiomeFamilies, secondaryBiomeFamily);
+                if (!primaryMatched && !secondaryMatched)
                     return false;
             }
 
@@ -2199,6 +2217,25 @@ namespace Hecton8.World
             }
 
             return true;
+        }
+
+        private static bool MatchesPreferredBiomeFamily(
+            HectonBiomeFamilyProfile[] preferredBiomeFamilies,
+            HectonBiomeFamilyProfile biomeFamily)
+        {
+            if (preferredBiomeFamilies == null || preferredBiomeFamilies.Length == 0 || biomeFamily == null)
+                return false;
+
+            for (int i = 0; i < preferredBiomeFamilies.Length; i++)
+            {
+                HectonBiomeFamilyProfile preferredBiomeFamily = preferredBiomeFamilies[i];
+                if (preferredBiomeFamily == null || preferredBiomeFamily != biomeFamily)
+                    continue;
+
+                return true;
+            }
+
+            return false;
         }
 
         private static int ResolveHeightLayerIndex(
@@ -2991,6 +3028,9 @@ namespace Hecton8.World
             Dictionary<long, ScatterPlacement> retainedPlacements = registrationContext.RetainedPlacements;
             Dictionary<long, float> placementLastSeenTimes = registrationContext.PlacementLastSeenTimes;
             bool alreadyRegistered = desiredPlacements.TryGetValue(placement.Key, out ScatterPlacement existingDesired);
+            if (!alreadyRegistered && !HasFloraStreamCellBiomeQuota(placement))
+                return false;
+
             if (alreadyRegistered)
             {
                 if (!ReferenceEquals(existingDesired, placement))
@@ -3025,7 +3065,10 @@ namespace Hecton8.World
 
             placementLastSeenTimes[placement.Key] = registrationContext.Now;
             if (!alreadyRegistered)
+            {
                 RegisterPlacementInGrid(placement);
+                RegisterFloraStreamCellBiomeQuota(placement);
+            }
             return true;
         }
 
@@ -4282,17 +4325,6 @@ namespace Hecton8.World
                 return "None";
 
             return topCandidates[index].Family != null ? topCandidates[index].Family.familyLabel : "None";
-        }
-
-        private static Dictionary<string, int>[] CreateLayerFamilyCounters()
-        {
-            return new[]
-            {
-                new Dictionary<string, int>(8),
-                new Dictionary<string, int>(8),
-                new Dictionary<string, int>(8),
-                new Dictionary<string, int>(8)
-            };
         }
 
         private static void FillOrderedCandidateBuffer(

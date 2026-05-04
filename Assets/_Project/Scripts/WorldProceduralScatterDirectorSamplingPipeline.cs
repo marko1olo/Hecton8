@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using Hecton8.Core;
 using Hecton8.Environment;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -90,7 +93,12 @@ namespace Hecton8.World
                 BuildScatterSamplingInputs(in samplingContext);
                 using (_scatterSamplingScheduleProfilerMarker.Auto())
                 {
-                    _samplingJobHandle = fieldSampler.ScheduleCellSamplingJob(_memory.CellSamplingInputs, _memory.CellSamplingOutputs, samplingContext.TotalCells);
+                    JobHandle cellSamplingHandle = fieldSampler.ScheduleCellSamplingJob(
+                        _memory.CellSamplingInputs,
+                        _memory.CellSamplingOutputs,
+                        _memory.BiomeInfluenceCells,
+                        samplingContext.TotalCells);
+                    _samplingJobHandle = ScheduleBiomeInfluencePackJob(samplingContext.TotalCells, cellSamplingHandle);
                 }
 
                 _isSamplingJobRunning = true;
@@ -320,7 +328,9 @@ namespace Hecton8.World
             long rebuildStartTimestamp = completionContext.RebuildStartTimestamp;
             long samplingInputsEndTimestamp = completionContext.SamplingInputsEndTimestamp;
             long samplingCompleteEndTimestamp = enableScatterRebuildProfiling ? Stopwatch.GetTimestamp() : 0L;
+            PublishBiomeInfluenceGrid(totalCells);
             int evaluatedCells = 0;
+            int biomeInfluenceTransitionCells = 0;
             ScatterCandidate topCandidate = default;
             bool hasTopCandidate = false;
             ScatterCandidate[] layerTopCandidates = completionContext.LayerTopCandidates;
@@ -370,6 +380,9 @@ namespace Hecton8.World
                 for (int cellIndex = 0; cellIndex < totalCells; cellIndex++)
                 {
                     WorldProceduralFieldSampler.CellOutputData cellOutput = _memory.CellSamplingOutputs[cellIndex];
+                    if (((cellOutput.BiomeInfluencePacked >> 8) & 0xFFu) != 0u)
+                        biomeInfluenceTransitionCells++;
+
                     ScatterSimulationCellState backendCellState = BuildScatterBackendCellState(cellOutput);
                     if (!fieldSampler.TryBuildFieldSample(cellOutput, out WorldProceduralFieldSampler.FieldSample fieldSample))
                     {
@@ -399,6 +412,7 @@ namespace Hecton8.World
 #endif
                 WorldProceduralPatternProfile cellPatternProfile = ResolvePatternProfile(fieldSample.resolvedPattern, out _);
                 WorldProceduralBiomeFamilyContextProfile cellBiomeContext = ResolveBiomeContextProfile(fieldSample.biomeFamily, out _);
+                ScatterBiomeTransitionContext biomeTransitionContext = ResolveBiomeTransitionContext(fieldSample, cellBiomeContext);
                 string cellBiomeContextLabel = cellBiomeContext != null ? cellBiomeContext.label : "None";
                 bool usesPatternAccentQuotas = UsesPatternAccentQuotas(fieldSample.resolvedPattern);
                 PopulatePatternQuotaCache(fieldSample.resolvedPattern, fieldSample.biomeProfile);
@@ -410,9 +424,10 @@ namespace Hecton8.World
                 int predatorSpawnMax = _memory.CachedPatternPredatorSpawnMax;
                 ScatterBiomeScoreContext biomeScoreContext = BuildScatterBiomeScoreContext(fieldSample.biomeProfile);
                 ScatterPatternScoreContext patternScoreContext = BuildScatterPatternScoreContext(fieldSample.resolvedPattern);
-                ResolveCombinedBudgetScales(
+                ResolveTransitionBudgetScales(
                     cellPatternProfile,
                     cellBiomeContext,
+                    biomeTransitionContext,
                     out float localGroundBudgetScale,
                     out float localClusterBudgetScale,
                     out float localStructureBudgetScale,
@@ -457,8 +472,18 @@ namespace Hecton8.World
 
                         WorldProceduralPlacementRule rule = runtimeRule.Rule;
                         WorldPrefabFamilyProfile family = runtimeRule.Family;
-                        if (!MatchesScatter(runtimeRule, activeFieldSample.biomeFamily, activeFieldSample.zone, activeFieldSample.resolvedZoneKind, activeFieldSample.depthMeters, activeFieldSample.slopeDegrees))
+                        if (!MatchesScatter(
+                                runtimeRule,
+                                activeFieldSample.biomeFamily,
+                                biomeTransitionContext.SecondaryFamily,
+                                biomeTransitionContext.HasSecondary,
+                                activeFieldSample.zone,
+                                activeFieldSample.resolvedZoneKind,
+                                activeFieldSample.depthMeters,
+                                activeFieldSample.slopeDegrees))
+                        {
                             continue;
+                        }
                         if (collectDetailedDiagnostics)
                             matchedScatterRules++;
 
@@ -530,6 +555,9 @@ namespace Hecton8.World
                             continue;
                         }
 
+                        int secondaryLayerPreferredFamilyIndex = biomeTransitionContext.HasSecondary
+                            ? GetPreferredFamilyIndexForLayer(biomeTransitionContext.SecondaryProfile, family, layer)
+                            : -1;
                         RegisterScatterBackendCellEligibility(ref backendCellState, layer);
                         RegisterScatterBackendCellSuppression(
                             ref backendCellState,
@@ -542,9 +570,11 @@ namespace Hecton8.World
                                 activeFieldSample,
                                 runtimeRule,
                                 biomeScoreContext,
+                                biomeTransitionContext,
                                 patternScoreContext,
                                 cellBiomeContext,
                                 layerPreferredFamilyIndex,
+                                secondaryLayerPreferredFamilyIndex,
                                 spawnProbability,
                                 heat,
                                 needsRescueTracking,
@@ -649,6 +679,7 @@ namespace Hecton8.World
 
             ReleaseCandidateListPlacements(_candidateBuffer);
             fieldSampler.EndScatterSamplingFrame();
+            _debugBiomeInfluenceTransitionCells = biomeInfluenceTransitionCells;
 
             long samplingEndTimestamp = enableScatterRebuildProfiling ? Stopwatch.GetTimestamp() : 0L;
 
@@ -761,7 +792,79 @@ namespace Hecton8.World
 
             ResetSamplingState(HasPendingScatterReconcileWork() ? ScatterState.Spawning : ScatterState.Idle);
         }
+        }
 
+        private JobHandle ScheduleBiomeInfluencePackJob(int totalCells, JobHandle dependency)
+        {
+            if (_memory == null ||
+                !_memory.BiomeInfluenceCells.IsCreated ||
+                !_memory.BiomeInfluencePackedCells.IsCreated ||
+                totalCells <= 0)
+            {
+                return dependency;
+            }
+
+            int packCellCount = math.min(totalCells, math.min(_memory.BiomeInfluenceCells.Length, _memory.BiomeInfluencePackedCells.Length));
+            if (packCellCount <= 0)
+                return dependency;
+
+            BiomeInfluencePackJob packJob = new BiomeInfluencePackJob
+            {
+                Source = _memory.BiomeInfluenceCells,
+                Destination = _memory.BiomeInfluencePackedCells,
+                CellCount = packCellCount
+            };
+
+            return packJob.Schedule(packJob.CellCount, math.max(1, math.min(64, packJob.CellCount / 8)), dependency);
+        }
+
+        private void PublishBiomeInfluenceGrid(int totalCells)
+        {
+            if (_memory == null ||
+                !_memory.BiomeInfluencePackedCells.IsCreated ||
+                totalCells <= 0 ||
+                fieldSampler == null ||
+                !fieldSampler.TryUploadPackedBiomeInfluenceGrid(
+                    _memory.BiomeInfluencePackedCells,
+                    totalCells,
+                    out GraphicsBuffer biomeInfluenceBuffer,
+                    out int biomeInfluenceBufferCapacity))
+            {
+                Shader.SetGlobalInt(_ScatterBiomeInfluenceGridCountId, 0);
+                _debugBiomeInfluenceGridCells = 0;
+                _debugBiomeInfluenceGpuBufferCapacity = 0;
+                return;
+            }
+
+            int originCellX = _samplingSnapshot.CenterCellX - _samplingRadiusCells;
+            int originCellZ = _samplingSnapshot.CenterCellZ - _samplingRadiusCells;
+            Shader.SetGlobalBuffer(_ScatterBiomeInfluenceGridId, biomeInfluenceBuffer);
+            Shader.SetGlobalInt(_ScatterBiomeInfluenceGridCountId, totalCells);
+            Shader.SetGlobalVector(
+                _ScatterBiomeInfluenceGridOriginId,
+                new Vector4(originCellX, originCellZ, _samplingCellDiameter, _samplingRadiusCells));
+            Shader.SetGlobalVector(
+                _ScatterBiomeInfluenceGridParamsId,
+                new Vector4(_samplingCellSize, totalCells, biomeInfluenceBufferCapacity, 0f));
+
+            _debugBiomeInfluenceGridCells = totalCells;
+            _debugBiomeInfluenceGpuBufferCapacity = biomeInfluenceBufferCapacity;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct BiomeInfluencePackJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<WorldProceduralFieldSampler.BiomeInfluenceCell> Source;
+            [WriteOnly] public NativeArray<uint> Destination;
+            public int CellCount;
+
+            public void Execute(int index)
+            {
+                if ((uint)index >= (uint)CellCount)
+                    return;
+
+                Destination[index] = Source[index].Packed;
+            }
         }
 
         private bool TryBuildScatterSamplingCompletionContext(out ScatterSamplingCompletionContext context)
@@ -873,6 +976,95 @@ namespace Hecton8.World
                 out injectedSpawnRescuePlacements);
             trackedSpawnRescueCandidates = rescueTrackingContext.SpawnCandidates != null ? rescueTrackingContext.SpawnCandidates.Count : 0;
             ReleaseRescueCandidateBuffers();
+        }
+
+        private ScatterBiomeTransitionContext ResolveBiomeTransitionContext(
+            in WorldProceduralFieldSampler.FieldSample fieldSample,
+            WorldProceduralBiomeFamilyContextProfile primaryBiomeContext)
+        {
+            WorldProceduralFieldSampler.BiomeInfluenceCell influence = fieldSample.biomeInfluence;
+            if (influence.SecondaryBiomeId == 0 || influence.Blend255 == 0 || fieldSampler == null)
+                return default;
+
+            if (!fieldSampler.TryResolveBiomeMatrixProfileById(influence.SecondaryBiomeId, out HectonBiomeMatrixProfile secondaryProfile) ||
+                secondaryProfile == null ||
+                ReferenceEquals(secondaryProfile, fieldSample.biomeProfile))
+            {
+                return default;
+            }
+
+            HectonBiomeFamilyProfile secondaryFamily = secondaryProfile.familyProfile;
+            WorldProceduralBiomeFamilyContextProfile secondaryBiomeContext = ResolveBiomeContextProfile(secondaryFamily, out _);
+            ScatterBiomeScoreContext secondaryScoreContext = BuildScatterBiomeScoreContext(secondaryProfile);
+            float secondaryWeight = influence.Blend255 * (1f / 255f);
+
+            return new ScatterBiomeTransitionContext(
+                true,
+                secondaryProfile,
+                secondaryFamily,
+                secondaryBiomeContext,
+                secondaryScoreContext,
+                secondaryWeight);
+        }
+
+        private void ResolveTransitionBudgetScales(
+            WorldProceduralPatternProfile cellPatternProfile,
+            WorldProceduralBiomeFamilyContextProfile primaryBiomeContext,
+            in ScatterBiomeTransitionContext biomeTransitionContext,
+            out float groundBudgetScale,
+            out float clusterBudgetScale,
+            out float structureBudgetScale,
+            out float spawnBudgetScale)
+        {
+            ResolveCombinedBudgetScales(
+                cellPatternProfile,
+                primaryBiomeContext,
+                out groundBudgetScale,
+                out clusterBudgetScale,
+                out structureBudgetScale,
+                out spawnBudgetScale);
+
+            if (!biomeTransitionContext.HasSecondary)
+                return;
+
+            ResolveCombinedBudgetScales(
+                cellPatternProfile,
+                biomeTransitionContext.SecondaryBiomeContext,
+                out float secondaryGroundBudgetScale,
+                out float secondaryClusterBudgetScale,
+                out float secondaryStructureBudgetScale,
+                out float secondarySpawnBudgetScale);
+
+            float t = biomeTransitionContext.SecondaryWeight;
+            groundBudgetScale = Mathf.Lerp(groundBudgetScale, secondaryGroundBudgetScale, t);
+            clusterBudgetScale = Mathf.Lerp(clusterBudgetScale, secondaryClusterBudgetScale, t);
+            structureBudgetScale = Mathf.Lerp(structureBudgetScale, secondaryStructureBudgetScale, t);
+            spawnBudgetScale = Mathf.Lerp(spawnBudgetScale, secondarySpawnBudgetScale, t);
+        }
+
+        private static float ResolveTransitionBiomeMatrixScoreUpperBound(
+            in ScatterRuntimeRuleEntry runtimeRule,
+            bool hasPrimaryBiomeProfile,
+            int primaryPreferredFamilyIndex,
+            in ScatterBiomeTransitionContext biomeTransitionContext,
+            int secondaryPreferredFamilyIndex,
+            in ScatterPatternScoreContext patternScoreContext)
+        {
+            float primaryUpperBound = ResolveBiomeMatrixScoreUpperBound(
+                runtimeRule,
+                hasPrimaryBiomeProfile,
+                primaryPreferredFamilyIndex,
+                patternScoreContext);
+
+            if (!biomeTransitionContext.HasSecondary)
+                return primaryUpperBound;
+
+            float secondaryUpperBound = ResolveBiomeMatrixScoreUpperBound(
+                runtimeRule,
+                biomeTransitionContext.SecondaryScoreContext.HasBiomeProfile,
+                secondaryPreferredFamilyIndex,
+                patternScoreContext);
+            return Mathf.Max(primaryUpperBound, secondaryUpperBound);
         }
 
         private bool TryPrepareScatterCandidateScoring(
@@ -1024,6 +1216,7 @@ namespace Hecton8.World
                 CellZ = cellOutput.CellZ,
                 Height = cellOutput.SeafloorHeight,
                 HeightSource = cellOutput.SeafloorSource,
+                BiomeInfluencePacked = cellOutput.BiomeInfluencePacked,
                 Eligibility = ScatterSimulationEligibilityFlags.None,
                 Suppression = ScatterSimulationSuppressionState.None,
                 DirtyFlags = dirtyFlags
@@ -1091,9 +1284,11 @@ namespace Hecton8.World
             WorldProceduralFieldSampler.FieldSample activeFieldSample,
             ScatterRuntimeRuleEntry runtimeRule,
             ScatterBiomeScoreContext biomeScoreContext,
+            in ScatterBiomeTransitionContext biomeTransitionContext,
             ScatterPatternScoreContext patternScoreContext,
             WorldProceduralBiomeFamilyContextProfile cellBiomeContext,
             int layerPreferredFamilyIndex,
+            int secondaryLayerPreferredFamilyIndex,
             float spawnProbability,
             float heat,
             bool needsRescueTracking,
@@ -1126,13 +1321,31 @@ namespace Hecton8.World
                     RefreshWorstCandidate(_candidateBuffer, out worstCandidateIndex, out worstCandidateScore);
 
                 float scoreUpperBound = scoreBeforeBiomeMatrixAndGeology
-                    + ResolveBiomeMatrixScoreUpperBound(runtimeRule, activeFieldSample.biomeProfile != null, layerPreferredFamilyIndex, patternScoreContext)
+                    + ResolveTransitionBiomeMatrixScoreUpperBound(
+                        runtimeRule,
+                        activeFieldSample.biomeProfile != null,
+                        layerPreferredFamilyIndex,
+                        biomeTransitionContext,
+                        secondaryLayerPreferredFamilyIndex,
+                        patternScoreContext)
                     + runtimeRule.GeologyScoreScale;
                 if (scoreUpperBound <= worstCandidateScore)
                     return false;
             }
 
             float biomeMatrixScore = GetBiomeMatrixBonus(activeFieldSample.resolvedPattern, activeFieldSample.biomeProfile, runtimeRule, biomeScoreContext, layerPreferredFamilyIndex, patternScoreContext);
+            if (biomeTransitionContext.HasSecondary)
+            {
+                float secondaryBiomeMatrixScore = GetBiomeMatrixBonus(
+                    activeFieldSample.resolvedPattern,
+                    biomeTransitionContext.SecondaryProfile,
+                    runtimeRule,
+                    biomeTransitionContext.SecondaryScoreContext,
+                    secondaryLayerPreferredFamilyIndex,
+                    patternScoreContext);
+                biomeMatrixScore = Mathf.Lerp(biomeMatrixScore, secondaryBiomeMatrixScore, biomeTransitionContext.SecondaryWeight);
+            }
+
             float scoreWithoutGeology = scoreBeforeBiomeMatrixAndGeology + biomeMatrixScore;
             if (canPruneByScore && scoreWithoutGeology + runtimeRule.GeologyScoreScale <= worstCandidateScore)
                 return false;
@@ -1283,6 +1496,62 @@ namespace Hecton8.World
                     ref passiveSpawnCount,
                     ref predatorSpawnCount,
                     acceptanceContext.CollectDetailedDiagnostics);
+            }
+        }
+
+        private bool HasFloraStreamCellBiomeQuota(ScatterPlacement placement)
+        {
+            if (!IsFloraQuotaPlacement(placement))
+                return true;
+
+            if (_memory == null)
+                return true;
+
+            long key = ComposeFloraStreamCellBiomeKey(
+                placement.CellX,
+                placement.CellZ,
+                placement.BiomeProfile != null ? placement.BiomeProfile.matrixIndex : 0);
+            if (!_memory.FloraStreamCellBiomeCounts.TryGetValue(key, out int count) ||
+                count < MaxFloraInstancesPerStreamCellPerBiome)
+            {
+                return true;
+            }
+
+            _debugFloraQuotaRejectedCandidates++;
+            return false;
+        }
+
+        private void RegisterFloraStreamCellBiomeQuota(ScatterPlacement placement)
+        {
+            if (!IsFloraQuotaPlacement(placement) || _memory == null)
+                return;
+
+            long key = ComposeFloraStreamCellBiomeKey(
+                placement.CellX,
+                placement.CellZ,
+                placement.BiomeProfile != null ? placement.BiomeProfile.matrixIndex : 0);
+            _memory.FloraStreamCellBiomeCounts.TryGetValue(key, out int count);
+            _memory.FloraStreamCellBiomeCounts[key] = count + 1;
+        }
+
+        private static bool IsFloraQuotaPlacement(ScatterPlacement placement)
+        {
+            if (placement == null || placement.Family == null)
+                return false;
+
+            return placement.Family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.Kelp ||
+                   placement.Family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.Plant ||
+                   placement.Family.proceduralDomain == WorldPrefabFamilyProfile.ProceduralDomain.Coral;
+        }
+
+        private static long ComposeFloraStreamCellBiomeKey(int cellX, int cellZ, int biomeId)
+        {
+            unchecked
+            {
+                ulong packedCellX = (uint)cellX & 0xFFFFFUL;
+                ulong packedCellZ = (uint)cellZ & 0xFFFFFUL;
+                ulong packedBiome = (uint)biomeId & 0xFFUL;
+                return (long)(packedCellX | (packedCellZ << 20) | (packedBiome << 40));
             }
         }
 

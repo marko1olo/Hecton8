@@ -486,6 +486,9 @@ namespace Hecton8.Gameplay
                 return;
 
             _powerIndicatorRenderer.GetPropertyBlock(_mpb);
+            float flickerScalar = 1f;
+            if (TryGetToolBrownoutFlicker(out float brownoutFlicker))
+                flickerScalar = Mathf.Clamp(brownoutFlicker, 0f, 1f);
 
             if (_installedBattery == null || _batteryCharge <= 0f)
             {
@@ -493,11 +496,11 @@ namespace Hecton8.Gameplay
             }
             else if (_batteryCharge <= 0.2f)
             {
-                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f));
+                _mpb.SetColor(_EmissionColorID, new Color(1f, 0.3f, 0f) * flickerScalar);
             }
             else
             {
-                _mpb.SetColor(_EmissionColorID, _powerOnColor);
+                _mpb.SetColor(_EmissionColorID, _powerOnColor * flickerScalar);
             }
 
             _powerIndicatorRenderer.SetPropertyBlock(_mpb);
@@ -621,6 +624,8 @@ namespace Hecton8.Gameplay
         public override void ToolTick(float deltaTime)
         {
             UpdateScientificScanning(deltaTime);
+            if (_powerIndicatorRenderer != null && TryGetToolBrownoutFlicker(out _))
+                UpdatePowerIndicator();
 
             if (!PulseActive)
                 return;

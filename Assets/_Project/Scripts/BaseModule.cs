@@ -476,6 +476,7 @@ namespace Hecton8.Gameplay
         private float _queuedHydroStructuralLoadRemainingSeconds;
         private Vector3 _queuedHydroStructuralLoadPointWorld;
         private bool _bulkheadFailureLatched;
+        private bool _ruptureCascadeFailureQueued;
         private bool _emergencyBulkheadLockedDown;
         private bool _implosionTriggered;
         private bool _defaultBodyIsKinematic;
@@ -684,6 +685,17 @@ namespace Hecton8.Gameplay
             ? 0f
             : _basePowerRating + _cultivationLightingPowerCreditWatts - ResolveFloodPumpPowerDraw() - _parasitePowerDrainWatts - _cultivationScrubberPowerDrainWatts;
         internal PowerGrid CachedPowerGrid => _powerNode != null ? _powerNode.Grid : null;
+        internal float CachedPowerSupplyRatio
+        {
+            get
+            {
+                if (!HasOperationalPower)
+                    return 0f;
+
+                PowerGrid grid = CachedPowerGrid;
+                return grid != null ? Mathf.Clamp01(grid.SupplyRatio) : (_hasPower ? 1f : 0f);
+            }
+        }
         internal HectonVoxelVolume CachedVoxelVolume => _voxelVolume;
 
         // ══════════════════════════════════════════════════════════
@@ -765,6 +777,7 @@ namespace Hecton8.Gameplay
             _jointShearStress01 = 0f;
             _jointShearGroanCooldownRemainingSeconds = 0f;
             _bulkheadFailureLatched = false;
+            _ruptureCascadeFailureQueued = false;
             _emergencyBulkheadLockedDown = false;
             _implosionTriggered = false;
             _trackedPlayerMovement = null;
@@ -814,6 +827,7 @@ namespace Hecton8.Gameplay
             _jointShearStress01 = 0f;
             _jointShearGroanCooldownRemainingSeconds = 0f;
             _bulkheadFailureLatched = false;
+            _ruptureCascadeFailureQueued = false;
             _emergencyBulkheadLockedDown = false;
             _implosionTriggered = false;
             ClearQueuedHydroStructuralLoad();
@@ -1431,6 +1445,35 @@ namespace Hecton8.Gameplay
                 return true;
 
             ApplyDamage(damageAmount);
+            return true;
+        }
+
+        internal void ApplyRuptureCascadeStress(float stressMultiplier01)
+        {
+            if (stressMultiplier01 <= 0f ||
+                !float.IsFinite(stressMultiplier01) ||
+                IsBreached)
+            {
+                return;
+            }
+
+            float previousStress = _jointShearStress01;
+            _jointShearStress01 = Mathf.Clamp01(_jointShearStress01 + stressMultiplier01);
+            if (previousStress < 1f && _jointShearStress01 >= 1f)
+                _ruptureCascadeFailureQueued = true;
+        }
+
+        internal bool TryConsumePendingRuptureCascadeFailure()
+        {
+            if (!_ruptureCascadeFailureQueued)
+                return false;
+
+            _ruptureCascadeFailureQueued = false;
+            if (IsBreached)
+                return false;
+
+            float ruptureDamage = Mathf.Max(1f, CurrentIntegrity);
+            ApplyDamage(ruptureDamage);
             return true;
         }
 
@@ -2741,6 +2784,7 @@ namespace Hecton8.Gameplay
             _bulkheadFloodStress01 = 0f;
             _jointShearStress01 = 0f;
             _bulkheadFailureLatched = false;
+            _ruptureCascadeFailureQueued = false;
         }
 
         private void ClearQueuedHydroStructuralLoad()
@@ -2833,6 +2877,19 @@ namespace Hecton8.Gameplay
 
                 targetCenterOfMass += islandOffset * _islandFloodCenterOfMassWeight01;
                 hasFloodCenterOfMassShift = true;
+            }
+
+            Vector3 targetOffset = targetCenterOfMass - _defaultCenterOfMassLocal;
+            float maximumTargetShift = ResolveMaximumCenterOfMassShiftMeters();
+            if (targetOffset.sqrMagnitude > (maximumTargetShift * maximumTargetShift))
+                targetCenterOfMass = _defaultCenterOfMassLocal + targetOffset.normalized * maximumTargetShift;
+
+            if (!IsFiniteVector(currentCenterOfMass) || !IsFiniteVector(targetCenterOfMass))
+            {
+                _moduleRigidbody.centerOfMass = _defaultCenterOfMassLocal;
+                _hasIslandFloodCenterOfMassTarget = false;
+                _islandFloodCenterOfMassWeight01 = 0f;
+                return;
             }
 
             if (!hasFloodCenterOfMassShift && (currentCenterOfMass - _defaultCenterOfMassLocal).sqrMagnitude <= 0f)
@@ -3337,12 +3394,15 @@ namespace Hecton8.Gameplay
 
         internal float ResolveHostRoomTemperatureCelsius()
         {
-            if (_submarineAtmosphereSystem == null)
+            if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) ||
+                atmosphereSystem == null)
+            {
                 return 0f;
+            }
 
-            int roomIndex = _submarineAtmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
+            int roomIndex = atmosphereSystem.ResolveNearestRoomIndexForWorldPosition(transform.position);
             return roomIndex >= 0
-                ? _submarineAtmosphereSystem.GetRoomTemperatureCelsius(roomIndex)
+                ? atmosphereSystem.GetRoomTemperatureCelsius(roomIndex)
                 : 0f;
         }
 
@@ -3606,6 +3666,24 @@ namespace Hecton8.Gameplay
 
             radius = halfExtents.magnitude;
             return radius > 0.01f;
+        }
+
+        internal bool TryGetInteriorAabbBounds(out Vector3 worldCenter, out Vector3 halfExtents)
+        {
+            if (!TryGetInteriorOverlapQuery(out worldCenter, out Vector3 orientedHalfExtents, out Quaternion worldRotation))
+            {
+                halfExtents = Vector3.zero;
+                return false;
+            }
+
+            Vector3 right = worldRotation * Vector3.right;
+            Vector3 up = worldRotation * Vector3.up;
+            Vector3 forward = worldRotation * Vector3.forward;
+            halfExtents = new Vector3(
+                (Mathf.Abs(right.x) * orientedHalfExtents.x) + (Mathf.Abs(up.x) * orientedHalfExtents.y) + (Mathf.Abs(forward.x) * orientedHalfExtents.z),
+                (Mathf.Abs(right.y) * orientedHalfExtents.x) + (Mathf.Abs(up.y) * orientedHalfExtents.y) + (Mathf.Abs(forward.y) * orientedHalfExtents.z),
+                (Mathf.Abs(right.z) * orientedHalfExtents.x) + (Mathf.Abs(up.z) * orientedHalfExtents.y) + (Mathf.Abs(forward.z) * orientedHalfExtents.z));
+            return halfExtents.x > 0f && halfExtents.y > 0f && halfExtents.z > 0f;
         }
 
         private void EvaluateCatastrophicImplosion()

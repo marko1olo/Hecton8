@@ -1,5 +1,7 @@
+using System;
 using UnityEngine;
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.SaveSystem;
 using Unity.Collections;
 
@@ -16,22 +18,14 @@ namespace Hecton8.UI
         ILocalizationLanguageChangedListener,
         ILocalizationCorruptionVisualStateListener
     {
-        private const int MessageCacheCapacity = 8;
-
-        private struct SaveNotificationCacheEntry
-        {
-            public FixedString64Bytes SlotName;
-            public uint LanguageHash;
-            public SaveEventType EventType;
-            public string Message;
-            public bool IsValid;
-        }
+        private const int MessageCharCapacity = 160;
+        private static readonly int SaveSynchronizedKeyHash = LocHash.Compute(LocalizationKeys.SAVE_NOTIFICATION_SYNCHRONIZED);
+        private static readonly int SaveFailedKeyHash = LocHash.Compute(LocalizationKeys.ERROR_SAVE_FAILED_TITLE);
+        private static readonly int SlotPrefixKeyHash = LocHash.Compute(LocalizationKeys.SLOT_PREFIX);
 
         [SerializeField] private HUDNotification notificationSystem;
 
-        // COLD ALLOC: SaveNotificationCacheEntry[8] — bounded save HUD message cache — owner: HUDSaveNotificationLink
-        private readonly SaveNotificationCacheEntry[] _messageCache = new SaveNotificationCacheEntry[MessageCacheCapacity];
-        private int _messageCacheCursor;
+        private FixedCharBuffer _messageBuffer = new FixedCharBuffer(MessageCharCapacity); // COLD ALLOC: char[160] - save notification HUD staging buffer - owner: HUDSaveNotificationLink
         
         private void OnEnable()
         {
@@ -59,14 +53,17 @@ namespace Hecton8.UI
             if (notificationSystem == null)
                 return;
 
+            if (!TryBuildMessage(in payload))
+                return;
+
             switch (payload.Type)
             {
                 case SaveEventType.SaveCompleted:
-                    notificationSystem.ShowInfo(ResolveCachedMessage(in payload));
+                    notificationSystem.ShowInfo(in _messageBuffer);
                     return;
 
                 case SaveEventType.SaveFailed:
-                    notificationSystem.ShowCritical(ResolveCachedMessage(in payload));
+                    notificationSystem.ShowCritical(in _messageBuffer);
                     return;
             }
         }
@@ -87,114 +84,77 @@ namespace Hecton8.UI
             ClearMessageCache();
         }
 
-        private string ResolveCachedMessage(in SaveEventPayload payload)
+        private bool TryBuildMessage(in SaveEventPayload payload)
         {
-            uint languageHash = GetCurrentLanguageHash();
-            for (int i = 0; i < _messageCache.Length; i++)
-            {
-                SaveNotificationCacheEntry entry = _messageCache[i];
-                if (!entry.IsValid ||
-                    entry.EventType != payload.Type ||
-                    entry.LanguageHash != languageHash ||
-                    !entry.SlotName.Equals(payload.SlotName))
-                {
-                    continue;
-                }
+            _messageBuffer.Clear();
 
-                return entry.Message;
-            }
+            if (payload.Type == SaveEventType.SaveCompleted)
+                AppendLocalized(ref _messageBuffer, SaveSynchronizedKeyHash, "GAME DATA SYNCHRONIZED - SECURE".AsSpan());
+            else if (payload.Type == SaveEventType.SaveFailed)
+                AppendLocalized(ref _messageBuffer, SaveFailedKeyHash, "SAVE FAILED".AsSpan());
+            else
+                return false;
 
-            string slotName = payload.SlotName.ToString();
-            string message = payload.Type == SaveEventType.SaveCompleted
-                ? BuildCompletedMessage(slotName)
-                : BuildFailedMessage(slotName);
-
-            int cacheIndex = _messageCacheCursor;
-            _messageCacheCursor = (_messageCacheCursor + 1) % _messageCache.Length;
-            _messageCache[cacheIndex] = new SaveNotificationCacheEntry
-            {
-                SlotName = payload.SlotName,
-                LanguageHash = languageHash,
-                EventType = payload.Type,
-                Message = message,
-                IsValid = true
-            };
-
-            return message;
+            AppendSlotLabel(ref _messageBuffer, in payload.SlotName);
+            return _messageBuffer.Length > 0;
         }
 
         private void ClearMessageCache()
         {
-            for (int i = 0; i < _messageCache.Length; i++)
-                _messageCache[i] = default;
-
-            _messageCacheCursor = 0;
+            _messageBuffer.Clear();
         }
 
-        private static string BuildCompletedMessage(string slotName)
+        private static void AppendSlotLabel(ref FixedCharBuffer buffer, in FixedString64Bytes slotName)
         {
-            string baseMessage = ResolveLocalized(
-                LocalizationKeys.SAVE_NOTIFICATION_SYNCHRONIZED,
-                "GAME DATA SYNCHRONIZED - SECURE");
-            return AppendSlotLabel(baseMessage, slotName);
+            if (slotName.Length <= 0)
+                return;
+
+            AppendLiteral(ref buffer, " [".AsSpan());
+            AppendLocalized(ref buffer, SlotPrefixKeyHash, "SLOT".AsSpan());
+            AppendChar(ref buffer, ' ');
+            AppendSlotNumber(ref buffer, in slotName);
+            AppendChar(ref buffer, ']');
         }
 
-        private static string BuildFailedMessage(string slotName)
+        private static void AppendSlotNumber(ref FixedCharBuffer buffer, in FixedString64Bytes slotName)
         {
-            string baseMessage = ResolveLocalized(
-                LocalizationKeys.ERROR_SAVE_FAILED_TITLE,
-                "SAVE FAILED");
-            return AppendSlotLabel(baseMessage, slotName);
+            int startIndex = 0;
+            for (int index = slotName.Length - 1; index >= 0; index--)
+            {
+                if (slotName[index] == (byte)'_')
+                {
+                    startIndex = index + 1;
+                    break;
+                }
+            }
+
+            for (int index = startIndex; index < slotName.Length; index++)
+                AppendAsciiByte(ref buffer, slotName[index]);
         }
 
-        private static string AppendSlotLabel(string baseMessage, string slotName)
-        {
-            string slotLabel = BuildSlotLabel(slotName);
-            if (string.IsNullOrEmpty(slotLabel))
-                return baseMessage;
-
-            return string.Concat(baseMessage, " [", slotLabel, "]");
-        }
-
-        private static string BuildSlotLabel(string slotName)
-        {
-            if (string.IsNullOrEmpty(slotName))
-                return string.Empty;
-
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            string slotPrefix = ResolveCurrentLanguage(manager, LocalizationKeys.SLOT_PREFIX, "SLOT");
-
-            return string.Concat(slotPrefix, " ", ExtractSlotNumber(slotName));
-        }
-
-        private static string ExtractSlotNumber(string slotName)
-        {
-            int underscoreIndex = slotName.LastIndexOf('_');
-            if (underscoreIndex >= 0 && underscoreIndex < slotName.Length - 1)
-                return slotName.Substring(underscoreIndex + 1);
-
-            return slotName;
-        }
-
-        private static string ResolveLocalized(string key, string fallback)
+        private static void AppendLocalized(ref FixedCharBuffer buffer, int keyHash, ReadOnlySpan<char> fallback)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return ResolveCurrentLanguage(manager, key, fallback);
+            ReadOnlySpan<char> text = manager != null ? manager.GetRawSpanOrFallback(keyHash, fallback) : fallback;
+            buffer.Append(text);
         }
 
-        private static string ResolveCurrentLanguage(LocalizationManager manager, string key, string fallback)
+        private static void AppendLiteral(ref FixedCharBuffer buffer, ReadOnlySpan<char> text)
         {
-            return manager != null
-                ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
-                : fallback;
+            buffer.Append(text);
         }
 
-        private static uint GetCurrentLanguageHash()
+        private static void AppendAsciiByte(ref FixedCharBuffer buffer, byte value)
         {
-            LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
-            return manager != null
-                ? unchecked((uint)manager.CurrentLanguage)
-                : 0u;
+            AppendChar(ref buffer, value >= 32 && value < 127 ? (char)value : '?');
         }
+
+        private static void AppendChar(ref FixedCharBuffer buffer, char value)
+        {
+            Span<char> one = stackalloc char[1];
+            one[0] = value;
+            buffer.Append(one);
+        }
+
     }
 }

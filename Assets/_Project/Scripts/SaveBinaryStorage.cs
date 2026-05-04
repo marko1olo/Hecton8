@@ -1487,7 +1487,6 @@ namespace Hecton8.SaveSystem
             }
 
             return entry.ByteOffset >= minimumByteOffset &&
-                   entry.CompressedSize <= fileLength &&
                    entry.ByteOffset <= fileLength - entry.CompressedSize;
         }
 
@@ -1574,6 +1573,9 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
+            if (!TryResolveAppendFileLength(originalLength, overrideCompressedSize, out long appendFileLength, out error))
+                return false;
+
             if (TryFindIndexedSectorEntryIndex(sectorEntries, sectorHash, out int existingSlotIndex))
             {
                 SectorEntry existingEntry = sectorEntries[existingSlotIndex];
@@ -1593,7 +1595,7 @@ namespace Hecton8.SaveSystem
                     insertedNewSlot: false,
                     slotIndex: existingSlotIndex,
                     writeOffset: originalLength,
-                    newFileLength: originalLength + overrideCompressedSize);
+                    newFileLength: appendFileLength);
                 return true;
             }
 
@@ -1609,7 +1611,7 @@ namespace Hecton8.SaveSystem
                     insertedNewSlot: true,
                     slotIndex: slot,
                     writeOffset: originalLength,
-                    newFileLength: originalLength + overrideCompressedSize);
+                    newFileLength: appendFileLength);
                 sectorCountDelta = 1;
                 return true;
             }
@@ -1617,6 +1619,24 @@ namespace Hecton8.SaveSystem
             error = $"Indexed sector directory is full while resolving commit target for sector 0x{sectorHash:X16}.";
             ReportIndexedSectorDirectoryCapacityExceeded(sectorHash, IndexedSectorDirectorySlotCount + 1);
             return false;
+        }
+
+        private static bool TryResolveAppendFileLength(
+            long originalLength,
+            int appendBytes,
+            out long newFileLength,
+            out string error)
+        {
+            newFileLength = 0L;
+            error = string.Empty;
+            if (originalLength < 0L || appendBytes <= 0 || originalLength > long.MaxValue - appendBytes)
+            {
+                error = "Indexed sector append length overflowed the file range.";
+                return false;
+            }
+
+            newFileLength = originalLength + appendBytes;
+            return true;
         }
 
         private static bool IsMmfMoveRangeWithinFile(long offset, long length, long totalFileSize)
@@ -1886,6 +1906,7 @@ namespace Hecton8.SaveSystem
             out ulong payloadHash64,
             out int rawPayloadLength,
             out int detectedVersion,
+            out bool indexedBackupRecoveryUsed,
             out string error)
         {
             data = null;
@@ -1898,6 +1919,7 @@ namespace Hecton8.SaveSystem
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
             detectedVersion = 0;
+            indexedBackupRecoveryUsed = false;
             error = string.Empty;
 
             if (!TryReadIndexedDirectory(in header, ref mapping, out IndexedSectorDirectoryHeader directoryHeader, out SectorEntry[] sectorEntries, out error))
@@ -2043,22 +2065,45 @@ namespace Hecton8.SaveSystem
                     using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                     if (!TryReadIndexedCompressedBlock(ref mapping, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, sectorRaw, out _, out error))
                     {
-                        TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out _);
-                        continue;
+                        string sectorError = error;
+                        if (TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out string backupError))
+                        {
+                            indexedBackupRecoveryUsed = true;
+                            error = string.Empty;
+                            continue;
+                        }
+
+                        error = $"{sectorError} Backup sector recovery failed: {backupError}";
+                        return false;
                     }
 
                     byte* sectorRawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sectorRaw);
                     if (ComputeIndexedSectorChecksum(sectorRawPtr, entry.DecompressedSize) != entry.Checksum)
                     {
-                        error = $"Indexed persistent-world sector checksum mismatch for sector 0x{entry.SectorHash:X16}.";
-                        TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out _);
-                        continue;
+                        string sectorError = $"Indexed persistent-world sector checksum mismatch for sector 0x{entry.SectorHash:X16}.";
+                        if (TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out string backupError))
+                        {
+                            indexedBackupRecoveryUsed = true;
+                            error = string.Empty;
+                            continue;
+                        }
+
+                        error = $"{sectorError} Backup sector recovery failed: {backupError}";
+                        return false;
                     }
 
                     if (!TryReadPersistentWorldSectionFromBuffer(sectorRawPtr, entry.DecompressedSize, out PersistentWorldDeltaRecord[] sectorRecords, out error))
                     {
-                        TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out _);
-                        continue;
+                        string sectorError = error;
+                        if (TryAppendIndexedPersistentWorldSectorFromBackup(absolutePath, entry.SectorHash, aggregatedWorldDeltas, out string backupError))
+                        {
+                            indexedBackupRecoveryUsed = true;
+                            error = string.Empty;
+                            continue;
+                        }
+
+                        error = $"{sectorError} Backup sector recovery failed: {backupError}";
+                        return false;
                     }
 
                     if (sectorRecords != null && sectorRecords.Length > 0)
@@ -2493,7 +2538,8 @@ namespace Hecton8.SaveSystem
                 sectorHash = overrideHeader.SectorHash;
                 if (overrideHeader.CompressedSize <= IndexedSectorBlockHeaderSize ||
                     overrideHeader.DecompressedSize <= 0 ||
-                    overrideHeader.CompressedSize + overrideHeaderSize > mapping.Length)
+                    mapping.Length < overrideHeaderSize ||
+                    overrideHeader.CompressedSize > mapping.Length - overrideHeaderSize)
                 {
                     error = "Sector override header is invalid.";
                     return false;
@@ -2545,8 +2591,10 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            DispatcherJobSwap.TryComplete(ref writeHandle.Handle, forceComplete: true);
-            return TryCompleteIndexedSectorEntityStateOverrideWrite(ref writeHandle, out error);
+            SaveBinaryStorage.DisposeIndexedSectorEntityStateOverrideWriteDeferred(ref writeHandle, default);
+            JobHandle.ScheduleBatchedJobs();
+            error = "Synchronous sector entity-state override writes are disabled. Use the scheduled dehydration pipeline.";
+            return false;
         }
 
         internal static bool TryScheduleIndexedSectorEntityStateOverrideWrite(
@@ -2589,6 +2637,12 @@ namespace Hecton8.SaveSystem
             }
 
             int dictionaryLength = SaveBinaryPayloadCodec.Lz4CompressionDictionaryLength;
+            if (dictionaryLength != SaveBinaryPayloadCodec.Lz4CompressionDictionarySizeBytes)
+            {
+                error = $"Static LZ4 dictionary must be exactly {SaveBinaryPayloadCodec.Lz4CompressionDictionarySizeBytes} bytes.";
+                return false;
+            }
+
             int dictionaryScratchBytes = checked(dictionaryLength + SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes);
 
             try
@@ -2701,10 +2755,8 @@ namespace Hecton8.SaveSystem
             if (!writeHandle.IsCreated)
                 return;
 
-            if (!writeHandle.Handle.IsCompleted)
-                DispatcherJobSwap.TryComplete(ref writeHandle.Handle, forceComplete: true);
-
-            writeHandle.Dispose();
+            SaveBinaryStorage.DisposeIndexedSectorEntityStateOverrideWriteDeferred(ref writeHandle, default);
+            JobHandle.ScheduleBatchedJobs();
         }
 
         internal static JobHandle DisposeIndexedSectorEntityStateOverrideWriteDeferred(
@@ -2750,7 +2802,8 @@ namespace Hecton8.SaveSystem
                 if (header.CompressedSize <= 0 ||
                     header.DecompressedSize <= 0 ||
                     header.RecordCount == 0 ||
-                    header.CompressedSize + headerSize > mapping.Length)
+                    mapping.Length < headerSize ||
+                    header.CompressedSize > mapping.Length - headerSize)
                 {
                     error = "Sector entity-state override header is invalid.";
                     return false;
@@ -3052,6 +3105,7 @@ namespace Hecton8.SaveSystem
                 byte* filePtr = (byte*)mapping.View;
                 int sectorEntrySize = UnsafeUtility.SizeOf<SectorEntry>();
                 int populatedCount = 0;
+                int skippedModSectorCount = 0;
                 using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(ModPayloadSubBlockSizeBytes, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                 for (int i = 0; i < IndexedSectorDirectorySlotCount; i++)
                 {
@@ -3071,13 +3125,16 @@ namespace Hecton8.SaveSystem
                         continue;
 
                     if (!TryReadModPayloadHeaderFromEntry(ref mapping, in entry, rawBlockBytes, out ModPayloadSubSectorHeader payloadHeader, out _))
+                    {
+                        skippedModSectorCount++;
                         continue;
+                    }
 
                     if (payloadHeader.ModHash == 0u ||
                         entry.SectorHash != ComputeModPayloadSectorHash(payloadHeader.ModHash, payloadHeader.PagedSectorHash))
                     {
-                        error = "Mod payload directory identity mismatch.";
-                        return false;
+                        skippedModSectorCount++;
+                        continue;
                     }
 
                     ModPayloadSectorInfo sectorInfo = new ModPayloadSectorInfo(
@@ -3088,13 +3145,19 @@ namespace Hecton8.SaveSystem
                         payloadHeader.PayloadChecksum);
 
                     if (!TryCopyModPayloadFromRawBlock(rawBlockBytes, payloadHeader.PayloadLength, payloadBytes, out error))
-                        return false;
+                    {
+                        skippedModSectorCount++;
+                        continue;
+                    }
+
+                    if (!readHandler(in sectorInfo, payloadBytes, payloadHeader.PayloadLength, out error))
+                    {
+                        skippedModSectorCount++;
+                        continue;
+                    }
 
                     if (collectResults)
                         results.Add(sectorInfo);
-
-                    if (!readHandler(in sectorInfo, payloadBytes, payloadHeader.PayloadLength, out error))
-                        return false;
                 }
 
                 if (populatedCount != (int)directoryHeader.SectorCount)
@@ -3102,6 +3165,9 @@ namespace Hecton8.SaveSystem
                     error = $"Indexed sector directory count mismatch. Header={directoryHeader.SectorCount}, Populated={populatedCount}.";
                     return false;
                 }
+
+                if (skippedModSectorCount > 0)
+                    error = $"Skipped {skippedModSectorCount} invalid mod payload sector(s).";
 
                 return true;
             }
@@ -3385,7 +3451,8 @@ namespace Hecton8.SaveSystem
                 overrideDecompressedSize = overrideHeader.DecompressedSize;
                 overrideChecksum = overrideHeader.Checksum;
                 if (overrideCompressedSize <= IndexedSectorBlockHeaderSize ||
-                    overrideCompressedSize + overrideHeaderSize > overrideMapping.Length)
+                    overrideMapping.Length < overrideHeaderSize ||
+                    overrideCompressedSize > overrideMapping.Length - overrideHeaderSize)
                 {
                     error = "Sector override commit header is invalid.";
                     return false;
@@ -3578,79 +3645,57 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                List<int> sortedIndices = new List<int>(checked((int)directoryHeader.SectorCount));
+                int populatedCount = checked((int)directoryHeader.SectorCount);
+                int[] sortedSlots = new int[populatedCount];
+                int sortedCount = 0;
                 for (int i = 0; i < sectorEntries.Length; i++)
                 {
                     if (IsIndexedSectorEntryPopulated(in sectorEntries[i]))
-                        sortedIndices.Add(i);
+                        sortedSlots[sortedCount++] = i;
                 }
 
-                sortedIndices.Sort((left, right) => sectorEntries[left].ByteOffset.CompareTo(sectorEntries[right].ByteOffset));
-                if (sortedIndices.Count <= 0)
+                if (sortedCount <= 0)
                     return true;
 
-                int trailingBlockIndex = sortedIndices[sortedIndices.Count - 1];
-                SectorEntry trailingBlock = sectorEntries[trailingBlockIndex];
-                if (!IsIndexedSectorEntryWithinFileBounds(in trailingBlock, metadataEndOffset, originalLength))
+                for (int i = 1; i < sortedCount; i++)
                 {
-                    error = "Indexed sector defrag found an invalid trailing sector block.";
-                    return false;
+                    int slot = sortedSlots[i];
+                    long slotOffset = sectorEntries[slot].ByteOffset;
+                    int insertIndex = i - 1;
+                    while (insertIndex >= 0 && sectorEntries[sortedSlots[insertIndex]].ByteOffset > slotOffset)
+                    {
+                        sortedSlots[insertIndex + 1] = sortedSlots[insertIndex];
+                        insertIndex--;
+                    }
+
+                    sortedSlots[insertIndex + 1] = slot;
                 }
 
-                long scanCursor = metadataEndOffset;
-                long largestHoleOffset = 0L;
-                long largestHoleSize = 0L;
-                for (int i = 0; i < sortedIndices.Count; i++)
+                long overlapScanCursor = metadataEndOffset;
+                for (int i = 0; i < sortedCount; i++)
                 {
-                    SectorEntry entry = sectorEntries[sortedIndices[i]];
-                    if (entry.CompressedSize <= 0)
-                        continue;
-
+                    SectorEntry entry = sectorEntries[sortedSlots[i]];
                     if (!IsIndexedSectorEntryWithinFileBounds(in entry, metadataEndOffset, originalLength))
                     {
                         error = "Indexed sector defrag found an invalid sector block.";
                         return false;
                     }
 
-                    if (entry.ByteOffset > scanCursor)
+                    if (entry.ByteOffset < overlapScanCursor)
                     {
-                        long holeSize = entry.ByteOffset - scanCursor;
-                        if (holeSize > largestHoleSize && scanCursor < trailingBlock.ByteOffset)
-                        {
-                            largestHoleOffset = scanCursor;
-                            largestHoleSize = holeSize;
-                        }
+                        error = "Indexed sector defrag detected overlapping sector blocks.";
+                        return false;
                     }
 
-                    long entryEnd = entry.ByteOffset + entry.CompressedSize;
-                    if (entryEnd > scanCursor)
-                        scanCursor = entryEnd;
-                }
-
-                if (largestHoleSize < trailingBlock.CompressedSize || largestHoleOffset <= 0L)
-                {
-                    reclaimedBytes = 0L;
-                    return true;
-                }
-
-                long sourceOffset = trailingBlock.ByteOffset;
-                long destOffset = largestHoleOffset;
-                long moveLength = trailingBlock.CompressedSize;
-                if (!IsMmfMoveRangeWithinFile(sourceOffset, moveLength, originalLength) ||
-                    !IsMmfMoveRangeWithinFile(destOffset, moveLength, originalLength))
-                {
-                    error =
-                        $"Indexed sector defrag move is out of bounds. " +
-                        $"src={sourceOffset}, dst={destOffset}, len={moveLength}, file={originalLength}.";
-                    return false;
+                    overlapScanCursor = entry.ByteOffset + entry.CompressedSize;
                 }
 
                 FileStream fileStream = null;
                 MemoryMappedFile fileMapping = null;
                 MemoryMappedViewAccessor accessor = null;
                 byte* filePtr = null;
-                bool relocationApplied = false;
-                long truncatedLength = trailingBlock.ByteOffset;
+                bool compactionApplied = false;
+                long truncatedLength = metadataEndOffset;
 
                 try
                 {
@@ -3660,12 +3705,27 @@ namespace Hecton8.SaveSystem
                     accessor.SafeMemoryMappedViewHandle.AcquirePointer(ref filePtr);
                     byte* mappedFilePtr = filePtr + accessor.PointerOffset;
 
-                    UnsafeUtility.MemMove(mappedFilePtr + destOffset, mappedFilePtr + sourceOffset, moveLength);
+                    long compactCursor = metadataEndOffset;
+                    for (int i = 0; i < sortedCount; i++)
+                    {
+                        int slot = sortedSlots[i];
+                        SectorEntry entry = sectorEntries[slot];
+                        if (compactCursor > originalLength - entry.CompressedSize)
+                        {
+                            error = "Indexed sector defrag compact cursor exceeded the file bounds.";
+                            return false;
+                        }
 
-                    int directoryEntryOffset = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize + (trailingBlockIndex * UnsafeUtility.SizeOf<SectorEntry>());
-                    SectorEntry movedEntry = trailingBlock;
-                    movedEntry.ByteOffset = destOffset;
-                    UnsafeUtility.CopyStructureToPtr(ref movedEntry, mappedFilePtr + directoryEntryOffset);
+                        if (entry.ByteOffset != compactCursor)
+                            UnsafeUtility.MemMove(mappedFilePtr + compactCursor, mappedFilePtr + entry.ByteOffset, entry.CompressedSize);
+
+                        entry.ByteOffset = compactCursor;
+                        sectorEntries[slot] = entry;
+
+                        int directoryEntryOffset = CurrentHeaderSize + IndexedSectorDirectoryHeaderSize + (slot * UnsafeUtility.SizeOf<SectorEntry>());
+                        UnsafeUtility.CopyStructureToPtr(ref entry, mappedFilePtr + directoryEntryOffset);
+                        compactCursor += entry.CompressedSize;
+                    }
 
                     SaveFileHeader updatedHeader = UnsafeUtility.ReadArrayElement<SaveFileHeader>(mappedFilePtr, 0);
                     ulong newDirectoryHash64 = directoryBytes > 0
@@ -3677,7 +3737,8 @@ namespace Hecton8.SaveSystem
                     UnsafeUtility.CopyStructureToPtr(ref updatedHeader, mappedFilePtr);
 
                     accessor.Flush();
-                    relocationApplied = true;
+                    truncatedLength = compactCursor;
+                    compactionApplied = true;
                 }
                 finally
                 {
@@ -3689,7 +3750,7 @@ namespace Hecton8.SaveSystem
 
                     if (fileStream != null)
                     {
-                        if (relocationApplied)
+                        if (compactionApplied)
                         {
                             fileStream.SetLength(truncatedLength);
                             fileStream.Flush(true);
@@ -3723,6 +3784,7 @@ namespace Hecton8.SaveSystem
             out ulong payloadHash64,
             out int rawPayloadLength,
             out int detectedVersion,
+            out bool indexedBackupRecoveryUsed,
             out string error)
         {
             data = null;
@@ -3735,6 +3797,7 @@ namespace Hecton8.SaveSystem
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
             detectedVersion = 0;
+            indexedBackupRecoveryUsed = false;
 
             if (TryReadValidatedHeader(absolutePath, out AsyncWriteManager.ReadOnlyMapping v8Mapping, out SaveFileHeader v8Header, out _, out string headerError))
             {
@@ -3758,6 +3821,7 @@ namespace Hecton8.SaveSystem
                             out payloadHash64,
                             out rawPayloadLength,
                             out detectedVersion,
+                            out indexedBackupRecoveryUsed,
                             out error);
                     }
                 }
@@ -3897,6 +3961,29 @@ namespace Hecton8.SaveSystem
                 return string.Empty;
 
             return $"{absolutePath}.bak";
+        }
+
+        internal static bool IsIndexedBlockStorageRecoveryError(string error)
+        {
+            if (string.IsNullOrEmpty(error))
+                return false;
+
+            return error.IndexOf("Save header checksum mismatch", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Header checksum mismatch", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Save file magic mismatch", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Save magic mismatch", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Save file is smaller than", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Save file is truncated inside the fixed header", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Unsupported save header version", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Save header is not an indexed sector container", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Indexed sector block decompression requires save header version", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Indexed sector directory", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Indexed metadata block", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Indexed LZ4 block decompression failed", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Indexed block length mismatch", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Indexed aggregate payload checksum mismatch", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Indexed persistent-world sector checksum mismatch", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   error.IndexOf("Indexed sector checksum mismatch", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static uint ComputeEntityStateOverrideChecksum(void* ptr, long length)

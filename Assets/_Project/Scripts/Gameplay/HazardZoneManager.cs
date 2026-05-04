@@ -542,7 +542,11 @@ namespace Hecton8.Gameplay
             _jobVolumes = new NativeArray<HazardVolumeData>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _jobResult = new NativeArray<HazardExposureJobResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             _candidateVolumeFlags = new NativeArray<byte>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _spatialHash = new HectonSpatialHash(safeCapacity, safeCapacity * 6, HazardSpatialCellSizeMeters);
+            _spatialHash = new HectonSpatialHash(
+                safeCapacity,
+                safeCapacity * 6,
+                HazardSpatialCellSizeMeters,
+                NativeAllocationLifetime.Session);
             _spatialQueryHandles = new NativeList<int>(HazardSpatialQueryCapacity, Allocator.Persistent);
             NativeMemorySentinel.RegisterNativeArray(_volumes, nameof(HazardZoneManager), nameof(_volumes), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(_volumeIds, nameof(HazardZoneManager), nameof(_volumeIds), NativeAllocationLifetime.Session);

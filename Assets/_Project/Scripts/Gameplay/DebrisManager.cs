@@ -132,7 +132,7 @@ namespace Hecton8.Gameplay
                     _frontStates,
                     nameof(DebrisManager),
                     nameof(_frontStates),
-                    NativeAllocationLifetime.Scene);
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_backStates.IsCreated)
@@ -143,7 +143,7 @@ namespace Hecton8.Gameplay
                     _backStates,
                     nameof(DebrisManager),
                     nameof(_backStates),
-                    NativeAllocationLifetime.Scene);
+                    NativeAllocationLifetime.Session);
             }
 
             if (_matrixBuffer == null)

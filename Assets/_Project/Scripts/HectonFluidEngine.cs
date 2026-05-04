@@ -1584,15 +1584,18 @@ namespace Hecton8.Physics
                 weatherSnapshot.GlobalWindVector.y,
                 weatherSnapshot.GlobalWindVector.z);
             Vector3 horizontalResolutionVector = new Vector3(abyssalFlowHorizontalResolution, abyssalFlowVerticalResolution, abyssalFlowHorizontalResolution);
+            Vector4 gridResolution = new Vector4(horizontalResolutionVector.x, horizontalResolutionVector.y, horizontalResolutionVector.z, nodeCount);
+            Vector4 flowCenterVector = new Vector4(centerManaged.x, centerManaged.y, centerManaged.z, 0f);
+            Vector4 flowSpacingVector = new Vector4(abyssalFlowHorizontalCellSize, abyssalFlowVerticalCellSize, 0f, 0f);
             float resolvedWaveHeight = math.max(
                 0f,
                 math.max(0f, weatherSnapshot.Wave0.Amplitude) +
                 math.max(0f, weatherSnapshot.Wave1.Amplitude) +
                 math.max(0f, weatherSnapshot.Wave2.Amplitude));
 
-            abyssalFlowFieldCompute.SetVector(_AbyssalGridResolutionId, new Vector4(horizontalResolutionVector.x, horizontalResolutionVector.y, horizontalResolutionVector.z, nodeCount));
-            abyssalFlowFieldCompute.SetVector(_AbyssalFlowCenterId, new Vector4(centerManaged.x, centerManaged.y, centerManaged.z, 0f));
-            abyssalFlowFieldCompute.SetVector(_AbyssalFlowSpacingId, new Vector4(abyssalFlowHorizontalCellSize, abyssalFlowVerticalCellSize, 0f, 0f));
+            abyssalFlowFieldCompute.SetVector(_AbyssalGridResolutionId, gridResolution);
+            abyssalFlowFieldCompute.SetVector(_AbyssalFlowCenterId, flowCenterVector);
+            abyssalFlowFieldCompute.SetVector(_AbyssalFlowSpacingId, flowSpacingVector);
             abyssalFlowFieldCompute.SetVector(_AbyssalFlowWeatherCurrentId, new Vector4(weatherCurrentManaged.x, weatherCurrentManaged.y, weatherCurrentManaged.z, weatherSnapshot.WeatherIntensity));
             abyssalFlowFieldCompute.SetVector(_AbyssalFlowWeatherWindId, new Vector4(weatherWindManaged.x, weatherWindManaged.y, weatherWindManaged.z, 0f));
             abyssalFlowFieldCompute.SetVector(_AbyssalFlowWeatherParamsId, new Vector4(
@@ -1607,6 +1610,10 @@ namespace Hecton8.Physics
 
             abyssalFlowFieldCompute.Dispatch(_gpuAbyssalUpdateKernel, groupCount, 1, 1);
             abyssalFlowFieldCompute.Dispatch(_gpuAbyssalSurgeKernel, groupCount, 1, 1);
+            Shader.SetGlobalBuffer(_AbyssalFlowFieldResultId, _gpuAbyssalFlowResultBuffer);
+            Shader.SetGlobalVector(_AbyssalGridResolutionId, gridResolution);
+            Shader.SetGlobalVector(_AbyssalFlowCenterId, flowCenterVector);
+            Shader.SetGlobalVector(_AbyssalFlowSpacingId, flowSpacingVector);
 
             _gpuAbyssalReadbackRequests[slot] = AsyncGPUReadback.Request(_gpuAbyssalAggregateBuffer);
             _gpuAbyssalReadbackActive[slot] = true;

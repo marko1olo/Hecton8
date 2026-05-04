@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Power;
 using Unity.Collections;
 using Unity.Mathematics;
 using UnityEngine;
@@ -33,6 +34,7 @@ namespace Hecton8.World
         public float SpotCosine;
         public float ShadowPhase01;
         public float PowerFlicker01;
+        public float OxygenStress01;
         public float LastUpdateUnscaledTime;
         public uint Flags;
         public byte Type;
@@ -48,6 +50,7 @@ namespace Hecton8.World
             float intensity,
             float shadowPhase01,
             float powerFlicker01,
+            float oxygenStress01,
             float unscaledTimeSeconds)
         {
             return new ProxyLightData
@@ -61,6 +64,7 @@ namespace Hecton8.World
                 SpotCosine = 0f,
                 ShadowPhase01 = math.saturate(shadowPhase01),
                 PowerFlicker01 = math.saturate(powerFlicker01),
+                OxygenStress01 = math.saturate(oxygenStress01),
                 LastUpdateUnscaledTime = math.max(0f, unscaledTimeSeconds),
                 Flags = (uint)(ProxyLightFlags.Visible | ProxyLightFlags.Powered | ProxyLightFlags.UiPanel),
                 Type = (byte)ProxyLightType.Panel,
@@ -76,6 +80,10 @@ namespace Hecton8.World
     {
         private const int MaxProxyLights = 128;
         private const float MinimumVisibleIntensity = 0.0001f;
+        private const float BrownoutIntensityFloor = 0.14f;
+        private const float BrownoutIntensityCeiling = 0.72f;
+        private const float BrownoutFlickerFrequency = 47.3f;
+        private const float TwoPi = 6.28318530718f;
 
         private static NativeParallelHashMap<int, ProxyLightData> _lightsByKey;
         private static NativeArray<int> _keys;
@@ -109,6 +117,11 @@ namespace Hecton8.World
             if (key == 0 || !IsValid(in data))
                 return false;
 
+            ProxyLightData resolvedData = data;
+            ApplyPoweredPanelModulation(ref resolvedData);
+            if (!IsValid(in resolvedData))
+                return false;
+
             EnsureInitialized();
             bool existed = _lightsByKey.ContainsKey(key);
             if (!existed)
@@ -123,7 +136,7 @@ namespace Hecton8.World
                 _lightsByKey.Remove(key);
             }
 
-            return _lightsByKey.TryAdd(key, data);
+            return _lightsByKey.TryAdd(key, resolvedData);
         }
 
         public static void Unregister(int key)
@@ -238,6 +251,60 @@ namespace Hecton8.World
                    math.all(math.isfinite(data.RuntimePosition)) &&
                    math.all(math.isfinite(data.ColorLinear)) &&
                    math.all(math.isfinite(data.Forward));
+        }
+
+        private static void ApplyPoweredPanelModulation(ref ProxyLightData data)
+        {
+            if ((data.Flags & (uint)ProxyLightFlags.Powered) == 0u ||
+                (data.Flags & (uint)ProxyLightFlags.UiPanel) == 0u ||
+                !TryResolvePowerGridBrownout(out bool brownoutActive, out float supplyRatio) ||
+                !brownoutActive)
+            {
+                return;
+            }
+
+            float phase = (data.LastUpdateUnscaledTime * BrownoutFlickerFrequency) + (data.ShadowPhase01 * TwoPi);
+            float flickerWave = math.abs(math.sin(phase) * math.sin((phase * 0.37f) + 1.618f));
+            float brownoutFlicker01 = math.pow(math.saturate(flickerWave), 0.35f);
+            float supplyScalar = math.lerp(0.55f, 1f, math.saturate(supplyRatio));
+            float intensityScalar = math.lerp(BrownoutIntensityFloor, BrownoutIntensityCeiling, brownoutFlicker01) * supplyScalar;
+            data.Intensity = math.saturate(data.Intensity * intensityScalar);
+            data.PowerFlicker01 = math.saturate(data.PowerFlicker01 * intensityScalar);
+        }
+
+        private static bool TryResolvePowerGridBrownout(out bool brownoutActive, out float supplyRatio)
+        {
+            brownoutActive = false;
+            supplyRatio = 1f;
+
+            int gridCount = PowerGridManager.RuntimeGridCount;
+            if (gridCount > 0)
+            {
+                for (int gridIndex = 0; gridIndex < gridCount; gridIndex++)
+                {
+                    PowerGrid grid = PowerGridManager.GetRuntimeGridAt(gridIndex);
+                    if (grid == null)
+                        continue;
+
+                    supplyRatio = math.min(supplyRatio, math.saturate(grid.SupplyRatio));
+                    brownoutActive |= grid.BrownoutTier != LogisticsBrownoutTier.None ||
+                                      grid.IsBatteryEmergencyReserveActive ||
+                                      grid.HasPowerDeficit;
+                }
+
+                return true;
+            }
+
+            IPowerGridService powerGrid = GlobalRegistry.PowerGrid;
+            if (powerGrid == null)
+                return false;
+
+            supplyRatio = powerGrid.TotalConsumption > 0.0001f
+                ? math.saturate(powerGrid.TotalGeneration / powerGrid.TotalConsumption)
+                : 1f;
+            BatteryRuntimeSnapshot batterySnapshot = powerGrid.BatterySnapshot;
+            brownoutActive = supplyRatio < 0.85f || batterySnapshot.EmergencyReserveActive;
+            return true;
         }
     }
 }

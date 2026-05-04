@@ -1,0 +1,536 @@
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using Hecton8.Bootstrap;
+using UnityEditor;
+using UnityEditor.Compilation;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.Profiling;
+using UnityEngine.SceneManagement;
+using Debug = UnityEngine.Debug;
+
+namespace Hecton8.Editor
+{
+    [InitializeOnLoad]
+    public static class CodexPlayModeLauncher
+    {
+        private enum Phase
+        {
+            Idle = 0,
+            Compile = 1,
+            EnterPlay = 2,
+            WaitPlayStart = 3,
+            Sampling = 4,
+            ExitPlay = 5,
+        }
+
+        private const string ActiveKey = "H8.CodexPlayModeLauncher.Active";
+        private const string PhaseKey = "H8.CodexPlayModeLauncher.Phase";
+        private const string StatusKey = "H8.CodexPlayModeLauncher.Status";
+        private const string ExitCodeKey = "H8.CodexPlayModeLauncher.ExitCode";
+        private const string PhaseStartTimeKey = "H8.CodexPlayModeLauncher.PhaseStartTime";
+        private const string PlayStartTimeKey = "H8.CodexPlayModeLauncher.PlayStartTime";
+        private const string StartAllocatedMemoryKey = "H8.CodexPlayModeLauncher.StartAllocatedMemory";
+        private const string EndAllocatedMemoryKey = "H8.CodexPlayModeLauncher.EndAllocatedMemory";
+        private const string PeakAllocatedMemoryKey = "H8.CodexPlayModeLauncher.PeakAllocatedMemory";
+        private const string EndReservedMemoryKey = "H8.CodexPlayModeLauncher.EndReservedMemory";
+        private const string EndMonoUsedMemoryKey = "H8.CodexPlayModeLauncher.EndMonoUsedMemory";
+        private const string StartGc0Key = "H8.CodexPlayModeLauncher.StartGc0";
+        private const string EndGc0Key = "H8.CodexPlayModeLauncher.EndGc0";
+        private const string StartFrameKey = "H8.CodexPlayModeLauncher.StartFrame";
+        private const string EndFrameKey = "H8.CodexPlayModeLauncher.EndFrame";
+        private const string CompileErrorsKey = "H8.CodexPlayModeLauncher.CompileErrors";
+        private const string CompileWarningsKey = "H8.CodexPlayModeLauncher.CompileWarnings";
+        private const string LogErrorsKey = "H8.CodexPlayModeLauncher.LogErrors";
+        private const string LogAssertionsKey = "H8.CodexPlayModeLauncher.LogAssertions";
+        private const string LogExceptionsKey = "H8.CodexPlayModeLauncher.LogExceptions";
+        private const string BeeKilledKey = "H8.CodexPlayModeLauncher.BeeKilled";
+        private const string LoadedScenePathKey = "H8.CodexPlayModeLauncher.LoadedScenePath";
+        private const string DirtySceneReloadedKey = "H8.CodexPlayModeLauncher.DirtySceneReloaded";
+        private const string MetricsPathKey = "H8.CodexPlayModeLauncher.MetricsPath";
+        private const double RequestedPlaySeconds = 15.0;
+        private const double PhaseTimeoutSeconds = 90.0;
+        private static readonly Encoding JsonEncoding = new UTF8Encoding(false);
+
+        static CodexPlayModeLauncher()
+        {
+            if (SessionState.GetBool(ActiveKey, false))
+                AttachCallbacks();
+        }
+
+        [MenuItem("Hecton8/Codex/Run Play Mode Sentinel")]
+        public static void Run()
+        {
+            ResetSessionState();
+            SessionState.SetBool(ActiveKey, true);
+            SessionState.SetString(MetricsPathKey, ResolveMetricsPath());
+            SessionState.SetInt(BeeKilledKey, KillBeeBackends());
+            SetPhase(Phase.Compile);
+            AttachCallbacks();
+
+            AssetDatabase.Refresh(ImportAssetOptions.ForceUpdate);
+            CompilationPipeline.RequestScriptCompilation();
+            Tick();
+        }
+
+        private static void AttachCallbacks()
+        {
+            EditorApplication.update -= Tick;
+            EditorApplication.update += Tick;
+            CompilationPipeline.assemblyCompilationFinished -= OnAssemblyCompilationFinished;
+            CompilationPipeline.assemblyCompilationFinished += OnAssemblyCompilationFinished;
+            Application.logMessageReceived -= OnLogMessageReceived;
+            Application.logMessageReceived += OnLogMessageReceived;
+        }
+
+        private static void DetachCallbacks()
+        {
+            EditorApplication.update -= Tick;
+            CompilationPipeline.assemblyCompilationFinished -= OnAssemblyCompilationFinished;
+            Application.logMessageReceived -= OnLogMessageReceived;
+        }
+
+        private static void Tick()
+        {
+            if (!SessionState.GetBool(ActiveKey, false))
+                return;
+
+            if (HasPhaseTimedOut())
+            {
+                CompleteRun("phase_timeout", 2);
+                return;
+            }
+
+            if (EditorApplication.isPlaying)
+                UpdatePeakAllocatedMemory();
+
+            Phase phase = (Phase)SessionState.GetInt(PhaseKey, (int)Phase.Idle);
+            switch (phase)
+            {
+                case Phase.Compile:
+                    TickCompile();
+                    break;
+                case Phase.EnterPlay:
+                    TickEnterPlay();
+                    break;
+                case Phase.WaitPlayStart:
+                    TickWaitPlayStart();
+                    break;
+                case Phase.Sampling:
+                    TickSampling();
+                    break;
+                case Phase.ExitPlay:
+                    TickExitPlay();
+                    break;
+            }
+        }
+
+        private static void TickCompile()
+        {
+            if (EditorApplication.isCompiling || EditorApplication.isUpdating)
+                return;
+
+            if (SessionState.GetInt(CompileErrorsKey, 0) > 0)
+            {
+                CompleteRun("compile_failed", 1);
+                return;
+            }
+
+            ForceLoadEntrySceneFromDisk();
+            SetPhase(Phase.EnterPlay);
+        }
+
+        private static void TickEnterPlay()
+        {
+            if (!EditorApplication.isPlayingOrWillChangePlaymode)
+                EditorApplication.isPlaying = true;
+
+            SetPhase(Phase.WaitPlayStart);
+        }
+
+        private static void TickWaitPlayStart()
+        {
+            if (!EditorApplication.isPlaying)
+                return;
+
+            long allocatedMemory = Profiler.GetTotalAllocatedMemoryLong();
+            SessionState.SetString(PlayStartTimeKey, EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
+            SessionState.SetString(StartAllocatedMemoryKey, allocatedMemory.ToString(CultureInfo.InvariantCulture));
+            SessionState.SetString(PeakAllocatedMemoryKey, allocatedMemory.ToString(CultureInfo.InvariantCulture));
+            SessionState.SetInt(StartGc0Key, GC.CollectionCount(0));
+            SessionState.SetInt(StartFrameKey, Time.frameCount);
+            SetPhase(Phase.Sampling);
+        }
+
+        private static void TickSampling()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                CompleteRun("playmode_exited_early", 3);
+                return;
+            }
+
+            double playStartTime = GetSessionDouble(PlayStartTimeKey, EditorApplication.timeSinceStartup);
+            if (EditorApplication.timeSinceStartup - playStartTime < RequestedPlaySeconds)
+                return;
+
+            CaptureEndMetrics();
+            SessionState.SetString(StatusKey, "completed");
+            SessionState.SetInt(ExitCodeKey, 0);
+            SetPhase(Phase.ExitPlay);
+            EditorApplication.isPlaying = false;
+        }
+
+        private static void TickExitPlay()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                return;
+
+            WriteMetrics();
+            CleanupAndExitIfBatch();
+        }
+
+        private static void CaptureEndMetrics()
+        {
+            SessionState.SetString(EndAllocatedMemoryKey, Profiler.GetTotalAllocatedMemoryLong().ToString(CultureInfo.InvariantCulture));
+            SessionState.SetString(EndReservedMemoryKey, Profiler.GetTotalReservedMemoryLong().ToString(CultureInfo.InvariantCulture));
+            SessionState.SetString(EndMonoUsedMemoryKey, Profiler.GetMonoUsedSizeLong().ToString(CultureInfo.InvariantCulture));
+            SessionState.SetInt(EndGc0Key, GC.CollectionCount(0));
+            SessionState.SetInt(EndFrameKey, Time.frameCount);
+            UpdatePeakAllocatedMemory();
+        }
+
+        private static void UpdatePeakAllocatedMemory()
+        {
+            long current = Profiler.GetTotalAllocatedMemoryLong();
+            long peak = GetSessionLong(PeakAllocatedMemoryKey, 0L);
+            if (current > peak)
+                SessionState.SetString(PeakAllocatedMemoryKey, current.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void CompleteRun(string status, int exitCode)
+        {
+            if (EditorApplication.isPlaying)
+            {
+                CaptureEndMetrics();
+                SessionState.SetString(StatusKey, status);
+                SessionState.SetInt(ExitCodeKey, exitCode);
+                SetPhase(Phase.ExitPlay);
+                EditorApplication.isPlaying = false;
+                return;
+            }
+
+            SessionState.SetString(StatusKey, status);
+            SessionState.SetInt(ExitCodeKey, exitCode);
+            WriteMetrics();
+            CleanupAndExitIfBatch();
+        }
+
+        private static void CleanupAndExitIfBatch()
+        {
+            int exitCode = SessionState.GetInt(ExitCodeKey, 0);
+            SessionState.SetBool(ActiveKey, false);
+            DetachCallbacks();
+            if (Application.isBatchMode)
+                EditorApplication.Exit(exitCode);
+        }
+
+        private static void SetPhase(Phase phase)
+        {
+            SessionState.SetInt(PhaseKey, (int)phase);
+            SessionState.SetString(PhaseStartTimeKey, EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
+        }
+
+        private static bool HasPhaseTimedOut()
+        {
+            Phase phase = (Phase)SessionState.GetInt(PhaseKey, (int)Phase.Idle);
+            if (phase == Phase.Sampling)
+                return false;
+
+            double phaseStartTime = GetSessionDouble(PhaseStartTimeKey, EditorApplication.timeSinceStartup);
+            return EditorApplication.timeSinceStartup - phaseStartTime > PhaseTimeoutSeconds;
+        }
+
+        private static void OnAssemblyCompilationFinished(string assemblyPath, CompilerMessage[] messages)
+        {
+            if (!SessionState.GetBool(ActiveKey, false) || messages == null)
+                return;
+
+            int errors = SessionState.GetInt(CompileErrorsKey, 0);
+            int warnings = SessionState.GetInt(CompileWarningsKey, 0);
+            for (int i = 0; i < messages.Length; i++)
+            {
+                if (messages[i].type == CompilerMessageType.Error)
+                    errors++;
+                else if (messages[i].type == CompilerMessageType.Warning)
+                    warnings++;
+            }
+
+            SessionState.SetInt(CompileErrorsKey, errors);
+            SessionState.SetInt(CompileWarningsKey, warnings);
+        }
+
+        private static void OnLogMessageReceived(string condition, string stackTrace, LogType type)
+        {
+            if (!SessionState.GetBool(ActiveKey, false))
+                return;
+
+            switch (type)
+            {
+                case LogType.Error:
+                    SessionState.SetInt(LogErrorsKey, SessionState.GetInt(LogErrorsKey, 0) + 1);
+                    break;
+                case LogType.Assert:
+                    SessionState.SetInt(LogAssertionsKey, SessionState.GetInt(LogAssertionsKey, 0) + 1);
+                    break;
+                case LogType.Exception:
+                    SessionState.SetInt(LogExceptionsKey, SessionState.GetInt(LogExceptionsKey, 0) + 1);
+                    break;
+            }
+        }
+
+        private static int KillBeeBackends()
+        {
+            int killed = 0;
+            try
+            {
+                Process[] processes = Process.GetProcessesByName("bee_backend");
+                for (int i = 0; i < processes.Length; i++)
+                {
+                    using (Process process = processes[i])
+                    {
+                        if (process.HasExited)
+                            continue;
+
+                        process.Kill();
+                        process.WaitForExit(2000);
+                        killed++;
+                    }
+                }
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[CodexPlayModeLauncher] Failed to kill bee_backend: " + exception.Message);
+            }
+
+            return killed;
+        }
+
+        private static void ForceLoadEntrySceneFromDisk()
+        {
+            string targetScenePath = ResolveEntryScenePath();
+            if (string.IsNullOrEmpty(targetScenePath))
+                return;
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            bool dirtySceneReloaded = activeScene.IsValid() && activeScene.isDirty;
+            if (dirtySceneReloaded ||
+                !string.Equals(activeScene.path, targetScenePath, StringComparison.OrdinalIgnoreCase))
+            {
+                EditorSceneManager.OpenScene(targetScenePath, UnityEditor.SceneManagement.OpenSceneMode.Single);
+            }
+
+            SessionState.SetBool(DirtySceneReloadedKey, dirtySceneReloaded);
+            SessionState.SetString(LoadedScenePathKey, targetScenePath);
+        }
+
+        private static string ResolveEntryScenePath()
+        {
+            EditorBuildSettingsScene[] scenes = EditorBuildSettings.scenes;
+            for (int i = 0; i < scenes.Length; i++)
+            {
+                if (scenes[i] != null &&
+                    scenes[i].enabled &&
+                    scenes[i].path.IndexOf("00_BOOTSTRAP", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return scenes[i].path;
+                }
+            }
+
+            for (int i = 0; i < scenes.Length; i++)
+            {
+                if (scenes[i] != null && scenes[i].enabled)
+                    return scenes[i].path;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            return activeScene.IsValid() ? activeScene.path : string.Empty;
+        }
+
+        private static string ResolveMetricsPath()
+        {
+            DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
+            string rootPath = projectRoot != null ? projectRoot.FullName : Application.dataPath;
+            return Path.Combine(rootPath, "playmode_metrics.json");
+        }
+
+        private static void WriteMetrics()
+        {
+            string metricsPath = SessionState.GetString(MetricsPathKey, ResolveMetricsPath());
+            string status = SessionState.GetString(StatusKey, "unknown");
+            double playStartTime = GetSessionDouble(PlayStartTimeKey, 0d);
+            double observedPlaySeconds = playStartTime > 0d
+                ? Math.Max(0d, EditorApplication.timeSinceStartup - playStartTime)
+                : 0d;
+            int startGc0 = SessionState.GetInt(StartGc0Key, 0);
+            int endGc0 = SessionState.GetInt(EndGc0Key, startGc0);
+            int startFrame = SessionState.GetInt(StartFrameKey, 0);
+            int endFrame = SessionState.GetInt(EndFrameKey, startFrame);
+
+            StringBuilder builder = new StringBuilder(1536);
+            builder.AppendLine("{");
+            AppendJsonProperty(builder, "schema", "hecton8.codex.playmode_metrics.v1", comma: true);
+            AppendJsonProperty(builder, "utc", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture), comma: true);
+            AppendJsonProperty(builder, "projectPath", Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath, comma: true);
+            AppendJsonProperty(builder, "status", status, comma: true);
+            AppendJsonProperty(builder, "exitCode", SessionState.GetInt(ExitCodeKey, 1), comma: true);
+            AppendJsonProperty(builder, "requestedPlaySeconds", RequestedPlaySeconds, comma: true);
+            AppendJsonProperty(builder, "observedPlaySeconds", observedPlaySeconds, comma: true);
+            AppendJsonProperty(builder, "loadedScenePath", SessionState.GetString(LoadedScenePathKey, string.Empty), comma: true);
+            AppendJsonProperty(builder, "dirtySceneReloadedFromDisk", SessionState.GetBool(DirtySceneReloadedKey, false), comma: true);
+            AppendJsonProperty(builder, "beeBackendsKilled", SessionState.GetInt(BeeKilledKey, 0), comma: true);
+            AppendJsonProperty(builder, "compileErrorCount", SessionState.GetInt(CompileErrorsKey, 0), comma: true);
+            AppendJsonProperty(builder, "compileWarningCount", SessionState.GetInt(CompileWarningsKey, 0), comma: true);
+            AppendJsonProperty(builder, "logErrorCount", SessionState.GetInt(LogErrorsKey, 0), comma: true);
+            AppendJsonProperty(builder, "logAssertionCount", SessionState.GetInt(LogAssertionsKey, 0), comma: true);
+            AppendJsonProperty(builder, "logExceptionCount", SessionState.GetInt(LogExceptionsKey, 0), comma: true);
+            AppendJsonProperty(builder, "startTotalAllocatedMemoryBytes", GetSessionLong(StartAllocatedMemoryKey, 0L), comma: true);
+            AppendJsonProperty(builder, "endTotalAllocatedMemoryBytes", GetSessionLong(EndAllocatedMemoryKey, 0L), comma: true);
+            AppendJsonProperty(builder, "peakTotalAllocatedMemoryBytes", GetSessionLong(PeakAllocatedMemoryKey, 0L), comma: true);
+            AppendJsonProperty(builder, "endTotalReservedMemoryBytes", GetSessionLong(EndReservedMemoryKey, 0L), comma: true);
+            AppendJsonProperty(builder, "endMonoUsedMemoryBytes", GetSessionLong(EndMonoUsedMemoryKey, 0L), comma: true);
+            AppendJsonProperty(builder, "gcGen0CollectionsDelta", Math.Max(0, endGc0 - startGc0), comma: true);
+            AppendJsonProperty(builder, "framesObserved", Math.Max(0, endFrame - startFrame), comma: false);
+            builder.AppendLine("}");
+
+            File.WriteAllText(metricsPath, builder.ToString(), JsonEncoding);
+            Debug.Log("[CodexPlayModeLauncher] Wrote Play Mode metrics: " + metricsPath);
+        }
+
+        private static void AppendJsonProperty(StringBuilder builder, string name, string value, bool comma)
+        {
+            builder.Append("  ");
+            AppendJsonString(builder, name);
+            builder.Append(": ");
+            AppendJsonString(builder, value);
+            if (comma)
+                builder.Append(',');
+            builder.AppendLine();
+        }
+
+        private static void AppendJsonProperty(StringBuilder builder, string name, long value, bool comma)
+        {
+            builder.Append("  ");
+            AppendJsonString(builder, name);
+            builder.Append(": ");
+            builder.Append(value.ToString(CultureInfo.InvariantCulture));
+            if (comma)
+                builder.Append(',');
+            builder.AppendLine();
+        }
+
+        private static void AppendJsonProperty(StringBuilder builder, string name, double value, bool comma)
+        {
+            builder.Append("  ");
+            AppendJsonString(builder, name);
+            builder.Append(": ");
+            builder.Append(value.ToString("0.######", CultureInfo.InvariantCulture));
+            if (comma)
+                builder.Append(',');
+            builder.AppendLine();
+        }
+
+        private static void AppendJsonProperty(StringBuilder builder, string name, bool value, bool comma)
+        {
+            builder.Append("  ");
+            AppendJsonString(builder, name);
+            builder.Append(": ");
+            builder.Append(value ? "true" : "false");
+            if (comma)
+                builder.Append(',');
+            builder.AppendLine();
+        }
+
+        private static void AppendJsonString(StringBuilder builder, string value)
+        {
+            builder.Append('"');
+            if (!string.IsNullOrEmpty(value))
+            {
+                for (int i = 0; i < value.Length; i++)
+                {
+                    char c = value[i];
+                    switch (c)
+                    {
+                        case '\\':
+                            builder.Append("\\\\");
+                            break;
+                        case '"':
+                            builder.Append("\\\"");
+                            break;
+                        case '\n':
+                            builder.Append("\\n");
+                            break;
+                        case '\r':
+                            builder.Append("\\r");
+                            break;
+                        case '\t':
+                            builder.Append("\\t");
+                            break;
+                        default:
+                            builder.Append(c);
+                            break;
+                    }
+                }
+            }
+
+            builder.Append('"');
+        }
+
+        private static long GetSessionLong(string key, long fallback)
+        {
+            string value = SessionState.GetString(key, fallback.ToString(CultureInfo.InvariantCulture));
+            return long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out long parsed)
+                ? parsed
+                : fallback;
+        }
+
+        private static double GetSessionDouble(string key, double fallback)
+        {
+            string value = SessionState.GetString(key, fallback.ToString("R", CultureInfo.InvariantCulture));
+            return double.TryParse(value, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsed)
+                ? parsed
+                : fallback;
+        }
+
+        private static void ResetSessionState()
+        {
+            SessionState.SetBool(ActiveKey, false);
+            SessionState.SetInt(PhaseKey, (int)Phase.Idle);
+            SessionState.SetString(StatusKey, "starting");
+            SessionState.SetInt(ExitCodeKey, 1);
+            SessionState.SetString(PhaseStartTimeKey, EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
+            SessionState.SetString(PlayStartTimeKey, "0");
+            SessionState.SetString(StartAllocatedMemoryKey, "0");
+            SessionState.SetString(EndAllocatedMemoryKey, "0");
+            SessionState.SetString(PeakAllocatedMemoryKey, "0");
+            SessionState.SetString(EndReservedMemoryKey, "0");
+            SessionState.SetString(EndMonoUsedMemoryKey, "0");
+            SessionState.SetInt(StartGc0Key, 0);
+            SessionState.SetInt(EndGc0Key, 0);
+            SessionState.SetInt(StartFrameKey, 0);
+            SessionState.SetInt(EndFrameKey, 0);
+            SessionState.SetInt(CompileErrorsKey, 0);
+            SessionState.SetInt(CompileWarningsKey, 0);
+            SessionState.SetInt(LogErrorsKey, 0);
+            SessionState.SetInt(LogAssertionsKey, 0);
+            SessionState.SetInt(LogExceptionsKey, 0);
+            SessionState.SetInt(BeeKilledKey, 0);
+            SessionState.SetString(LoadedScenePathKey, string.Empty);
+            SessionState.SetBool(DirtySceneReloadedKey, false);
+            SessionState.SetString(MetricsPathKey, ResolveMetricsPath());
+        }
+    }
+}

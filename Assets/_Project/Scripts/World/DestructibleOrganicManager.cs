@@ -28,8 +28,9 @@ namespace Hecton8.World
 
         private const int DefaultTrackedDestroyedCapacity = 2048;
         private const int DefaultTrackedHealthCapacity = 4096;
-        private const int DefaultPendingYieldCapacity = 128;
+        private const int DefaultPendingYieldCapacity = 1024;
         private const int DefaultDropBufferCapacity = 256;
+        private const int MaxOrganicDropRecordsPerFrame = 256;
         private const float HiddenInstanceWorldY = -100000f;
         private const float MinimumSearchRadius = 0.8f;
         private const float KelpRadiusBias = 0.65f;
@@ -332,6 +333,7 @@ namespace Hecton8.World
         private NativeArray<Vector3> _dropDebugScratch;
         private JobHandle _yieldJobHandle;
         private int _scheduledYieldCount;
+        private int _deferredYieldScheduleFrame = -1;
         private int _surfaceRevision = -1;
         private int _underwaterRevision = -1;
         private int _surfaceCount;
@@ -675,18 +677,28 @@ namespace Hecton8.World
             UpdateMatureSporeAcoustics(currentTime);
             UpdateDamageVisuals(currentTime);
             UpdateWiltInstances(currentTime);
-            bool dropBufferDrained = DrainDropBuffer();
-            if (dropBufferDrained)
-            {
-                VoxelDynamicNavGridRuntime.EnqueueDestroyedOrganicEvents(_pendingYieldEvents);
+            bool dropBufferDrained = !_yieldScheduled && DrainDropBuffer();
+            if (dropBufferDrained && _deferredYieldScheduleFrame < 0)
                 ScheduleYieldJobIfNeeded();
-            }
+
             VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
         }
 
         public void LateFrameTick()
         {
             CompleteYieldJobIfNeeded(force: false);
+            if (_yieldScheduled)
+                return;
+
+            bool dropBufferDrained = DrainDropBuffer();
+            if (dropBufferDrained &&
+                _deferredYieldScheduleFrame >= 0 &&
+                Time.frameCount >= _deferredYieldScheduleFrame)
+            {
+                _deferredYieldScheduleFrame = -1;
+                ScheduleYieldJobIfNeeded();
+                VoxelDynamicNavGridRuntime.SchedulePendingDynamicObstacleUpdates();
+            }
         }
 
         /// <summary>
@@ -1603,14 +1615,31 @@ namespace Hecton8.World
                 !_yieldMaterialLut.IsCreated)
                 return;
 
-            int eventCount = math.min(_pendingYieldEvents.Length, _dropBuffer.Capacity);
+            int pendingCount = _pendingYieldEvents.Length;
+            int eventCount = math.min(pendingCount, math.min(_dropBuffer.Capacity, MaxOrganicDropRecordsPerFrame));
             EnsureNativeCapacity(ref _yieldJobInput, eventCount, nameof(_yieldJobInput));
             for (int i = 0; i < eventCount; i++)
             {
                 _yieldJobInput[i] = _pendingYieldEvents[i];
             }
 
-            _pendingYieldEvents.Clear();
+            VoxelDynamicNavGridRuntime.EnqueueDestroyedOrganicEvents(_yieldJobInput, eventCount);
+
+            int remainderCount = pendingCount - eventCount;
+            if (remainderCount > 0)
+            {
+                for (int i = 0; i < remainderCount; i++)
+                    _pendingYieldEvents[i] = _pendingYieldEvents[eventCount + i];
+
+                _pendingYieldEvents.ResizeUninitialized(remainderCount);
+                _deferredYieldScheduleFrame = math.max(_deferredYieldScheduleFrame, Time.frameCount + 1);
+            }
+            else
+            {
+                _pendingYieldEvents.Clear();
+                _deferredYieldScheduleFrame = -1;
+            }
+
             _scheduledYieldCount = eventCount;
             _yieldJobHandle = new EntropyYieldJob
             {
@@ -1634,7 +1663,7 @@ namespace Hecton8.World
                 : null;
             Hecton8.SaveSystem.ItemCatalog itemCatalog = playerInventory != null ? playerInventory.ItemCatalog : null;
             PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
-            int remainingBudget = _dropBuffer.Capacity;
+            int remainingBudget = math.min(_dropBuffer.Capacity, MaxOrganicDropRecordsPerFrame);
             while (remainingBudget-- > 0 && _dropBuffer.TryDequeue(out ItemDropData drop))
             {
                 if (drop.ItemHashId == 0 || drop.Quantity == 0)

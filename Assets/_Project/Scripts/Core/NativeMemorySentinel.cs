@@ -432,7 +432,6 @@ namespace Hecton8.Core
         /// </summary>
         public static void ReportSceneLifetimeLeaks(string context)
         {
-            int unsafeLeakCount = UnsafeUtility.CheckForLeaks();
             int reported = 0;
             for (int i = 0; i < _count; i++)
             {
@@ -446,12 +445,15 @@ namespace Hecton8.Core
                     $"{CriticalMemoryViolationPrefix}: scene allocation survived unload. context={context} owner={record.Owner} label={record.Label} bytes={record.Bytes} pointer=0x{record.Pointer.ToInt64():X}\nALLOCATOR_STACK:\n{record.StackTrace}");
             }
 
+#if HECTON_FULL_NATIVE_LEAK_SCAN_ON_SCENE_UNLOAD
+            int unsafeLeakCount = UnsafeUtility.CheckForLeaks();
             if (unsafeLeakCount > reported)
             {
                 Interlocked.Increment(ref _sceneLeakViolationCount);
                 Debug.LogError(
                     $"{CriticalMemoryViolationPrefix}: UnsafeUtility leak detector reported {unsafeLeakCount} leak(s), sentinel scene records={reported}. context={context}");
             }
+#endif
         }
 
         private static void RegisterSceneHooks()

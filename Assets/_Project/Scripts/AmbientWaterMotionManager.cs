@@ -14,6 +14,7 @@
 using System.Collections.Generic;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -22,9 +23,10 @@ namespace Hecton8.Physics
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4900)]
     [AddComponentMenu("Hecton/Physics/Ambient Water Motion Manager")]
-    public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable, IUpdatable
+    public sealed class AmbientWaterMotionManager : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener
     {
         private static AmbientWaterMotionManager _instance;
+        private const float BiomeFlowBlendSeconds = 5f;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -52,6 +54,8 @@ namespace Hecton8.Physics
         [SerializeField] private int _debugMediumCount;
         [SerializeField] private int _debugFarCount;
         [SerializeField] private int _debugCulledCount;
+        [SerializeField] private int _debugBiomeCurrentBiomeId = -1;
+        [SerializeField] private Vector3 _debugBiomeCurrentVector;
 
         // â”€â”€ Registered objects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // List Ð´Ð»Ñ Ð¸Ñ‚ÐµÑ€Ð°Ñ†Ð¸Ð¸ (cache-friendly), HashSet Ð´Ð»Ñ O(1) Ð´ÐµÐ´ÑƒÐ¿Ð»Ð¸ÐºÐ°Ñ†Ð¸Ð¸ Ð² Register.
@@ -66,6 +70,11 @@ namespace Hecton8.Physics
         private float _cullDistanceSqr;
         private bool _tickRegistered;
         private bool _serviceRegistered;
+        private Vector3 _biomeCurrentVector;
+        private Vector3 _biomeCurrentStartVector;
+        private Vector3 _biomeCurrentTargetVector;
+        private float _biomeCurrentBlendElapsed;
+        private bool _hasBiomeCurrentTarget;
 
         // â”€â”€ Observer resolve cooldown â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         // Ð•ÑÐ»Ð¸ observer Ð½Ðµ Ð½Ð°Ð·Ð½Ð°Ñ‡ÐµÐ½ Ð¸ Ð½Ðµ Ð½Ð°Ð¹Ð´ÐµÐ½ â€” Ð½Ðµ Ð´Ñ‘Ñ€Ð³Ð°ÐµÐ¼ bootstrap ÐºÐ°Ð¶Ð´Ñ‹Ð¹ ÐºÐ°Ð´Ñ€.
@@ -96,16 +105,20 @@ namespace Hecton8.Physics
         {
             TryRegister();
             TryRegisterService();
+            if (Application.isPlaying)
+                BiomeMatrixEvents.Register(this);
         }
 
         private void OnDisable()
         {
+            BiomeMatrixEvents.Unregister(this);
             TryUnregister();
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            BiomeMatrixEvents.Unregister(this);
             TryUnregister();
             TryUnregisterService();
 
@@ -144,6 +157,8 @@ namespace Hecton8.Physics
 
         public void Tick(float deltaTime)
         {
+            UpdateBiomeCurrentBlend(deltaTime);
+
             if (_objects.Count == 0) return;
 
             _frameCounter++;
@@ -267,7 +282,8 @@ namespace Hecton8.Physics
                 motion.CurrentCoupling);
 
             Vector3 current = volumeCurrent
-                + new Vector3(phantomCurrent.x, phantomCurrent.y, phantomCurrent.z);
+                + new Vector3(phantomCurrent.x, phantomCurrent.y, phantomCurrent.z)
+                + _biomeCurrentVector;
 
             float currentMagnitude = current.magnitude;
             Vector3 currentDir = currentMagnitude > 0.0001f
@@ -296,6 +312,50 @@ namespace Hecton8.Physics
 
             tr.localPosition = motion.RestLocalPosition + offset;
             tr.localRotation = motion.RestLocalRotation * Quaternion.Euler(pitch, yaw, roll);
+        }
+
+        private void UpdateBiomeCurrentBlend(float deltaTime)
+        {
+            if (!_hasBiomeCurrentTarget)
+                return;
+
+            _biomeCurrentBlendElapsed += Mathf.Max(0f, deltaTime);
+            float t = Mathf.Clamp01(_biomeCurrentBlendElapsed / BiomeFlowBlendSeconds);
+            float smooth = t * t * (3f - 2f * t);
+            _biomeCurrentVector = Vector3.LerpUnclamped(_biomeCurrentStartVector, _biomeCurrentTargetVector, smooth);
+            if (t >= 1f)
+            {
+                _biomeCurrentVector = _biomeCurrentTargetVector;
+                _hasBiomeCurrentTarget = false;
+            }
+
+            _debugBiomeCurrentVector = _biomeCurrentVector;
+        }
+
+        private void SetBiomeCurrentTarget(HectonBiomeMatrixProfile profile)
+        {
+            Vector3 target = Vector3.zero;
+            if (profile != null && profile.hasAmbientFlowOverride)
+                target = profile.ambientFlowOverride * Mathf.Clamp01(profile.ambientFlowOverrideWeight);
+
+            _debugBiomeCurrentBiomeId = profile != null ? profile.matrixIndex : -1;
+            if ((target - _biomeCurrentTargetVector).sqrMagnitude <= 0.000001f)
+                return;
+
+            _biomeCurrentStartVector = _biomeCurrentVector;
+            _biomeCurrentTargetVector = target;
+            _biomeCurrentBlendElapsed = 0f;
+            _hasBiomeCurrentTarget = true;
+            _debugBiomeCurrentVector = _biomeCurrentVector;
+        }
+
+        void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            SetBiomeCurrentTarget(profile);
+        }
+
+        void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
+        {
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

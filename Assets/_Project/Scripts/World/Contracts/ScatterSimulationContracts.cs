@@ -70,6 +70,7 @@ namespace Hecton8.World
         public int CellZ;
         public float Height;
         public int HeightSource;
+        public uint BiomeInfluencePacked;
         public ScatterSimulationEligibilityFlags Eligibility;
         public ScatterSimulationSuppressionState Suppression;
         public ScatterSimulationDirtyFlags DirtyFlags;

@@ -1073,7 +1073,7 @@ namespace Hecton8.Gameplay
 
         private float ResolveOxygenStressScale()
         {
-            return 1f + ResolveOxygenStressSeverity01() * OxygenStressScaleCeilingBonus;
+            return ResolveHeartrateOxygenMultiplier(ResolveOxygenStressMagnitude01());
         }
 
         private float ResolveOxygenLeakScale()
@@ -1105,6 +1105,49 @@ namespace Hecton8.Gameplay
                 thermalSeverity * 0.15f +
                 _decompressionRisk01 * 0.10f +
                 (1f - IntegrityNormalized) * 0.05f);
+        }
+
+        private float ResolveOxygenStressMagnitude01()
+        {
+            float physiologicalStress = ResolveOxygenStressSeverity01();
+            float movementStress = ResolveMovementStressMagnitude01();
+            float traumaStress = ResolveTraumaStressMagnitude01();
+            return math.saturate(math.max(physiologicalStress, math.max(movementStress, traumaStress)));
+        }
+
+        internal static float ResolveHeartrateOxygenMultiplier(float stressMagnitude01)
+        {
+            return math.exp(math.saturate(stressMagnitude01) * OxygenStressScaleCeilingBonus);
+        }
+
+        private float ResolveMovementStressMagnitude01()
+        {
+            if (_playerMovement == null)
+                return 0f;
+
+            float underwaterStress = math.saturate(_playerMovement.CurrentUnderwaterStressIntensity01);
+            float hullStress = math.saturate(_playerMovement.CurrentHullStress01);
+            float fatalPressureStress = math.saturate(_playerMovement.CurrentFatalPressureSequence01);
+            return math.max(underwaterStress, math.max(hullStress, fatalPressureStress));
+        }
+
+        private float ResolveTraumaStressMagnitude01()
+        {
+            if (_traumaDispatcher == null)
+                return 0f;
+
+            float integrityStress = math.saturate(_traumaDispatcher.IntegrityChannel01);
+            float powerStress = math.saturate(_traumaDispatcher.PowerChannel01) * 0.75f;
+            float clarityStress = math.saturate(_traumaDispatcher.ClarityChannel01);
+            float hazardStress = math.max(
+                math.saturate(_traumaDispatcher.HazardRadiationSignal01),
+                math.max(
+                    math.saturate(_traumaDispatcher.HazardThermalSignal01),
+                    math.saturate(_traumaDispatcher.HazardToxicSignal01)));
+
+            return math.max(
+                math.max(integrityStress, clarityStress),
+                math.max(powerStress, hazardStress));
         }
 
         private float ResolveCurrentMovementSpeedMetersPerSecond()

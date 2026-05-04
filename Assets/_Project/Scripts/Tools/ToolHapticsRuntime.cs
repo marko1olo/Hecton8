@@ -17,6 +17,7 @@ namespace Hecton8.Tools
         private const float DefaultDecayRate = 1.5f;
         private const float DefaultDurationSeconds = 0.18f;
         private const byte RightMotorMask = 0b0010;
+        internal const byte PriorityCritical = 3;
         private const float TwoPi = 6.28318530718f;
 
         private static ToolHapticsRuntime _instance;

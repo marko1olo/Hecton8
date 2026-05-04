@@ -153,6 +153,7 @@ namespace Hecton8.Power
             [ReadOnly] public NativeArray<LogisticsNode> Nodes;
             [ReadOnly] public NativeArray<float> NodeNetInjection;
             [ReadOnly] public NativeArray<float> NodeServedDemand;
+            [ReadOnly] public NativeArray<float> NodeVoltageSupplyRatio;
 
             public NativeArray<ushort> PublishedNodeStates;
             public NativeParallelHashMap<uint, ushort>.ParallelWriter PublishedNodeStateMap;
@@ -170,6 +171,12 @@ namespace Hecton8.Power
 
                 if ((node.Flags & LogisticsNodeFlags.Brownout) != 0)
                     stateBits |= LogisticsNodeStateBits.Brownout;
+
+                if (NodeServedDemand[index] > PublishEpsilon &&
+                    NodeVoltageSupplyRatio[index] < 0.85f)
+                {
+                    stateBits |= LogisticsNodeStateBits.Brownout;
+                }
 
                 if ((node.Flags & LogisticsNodeFlags.Isolated) != 0)
                     stateBits |= LogisticsNodeStateBits.Isolated;
@@ -237,6 +244,7 @@ namespace Hecton8.Power
             public NativeArray<float> NodePotentialFront;
             public NativeArray<float> NodePotentialBack;
             public NativeArray<float> NodeServedDemand;
+            public NativeArray<float> NodeVoltageSupplyRatio;
             public NativeArray<float> ComponentGeneration;
             public NativeArray<float> ComponentDemand;
             public NativeArray<float> ComponentServedDemand;
@@ -407,6 +415,7 @@ namespace Hecton8.Power
                     NodePotentialFront[nodeIndex] = 0f;
                     NodePotentialBack[nodeIndex] = 0f;
                     NodeServedDemand[nodeIndex] = 0f;
+                    NodeVoltageSupplyRatio[nodeIndex] = 1f;
                     ComponentGeneration[nodeIndex] = 0f;
                     ComponentDemand[nodeIndex] = 0f;
                     ComponentServedDemand[nodeIndex] = 0f;
@@ -824,10 +833,12 @@ namespace Hecton8.Power
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct RelaxNodePotentialsJob : IJobParallelFor
+        private struct RelaxNodePotentialsConvergedJob : IJob
         {
+            private const int MaxJacobiIterationsValue = 8;
             private const float MinResistanceValue = 0.0001f;
             private const float EpsilonValue = 0.001f;
+            private const float JacobiConvergenceDeltaValue = 0.01f;
             private const float RuptureResistanceMultiplierValue = 2f;
 
             public LogisticsNetworkType NetworkType;
@@ -840,16 +851,40 @@ namespace Hecton8.Power
             [ReadOnly] public NativeArray<int> ComponentIds;
             [ReadOnly] public NativeArray<int> ComponentAnchorNode;
             [ReadOnly] public NativeArray<float> NodeNetInjection;
-            [ReadOnly] public NativeArray<float> NodePotentialFront;
 
+            public NativeArray<float> NodePotentialFront;
             public NativeArray<float> NodePotentialBack;
 
-            public void Execute(int nodeIndex)
+            public void Execute()
+            {
+                int safeNodeCount = math.min(NodeCount, math.min(NodePotentialFront.Length, NodePotentialBack.Length));
+                if (safeNodeCount <= 0)
+                    return;
+
+                for (int iteration = 0; iteration < MaxJacobiIterationsValue; iteration++)
+                {
+                    float maxDelta = 0f;
+
+                    for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                        RelaxNode(nodeIndex, safeNodeCount, ref maxDelta);
+
+                    for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                        NodePotentialFront[nodeIndex] = NodePotentialBack[nodeIndex];
+
+                    if (maxDelta < JacobiConvergenceDeltaValue)
+                        break;
+                }
+            }
+
+            private void RelaxNode(int nodeIndex, int safeNodeCount, ref float maxDelta)
             {
                 int componentIndex = ComponentIds[nodeIndex];
-                if (componentIndex < 0 || componentIndex >= NodeCount || ComponentAnchorNode[componentIndex] == nodeIndex)
+                if (componentIndex < 0 ||
+                    componentIndex >= ComponentAnchorNode.Length ||
+                    ComponentAnchorNode[componentIndex] == nodeIndex)
                 {
                     NodePotentialBack[nodeIndex] = 0f;
+                    maxDelta = math.max(maxDelta, math.abs(NodePotentialFront[nodeIndex]));
                     return;
                 }
 
@@ -862,7 +897,7 @@ namespace Hecton8.Power
                 {
                     int neighborNodeIndex = EdgeDestinations[edgeIndex];
                     if (neighborNodeIndex < 0 ||
-                        neighborNodeIndex >= NodeCount ||
+                        neighborNodeIndex >= safeNodeCount ||
                         ComponentIds[neighborNodeIndex] != componentIndex)
                     {
                         continue;
@@ -876,11 +911,16 @@ namespace Hecton8.Power
                 if (conductanceSum <= EpsilonValue)
                 {
                     NodePotentialBack[nodeIndex] = 0f;
+                    maxDelta = math.max(maxDelta, math.abs(NodePotentialFront[nodeIndex]));
                     return;
                 }
 
                 float relaxedPotential = (weightedPotential + NodeNetInjection[nodeIndex]) / conductanceSum;
-                NodePotentialBack[nodeIndex] = math.isfinite(relaxedPotential) ? relaxedPotential : 0f;
+                if (!math.isfinite(relaxedPotential))
+                    relaxedPotential = 0f;
+
+                NodePotentialBack[nodeIndex] = relaxedPotential;
+                maxDelta = math.max(maxDelta, math.abs(relaxedPotential - NodePotentialFront[nodeIndex]));
             }
 
             private float ResolveCombinedResistance(int sourceNodeIndex, int destinationNodeIndex, int edgeIndex)
@@ -907,6 +947,8 @@ namespace Hecton8.Power
             private const float MinResistanceValue = 0.0001f;
             private const float EpsilonValue = 0.001f;
             private const float RuptureResistanceMultiplierValue = 2f;
+            private const float VoltageDropPenaltyScaleValue = 0.01f;
+            private const float VoltageBrownoutNodeRatioValue = 0.85f;
 
             public LogisticsNetworkType NetworkType;
             public int NodeCount;
@@ -919,6 +961,7 @@ namespace Hecton8.Power
             [ReadOnly] public NativeArray<float> NodeServedDemand;
             [ReadOnly] public NativeArray<float> NodeNetInjection;
             [ReadOnly] public NativeArray<float> FinalPotentials;
+            public NativeArray<float> NodeVoltageSupplyRatio;
 
             public void Execute(int nodeIndex)
             {
@@ -941,11 +984,34 @@ namespace Hecton8.Power
                 }
 
                 node.Potential = nodePotential;
+                float voltageSupplyRatio = ResolveVoltageSupplyRatio(nodePotential, NodeServedDemand[nodeIndex]);
+                NodeVoltageSupplyRatio[nodeIndex] = voltageSupplyRatio;
+                if (NetworkType == LogisticsNetworkType.PowerDc &&
+                    NodeServedDemand[nodeIndex] > EpsilonValue &&
+                    voltageSupplyRatio + EpsilonValue < VoltageBrownoutNodeRatioValue)
+                {
+                    node.Flags |= LogisticsNodeFlags.Brownout;
+                }
+
                 node.CurrentLoad = math.max(branchLoad, NodeServedDemand[nodeIndex] + math.max(0f, NodeNetInjection[nodeIndex]));
                 if (node.CurrentLoad > node.Capacity * 1.15f)
                     node.Flags |= LogisticsNodeFlags.Overloaded;
 
                 Nodes[nodeIndex] = node;
+            }
+
+            private float ResolveVoltageSupplyRatio(float nodePotential, float servedDemand)
+            {
+                if (NetworkType != LogisticsNetworkType.PowerDc || servedDemand <= EpsilonValue)
+                    return 1f;
+
+                float voltageDropPenalty = math.abs(nodePotential) * VoltageDropPenaltyScaleValue;
+                float denominator = servedDemand + voltageDropPenalty;
+                if (denominator <= EpsilonValue || !math.isfinite(denominator))
+                    return 0f;
+
+                float ratio = servedDemand / denominator;
+                return math.isfinite(ratio) ? math.saturate(ratio) : 0f;
             }
 
             private float ResolveCombinedResistance(int sourceNodeIndex, int destinationNodeIndex, int edgeIndex)
@@ -966,6 +1032,124 @@ namespace Hecton8.Power
             }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ApplyVoltageBrownoutConsumerStatesJob : IJobParallelFor
+        {
+            private const float EpsilonValue = 0.001f;
+            private const float EmergencyVoltageMinimumRatio = 0.20f;
+            private const float EssentialVoltageMinimumRatio = 0.45f;
+            private const float StandardVoltageMinimumRatio = 0.65f;
+            private const float AmbientVoltageMinimumRatio = 0.85f;
+
+            public LogisticsNetworkType NetworkType;
+            public int NodeCount;
+
+            [ReadOnly] public NativeList<ConsumerRecord> Consumers;
+            [ReadOnly] public NativeArray<LogisticsNode> Nodes;
+            [ReadOnly] public NativeArray<float> NodeVoltageSupplyRatio;
+
+            public NativeArray<byte> ConsumerStates;
+
+            public void Execute(int consumerIndex)
+            {
+                if (NetworkType != LogisticsNetworkType.PowerDc || ConsumerStates[consumerIndex] == 0)
+                    return;
+
+                ConsumerRecord consumer = Consumers[consumerIndex];
+                int nodeIndex = consumer.NodeIndex;
+                if (nodeIndex < 0 || nodeIndex >= NodeCount)
+                {
+                    ConsumerStates[consumerIndex] = 0;
+                    return;
+                }
+
+                LogisticsNode node = Nodes[nodeIndex];
+                if ((node.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
+                {
+                    ConsumerStates[consumerIndex] = 0;
+                    return;
+                }
+
+                float voltageSupplyRatio = NodeVoltageSupplyRatio[nodeIndex];
+                if (!math.isfinite(voltageSupplyRatio) ||
+                    voltageSupplyRatio + EpsilonValue < ResolveMinimumVoltageRatio(in consumer))
+                {
+                    ConsumerStates[consumerIndex] = 0;
+                }
+            }
+
+            private static float ResolveMinimumVoltageRatio(in ConsumerRecord consumer)
+            {
+                if ((consumer.Flags & LogisticsConsumerFlags.EmergencyReserved) != 0 || consumer.PriorityTier == 0)
+                    return EmergencyVoltageMinimumRatio;
+
+                if ((consumer.Flags & LogisticsConsumerFlags.Essential) != 0 || consumer.PriorityTier <= 1)
+                    return EssentialVoltageMinimumRatio;
+
+                if ((consumer.Flags & LogisticsConsumerFlags.AmbientLighting) != 0 || consumer.PriorityTier >= 2)
+                    return AmbientVoltageMinimumRatio;
+
+                return StandardVoltageMinimumRatio;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct FinalizeVoltageDistributionSummaryJob : IJob
+        {
+            private const float EpsilonValue = 0.001f;
+
+            public int ConsumerCount;
+
+            [ReadOnly] public NativeList<ConsumerRecord> Consumers;
+            [ReadOnly] public NativeArray<byte> ConsumerStates;
+
+            public NativeArray<DistributionSummary> DistributionSummaryBuffer;
+
+            public void Execute()
+            {
+                if (DistributionSummaryBuffer.Length <= 0)
+                    return;
+
+                DistributionSummary summary = DistributionSummaryBuffer[0];
+                int poweredCount = 0;
+                float servedDemand = 0f;
+                for (int consumerIndex = 0; consumerIndex < ConsumerCount; consumerIndex++)
+                {
+                    if (ConsumerStates[consumerIndex] == 0)
+                        continue;
+
+                    poweredCount++;
+                    servedDemand += Consumers[consumerIndex].Demand;
+                }
+
+                summary.PoweredCount = poweredCount;
+                summary.DisabledCount = math.max(0, ConsumerCount - poweredCount);
+                summary.ServedDemand = servedDemand;
+                summary.UnservedDemand = math.max(0f, summary.TotalConsumption - servedDemand);
+                summary.HasDeficit = summary.UnservedDemand > EpsilonValue;
+
+                float deliveredRatio = summary.TotalConsumption > EpsilonValue
+                    ? math.saturate(servedDemand / summary.TotalConsumption)
+                    : 1f;
+                LogisticsBrownoutTier voltageTier = ResolveBrownoutTier(deliveredRatio);
+                if ((byte)voltageTier > (byte)summary.BrownoutTier)
+                    summary.BrownoutTier = voltageTier;
+
+                DistributionSummaryBuffer[0] = summary;
+            }
+
+            private static LogisticsBrownoutTier ResolveBrownoutTier(float supplyRatio)
+            {
+                if (supplyRatio < 0.10f)
+                    return LogisticsBrownoutTier.EmergencyOnly;
+                if (supplyRatio < 0.40f)
+                    return LogisticsBrownoutTier.EssentialOnly;
+                if (supplyRatio < 0.85f)
+                    return LogisticsBrownoutTier.AmbientLightsOnly;
+                return LogisticsBrownoutTier.None;
+            }
+        }
+
         private const int MinPriority = 0;
         private const int MaxPriority = 100;
         private const int MaxSearchDepth = 100;
@@ -975,6 +1159,12 @@ namespace Hecton8.Power
         private const float Epsilon = 0.001f;
         private const float JacobiConvergenceDelta = 0.01f;
         private const float RuptureResistanceMultiplier = 2f;
+        private const float VoltageDropPenaltyScale = 0.01f;
+        private const float VoltageBrownoutNodeRatio = 0.85f;
+        private const float EmergencyVoltageMinimumRatio = 0.20f;
+        private const float EssentialVoltageMinimumRatio = 0.45f;
+        private const float StandardVoltageMinimumRatio = 0.65f;
+        private const float AmbientVoltageMinimumRatio = 0.85f;
 
         private LogisticsNetworkType _networkType;
         private int _nodeCount;
@@ -1002,6 +1192,7 @@ namespace Hecton8.Power
         private NativeArray<float> _nodePotentialFront;
         private NativeArray<float> _nodePotentialBack;
         private NativeArray<float> _nodeServedDemand;
+        private NativeArray<float> _nodeVoltageSupplyRatio;
         private NativeArray<float> _componentGeneration;
         private NativeArray<float> _componentDemand;
         private NativeArray<float> _componentServedDemand;
@@ -1013,7 +1204,9 @@ namespace Hecton8.Power
         private NativeArray<TopologySummary> _scheduledTopologySummary;
         private NativeArray<DistributionSummary> _scheduledDistributionSummary;
         private NativeArray<ushort> _publishedNodeStates;
+        private NativeArray<ushort> _publishedNodeStatesBack;
         private NativeParallelHashMap<uint, ushort> _publishedNodeStateMap;
+        private NativeParallelHashMap<uint, ushort> _publishedNodeStateBackMap;
         private NativeQueue<int> _bfsQueue;
         private static int _nextSentinelInstanceId;
         private readonly string _bfsQueueSentinelLabel;
@@ -1021,6 +1214,9 @@ namespace Hecton8.Power
         private bool _evaluateGraphPending;
         private JobHandle _publishNodeStatesJobHandle;
         private bool _publishNodeStatesPending;
+        private TopologySummary _committedTopologySummary;
+        private DistributionSummary _committedDistributionSummary;
+        private bool _buildOpen;
 
         public LogisticsNetworkGraph(int nodeCapacity = 16, int edgeCapacity = 32, int consumerCapacity = 16)
         {
@@ -1051,8 +1247,12 @@ namespace Hecton8.Power
             _consumerMap = new NativeParallelHashMap<int, float>(safeNodeCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeArray<ushort>[nodeCapacity] — published node-state bitmasks — owner: LogisticsNetworkGraph
             _publishedNodeStates = new NativeArray<ushort>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<ushort>[nodeCapacity] — back-buffer node-state bitmasks for async publish — owner: LogisticsNetworkGraph
+            _publishedNodeStatesBack = new NativeArray<ushort>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeParallelHashMap<uint,ushort>[nodeCapacity] — published node-state lookup by stable node id — owner: LogisticsNetworkGraph
             _publishedNodeStateMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, Allocator.Persistent);
+            // COLD ALLOC: NativeParallelHashMap<uint,ushort>[nodeCapacity] — back-buffer node-state lookup for async publish — owner: LogisticsNetworkGraph
+            _publishedNodeStateBackMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, Allocator.Persistent);
             // COLD ALLOC: NativeQueue<int>[nodeCapacity] — iterative BFS frontier — owner: LogisticsNetworkGraph
             _bfsQueue = new NativeQueue<int>(Allocator.Persistent);
             NativeMemorySentinel.RegisterNativeQueue(
@@ -1061,6 +1261,11 @@ namespace Hecton8.Power
                 nameof(LogisticsNetworkGraph),
                 _bfsQueueSentinelLabel,
                 NativeAllocationLifetime.Session);
+            _committedDistributionSummary = new DistributionSummary
+            {
+                SupplyRatio = 1f,
+                BrownoutTier = LogisticsBrownoutTier.None
+            };
         }
 
         public int NodeCount => _nodeCount;
@@ -1094,6 +1299,7 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _nodePotentialFront, disposeDependency);
             DisposeNativeArray(ref _nodePotentialBack, disposeDependency);
             DisposeNativeArray(ref _nodeServedDemand, disposeDependency);
+            DisposeNativeArray(ref _nodeVoltageSupplyRatio, disposeDependency);
             DisposeNativeArray(ref _componentGeneration, disposeDependency);
             DisposeNativeArray(ref _componentDemand, disposeDependency);
             DisposeNativeArray(ref _componentServedDemand, disposeDependency);
@@ -1105,7 +1311,9 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _scheduledTopologySummary, disposeDependency);
             DisposeNativeArray(ref _scheduledDistributionSummary, disposeDependency);
             DisposeNativeArray(ref _publishedNodeStates, disposeDependency);
+            DisposeNativeArray(ref _publishedNodeStatesBack, disposeDependency);
             DisposeNativeParallelHashMap(ref _publishedNodeStateMap, disposeDependency);
+            DisposeNativeParallelHashMap(ref _publishedNodeStateBackMap, disposeDependency);
 
             if (_bfsQueue.IsCreated)
             {
@@ -1126,6 +1334,7 @@ namespace Hecton8.Power
             _publishNodeStatesJobHandle = default;
             _evaluateGraphPending = false;
             _publishNodeStatesPending = false;
+            _buildOpen = false;
 
             return JobHandle.CombineDependencies(evaluationHandle, publishHandle);
         }
@@ -1165,13 +1374,17 @@ namespace Hecton8.Power
 
         public void BeginBuild(LogisticsNetworkType networkType, int nodeCapacity, int edgeCapacity, int consumerCapacity)
         {
-            CompleteEvaluation();
-            CompleteNodeStatePublish();
+            if (!TryCompleteEvaluation() || !TryCompleteNodeStatePublish())
+            {
+                _buildOpen = false;
+                return;
+            }
 
             int safeNodeCapacity = math.max(1, nodeCapacity);
             int safeEdgeCapacity = math.max(1, edgeCapacity);
             int safeConsumerCapacity = math.max(1, consumerCapacity);
 
+            _buildOpen = true;
             _networkType = networkType;
             _nodeCount = 0;
             _edgeCount = 0;
@@ -1194,6 +1407,9 @@ namespace Hecton8.Power
 
         public int AddNode(uint nodeId, float capacity, float resistance, byte priorityTier, LogisticsNodeFlags flags, byte reservedState)
         {
+            if (!_buildOpen)
+                return -1;
+
             if (_nodeCount >= _nodeBuffer.Length)
                 EnsureNodeCapacity(_nodeCount + 1);
 
@@ -1215,6 +1431,9 @@ namespace Hecton8.Power
 
         public void AddEdge(int sourceNodeIndex, int destinationNodeIndex, float resistance)
         {
+            if (!_buildOpen)
+                return;
+
             if (_topologyEdgeList.Length >= _topologyEdgeList.Capacity)
                 _topologyEdgeList.Capacity = math.max(1, _topologyEdgeList.Capacity * 2);
 
@@ -1228,6 +1447,9 @@ namespace Hecton8.Power
 
         public void AddProducer(int nodeIndex, float productionRate)
         {
+            if (!_buildOpen)
+                return;
+
             if (nodeIndex < 0 || nodeIndex >= _nodeCount || productionRate <= 0f)
                 return;
 
@@ -1243,6 +1465,9 @@ namespace Hecton8.Power
 
         public void AddConsumer(int nodeIndex, float demand, int powerPriority, byte priorityTier, LogisticsConsumerFlags flags)
         {
+            if (!_buildOpen)
+                return;
+
             if (nodeIndex < 0 || nodeIndex >= _nodeCount || demand <= 0f)
                 return;
 
@@ -1263,6 +1488,9 @@ namespace Hecton8.Power
 
         public void FinalizeBuild()
         {
+            if (!_buildOpen)
+                return;
+
             int nodeCount = _nodeCount;
             for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
                 _edgeOffsets[nodeIndex] = 0;
@@ -1297,11 +1525,14 @@ namespace Hecton8.Power
                 _edgeDestinations[writeIndex] = edge.DestinationNodeIndex;
                 _edgeResistance[writeIndex] = edge.Resistance;
             }
+
+            _buildOpen = false;
         }
 
         public TopologySummary AnalyzeTopology()
         {
-            CompleteEvaluation();
+            if (!TryCompleteEvaluation())
+                return _committedTopologySummary;
 
             TopologySummary summary = new TopologySummary
             {
@@ -1370,12 +1601,14 @@ namespace Hecton8.Power
             summary.BfsVisitedCount = TraverseReachableFromInternal(0);
             summary.ProducerReachableCount = TraverseProducerReachability();
             MarkIsolatedNodesFromVisited();
+            _committedTopologySummary = summary;
             return summary;
         }
 
         public DistributionSummary Distribute()
         {
-            CompleteEvaluation();
+            if (!TryCompleteEvaluation())
+                return _committedDistributionSummary;
 
             DistributionSummary summary = new DistributionSummary
             {
@@ -1401,8 +1634,9 @@ namespace Hecton8.Power
             BuildNodeInjection();
             RelaxNodePotentials();
             AccumulateNodeLoadsFromPotentials();
-            summary.UnservedDemand = math.max(0f, summary.TotalConsumption - summary.ServedDemand);
-            summary.HasDeficit = summary.UnservedDemand > Epsilon;
+            ApplyVoltageBrownoutConsumerStates();
+            FinalizeDistributionSummaryAfterVoltage(ref summary);
+            _committedDistributionSummary = summary;
             return summary;
         }
 
@@ -1445,7 +1679,8 @@ namespace Hecton8.Power
 
         public void ScheduleNodeStatePublish(JobHandle dependency)
         {
-            CompleteNodeStatePublish();
+            if (_publishNodeStatesPending)
+                return;
 
             if (_nodeCount <= 0)
             {
@@ -1454,15 +1689,16 @@ namespace Hecton8.Power
             }
 
             EnsurePublishedStateCapacity(_nodeCount);
-            _publishedNodeStateMap.Clear();
+            _publishedNodeStateBackMap.Clear();
 
             PublishNodeStatesJob job = new PublishNodeStatesJob
             {
                 Nodes = _nodeBuffer,
                 NodeNetInjection = _nodeNetInjection,
                 NodeServedDemand = _nodeServedDemand,
-                PublishedNodeStates = _publishedNodeStates,
-                PublishedNodeStateMap = _publishedNodeStateMap.AsParallelWriter()
+                NodeVoltageSupplyRatio = _nodeVoltageSupplyRatio,
+                PublishedNodeStates = _publishedNodeStatesBack,
+                PublishedNodeStateMap = _publishedNodeStateBackMap.AsParallelWriter()
             };
 
             _publishNodeStatesJobHandle = job.Schedule(_nodeCount, ParallelNodeBatchSize, dependency);
@@ -1471,7 +1707,8 @@ namespace Hecton8.Power
 
         public JobHandle ScheduleEvaluation()
         {
-            CompleteEvaluation();
+            if (_evaluateGraphPending)
+                return _evaluateGraphJobHandle;
 
             if (_nodeCount <= 0)
             {
@@ -1482,6 +1719,7 @@ namespace Hecton8.Power
                     SupplyRatio = 1f,
                     BrownoutTier = LogisticsBrownoutTier.None
                 };
+                CommitScheduledEvaluation();
                 return default;
             }
 
@@ -1513,6 +1751,7 @@ namespace Hecton8.Power
                 NodePotentialFront = _nodePotentialFront,
                 NodePotentialBack = _nodePotentialBack,
                 NodeServedDemand = _nodeServedDemand,
+                NodeVoltageSupplyRatio = _nodeVoltageSupplyRatio,
                 ComponentGeneration = _componentGeneration,
                 ComponentDemand = _componentDemand,
                 ComponentServedDemand = _componentServedDemand,
@@ -1536,30 +1775,22 @@ namespace Hecton8.Power
 
             evaluationHandle = initializePotentialsJob.Schedule(_nodeCount, ParallelNodeBatchSize, evaluationHandle);
 
-            NativeArray<float> relaxFront = _nodePotentialFront;
-            NativeArray<float> relaxBack = _nodePotentialBack;
-            for (int iteration = 0; iteration < MaxJacobiIterations; iteration++)
+            RelaxNodePotentialsConvergedJob relaxPotentialsJob = new RelaxNodePotentialsConvergedJob
             {
-                RelaxNodePotentialsJob relaxPotentialsJob = new RelaxNodePotentialsJob
-                {
-                    NetworkType = _networkType,
-                    NodeCount = _nodeCount,
-                    Nodes = _nodeBuffer,
-                    EdgeOffsets = _edgeOffsets,
-                    EdgeDestinations = _edgeDestinations,
-                    EdgeResistance = _edgeResistance,
-                    ComponentIds = _componentIds,
-                    ComponentAnchorNode = _componentAnchorNode,
-                    NodeNetInjection = _nodeNetInjection,
-                    NodePotentialFront = relaxFront,
-                    NodePotentialBack = relaxBack
-                };
+                NetworkType = _networkType,
+                NodeCount = _nodeCount,
+                Nodes = _nodeBuffer,
+                EdgeOffsets = _edgeOffsets,
+                EdgeDestinations = _edgeDestinations,
+                EdgeResistance = _edgeResistance,
+                ComponentIds = _componentIds,
+                ComponentAnchorNode = _componentAnchorNode,
+                NodeNetInjection = _nodeNetInjection,
+                NodePotentialFront = _nodePotentialFront,
+                NodePotentialBack = _nodePotentialBack
+            };
 
-                evaluationHandle = relaxPotentialsJob.Schedule(_nodeCount, ParallelNodeBatchSize, evaluationHandle);
-                NativeArray<float> swap = relaxFront;
-                relaxFront = relaxBack;
-                relaxBack = swap;
-            }
+            evaluationHandle = relaxPotentialsJob.Schedule(evaluationHandle);
 
             ApplyPotentialsAndLoadsJob applyPotentialsAndLoadsJob = new ApplyPotentialsAndLoadsJob
             {
@@ -1571,22 +1802,44 @@ namespace Hecton8.Power
                 EdgeResistance = _edgeResistance,
                 NodeServedDemand = _nodeServedDemand,
                 NodeNetInjection = _nodeNetInjection,
-                FinalPotentials = relaxFront
+                FinalPotentials = _nodePotentialFront,
+                NodeVoltageSupplyRatio = _nodeVoltageSupplyRatio
             };
 
-            _evaluateGraphJobHandle = applyPotentialsAndLoadsJob.Schedule(_nodeCount, ParallelNodeBatchSize, evaluationHandle);
+            evaluationHandle = applyPotentialsAndLoadsJob.Schedule(_nodeCount, ParallelNodeBatchSize, evaluationHandle);
+
+            int consumerCount = ConsumerCount;
+            if (consumerCount > 0)
+            {
+                ApplyVoltageBrownoutConsumerStatesJob voltageConsumerStatesJob = new ApplyVoltageBrownoutConsumerStatesJob
+                {
+                    NetworkType = _networkType,
+                    NodeCount = _nodeCount,
+                    Consumers = _consumers,
+                    Nodes = _nodeBuffer,
+                    NodeVoltageSupplyRatio = _nodeVoltageSupplyRatio,
+                    ConsumerStates = _consumerStates
+                };
+
+                evaluationHandle = voltageConsumerStatesJob.Schedule(consumerCount, ParallelNodeBatchSize, evaluationHandle);
+            }
+
+            FinalizeVoltageDistributionSummaryJob finalizeDistributionSummaryJob = new FinalizeVoltageDistributionSummaryJob
+            {
+                ConsumerCount = consumerCount,
+                Consumers = _consumers,
+                ConsumerStates = _consumerStates,
+                DistributionSummaryBuffer = _scheduledDistributionSummary
+            };
+
+            _evaluateGraphJobHandle = finalizeDistributionSummaryJob.Schedule(evaluationHandle);
             _evaluateGraphPending = true;
             return _evaluateGraphJobHandle;
         }
 
         public void CompleteEvaluation()
         {
-            if (!_evaluateGraphPending)
-                return;
-
-            DispatcherJobSwap.TryComplete(ref _evaluateGraphJobHandle, forceComplete: true);
-            _evaluateGraphJobHandle = default;
-            _evaluateGraphPending = false;
+            TryCompleteEvaluation();
         }
 
         /// <summary>
@@ -1603,38 +1856,40 @@ namespace Hecton8.Power
 
             _evaluateGraphJobHandle = default;
             _evaluateGraphPending = false;
+            CommitScheduledEvaluation();
             return true;
+        }
+
+        private void CommitScheduledEvaluation()
+        {
+            _committedTopologySummary = _scheduledTopologySummary.IsCreated && _scheduledTopologySummary.Length > 0
+                ? _scheduledTopologySummary[0]
+                : default;
+
+            _committedDistributionSummary = _scheduledDistributionSummary.IsCreated && _scheduledDistributionSummary.Length > 0
+                ? _scheduledDistributionSummary[0]
+                : new DistributionSummary
+                {
+                    SupplyRatio = 1f,
+                    BrownoutTier = LogisticsBrownoutTier.None
+                };
         }
 
         public TopologySummary GetScheduledTopologySummary()
         {
-            CompleteEvaluation();
-            return _scheduledTopologySummary.IsCreated && _scheduledTopologySummary.Length > 0
-                ? _scheduledTopologySummary[0]
-                : default;
+            TryCompleteEvaluation();
+            return _committedTopologySummary;
         }
 
         public DistributionSummary GetScheduledDistributionSummary()
         {
-            CompleteEvaluation();
-            if (_scheduledDistributionSummary.IsCreated && _scheduledDistributionSummary.Length > 0)
-                return _scheduledDistributionSummary[0];
-
-            return new DistributionSummary
-            {
-                SupplyRatio = 1f,
-                BrownoutTier = LogisticsBrownoutTier.None
-            };
+            TryCompleteEvaluation();
+            return _committedDistributionSummary;
         }
 
         public void CompleteNodeStatePublish()
         {
-            if (!_publishNodeStatesPending)
-                return;
-
-            DispatcherJobSwap.TryComplete(ref _publishNodeStatesJobHandle, forceComplete: true);
-            _publishNodeStatesJobHandle = default;
-            _publishNodeStatesPending = false;
+            TryCompleteNodeStatePublish();
         }
 
         /// <summary>
@@ -1651,26 +1906,43 @@ namespace Hecton8.Power
 
             _publishNodeStatesJobHandle = default;
             _publishNodeStatesPending = false;
+            SwapPublishedNodeStateBuffers();
             return true;
+        }
+
+        private void SwapPublishedNodeStateBuffers()
+        {
+            NativeArray<ushort> statesSwap = _publishedNodeStates;
+            _publishedNodeStates = _publishedNodeStatesBack;
+            _publishedNodeStatesBack = statesSwap;
+
+            NativeParallelHashMap<uint, ushort> mapSwap = _publishedNodeStateMap;
+            _publishedNodeStateMap = _publishedNodeStateBackMap;
+            _publishedNodeStateBackMap = mapSwap;
         }
 
         public void PublishNodeStateSynchronously()
         {
-            CompleteNodeStatePublish();
+            if (_publishNodeStatesPending && !TryCompleteNodeStatePublish())
+                return;
+
             PublishNodeStatesMainThread();
         }
 
         public void ClearPublishedNodeStates()
         {
-            CompleteNodeStatePublish();
+            if (_publishNodeStatesPending && !TryCompleteNodeStatePublish())
+                return;
 
             if (_publishedNodeStateMap.IsCreated)
                 _publishedNodeStateMap.Clear();
+            if (_publishedNodeStateBackMap.IsCreated)
+                _publishedNodeStateBackMap.Clear();
         }
 
         public bool TryGetPublishedNodeState(uint nodeId, out ushort stateBits)
         {
-            CompleteNodeStatePublish();
+            TryCompleteNodeStatePublish();
 
             if (!_publishedNodeStateMap.IsCreated)
             {
@@ -1759,6 +2031,7 @@ namespace Hecton8.Power
                 _nodePotentialFront[nodeIndex] = 0f;
                 _nodePotentialBack[nodeIndex] = 0f;
                 _nodeServedDemand[nodeIndex] = 0f;
+                _nodeVoltageSupplyRatio[nodeIndex] = 1f;
                 _componentGeneration[nodeIndex] = 0f;
                 _componentDemand[nodeIndex] = 0f;
                 _componentServedDemand[nodeIndex] = 0f;
@@ -2008,12 +2281,84 @@ namespace Hecton8.Power
                         branchLoad += flowRate;
                 }
 
+                float voltageSupplyRatio = ResolveVoltageSupplyRatio(_nodePotentialFront[nodeIndex], _nodeServedDemand[nodeIndex]);
+                _nodeVoltageSupplyRatio[nodeIndex] = voltageSupplyRatio;
+                if (_networkType == LogisticsNetworkType.PowerDc &&
+                    _nodeServedDemand[nodeIndex] > Epsilon &&
+                    voltageSupplyRatio + Epsilon < VoltageBrownoutNodeRatio)
+                {
+                    node.Flags |= LogisticsNodeFlags.Brownout;
+                }
+
                 node.CurrentLoad = math.max(branchLoad, _nodeServedDemand[nodeIndex] + math.max(0f, _nodeNetInjection[nodeIndex]));
                 if (node.CurrentLoad > node.Capacity * 1.15f)
                     node.Flags |= LogisticsNodeFlags.Overloaded;
 
                 _nodeBuffer[nodeIndex] = node;
             }
+        }
+
+        private void ApplyVoltageBrownoutConsumerStates()
+        {
+            if (_networkType != LogisticsNetworkType.PowerDc)
+                return;
+
+            int consumerCount = ConsumerCount;
+            for (int consumerIndex = 0; consumerIndex < consumerCount; consumerIndex++)
+            {
+                if (_consumerStates[consumerIndex] == 0)
+                    continue;
+
+                ConsumerRecord consumer = _consumers[consumerIndex];
+                int nodeIndex = consumer.NodeIndex;
+                if (!IsValidNodeIndex(nodeIndex))
+                {
+                    _consumerStates[consumerIndex] = 0;
+                    continue;
+                }
+
+                LogisticsNode node = _nodeBuffer[nodeIndex];
+                if ((node.Flags & (LogisticsNodeFlags.Isolated | LogisticsNodeFlags.Ruptured)) != 0)
+                {
+                    _consumerStates[consumerIndex] = 0;
+                    continue;
+                }
+
+                float voltageSupplyRatio = _nodeVoltageSupplyRatio[nodeIndex];
+                if (!math.isfinite(voltageSupplyRatio) ||
+                    voltageSupplyRatio + Epsilon < ResolveMinimumVoltageRatio(in consumer))
+                {
+                    _consumerStates[consumerIndex] = 0;
+                }
+            }
+        }
+
+        private void FinalizeDistributionSummaryAfterVoltage(ref DistributionSummary summary)
+        {
+            int consumerCount = ConsumerCount;
+            int poweredCount = 0;
+            float servedDemand = 0f;
+            for (int consumerIndex = 0; consumerIndex < consumerCount; consumerIndex++)
+            {
+                if (_consumerStates[consumerIndex] == 0)
+                    continue;
+
+                poweredCount++;
+                servedDemand += _consumers[consumerIndex].Demand;
+            }
+
+            summary.PoweredCount = poweredCount;
+            summary.DisabledCount = math.max(0, consumerCount - poweredCount);
+            summary.ServedDemand = servedDemand;
+            summary.UnservedDemand = math.max(0f, summary.TotalConsumption - servedDemand);
+            summary.HasDeficit = summary.UnservedDemand > Epsilon;
+
+            float deliveredRatio = summary.TotalConsumption > Epsilon
+                ? math.saturate(servedDemand / summary.TotalConsumption)
+                : 1f;
+            LogisticsBrownoutTier voltageTier = ResolveBrownoutTier(deliveredRatio);
+            if ((byte)voltageTier > (byte)summary.BrownoutTier)
+                summary.BrownoutTier = voltageTier;
         }
 
         private void ResetTopologyScratch(int nodeCount)
@@ -2233,6 +2578,34 @@ namespace Hecton8.Power
             }
         }
 
+        private float ResolveVoltageSupplyRatio(float nodePotential, float servedDemand)
+        {
+            if (_networkType != LogisticsNetworkType.PowerDc || servedDemand <= Epsilon)
+                return 1f;
+
+            float voltageDropPenalty = math.abs(nodePotential) * VoltageDropPenaltyScale;
+            float denominator = servedDemand + voltageDropPenalty;
+            if (denominator <= Epsilon || !math.isfinite(denominator))
+                return 0f;
+
+            float ratio = servedDemand / denominator;
+            return math.isfinite(ratio) ? math.saturate(ratio) : 0f;
+        }
+
+        private static float ResolveMinimumVoltageRatio(in ConsumerRecord consumer)
+        {
+            if ((consumer.Flags & LogisticsConsumerFlags.EmergencyReserved) != 0 || consumer.PriorityTier == 0)
+                return EmergencyVoltageMinimumRatio;
+
+            if ((consumer.Flags & LogisticsConsumerFlags.Essential) != 0 || consumer.PriorityTier <= 1)
+                return EssentialVoltageMinimumRatio;
+
+            if ((consumer.Flags & LogisticsConsumerFlags.AmbientLighting) != 0 || consumer.PriorityTier >= 2)
+                return AmbientVoltageMinimumRatio;
+
+            return StandardVoltageMinimumRatio;
+        }
+
         private int FindRoot(int nodeIndex)
         {
             int parentIndex = _parents[nodeIndex];
@@ -2314,6 +2687,12 @@ namespace Hecton8.Power
 
                 if ((node.Flags & LogisticsNodeFlags.Brownout) != 0)
                     stateBits |= LogisticsNodeStateBits.Brownout;
+
+                if (_nodeServedDemand[nodeIndex] > Epsilon &&
+                    _nodeVoltageSupplyRatio[nodeIndex] < VoltageBrownoutNodeRatio)
+                {
+                    stateBits |= LogisticsNodeStateBits.Brownout;
+                }
 
                 if ((node.Flags & LogisticsNodeFlags.Isolated) != 0)
                     stateBits |= LogisticsNodeStateBits.Isolated;
@@ -2435,6 +2814,7 @@ namespace Hecton8.Power
             EnsureFloatArrayCapacity(ref _nodePotentialFront, nodeCount);
             EnsureFloatArrayCapacity(ref _nodePotentialBack, nodeCount);
             EnsureFloatArrayCapacity(ref _nodeServedDemand, nodeCount);
+            EnsureFloatArrayCapacity(ref _nodeVoltageSupplyRatio, nodeCount);
             EnsureFloatArrayCapacity(ref _componentGeneration, nodeCount);
             EnsureFloatArrayCapacity(ref _componentDemand, nodeCount);
             EnsureFloatArrayCapacity(ref _componentServedDemand, nodeCount);
@@ -2504,7 +2884,9 @@ namespace Hecton8.Power
         {
             int safeLength = math.max(1, requiredLength);
             EnsureUShortArrayCapacity(ref _publishedNodeStates, safeLength);
+            EnsureUShortArrayCapacity(ref _publishedNodeStatesBack, safeLength);
             EnsureUShortMapCapacity(ref _publishedNodeStateMap, safeLength);
+            EnsureUShortMapCapacity(ref _publishedNodeStateBackMap, safeLength);
         }
 
         private static void EnsureUShortArrayCapacity(ref NativeArray<ushort> array, int requiredLength)

@@ -375,6 +375,15 @@ namespace Hecton8.Gameplay
             return runtime.TryGetWirelessBrownoutFeedback(_runtimeToolId, out flickerScalar);
         }
 
+        protected bool TryGetToolBrownoutFlicker(out float flickerScalar)
+        {
+            flickerScalar = 0f;
+            if (!_runtimeToolRegistered || !(GlobalRegistry.ModularEquipment is ModularEquipmentEngine runtime))
+                return false;
+
+            return runtime.TryGetToolBrownoutFeedback(_runtimeToolId, out flickerScalar);
+        }
+
         protected bool HasToolEnergyOrWirelessPath()
         {
             if (GetRuntimeBatteryNormalized(0f) > 0.0001f)

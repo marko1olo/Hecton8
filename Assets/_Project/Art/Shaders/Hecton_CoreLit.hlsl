@@ -32,6 +32,9 @@ float4 _HectonBiolumVolumeParams;
 float4 _HectonProjectedCausticsWorldRect;
 float4 _HectonProjectedCausticsParams;
 float4 _HectonProjectedCausticsColor;
+float4 _FinalGiantAbyssLight;
+float4 _SunDirection;
+float4 _AegirDirection;
 float4 _HectonCausticsSimulationParamsA;
 float4 _HectonCausticsSimulationParamsB;
 float4 _HectonCausticsSimulationParamsC;
@@ -55,6 +58,8 @@ TEXTURE3D(_HectonBiolumVolumeTex);
 SAMPLER(sampler_HectonBiolumVolumeTex);
 TEXTURE2D(_NoirFogLUT);
 SAMPLER(sampler_NoirFogLUT);
+TEXTURE2D(_HectonProjectedCausticsTex);
+SAMPLER(sampler_HectonProjectedCausticsTex);
 TEXTURE2D(_HectonSedimentMaskTex);
 SAMPLER(sampler_HectonSedimentMaskTex);
 float4 _HectonNoirFogLutParams;
@@ -73,6 +78,11 @@ float3 HectonCoreLitSafeNormalize(float3 value)
 {
     float lenSq = dot(value, value);
     return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+}
+
+half HectonCoreLitResolveVertexAmbientOcclusion(float bakedAo)
+{
+    return (half)saturate(bakedAo);
 }
 
 float4 HectonCoreLitApplyClipSpaceDepthBias(float4 positionCS, float depthBias, float depthBiasMask)
@@ -265,6 +275,21 @@ float HectonCoreLitResolveFlashlightShadowFloor()
 bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon);
 float HectonCoreLitEvaluateCaveAmbientFactor(float3 positionWS, float3 normalWS);
 
+float HectonCoreLitEvaluateDirectionalCausticsWeight(float3 normalWS)
+{
+    float3 normal = HectonCoreLitSafeNormalize(normalWS);
+    float3 sunDirection = HectonCoreLitSafeNormalize(_SunDirection.xyz);
+    return saturate(dot(normal, -sunDirection));
+}
+
+half3 HectonCoreLitEvaluateGiantAbyssLight(float3 normalWS)
+{
+    float3 normal = HectonCoreLitSafeNormalize(normalWS);
+    float3 aegirDirection = HectonCoreLitSafeNormalize(_AegirDirection.xyz);
+    float facing = saturate(dot(normal, aegirDirection) * 0.5 + 0.5);
+    return (half3)(_FinalGiantAbyssLight.rgb * facing);
+}
+
 float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 normalWS)
 {
     if (_HectonProjectedCausticsParams.x <= 0.0001)
@@ -285,15 +310,16 @@ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 norma
         return 0.0;
 
     float upFacing = saturate(normalWS.y * 1.25);
-    float caustics = HectonCoreLitEvaluateProceduralCaustics(uv);
+    float directionalWeight = HectonCoreLitEvaluateDirectionalCausticsWeight(normalWS);
+    float caustics = SAMPLE_TEXTURE2D_LOD(_HectonProjectedCausticsTex, sampler_HectonProjectedCausticsTex, uv, 0).r;
     float shadowTerm = HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
-    return caustics * depthFade * upFacing * shadowTerm * _HectonProjectedCausticsParams.x;
+    return caustics * depthFade * upFacing * directionalWeight * shadowTerm * _HectonProjectedCausticsParams.x;
 }
 
 half3 HectonCoreLitEvaluateProjectedCausticsScattering(float3 positionWS, float3 normalWS)
 {
     float mask = HectonCoreLitEvaluateProjectedCausticsMask(positionWS, normalWS);
-    return (half3)(_HectonProjectedCausticsColor.rgb * mask);
+    return (half3)(_HectonProjectedCausticsColor.rgb * mask) + (HectonCoreLitEvaluateGiantAbyssLight(normalWS) * (half)(mask * 0.35));
 }
 
 half HectonCoreLitEvaluateNoirFog(half fogRaw)
@@ -342,7 +368,7 @@ half3 HectonCoreLitApplyNoirFog(half3 color, half fogRaw, float3 positionWS)
     float3 absorption = max(lerp(sourceAbsorption, targetAbsorption, lutBlend), float3(0.0, 0.0, 0.0));
     float3 ambientTint = lerp(sourceAmbient, targetAmbient, lutBlend);
     float3 attenuatedColor = color * exp(-absorption * lutSample);
-    float3 fogTarget = fogColor + ambientTint * 0.35;
+    float3 fogTarget = fogColor + ambientTint * 0.35 + _FinalGiantAbyssLight.rgb * (0.18 * saturate(lutSample));
     return (half3)lerp(attenuatedColor, fogTarget, saturate(lutSample));
 }
 

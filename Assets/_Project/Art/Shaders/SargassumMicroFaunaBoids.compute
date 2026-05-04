@@ -78,6 +78,7 @@ RWStructuredBuffer<int4> _PbdCorrections;
 RWStructuredBuffer<uint> _SpatialGridCounts;
 RWStructuredBuffer<uint> _SpatialGridCells;
 float4 _OriginShiftDelta;
+float4 _AbyssalFlowWeatherCurrent;
 
 Texture2D<float4> _DensityTex;
 SamplerState sampler_DensityTex;
@@ -125,10 +126,14 @@ struct SargassumSimulationFrameData
     float4 ThreatVoxelCellSize;
     float4 TransportCapsule0;
     float4 TransportCapsule1;
+    float4 SubmarineWake0;
+    float4 SubmarineWake1;
     float4 Ecosystem0;
     float4 Fragmentation0;
     float4 Fragmentation1;
     float4 SonarScatter0;
+    float4 AcousticPanic0;
+    float4 AcousticPanic1;
 };
 
 StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
@@ -235,6 +240,10 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define _TransportCapsuleRadius (_SargassumSimulationFrame[0].TransportCapsule0.w)
 #define _TransportCapsuleVelocityWS (_SargassumSimulationFrame[0].TransportCapsule1.xyz)
 #define _TransportCapsuleHalfLength (_SargassumSimulationFrame[0].TransportCapsule1.w)
+#define _SubmarineWakePositionWS (_SargassumSimulationFrame[0].SubmarineWake0.xyz)
+#define _SubmarineWakeRadius (_SargassumSimulationFrame[0].SubmarineWake0.w)
+#define _SubmarineWakeVelocityWS (_SargassumSimulationFrame[0].SubmarineWake1.xyz)
+#define _SubmarineWakeHalfLength (_SargassumSimulationFrame[0].SubmarineWake1.w)
 #define _FragmentationWeight (_SargassumSimulationFrame[0].Ecosystem0.x)
 #define _SonarScatterStrength (_SargassumSimulationFrame[0].Ecosystem0.y)
 #define _SonarScatterBandWidth (_SargassumSimulationFrame[0].Ecosystem0.z)
@@ -246,6 +255,11 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define _FragmentationRadiusWS (_SargassumSimulationFrame[0].Fragmentation1.w)
 #define _SonarScatterOriginWS (_SargassumSimulationFrame[0].SonarScatter0.xyz)
 #define _SonarScatterWaveFrontWS (_SargassumSimulationFrame[0].SonarScatter0.w)
+#define _AcousticPanicOriginWS (_SargassumSimulationFrame[0].AcousticPanic0.xyz)
+#define _AcousticPanicRadius (_SargassumSimulationFrame[0].AcousticPanic0.w)
+#define _AcousticPanicSeed (_SargassumSimulationFrame[0].AcousticPanic1.x)
+#define _AcousticPanicStrength (_SargassumSimulationFrame[0].AcousticPanic1.y)
+#define _AcousticPanicTimeRemaining (_SargassumSimulationFrame[0].AcousticPanic1.z)
 
 #define LATCH_STATS_QUANTIZE 2048.0
 #define WAKE_STATS_QUANTIZE 1024.0
@@ -267,6 +281,8 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define TAU 6.28318530718
 #define PANIC_CONTAGION_GAIN 0.10
 #define PANIC_CONTAGION_THRESHOLD 0.35
+#define DENSITY_CAP_MAX_BOIDS 8.0
+#define DENSITY_CAP_RADIUS_SQ 4.0
 #define BOID_FLAG_ACTIVE 1u
 #define BOID_FLAG_HUNTING 2u
 #define BOID_FLAG_FLEEING 4u
@@ -345,8 +361,12 @@ float3 ResolveFlowField(float3 positionWS, float phaseTime)
     float nz = ValueNoise2(float2(sz + time + 67.30, sx + 149.20)) * 2.0 - 1.0;
     float ny = (ValueNoise2(float2(sx + time * 0.7 + 211.50, sz + time * 0.3)) * 2.0 - 1.0) * 0.12;
     float3 driftVelocity = _DeltaTime > 0.0001 ? (_GlobalDriftDelta / max(_DeltaTime, 0.0001)) : float3(0.0, 0.0, 0.0);
+    float3 weatherCurrent = _AbyssalFlowWeatherCurrent.xyz;
+    if (dot(weatherCurrent, weatherCurrent) > 1.0e+16)
+        weatherCurrent = float3(0.0, 0.0, 0.0);
+
     float proceduralStrength = max(length(driftVelocity) * 0.5, max(_CruiseSpeed * 0.18, 0.22));
-    return driftVelocity + float3(nx, ny, nz) * proceduralStrength;
+    return driftVelocity + weatherCurrent + float3(nx, ny, nz) * proceduralStrength;
 }
 
 float3 ResolveFlowTurbulence(float3 positionWS, float phaseTime)
@@ -808,6 +828,83 @@ bool TryResolveTransportCapsuleAvoidance(float3 positionWS, float3 velocityWS, o
     return avoidanceGate > 0.0;
 }
 
+bool TryResolveSubmarineWakeRepulsion(float3 positionWS, out float3 repulsionWS, out float3 vortexWS, out float wakeGate)
+{
+    repulsionWS = float3(0.0, 0.0, 0.0);
+    vortexWS = float3(0.0, 0.0, 0.0);
+    wakeGate = 0.0;
+    if (_SubmarineWakeRadius <= EPSILON)
+        return false;
+
+    float3 hullVelocityWS = _SubmarineWakeVelocityWS;
+    float hullSpeed = length(hullVelocityWS);
+    if (hullSpeed <= EPSILON)
+        return false;
+
+    float3 wakeAxisWS = SafeNormalize(hullVelocityWS);
+    float3 deltaToHullWS = positionWS - _SubmarineWakePositionWS;
+    float distanceSq = dot(deltaToHullWS, deltaToHullWS);
+    float radiusSq = _SubmarineWakeRadius * _SubmarineWakeRadius;
+    if (distanceSq >= radiusSq)
+        return false;
+
+    float distance = sqrt(max(distanceSq, EPSILON));
+    float3 radialNormalWS = distance > EPSILON ? deltaToHullWS / distance : -wakeAxisWS;
+    float radialGate = 1.0 - saturate(distance / max(_SubmarineWakeRadius, 0.001));
+    float minimumDistanceSq = max(_BoidBodyRadius * _BoidBodyRadius, EPSILON);
+    float inverseSquareGate = saturate((_BoidBodyRadius * _SubmarineWakeRadius) / max(distanceSq, minimumDistanceSq));
+    wakeGate = saturate((radialGate * 0.65 + inverseSquareGate * 0.35) * saturate(hullSpeed / 4.0));
+    if (wakeGate <= 0.0)
+        return false;
+
+    float halfLength = max(_SubmarineWakeHalfLength, _SubmarineWakeRadius);
+    float axialOffset = dot(deltaToHullWS, wakeAxisWS);
+    float trailingGate = saturate((-axialOffset + _SubmarineWakeRadius) / max(halfLength + _SubmarineWakeRadius, 0.001));
+    float propellerGate = trailingGate * saturate(hullSpeed / 18.0);
+    float3 tangentWS = SafeNormalize(cross(wakeAxisWS, radialNormalWS));
+    if (dot(tangentWS, tangentWS) <= EPSILON)
+        tangentWS = SafeNormalize(cross(float3(0.0, 1.0, 0.0), radialNormalWS));
+    if (dot(tangentWS, tangentWS) <= EPSILON)
+        tangentWS = float3(1.0, 0.0, 0.0);
+
+    repulsionWS = radialNormalWS;
+    vortexWS = SafeNormalize((tangentWS * (0.85 + propellerGate * 1.65)) + (radialNormalWS * 0.35) - (wakeAxisWS * trailingGate * 0.22));
+    return dot(repulsionWS, repulsionWS) > EPSILON && dot(vortexWS, vortexWS) > EPSILON;
+}
+
+float3 ResolveAcousticPanicChaos(float3 positionWS, uint boidIndex, out float panicGate)
+{
+    panicGate = 0.0;
+    if (_AcousticPanicRadius <= EPSILON || _AcousticPanicStrength <= EPSILON || _AcousticPanicTimeRemaining <= EPSILON)
+        return float3(0.0, 0.0, 0.0);
+
+    float3 fromPing = positionWS - _AcousticPanicOriginWS;
+    float distanceSq = dot(fromPing, fromPing);
+    float radiusSq = _AcousticPanicRadius * _AcousticPanicRadius;
+    if (distanceSq >= radiusSq)
+        return float3(0.0, 0.0, 0.0);
+
+    float distanceToPing = sqrt(max(distanceSq, EPSILON));
+    float radialGate = 1.0 - smoothstep(_AcousticPanicRadius * 0.25, _AcousticPanicRadius, distanceToPing);
+    panicGate = saturate(radialGate * _AcousticPanicStrength);
+    if (panicGate <= EPSILON)
+        return float3(0.0, 0.0, 0.0);
+
+    float seed = _AcousticPanicSeed + (float)boidIndex * 17.131 + _SimulationTime * 11.719;
+    float3 chaos = float3(
+        Hash11(seed + positionWS.x * 0.317) * 2.0 - 1.0,
+        Hash11(seed + positionWS.y * 0.373) * 2.0 - 1.0,
+        Hash11(seed + positionWS.z * 0.419) * 2.0 - 1.0);
+    float3 radialDirection = distanceSq > EPSILON ? fromPing * rsqrt(distanceSq) : SafeNormalize(chaos);
+    float3 vortexDirection = SafeNormalize(cross(radialDirection, chaos));
+    if (dot(vortexDirection, vortexDirection) <= EPSILON)
+        vortexDirection = SafeNormalize(cross(radialDirection, float3(0.0, 1.0, 0.0)));
+    if (dot(vortexDirection, vortexDirection) <= EPSILON)
+        vortexDirection = float3(1.0, 0.0, 0.0);
+
+    return SafeNormalize((chaos * 0.65) + (radialDirection * 0.55) + (vortexDirection * 0.85));
+}
+
 uint LoadSpatialGridCount(int flatIndex)
 {
     uint maxCount = (uint)max(_SpatialGridMeta.w, 1);
@@ -1187,6 +1284,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
                     int cellIndex = FlattenGridCell(neighbourCell, gridResolution);
                     uint cellCount = LoadSpatialGridCount(cellIndex);
+                    float densityOverflow01 = saturate(((float)cellCount - DENSITY_CAP_MAX_BOIDS) / DENSITY_CAP_MAX_BOIDS);
                     int cellBaseIndex = cellIndex * max(_SpatialGridMeta.w, 1);
                     [loop]
                     for (uint slotIndex = 0u; slotIndex < cellCount; slotIndex++)
@@ -1216,8 +1314,23 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
                                     if (distanceSq <= separationRadiusSq)
                                     {
-                                        separationSum -= toOther * rsqrt(distanceSq + 0.025);
-                                        separationCount += 1.0;
+                                        float clampedDistanceSq = max(distanceSq, 0.04);
+                                        float3 awayDirection = -toOther * rsqrt(clampedDistanceSq);
+                                        float falloff = saturate(1.0 - (distanceSq / max(separationRadiusSq, EPSILON)));
+                                        float inverseSquare = rcp(clampedDistanceSq);
+                                        float densityPenalty = densityOverflow01 > 0.0 && distanceSq <= DENSITY_CAP_RADIUS_SQ
+                                            ? densityOverflow01 * 3.75 * inverseSquare
+                                            : 0.0;
+                                        separationSum += awayDirection * ((inverseSquare * falloff) + densityPenalty);
+                                        separationCount += 1.0 + densityOverflow01;
+                                    }
+                                    else if (densityOverflow01 > 0.0 && distanceSq <= DENSITY_CAP_RADIUS_SQ)
+                                    {
+                                        float clampedDistanceSq = max(distanceSq, 0.04);
+                                        float3 awayDirection = -toOther * rsqrt(clampedDistanceSq);
+                                        float inverseSquarePenalty = densityOverflow01 * 3.75 * rcp(clampedDistanceSq);
+                                        separationSum += awayDirection * inverseSquarePenalty;
+                                        separationCount += densityOverflow01;
                                     }
                                 }
                             }
@@ -1246,10 +1359,12 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float panicFromMassive = 0.0;
     float leviathanHuntPulse = 0.0;
     float panicFromSonar = 0.0;
+    float panicFromAcoustic = 0.0;
     float3 bloomImpulse = float3(0.0, 0.0, 0.0);
     float3 collapseImpulse = float3(0.0, 0.0, 0.0);
     float3 fleeFromMassive = float3(0.0, 0.0, 0.0);
     float3 sonarScatterDirectionWS = float3(0.0, 0.0, 0.0);
+    float3 acousticPanicDirectionWS = ResolveAcousticPanicChaos(positionWS, index, panicFromAcoustic);
     if (_SonarScatterStrength > 0.001)
     {
         float3 fromSonarOrigin = positionWS - _SonarScatterOriginWS;
@@ -1330,7 +1445,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    float sourcePanic = saturate(max(panic, max(max(max(max(max(panicFromCut, panicFromPlayer), panicFromMassive), panicFromSonar), threatGridPanic), leviathanHuntPulse)));
+    float sourcePanic = saturate(max(panic, max(max(max(max(max(max(panicFromCut, panicFromPlayer), panicFromMassive), panicFromSonar), panicFromAcoustic), threatGridPanic), leviathanHuntPulse)));
     panic = saturate(sourcePanic + panicContagion);
     stateFlags = max(panic, leviathanHuntPulse) >= 0.05 ? BuildFleeStateFlags() : BuildAliveStateFlags();
 
@@ -1361,13 +1476,21 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         acceleration += sonarScatterDirectionWS * (_SonarScatterAcceleration * panicFromSonar);
     }
 
+    if (panicFromAcoustic > 0.0 && dot(acousticPanicDirectionWS, acousticPanicDirectionWS) > EPSILON)
+    {
+        float acousticImpulse = _SonarScatterAcceleration * (1.2 + panicFromAcoustic);
+        acceleration += acousticPanicDirectionWS * (acousticImpulse * panicFromAcoustic);
+        velocity += acousticPanicDirectionWS * (_MaxSpeed * panicFromAcoustic * _DeltaTime);
+    }
+
     bool fleeState = IsFleeState(stateFlags);
     float separationWeight = _SeparationWeight * (fleeState ? 2.0 : 1.0);
     float fleeMaxSpeedMultiplier = fleeState ? 2.0 : 1.0;
     if (separationCount > 0.0)
     {
-        float3 separationForce = SafeNormalize(separationSum / separationCount);
-        acceleration += separationForce * separationWeight;
+        float3 separationForce = separationSum / separationCount;
+        float separationMagnitude = min(length(separationForce), 4.0);
+        acceleration += SafeNormalize(separationForce) * (separationMagnitude * separationWeight);
     }
 
     if (neighbourCount > 0.0)
@@ -1421,6 +1544,27 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
             float vortexForceWeight = transportAvoidanceGate * transportAvoidanceGate * max(_AlignmentWeight, 0.35);
             acceleration += transportSteerForce * transportForceWeight;
             acceleration += vortexSteerForce * vortexForceWeight;
+        }
+    }
+
+    if (!simplifiedTier)
+    {
+        float3 submarineRepulsionWS;
+        float3 submarineVortexWS;
+        float submarineWakeGate;
+        if (TryResolveSubmarineWakeRepulsion(positionWS, submarineRepulsionWS, submarineVortexWS, submarineWakeGate))
+        {
+            float submarineSpeed01 = saturate(length(_SubmarineWakeVelocityWS) / 22.0);
+            float wakeSpeedScale = 1.0 + submarineSpeed01;
+            float3 repulsionSteerForce = (submarineRepulsionWS * _MaxSpeed * wakeSpeedScale) - velocity;
+            float3 vortexSteerForce = (submarineVortexWS * _MaxSpeed * wakeSpeedScale) - velocity;
+            float repulsionWeight = submarineWakeGate * max(_PanicWeight, 1.0) * (2.4 + submarineSpeed01 * 3.2);
+            float vortexWeight = submarineWakeGate * submarineWakeGate * max(_AlignmentWeight, 0.5) * (1.6 + submarineSpeed01 * 2.8);
+            acceleration += repulsionSteerForce * repulsionWeight;
+            acceleration += vortexSteerForce * vortexWeight;
+            velocity += (submarineRepulsionWS * repulsionWeight + submarineVortexWS * vortexWeight) * (_DeltaTime * 0.12);
+            panic = max(panic, submarineWakeGate);
+            stateFlags = BuildFleeStateFlags();
         }
     }
 

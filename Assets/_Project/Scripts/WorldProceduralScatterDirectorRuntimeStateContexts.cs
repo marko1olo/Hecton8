@@ -248,6 +248,34 @@ namespace Hecton8.World
             public ScatterPlacementRegistrationContext PlacementRegistrationContext;
         }
 
+        private readonly struct ScatterBiomeTransitionContext
+        {
+            public ScatterBiomeTransitionContext(
+                bool hasSecondary,
+                HectonBiomeMatrixProfile secondaryProfile,
+                HectonBiomeFamilyProfile secondaryFamily,
+                WorldProceduralBiomeFamilyContextProfile secondaryBiomeContext,
+                ScatterBiomeScoreContext secondaryScoreContext,
+                float secondaryWeight)
+            {
+                HasSecondary = hasSecondary && secondaryProfile != null && secondaryWeight > 0f;
+                SecondaryProfile = HasSecondary ? secondaryProfile : null;
+                SecondaryFamily = HasSecondary ? secondaryFamily : null;
+                SecondaryBiomeContext = HasSecondary ? secondaryBiomeContext : null;
+                SecondaryScoreContext = HasSecondary ? secondaryScoreContext : default;
+                SecondaryWeight = HasSecondary ? Mathf.Clamp01(secondaryWeight) : 0f;
+                PrimaryWeight = 1f - SecondaryWeight;
+            }
+
+            public bool HasSecondary { get; }
+            public HectonBiomeMatrixProfile SecondaryProfile { get; }
+            public HectonBiomeFamilyProfile SecondaryFamily { get; }
+            public WorldProceduralBiomeFamilyContextProfile SecondaryBiomeContext { get; }
+            public ScatterBiomeScoreContext SecondaryScoreContext { get; }
+            public float PrimaryWeight { get; }
+            public float SecondaryWeight { get; }
+        }
+
         private struct ScatterCellPlacementCounters
         {
             public int GroundCount;

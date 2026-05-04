@@ -269,6 +269,37 @@ namespace Hecton8.Gameplay
             _hydrodynamicDepthMeters = math.max(0f, depthMeters);
         }
 
+        public float SampleMacroFloraDensityAlongVelocity(
+            HectonMapMagicVegetationBridge vegetationBridge,
+            float probeLengthMeters,
+            int probeCount,
+            float fixedDeltaTime)
+        {
+            _lastKelpDensity01 = 0f;
+            if (vegetationBridge == null || _body == null || probeCount <= 0)
+                return 0f;
+
+            Vector3 velocity = HectonPlayerMotor.SafeVelocity(_linearVelocity);
+            float speed = velocity.magnitude;
+            if (speed * speed <= MinVectorMagnitudeSq)
+                return 0f;
+
+            Vector3 direction = velocity / math.max(speed, 0.0001f);
+            int safeProbeCount = math.min(math.max(1, probeCount), 16);
+            float probeDistance = math.max(1f, math.max(probeLengthMeters, speed * math.max(fixedDeltaTime, 0.0001f)));
+            Vector3 origin = _body.worldCenterOfMass;
+            float accumulatedDensity = 0f;
+            for (int i = 0; i < safeProbeCount; i++)
+            {
+                float sampleT = (i + 1f) / safeProbeCount;
+                Vector3 samplePosition = origin + direction * (probeDistance * sampleT);
+                accumulatedDensity += vegetationBridge.SampleMacroFloraDensityImmediate(samplePosition);
+            }
+
+            _lastKelpDensity01 = math.saturate(accumulatedDensity / safeProbeCount);
+            return _lastKelpDensity01;
+        }
+
         /// <summary>Activates a kinematic macro-flora tether that suppresses thrust and constrains the vehicle to one anchor.</summary>
         public void BeginEntanglement(Vector3 anchorPosition, float tetherLength)
         {
@@ -681,12 +712,18 @@ namespace Hecton8.Gameplay
 
         private float ResolveDepthScaledDragCoefficient(float baseDragCoefficient)
         {
+            return ResolveDepthLogarithmicDragCoefficient(baseDragCoefficient, _hydrodynamicDepthMeters);
+        }
+
+        internal static float ResolveDepthLogarithmicDragCoefficient(float baseDragCoefficient, float depthMeters)
+        {
             float safeBaseDrag = math.max(0f, baseDragCoefficient);
             if (safeBaseDrag <= 0f)
                 return 0f;
 
-            float depthViscosityScale = 1f + math.log(1f + (_hydrodynamicDepthMeters / MinDepthViscosityReferenceMeters));
-            return safeBaseDrag * math.max(1f, depthViscosityScale);
+            float safeDepthMeters = math.max(0f, depthMeters);
+            float depthScale = math.log10(1f + (safeDepthMeters / MinDepthViscosityReferenceMeters));
+            return safeBaseDrag * math.max(0f, depthScale);
         }
 
         private Vector3 ApplyKelpPushback(Vector3 velocity, float deltaTime)

@@ -49,6 +49,8 @@ namespace Hecton8.Bootstrap
         private const string PersistentWorldRegistryRuntimeName = "[PersistentWorldRegistry]";
         private const string RuntimePerformanceProfilerRuntimeName = "[RuntimePerformanceProfiler]";
         private const string CrashTelemetryRuntimeName = "[CrashTelemetryBuffer]";
+        private const string RuntimeWatchdogRuntimeName = "[RuntimeWatchdog]";
+        private const string GCMonitorRuntimeName = "[GCMonitor]";
         private const string HeadlessCommandLineArg = "-headless";
         private const int OptionalServiceTimeoutMilliseconds = 2000;
         private const int ShaderWarmupTimeoutMilliseconds = 5000;
@@ -366,6 +368,8 @@ namespace Hecton8.Bootstrap
                 return;
 
             EnsureCrashTelemetryBufferRegistered();
+            EnsureRuntimeWatchdogRegistered();
+            EnsureGCMonitorRegistered();
             _bootstrapRunInProgress = true;
             _ = RunBootstrapStateMachineAsync(destroyCancellationToken);
         }
@@ -739,6 +743,8 @@ namespace Hecton8.Bootstrap
         private bool InitializeCoreLayer()
         {
             EnsureCrashTelemetryBufferRegistered();
+            EnsureRuntimeWatchdogRegistered();
+            EnsureGCMonitorRegistered();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureRuntimePerformanceProfilerRegistered();
 #endif
@@ -1264,6 +1270,8 @@ namespace Hecton8.Bootstrap
             PersistRuntimeService(dispatcher);
 
             dispatcher.InitializeService();
+            EnsureRuntimeWatchdogRegistered();
+            EnsureGCMonitorRegistered();
             return dispatcher;
         }
 
@@ -1390,26 +1398,61 @@ namespace Hecton8.Bootstrap
                 DontDestroyOnLoad(telemetry.gameObject);
             }
 
+            BootstrapStatus.RegisterSafeHaltTelemetryReporter(CrashTelemetryBuffer.ReportBootstrapSafeHalt);
             return telemetry;
+        }
+
+        private static Hecton8.Core.RuntimeWatchdog EnsureRuntimeWatchdogRegistered()
+        {
+            Hecton8.Core.RuntimeWatchdog watchdog = Hecton8.Core.RuntimeWatchdog.EnsureRuntimeInstance();
+            if (watchdog == null)
+            {
+                GameObject runtimeRoot = new GameObject(RuntimeWatchdogRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-owned runtime liveness watchdog root - owner: GameBootstrapper
+                watchdog = runtimeRoot.AddComponent<Hecton8.Core.RuntimeWatchdog>();
+            }
+
+            PersistRuntimeService(watchdog);
+            watchdog.InitializeService();
+            return watchdog;
+        }
+
+        private static Hecton8.Core.GCMonitor EnsureGCMonitorRegistered()
+        {
+            Hecton8.Core.GCMonitor monitor = Hecton8.Core.GCMonitor.EnsureRuntimeInstance();
+            if (monitor == null)
+            {
+                GameObject runtimeRoot = new GameObject(GCMonitorRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-owned GC sentinel root - owner: GameBootstrapper
+                monitor = runtimeRoot.AddComponent<Hecton8.Core.GCMonitor>();
+            }
+
+            PersistRuntimeService(monitor);
+            monitor.InitializeService();
+            return monitor;
         }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static RuntimePerformanceProfiler EnsureRuntimePerformanceProfilerRegistered()
         {
             RuntimePerformanceProfiler profiler = RuntimePerformanceProfiler.Instance;
+            bool activateAfterConfigure = false;
             if (profiler == null)
             {
                 GameObject runtimeRoot = new GameObject(RuntimePerformanceProfilerRuntimeName); // COLD ALLOC: GameObject[1] - development performance profiler root - owner: GameBootstrapper
+                runtimeRoot.SetActive(false);
                 profiler = runtimeRoot.AddComponent<RuntimePerformanceProfiler>();
+                activateAfterConfigure = true;
             }
 
             profiler.ConfigureForDevRun(
                 autoStartOnEnable: true,
                 enableBudgetViolationLogging: true,
                 enableWindowLogging: false,
+                autoStartNewGame: false,
                 sampleWindow: 2f);
 
             PersistRuntimeService(profiler);
+            if (activateAfterConfigure)
+                profiler.gameObject.SetActive(true);
 
             return profiler;
         }

@@ -19,6 +19,8 @@ namespace Hecton8.World
 
             public NativeArray<WorldProceduralFieldSampler.CellInputData> CellSamplingInputs;
             public NativeArray<WorldProceduralFieldSampler.CellOutputData> CellSamplingOutputs;
+            public NativeArray<WorldProceduralFieldSampler.BiomeInfluenceCell> BiomeInfluenceCells;
+            public NativeArray<uint> BiomeInfluencePackedCells;
             public NativeArray<ScatterSimulationCellState> ScatterBackendCellStates;
             public readonly System.Collections.Generic.Dictionary<long, ScatterPlacement> DesiredPlacements = new System.Collections.Generic.Dictionary<long, ScatterPlacement>(2048);
             public readonly System.Collections.Generic.Dictionary<long, ScatterPlacement> RetainedPlacements = new System.Collections.Generic.Dictionary<long, ScatterPlacement>(4096);
@@ -26,6 +28,7 @@ namespace Hecton8.World
             public readonly System.Collections.Generic.Stack<ScatterPlacement> PlacementPool = new System.Collections.Generic.Stack<ScatterPlacement>(4096);
             public readonly System.Collections.Generic.Dictionary<long, int> StructureWindowCounts = new System.Collections.Generic.Dictionary<long, int>(256);
             public readonly System.Collections.Generic.Dictionary<long, int> SpawnWindowCounts = new System.Collections.Generic.Dictionary<long, int>(256);
+            public readonly System.Collections.Generic.Dictionary<long, int> FloraStreamCellBiomeCounts = new System.Collections.Generic.Dictionary<long, int>(512);
             public readonly System.Collections.Generic.List<ScatterCandidate> CandidateBuffer = new System.Collections.Generic.List<ScatterCandidate>(256);
             public readonly System.Collections.Generic.List<long> RemovalBuffer = new System.Collections.Generic.List<long>(256);
             public readonly System.Collections.Generic.List<WorldFaunaSpawnRegistry.Anchor> FaunaAnchorBuffer = new System.Collections.Generic.List<WorldFaunaSpawnRegistry.Anchor>(128);
@@ -100,8 +103,8 @@ namespace Hecton8.World
             public readonly float[] ClusterAccentRoleMaxRatioBuffer = new float[_ClusterAccentRoleCount];
             public readonly int[] StructureAccentCountsBuffer = new int[_StructureAccentRoleCount];
             public readonly int[] StructureAccentRoleMaxBuffer = new int[_StructureAccentRoleCount];
-            public readonly System.Collections.Generic.Dictionary<string, int>[] LayerFamilyCountsBuffer = CreateLayerFamilyCounters();
-            public readonly System.Collections.Generic.Dictionary<string, int>[] LayerBiomeCountsBuffer = CreateLayerFamilyCounters();
+            public readonly System.Collections.Generic.Dictionary<string, int>[] LayerFamilyCountsBuffer;
+            public readonly System.Collections.Generic.Dictionary<string, int>[] LayerBiomeCountsBuffer;
             public readonly System.Collections.Generic.Dictionary<HectonBiomeMatrixProfile, int> SampledMatrixProfileCounts = new System.Collections.Generic.Dictionary<HectonBiomeMatrixProfile, int>(16);
             public readonly System.Collections.Generic.Dictionary<string, int> SampledMatrixBiomeCounts = new System.Collections.Generic.Dictionary<string, int>(16);
             public readonly System.Collections.Generic.Dictionary<string, int> SampledBiomeCounts = new System.Collections.Generic.Dictionary<string, int>(16);
@@ -129,6 +132,16 @@ namespace Hecton8.World
 
             public ScatterWorkingMemory()
             {
+                // COLD ALLOC: Dictionary<string,int>[4x8] - scatter layer family counters - owner: WorldProceduralScatterDirector.ScatterWorkingMemory
+                LayerFamilyCountsBuffer = new System.Collections.Generic.Dictionary<string, int>[ScatterLayerCount];
+                // COLD ALLOC: Dictionary<string,int>[4x8] - scatter layer biome counters - owner: WorldProceduralScatterDirector.ScatterWorkingMemory
+                LayerBiomeCountsBuffer = new System.Collections.Generic.Dictionary<string, int>[ScatterLayerCount];
+                for (int layerIndex = 0; layerIndex < ScatterLayerCount; layerIndex++)
+                {
+                    LayerFamilyCountsBuffer[layerIndex] = new System.Collections.Generic.Dictionary<string, int>(8);
+                    LayerBiomeCountsBuffer[layerIndex] = new System.Collections.Generic.Dictionary<string, int>(8);
+                }
+
                 // COLD ALLOC: NativeList<ScatterPlacementSpatialMetadata>[16384] — native scatter spacing cache — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
                 GridPlacementSpatialMetadata = new NativeList<ScatterPlacementSpatialMetadata>(InitialGridPlacementNativeCapacity, Allocator.Persistent);
                 // COLD ALLOC: NativeParallelMultiHashMap<int, float3>[16384] — native scatter cell position buckets — owner: WorldProceduralScatterDirector.ScatterWorkingMemory
@@ -156,6 +169,8 @@ namespace Hecton8.World
 
                 EnsureCapacity(ref CellSamplingInputs, requiredCapacity, nameof(CellSamplingInputs));
                 EnsureCapacity(ref CellSamplingOutputs, requiredCapacity, nameof(CellSamplingOutputs));
+                EnsureCapacity(ref BiomeInfluenceCells, requiredCapacity, nameof(BiomeInfluenceCells));
+                EnsureCapacity(ref BiomeInfluencePackedCells, requiredCapacity, nameof(BiomeInfluencePackedCells));
                 EnsureCapacity(ref ScatterBackendCellStates, requiredCapacity, nameof(ScatterBackendCellStates));
             }
 
@@ -188,6 +203,7 @@ namespace Hecton8.World
                 if (CandidateAcceptanceStructureAccentRoleMaxCountsScratch.IsCreated)
                     ClearNativeArray(CandidateAcceptanceStructureAccentRoleMaxCountsScratch, 0);
 
+                FloraStreamCellBiomeCounts.Clear();
                 GridPlacementNativeOverflowed = false;
             }
 
@@ -349,6 +365,8 @@ namespace Hecton8.World
             {
                 DisposeNativeArray(ref CellSamplingInputs);
                 DisposeNativeArray(ref CellSamplingOutputs);
+                DisposeNativeArray(ref BiomeInfluenceCells);
+                DisposeNativeArray(ref BiomeInfluencePackedCells);
                 DisposeNativeArray(ref ScatterBackendCellStates);
                 DisposeNativeList(ref GridPlacementSpatialMetadata, nameof(GridPlacementSpatialMetadata));
                 DisposeNativeParallelMultiHashMap(ref GridPlacementPositionBuckets, nameof(GridPlacementPositionBuckets));
@@ -386,6 +404,7 @@ namespace Hecton8.World
                 PlacementPool.Clear();
                 StructureWindowCounts.Clear();
                 SpawnWindowCounts.Clear();
+                FloraStreamCellBiomeCounts.Clear();
                 CandidateBuffer.Clear();
                 RemovalBuffer.Clear();
                 FaunaAnchorBuffer.Clear();

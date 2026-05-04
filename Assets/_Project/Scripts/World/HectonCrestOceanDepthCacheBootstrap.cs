@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using Crest;
+using Hecton8.Celestial;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using System.Diagnostics;
@@ -79,6 +80,10 @@ namespace Hecton8.World
         [Tooltip("When enabled, the cache repopulates after terrain streaming changes the captured footprint.")]
         [SerializeField] private bool repopulateOnTerrainChange = true;
 
+        [Header("-- Tidal Cache Modulation --")]
+        [SerializeField] private bool enableTidalHeightCacheModulation = true;
+        [SerializeField, Min(0f)] private float tidalHeightCacheAmplitudeMeters = 4f;
+
         [Tooltip("When enabled in editor/development, save one post-populate depth cache frame to Temp/depth_debug.png.")]
         [SerializeField] private bool dumpDepthDebugFrame;
 
@@ -105,6 +110,8 @@ namespace Hecton8.World
         [SerializeField] private float _debugCaptureCameraNear;
         [SerializeField] private float _debugCaptureCameraFar;
         [SerializeField] private float _debugCaptureCameraOrthoSize;
+        [SerializeField] private float _debugTidalWaterLevelOffset;
+        [SerializeField] private Vector3 _debugTidalAegirDirection;
 
         private bool _registeredToSlowTickManager;
         private bool _hasConfiguredBounds;
@@ -591,14 +598,47 @@ namespace Hecton8.World
 
         private float ResolveWaterLevel()
         {
+            float baseWaterLevel;
             if (oceanRenderer != null && oceanRenderer.Root != null)
             {
                 float seaLevel = oceanRenderer.SeaLevel;
                 if (IsFinite(seaLevel))
-                    return seaLevel;
+                {
+                    baseWaterLevel = seaLevel;
+                    return baseWaterLevel + ResolveTidalHeightCacheOffset();
+                }
             }
 
-            return ResolveFallbackWaterLevel();
+            baseWaterLevel = ResolveFallbackWaterLevel();
+            return baseWaterLevel + ResolveTidalHeightCacheOffset();
+        }
+
+        private float ResolveTidalHeightCacheOffset()
+        {
+            _debugTidalWaterLevelOffset = 0f;
+            _debugTidalAegirDirection = Vector3.zero;
+
+            if (!enableTidalHeightCacheModulation || tidalHeightCacheAmplitudeMeters <= 0f)
+                return 0f;
+
+            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            if (celestialEngine == null ||
+                !celestialEngine.TryGetAegirSkyDirection(out Vector3 aegirDirection) ||
+                !IsFiniteVector3(aegirDirection))
+            {
+                return 0f;
+            }
+
+            float directionMagnitudeSqr = aegirDirection.sqrMagnitude;
+            if (directionMagnitudeSqr <= 0.0001f)
+                return 0f;
+
+            Vector3 normalizedAegirDirection = aegirDirection / Mathf.Sqrt(directionMagnitudeSqr);
+            float verticalDot = Mathf.Clamp(Vector3.Dot(normalizedAegirDirection, Vector3.up), -1f, 1f);
+            float offset = verticalDot * Mathf.Max(0f, tidalHeightCacheAmplitudeMeters);
+            _debugTidalAegirDirection = normalizedAegirDirection;
+            _debugTidalWaterLevelOffset = offset;
+            return offset;
         }
 
         private void PurgeLegacyDepthCaches()
@@ -919,6 +959,14 @@ namespace Hecton8.World
 
             return fallbackMask;
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            terrainBoundsPadding = Mathf.Max(0f, terrainBoundsPadding);
+            tidalHeightCacheAmplitudeMeters = Mathf.Max(0f, tidalHeightCacheAmplitudeMeters);
+        }
+#endif
 
         private static bool IsFinite(float value)
         {

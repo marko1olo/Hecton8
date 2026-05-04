@@ -5,9 +5,9 @@
 
 #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/Common.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/DeclareDepthTexture.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
 
+// Compute kernels sample the bound depth texture directly; DeclareDepthTexture maps incorrectly on cs_5_0.
 TEXTURE2D_X(_HectonVolumetricSourceColor);
 TEXTURE2D_X(_HectonVolumetricSourceDepth);
 TEXTURE2D_X(_HectonVolumetricHalfInput);
@@ -20,8 +20,10 @@ CBUFFER_START(HectonVolumetricLightParams)
     float4 _HectonVolumetricMainLightDirection;
     float4 _HectonVolumetricMainLightColor;
     float4 _HectonVolumetricScatteringParams;
+    float4 _HectonHudFogPerturbation;
     float4 _HectonVolumetricMarchParams;
     float4 _HectonVolumetricCompositeParams;
+    float _FogScatteringCoeff;
     float4x4 _HectonVolumetricInverseViewProjection;
     float4x4 _HectonVolumetricViewProjection;
 CBUFFER_END
@@ -48,7 +50,7 @@ float ResolveFarRawDepth()
 
 void ResolveDepthData(float2 screenUv, out float rawDepth, out float validMask, out float linearEyeDepth, out float3 positionWS)
 {
-    rawDepth = SampleSceneDepth(screenUv);
+    rawDepth = SAMPLE_TEXTURE2D_X_LOD(_HectonVolumetricSourceDepth, sampler_PointClamp, saturate(screenUv), 0).r;
 #if UNITY_REVERSED_Z
     validMask = step(0.0001, rawDepth);
 #else
@@ -210,12 +212,19 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
         if (density <= 0.0001)
             continue;
 
-        float extinction = density * max(scatterCoeff, 0.0001);
+        float nearCameraHudMask = saturate(1.0 - normalizedTravel * 2.75);
+        float hudFogLuminance = saturate(_HectonHudFogPerturbation.x);
+        float hudDensityLift = 1.0 + hudFogLuminance * nearCameraHudMask * 0.18;
+        float localScatterCoeff = scatterCoeff + max(_HectonHudFogPerturbation.z, 0.0) * nearCameraHudMask;
+        localScatterCoeff += max(_FogScatteringCoeff, 0.0) * hudFogLuminance * nearCameraHudMask * 2.0;
+        density *= hudDensityLift;
+
+        float extinction = density * max(localScatterCoeff, 0.0001);
         float cosTheta = saturate(dot(rayDirectionWS, lightDirectionWS));
         float phase = PhaseHG(cosTheta, anisotropy);
         float shadowTerm = ResolveMainLightShadow(samplePositionWS);
         transmittance *= exp(-extinction * stepSize);
-        accumulatedLight += density * scatterCoeff * phase * shadowTerm * transmittance * stepSize;
+        accumulatedLight += density * localScatterCoeff * phase * shadowTerm * transmittance * stepSize;
 
         if (transmittance <= minTransmittance)
             break;

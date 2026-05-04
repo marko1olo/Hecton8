@@ -277,6 +277,7 @@ namespace Hecton8.Audio
         private PlaybackState _playbackState = PlaybackState.Silent;
         private HectonMusicBiomeProfile _resolvedProfile;
         private HectonMusicBiomeProfile _manualProfile;
+        private HectonMusicBiomeProfile _matrixBiomeProfile;
         private HectonMusicBiomeProfile _waitProfile;
         private int _activeVoiceIndex = InvalidVoiceIndex;
         private float _waitTimerSeconds;
@@ -350,6 +351,7 @@ namespace Hecton8.Audio
         /// Currently resolved runtime profile.
         /// </summary>
         public HectonMusicBiomeProfile ActiveResolvedProfile => _resolvedProfile;
+        public HectonMusicBiomeProfile ActiveMatrixBiomeMusicProfile => _matrixBiomeProfile;
 
         /// <summary>
         /// True while a forced override cue is active.
@@ -553,6 +555,19 @@ namespace Hecton8.Audio
         public void SetManualBiomeProfile(HectonMusicBiomeProfile profile)
         {
             _manualProfile = profile;
+            ReevaluateContext(true);
+        }
+
+        /// <summary>
+        /// Sets the biome-matrix driven exploration profile. Combat, menu, base, cave, and thermal contexts keep priority.
+        /// </summary>
+        public void SetMatrixBiomeProfile(HectonBiomeMatrixProfile matrixProfile)
+        {
+            HectonMusicBiomeProfile resolvedProfile = ResolveMatrixBiomeMusicProfile(matrixProfile);
+            if (_matrixBiomeProfile == resolvedProfile)
+                return;
+
+            _matrixBiomeProfile = resolvedProfile;
             ReevaluateContext(true);
         }
 
@@ -1127,6 +1142,9 @@ namespace Hecton8.Audio
             if (ResolveCaveContext())
                 return _caveProfile != null ? _caveProfile : (_shelfProfile != null ? _shelfProfile : _fallbackProfile);
 
+            if (_matrixBiomeProfile != null)
+                return _matrixBiomeProfile;
+
             int depthTier = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentDepthTier : 0;
             if (depthTier > 0)
             {
@@ -1232,6 +1250,41 @@ namespace Hecton8.Audio
             HectonBiomeMatrixProfile matrixProfile = _biomeMatrixDirector != null ? _biomeMatrixDirector.CurrentProfile : null;
             return matrixProfile != null &&
                    (ContainsAnyToken(matrixProfile.biomeName, ThermalTokens) || ContainsAnyToken(matrixProfile.shortDescription, ThermalTokens));
+        }
+
+        private HectonMusicBiomeProfile ResolveMatrixBiomeMusicProfile(HectonBiomeMatrixProfile matrixProfile)
+        {
+            if (matrixProfile == null)
+                return null;
+
+            if (matrixProfile.musicBiomeProfile != null)
+                return matrixProfile.musicBiomeProfile;
+
+            string biomeName = matrixProfile.biomeName;
+            string description = matrixProfile.shortDescription;
+            string familyId = matrixProfile.familyId;
+
+            if (ContainsAnyToken(biomeName, ThermalTokens) ||
+                ContainsAnyToken(description, ThermalTokens) ||
+                ContainsAnyToken(familyId, ThermalTokens))
+            {
+                return _thermalProfile != null ? _thermalProfile : (_abyssProfile != null ? _abyssProfile : _fallbackProfile);
+            }
+
+            if (ContainsAnyToken(biomeName, CaveTokens) ||
+                ContainsAnyToken(description, CaveTokens) ||
+                ContainsAnyToken(familyId, CaveTokens))
+            {
+                return _caveProfile != null ? _caveProfile : (_shelfProfile != null ? _shelfProfile : _fallbackProfile);
+            }
+
+            if (matrixProfile.depthTier <= 3)
+                return _shallowProfile != null ? _shallowProfile : _fallbackProfile;
+
+            if (matrixProfile.depthTier <= 9)
+                return _shelfProfile != null ? _shelfProfile : _fallbackProfile;
+
+            return _abyssProfile != null ? _abyssProfile : _fallbackProfile;
         }
 
         private bool TryStartNextResolvedTrack(bool forceCrossfade)
@@ -2187,7 +2240,7 @@ namespace Hecton8.Audio
 
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
-            ReevaluateContext(true);
+            SetMatrixBiomeProfile(profile);
         }
 
         private void HandleDepthTierChanged(int depthTier, float depthMeters)

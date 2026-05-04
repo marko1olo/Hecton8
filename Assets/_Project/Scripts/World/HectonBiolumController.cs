@@ -43,6 +43,7 @@ namespace Hecton8.World
         [Header("── Eclipse Boost ────────────────────────────")]
         [Tooltip("Множитель во время затмения.")]
         [SerializeField, Range(1f, 3f)] private float eclipseMultiplier = 1.5f;
+        [SerializeField, Min(0.01f)] private float eclipseMultiplierSmoothRate = 1.25f;
 
         [Header("── Signal Pulse ────────────────────────────")]
         [Tooltip("Дополнительная интенсивность при пульсе сигнала Атлас-6.")]
@@ -60,6 +61,7 @@ namespace Hecton8.World
 
         [Header("── References ──────────────────────────────")]
         [SerializeField] private HectonSurvivalSystem survivalSystem;
+        [SerializeField] private Light[] localProxyLights;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -78,6 +80,9 @@ namespace Hecton8.World
         private float _targetIntensity;
         private float _atlasPulseBurst;
         private float _sonarPulseBurst;
+        private float _currentEclipseMultiplier = 1f;
+        private float _targetEclipseMultiplier = 1f;
+        private float[] _localProxyLightBaseIntensities;
         private bool  _eclipseActive;
         private bool  _registered;
 
@@ -105,10 +110,14 @@ namespace Hecton8.World
             DepthZoneEvents.Register(this);
             SpectrumEvents.RegisterSonarPulseListener(this);
 
+            CacheLocalProxyLightBaselines();
             _currentIntensity = baseIntensity;
+            _currentEclipseMultiplier = 1f;
+            _targetEclipseMultiplier = 1f;
             _atlasPulseBurst = 0f;
             _sonarPulseBurst = 0f;
             ApplyShader();
+            ApplyLocalProxyLights();
         }
 
         private void OnDisable()
@@ -120,6 +129,9 @@ namespace Hecton8.World
             DepthZoneEvents.Unregister(this);
             SpectrumEvents.UnregisterSonarPulseListener(this);
 
+            _targetEclipseMultiplier = 1f;
+            _currentEclipseMultiplier = 1f;
+            ApplyLocalProxyLights();
             Shader.SetGlobalFloat(_ShaderBiolumIntensity, baseIntensity);
             Shader.SetGlobalFloat(_ShaderBiolumPulseTime, 0f);
         }
@@ -152,8 +164,12 @@ namespace Hecton8.World
 
             float target = Mathf.Lerp(baseIntensity, deepIntensity, depthFactor);
 
-            if (_eclipseActive)
-                target *= eclipseMultiplier;
+            _currentEclipseMultiplier = Mathf.MoveTowards(
+                _currentEclipseMultiplier,
+                _targetEclipseMultiplier,
+                eclipseMultiplierSmoothRate * dt);
+
+            target *= _currentEclipseMultiplier;
 
             _targetIntensity = target;
 
@@ -182,9 +198,49 @@ namespace Hecton8.World
             Shader.SetGlobalFloat(_ShaderBiolumIntensity, _currentIntensity + _atlasPulseBurst + _sonarPulseBurst);
         }
 
+        private void CacheLocalProxyLightBaselines()
+        {
+            int count = localProxyLights != null ? localProxyLights.Length : 0;
+            if (count <= 0)
+                return;
+
+            if (_localProxyLightBaseIntensities == null || _localProxyLightBaseIntensities.Length != count)
+                _localProxyLightBaseIntensities = new float[count]; // COLD ALLOC: float[count] - authored local biolum proxy light baseline cache - owner: HectonBiolumController
+
+            for (int i = 0; i < count; i++)
+            {
+                Light proxyLight = localProxyLights[i];
+                _localProxyLightBaseIntensities[i] = proxyLight != null ? proxyLight.intensity : 0f;
+            }
+        }
+
+        private void ApplyLocalProxyLights()
+        {
+            int count = localProxyLights != null ? localProxyLights.Length : 0;
+            if (count <= 0 || _localProxyLightBaseIntensities == null)
+                return;
+
+            int limit = Mathf.Min(count, _localProxyLightBaseIntensities.Length);
+            for (int i = 0; i < limit; i++)
+            {
+                Light proxyLight = localProxyLights[i];
+                if (proxyLight == null)
+                    continue;
+
+                proxyLight.intensity = _localProxyLightBaseIntensities[i] * _currentEclipseMultiplier;
+            }
+        }
+
         private void HandleEclipsePhase(bool active)
         {
             _eclipseActive = active;
+            _targetEclipseMultiplier = active ? Mathf.Max(1f, eclipseMultiplier) : 1f;
+        }
+
+        private void HandleEclipseBiolumMultiplier(float multiplier)
+        {
+            float localMax = Mathf.Max(1f, eclipseMultiplier);
+            _targetEclipseMultiplier = Mathf.Clamp(multiplier, 1f, localMax);
         }
 
         void IEclipseGameplayEventListener.OnEclipseGameplayPhaseChanged(bool active)
@@ -200,6 +256,11 @@ namespace Hecton8.World
         {
         }
 
+        void IEclipseGameplayEventListener.OnEclipseBiolumMultiplierChanged(float multiplier)
+        {
+            HandleEclipseBiolumMultiplier(multiplier);
+        }
+
         public void OnAtlasSignalEvent(in AtlasSignalEventPayload payload)
         {
             if ((AtlasSignalEventType)payload.EventType == AtlasSignalEventType.Pulse)
@@ -211,6 +272,7 @@ namespace Hecton8.World
             _atlasPulseBurst = Mathf.Max(_atlasPulseBurst, signalPulseBoost * intensity);
             Shader.SetGlobalFloat(_ShaderBiolumPulseTime, Time.time);
             ApplyShader();
+            ApplyLocalProxyLights();
         }
 
         private void HandleSonarPulse(float radius)
@@ -291,6 +353,7 @@ namespace Hecton8.World
             deepTransitionDepth = Mathf.Max(1f, deepTransitionDepth);
             pulseDecayRate = Mathf.Max(0.01f, pulseDecayRate);
             sonarReferenceRadius = Mathf.Max(1f, sonarReferenceRadius);
+            eclipseMultiplierSmoothRate = Mathf.Max(0.01f, eclipseMultiplierSmoothRate);
         }
 #endif
     }

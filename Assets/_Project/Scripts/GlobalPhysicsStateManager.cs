@@ -195,7 +195,7 @@ namespace Hecton8.Physics
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8995)]
-    public sealed class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IOriginShiftListener
+    public sealed class GlobalPhysicsStateManager : MonoBehaviour, IFixedTickable, ILateFrameTickable, IPostFixedTickable, IOriginShiftListener
     {
         private struct RigidbodyState
         {
@@ -277,6 +277,8 @@ namespace Hecton8.Physics
         private const float AddedMassInertiaTensorScale = 0.35f;
         private const float OriginShiftContinuousCcdSpeedMetersPerSecond = 20f;
         private const float KineticAnomalyAccelerationMetersPerSecondSq = 100f;
+        private const float AupJitterThresholdMeters = 0.05f;
+        private const float AupJitterThresholdMetersSq = AupJitterThresholdMeters * AupJitterThresholdMeters;
         private const double FarKinematicSleepDistanceSq = FarKinematicSleepDistanceMeters * FarKinematicSleepDistanceMeters;
         private const double ColliderLodCompoundToSimpleDistanceSq = ColliderLodCompoundToSimpleDistanceMeters * ColliderLodCompoundToSimpleDistanceMeters;
         private const double ColliderLodSimpleToCompoundDistanceSq = ColliderLodSimpleToCompoundDistanceMeters * ColliderLodSimpleToCompoundDistanceMeters;
@@ -303,6 +305,7 @@ namespace Hecton8.Physics
         private bool _isInitialized;
         private bool _registeredFixedTick;
         private bool _registeredLateFrameTick;
+        private bool _registeredPostFixedTick;
         private bool _registeredOriginShift;
         private bool _sceneEventsSubscribed;
         private int _lastKineticAnomalyFrame = -1;
@@ -485,6 +488,7 @@ namespace Hecton8.Physics
                 TryRegisterService();
                 TryRegisterFixedTick();
                 TryRegisterLateFrameTick();
+                TryRegisterPostFixedTick();
                 TryRegisterOriginShift();
                 return;
             }
@@ -502,6 +506,8 @@ namespace Hecton8.Physics
             ScanLoadedScenesForRigidbodies();
             _isInitialized = true;
             TryRegisterFixedTick();
+            TryRegisterLateFrameTick();
+            TryRegisterPostFixedTick();
             TryRegisterOriginShift();
         }
 
@@ -514,6 +520,7 @@ namespace Hecton8.Physics
 
             TryRegisterFixedTick();
             TryRegisterLateFrameTick();
+            TryRegisterPostFixedTick();
             TryRegisterOriginShift();
         }
 
@@ -521,6 +528,12 @@ namespace Hecton8.Physics
         public void LateFrameTick()
         {
             FlushImpactEvents();
+        }
+
+        /// <inheritdoc />
+        public void PostFixedTick(float fixedDeltaTime)
+        {
+            ApplyAupJitterSentinel();
         }
 
         private void OnDisable()
@@ -538,6 +551,12 @@ namespace Hecton8.Physics
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
                 _registeredLateFrameTick = false;
+            }
+
+            if (_registeredPostFixedTick)
+            {
+                GlobalRegistry.UnregisterPostFixedTickable(this, PriorityLayer.Core);
+                _registeredPostFixedTick = false;
             }
 
             if (_registeredOriginShift)
@@ -622,6 +641,17 @@ namespace Hecton8.Physics
             GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
             _registeredLateFrameTick = SystemDispatcher
                 .GetLateFrameLane(PriorityLayer.Core)
+                .Contains(this);
+        }
+
+        private void TryRegisterPostFixedTick()
+        {
+            if (_registeredPostFixedTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterPostFixedTickable(this, PriorityLayer.Core);
+            _registeredPostFixedTick = SystemDispatcher
+                .GetPostFixedLane(PriorityLayer.Core)
                 .Contains(this);
         }
 
@@ -1217,6 +1247,60 @@ namespace Hecton8.Physics
                 bodyState.LastValidAngularVelocity = IsFinite(body.angularVelocity) ? body.angularVelocity : Vector3.zero;
                 _bodyStates[i] = bodyState;
                 _lastValidPositions[i] = new float3(bodyPosition.x, bodyPosition.y, bodyPosition.z);
+            }
+        }
+
+        private void ApplyAupJitterSentinel()
+        {
+            if (!_lastValidPositions.IsCreated || _trackedBodyCount <= 0 || HectonFloatingOrigin.IsShiftInProgress)
+                return;
+
+            for (int i = _trackedBodyCount - 1; i >= 0; i--)
+            {
+                Rigidbody body = _trackedBodies[i];
+                if (body == null)
+                {
+                    RemoveTrackedBodyAt(i);
+                    continue;
+                }
+
+                if (!body.isKinematic)
+                    continue;
+
+                RigidbodyState bodyState = _bodyStates[i];
+                if (!bodyState.HasLastValidAup)
+                    continue;
+
+                Vector3 bodyPosition = body.position;
+                if (!IsFinite(bodyPosition))
+                    continue;
+
+                float3 aupRuntimePosition3 = bodyState.LastValidAup.ToRuntimeFloat3();
+                Vector3 aupRuntimePosition = new Vector3(
+                    aupRuntimePosition3.x,
+                    aupRuntimePosition3.y,
+                    aupRuntimePosition3.z);
+                if (!IsFinite(aupRuntimePosition))
+                    continue;
+
+                Vector3 correctionDelta = aupRuntimePosition - bodyPosition;
+                float correctionSq = correctionDelta.sqrMagnitude;
+                if (correctionSq <= AupJitterThresholdMetersSq)
+                    continue;
+
+                Vector3 linearVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero;
+                Vector3 angularVelocity = IsFinite(body.angularVelocity) ? body.angularVelocity : Vector3.zero;
+                HectonFloatingOrigin.ResyncBody(body, in bodyState.LastValidAup);
+
+                _lastValidPositions[i] = aupRuntimePosition3;
+                bodyState.HasLastValidPosition = true;
+                bodyState.LastValidAup = AbsoluteUniversePosition.FromRuntimePosition(aupRuntimePosition);
+                bodyState.HasLastValidAup = true;
+                bodyState.LastValidLinearVelocity = linearVelocity;
+                bodyState.LastValidAngularVelocity = angularVelocity;
+                _bodyStates[i] = bodyState;
+
+                CrashTelemetryBuffer.ReportAupJitterCorrection(bodyPosition, math.sqrt(correctionSq));
             }
         }
 

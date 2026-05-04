@@ -91,7 +91,9 @@ namespace Hecton8.Visor
                 internal Vector4 mainLightDirection;
                 internal Vector4 mainLightColor;
                 internal Vector4 scatteringParams;
+                internal Vector4 hudFogPerturbation;
                 internal Vector4 marchParams;
+                internal float fogScatteringCoeff;
             }
 
             private sealed class CompositePassData
@@ -208,6 +210,8 @@ namespace Hecton8.Visor
                     Mathf.Max(0f, _settings.scatterCoefficient),
                     Mathf.Clamp(_settings.anisotropy, -0.95f, 0.95f),
                     Mathf.Max(0f, _settings.intensity));
+                Vector4 hudFogPerturbation = Shader.GetGlobalVector(ShaderConstants.HudFogPerturbationId);
+                float fogScatteringCoeff = Shader.GetGlobalFloat(ShaderConstants.FogScatteringCoeffId);
                 Vector4 marchParams = new Vector4(
                     Mathf.Max(0.1f, _settings.maxRayDistance),
                     _settings.ResolveRaymarchSteps(),
@@ -229,7 +233,9 @@ namespace Hecton8.Visor
                     passData.mainLightDirection = _mainLightDirection;
                     passData.mainLightColor = _mainLightColor;
                     passData.scatteringParams = scatteringParams;
+                    passData.hudFogPerturbation = hudFogPerturbation;
                     passData.marchParams = marchParams;
+                    passData.fogScatteringCoeff = Mathf.Max(0f, fogScatteringCoeff);
 
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(halfTexture, AccessFlags.Write);
@@ -246,7 +252,9 @@ namespace Hecton8.Visor
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MainLightDirectionId, data.mainLightDirection);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MainLightColorId, data.mainLightColor);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.ScatteringParamsId, data.scatteringParams);
+                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.HudFogPerturbationId, data.hudFogPerturbation);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MarchParamsId, data.marchParams);
+                        context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FogScatteringCoeffId, data.fogScatteringCoeff);
                         context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
                     });
                 }
@@ -348,6 +356,8 @@ namespace Hecton8.Visor
             internal static readonly int MainLightDirectionId = Shader.PropertyToID("_HectonVolumetricMainLightDirection");
             internal static readonly int MainLightColorId = Shader.PropertyToID("_HectonVolumetricMainLightColor");
             internal static readonly int ScatteringParamsId = Shader.PropertyToID("_HectonVolumetricScatteringParams");
+            internal static readonly int HudFogPerturbationId = Shader.PropertyToID("_HectonHudFogPerturbation");
+            internal static readonly int FogScatteringCoeffId = Shader.PropertyToID("_FogScatteringCoeff");
             internal static readonly int MarchParamsId = Shader.PropertyToID("_HectonVolumetricMarchParams");
             internal static readonly int CompositeParamsId = Shader.PropertyToID("_HectonVolumetricCompositeParams");
         }

@@ -82,6 +82,24 @@ namespace Hecton.Localization
         private const int MadnessChancePercent = 15;
         private const float MadnessRollInterval = 0.5f;
         private const float MadnessBlinkDuration = 2f;
+        private static readonly int[] MadnessWhisperKeyHashes =
+        {
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_01),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_02),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_03),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_04),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_05),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_06),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_07),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_08),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_09),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_10),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_11),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_12),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_13),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_14),
+            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_15)
+        };
         private const string DeepAbyssZoneId = "zone_deep_abyss";
         private const string CorruptionBlocks = "#%&█";
         private const string LatinCorruptionAlphabet = "AEINORSTUVWXYZ";
@@ -203,6 +221,24 @@ namespace Hecton.Localization
             Debug.LogWarning($"[Localization] Missing key: \"{key}\" for {CurrentLanguage}");
 #endif
             return key;
+        }
+
+        /// <summary>
+        /// Resolve a localized raw entry as a span for zero-allocation HUD writers.
+        /// </summary>
+        public ReadOnlySpan<char> GetRawSpanOrFallback(int keyHash, ReadOnlySpan<char> fallback)
+        {
+            return LocRegistry.TryGetRawBuffer(keyHash, out char[] buffer, out int length)
+                ? buffer.AsSpan(0, length)
+                : fallback;
+        }
+
+        /// <summary>
+        /// Resolve a localized raw entry buffer for TMP SetCharArray callers.
+        /// </summary>
+        public bool TryGetRawBuffer(int keyHash, out char[] buffer, out int length)
+        {
+            return LocRegistry.TryGetRawBuffer(keyHash, out buffer, out length);
         }
 
         /// <summary>
@@ -359,11 +395,8 @@ namespace Hecton.Localization
             if (text.Length == 0)
                 return true;
 
-            if (TryResolveMadnessOverride("hull_stress", out string madnessText))
-            {
-                length = CopyStringToBuffer(madnessText, destination);
+            if (TryResolveMadnessOverride("hull_stress".AsSpan(), destination, out length))
                 return true;
-            }
 
             float intensity = GetHullStressCorruptionIntensity();
             if (intensity <= 0f)
@@ -396,6 +429,28 @@ namespace Hecton.Localization
             int seed = ComputeMadnessSeed("HUD", cycle, (int)CurrentLanguage);
             string whisperKey = ResolveMadnessWhisperKey(seed);
             return GetOrFallback(CurrentLanguage, whisperKey, fallback);
+        }
+
+        /// <summary>
+        /// Writes the current hull-stress HUD whisper into a caller-owned buffer.
+        /// </summary>
+        internal bool TryGetHullStressHudWhisperBuffer(ReadOnlySpan<char> fallback, char[] destination, out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            EvaluateMadnessOverrideState();
+            int cycle = _madnessActiveWindowId >= 0
+                ? _madnessActiveWindowId
+                : Mathf.Max(0, Mathf.FloorToInt(Time.unscaledTime / MadnessRollInterval));
+            int seed = ComputeMadnessSeed("HUD".AsSpan(), cycle, (int)CurrentLanguage);
+            int keyHash = ResolveMadnessWhisperKeyHash(seed);
+            ReadOnlySpan<char> whisper = LocRegistry.TryGetRawBuffer(keyHash, out char[] rawBuffer, out int rawLength) && rawLength > 0
+                ? rawBuffer.AsSpan(0, rawLength)
+                : fallback;
+
+            return TryApplyHullStressCorruptionIfNeeded(whisper, destination, out length);
         }
 
         /// <summary>
@@ -892,6 +947,34 @@ namespace Hecton.Localization
             return !string.IsNullOrEmpty(madnessText);
         }
 
+        private bool TryResolveMadnessOverride(ReadOnlySpan<char> sourceToken, char[] destination, out int length)
+        {
+            length = 0;
+            if (destination == null || destination.Length == 0)
+                return false;
+
+            EvaluateMadnessOverrideState();
+            if (!IsMadnessOverrideActive())
+                return false;
+
+            ReadOnlySpan<char> normalizedSourceToken = sourceToken.Length == 0 ? "<null>".AsSpan() : sourceToken;
+            int seed = 17;
+            for (int i = 0; i < normalizedSourceToken.Length; i++)
+                seed = (seed * 31) + normalizedSourceToken[i];
+
+            seed = (seed * 31) + _madnessActiveWindowId;
+            seed = (seed * 31) + (int)CurrentLanguage;
+            int keyHash = MadnessWhisperKeyHashes[(seed & int.MaxValue) % MadnessWhisperKeyHashes.Length];
+            if (!LocRegistry.TryGetRawBuffer(keyHash, out char[] rawBuffer, out int rawLength) || rawLength <= 0)
+                return false;
+
+            length = CopySpanToBuffer(rawBuffer.AsSpan(0, rawLength), destination);
+            if (length > 0)
+                TriggerMadnessWhisperAudioIfNeeded();
+
+            return length > 0;
+        }
+
         /// <summary>
         /// True while the active madness whisper replacement window is live for PDA lore surfaces.
         /// </summary>
@@ -1052,6 +1135,27 @@ namespace Hecton.Localization
                 hash = (hash * 31) + languageIndex;
                 return hash & int.MaxValue;
             }
+        }
+
+        private static int ComputeMadnessSeed(ReadOnlySpan<char> sourceToken, int cycle, int languageIndex)
+        {
+            unchecked
+            {
+                ReadOnlySpan<char> token = sourceToken.Length == 0 ? "<null>".AsSpan() : sourceToken;
+                int hash = 17;
+                for (int i = 0; i < token.Length; i++)
+                    hash = (hash * 31) + token[i];
+
+                hash = (hash * 31) + cycle;
+                hash = (hash * 31) + languageIndex;
+                return hash & int.MaxValue;
+            }
+        }
+
+        private static int ResolveMadnessWhisperKeyHash(int hash)
+        {
+            int index = (hash & int.MaxValue) % MadnessWhisperKeyHashes.Length;
+            return MadnessWhisperKeyHashes[index];
         }
 
         private static string ResolveMadnessWhisperKey(int hash)

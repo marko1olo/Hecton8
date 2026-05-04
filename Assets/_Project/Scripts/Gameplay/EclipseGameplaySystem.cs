@@ -23,6 +23,7 @@
 using System;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
+using Hecton8.Audio;
 using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.UI;
@@ -44,6 +45,9 @@ namespace Hecton8.Gameplay
 
         /// <summary>Called when eclipse temperature delta changes.</summary>
         void OnEclipseTemperatureDelta(float delta);
+
+        /// <summary>Called when eclipse bioluminescence multiplier changes.</summary>
+        void OnEclipseBiolumMultiplierChanged(float multiplier);
     }
 
     /// <summary>
@@ -61,7 +65,8 @@ namespace Hecton8.Gameplay
         private const byte PhaseChangedEventType = 1;
         private const byte NightPredatorsRisingEventType = 2;
         private const byte TemperatureDeltaEventType = 3;
-        private const int ExpectedPendingEventCapacity = 8;
+        private const byte BiolumMultiplierEventType = 4;
+        private const int ExpectedPendingEventCapacity = 16;
         private const int ListenerCapacity = 8;
 
         private static readonly RegistryBucket<IEclipseGameplayEventListener> _listeners = new RegistryBucket<IEclipseGameplayEventListener>(ListenerCapacity);
@@ -141,6 +146,12 @@ namespace Hecton8.Gameplay
         public static void RaiseTemperatureDelta(float delta)
         {
             EnqueueValue(TemperatureDeltaEventType, delta);
+        }
+
+        /// <summary>Queues eclipse bioluminescence multiplier.</summary>
+        public static void RaiseBiolumMultiplierChanged(float multiplier)
+        {
+            EnqueueValue(BiolumMultiplierEventType, Mathf.Max(0f, multiplier));
         }
 
         /// <summary>
@@ -229,6 +240,9 @@ namespace Hecton8.Gameplay
                     case TemperatureDeltaEventType:
                         listener.OnEclipseTemperatureDelta(payload.Value);
                         break;
+                    case BiolumMultiplierEventType:
+                        listener.OnEclipseBiolumMultiplierChanged(payload.Value);
+                        break;
                 }
             }
         }
@@ -237,7 +251,7 @@ namespace Hecton8.Gameplay
         {
             if (!_pendingEvents.IsCreated)
             {
-                _pendingEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[8] - deferred eclipse gameplay lane flushed by SystemDispatcher - owner: EclipseGameplayEvents
+                _pendingEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] - deferred eclipse gameplay lane flushed by SystemDispatcher - owner: EclipseGameplayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _pendingEvents,
                     ExpectedPendingEventCapacity,
@@ -248,7 +262,7 @@ namespace Hecton8.Gameplay
 
             if (!_nextFrameEvents.IsCreated)
             {
-                _nextFrameEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[8] - next-frame eclipse gameplay lane prevents same-frame reentrant dispatch - owner: EclipseGameplayEvents
+                _nextFrameEvents = new NativeQueue<EclipseGameplayEventPayload>(Allocator.Persistent); // COLD ALLOC: NativeQueue<EclipseGameplayEventPayload>[16] - next-frame eclipse gameplay lane prevents same-frame reentrant dispatch - owner: EclipseGameplayEvents
                 NativeMemorySentinel.RegisterNativeQueue(
                     _nextFrameEvents,
                     ExpectedPendingEventCapacity,
@@ -300,10 +314,15 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Интенсивность подъёма хищников [0..1].")]
         [SerializeField, Range(0f, 1f)] private float predatorRiseIntensity = 0.7f;
+        [SerializeField, Min(0f)] private float predatorRiseHoldSeconds = 180f;
 
         [Header("── Bioluminescence ────────────────────────")]
         [Tooltip("Множитель биолюминесценции во время затмения.")]
         [SerializeField] private float biolumMultiplier = 1.5f;
+
+        [Header("Eclipse Audio")]
+        [SerializeField, Range(-300f, 0f)] private float totalEclipseAcousticPitchShiftCents = -150f;
+        [SerializeField, Range(0f, 1f)] private float acousticPitchShiftStartOcclusion = 0.85f;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -323,6 +342,8 @@ namespace Hecton8.Gameplay
         private float _currentTempDrop;
         private bool  _predatorsRisen;
         private bool  _registered;
+        private float _currentBiolumMultiplier = 1f;
+        private float _currentAcousticPitchShiftCents;
 
         private static readonly int _ShaderBiolumMultiplier =
             Shader.PropertyToID("_EclipseBiolumMultiplier");
@@ -333,6 +354,7 @@ namespace Hecton8.Gameplay
 
         public bool IsEclipseActive => _eclipseActive;
         public float CurrentTempDrop => _currentTempDrop;
+        public float CurrentAcousticPitchShiftCents => _currentAcousticPitchShiftCents;
         public float EclipseProgress => _eclipseActive && maxTemperatureDrop > 0f
             ? _currentTempDrop / maxTemperatureDrop
             : 0f;
@@ -357,6 +379,10 @@ namespace Hecton8.Gameplay
         {
             TryUnregister();
             CelestialEvents.Unregister(this);
+            ApplyPredatorShallowMigration(0f, 0f);
+            _currentBiolumMultiplier = 1f;
+            Shader.SetGlobalFloat(_ShaderBiolumMultiplier, 1f);
+            PublishEclipseAcousticPitchShift(0f);
         }
 
         private void OnDestroy()
@@ -398,9 +424,13 @@ namespace Hecton8.Gameplay
                 {
                     _predatorsRisen = true;
                     EclipseGameplayEvents.RaiseNightPredatorsRising(predatorRiseIntensity);
+                    ApplyPredatorShallowMigration(predatorRiseIntensity, predatorRiseHoldSeconds);
 
                     LogNightPredatorsRising(predatorRiseIntensity);
                 }
+
+                PublishBiolumMultiplier(ResolveTargetBiolumMultiplier());
+                PublishEclipseAcousticPitchShift(ResolveTargetAcousticPitchShiftCents());
             }
             else
             {
@@ -436,7 +466,8 @@ namespace Hecton8.Gameplay
                 "GREAT ECLIPSE - TEMPERATURE FALLING. NIGHT PREDATORS ASCENDING."));
 
             // Биолюминесценция усиливается
-            Shader.SetGlobalFloat(_ShaderBiolumMultiplier, biolumMultiplier);
+            PublishBiolumMultiplier(ResolveTargetBiolumMultiplier());
+            PublishEclipseAcousticPitchShift(ResolveTargetAcousticPitchShiftCents());
 
             LogEclipseStarted();
         }
@@ -446,14 +477,84 @@ namespace Hecton8.Gameplay
             _eclipseActive = false;
 
             EclipseGameplayEvents.RaisePhaseChanged(false);
+            ApplyPredatorShallowMigration(0f, 0f);
             NotificationEvents.PushInfo(ResolveLocalized(
                 LocalizationKeys.ECLIPSE_EVENT_ENDED,
                 "ECLIPSE ENDED - TEMPERATURE RECOVERING."));
 
             // Биолюминесценция возвращается к норме
-            Shader.SetGlobalFloat(_ShaderBiolumMultiplier, 1f);
+            PublishBiolumMultiplier(1f);
+            PublishEclipseAcousticPitchShift(0f);
 
             LogEclipseEnded();
+        }
+
+        private void ApplyPredatorShallowMigration(float intensity01, float holdSeconds)
+        {
+            IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
+            if (ecosystemDirector == null)
+                return;
+
+            ecosystemDirector.ApplyEclipsePredatorShallowMigration(
+                Mathf.Clamp01(intensity01),
+                Mathf.Max(0f, holdSeconds));
+        }
+
+        private float ResolveTargetBiolumMultiplier()
+        {
+            if (!_eclipseActive)
+                return 1f;
+
+            float occlusion01 = ResolveEclipseOcclusion01();
+            return Mathf.Lerp(1f, Mathf.Max(1f, biolumMultiplier), occlusion01);
+        }
+
+        private float ResolveTargetAcousticPitchShiftCents()
+        {
+            if (!_eclipseActive)
+                return 0f;
+
+            float occlusion01 = ResolveEclipseOcclusion01();
+            float start = Mathf.Clamp(acousticPitchShiftStartOcclusion, 0f, 0.99f);
+            float totality01 = Mathf.Clamp01((occlusion01 - start) / Mathf.Max(0.0001f, 1f - start));
+            totality01 = totality01 * totality01 * (3f - 2f * totality01);
+            return Mathf.Lerp(0f, Mathf.Min(0f, totalEclipseAcousticPitchShiftCents), totality01);
+        }
+
+        private static float ResolveEclipseOcclusion01()
+        {
+            float occlusion01 = 1f;
+            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            if (celestialEngine != null)
+            {
+                occlusion01 = Mathf.Clamp01(Mathf.Max(
+                    celestialEngine.PenumbraFactor,
+                    celestialEngine.SunOcclusionFactor));
+            }
+
+            return occlusion01;
+        }
+
+        private void PublishBiolumMultiplier(float multiplier)
+        {
+            float clampedMultiplier = Mathf.Max(0f, multiplier);
+            if (Mathf.Abs(clampedMultiplier - _currentBiolumMultiplier) <= 0.001f)
+                return;
+
+            _currentBiolumMultiplier = clampedMultiplier;
+            Shader.SetGlobalFloat(_ShaderBiolumMultiplier, clampedMultiplier);
+            EclipseGameplayEvents.RaiseBiolumMultiplierChanged(clampedMultiplier);
+        }
+
+        private void PublishEclipseAcousticPitchShift(float shiftCents)
+        {
+            float clampedCents = Mathf.Clamp(shiftCents, -300f, 0f);
+            if (Mathf.Abs(clampedCents - _currentAcousticPitchShiftCents) <= 0.01f)
+                return;
+
+            _currentAcousticPitchShiftCents = clampedCents;
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
+                spatialAudioManager.SetEclipseAcousticPitchShiftCents(clampedCents);
         }
 
         void ICelestialEventListener.OnCelestialEclipseStarted()

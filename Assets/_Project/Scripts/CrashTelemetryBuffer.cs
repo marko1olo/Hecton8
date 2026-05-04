@@ -33,6 +33,8 @@ namespace Hecton8.Core
         private const int DebugLogEntrySizeBytes = 64;
         private const int CrashExportHeaderSizeBytes = 16;
         private const int ExportScratchSizeBytes = CrashExportHeaderSizeBytes + (ExportSnapshotEntries * DebugLogEntrySizeBytes);
+        private const int BootstrapSafeHaltDumpSizeBytes = 96;
+        private const int BootstrapSafeHaltDumpOffsetBytes = ExportScratchSizeBytes - BootstrapSafeHaltDumpSizeBytes;
         private const int ExportStateIdle = 0;
         private const int ExportStateQueued = 1;
         private const int LiveTelemetryStateIdle = 0;
@@ -47,6 +49,7 @@ namespace Hecton8.Core
         private const float MaximumReservedMemoryMb = 4096f;
         private const uint LiveTelemetryMagic = 0x4D4C4554u; // "TELM"
         private const uint LiveTelemetryVersion = 1u;
+        private const ulong BootstrapSafeHaltDumpMagic = 0x544C484554435048ul; // "HPCTEHLT" little-endian sentinel.
         private const ulong BinaryMagic = 0x00384E4F54434548ul; // "HECTON8\0" in little-endian byte order.
         private const string ExportFilePrefix = "crash_";
         private const string ExportFileExtension = ".hbin";
@@ -68,6 +71,12 @@ namespace Hecton8.Core
         private static CrashTelemetryBuffer _instance;
         private static int _runtimeFaultFlags;
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void RegisterBootstrapTelemetryReporter()
+        {
+            BootstrapStatus.RegisterSafeHaltTelemetryReporter(ReportBootstrapSafeHalt);
+        }
+
         [Flags]
         private enum ErrorBits : uint
         {
@@ -85,6 +94,11 @@ namespace Hecton8.Core
             TemporalCompression = 1u << 10,
             BusCongestionWarning = 1u << 11,
             KineticAnomaly = 1u << 12,
+            LateFrameLoadShedding = 1u << 13,
+            BootstrapSafeHalt = 1u << 14,
+            RuntimeWatchdogStall = 1u << 15,
+            AupJitterCorrection = 1u << 16,
+            CriticalRecovery = 1u << 17,
         }
 
         [Flags]
@@ -98,6 +112,7 @@ namespace Hecton8.Core
             Bootstrap = 1u << 4,
             OriginShift = 1u << 5,
             EventBus = 1u << 6,
+            Save = 1u << 7,
         }
 
         private enum ExportReason : uint
@@ -111,6 +126,11 @@ namespace Hecton8.Core
             BootstrapPhaseDuration = 6u,
             BusCongestionWarning = 7u,
             KineticAnomaly = 8u,
+            LateFrameLoadShedding = 9u,
+            BootstrapSafeHalt = 10u,
+            RuntimeWatchdogStall = 11u,
+            AupJitterCorrection = 12u,
+            CriticalRecovery = 13u,
         }
 
         [StructLayout(LayoutKind.Sequential, Size = CrashExportHeaderSizeBytes)]
@@ -151,6 +171,34 @@ namespace Hecton8.Core
             public float CpuFrameTimeMs;
             public float DeltaTime;
             public float ReservedMemoryMb;
+        }
+
+        [StructLayout(LayoutKind.Sequential, Size = BootstrapSafeHaltDumpSizeBytes)]
+        private struct BootstrapSafeHaltMmfDump
+        {
+            public ulong Magic;
+            public uint Version;
+            public uint FrameIndex;
+            public uint ActiveStep;
+            public uint LongestStep;
+            public float BootElapsedSeconds;
+            public float ActiveStepElapsedMilliseconds;
+            public uint RecentStepMaskLow;
+            public uint RecentStepMaskHigh;
+            public uint RecentStepHash0;
+            public uint RecentStepHash1;
+            public uint RecentStepHash2;
+            public uint RecentStepHash3;
+            public uint RecentStepHash4;
+            public uint RecentStepHash5;
+            public uint RecentStepHash6;
+            public uint RecentStepHash7;
+            public uint RecentStepHash8;
+            public uint RecentStepHash9;
+            public uint ErrorFlags;
+            public uint Reserved0;
+            public uint Reserved1;
+            public uint Reserved2;
         }
 
         private NativeArray<DebugLogEntry> _ringBuffer;
@@ -267,6 +315,21 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Reports a CRITICAL_RECOVERY save backup promotion into crash telemetry.
+        /// </summary>
+        public static void ReportCriticalRecovery()
+        {
+            int flags = unchecked((int)ErrorBits.CriticalRecovery);
+            OrRuntimeFaultFlags(flags);
+
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null)
+                return;
+
+            instance.OrThreadedFaultFlags(flags);
+        }
+
+        /// <summary>
         /// Reports a dropped event payload caused by recursive cascade protection.
         /// </summary>
         public static void ReportEventCascadeWarning()
@@ -334,6 +397,105 @@ namespace Hecton8.Core
                 return;
 
             instance.WriteKineticAnomalyTelemetry(runtimePosition, deltaVelocity, accelerationMetersPerSecondSq);
+        }
+
+        /// <summary>
+        /// Records dispatcher load shedding when late-frame event queues exceed their time budget.
+        /// </summary>
+        public static void ReportLateFrameLoadShedding(uint queueHash, int remainingDispatchBudget)
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.LateFrameLoadShedding);
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteLateFrameLoadSheddingTelemetry(queueHash, remainingDispatchBudget);
+        }
+
+        /// <summary>
+        /// Records a bootstrap safe-halt forensic row and exports the current crash snapshot synchronously.
+        /// </summary>
+        public static void ReportBootstrapSafeHalt(
+            BootstrapStepToken activeStep,
+            BootstrapStepToken longestStep,
+            double bootElapsedSeconds,
+            double activeStepElapsedMilliseconds,
+            uint recentStepMaskLow,
+            uint recentStepMaskHigh,
+            uint recentStepHash0,
+            uint recentStepHash1,
+            uint recentStepHash2,
+            uint recentStepHash3,
+            uint recentStepHash4,
+            uint recentStepHash5,
+            uint recentStepHash6,
+            uint recentStepHash7,
+            uint recentStepHash8,
+            uint recentStepHash9)
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.BootstrapSafeHalt);
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteBootstrapSafeHaltTelemetry(
+                activeStep,
+                longestStep,
+                bootElapsedSeconds,
+                activeStepElapsedMilliseconds,
+                recentStepMaskLow,
+                recentStepMaskHigh);
+            instance.TryExportSnapshot(
+                ExportReason.BootstrapSafeHalt,
+                (uint)ErrorBits.BootstrapSafeHalt,
+                writeSynchronously: true);
+            instance.WriteBootstrapSafeHaltMmfDump(
+                activeStep,
+                longestStep,
+                bootElapsedSeconds,
+                activeStepElapsedMilliseconds,
+                recentStepMaskLow,
+                recentStepMaskHigh,
+                recentStepHash0,
+                recentStepHash1,
+                recentStepHash2,
+                recentStepHash3,
+                recentStepHash4,
+                recentStepHash5,
+                recentStepHash6,
+                recentStepHash7,
+                recentStepHash8,
+                recentStepHash9);
+        }
+
+        /// <summary>
+        /// Records a runtime watchdog stall before the watchdog terminates the process.
+        /// </summary>
+        public static void ReportRuntimeWatchdogStall(uint lane, uint counter)
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.RuntimeWatchdogStall);
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteRuntimeWatchdogStallTelemetry(lane, counter);
+            instance.TryExportSnapshot(
+                ExportReason.RuntimeWatchdogStall,
+                (uint)ErrorBits.RuntimeWatchdogStall,
+                writeSynchronously: true);
+        }
+
+        /// <summary>
+        /// Records an AUP/runtime coordinate resync applied after fixed simulation.
+        /// </summary>
+        public static void ReportAupJitterCorrection(Vector3 runtimePosition, float correctionMeters)
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.AupJitterCorrection);
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteAupJitterCorrectionTelemetry(runtimePosition, correctionMeters);
         }
 
         /// <summary>
@@ -448,6 +610,7 @@ namespace Hecton8.Core
         /// <param name="dt">Frame delta passed by <see cref="GameTickManager"/>.</param>
         public void Tick(float dt)
         {
+            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.CrashTelemetry);
             if (!_ringBuffer.IsCreated)
                 return;
 
@@ -625,6 +788,200 @@ namespace Hecton8.Core
             _writeCursor++;
         }
 
+        private void WriteLateFrameLoadSheddingTelemetry(uint queueHash, int remainingDispatchBudget)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.EventBus;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.LateFrameLoadShedding;
+            entry.ExportReason = (uint)ExportReason.LateFrameLoadShedding;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = queueHash;
+            entry.SubsystemHeatPacked = unchecked((uint)math.max(0, remainingDispatchBudget));
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
+        private void WriteBootstrapSafeHaltTelemetry(
+            BootstrapStepToken activeStep,
+            BootstrapStepToken longestStep,
+            double bootElapsedSeconds,
+            double activeStepElapsedMilliseconds,
+            uint recentStepMaskLow,
+            uint recentStepMaskHigh)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Bootstrap;
+            entry.DeltaTime = (float)math.max(0d, bootElapsedSeconds);
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = (float)math.max(0d, activeStepElapsedMilliseconds);
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = new float3((int)activeStep, (int)longestStep, (float)math.max(0d, LongestStepMillisecondsSafe()));
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.BootstrapSafeHalt;
+            entry.ExportReason = (uint)ExportReason.BootstrapSafeHalt;
+            entry.AupShiftSequence = HectonFloatingOrigin.LastShiftEvent.Sequence;
+            entry.AiStatePacked = recentStepMaskLow;
+            entry.SubsystemHeatPacked = recentStepMaskHigh;
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, HectonFloatingOrigin.LastShiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
+        private void WriteBootstrapSafeHaltMmfDump(
+            BootstrapStepToken activeStep,
+            BootstrapStepToken longestStep,
+            double bootElapsedSeconds,
+            double activeStepElapsedMilliseconds,
+            uint recentStepMaskLow,
+            uint recentStepMaskHigh,
+            uint recentStepHash0,
+            uint recentStepHash1,
+            uint recentStepHash2,
+            uint recentStepHash3,
+            uint recentStepHash4,
+            uint recentStepHash5,
+            uint recentStepHash6,
+            uint recentStepHash7,
+            uint recentStepHash8,
+            uint recentStepHash9)
+        {
+            if (_crashTelemetryView == null)
+                return;
+
+            BootstrapSafeHaltMmfDump dump = default;
+            dump.Magic = BootstrapSafeHaltDumpMagic;
+            dump.Version = 1u;
+            dump.FrameIndex = unchecked((uint)Time.frameCount);
+            dump.ActiveStep = (uint)activeStep;
+            dump.LongestStep = (uint)longestStep;
+            dump.BootElapsedSeconds = (float)math.max(0d, bootElapsedSeconds);
+            dump.ActiveStepElapsedMilliseconds = (float)math.max(0d, activeStepElapsedMilliseconds);
+            dump.RecentStepMaskLow = recentStepMaskLow;
+            dump.RecentStepMaskHigh = recentStepMaskHigh;
+            dump.RecentStepHash0 = recentStepHash0;
+            dump.RecentStepHash1 = recentStepHash1;
+            dump.RecentStepHash2 = recentStepHash2;
+            dump.RecentStepHash3 = recentStepHash3;
+            dump.RecentStepHash4 = recentStepHash4;
+            dump.RecentStepHash5 = recentStepHash5;
+            dump.RecentStepHash6 = recentStepHash6;
+            dump.RecentStepHash7 = recentStepHash7;
+            dump.RecentStepHash8 = recentStepHash8;
+            dump.RecentStepHash9 = recentStepHash9;
+            dump.ErrorFlags = (uint)ErrorBits.BootstrapSafeHalt;
+
+            try
+            {
+                unsafe
+                {
+                    byte* mappedBaseAddress = null;
+                    try
+                    {
+                        _crashTelemetryView.SafeMemoryMappedViewHandle.AcquirePointer(ref mappedBaseAddress);
+                        if (mappedBaseAddress == null)
+                            return;
+
+                        byte* destination = mappedBaseAddress +
+                            (int)_crashTelemetryView.PointerOffset +
+                            BootstrapSafeHaltDumpOffsetBytes;
+                        UnsafeUtility.MemCpy(destination, &dump, BootstrapSafeHaltDumpSizeBytes);
+                        _crashTelemetryView.Flush();
+                        _crashTelemetryStream?.Flush(true);
+                    }
+                    finally
+                    {
+                        if (mappedBaseAddress != null)
+                            _crashTelemetryView.SafeMemoryMappedViewHandle.ReleasePointer();
+                    }
+                }
+            }
+            catch (UnauthorizedAccessException exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
+            }
+            catch (IOException exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogException(exception);
+#endif
+            }
+            catch (Exception)
+            {
+            }
+        }
+
+        private void WriteRuntimeWatchdogStallTelemetry(uint lane, uint counter)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Bootstrap;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.RuntimeWatchdogStall;
+            entry.ExportReason = (uint)ExportReason.RuntimeWatchdogStall;
+            entry.AupShiftSequence = HectonFloatingOrigin.LastShiftEvent.Sequence;
+            entry.AiStatePacked = lane;
+            entry.SubsystemHeatPacked = counter;
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, HectonFloatingOrigin.LastShiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
+        private void WriteAupJitterCorrectionTelemetry(Vector3 runtimePosition, float correctionMeters)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Physics;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = math.max(0f, correctionMeters);
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = ToAbsoluteUniversePosition(runtimePosition);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.AupJitterCorrection;
+            entry.ExportReason = (uint)ExportReason.AupJitterCorrection;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = PackAiState();
+            entry.SubsystemHeatPacked = PackSubsystemHeat();
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
+        private static double LongestStepMillisecondsSafe()
+        {
+            return BootstrapStatus.LongestStepMilliseconds;
+        }
+
         private static uint PackBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds)
         {
             double positiveMilliseconds = elapsedMilliseconds > 0d ? elapsedMilliseconds : 0d;
@@ -641,10 +998,11 @@ namespace Hecton8.Core
 
             if (!UnsafeUtility.IsBlittable<DebugLogEntry>() ||
                 UnsafeUtility.SizeOf<CrashExportHeader>() != CrashExportHeaderSizeBytes ||
-                UnsafeUtility.SizeOf<DebugLogEntry>() != DebugLogEntrySizeBytes)
+                UnsafeUtility.SizeOf<DebugLogEntry>() != DebugLogEntrySizeBytes ||
+                UnsafeUtility.SizeOf<BootstrapSafeHaltMmfDump>() != BootstrapSafeHaltDumpSizeBytes)
             {
                 enabled = false;
-                Debug.LogError("CrashTelemetryBuffer requires a blittable 16-byte header and a blittable 64-byte DebugLogEntry.");
+                Debug.LogError("CrashTelemetryBuffer requires fixed-size blittable crash export structs.");
                 return;
             }
 
@@ -796,6 +1154,9 @@ namespace Hecton8.Core
 
             if (HectonDirectorAI.ActiveRuntimeInstance != null)
                 systemMask |= (uint)SystemBits.AI;
+
+            if (GlobalRegistry.SaveRuntime != null)
+                systemMask |= (uint)SystemBits.Save;
 
             return systemMask;
         }

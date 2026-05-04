@@ -279,7 +279,7 @@ namespace Hecton8.Gameplay
             if (_body == null || planeNormal.sqrMagnitude <= MinVectorMagnitudeSq)
                 return;
 
-            Vector3 projectedVelocity = Vector3.ProjectOnPlane(_body.linearVelocity, planeNormal);
+            Vector3 projectedVelocity = ProjectVelocityOnCollisionPlane(_body.linearVelocity, planeNormal);
             SetLinearVelocity(projectedVelocity);
         }
 
@@ -675,6 +675,15 @@ namespace Hecton8.Gameplay
             return SafeVelocity(normalized, fallback);
         }
 
+        internal static Vector3 ProjectVelocityOnCollisionPlane(Vector3 velocity, Vector3 hitNormal)
+        {
+            Vector3 safeVelocity = SafeVelocity(velocity);
+            Vector3 safeNormal = SafeNormal(hitNormal, Vector3.up);
+            float normalVelocity = Vector3.Dot(safeVelocity, safeNormal);
+            Vector3 projectedVelocity = safeVelocity - (safeNormal * normalVelocity);
+            return SafeVelocity(projectedVelocity, Vector3.zero);
+        }
+
         private void EnsureScheduledSweepState()
         {
             _nativeState.EnsureScheduledSweepState(ScheduledSweepCommandCount, ScheduledSweepMaxHits);
@@ -771,8 +780,7 @@ namespace Hecton8.Gameplay
                 (_scheduledSweepBlockingHit.normal * penetrationDepth);
 
             Vector3 previousVelocity = _body != null ? _body.linearVelocity : Vector3.zero;
-            Vector3 safeNormal = SafeNormal(_scheduledSweepBlockingHit.normal, Vector3.up);
-            Vector3 projectedVelocity = previousVelocity - (safeNormal * Vector3.Dot(previousVelocity, safeNormal));
+            Vector3 projectedVelocity = ProjectVelocityOnCollisionPlane(previousVelocity, _scheduledSweepBlockingHit.normal);
             _scheduledSweepBlockedSpeed = (previousVelocity - projectedVelocity).magnitude;
 
             MovePosition(_scheduledSweepResolvedPosition);

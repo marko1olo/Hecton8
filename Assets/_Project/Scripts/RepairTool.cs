@@ -194,7 +194,7 @@ namespace Hecton8.Gameplay
             _powerIndicatorRenderer.GetPropertyBlock(_mpb);
             float currentCharge = BatteryCharge;
             float flickerScalar = 1f;
-            if (TryGetWirelessBrownoutFlicker(out float brownoutFlicker))
+            if (TryGetToolBrownoutFlicker(out float brownoutFlicker))
                 flickerScalar = Mathf.Clamp(brownoutFlicker, 0f, 1f);
 
             if (_installedBattery == null || currentCharge <= 0f)

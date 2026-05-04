@@ -274,6 +274,7 @@ namespace Hecton8.AI
                 case AIState.Feint:
                 case AIState.Escape:
                 case AIState.Aggressive:
+                case AIState.ApexForcedRetreat:
                 case AIState.Retreat:
                 case AIState.ThreatDisplay:
                     return true;

@@ -137,6 +137,10 @@ namespace Hecton8.World
         [Tooltip("Synthetic blood/oil tint used for ruptured abyssal drone schools.")]
         private Color ruptureFluidColor = new Color(0.32f, 0.1f, 0.18f, 0.82f);
 
+        [SerializeField]
+        [Tooltip("Low-alpha silt tint used for biome transition seismic dust.")]
+        private Color seismicDustColor = new Color(0.34f, 0.32f, 0.26f, 0.42f);
+
         private FluidDecalState[] _decalStates;
         private Mesh _quadMesh;
         private Material _runtimeMaterial;
@@ -220,6 +224,16 @@ namespace Hecton8.World
         {
             EnsureRenderingResources(true);
             RegisterDecal(positionWS, ruptureFluidColor, Mathf.Lerp(1.4f, 3.2f, Mathf.Clamp01(radiusScale)), Mathf.Lerp(3.6f, 7.5f, Mathf.Clamp01(radiusScale)), 14f);
+        }
+
+        /// <summary>
+        /// Registers a soft seafloor dust sheet for tectonic biome transitions.
+        /// </summary>
+        public void RegisterSeismicDust(Vector3 positionWS, float radiusScale)
+        {
+            EnsureRenderingResources(true);
+            float clampedScale = Mathf.Clamp01(radiusScale);
+            RegisterDecal(positionWS, seismicDustColor, Mathf.Lerp(0.6f, 1.6f, clampedScale), Mathf.Lerp(2.2f, 5.4f, clampedScale), 8f);
         }
 
         /// <summary>

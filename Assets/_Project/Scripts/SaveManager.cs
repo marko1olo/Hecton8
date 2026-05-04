@@ -33,8 +33,7 @@ namespace Hecton8.SaveSystem
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
-        private const double LoadApplyFrameBudgetMilliseconds = 4.0d;
-        private static readonly double StopwatchTickToMilliseconds = 1000.0d / Stopwatch.Frequency;
+        private static readonly long LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
         private const float IntegrityScanIntervalSeconds = 10f;
         private const float IndexedDefragCheckIntervalSeconds = 5f;
         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
@@ -585,6 +584,7 @@ namespace Hecton8.SaveSystem
             }
             finally
             {
+                await Awaitable.MainThreadAsync();
                 _indexedDefragInFlight = false;
                 _nextIndexedDefragCheckTime = Time.unscaledTime + IndexedDefragCheckIntervalSeconds;
             }
@@ -1003,6 +1003,8 @@ namespace Hecton8.SaveSystem
                 bool usedLegacyFormat = false;
                 ulong loadedPayloadHash64 = 0UL;
                 int loadedPayloadLength = 0;
+                bool criticalBackupPromotedForLoad = false;
+                int criticalBackupGenerationForLoad = 0;
 
                 for (int i = 0; i < candidates.Count; i++)
                 {
@@ -1019,19 +1021,89 @@ namespace Hecton8.SaveSystem
                         out ulong candidatePayloadHash64,
                         out int candidatePayloadLength,
                         out bool candidateUsedLegacyFormat,
+                        out bool candidateIndexedBackupRecoveryUsed,
                         out string candidateError))
                     {
+                        bool criticalBackupPromoted = false;
+                        int criticalBackupGeneration = 0;
+                        if (!candidates[i].IsBackup && candidateIndexedBackupRecoveryUsed)
+                        {
+                            if (candidateVoxelDeltaSnapshot.IsCreated)
+                                candidateVoxelDeltaSnapshot.Dispose();
+
+                            if (!TryLoadAndPromoteCriticalBackup(
+                                    slotName,
+                                    "Indexed primary sector recovered from backup sector during load.",
+                                    out candidateData,
+                                    out candidateQuestHeader,
+                                    out candidateQuestStateWords,
+                                    out candidateWorldDeltas,
+                                    out candidateEcosystemSectors,
+                                    out candidateVoxelDeltaSnapshot,
+                                    out candidateMetadata,
+                                    out candidatePayloadHash64,
+                                    out candidatePayloadLength,
+                                    out candidateUsedLegacyFormat,
+                                    out criticalBackupGeneration,
+                                    out candidateError))
+                            {
+                                lastError = new Exception(candidateError);
+                                Debug.LogWarning($"[SaveManager] CRITICAL_RECOVERY failed for '{slotName}': {candidateError}");
+                                continue;
+                            }
+
+                            criticalBackupPromoted = true;
+                        }
+
                         data = candidateData;
                         loadedQuestHeader = candidateQuestHeader;
                         loadedQuestStateWords = candidateQuestStateWords;
                         loadedWorldDeltas = candidateWorldDeltas;
                         loadedEcosystemSectors = candidateEcosystemSectors;
                         loadedVoxelDeltaSnapshot = candidateVoxelDeltaSnapshot;
-                        loadedCandidate = candidates[i];
+                        loadedCandidate = criticalBackupPromoted
+                            ? new SaveLoadCandidate(GetPrimarySaveFilePath(slotName), false, 0)
+                            : candidates[i];
                         loadedMetadata = candidateMetadata;
                         loadedPayloadHash64 = candidatePayloadHash64;
                         loadedPayloadLength = candidatePayloadLength;
                         usedLegacyFormat = candidateUsedLegacyFormat;
+                        criticalBackupPromotedForLoad = criticalBackupPromoted;
+                        criticalBackupGenerationForLoad = criticalBackupPromoted ? criticalBackupGeneration : 0;
+                        break;
+                    }
+
+                    if (!candidates[i].IsBackup &&
+                        SaveBinaryStorage.IsIndexedBlockStorageRecoveryError(candidateError) &&
+                        TryLoadAndPromoteCriticalBackup(
+                            slotName,
+                            candidateError,
+                            out SaveData recoveryData,
+                            out QuestSaveHeader recoveryQuestHeader,
+                            out uint[] recoveryQuestStateWords,
+                            out PersistentWorldDeltaRecord[] recoveryWorldDeltas,
+                            out EcosystemSectorSaveRecord[] recoveryEcosystemSectors,
+                            out NativeArray<byte> recoveryVoxelDeltaSnapshot,
+                            out SaveMetadata recoveryMetadata,
+                            out ulong recoveryPayloadHash64,
+                            out int recoveryPayloadLength,
+                            out bool recoveryUsedLegacyFormat,
+                            out int recoveryBackupGeneration,
+                            out string recoveryError))
+                    {
+                        data = recoveryData;
+                        loadedQuestHeader = recoveryQuestHeader;
+                        loadedQuestStateWords = recoveryQuestStateWords;
+                        loadedWorldDeltas = recoveryWorldDeltas;
+                        loadedEcosystemSectors = recoveryEcosystemSectors;
+                        loadedVoxelDeltaSnapshot = recoveryVoxelDeltaSnapshot;
+                        loadedCandidate = new SaveLoadCandidate(GetPrimarySaveFilePath(slotName), false, 0);
+                        loadedMetadata = recoveryMetadata;
+                        loadedPayloadHash64 = recoveryPayloadHash64;
+                        loadedPayloadLength = recoveryPayloadLength;
+                        usedLegacyFormat = recoveryUsedLegacyFormat;
+                        criticalBackupPromotedForLoad = true;
+                        criticalBackupGenerationForLoad = recoveryBackupGeneration;
                         break;
                     }
 
@@ -1058,8 +1130,11 @@ namespace Hecton8.SaveSystem
                 PersistentWorldRegistry persistentWorldRegistryForLoad = GlobalRegistry.PersistentWorldRegistry;
                 persistentWorldRegistryForLoad?.PreloadTombstonesFromLoadedRecords(loadedWorldDeltas);
                 ModSaveStateStore.LoadFromSaveData(data);
-                if (!ModSaveStateStore.TryLoadMmfPayloads(GetPersistentAbsolutePath(loadedCandidate.SavePath), out string modPayloadLoadError))
+                if (!ModSaveStateStore.TryLoadMmfPayloads(GetPersistentAbsolutePath(loadedCandidate.SavePath), out string modPayloadLoadError) ||
+                    !string.IsNullOrEmpty(modPayloadLoadError))
+                {
                     ReportModPayloadLoadFailure(slotName, modPayloadLoadError);
+                }
 
                 QuestManager.StageLoadedPackedState(loadedQuestHeader, loadedQuestStateWords);
                 
@@ -1067,7 +1142,7 @@ namespace Hecton8.SaveSystem
                 SortRegistryIfDirty(LoadPriorityComparer);
 
                 VoxelDeltaProcessor voxelDeltaProcessor = null;
-                long loadApplyStartTicks = Stopwatch.GetTimestamp();
+                long loadApplyDeadlineTicks = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks;
                 for (int i = 0; i < _saveableCount; i++)
                 {
                     ISaveable saveable = _saveables[i];
@@ -1081,11 +1156,10 @@ namespace Hecton8.SaveSystem
                     }
 
                     saveable.LoadFromSaveData(data);
-                    double elapsedMs = (Stopwatch.GetTimestamp() - loadApplyStartTicks) * StopwatchTickToMilliseconds;
-                    if (i + 1 < _saveableCount && elapsedMs >= LoadApplyFrameBudgetMilliseconds)
+                    if (i + 1 < _saveableCount && Stopwatch.GetTimestamp() >= loadApplyDeadlineTicks)
                     {
                         await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
-                        loadApplyStartTicks = Stopwatch.GetTimestamp();
+                        loadApplyDeadlineTicks = Stopwatch.GetTimestamp() + LoadApplyFrameBudgetTicks;
                     }
                 }
 
@@ -1138,19 +1212,25 @@ namespace Hecton8.SaveSystem
                     await Awaitable.MainThreadAsync();
                 }
 
-                string sourceLabel = loadedCandidate.IsBackup
-                    ? $"backup g{loadedCandidate.BackupGeneration}"
-                    : "primary";
-                LastLoadUsedBackup = loadedCandidate.IsBackup;
-                LastLoadBackupGeneration = loadedCandidate.BackupGeneration;
-                LastLoadSelfRepaired = repairedPrimaryArtifacts;
+                string sourceLabel = criticalBackupPromotedForLoad
+                    ? $"backup g{criticalBackupGenerationForLoad} promoted to primary"
+                    : (loadedCandidate.IsBackup
+                        ? $"backup g{loadedCandidate.BackupGeneration}"
+                        : "primary");
+                LastLoadUsedBackup = criticalBackupPromotedForLoad || loadedCandidate.IsBackup;
+                LastLoadBackupGeneration = criticalBackupPromotedForLoad
+                    ? criticalBackupGenerationForLoad
+                    : loadedCandidate.BackupGeneration;
+                LastLoadSelfRepaired = repairedPrimaryArtifacts || criticalBackupPromotedForLoad;
                 LastLoadUsedLegacyCompression = usedLegacyFormat;
                 SaveSlotInfo postLoadInfo = BuildSaveSlotInfoInternal(slotName);
                 SaveSlotIntegrityState postLoadIntegrity = postLoadInfo != null ? postLoadInfo.IntegrityState : SaveSlotIntegrityState.Empty;
                 RecordSuccessfulLoad(slotName, data.version, postLoadIntegrity, LastLoadUsedBackup, LastLoadBackupGeneration, LastLoadUsedLegacyCompression, LastLoadSelfRepaired);
                 LastOperationSucceeded = true;
-                Debug.Log($"[SaveManager] Loaded '{slotName}' from {sourceLabel} in {totalTimer.ElapsedMilliseconds}ms" +
-                          (repairedPrimaryArtifacts ? " and self-repaired primary artifacts." : "."));
+                string loadCompletionSuffix = criticalBackupPromotedForLoad
+                    ? " and promoted .bak to primary."
+                    : (repairedPrimaryArtifacts ? " and self-repaired primary artifacts." : ".");
+                Debug.Log($"[SaveManager] Loaded '{slotName}' from {sourceLabel} in {totalTimer.ElapsedMilliseconds}ms{loadCompletionSuffix}");
                 SaveEvents.RaiseLoadCompleted(slotName);
             }
             catch (Exception ex)
@@ -1478,7 +1558,7 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(error))
                 return;
 
-            Debug.LogWarning($"[SaveManager] Mod payload load failed for '{slotName}': {error}");
+            Debug.LogWarning($"[SaveManager] Mod payload load warning for '{slotName}': {error}");
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -1610,6 +1690,7 @@ namespace Hecton8.SaveSystem
                     out _,
                     out _,
                     out bool candidateUsedLegacyFormat,
+                    out _,
                     out string candidateError))
                 {
                     repairedData = candidateData;
@@ -1727,6 +1808,7 @@ namespace Hecton8.SaveSystem
                     out _,
                     out _,
                     out bool candidateLegacyFormat,
+                    out _,
                     out string candidateError))
                 {
                     if (isBackup)
@@ -1832,6 +1914,146 @@ namespace Hecton8.SaveSystem
                 overwritePrimarySave: true);
         }
 
+        private static bool TryLoadAndPromoteCriticalBackup(
+            string slotName,
+            string primaryError,
+            out SaveData data,
+            out QuestSaveHeader packedQuestHeader,
+            out uint[] packedQuestStateWords,
+            out PersistentWorldDeltaRecord[] persistentWorldItems,
+            out EcosystemSectorSaveRecord[] ecosystemSectorStates,
+            out NativeArray<byte> voxelDeltaSnapshot,
+            out SaveMetadata metadata,
+            out ulong payloadHash64,
+            out int rawPayloadLength,
+            out bool usedLegacyFormat,
+            out int backupGeneration,
+            out string errorMessage)
+        {
+            data = null;
+            packedQuestHeader = default;
+            packedQuestStateWords = null;
+            persistentWorldItems = null;
+            ecosystemSectorStates = null;
+            voxelDeltaSnapshot = default;
+            metadata = null;
+            payloadHash64 = 0UL;
+            rawPayloadLength = 0;
+            usedLegacyFormat = false;
+            backupGeneration = 1;
+            errorMessage = string.Empty;
+
+            string backupSavePath = GetBackupSaveFilePath(slotName, backupGeneration);
+            if (!FileExists(backupSavePath))
+            {
+                errorMessage = $"CRITICAL_RECOVERY failed: '{backupSavePath}' is missing. Primary failure: {primaryError}";
+                return false;
+            }
+
+            SaveLoadCandidate backupCandidate = new SaveLoadCandidate(backupSavePath, true, backupGeneration);
+            if (!TryLoadCandidate(
+                    slotName,
+                    backupCandidate,
+                    out data,
+                    out packedQuestHeader,
+                    out packedQuestStateWords,
+                    out persistentWorldItems,
+                    out ecosystemSectorStates,
+                    out voxelDeltaSnapshot,
+                    out metadata,
+                    out payloadHash64,
+                    out rawPayloadLength,
+                    out usedLegacyFormat,
+                    out bool indexedBackupRecoveryUsed,
+                    out string backupError))
+            {
+                errorMessage = $"CRITICAL_RECOVERY rejected invalid '{backupSavePath}': {backupError}. Primary failure: {primaryError}";
+                return false;
+            }
+
+            if (indexedBackupRecoveryUsed)
+            {
+                if (voxelDeltaSnapshot.IsCreated)
+                    voxelDeltaSnapshot.Dispose();
+
+                errorMessage = $"CRITICAL_RECOVERY rejected cascading backup-sector recovery in '{backupSavePath}'. Primary failure: {primaryError}";
+                return false;
+            }
+
+            if (!TryPromoteBackupToPrimaryAfterCriticalRecovery(slotName, backupSavePath, out string promotionError))
+            {
+                if (voxelDeltaSnapshot.IsCreated)
+                    voxelDeltaSnapshot.Dispose();
+
+                errorMessage = $"CRITICAL_RECOVERY promotion failed for '{backupSavePath}': {promotionError}. Primary failure: {primaryError}";
+                return false;
+            }
+
+            CrashTelemetryBuffer.ReportCriticalRecovery();
+            Debug.LogError($"[SaveManager] CRITICAL_RECOVERY promoted '{backupSavePath}' to '{GetPrimarySaveFilePath(slotName)}'. Primary failure: {primaryError}");
+            return true;
+        }
+
+        private static bool TryPromoteBackupToPrimaryAfterCriticalRecovery(
+            string slotName,
+            string backupSavePath,
+            out string errorMessage)
+        {
+            errorMessage = string.Empty;
+            if (string.IsNullOrEmpty(slotName) || string.IsNullOrEmpty(backupSavePath) || !FileExists(backupSavePath))
+            {
+                errorMessage = "Backup promotion input is invalid.";
+                return false;
+            }
+
+            string primarySavePath = GetPrimarySaveFilePath(slotName);
+            string tempSavePath = GetTempSaveFilePath(slotName);
+            string absoluteBackupPath = GetPersistentAbsolutePath(backupSavePath);
+            string absolutePrimaryPath = GetPersistentAbsolutePath(primarySavePath);
+            string absoluteTempPath = GetPersistentAbsolutePath(tempSavePath);
+
+            try
+            {
+                DeleteFileIfExists(tempSavePath);
+                File.Copy(absoluteBackupPath, absoluteTempPath, true);
+
+                if (File.Exists(absolutePrimaryPath))
+                {
+                    File.Replace(absoluteTempPath, absolutePrimaryPath, null, true);
+                }
+                else
+                {
+                    File.Move(absoluteTempPath, absolutePrimaryPath);
+                }
+
+                if (File.Exists(absoluteTempPath))
+                    File.Delete(absoluteTempPath);
+
+                if (!File.Exists(absolutePrimaryPath))
+                {
+                    errorMessage = "Primary file was missing after atomic backup promotion.";
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = ex.Message;
+                try
+                {
+                    if (File.Exists(absoluteTempPath))
+                        File.Delete(absoluteTempPath);
+                }
+                catch (Exception cleanupEx)
+                {
+                    errorMessage = $"{errorMessage}; temp cleanup failed: {cleanupEx.Message}";
+                }
+
+                return false;
+            }
+        }
+
         private static bool TryLoadCandidate(
             string slotName,
             SaveLoadCandidate candidate,
@@ -1845,6 +2067,7 @@ namespace Hecton8.SaveSystem
             out ulong payloadHash64,
             out int rawPayloadLength,
             out bool usedLegacyFormat,
+            out bool indexedBackupRecoveryUsed,
             out string errorMessage)
         {
             data = null;
@@ -1857,16 +2080,29 @@ namespace Hecton8.SaveSystem
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
             usedLegacyFormat = false;
+            indexedBackupRecoveryUsed = false;
             errorMessage = string.Empty;
 
-            string absolutePath = GetPersistentAbsolutePath(candidate.SavePath);
-            if (SaveBinaryStorage.IsBinaryContainer(absolutePath))
+            if (!FileExists(candidate.SavePath))
             {
-                return TryLoadBinaryCandidate(slotName, candidate, out data, out packedQuestHeader, out packedQuestStateWords, out persistentWorldItems, out ecosystemSectorStates, out voxelDeltaSnapshot, out metadata, out payloadHash64, out rawPayloadLength, out errorMessage);
+                errorMessage = $"Save artifact '{candidate.SavePath}' is missing.";
+                return false;
             }
 
-            errorMessage = $"Unsupported non-binary save artifact '{candidate.SavePath}'.";
-            return false;
+            return TryLoadBinaryCandidate(
+                slotName,
+                candidate,
+                out data,
+                out packedQuestHeader,
+                out packedQuestStateWords,
+                out persistentWorldItems,
+                out ecosystemSectorStates,
+                out voxelDeltaSnapshot,
+                out metadata,
+                out payloadHash64,
+                out rawPayloadLength,
+                out indexedBackupRecoveryUsed,
+                out errorMessage);
         }
 
         private static bool TryLoadBinaryCandidate(
@@ -1881,6 +2117,7 @@ namespace Hecton8.SaveSystem
             out SaveMetadata metadata,
             out ulong payloadHash64,
             out int rawPayloadLength,
+            out bool indexedBackupRecoveryUsed,
             out string errorMessage)
         {
             data = null;
@@ -1892,6 +2129,7 @@ namespace Hecton8.SaveSystem
             metadata = null;
             payloadHash64 = 0UL;
             rawPayloadLength = 0;
+            indexedBackupRecoveryUsed = false;
             errorMessage = string.Empty;
 
             AcquireReadBuffer(out NativeArray<byte> readBuffer, out bool ownsReadBuffer);
@@ -1911,6 +2149,7 @@ namespace Hecton8.SaveSystem
                     out payloadHash64,
                     out rawPayloadLength,
                     out _,
+                    out indexedBackupRecoveryUsed,
                     out errorMessage))
                 {
                     if (voxelDeltaSnapshot.IsCreated)

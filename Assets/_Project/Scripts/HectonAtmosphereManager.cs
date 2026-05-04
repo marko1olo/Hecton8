@@ -45,6 +45,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -359,6 +360,10 @@ namespace Hecton8.Atmosphere
             Shader.PropertyToID("_HectonNightFactor");
         private static readonly int _shaderID_SargassumBiolumPhaseMultiplier =
             Shader.PropertyToID("_SargassumBiolumPhaseMultiplier");
+        private static readonly int _shaderID_FinalGiantAbyssLight =
+            Shader.PropertyToID("_FinalGiantAbyssLight");
+        private static readonly int _shaderID_AegirDirection =
+            Shader.PropertyToID("_AegirDirection");
 
         #endregion
 
@@ -403,8 +408,22 @@ namespace Hecton8.Atmosphere
         [SerializeField] private float _waterSurfaceY = 0f;
         [SerializeField] private bool _useAutoUnderwaterDetection = true;
 
+        [Header("Giant Abyss Light")]
+        [Tooltip("Linearized surface-color source used before depth absorption attenuates Aegir's planet-shine in water.")]
+        [SerializeField, ColorUsage(false, true)] private Color _giantAbyssSurfaceLightColor = new Color(0.48f, 0.72f, 1f, 1f);
+        [Tooltip("RGB absorption coefficients per meter for exp(-depthMeters * sigmaRgbPerMeter).")]
+        [SerializeField] private Vector3 _giantAbyssSigmaRgbPerMeter = new Vector3(0.0035f, 0.0012f, 0.00055f);
+        [Tooltip("Scalar applied to Aegir's phase-lit planet-shine before it is published to shaders.")]
+        [SerializeField, Range(0f, 2f)] private float _giantAbyssLightIntensity = 0.35f;
+        [Tooltip("Abyssal biolume tint added as a low-strength fill so deep water never collapses to pure black.")]
+        [SerializeField, ColorUsage(false, true)] private Color _giantAbyssBiolumeColor = new Color(0f, 0.38f, 0.55f, 1f);
+        [Tooltip("Maximum biolume fill added to the final giant abyss light at depth.")]
+        [SerializeField, Range(0f, 0.25f)] private float _giantAbyssBiolumeIntensity = 0.055f;
+
         [Header("═══ Vertical Runtime ═══")]
         [SerializeField] private BiomeMatrixDirector _biomeMatrixDirector;
+        [SerializeField] private WorldProceduralFieldSampler _proceduralFieldSampler;
+        [SerializeField, Min(0.05f)] private float _biomeInfluenceRefreshInterval = 0.35f;
 
         [Header("═══ Biome Overrides ═══")]
         [SerializeField] private BiomeAtmosphereOverride[] _biomeOverrides;
@@ -437,6 +456,11 @@ namespace Hecton8.Atmosphere
 
         private AtmosphereProfile _activeBiomeProfile;
         private AtmosphereProfile _activeMatrixProfile;
+        private WorldProceduralFieldSampler.BiomeInfluenceCell _currentBiomeInfluence;
+        private HectonBiomeMatrixProfile _biomeInfluencePrimaryProfile;
+        private HectonBiomeMatrixProfile _biomeInfluenceSecondaryProfile;
+        private float _nextBiomeInfluenceRefreshTime = float.NegativeInfinity;
+        private bool _hasBiomeInfluenceAtmosphere;
         private int _currentBiomeID = -1;
         private bool _editorInitialized;
         private bool _editorPreviewDirty;
@@ -449,6 +473,8 @@ namespace Hecton8.Atmosphere
         private float _cachedShaderTimeOfDay01 = -1f;
         private float _cachedShaderNightFactor = -1f;
         private float _cachedShaderSargassumBiolumPhaseMultiplier = float.NaN;
+        private float4 _cachedFinalGiantAbyssLight = new float4(-1f, -1f, -1f, -1f);
+        private float4 _cachedAegirDirection = new float4(0f, 0f, 0f, -999f);
 
         /// <summary>Dictionary for O(1) biome profile lookup (instead of linear search).</summary>
         private Dictionary<int, AtmosphereProfile> _biomeProfileDict;
@@ -795,6 +821,7 @@ namespace Hecton8.Atmosphere
             _transitionProgress = 1f;
 
             ComputeSunValues();
+            PublishGiantAbyssLight();
         }
 
         private void OnValidate()
@@ -871,6 +898,7 @@ namespace Hecton8.Atmosphere
             ProcessStateTransition(resolved);
 
             InterpolateAtmosphere(deltaTime);
+            ApplyProceduralBiomeInfluenceAtmosphere();
 
             ComputeSunValues();
         }
@@ -900,6 +928,7 @@ namespace Hecton8.Atmosphere
 
             RotateSun();
             ComputeSunValues();
+            PublishGiantAbyssLight();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -979,9 +1008,13 @@ namespace Hecton8.Atmosphere
             _cachedShaderTimeOfDay01 = -1f;
             _cachedShaderNightFactor = -1f;
             _cachedShaderSargassumBiolumPhaseMultiplier = float.NaN;
+            _cachedFinalGiantAbyssLight = new float4(-1f, -1f, -1f, -1f);
+            _cachedAegirDirection = new float4(0f, 0f, 0f, -999f);
             Shader.SetGlobalFloat(_shaderID_HectonTimeOfDay01, 0f);
             Shader.SetGlobalFloat(_shaderID_HectonNightFactor, 0f);
             Shader.SetGlobalFloat(_shaderID_SargassumBiolumPhaseMultiplier, HectonVegetationConstants.SargassumBiolumPhaseMultiplier);
+            Shader.SetGlobalVector(_shaderID_FinalGiantAbyssLight, Vector4.zero);
+            Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(0f, 0f, 1f, 0f));
         }
 
         #endregion
@@ -1141,6 +1174,59 @@ namespace Hecton8.Atmosphere
             _computedSunIntensity = _currentValues.sunIntensity * _computedHorizonFade;
         }
 
+        private void PublishGiantAbyssLight()
+        {
+            HectonCelestialEngine celestial = HectonCelestialEngine.ActiveRuntimeInstance;
+            float3 aegirDirection = new float3(0f, 0f, 1f);
+            float planetPhase = 0f;
+            float eclipseBacklit = 0f;
+
+            if (celestial != null)
+            {
+                planetPhase = celestial.PlanetPhase;
+                eclipseBacklit = math.saturate(celestial.EclipseBacklitFactor);
+                if (celestial.TryGetAegirSkyDirection(out Vector3 direction))
+                    aegirDirection = math.normalizesafe(new float3(direction.x, direction.y, direction.z), new float3(0f, 0f, 1f));
+            }
+
+            float depthMeters = math.max(0f, ResolvePlayerDepth());
+            float3 sigmaRgbPerMeter = math.max(
+                new float3(
+                    _giantAbyssSigmaRgbPerMeter.x,
+                    _giantAbyssSigmaRgbPerMeter.y,
+                    _giantAbyssSigmaRgbPerMeter.z),
+                float3.zero);
+            float3 waterTransmittance = math.exp(-depthMeters * sigmaRgbPerMeter);
+
+            Color surfaceLinearColor = _giantAbyssSurfaceLightColor.linear;
+            float3 giantSurfaceColor = new float3(surfaceLinearColor.r, surfaceLinearColor.g, surfaceLinearColor.b);
+            float phase01 = math.saturate((planetPhase * 0.5f) + 0.5f);
+            float planetShineIntensity = math.max(0f, _giantAbyssLightIntensity) *
+                                          math.saturate((phase01 * phase01) + (eclipseBacklit * 0.35f));
+
+            Color biolumeLinearColor = _giantAbyssBiolumeColor.linear;
+            float3 biolumeColor = new float3(biolumeLinearColor.r, biolumeLinearColor.g, biolumeLinearColor.b);
+            float biolumeDepthMask = math.saturate(depthMeters * 0.0025f) * math.saturate(_cachedShaderNightFactor);
+
+            float3 finalGiantAbyssLight = (giantSurfaceColor * waterTransmittance * planetShineIntensity) +
+                                           (biolumeColor * math.max(0f, _giantAbyssBiolumeIntensity) * biolumeDepthMask);
+            float4 finalPayload = new float4(finalGiantAbyssLight, planetShineIntensity);
+            if (math.all(math.isfinite(finalPayload)) &&
+                math.any(math.abs(finalPayload - _cachedFinalGiantAbyssLight) > 0.0001f))
+            {
+                _cachedFinalGiantAbyssLight = finalPayload;
+                Shader.SetGlobalVector(_shaderID_FinalGiantAbyssLight, new Vector4(finalPayload.x, finalPayload.y, finalPayload.z, finalPayload.w));
+            }
+
+            float4 directionPayload = new float4(aegirDirection, planetPhase);
+            if (math.all(math.isfinite(directionPayload)) &&
+                math.any(math.abs(directionPayload - _cachedAegirDirection) > 0.0001f))
+            {
+                _cachedAegirDirection = directionPayload;
+                Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(directionPayload.x, directionPayload.y, directionPayload.z, directionPayload.w));
+            }
+        }
+
         #endregion
 
         #region ══════════ Profile Resolution ══════════
@@ -1173,6 +1259,76 @@ namespace Hecton8.Atmosphere
         #endregion
 
         #region ══════════ Biome Handler ══════════
+
+        private void ApplyProceduralBiomeInfluenceAtmosphere()
+        {
+            if (!Application.isPlaying || _currentState == EnvironmentState.ECLIPSE)
+                return;
+
+            RefreshProceduralBiomeInfluenceSnapshotIfNeeded();
+            if (!_hasBiomeInfluenceAtmosphere)
+                return;
+
+            AtmosphereProfile primary = ResolveMatrixAtmosphereProfile(_biomeInfluencePrimaryProfile);
+            if (primary == null)
+                return;
+
+            AtmosphereProfile secondary = ResolveMatrixAtmosphereProfile(_biomeInfluenceSecondaryProfile);
+            if (secondary == null || _currentBiomeInfluence.SecondaryBiomeId == 0)
+            {
+                _currentValues.fogColor = primary.fogColor;
+                _currentValues.fogDensity = primary.fogDensity;
+                return;
+            }
+
+            float blend = _currentBiomeInfluence.Blend255 * (1f / 255f);
+            _currentValues.fogColor = Color.Lerp(primary.fogColor, secondary.fogColor, blend);
+            _currentValues.fogDensity = math.lerp(primary.fogDensity, secondary.fogDensity, blend);
+        }
+
+        private void RefreshProceduralBiomeInfluenceSnapshotIfNeeded()
+        {
+            float now = Time.unscaledTime;
+            if (now < _nextBiomeInfluenceRefreshTime)
+                return;
+
+            _nextBiomeInfluenceRefreshTime = now + math.max(0.05f, _biomeInfluenceRefreshInterval);
+
+            if (_proceduralFieldSampler == null)
+                WorldRuntimeReferenceUtility.TryResolveWorldProceduralFieldSampler(ref _proceduralFieldSampler);
+
+            Transform sampleTransform = _playerCameraTransform != null ? _playerCameraTransform : _playerTransform;
+            if (_proceduralFieldSampler == null || sampleTransform == null)
+            {
+                _hasBiomeInfluenceAtmosphere = false;
+                return;
+            }
+
+            if (_proceduralFieldSampler.TrySampleBiomeInfluence(
+                    sampleTransform.position,
+                    out WorldProceduralFieldSampler.BiomeInfluenceCell influence,
+                    out HectonBiomeMatrixProfile primary,
+                    out HectonBiomeMatrixProfile secondary))
+            {
+                _currentBiomeInfluence = influence;
+                _biomeInfluencePrimaryProfile = primary;
+                _biomeInfluenceSecondaryProfile = secondary;
+                _hasBiomeInfluenceAtmosphere = primary != null;
+                return;
+            }
+
+            _hasBiomeInfluenceAtmosphere = false;
+            _currentBiomeInfluence = default;
+            _biomeInfluencePrimaryProfile = null;
+            _biomeInfluenceSecondaryProfile = null;
+        }
+
+        private static AtmosphereProfile ResolveMatrixAtmosphereProfile(HectonBiomeMatrixProfile profile)
+        {
+            return profile != null && profile.familyProfile != null
+                ? profile.familyProfile.atmosphereProfile
+                : null;
+        }
 
         private void HandleBiomeChanged(int biomeID)
         {

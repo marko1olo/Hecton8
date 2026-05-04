@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Atmosphere;
+using Hecton8.AI;
 using Hecton8.Construction;
 using Hecton8.Core;
 using Hecton8.Environment;
@@ -279,6 +280,7 @@ namespace Hecton8.World
         private const int MaxExternalInteractionPoints = 4;
         private const int MaxQueryColliders = 32;
         private const int MaxModuleQueryHits = 32;
+        private const int MaxPredatorThreatQueryHits = 16;
         private const int MaxParasiteAnchors = 16;
         private const int DefaultHeadlessParasiteCapacity = 256;
         private const int MaxCascadeEvents = 4;
@@ -331,6 +333,7 @@ namespace Hecton8.World
         private static readonly int _VegetationCurrentTimeScaleId = Shader.PropertyToID("_HectonVegetationCurrentTimeScale");
         private static readonly int _VegetationCurrentVerticalFactorId = Shader.PropertyToID("_HectonVegetationCurrentVerticalFactor");
         private static readonly int _FloraPredatorThreatParamsId = Shader.PropertyToID("_HectonFloraPredatorThreatParams");
+        private static readonly int _FloraPredatorThreatPositionRadiusId = Shader.PropertyToID("_HectonFloraPredatorThreatPositionRadius");
         private static readonly int _FloraLifecycleParamsId = Shader.PropertyToID("_HectonFloraLifecycleParams");
         private static readonly int _FloraCascadeParamsId = Shader.PropertyToID("_HectonFloraCascadeParams");
         private static readonly int _SeasonCycleId = Shader.PropertyToID("_HectonSeasonCycle");
@@ -859,6 +862,7 @@ namespace Hecton8.World
         private float _lastToxicSporeExposure01;
         private float _moduleParasiteScanTimer;
         private SpatialQueryHit[] _moduleQueryHits;
+        private SpatialQueryHit[] _predatorThreatQueryHits;
         private readonly Vector4[] _parasiteAnchorData = new Vector4[MaxParasiteAnchors];
         private readonly Vector4[] _parasiteAnchorParams = new Vector4[MaxParasiteAnchors];
         private int _publishedParasiteAnchorCount;
@@ -951,8 +955,8 @@ namespace Hecton8.World
             _wakeTrailWaveDamping = Mathf.Clamp(_wakeTrailWaveDamping, 0.5f, 1f);
             _denseGrassInstanceThreshold = Mathf.Max(1024, _denseGrassInstanceThreshold);
             _sedimentMaxBurstCount = Mathf.Clamp(_sedimentMaxBurstCount, 2, 32);
-            _predatorThreatQueryRadius = Mathf.Max(2f, _predatorThreatQueryRadius);
-            _predatorBiolumDimRadius = Mathf.Max(1f, _predatorBiolumDimRadius);
+            _predatorThreatQueryRadius = Mathf.Max(15f, _predatorThreatQueryRadius);
+            _predatorBiolumDimRadius = Mathf.Max(15f, _predatorBiolumDimRadius);
             _predatorBiolumDimStrength = Mathf.Clamp01(_predatorBiolumDimStrength);
             _seasonCycleSeconds = Mathf.Max(120f, _seasonCycleSeconds);
             _bloomPhaseWidthNormalized = Mathf.Clamp(_bloomPhaseWidthNormalized, 0.05f, 0.45f);
@@ -1018,6 +1022,8 @@ namespace Hecton8.World
             _interactionBodies = new Rigidbody[MaxQueryColliders];
             // COLD ALLOC: SpatialQueryHit[32] - module-contact query results for parasitic flora host resolution - owner: FloraInteractionManager
             _moduleQueryHits = new SpatialQueryHit[MaxModuleQueryHits];
+            // COLD ALLOC: SpatialQueryHit[16] - predator bioform query results for flora bioluminescence stealth - owner: FloraInteractionManager
+            _predatorThreatQueryHits = new SpatialQueryHit[MaxPredatorThreatQueryHits];
             _interactionBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<FloraInteractionPointGpuData>(_maxInteractionPoints); // COLD ALLOC: GraphicsBuffer[_maxInteractionPoints] - global vegetation interaction StructuredBuffer - owner: FloraInteractionManager
             // COLD ALLOC: NativeArray<Vector3>[1] - caller-owned ocean provider sample positions for vegetation flow publishing - owner: FloraInteractionManager
             _oceanFlowSamplePositions = new NativeArray<Vector3>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -3902,15 +3908,40 @@ namespace Hecton8.World
         private void PublishPredatorThreatGlobals(Vector3 samplePositionWS)
         {
             float aggressiveBioformThreat = 0f;
-            if (WorldSpatialHashGrid.TryGetNearestAggressiveBioform(
-                samplePositionWS,
-                _predatorThreatQueryRadius,
-                _predatorThreatMask.value,
-                _playerTransform,
-                out SpatialQueryHit hit))
+            Vector4 predatorThreatPositionRadius = Vector4.zero;
+            float predatorQueryRadius = Mathf.Max(15f, _predatorThreatQueryRadius);
+            float predatorDimRadius = Mathf.Max(15f, _predatorBiolumDimRadius);
+            if (_predatorThreatQueryHits != null)
             {
-                float distance = Vector3.Distance(hit.Position, samplePositionWS);
-                aggressiveBioformThreat = 1f - Mathf.Clamp01(distance / Mathf.Max(_predatorThreatQueryRadius, 0.001f));
+                int hitCount = WorldSpatialHashGrid.CollectContactsNonAlloc(
+                    samplePositionWS,
+                    predatorQueryRadius,
+                    SpatialTargetKind.Bioform,
+                    _predatorThreatQueryHits);
+                float bestDistanceSqr = predatorQueryRadius * predatorQueryRadius;
+                for (int i = 0; i < hitCount; i++)
+                {
+                    SpatialQueryHit hit = _predatorThreatQueryHits[i];
+                    if (hit.Transform == null || hit.Transform == _playerTransform)
+                        continue;
+
+                    if (_predatorThreatMask.value != 0 && (_predatorThreatMask.value & (1 << hit.Layer)) == 0)
+                        continue;
+
+                    bool leviathanThreat = hit.Transform.tag == "Leviathan";
+                    if (!leviathanThreat && hit.Owner is FaunaBrain brain && brain.SpeciesProfile != null)
+                        leviathanThreat = brain.SpeciesProfile.isLeviathan;
+                    if (!leviathanThreat)
+                        continue;
+
+                    if (hit.DistanceSqr >= bestDistanceSqr)
+                        continue;
+
+                    bestDistanceSqr = hit.DistanceSqr;
+                    float distance = Mathf.Sqrt(hit.DistanceSqr);
+                    aggressiveBioformThreat = 1f - Mathf.Clamp01(distance / predatorDimRadius);
+                    predatorThreatPositionRadius = new Vector4(hit.Position.x, hit.Position.y, hit.Position.z, predatorDimRadius);
+                }
             }
 
             float bridgeThreat = _vegetationBridge != null ? Mathf.Clamp01(_vegetationBridge.GetThreatLevel(samplePositionWS)) : 0f;
@@ -3919,9 +3950,10 @@ namespace Hecton8.World
                 _FloraPredatorThreatParamsId,
                 new Vector4(
                     threatExposure,
-                    Mathf.Max(0.25f, _predatorBiolumDimRadius),
+                    predatorDimRadius,
                     _predatorBiolumDimStrength,
                     aggressiveBioformThreat));
+            Shader.SetGlobalVector(_FloraPredatorThreatPositionRadiusId, predatorThreatPositionRadius);
         }
 
         private void RefreshFlowFieldGlobals(float deltaTime)
@@ -4481,6 +4513,7 @@ namespace Hecton8.World
             Shader.SetGlobalVector(_VegetationCurrentVectorId, Vector4.zero);
             Shader.SetGlobalFloat(_VegetationCurrentStrengthId, 0f);
             Shader.SetGlobalVector(_FloraPredatorThreatParamsId, Vector4.zero);
+            Shader.SetGlobalVector(_FloraPredatorThreatPositionRadiusId, Vector4.zero);
             Shader.SetGlobalVector(_FloraLifecycleParamsId, new Vector4(0f, 0f, 1f, 0f));
             Shader.SetGlobalFloat(_SeasonCycleId, 0f);
             Shader.SetGlobalFloat(_SeasonCycleAliasId, 0f);

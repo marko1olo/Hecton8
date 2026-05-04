@@ -566,6 +566,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [Header("═══ ECLIPSE DETECTION ═══")]
         [SerializeField] private float eclipseAngularRadiusOverride;
         [SerializeField] private float eclipseHysteresisMargin = 0.5f;
+        [SerializeField, Range(0.01f, 5f)] private float sunAngularRadiusDegrees = 0.27f;
+        [SerializeField, Range(0.01f, 1f)] private float eclipseEventStartPenumbraThreshold = 0.5f;
 
         [Header("═══ ECLIPSE BACKLIGHT ═══")]
         [SerializeField] private float backlitAlignmentSoftStart = 0.97f;
@@ -635,6 +637,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private bool _baseFlareValuesCaptured;
 
         private float3 _resolvedSunDirection;
+        private float _penumbraFactor;
         private Color _resolvedSkyZenith;
         private Color _resolvedSkyHorizon;
         private Color _resolvedSkyNadir;
@@ -662,7 +665,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private Texture _skyHighCloudTexDefault;
         private Texture _skyMainCloudAtlasDefault;
         private Texture _skyMainCloudTexDefault;
-        private Texture _skyStarTexDefault;
         private Texture _daySkyboxMainTexDefault;
         private Texture _daySkyboxEmissionTexDefault;
         private Texture _nightSkyboxMainTexDefault;
@@ -753,6 +755,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private static readonly int _ID_NightBlend         = Shader.PropertyToID("_NightBlend");
         private static readonly int _ID_SunElevation       = Shader.PropertyToID("_SunElevation");
         private static readonly int _ID_EclipseOcclusion   = Shader.PropertyToID("_EclipseOcclusion");
+        private static readonly int _ID_PenumbraFactor     = Shader.PropertyToID("_PenumbraFactor");
         private static readonly int _ID_CloudDensityThreshold = Shader.PropertyToID("_CloudDensityThreshold");
         private static readonly int _ID_CloudSoftness = Shader.PropertyToID("_CloudSoftness");
         private static readonly int _ID_CloudSpeedMult = Shader.PropertyToID("_CloudSpeedMult");
@@ -775,7 +778,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private static readonly int _ID_HighCloudTex       = Shader.PropertyToID("_HighCloudTex");
         private static readonly int _ID_MainCloudAtlas     = Shader.PropertyToID("_MainCloudAtlas");
         private static readonly int _ID_MainCloudTex       = Shader.PropertyToID("_MainCloudTex");
-        private static readonly int _ID_StarTex            = Shader.PropertyToID("_StarTex");
         private static readonly int _ID_MainTex            = Shader.PropertyToID("_MainTex");
         private static readonly int _ID_EmissionMap        = Shader.PropertyToID("_EmissionMap");
         private static readonly int _ID_DayCubemap         = Shader.PropertyToID("_DayCubemap");
@@ -1052,6 +1054,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         {
             EnsureCelestialAtmosphereLutReady();
             CacheMoonRenderers();
+            sunAngularRadiusDegrees = Mathf.Max(0.01f, sunAngularRadiusDegrees);
+            eclipseEventStartPenumbraThreshold = Mathf.Clamp(eclipseEventStartPenumbraThreshold, 0.01f, 1f);
             _editorPreviewDirty = true;
 
             if (Application.isPlaying)
@@ -1216,6 +1220,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             else if (aegirObserverRelativeBody == null)
                 aegirTransform.TryGetComponent(out aegirObserverRelativeBody);
 
+            EnforceAegirFixedDirectionLock();
+
             if (playerTransform == null)
             {
                 if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform currentPlayer) && currentPlayer != null)
@@ -1231,6 +1237,18 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
             if (_skyMaterial == null)
                 Debug.LogWarning("[HectonCelestialEngine] Sky Material is not assigned!", this);
+        }
+
+        private void EnforceAegirFixedDirectionLock()
+        {
+            if (aegirObserverRelativeBody == null)
+                return;
+
+            Vector3 fallbackDirection = Vector3.forward;
+            if (aegirTransform != null && aegirTransform.localPosition.sqrMagnitude > 0.0001f)
+                fallbackDirection = aegirTransform.localPosition;
+
+            aegirObserverRelativeBody.EnforceFixedDirectionLock(fallbackDirection);
         }
 
         private void SyncCrestPrimaryLight()
@@ -2106,7 +2124,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             _skyHighCloudTexDefault = GetMaterialTexture(_skyMaterial, _ID_HighCloudTex);
             _skyMainCloudAtlasDefault = GetMaterialTexture(_skyMaterial, _ID_MainCloudAtlas);
             _skyMainCloudTexDefault = GetMaterialTexture(_skyMaterial, _ID_MainCloudTex);
-            _skyStarTexDefault = GetMaterialTexture(_skyMaterial, _ID_StarTex);
 
             _daySkyboxMainTexDefault = GetMaterialTexture(daySkybox, _ID_MainTex);
             _daySkyboxEmissionTexDefault = GetMaterialTexture(daySkybox, _ID_EmissionMap);
@@ -2427,7 +2444,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             SetSkyTextureAllTargets(_ID_HighCloudTex, null);
             SetSkyTextureAllTargets(_ID_MainCloudAtlas, null);
             SetSkyTextureAllTargets(_ID_MainCloudTex, null);
-            SetSkyTextureAllTargets(_ID_StarTex, null);
 
             SetMaterialTexture(daySkybox, _ID_MainTex, null);
             SetMaterialTexture(daySkybox, _ID_EmissionMap, null);
@@ -2450,7 +2466,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             SetSkyTextureAllTargets(_ID_HighCloudTex, _skyHighCloudTexDefault);
             SetSkyTextureAllTargets(_ID_MainCloudAtlas, _skyMainCloudAtlasDefault);
             SetSkyTextureAllTargets(_ID_MainCloudTex, _skyMainCloudTexDefault);
-            SetSkyTextureAllTargets(_ID_StarTex, _skyStarTexDefault);
 
             SetMaterialTexture(daySkybox, _ID_MainTex, _daySkyboxMainTexDefault);
             SetMaterialTexture(daySkybox, _ID_EmissionMap, _daySkyboxEmissionTexDefault);
@@ -2762,6 +2777,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             targetMaterial.SetFloat(_ID_StarSeed, _resolvedStarMapSeed);
             targetMaterial.SetFloat(_ID_SunElevation, sunElevationNormalized);
             targetMaterial.SetFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
+            targetMaterial.SetFloat(_ID_PenumbraFactor, _penumbraFactor);
             targetMaterial.SetFloat(_ID_AtmosphereTransmittanceWeight, _atmosphereTransmittanceWeight);
             targetMaterial.SetFloat(_ID_AtmosphereInscatterWeight, _atmosphereInscatterWeight);
             targetMaterial.SetVector(_ID_SunDirection, sunDirection);
@@ -2909,60 +2925,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
         private void UpdateSunOcclusion(float dt)
         {
-            if (_isEclipseActive)
-            {
-                _sunOcclusionFactor = 1.0f;
-#if UNITY_EDITOR
-                if (!Application.isPlaying && dt <= 0f)
-                {
-                    _smoothedOcclusionFactor = 1.0f;
-                    return;
-                }
-#endif
-                _smoothedOcclusionFactor = math.lerp(
-                    _smoothedOcclusionFactor, 1.0f, math.saturate(flareFadeSpeed * dt));
-                return;
-            }
-
-            if (!TryResolveAegirSkyDirection(out float3 toAegir))
-            {
-                _sunOcclusionFactor = 0f;
-#if UNITY_EDITOR
-                if (!Application.isPlaying && dt <= 0f)
-                {
-                    _smoothedOcclusionFactor = 0f;
-                    return;
-                }
-#endif
-                _smoothedOcclusionFactor = math.lerp(
-                    _smoothedOcclusionFactor, 0f, math.saturate(flareFadeSpeed * dt));
-                return;
-            }
-
-            float3 toSun     = _resolvedSunDirection;
-
-            float dotSunAegir = math.dot(toSun, toAegir);
-            float angularSeparationDeg = math.degrees(
-                math.acos(math.clamp(dotSunAegir, -1f, 1f)));
-
-            float dynamicAngularRadius = GetAegirAngularRadiusDegrees();
-
-            float innerEdge = dynamicAngularRadius;
-            float outerEdge = dynamicAngularRadius + math.max(flareFadeMarginDegrees, 0.01f);
-
-            if (angularSeparationDeg <= innerEdge)
-            {
-                _sunOcclusionFactor = 1.0f;
-            }
-            else if (angularSeparationDeg < outerEdge)
-            {
-                float t = (outerEdge - angularSeparationDeg) / (outerEdge - innerEdge);
-                _sunOcclusionFactor = SmoothStep01(t);
-            }
-            else
-            {
-                _sunOcclusionFactor = 0f;
-            }
+            _sunOcclusionFactor = math.saturate(_penumbraFactor);
 
 #if UNITY_EDITOR
             if (!Application.isPlaying && dt <= 0f)
@@ -3153,6 +3116,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             Shader.SetGlobalColor(_ID_SkyColorNadir, _resolvedSkyNadir);
             Shader.SetGlobalFloat(_ID_NightBlend, _currentBlend);
             Shader.SetGlobalFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
+            Shader.SetGlobalFloat(_ID_PenumbraFactor, _penumbraFactor);
             Shader.SetGlobalFloat(_ID_AtmosphereTransmittanceWeight, _atmosphereTransmittanceWeight);
             Shader.SetGlobalFloat(_ID_AtmosphereInscatterWeight, _atmosphereInscatterWeight);
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereLutReady, _celestialAtmosphereLutTexture != null ? 1f : 0f);
@@ -3306,8 +3270,18 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
         private void DetectEclipse()
         {
-            if (!TryResolveSunOcclusion(out bool sunOccluded, out bool insideExitBand))
+            if (!TryResolveSunOcclusion(out bool sunOccluded, out bool insideExitBand, out float penumbraFactor))
+            {
+                _penumbraFactor = 0f;
+                if (_isEclipseActive)
+                {
+                    _isEclipseActive = false;
+                    CelestialEvents.RaiseEclipseEnded();
+                }
                 return;
+            }
+
+            _penumbraFactor = penumbraFactor;
 
             if (sunOccluded && !_isEclipseActive)
             {
@@ -3321,10 +3295,11 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             }
         }
 
-        private bool TryResolveSunOcclusion(out bool sunOccluded, out bool insideExitBand)
+        private bool TryResolveSunOcclusion(out bool sunOccluded, out bool insideExitBand, out float penumbraFactor)
         {
             sunOccluded = false;
             insideExitBand = false;
+            penumbraFactor = 0f;
             bool hasOccluder = false;
             float3 toSun = _resolvedSunDirection;
 
@@ -3336,7 +3311,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                     toAegir,
                     GetAegirAngularRadiusDegrees(),
                     ref sunOccluded,
-                    ref insideExitBand);
+                    ref insideExitBand,
+                    ref penumbraFactor);
             }
 
             for (int i = 0; i < _observerBodyCache.Count; i++)
@@ -3357,7 +3333,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                     bodyDirection,
                     angularRadius,
                     ref sunOccluded,
-                    ref insideExitBand);
+                    ref insideExitBand,
+                    ref penumbraFactor);
             }
 
             return hasOccluder;
@@ -3368,22 +3345,71 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             float3 toOccluder,
             float angularRadius,
             ref bool sunOccluded,
-            ref bool insideExitBand)
+            ref bool insideExitBand,
+            ref float penumbraFactor)
         {
             float dotSunOccluder = math.dot(toSun, toOccluder);
             float angleDeg = math.degrees(
                 math.acos(math.clamp(dotSunOccluder, -1f, 1f)));
 
-            if (angleDeg < angularRadius)
+            float sunRadius = math.max(0.001f, sunAngularRadiusDegrees);
+            float occluderRadius = math.max(0.001f, angularRadius);
+            float overlap01 = ComputeAngularDiscOverlapFactor(sunRadius, occluderRadius, angleDeg);
+            penumbraFactor = math.max(penumbraFactor, overlap01);
+
+            if (overlap01 >= math.clamp(eclipseEventStartPenumbraThreshold, 0.01f, 1f))
                 sunOccluded = true;
 
-            if (angleDeg < angularRadius + eclipseHysteresisMargin)
+            if (angleDeg < occluderRadius + sunRadius + math.max(0f, eclipseHysteresisMargin))
                 insideExitBand = true;
         }
 
         // ─────────────────────────────────────────────
         // UTILITY
         // ─────────────────────────────────────────────
+
+        private static float ComputeAngularDiscOverlapFactor(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
+        {
+            float sunRadius = math.max(0.0001f, sunRadiusDeg);
+            float occluderRadius = math.max(0.0001f, occluderRadiusDeg);
+            float separation = math.max(0f, separationDeg);
+            float sunArea = math.PI * sunRadius * sunRadius;
+
+            if (separation >= sunRadius + occluderRadius)
+                return 0f;
+
+            if (separation <= math.abs(occluderRadius - sunRadius))
+            {
+                if (occluderRadius >= sunRadius)
+                    return 1f;
+
+                return math.saturate((math.PI * occluderRadius * occluderRadius) / sunArea);
+            }
+
+            float separationSq = separation * separation;
+            float sunRadiusSq = sunRadius * sunRadius;
+            float occluderRadiusSq = occluderRadius * occluderRadius;
+            float sunTerm = math.acos(math.clamp(
+                (separationSq + sunRadiusSq - occluderRadiusSq) / (2f * separation * sunRadius),
+                -1f,
+                1f));
+            float occluderTerm = math.acos(math.clamp(
+                (separationSq + occluderRadiusSq - sunRadiusSq) / (2f * separation * occluderRadius),
+                -1f,
+                1f));
+            float rootTerm = math.max(
+                0f,
+                (-separation + sunRadius + occluderRadius) *
+                (separation + sunRadius - occluderRadius) *
+                (separation - sunRadius + occluderRadius) *
+                (separation + sunRadius + occluderRadius));
+            float overlapArea =
+                sunRadiusSq * sunTerm +
+                occluderRadiusSq * occluderTerm -
+                0.5f * math.sqrt(rootTerm);
+
+            return math.saturate(overlapArea / sunArea);
+        }
 
         private static float SmoothStep01(float t)
         {
@@ -3462,10 +3488,19 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         public bool IsEclipseActive => _isEclipseActive;
         public float EclipseBacklitFactor => _currentBacklitFactor;
         public float StarIntensity => _currentStarIntensity;
+        public float ResolvedStarMapSeed => _resolvedStarMapSeed;
         public Vector3 ResolvedSunDirection => (Vector3)_resolvedSunDirection;
         public float SunOcclusionFactor => _smoothedOcclusionFactor;
+        public float PenumbraFactor => _penumbraFactor;
+        public bool IsAegirFixedDirectionLocked =>
+            aegirObserverRelativeBody != null && aegirObserverRelativeBody.UsesFixedDirection;
         public float RotationTimer => _rotationTimer;
         public float GameTime => _gameTime;
+
+        public static float EvaluatePenumbraOverlapForSmoke(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
+        {
+            return ComputeAngularDiscOverlapFactor(sunRadiusDeg, occluderRadiusDeg, separationDeg);
+        }
 
         public bool TryGetAegirSkyDirection(out Vector3 direction)
         {

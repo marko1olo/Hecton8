@@ -163,6 +163,30 @@ namespace Hecton8.Physics
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static float3 ResolveTractorBeamPdVelocityChange(
+            float3 targetPosition,
+            float3 currentPosition,
+            float3 targetVelocity,
+            float3 currentVelocity,
+            float springStiffness,
+            float dampingCoefficient,
+            float reducedMassKilograms,
+            float maxVelocityChangeMagnitude)
+        {
+            float safeReducedMass = math.max(0.0001f, reducedMassKilograms);
+            float maxForce = math.max(0f, maxVelocityChangeMagnitude) * safeReducedMass;
+            float3 force = ResolveTractorBeamPdForce(
+                targetPosition,
+                currentPosition,
+                targetVelocity,
+                currentVelocity,
+                springStiffness,
+                dampingCoefficient,
+                maxForce);
+            return force / safeReducedMass;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static float ResolveExponentialBlendAlpha(float deltaTime, float sharpness)
         {
             float safeDeltaTime = math.max(0f, deltaTime);

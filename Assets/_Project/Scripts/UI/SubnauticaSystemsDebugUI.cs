@@ -41,6 +41,9 @@ namespace Hecton8.UI
             if (!Application.isPlaying)
                 return;
 
+            if (!ShouldAutoCreateRuntimeOverlay(SceneManager.GetActiveScene()))
+                return;
+
             // COLD ALLOC: SubnauticaSystemsDebugUI[] â€” runtime overlay recovery after scene load â€” owner: SubnauticaSystemsDebugUI
             if (s_activeRuntimeInstance != null)
             {
@@ -56,6 +59,12 @@ namespace Hecton8.UI
             GameObject runtimeRoot = new GameObject("SubnauticaSystemsDebugUI_Auto");
             SubnauticaSystemsDebugUI runtimeOverlay = runtimeRoot.AddComponent<SubnauticaSystemsDebugUI>();
             runtimeOverlay.QueueRuntimeBootstrap(forceManagerResolve: true);
+        }
+
+        private static bool ShouldAutoCreateRuntimeOverlay(Scene scene)
+        {
+            return scene.IsValid() &&
+                string.Equals(scene.name, "02_HECTON_WORLD", StringComparison.Ordinal);
         }
 
         private const string RootObjectName = "SubnauticaSystemsDebugUI_Panel";

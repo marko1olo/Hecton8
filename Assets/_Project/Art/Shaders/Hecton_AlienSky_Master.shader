@@ -42,7 +42,6 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         _MainCloudTex ("Cloud Atlas RGBA", 2D) = "gray" {}
 
         [Header(Star Field)]
-        _StarTex ("Star Field RGB", 2D) = "black" {}
         _StarTiling ("Star Tiling", Vector) = (3, 3, 0, 0)
         [HDR] _StarColor ("Star Tint", Color) = (1.0, 1.0, 1.0, 1)
         _StarIntensity ("Star Brightness", Range(0, 10)) = 2.0
@@ -168,12 +167,10 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             #include "Hecton_CelestialAtmosphere.hlsl"
 
             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
-            TEXTURE2D(_StarTex);            SAMPLER(sampler_StarTex);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainCloudTex_ST;
 
-                float4 _StarTex_ST;
                 float4 _StarTiling;
                 half4  _StarColor;
                 half   _StarIntensity;

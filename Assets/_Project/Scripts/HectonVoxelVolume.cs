@@ -613,6 +613,28 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
+        /// Releases ownership of a staged collider bake mesh after its PhysX bake has been handed to deferred teardown.
+        /// </summary>
+        /// <param name="index">Collider chunk index.</param>
+        internal void DetachColliderChunkBakeMesh(int index)
+        {
+            if (index < 0 || index >= _colliderChunkBakeMeshes.Length)
+                return;
+
+            if (index < _colliderChunkColliders.Length)
+            {
+                MeshCollider collider = _colliderChunkColliders[index];
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                    collider.sharedMesh = null;
+                }
+            }
+
+            _colliderChunkBakeMeshes[index] = null;
+        }
+
+        /// <summary>
         /// Clears all pooled collider chunks. When destroyMeshes is true the mesh instances are destroyed permanently.
         /// </summary>
         public void ResetColliderChunks(bool destroyMeshes)
@@ -1188,22 +1210,27 @@ namespace Hecton8.Caves
         /// Samples a trench line in absolute-universe space and converts each intersecting column into subtractive
         /// crater stamps owned by the authoritative voxel delta pipeline.
         /// </summary>
+        /// <param name="absoluteEpicenter">Absolute-universe event epicenter used for linear trench depth falloff.</param>
         /// <param name="absoluteStart">Absolute-universe trench start position.</param>
         /// <param name="absoluteEnd">Absolute-universe trench end position.</param>
         /// <param name="trenchDepth">Peak trench depth at the center line.</param>
         /// <param name="trenchSlope">Meters of depth loss per meter away from the center line.</param>
         /// <param name="sampleSpacing">Meters between longitudinal trench samples.</param>
         /// <param name="appliedStampCount">Count of accepted crater stamps.</param>
+        /// <param name="displacedVolumeCubicMeters">Estimated displaced solid mass volume from accepted stamps.</param>
         /// <returns>True when at least one trench stamp was applied to this volume.</returns>
         public bool TryApplySeismicTrench(
+            Vector3 absoluteEpicenter,
             Vector3 absoluteStart,
             Vector3 absoluteEnd,
             float trenchDepth,
             float trenchSlope,
             float sampleSpacing,
-            out int appliedStampCount)
+            out int appliedStampCount,
+            out float displacedVolumeCubicMeters)
         {
             appliedStampCount = 0;
+            displacedVolumeCubicMeters = 0f;
             if (!_runtimeDataReady || _bakeState != VoxelBakeState.Complete || _gridDimension <= 0 || _voxelSize <= 0f)
                 return false;
 
@@ -1212,6 +1239,7 @@ namespace Hecton8.Caves
 
             Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(absoluteStart);
             Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(absoluteEnd);
+            Vector3 runtimeEpicenter = HectonFloatingOrigin.ToRuntimePosition(absoluteEpicenter);
             Vector3 line = runtimeEnd - runtimeStart;
             float lineLength = line.magnitude;
             if (lineLength <= 0.001f)
@@ -1231,6 +1259,7 @@ namespace Hecton8.Caves
             float longitudinalStep = Mathf.Max(_voxelSize, sampleSpacing);
             float lateralStep = Mathf.Max(_voxelSize * 0.85f, longitudinalStep * 0.5f);
             int longitudinalCount = Mathf.Clamp(Mathf.CeilToInt(lineLength / longitudinalStep) + 1, 2, 64);
+            float epicenterFadeDistance = Mathf.Max(_voxelSize, lineLength * 0.5f + influenceRadius);
 
             for (int sampleIndex = 0; sampleIndex < longitudinalCount; sampleIndex++)
             {
@@ -1239,11 +1268,13 @@ namespace Hecton8.Caves
 
                 for (float lateral = -influenceRadius; lateral <= influenceRadius + 0.001f; lateral += lateralStep)
                 {
-                    float cutDepth = Mathf.Max(0f, clampedDepth - Mathf.Abs(lateral) * clampedSlope);
+                    Vector3 runtimeColumn = runtimeCenter + right * lateral;
+                    float epicenterDistance = (runtimeColumn - runtimeEpicenter).magnitude;
+                    float epicenterDepth = clampedDepth * (1f - Mathf.Clamp01(epicenterDistance / epicenterFadeDistance));
+                    float cutDepth = Mathf.Max(0f, epicenterDepth - Mathf.Abs(lateral) * clampedSlope);
                     if (cutDepth <= 0.0001f)
                         continue;
 
-                    Vector3 runtimeColumn = runtimeCenter + right * lateral;
                     Vector3 localColumn = cachedTransform.InverseTransformPoint(runtimeColumn);
                     if (localColumn.x < localBounds.min.x ||
                         localColumn.x > localBounds.max.x ||
@@ -1266,11 +1297,22 @@ namespace Hecton8.Caves
                     }
 
                     CarveCrater(cachedTransform.TransformPoint(localAnchor), craterRadius);
+                    displacedVolumeCubicMeters += EstimateSeismicCraterDisplacedVolume(craterRadius, cutDepth);
                     appliedStampCount++;
                 }
             }
 
             return appliedStampCount > 0;
+        }
+
+        private static float EstimateSeismicCraterDisplacedVolume(float craterRadius, float cutDepth)
+        {
+            float radius = Mathf.Max(0f, craterRadius);
+            float depth = Mathf.Clamp(cutDepth, 0f, radius * 2f);
+            if (radius <= 0f || depth <= 0f)
+                return 0f;
+
+            return Mathf.PI * depth * depth * (radius - depth / 3f);
         }
 
         /// <summary>
@@ -1967,12 +2009,32 @@ namespace Hecton8.Caves
             float impulseMagnitude = Mathf.Clamp(clusterCount * 3f + halfExtents.y * 2f, 12f, 48f);
             ApplyCollapseImpulse(runtimeCenter, halfExtents, impulseRadius, impulseMagnitude);
 
+            Vector3 trenchDirection = ResolveCollapseTrenchDirection(absoluteCenter);
+            float halfTrenchLength = Mathf.Max(2f, impulseRadius * 0.5f);
             SeismicShockwaveEvent shockwaveEvent = new SeismicShockwaveEvent(
                 runtimeCenter,
                 impulseRadius,
                 impulseMagnitude,
-                clusterCount);
+                clusterCount,
+                absoluteCenter - trenchDirection * halfTrenchLength,
+                absoluteCenter + trenchDirection * halfTrenchLength);
             RandomEventEvents.RaiseSeismicShockwave(in shockwaveEvent);
+        }
+
+        private static Vector3 ResolveCollapseTrenchDirection(Vector3 absoluteCenter)
+        {
+            uint seedA = unchecked((uint)Mathf.RoundToInt(absoluteCenter.x * 0.25f));
+            uint seedB = unchecked((uint)Mathf.RoundToInt(absoluteCenter.z * 0.25f));
+            uint state = seedA * 747796405u + seedB * 2891336453u + 0xB87F321Du;
+            state ^= state >> 16;
+            state *= 2246822519u;
+            state ^= state >> 13;
+            state *= 3266489917u;
+            state ^= state >> 16;
+
+            float angle = (state & 0x00FFFFFFu) * (Mathf.PI * 2f / 16777215f);
+            Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            return direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
         }
 
         private void ApplyCollapseImpulse(Vector3 runtimeCenter, Vector3 halfExtents, float impulseRadius, float impulseMagnitude)

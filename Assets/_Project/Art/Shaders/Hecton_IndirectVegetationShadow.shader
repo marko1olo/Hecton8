@@ -23,6 +23,7 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
             ZWrite On
             ZTest LEqual
             ColorMask 0
+            AlphaToMask On
 
             HLSLPROGRAM
             #pragma target 4.5
@@ -523,18 +524,18 @@ Shader "Hidden/Hecton8/VegetationIndirectShadowCaster"
             half4 ShadowFrag(Varyings input) : SV_Target
             {
                 half cutMask = ResolveVegetationCutMask(input.shadowData.x, input.positionWS);
-                clip(0.08h - cutMask);
+                half coverageVisibility = saturate((0.08h - cutMask) / 0.025h);
 
                 if (input.shadowData.x > 1.5)
                 {
                     half porousCoverage = ResolveSargassumShadowCoverage(input.positionWS, input.shadowData.y);
-                    clip(porousCoverage - 0.16h);
+                    coverageVisibility *= saturate((porousCoverage - 0.16h) / 0.08h);
                 }
 
                 half coverage = saturate(_Opacity);
-                clip(coverage - ResolveBayer4x4(floor(input.positionCS.xy)));
+                coverageVisibility *= (half)step(ResolveBayer4x4(floor(input.positionCS.xy)), coverage);
 
-                return 0;
+                return half4(0.0h, 0.0h, 0.0h, saturate(coverageVisibility));
             }
             ENDHLSL
         }

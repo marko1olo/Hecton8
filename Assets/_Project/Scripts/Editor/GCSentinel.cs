@@ -1,6 +1,6 @@
 #if UNITY_EDITOR
 using System;
-using Hecton8.Core;
+using UnityEditor;
 using UnityEngine;
 
 namespace Hecton8.Editor
@@ -8,16 +8,21 @@ namespace Hecton8.Editor
     /// <summary>
     /// Play-mode editor sentinel that escalates frequent gen0 collections as hard console errors.
     /// </summary>
-    [DefaultExecutionOrder(32000)]
-    internal sealed class GCSentinel : MonoBehaviour, IUpdatable
+    [InitializeOnLoad]
+    internal static class GCSentinel
     {
         private const int FrameWindow = 60;
-        private const string SentinelObjectName = "__GC_SENTINEL";
 
-        private int _framesRemaining = FrameWindow;
-        private int _lastGen0CollectionCount;
-        private long _lastManagedHeapBytes;
-        private bool _registeredForTick;
+        private static int s_framesRemaining = FrameWindow;
+        private static int s_lastGen0CollectionCount;
+        private static long s_lastManagedHeapBytes;
+        private static bool s_installed;
+
+        static GCSentinel()
+        {
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -25,60 +30,63 @@ namespace Hecton8.Editor
             if (!Application.isPlaying)
                 return;
 
-            GCSentinel existing = FindAnyObjectByType<GCSentinel>();
-            if (existing != null)
+            ResetCounters();
+            if (s_installed)
                 return;
 
-            GameObject sentinelObject = new GameObject(SentinelObjectName);
-            sentinelObject.hideFlags = HideFlags.HideAndDontSave;
-            sentinelObject.AddComponent<GCSentinel>();
+            EditorApplication.update -= TickEditor;
+            EditorApplication.update += TickEditor;
+            s_installed = true;
         }
 
-        private void Awake()
+        private static void HandlePlayModeStateChanged(PlayModeStateChange state)
         {
-            hideFlags = HideFlags.HideAndDontSave;
-            _lastGen0CollectionCount = GC.CollectionCount(0);
-            _lastManagedHeapBytes = GC.GetTotalMemory(false);
-            _framesRemaining = FrameWindow;
+            if (state == PlayModeStateChange.ExitingPlayMode ||
+                state == PlayModeStateChange.EnteredEditMode)
+            {
+                Uninstall();
+            }
         }
 
-        private void OnEnable()
+        private static void Uninstall()
         {
-            if (_registeredForTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!s_installed)
                 return;
 
-            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Core);
-            _registeredForTick = GlobalRegistry.Updatables.Contains(this);
+            EditorApplication.update -= TickEditor;
+            s_installed = false;
         }
 
-        private void OnDisable()
+        private static void ResetCounters()
         {
-            if (!_registeredForTick)
+            s_lastGen0CollectionCount = GC.CollectionCount(0);
+            s_lastManagedHeapBytes = GC.GetTotalMemory(false);
+            s_framesRemaining = FrameWindow;
+        }
+
+        private static void TickEditor()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                Uninstall();
                 return;
+            }
 
-            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
-            _registeredForTick = false;
-        }
-
-        /// <inheritdoc />
-        public void Tick(float deltaTime)
-        {
-            if (--_framesRemaining > 0)
+            if (--s_framesRemaining > 0)
                 return;
 
             int currentGen0Collections = GC.CollectionCount(0);
-            int gen0Delta = currentGen0Collections - _lastGen0CollectionCount;
+            int gen0Delta = currentGen0Collections - s_lastGen0CollectionCount;
             long currentManagedHeapBytes = GC.GetTotalMemory(false);
-            long managedHeapDeltaBytes = currentManagedHeapBytes - _lastManagedHeapBytes;
 
             if (gen0Delta > 1)
             {
                 Debug.LogError("[GCSentinel] GEN0 GC spike detected.");
             }
 
-            _lastGen0CollectionCount = currentGen0Collections;
-            _lastManagedHeapBytes = currentManagedHeapBytes;
-            _framesRemaining = FrameWindow;
+            s_lastGen0CollectionCount = currentGen0Collections;
+            s_lastManagedHeapBytes = currentManagedHeapBytes;
+            s_framesRemaining = FrameWindow;
         }
     }
 }

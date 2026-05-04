@@ -98,7 +98,7 @@ namespace Hecton8.Dev
         [SerializeField] private float sceneSnapshotDelaySeconds = 1.5f;
 
         [Header("Menu Route")]
-        [SerializeField] private bool autoStartNewGameFromMainMenu = true;
+        [SerializeField] private bool autoStartNewGameFromMainMenu = false;
         [SerializeField] private float autoStartNewGameDelaySeconds = 2.5f;
         [SerializeField] private string autoStartMainMenuSceneName = "01_MAIN_MENU";
         [SerializeField] private bool profileGameplaySceneOnly = true;
@@ -599,11 +599,20 @@ namespace Hecton8.Dev
             bool autoStartOnEnable = true,
             bool enableBudgetViolationLogging = true,
             bool enableWindowLogging = true,
+            bool autoStartNewGame = false,
             float sampleWindow = 2f)
         {
             startProfilingOnEnable = autoStartOnEnable;
             logBudgetViolations = enableBudgetViolationLogging;
             logEveryWindow = enableWindowLogging;
+            autoStartNewGameFromMainMenu = autoStartNewGame;
+            if (!autoStartNewGame)
+            {
+                _pendingAutoStartNewGame = false;
+                _pendingAutoStartDueRealtime = 0f;
+                _debugPendingAutoStart = "Disabled";
+            }
+
             sampleWindowSeconds = sampleWindow;
             ClampSettings();
         }
@@ -1416,7 +1425,7 @@ namespace Hecton8.Dev
 
         private void QueueAutoStartNewGame(string sceneName)
         {
-            if (!autoStartNewGameFromMainMenu || _autoStartNewGameTriggered)
+            if (!IsMainMenuAutoStartEnabled() || _autoStartNewGameTriggered)
                 return;
 
             if (!string.Equals(sceneName, autoStartMainMenuSceneName, StringComparison.Ordinal))
@@ -1445,6 +1454,14 @@ namespace Hecton8.Dev
 
         private void TryAutoStartNewGameFromMenu()
         {
+            if (!IsMainMenuAutoStartEnabled())
+            {
+                _pendingAutoStartNewGame = false;
+                _pendingAutoStartDueRealtime = 0f;
+                _debugPendingAutoStart = "Disabled";
+                return;
+            }
+
             if (!_pendingAutoStartNewGame && !_autoStartNewGameTriggered)
             {
                 if (!string.Equals(SceneManager.GetActiveScene().name, autoStartMainMenuSceneName, StringComparison.Ordinal))
@@ -1494,6 +1511,15 @@ namespace Hecton8.Dev
             _debugPendingAutoStart = "Triggered";
             RuntimeDiagnosticsTrace.WriteEvent("menu.auto_start", "StartGame(slot=NewGame)");
             mainMenuController.StartGame(string.Empty);
+        }
+
+        private bool IsMainMenuAutoStartEnabled()
+        {
+#if HECTON_RUNTIME_PROFILER_MENU_AUTOSTART
+            return autoStartNewGameFromMainMenu;
+#else
+            return false;
+#endif
         }
 
         private static bool ShouldYieldMenuRouteToShellSmoke()

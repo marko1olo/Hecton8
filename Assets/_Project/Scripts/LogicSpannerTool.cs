@@ -39,6 +39,7 @@ namespace Hecton8.Gameplay
 
         private SpannerState _state;
         private BaseModule _selectedSource;
+        private int _selectedSourceModuleHashId;
         private float _lastLinkPulse;
 
         private enum SpannerState : byte
@@ -87,9 +88,18 @@ namespace Hecton8.Gameplay
                 return;
             }
 
+            int targetModuleHashId = ResolveModuleHashId(targetModule);
+            if (targetModuleHashId == 0)
+            {
+                ToolHitUtility.ShowWarning(InvalidTargetMessage);
+                _state = _selectedSource != null ? SpannerState.SourceArmed : SpannerState.Idle;
+                return;
+            }
+
             if (_selectedSource == null)
             {
                 _selectedSource = targetModule;
+                _selectedSourceModuleHashId = targetModuleHashId;
                 _state = SpannerState.SourceArmed;
                 ToolHitUtility.ShowInfo(SourceArmedMessage);
                 return;
@@ -109,7 +119,18 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!constructionManager.TryCreateTemporaryBypass(_selectedSource, targetModule))
+            if (_selectedSourceModuleHashId == 0)
+            {
+                ToolHitUtility.ShowWarning(InvalidTargetMessage);
+                ClearSelectionInternal();
+                return;
+            }
+
+            if (!constructionManager.TryCreateTemporaryBypass(
+                    _selectedSource,
+                    targetModule,
+                    _selectedSourceModuleHashId,
+                    targetModuleHashId))
             {
                 ToolHitUtility.ShowWarning(DuplicateLinkMessage);
                 return;
@@ -118,6 +139,7 @@ namespace Hecton8.Gameplay
             _state = SpannerState.LinkCommitted;
             _lastLinkPulse = Time.time;
             _selectedSource = null;
+            _selectedSourceModuleHashId = 0;
             QueueToolHapticFeedback(Mathf.Max(0.1f, GetRuntimePowerScalar(1f)), 1f);
             ToolHitUtility.ShowInfo(LinkCreatedMessage);
         }
@@ -183,9 +205,23 @@ namespace Hecton8.Gameplay
             return module != null;
         }
 
+        private static int ResolveModuleHashId(BaseModule module)
+        {
+            if (module != null &&
+                module.TryGetComponent(out ModuleMarker marker) &&
+                marker != null &&
+                marker.Data != null)
+            {
+                return marker.Data.ModuleHashId;
+            }
+
+            return 0;
+        }
+
         private void ClearSelectionInternal()
         {
             _selectedSource = null;
+            _selectedSourceModuleHashId = 0;
             _state = SpannerState.Idle;
         }
     }

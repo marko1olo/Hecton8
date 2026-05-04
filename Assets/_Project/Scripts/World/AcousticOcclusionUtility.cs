@@ -107,7 +107,7 @@ namespace Hecton8.World
         private const int MaxQueuedRequests = 48;
         private const int MaxQueuedEnclosureRequests = 8;
         private const int EnclosureProbeCount = 6;
-        private const int EnclosureProbeSliceCount = 2;
+        private const int EnclosureProbeSliceCount = EnclosureProbeCount;
         private const float OcclusionReuseDistanceMeters = 0.5f;
         private const float OcclusionReuseDistanceSqr = OcclusionReuseDistanceMeters * OcclusionReuseDistanceMeters;
         private const float EnclosureReuseDistanceMeters = 2f;
@@ -243,21 +243,21 @@ namespace Hecton8.World
         private static readonly EnclosureFrameEntry[] _scheduledEnclosureEntries = new EnclosureFrameEntry[MaxQueuedEnclosureRequests];
         // COLD ALLOC: CachedEnclosureEntry[8] - last resolved enclosure cache - owner: AcousticOcclusionUtility
         private static readonly CachedEnclosureEntry[] _cachedEnclosureEntries = new CachedEnclosureEntry[MaxQueuedEnclosureRequests];
-        // COLD ALLOC: float[6] - staged enclosure distances accumulated across 3 frames - owner: AcousticOcclusionUtility
+        // COLD ALLOC: float[6] - staged enclosure distances for the active six-axis batch - owner: AcousticOcclusionUtility
         private static readonly float[] _activeEnclosureDistances = new float[EnclosureProbeCount];
-        // COLD ALLOC: float[6] - staged enclosure absorption coefficients accumulated across 3 frames - owner: AcousticOcclusionUtility
+        // COLD ALLOC: float[6] - staged enclosure absorption coefficients for the active six-axis batch - owner: AcousticOcclusionUtility
         private static readonly float[] _activeEnclosureAbsorptions = new float[EnclosureProbeCount];
-        // COLD ALLOC: bool[6] - staged enclosure hit flags accumulated across 3 frames - owner: AcousticOcclusionUtility
+        // COLD ALLOC: bool[6] - staged enclosure hit flags for the active six-axis batch - owner: AcousticOcclusionUtility
         private static readonly bool[] _activeEnclosureHits = new bool[EnclosureProbeCount];
-        // COLD ALLOC: int[2] - scheduled enclosure axis indices for the active frame slice - owner: AcousticOcclusionUtility
+        // COLD ALLOC: int[6] - scheduled enclosure axis indices for the active six-axis batch - owner: AcousticOcclusionUtility
         private static readonly int[] _scheduledEnclosureAxisIndices = new int[EnclosureProbeSliceCount];
         // COLD ALLOC: NativeList<RaycastCommand>[48] - deferred acoustic occlusion batch command buffer - owner: AcousticOcclusionUtility
         private static NativeList<RaycastCommand> _queryCommands;
         // COLD ALLOC: NativeArray<RaycastHit>[384] - deferred acoustic occlusion batch result buffer - owner: AcousticOcclusionUtility
         private static NativeArray<RaycastHit> _queryResults;
-        // COLD ALLOC: NativeList<RaycastCommand>[48] - deferred enclosure probe command buffer - owner: AcousticOcclusionUtility
+        // COLD ALLOC: NativeList<RaycastCommand>[6] - deferred six-axis enclosure probe command buffer - owner: AcousticOcclusionUtility
         private static NativeList<RaycastCommand> _enclosureCommands;
-        // COLD ALLOC: NativeArray<RaycastHit>[48] - deferred enclosure probe result buffer - owner: AcousticOcclusionUtility
+        // COLD ALLOC: NativeArray<RaycastHit>[6] - deferred six-axis enclosure probe result buffer - owner: AcousticOcclusionUtility
         private static NativeArray<RaycastHit> _enclosureResults;
         // COLD ALLOC: NativeArray<RaycastCommand>[1] - transient forward-echo acoustic probe command buffer - owner: AcousticOcclusionUtility
         private static NativeArray<RaycastCommand> _forwardEchoCommands;
@@ -907,8 +907,8 @@ namespace Hecton8.World
                     return;
 
                 _activeEnclosureQuery.Key = _queuedEnclosureEntries[0].Key;
-            _activeEnclosureQuery.Valid = true;
-            _activeEnclosureQuery.CompletedAxisMask = 0;
+                _activeEnclosureQuery.Valid = true;
+                _activeEnclosureQuery.CompletedAxisMask = 0;
                 for (int axisIndex = 0; axisIndex < EnclosureProbeCount; axisIndex++)
                 {
                     _activeEnclosureDistances[axisIndex] = _activeEnclosureQuery.Key.ProbeDistance;

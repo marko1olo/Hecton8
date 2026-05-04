@@ -575,6 +575,8 @@ namespace Hecton8.Atmosphere
         private const float DefaultDeepFreezeSupplyRatioThreshold = 0.1f;
         private const float DefaultDeepFreezeTauSeconds = 8f;
         private const float DefaultDeepFreezeTargetTemperatureCelsius = -3f;
+        private const float DefaultBrownoutOxygenSupplyRatioThreshold = 0.40f;
+        private const float DefaultBrownoutOccupiedRoomOxygenConsumptionUnitsPerSecond = 0.0008f;
         private const float DefaultAirDensityKilogramsPerCubicMeter = 1.225f;
         private const float DefaultAirSpecificHeatJoulesPerKilogramKelvin = 1005f;
         private const float DefaultWaterDensityKilogramsPerCubicMeter = 1027f;
@@ -1079,6 +1081,13 @@ namespace Hecton8.Atmosphere
         [Tooltip("Target flooded-room temperature reached under abyssal blackout conditions.")]
         [SerializeField] private float deepFreezeTargetTemperatureCelsius = DefaultDeepFreezeTargetTemperatureCelsius;
 
+        [Header("Brownout Life Support")]
+        [Tooltip("Below this module supply ratio, occupied base rooms stop generation and become O2 sinks.")]
+        [SerializeField, Range(0f, 1f)] private float brownoutOxygenSupplyRatioThreshold = DefaultBrownoutOxygenSupplyRatioThreshold;
+
+        [Tooltip("Slow occupied-room O2 drain applied while the connected base module is browned out.")]
+        [SerializeField, Min(0f)] private float brownoutOccupiedRoomOxygenConsumptionUnitsPerSecond = DefaultBrownoutOccupiedRoomOxygenConsumptionUnitsPerSecond;
+
         [Header("── Boiling Flood Hazard ──────────────────")]
         [Tooltip("Flooded rooms at or above this temperature register a heat hazard in the surrounding water.")]
         [SerializeField] private float boilingFloodTemperatureCelsius = DefaultBoilingFloodTemperatureCelsius;
@@ -1169,6 +1178,7 @@ namespace Hecton8.Atmosphere
         [SerializeField] private float _debugMaxSteamVolumeCubicMeters;
 
         private Transform _cachedTransform;
+        private Transform _playerTransform;
         private Rigidbody _submarineBody;
         private bool _registered;
         private bool _topologySeeded;
@@ -1207,6 +1217,8 @@ namespace Hecton8.Atmosphere
         private readonly Rigidbody[] _pressureImpulseBodyBuffer = new Rigidbody[PressureImpulseOverlapCapacity];
         // COLD ALLOC: int[8] â€” per-room boiling hazard source IDs â€” owner: SubmarineAtmosphereSystem
         private readonly int[] _boilingHazardIds = new int[RoomCapacity];
+        // COLD ALLOC: BaseModule[8] — cached room-to-base brownout links — owner: SubmarineAtmosphereSystem
+        private readonly BaseModule[] _brownoutRoomModules = new BaseModule[RoomCapacity];
         // COLD ALLOC: SpatialQueryHit[16] â€” fauna spillover query scratch for boiling rooms â€” owner: SubmarineAtmosphereSystem
         private readonly SpatialQueryHit[] _boilingFaunaContacts = new SpatialQueryHit[BoilingFaunaContactCapacity];
         // COLD ALLOC: FabricatorHeatEmitter[24] — cached fabricator heat sources mapped to rooms — owner: SubmarineAtmosphereSystem
@@ -1918,6 +1930,13 @@ namespace Hecton8.Atmosphere
 
             if (_submarineBody == null && fluidDynamics != null)
                 fluidDynamics.TryGetComponent(out _submarineBody);
+
+            if (_playerTransform == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _playerTransform = playerContext.PlayerTransform;
+            }
         }
 
         private void SeedBoilingHazardIds()
@@ -2150,7 +2169,9 @@ namespace Hecton8.Atmosphere
                     : fluidDynamics.GetCompartmentMaxFloodVolumeCubicMeters(roomIndex);
                 _roomVolumes[roomIndex] = math.max(roomVolume, minimumGasVolumeCubicMeters);
                 _floodVolumes[roomIndex] = math.clamp(fluidDynamics.GetCompartmentFloodVolumeCubicMeters(roomIndex), 0f, _roomVolumes[roomIndex] - Epsilon);
-                _o2ConsumptionRates[roomIndex] = math.max(0f, definition.oxygenConsumptionUnitsPerSecond);
+                float oxygenConsumptionRate = math.max(0f, definition.oxygenConsumptionUnitsPerSecond);
+                ApplyBrownoutOccupiedRoomOxygenDrain(roomIndex, ref oxygenConsumptionRate);
+                _o2ConsumptionRates[roomIndex] = oxygenConsumptionRate;
                 _co2GenerationRates[roomIndex] = math.max(0f, definition.carbonDioxideGenerationUnitsPerSecond);
             }
 
@@ -2167,6 +2188,93 @@ namespace Hecton8.Atmosphere
                 _doorPairs[doorIndex] = new int2(-1, -1);
                 _doorSealed[doorIndex] = 1;
             }
+        }
+
+        private void ApplyBrownoutOccupiedRoomOxygenDrain(int roomIndex, ref float oxygenConsumptionRate)
+        {
+            if (roomIndex < 0 || roomIndex >= RoomCapacity)
+                return;
+
+            if (!TryResolveBrownoutOccupiedModuleForRoom(roomIndex, out _))
+                return;
+
+            oxygenConsumptionRate = ResolveBrownoutOxygenConsumptionRate(
+                oxygenConsumptionRate,
+                brownoutOccupiedRoomOxygenConsumptionUnitsPerSecond);
+        }
+
+        private bool TryResolveBrownoutOccupiedModuleForRoom(int roomIndex, out BaseModule module)
+        {
+            module = null;
+            if (roomIndex < 0 || roomIndex >= RoomCapacity)
+                return false;
+
+            BaseModule cachedModule = _brownoutRoomModules[roomIndex];
+            if (IsBrownoutOccupiedModuleCandidate(cachedModule, roomIndex))
+            {
+                module = cachedModule;
+                return true;
+            }
+
+            int moduleCount = BaseModule.ActiveModuleCount;
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+            {
+                BaseModule candidate = BaseModule.GetActiveModuleAt(moduleIndex);
+                if (!IsBrownoutOccupiedModuleCandidate(candidate, roomIndex))
+                    continue;
+
+                _brownoutRoomModules[roomIndex] = candidate;
+                module = candidate;
+                return true;
+            }
+
+            _brownoutRoomModules[roomIndex] = null;
+            return false;
+        }
+
+        private bool IsBrownoutOccupiedModuleCandidate(BaseModule module, int roomIndex)
+        {
+            if (module == null)
+                return false;
+
+            if (ResolveNearestRoomIndex(module.transform.position) != roomIndex)
+                return false;
+
+            return ShouldSiphonOxygenDuringBrownout(
+                module.CachedPowerSupplyRatio,
+                brownoutOxygenSupplyRatioThreshold,
+                IsPlayerInsideModuleAabb(module));
+        }
+
+        internal static bool ShouldSiphonOxygenDuringBrownout(float supplyRatio, float threshold, bool playerInsideModule)
+        {
+            return playerInsideModule && supplyRatio < math.saturate(threshold);
+        }
+
+        internal static float ResolveBrownoutOxygenConsumptionRate(float currentConsumptionRate, float brownoutDrainRate)
+        {
+            return math.max(math.max(0f, currentConsumptionRate), math.max(0f, brownoutDrainRate));
+        }
+
+        private bool IsPlayerInsideModuleAabb(BaseModule module)
+        {
+            if (module == null)
+                return false;
+
+            if (_playerTransform == null)
+            {
+                IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+                if (playerContext != null)
+                    _playerTransform = playerContext.PlayerTransform;
+            }
+
+            if (_playerTransform == null || !module.TryGetInteriorAabbBounds(out Vector3 worldCenter, out Vector3 halfExtents))
+                return false;
+
+            Vector3 delta = _playerTransform.position - worldCenter;
+            return Mathf.Abs(delta.x) <= halfExtents.x &&
+                   Mathf.Abs(delta.y) <= halfExtents.y &&
+                   Mathf.Abs(delta.z) <= halfExtents.z;
         }
 
         private void AccumulateRoomHeatSources()

@@ -223,6 +223,39 @@ namespace Hecton8.Core
             return absoluteUniversePosition - committedTotalOffset;
         }
 
+        internal static void ResyncBody(Rigidbody body, in AbsoluteUniversePosition absolutePosition)
+        {
+            if (body == null)
+                return;
+
+            float3 runtimePosition3 = absolutePosition.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(runtimePosition3)))
+                return;
+
+            Vector3 runtimePosition = new Vector3(
+                runtimePosition3.x,
+                runtimePosition3.y,
+                runtimePosition3.z);
+            Vector3 linearVelocity = math.all(math.isfinite((float3)body.linearVelocity))
+                ? body.linearVelocity
+                : Vector3.zero;
+            Vector3 angularVelocity = math.all(math.isfinite((float3)body.angularVelocity))
+                ? body.angularVelocity
+                : Vector3.zero;
+            bool wasSleeping = body.IsSleeping();
+
+            body.position = runtimePosition;
+            body.MovePosition(runtimePosition);
+            body.linearVelocity = linearVelocity;
+            body.angularVelocity = angularVelocity;
+            if (wasSleeping)
+                body.Sleep();
+            else
+                body.WakeUp();
+
+            body.PublishTransform();
+        }
+
         /// <summary>
         /// Registers a listener for committed floating-origin shifts.
         /// </summary>
@@ -1112,7 +1145,6 @@ namespace Hecton8.Core
         {
             _shiftTargetsDirty = true;
             QueuePendingLoadedScene(scene);
-            TryPrepareShiftTargets();
         }
 
         private void HandleSceneUnloaded(Scene scene)
@@ -1130,14 +1162,23 @@ namespace Hecton8.Core
 
         private void TryPrepareShiftTargets()
         {
-            if (!Application.isPlaying || _isShiftInProgress || _physicsPauseActive || !_shiftTargetsDirty)
+            if (!Application.isPlaying ||
+                _isShiftInProgress ||
+                _physicsPauseActive ||
+                _pendingLoadedScenes.Count > 0 ||
+                !_shiftTargetsDirty)
+            {
                 return;
+            }
 
             RebuildShiftTargetCache();
         }
 
         private void ProcessPendingSceneSynchronization()
         {
+            if (_isShiftInProgress || _physicsPauseActive)
+                return;
+
             if (_pendingLoadedScenes.Count > 0)
             {
                 Vector3 committedTotalOffset = TotalOffset;

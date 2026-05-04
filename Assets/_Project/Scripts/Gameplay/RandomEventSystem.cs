@@ -38,17 +38,62 @@ namespace Hecton8.Gameplay
         public readonly float ImpulseRadiusMeters;
         public readonly float ImpulseMagnitude;
         public readonly int AppliedStampCount;
+        public readonly Vector3 AupStart;
+        public readonly Vector3 AupEnd;
+        private readonly byte _hasAupLineSegment;
+
+        public bool HasAupLineSegment => _hasAupLineSegment != 0;
 
         public SeismicShockwaveEvent(
             Vector3 epicenterWS,
             float impulseRadiusMeters,
             float impulseMagnitude,
             int appliedStampCount)
+            : this(
+                epicenterWS,
+                impulseRadiusMeters,
+                impulseMagnitude,
+                appliedStampCount,
+                Vector3.zero,
+                Vector3.zero,
+                false)
+        {
+        }
+
+        public SeismicShockwaveEvent(
+            Vector3 epicenterWS,
+            float impulseRadiusMeters,
+            float impulseMagnitude,
+            int appliedStampCount,
+            Vector3 aupStart,
+            Vector3 aupEnd)
+            : this(
+                epicenterWS,
+                impulseRadiusMeters,
+                impulseMagnitude,
+                appliedStampCount,
+                aupStart,
+                aupEnd,
+                true)
+        {
+        }
+
+        private SeismicShockwaveEvent(
+            Vector3 epicenterWS,
+            float impulseRadiusMeters,
+            float impulseMagnitude,
+            int appliedStampCount,
+            Vector3 aupStart,
+            Vector3 aupEnd,
+            bool hasAupLineSegment)
         {
             EpicenterWS = epicenterWS;
             ImpulseRadiusMeters = impulseRadiusMeters;
             ImpulseMagnitude = impulseMagnitude;
             AppliedStampCount = appliedStampCount;
+            AupStart = aupStart;
+            AupEnd = aupEnd;
+            _hasAupLineSegment = hasAupLineSegment ? (byte)1 : (byte)0;
         }
     }
 
@@ -950,12 +995,33 @@ namespace Hecton8.Gameplay
             }
 
             ApplySeismicImpulse(playerPosition, settings.impulseRadius, settings.impulseMagnitude);
+            Vector3 epicenterAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(playerPosition);
+            Vector3 trenchDirection = ResolveSeismicEventLineDirection(epicenterAup, stableSeed);
+            float halfTrenchLength = Mathf.Max(2f, settings.impulseRadius * 0.5f);
             seismicEvent = new SeismicShockwaveEvent(
                 playerPosition,
                 settings.impulseRadius,
                 settings.impulseMagnitude,
-                appliedStampCount);
+                appliedStampCount,
+                epicenterAup - trenchDirection * halfTrenchLength,
+                epicenterAup + trenchDirection * halfTrenchLength);
             return true;
+        }
+
+        private static Vector3 ResolveSeismicEventLineDirection(Vector3 absoluteEpicenter, uint stableSeed)
+        {
+            uint seedA = unchecked((uint)Mathf.RoundToInt(absoluteEpicenter.x * 0.25f));
+            uint seedB = unchecked((uint)Mathf.RoundToInt(absoluteEpicenter.z * 0.25f));
+            uint state = seedA * 747796405u + seedB * 2891336453u + stableSeed;
+            state ^= state >> 16;
+            state *= 2246822519u;
+            state ^= state >> 13;
+            state *= 3266489917u;
+            state ^= state >> 16;
+
+            float angle = (state & 0x00FFFFFFu) * (Mathf.PI * 2f / 16777215f);
+            Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            return direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
         }
 
         private void ApplySeismicImpulse(Vector3 epicenter, float radius, float impulseMagnitude)

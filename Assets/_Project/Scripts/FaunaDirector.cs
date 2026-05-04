@@ -50,6 +50,7 @@ using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Ecosystem;
 using Hecton8.Environment;
+using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.World;
@@ -65,7 +66,7 @@ namespace Hecton8.AI
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-5000)]
-    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable
+    public sealed class FaunaDirector : MonoBehaviour, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IAcousticPingEventListener
     {
         private const int CreaturePoolMinimumReserve = 8;
         private const int CreaturePoolBurstReserveMultiplier = 2;
@@ -79,6 +80,7 @@ namespace Hecton8.AI
         private const float HibernationDistanceMeters = 150f;
         private const double HibernationDistanceSq = HibernationDistanceMeters * HibernationDistanceMeters;
         private const float HibernationStarvationHealthDrainPerSecond = 0.002f;
+        private const float HibernationStarvationHuntThreshold01 = 0.9f;
         private const float ThermalApexMigrationIntervalSeconds = 2f;
         private const float ThermalApexMigrationRadiusMeters = 1000f;
         private const float ThermalApexMigrationStepMeters = 250f;
@@ -93,6 +95,10 @@ namespace Hecton8.AI
         private const float SpawnVisibilityDotThreshold = 0.5f;
         private const float MinimumSpawnViewDirectionMagnitudeSqr = 0.0001f;
         private const float RuntimeSettingsRefreshInterval = 5f;
+        private const int AcousticPanicCommandCapacity = 8;
+        private const int AcousticPanicCommandIndexMask = AcousticPanicCommandCapacity - 1;
+        private const float AcousticPingBoidPanicRadiusMeters = 100f;
+        private const float AcousticPingBoidPanicDurationSeconds = 3f;
         private static readonly string[] ThermalHabitatTokens = { "thermal", "brine", "heat", "furnace", "volcanic", "chemical" };
         private static readonly string[] CaveHabitatTokens = { "cave", "nest", "ambush", "rift", "pocket", "burrow", "crevice" };
         private Unity.Mathematics.Random _biomeSpawnRandom;
@@ -163,6 +169,7 @@ namespace Hecton8.AI
             public Quaternion rotation;
             public Vector3 linearVelocity;
             public Vector3 angularVelocity;
+            public Vector3 pendingHibernationHuntTarget;
             public float health;
             public float hunger01;
             public float pendingHibernationSleepSeconds;
@@ -178,6 +185,16 @@ namespace Hecton8.AI
             public uint uniqueInstanceUid;
             public bool isResident;
             public bool isDehydrated;
+            public bool hasPendingHibernationHuntTarget;
+        }
+
+        private struct AcousticPanicCommand
+        {
+            public Vector3 RuntimePosition;
+            public float RadiusMeters;
+            public float DurationSeconds;
+            public float Intensity01;
+            public uint Seed;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
@@ -405,6 +422,13 @@ namespace Hecton8.AI
         private bool _dispatcherRegistered;
         private bool _lateFrameRegistered;
         private float _slowTickAccumulator;
+        // COLD ALLOC: AcousticPanicCommand[8] - active sonar panic bridge to GPU boids - owner: FaunaDirector
+        private readonly AcousticPanicCommand[] _acousticPanicCommands = new AcousticPanicCommand[AcousticPanicCommandCapacity];
+        private int _acousticPanicReadIndex;
+        private int _acousticPanicWriteIndex;
+        private int _acousticPanicCount;
+        private uint _acousticPanicSequence;
+        private bool _acousticPingSubscribed;
 
         /// <summary>ÐšÐ²Ð°Ð´Ñ€Ð°Ñ‚ killDistance Ð´Ð»Ñ sqrMagnitude.</summary>
         private float _killDistanceSqr;
@@ -568,6 +592,7 @@ namespace Hecton8.AI
 
             GlobalRegistry.Save?.Register(this);
             TryRegisterFaunaSimulationService();
+            SubscribeAcousticPingEvents();
 
             if (GlobalRegistry.Dispatcher == null)
                 return;
@@ -616,6 +641,7 @@ namespace Hecton8.AI
 
             GlobalRegistry.Save?.Unregister(this);
             TryUnregisterFaunaSimulationService();
+            UnsubscribeAcousticPingEvents();
             CompleteResidentDataOnlySimulation(forceComplete: false);
 
             if (_dispatcherRegistered)
@@ -639,6 +665,7 @@ namespace Hecton8.AI
                 GlobalRegistry.Save?.Unregister(this);
 
             TryUnregisterFaunaSimulationService();
+            UnsubscribeAcousticPingEvents();
 
             if (_dispatcherRegistered)
             {
@@ -666,6 +693,7 @@ namespace Hecton8.AI
             EnsureRuntimeStateInitialized();
             InitializeDehydrationResidencyState();
             TryRegisterFaunaSimulationService();
+            SubscribeAcousticPingEvents();
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
@@ -724,6 +752,8 @@ namespace Hecton8.AI
             if (deltaTime <= 0f)
                 return;
 
+            DrainAcousticPanicCommands();
+
             _slowTickAccumulator += deltaTime;
             if (_slowTickAccumulator < DirectorSlowTickIntervalSeconds)
             {
@@ -745,6 +775,100 @@ namespace Hecton8.AI
         public void LateFrameTick()
         {
             CompleteResidentDataOnlySimulation(forceComplete: false);
+        }
+
+        public void OnAcousticPing(in AcousticPingEvent pingEvent)
+        {
+            float intensity01 = math.saturate(pingEvent.Intensity01);
+            if (intensity01 <= 0.0001f)
+                return;
+
+            EnqueueAcousticPanicCommand(
+                pingEvent.RuntimePosition,
+                AcousticPingBoidPanicRadiusMeters,
+                AcousticPingBoidPanicDurationSeconds,
+                intensity01);
+        }
+
+        private void SubscribeAcousticPingEvents()
+        {
+            if (_acousticPingSubscribed || !Application.isPlaying)
+                return;
+
+            PhysicsEventBus.Register(this);
+            _acousticPingSubscribed = true;
+        }
+
+        private void UnsubscribeAcousticPingEvents()
+        {
+            if (!_acousticPingSubscribed)
+                return;
+
+            PhysicsEventBus.Unregister(this);
+            _acousticPingSubscribed = false;
+            _acousticPanicReadIndex = 0;
+            _acousticPanicWriteIndex = 0;
+            _acousticPanicCount = 0;
+        }
+
+        private void EnqueueAcousticPanicCommand(
+            Vector3 runtimePosition,
+            float radiusMeters,
+            float durationSeconds,
+            float intensity01)
+        {
+            if (radiusMeters <= 0.001f || durationSeconds <= 0.001f || intensity01 <= 0.0001f)
+                return;
+
+            uint seed = math.hash(new int4(
+                math.asint(runtimePosition.x),
+                math.asint(runtimePosition.y),
+                math.asint(runtimePosition.z),
+                unchecked((int)++_acousticPanicSequence)));
+            if (seed == 0u)
+                seed = 0x9E3779B9u;
+
+            if (_acousticPanicCount >= AcousticPanicCommandCapacity)
+            {
+                _acousticPanicReadIndex = (_acousticPanicReadIndex + 1) & AcousticPanicCommandIndexMask;
+                _acousticPanicCount--;
+            }
+
+            _acousticPanicCommands[_acousticPanicWriteIndex] = new AcousticPanicCommand
+            {
+                RuntimePosition = runtimePosition,
+                RadiusMeters = radiusMeters,
+                DurationSeconds = durationSeconds,
+                Intensity01 = math.saturate(intensity01),
+                Seed = seed
+            };
+            _acousticPanicWriteIndex = (_acousticPanicWriteIndex + 1) & AcousticPanicCommandIndexMask;
+            _acousticPanicCount++;
+        }
+
+        private void DrainAcousticPanicCommands()
+        {
+            if (_acousticPanicCount <= 0)
+                return;
+
+            SargassumMicroFaunaBoids boids = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+            while (_acousticPanicCount > 0)
+            {
+                AcousticPanicCommand command = _acousticPanicCommands[_acousticPanicReadIndex];
+                _acousticPanicCommands[_acousticPanicReadIndex] = default;
+                _acousticPanicReadIndex = (_acousticPanicReadIndex + 1) & AcousticPanicCommandIndexMask;
+                _acousticPanicCount--;
+
+                if (boids == null)
+                    continue;
+
+                boids.RegisterAcousticPanicBurst(
+                    command.RuntimePosition,
+                    command.RadiusMeters,
+                    command.DurationSeconds,
+                    command.Intensity01,
+                    command.Seed);
+            }
         }
 
         /// <summary>
@@ -2339,6 +2463,7 @@ namespace Hecton8.AI
                 rotation = rotation,
                 linearVelocity = linearVelocity,
                 angularVelocity = angularVelocity,
+                pendingHibernationHuntTarget = default,
                 health = health,
                 hunger01 = hunger01,
                 pendingHibernationSleepSeconds = 0f,
@@ -2353,7 +2478,8 @@ namespace Hecton8.AI
                 isPredator = isPredator,
                 uniqueInstanceUid = uniqueInstanceUid,
                 isResident = true,
-                isDehydrated = markDehydrated
+                isDehydrated = markDehydrated,
+                hasPendingHibernationHuntTarget = false
             };
         }
 
@@ -2415,6 +2541,16 @@ namespace Hecton8.AI
                         ai.ApplyHibernationCatchUp(state.pendingHibernationSleepSeconds);
                     if ((state.hibernationStateFlags & FaunaSimulationEngine.CatchUpStateStarving) != 0)
                         ai.ForceStarvingState();
+                    if (state.hasPendingHibernationHuntTarget)
+                    {
+                        ai.ForceHighPriorityHibernationHunt(state.pendingHibernationHuntTarget, state.hunger01);
+                    }
+                    else if (state.isPredator &&
+                             state.hunger01 > HibernationStarvationHuntThreshold01 &&
+                             TryResolveHibernationStarvationHuntTarget(runtimePosition, out Vector3 lateHuntTarget))
+                    {
+                        ai.ForceHighPriorityHibernationHunt(lateHuntTarget, state.hunger01);
+                    }
                 }
 
                 if (instance.TryGetComponent(out Rigidbody rigidbody))
@@ -2444,6 +2580,8 @@ namespace Hecton8.AI
                 state.pendingHibernationSleepSeconds = 0f;
                 state.hibernationStartTimeSeconds = -1f;
                 state.hibernationStateFlags = 0;
+                state.pendingHibernationHuntTarget = default;
+                state.hasPendingHibernationHuntTarget = false;
                 _dehydratedCreatureStates[slotIndex] = state;
 
                 slotData = _faunaSimulationMemory.PoolSlots[slotIndex];
@@ -2672,9 +2810,29 @@ namespace Hecton8.AI
             restoredState.speciesId = speciesId;
             restoredState.isLargeThreat = isLargeThreat;
             restoredState.isPredator = isPredator;
+            if (isPredator &&
+                catchUpResult.Hunger01 > HibernationStarvationHuntThreshold01 &&
+                TryResolveHibernationStarvationHuntTarget(runtimePosition, out Vector3 huntTarget))
+            {
+                restoredState.pendingHibernationHuntTarget = huntTarget;
+                restoredState.hasPendingHibernationHuntTarget = true;
+            }
+            else
+            {
+                restoredState.pendingHibernationHuntTarget = default;
+                restoredState.hasPendingHibernationHuntTarget = false;
+            }
+
             _dehydratedCreatureStates[slotIndex] = restoredState;
             AddActiveDehydrationSlot(slotIndex);
             return true;
+        }
+
+        private static bool TryResolveHibernationStarvationHuntTarget(Vector3 runtimePosition, out Vector3 huntTarget)
+        {
+            huntTarget = default;
+            EcosystemDirector ecosystemDirector = ResolveConcreteEcosystemDirector();
+            return ecosystemDirector != null && ecosystemDirector.TryResolveNearestOrganicMass(runtimePosition, out huntTarget);
         }
 
         private static void RegisterHibernationCatchUpCorpse(

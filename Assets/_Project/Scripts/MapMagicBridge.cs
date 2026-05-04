@@ -37,8 +37,10 @@
 
 using System;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using MapMagic.Core;
@@ -209,6 +211,7 @@ namespace Hecton8.Core
         private const float SceneBindingRefreshInterval = 1f;
         private const int MainTerrainBaseMapResolutionBudget = 512;
         private const int DraftTerrainBaseMapResolutionBudget = 128;
+        private const int BiomeMatrixLayerCount = 108;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -261,6 +264,15 @@ namespace Hecton8.Core
                  "Определяет лимит поиска доминирующего слоя.\n" +
                  "Должно совпадать с количеством выходов Biomes Set ноды.")]
         [SerializeField] private int maxBiomeCount = 8;
+
+        [Header("Sandbox Generation")]
+        [Tooltip("When enabled, world-gen consumers treat MapMagic terrain as the only terrain authority and skip prebaked scene/fallback terrain reads.")]
+        [SerializeField] private bool sandboxProceduralTerrainOnly;
+        [Tooltip("When enabled, MapMagic alphamap layers 0..107 are interpreted as HECTON biome matrix IDs 1..108.")]
+        [SerializeField] private bool sandboxUseBiomeMatrixAlphamapLayers = true;
+        [SerializeField] private bool enableSandboxThermalWeathering = true;
+        [SerializeField, Range(0f, 1f)] private float sandboxThermalWeatheringStrength = 0.18f;
+        [SerializeField, Range(5f, 60f)] private float sandboxThermalWeatheringTalusAngleDegrees = 32f;
 
         [Header("── Diagnostics ───────────────────────────────")]
 #pragma warning disable CS0414
@@ -329,6 +341,11 @@ namespace Hecton8.Core
         /// <summary>MapMagic найден и доступен.</summary>
         public bool IsAvailable => mapMagicObject != null;
         public MapMagicObject RuntimeMapMagicObject => mapMagicObject;
+        public bool SandboxProceduralTerrainOnly => sandboxProceduralTerrainOnly;
+        public bool SandboxUseBiomeMatrixAlphamapLayers => sandboxUseBiomeMatrixAlphamapLayers;
+        public bool EnableSandboxThermalWeathering => enableSandboxThermalWeathering;
+        public float SandboxThermalWeatheringStrength => sandboxThermalWeatheringStrength;
+        public float SandboxThermalWeatheringTalusAngleDegrees => sandboxThermalWeatheringTalusAngleDegrees;
 
         /// <summary>
         /// Current biome ID under the player.
@@ -552,6 +569,40 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Samples a terrain normal through cached MapMagic height queries.
+        /// ZERO GC: central differences, no Unity global terrain fallback.
+        /// </summary>
+        public bool TryGetNormal(float x, float z, float sampleDistance, out Vector3 normal)
+        {
+            normal = Vector3.up;
+            if (!TryGetHeight(x, z, out float centerHeight))
+                return false;
+
+            float probe = Mathf.Max(0.25f, sampleDistance);
+            bool hasWest = TryGetHeight(x - probe, z, out float westHeight);
+            bool hasEast = TryGetHeight(x + probe, z, out float eastHeight);
+            bool hasSouth = TryGetHeight(x, z - probe, out float southHeight);
+            bool hasNorth = TryGetHeight(x, z + probe, out float northHeight);
+
+            if (!hasWest) westHeight = centerHeight;
+            if (!hasEast) eastHeight = centerHeight;
+            if (!hasSouth) southHeight = centerHeight;
+            if (!hasNorth) northHeight = centerHeight;
+
+            if (!hasWest && !hasEast && !hasSouth && !hasNorth)
+                return false;
+
+            Vector3 tangentX = new Vector3(probe * 2f, eastHeight - westHeight, 0f);
+            Vector3 tangentZ = new Vector3(0f, northHeight - southHeight, probe * 2f);
+            Vector3 sampledNormal = Vector3.Cross(tangentZ, tangentX);
+            if (sampledNormal.sqrMagnitude <= 0.0001f)
+                return false;
+
+            normal = sampledNormal.normalized;
+            return true;
+        }
+
+        /// <summary>
         /// Resolves terrain height from an absolute-universe position so long-running async voxel pipelines
         /// do not sample stale runtime coordinates after floating-origin shifts.
         /// </summary>
@@ -559,6 +610,12 @@ namespace Hecton8.Core
         {
             Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
             return TryGetHeight(runtimePosition.x, runtimePosition.z, out height);
+        }
+
+        public bool TryGetNormalAUP(Vector3 absoluteUniversePosition, float sampleDistance, out Vector3 normal)
+        {
+            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
+            return TryGetNormal(runtimePosition.x, runtimePosition.z, sampleDistance, out normal);
         }
 
         /// <summary>
@@ -717,7 +774,10 @@ namespace Hecton8.Core
             int   maxIndex  = 0;
             bool  anyValidTexture = false;
 
-            int searchLimit = math.min(totalLayers, maxBiomeCount);
+            int configuredSearchLimit = sandboxProceduralTerrainOnly && sandboxUseBiomeMatrixAlphamapLayers
+                ? math.max(maxBiomeCount, BiomeMatrixLayerCount)
+                : maxBiomeCount;
+            int searchLimit = math.min(totalLayers, math.max(1, configuredSearchLimit));
 
             for (int texIdx = 0; texIdx < textureCount; texIdx++)
             {
@@ -785,6 +845,53 @@ namespace Hecton8.Core
                 return false;
 
             biomeIndex = maxIndex;
+            return true;
+        }
+
+        public bool TryGetMatrixBiomeId(float x, float z, out int matrixBiomeId)
+        {
+            return TryGetMatrixBiomeId(x, z, out matrixBiomeId, out _);
+        }
+
+        public bool TryGetMatrixBiomeId(float x, float z, out int matrixBiomeId, out int alphamapLayer)
+        {
+            matrixBiomeId = 0;
+            alphamapLayer = -1;
+
+            if (!sandboxProceduralTerrainOnly || !sandboxUseBiomeMatrixAlphamapLayers)
+                return false;
+
+            if (!TryGetBiomeIndex(x, z, out int dominantLayer))
+                return false;
+
+            if (!TryResolveBiomeMatrixAlphamapLayer(dominantLayer + 1, out int resolvedLayer))
+                return false;
+
+            matrixBiomeId = dominantLayer + 1;
+            alphamapLayer = resolvedLayer;
+            return true;
+        }
+
+        public bool TryGetMatrixBiomeId(
+            float x,
+            float z,
+            HectonBiomeMatrixCatalog catalog,
+            out int matrixBiomeId,
+            out int alphamapLayer)
+        {
+            if (!TryGetMatrixBiomeId(x, z, out matrixBiomeId, out alphamapLayer))
+                return false;
+
+            return catalog == null || catalog.GetByMatrixIndex(matrixBiomeId) != null;
+        }
+
+        public static bool TryResolveBiomeMatrixAlphamapLayer(int matrixBiomeId, out int alphamapLayer)
+        {
+            alphamapLayer = -1;
+            if (matrixBiomeId < 1 || matrixBiomeId > BiomeMatrixLayerCount)
+                return false;
+
+            alphamapLayer = matrixBiomeId - 1;
             return true;
         }
 
@@ -930,6 +1037,73 @@ namespace Hecton8.Core
         public void SetWaterSurfaceLevel(float y)
         {
             waterSurfaceLevel = y;
+        }
+
+        /// <summary>
+        /// Enables or disables sandbox mode where downstream systems trust procedural terrain data only.
+        /// </summary>
+        /// <param name="enabled">True to ignore pre-baked matrix terrain inputs for sandbox sampling.</param>
+        public void SetSandboxProceduralTerrainOnly(bool enabled)
+        {
+            sandboxProceduralTerrainOnly = enabled;
+        }
+
+        /// <summary>
+        /// Enables or disables biome-matrix driven alphamap layer resolution for sandbox tiles.
+        /// </summary>
+        /// <param name="enabled">True to remap matrix biome IDs into procedural texture layers.</param>
+        public void SetSandboxBiomeMatrixAlphamapLayers(bool enabled)
+        {
+            sandboxUseBiomeMatrixAlphamapLayers = enabled;
+        }
+
+        /// <summary>
+        /// Schedules the sandbox thermal weathering post-process over a normalized height field.
+        /// </summary>
+        /// <param name="inputHeights01">Read-only normalized source heights.</param>
+        /// <param name="outputHeights01">Write target for normalized eroded heights.</param>
+        /// <param name="width">Height field width in samples.</param>
+        /// <param name="height">Height field height in samples.</param>
+        /// <param name="cellSizeMeters">World-space spacing between height samples.</param>
+        /// <param name="heightScaleMeters">World-space height scale used to normalize talus transfer.</param>
+        /// <param name="dependency">Input dependency for prior height jobs.</param>
+        /// <returns>Job handle for the weathering pass, or the input dependency when disabled/invalid.</returns>
+        public JobHandle ScheduleSandboxThermalWeatheringPostProcess(
+            NativeArray<float> inputHeights01,
+            NativeArray<float> outputHeights01,
+            int width,
+            int height,
+            float cellSizeMeters,
+            float heightScaleMeters,
+            JobHandle dependency = default)
+        {
+            if (!enableSandboxThermalWeathering ||
+                !inputHeights01.IsCreated ||
+                !outputHeights01.IsCreated ||
+                width <= 2 ||
+                height <= 2)
+            {
+                return dependency;
+            }
+
+            int cellCount = width * height;
+            if (inputHeights01.Length < cellCount || outputHeights01.Length < cellCount)
+                return dependency;
+
+            var job = new Hecton8.World.WorldProceduralTerrainThermalWeatheringJob
+            {
+                InputHeights01 = inputHeights01,
+                OutputHeights01 = outputHeights01,
+                Width = width,
+                Height = height,
+                CellSizeMeters = math.max(0.001f, cellSizeMeters),
+                HeightScaleMeters = math.max(0.001f, heightScaleMeters),
+                TalusAngleDegrees = sandboxThermalWeatheringTalusAngleDegrees,
+                Strength = sandboxThermalWeatheringStrength
+            };
+
+            int batchCount = math.max(1, math.min(64, cellCount / 16));
+            return job.Schedule(cellCount, batchCount, dependency);
         }
 
         /// <summary>

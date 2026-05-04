@@ -1185,6 +1185,7 @@ namespace Hecton8.AI
         private static bool IsPassiveFleeState(FaunaBrain.AIState state)
         {
             return state == FaunaBrain.AIState.Escape ||
+                   state == FaunaBrain.AIState.ApexForcedRetreat ||
                    state == FaunaBrain.AIState.Retreat;
         }
 
@@ -2358,7 +2359,7 @@ namespace Hecton8.AI
                     speedMultiplier = 0.6f;
                     turnMultiplier = 0.5f;
                 }
-                else if (state == FaunaBrain.AIState.Retreat || state == FaunaBrain.AIState.Escape)
+                else if (state == FaunaBrain.AIState.Retreat || state == FaunaBrain.AIState.ApexForcedRetreat || state == FaunaBrain.AIState.Escape)
                 {
                     float3 fleeFrom = input.PlayerPosition;
                     if ((control.Flags & (int)CognitionControlFlags.HasOverrideThreatPosition) != 0 && control.OverrideUntilTime > input.CurrentTime)
@@ -3158,6 +3159,7 @@ namespace Hecton8.AI
 
                     case FaunaBrain.AIState.Escape:
                     case FaunaBrain.AIState.Return:
+                    case FaunaBrain.AIState.ApexForcedRetreat:
                     case FaunaBrain.AIState.Retreat:
                         packedState |= (uint)FaunaWorldStateFlags.Fleeing;
                         break;

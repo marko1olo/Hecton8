@@ -198,6 +198,8 @@ namespace Hecton8.World
         [SerializeField] private float seismicTrenchDepthBias = 6f;
         [SerializeField] private float seismicTrenchSlope = 0.85f;
         [SerializeField] private float seismicTrenchSampleSpacing = 3.5f;
+        [SerializeField] private OrganicDebrisProfile seismicRockDebrisProfile;
+        [SerializeField, Range(0, 8)] private int seismicMaxDebrisBursts = 6;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugReady;
@@ -404,8 +406,18 @@ namespace Hecton8.World
             float trenchRadius = trenchDepth / trenchSlope;
             float halfLength = trenchLength * 0.5f;
             Vector3 trenchDirection = ResolveSeismicTrenchDirection(epicenterAbsolute);
-            Vector3 absoluteStart = epicenterAbsolute - trenchDirection * halfLength;
-            Vector3 absoluteEnd = epicenterAbsolute + trenchDirection * halfLength;
+            Vector3 absoluteStart = payload.HasAupLineSegment
+                ? payload.AupStart
+                : epicenterAbsolute - trenchDirection * halfLength;
+            Vector3 absoluteEnd = payload.HasAupLineSegment
+                ? payload.AupEnd
+                : epicenterAbsolute + trenchDirection * halfLength;
+            if (payload.HasAupLineSegment)
+            {
+                trenchLength = Mathf.Max(0.001f, (absoluteEnd - absoluteStart).magnitude);
+                trenchRadius = trenchDepth / trenchSlope;
+            }
+
             long trenchId = BuildSeismicTrenchId(epicenterAbsolute, trenchLength, trenchDepth);
 
             if (terrainApplier != null)
@@ -420,6 +432,8 @@ namespace Hecton8.World
                 terrainApplier.ReconcileTerrainSeams();
             }
 
+            float displacedVolumeCubicMeters = 0f;
+            int appliedStampCount = 0;
             Dictionary<long, GameObject>.Enumerator volumeEnumerator = _activeVolumes.GetEnumerator();
             while (volumeEnumerator.MoveNext())
             {
@@ -431,13 +445,88 @@ namespace Hecton8.World
                     continue;
                 }
 
-                volume.TryApplySeismicTrench(
+                if (!volume.TryApplySeismicTrench(
+                    epicenterAbsolute,
                     absoluteStart,
                     absoluteEnd,
                     trenchDepth,
                     trenchSlope,
                     Mathf.Max(1f, seismicTrenchSampleSpacing),
-                    out _);
+                    out int volumeStampCount,
+                    out float volumeDisplacedVolume))
+                {
+                    continue;
+                }
+
+                appliedStampCount += volumeStampCount;
+                displacedVolumeCubicMeters += volumeDisplacedVolume;
+            }
+
+            DispatchSeismicRockDebris(
+                displacedVolumeCubicMeters,
+                appliedStampCount,
+                epicenterAbsolute,
+                absoluteStart,
+                absoluteEnd,
+                trenchDepth,
+                trenchId);
+        }
+
+        private void DispatchSeismicRockDebris(
+            float displacedVolumeCubicMeters,
+            int appliedStampCount,
+            Vector3 epicenterAbsolute,
+            Vector3 absoluteStart,
+            Vector3 absoluteEnd,
+            float trenchDepth,
+            long trenchId)
+        {
+            if (displacedVolumeCubicMeters < 10f ||
+                appliedStampCount <= 0 ||
+                seismicRockDebrisProfile == null ||
+                !seismicRockDebrisProfile.IsValid ||
+                seismicMaxDebrisBursts <= 0)
+            {
+                return;
+            }
+
+            IDebrisService debris = GlobalRegistry.Debris;
+            if (debris == null || !debris.IsInitialized)
+                return;
+
+            int burstCount = Mathf.Clamp(Mathf.FloorToInt(displacedVolumeCubicMeters / 10f), 0, seismicMaxDebrisBursts);
+            if (burstCount <= 0)
+                return;
+
+            Vector3 line = absoluteEnd - absoluteStart;
+            float ceilingOffset = Mathf.Max(2f, trenchDepth * 0.65f);
+            float power01 = Mathf.Clamp01(displacedVolumeCubicMeters / Mathf.Max(10f, burstCount * 18f));
+            uint seedBase = unchecked((uint)trenchId);
+            for (int i = 0; i < burstCount; i++)
+            {
+                uint seed = seedBase + (uint)(i * 747796405u) + 1u;
+                float t = (i + 0.5f) / burstCount;
+                float jitter = (HashToFloat01(seed, (uint)appliedStampCount, 0xA53C91E7u) - 0.5f) * (1f / Mathf.Max(1, burstCount));
+                Vector3 absoluteAnchor = absoluteStart + line * Mathf.Clamp01(t + jitter);
+                float radialJitter = (HashToFloat01(seed, (uint)(i + 1), 0x7F4A7C15u) - 0.5f) * Mathf.Max(1f, trenchDepth * 0.25f);
+                Vector3 lateral = Vector3.Cross(Vector3.up, line.sqrMagnitude > 0.0001f ? line.normalized : Vector3.forward);
+                if (lateral.sqrMagnitude <= 0.0001f)
+                    lateral = Vector3.right;
+                absoluteAnchor += lateral.normalized * radialJitter;
+                Vector3 runtimeOrigin = HectonFloatingOrigin.ToRuntimePosition(absoluteAnchor + Vector3.up * ceilingOffset);
+                Vector3 runtimeHitPoint = runtimeOrigin + Vector3.down * Mathf.Max(0.5f, ceilingOffset * 0.35f);
+                Quaternion runtimeRotation = Quaternion.Euler(
+                    0f,
+                    HashToFloat01(seed, (uint)(i + 17), 0xD1B54A35u) * 360f,
+                    0f);
+                debris.SpawnBurst(
+                    seismicRockDebrisProfile,
+                    runtimeOrigin,
+                    runtimeRotation,
+                    runtimeHitPoint,
+                    Vector3.down,
+                    power01,
+                    seed);
             }
         }
 
@@ -815,21 +904,33 @@ namespace Hecton8.World
 
                 try
                 {
-                    Vector3 runtimeCenter = request.RuntimeCenter;
                     // Entrances are forwarded into HectonVoxelEngine, which owns terrain-hole registration
                     // through RegisterEntranceTerrainHoles -> RegisterTerrainHoleHandle.
-                    GameObject volume = await voxelEngine.GenerateVolumeFromDataAsync(
-                        runtimeCenter,
-                        gridDimension,
-                        voxelStep,
-                        nodes,
-                        tunnels,
-                        entrances,
-                        structureArray,
-                        generationParams,
-                        lodLevel: voxelLodLevel,
-                        buildCollider: buildCollider,
-                        ct: token);
+                    GameObject volume = request.hasAbsoluteUniverseCenterAup
+                        ? await voxelEngine.GenerateVolumeFromDataAsync(
+                            request.absoluteUniverseCenterAup,
+                            gridDimension,
+                            voxelStep,
+                            nodes,
+                            tunnels,
+                            entrances,
+                            structureArray,
+                            generationParams,
+                            voxelLodLevel,
+                            buildCollider,
+                            token)
+                        : await voxelEngine.GenerateVolumeFromDataAsync(
+                            request.RuntimeCenter,
+                            gridDimension,
+                            voxelStep,
+                            nodes,
+                            tunnels,
+                            entrances,
+                            structureArray,
+                            generationParams,
+                            lodLevel: voxelLodLevel,
+                            buildCollider: buildCollider,
+                            ct: token);
 
                     if (volume == null)
                         return;
@@ -1200,14 +1301,26 @@ namespace Hecton8.World
                 return new NativeArray<CaveEntrance>(0, Allocator.Persistent);
 
             NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            Vector3 terrainNormal = ResolveCaveEntranceTerrainNormal(request);
             entrances[0] = VoxelSeamDirector.BuildCaveEntrance(
                 request.RuntimeTerrainContactPosition,
                 request.RuntimeCenter,
                 request.size,
                 request.weight,
                 request.seamBlendRadius,
-                request.suggestedTerrainCut);
+                request.suggestedTerrainCut,
+                terrainNormal);
             return entrances;
+        }
+
+        private static Vector3 ResolveCaveEntranceTerrainNormal(in WorldGenerativeGeologyVoxelBlendRequest request)
+        {
+            if (!request.hasTerrainSample)
+                return default;
+
+            return VoxelSeamDirector.ResolveTerrainNormalAtSeam(
+                request.absoluteTerrainContactPosition,
+                request.seamBlendRadius);
         }
 
         private void RegisterHydrothermalVent(in WorldGenerativeGeologyVoxelBlendRequest request)

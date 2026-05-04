@@ -20,7 +20,9 @@
 
 using System;
 using Conditional = System.Diagnostics.ConditionalAttribute;
+using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Unity.Collections;
 using UnityEngine;
@@ -212,7 +214,7 @@ namespace Hecton8.World
 
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-60)]
-    public sealed class SoundscapeSystem : MonoBehaviour, ISlowTickable
+    public sealed class SoundscapeSystem : MonoBehaviour, ISlowTickable, IBiomeMatrixEventListener
     {
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -246,6 +248,10 @@ namespace Hecton8.World
         private SoundscapeTier _currentTier = SoundscapeTier.Surface;
         private bool _registered;
         private bool _serviceRegistered;
+        private bool _biomeMatrixRegistered;
+        private HectonMusicDirector _musicDirector;
+        private int _lastMatrixBiomeId;
+        private HectonMusicBiomeProfile _lastMatrixMusicProfile;
 
         private static readonly int _ShaderSoundscapeTier =
             Shader.PropertyToID("_SoundscapeDepthTier");
@@ -270,6 +276,7 @@ namespace Hecton8.World
         {
             TryRegisterService();
             TryRegister();
+            TryRegisterBiomeMatrixEvents();
 
             ResolveSurvivalSystem();
 
@@ -278,12 +285,14 @@ namespace Hecton8.World
 
         private void OnDisable()
         {
+            TryUnregisterBiomeMatrixEvents();
             TryUnregister();
             TryUnregisterService();
         }
 
         private void OnDestroy()
         {
+            TryUnregisterBiomeMatrixEvents();
             TryUnregister();
             TryUnregisterService();
         }
@@ -323,6 +332,24 @@ namespace Hecton8.World
 
             GlobalRegistry.UnregisterSoundscapeRuntime(this);
             _serviceRegistered = false;
+        }
+
+        private void TryRegisterBiomeMatrixEvents()
+        {
+            if (_biomeMatrixRegistered || !Application.isPlaying)
+                return;
+
+            BiomeMatrixEvents.Register(this);
+            _biomeMatrixRegistered = true;
+        }
+
+        private void TryUnregisterBiomeMatrixEvents()
+        {
+            if (!_biomeMatrixRegistered)
+                return;
+
+            BiomeMatrixEvents.Unregister(this);
+            _biomeMatrixRegistered = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -438,6 +465,49 @@ namespace Hecton8.World
             }
 
             return playerTransform.TryGetComponent(out survivalSystem);
+        }
+
+        void IBiomeMatrixEventListener.OnMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
+        {
+            int matrixBiomeId = profile != null ? profile.matrixIndex : 0;
+            if (matrixBiomeId == _lastMatrixBiomeId && _lastMatrixMusicProfile != null)
+                return;
+
+            if (!TryResolveMusicDirector(out HectonMusicDirector director))
+                return;
+
+            director.SetMatrixBiomeProfile(profile);
+            _lastMatrixBiomeId = matrixBiomeId;
+            _lastMatrixMusicProfile = director.ActiveMatrixBiomeMusicProfile;
+        }
+
+        void IBiomeMatrixEventListener.OnDepthTierChanged(int depthTier, float depthMeters)
+        {
+            if (!TryResolveMusicDirector(out HectonMusicDirector director))
+                return;
+
+            HectonBiomeMatrixProfile profile = BiomeMatrixDirector.ActiveRuntimeInstance != null
+                ? BiomeMatrixDirector.ActiveRuntimeInstance.CurrentProfile
+                : null;
+            director.SetMatrixBiomeProfile(profile);
+            _lastMatrixBiomeId = profile != null ? profile.matrixIndex : 0;
+            _lastMatrixMusicProfile = director.ActiveMatrixBiomeMusicProfile;
+        }
+
+        private bool TryResolveMusicDirector(out HectonMusicDirector director)
+        {
+            if (_musicDirector != null)
+            {
+                director = _musicDirector;
+                return true;
+            }
+
+            director = GlobalRegistry.MusicDirector;
+            if (director == null)
+                HectonMusicDirector.TryGetInstance(out director);
+
+            _musicDirector = director;
+            return _musicDirector != null;
         }
     }
 }

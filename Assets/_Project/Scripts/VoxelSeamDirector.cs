@@ -1,4 +1,5 @@
 using Hecton8.Caves;
+using Hecton8.Core;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -61,6 +62,64 @@ namespace Hecton8.World
         }
 
         /// <summary>
+        /// Samples the MapMagic-owned terrain normal for cave-mouth SDF blending.
+        /// Falls back to up when terrain data is not resident.
+        /// </summary>
+        public static Vector3 ResolveTerrainNormalAtSeam(Vector3 absoluteUniversePosition, float seamBlendRadius)
+        {
+            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
+            if (mapMagicBridge == null)
+                return Vector3.up;
+
+            float sampleDistance = Mathf.Clamp(seamBlendRadius * 0.18f, 1f, 4f);
+            return mapMagicBridge.TryGetNormalAUP(absoluteUniversePosition, sampleDistance, out Vector3 terrainNormal)
+                ? terrainNormal
+                : Vector3.up;
+        }
+
+        public static float ComputeCaveMouthDensityPerturbation(
+            float3 samplePosition,
+            float3 surfacePosition,
+            float3 terrainNormal,
+            float normalBlend,
+            float mouthRadius,
+            float voxelStep)
+        {
+            float safeBlend = math.saturate(normalBlend);
+            if (safeBlend <= 0f)
+                return 0f;
+
+            float3 safeTerrainNormal = math.normalizesafe(terrainNormal, new float3(0f, 1f, 0f));
+            float horizontalDistance = math.length(samplePosition.xz - surfacePosition.xz);
+            float mouthWeight = 1f - math.smoothstep(
+                math.max(mouthRadius * 0.25f, 0.001f),
+                math.max(mouthRadius * 1.55f, voxelStep),
+                horizontalDistance);
+            float terrainPlane = math.dot(samplePosition - surfacePosition, safeTerrainNormal);
+            return terrainPlane * (0.08f * safeBlend * mouthWeight);
+        }
+
+        public static float ResolveTerrainVoxelSnapStep(Vector3 voxelVolumeSize, float fallbackRadiusMeters)
+        {
+            float dominantSize = math.max(
+                math.max(math.abs(voxelVolumeSize.x), math.abs(voxelVolumeSize.y)),
+                math.abs(voxelVolumeSize.z));
+            float fallbackSize = math.max(1f, fallbackRadiusMeters * 2f);
+            float size = dominantSize > 0.001f ? dominantSize : fallbackSize;
+            return math.clamp(size / 64f, 0.125f, 2f);
+        }
+
+        public static double SnapAbsoluteHeightToVoxelLayer(
+            double absoluteHeight,
+            double absoluteVolumeOriginY,
+            float voxelStepMeters)
+        {
+            double safeStep = math.max(0.0001f, voxelStepMeters);
+            double normalized = (absoluteHeight - absoluteVolumeOriginY) / safeStep;
+            return absoluteVolumeOriginY + System.Math.Round(normalized) * safeStep;
+        }
+
+        /// <summary>
         /// Cave mouths are reserved for hard cliff contacts that actually request a carved blend.
         /// </summary>
         public static bool ShouldCreateCaveMouth(
@@ -84,7 +143,8 @@ namespace Hecton8.World
             Vector3 voxelSize,
             float blendWeight,
             float seamBlendRadius,
-            float suggestedTerrainCut)
+            float suggestedTerrainCut,
+            Vector3 terrainNormal = default)
         {
             Vector3 inward = runtimeVolumeCenter - runtimeSurfacePosition;
             if (inward.sqrMagnitude <= 0.0001f)
@@ -99,6 +159,8 @@ namespace Hecton8.World
             float radius = Mathf.Clamp(baseRadius * Mathf.Lerp(0.94f, 1.12f, Mathf.Clamp01(blendWeight)), MinimumEntranceRadius, MaximumEntranceRadius);
             float funnelLength = Mathf.Clamp(Mathf.Max(radius * 2.6f, voxelSize.y * 0.34f), MinimumFunnelLength, MaximumFunnelLength);
             float innerRadius = Mathf.Clamp(radius * 0.62f, 1.5f, radius * 0.92f);
+            Vector3 safeTerrainNormal = terrainNormal.sqrMagnitude > 0.0001f ? terrainNormal.normalized : Vector3.up;
+            float terrainNormalBlend = terrainNormal.sqrMagnitude > 0.0001f ? Mathf.Clamp01(blendWeight) : 0f;
 
             return new CaveEntrance
             {
@@ -106,7 +168,9 @@ namespace Hecton8.World
                 inwardDirection = inward,
                 radius = radius,
                 funnelLength = funnelLength,
-                innerRadius = innerRadius
+                innerRadius = innerRadius,
+                terrainNormal = safeTerrainNormal,
+                terrainNormalBlend = terrainNormalBlend
             };
         }
     }

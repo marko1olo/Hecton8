@@ -376,6 +376,8 @@ namespace Hecton8.World
                         continue;
 
                     plan.absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeWorldPosition);
+                    plan.absoluteUniverseAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeWorldPosition);
+                    plan.hasAbsoluteUniverseAup = true;
                     plan.worldRotation = binding.transform.rotation;
                     plan.worldScale = binding.transform.lossyScale;
                     plan.playerDistance = playerDistance;
@@ -387,9 +389,13 @@ namespace Hecton8.World
                     Vector3 runtimeTerrainPosition = new Vector3(runtimeWorldPosition.x, hasTerrainSample ? terrainHeight : runtimeWorldPosition.y, runtimeWorldPosition.z);
                     plan.hasTerrainSample = hasTerrainSample;
                     plan.absoluteTerrainHeight = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeTerrainPosition).y;
+                    plan.absoluteTerrainContactAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeTerrainPosition);
+                    plan.hasAbsoluteTerrainContactAup = true;
                     plan.terrainDelta = hasTerrainSample ? runtimeWorldPosition.y - terrainHeight : 0f;
-                    plan.absoluteVoxelVolumeCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(
-                        new Vector3(runtimeWorldPosition.x, voxelCenterY, runtimeWorldPosition.z));
+                    Vector3 runtimeVoxelCenter = new Vector3(runtimeWorldPosition.x, voxelCenterY, runtimeWorldPosition.z);
+                    plan.absoluteVoxelVolumeCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeVoxelCenter);
+                    plan.absoluteVoxelVolumeCenterAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeVoxelCenter);
+                    plan.hasAbsoluteVoxelVolumeCenterAup = true;
                 }
 
                 _plansByKey[runtimeKey] = plan;
@@ -515,8 +521,11 @@ namespace Hecton8.World
                 ? terrainHeight - binding.SuggestedTerrainCut * 0.35f + voxelHeight * 0.5f
                 : runtimeWorldPosition.y;
             Vector3 runtimeVoxelVolumeCenter = new Vector3(runtimeWorldPosition.x, voxelCenterY, runtimeWorldPosition.z);
-            Vector3 absoluteTerrainPosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(
-                new Vector3(runtimeWorldPosition.x, hasTerrainSample ? terrainHeight : runtimeWorldPosition.y, runtimeWorldPosition.z));
+            Vector3 runtimeTerrainPosition = new Vector3(runtimeWorldPosition.x, hasTerrainSample ? terrainHeight : runtimeWorldPosition.y, runtimeWorldPosition.z);
+            Vector3 absoluteTerrainPosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeTerrainPosition);
+            AbsoluteUniversePosition absoluteUniverseAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeWorldPosition);
+            AbsoluteUniversePosition absoluteTerrainContactAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeTerrainPosition);
+            AbsoluteUniversePosition absoluteVoxelVolumeCenterAup = AbsoluteUniversePosition.FromRuntimePosition(runtimeVoxelVolumeCenter);
 
             plan = new WorldGenerativeGeologySeamPlan
             {
@@ -534,11 +543,15 @@ namespace Hecton8.World
                 macroZoneX = macroZoneCoord.x,
                 macroZoneZ = macroZoneCoord.z,
                 absoluteUniversePosition = absoluteUniversePosition,
+                absoluteUniverseAup = absoluteUniverseAup,
+                hasAbsoluteUniverseAup = true,
                 worldRotation = targetTransform.rotation,
                 worldScale = targetTransform.lossyScale,
                 playerDistance = playerDistance,
                 hasTerrainSample = hasTerrainSample,
                 absoluteTerrainHeight = absoluteTerrainPosition.y,
+                absoluteTerrainContactAup = absoluteTerrainContactAup,
+                hasAbsoluteTerrainContactAup = true,
                 terrainDelta = terrainDelta,
                 seamBlendRadius = blendRadius,
                 suggestedTerrainRaise = binding.SuggestedTerrainRaise,
@@ -555,6 +568,8 @@ namespace Hecton8.World
                 debrisWeight = debrisWeight,
                 planWeight = planWeight,
                 absoluteVoxelVolumeCenter = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeVoxelVolumeCenter),
+                absoluteVoxelVolumeCenterAup = absoluteVoxelVolumeCenterAup,
+                hasAbsoluteVoxelVolumeCenterAup = true,
                 voxelVolumeSize = voxelSize
             };
 

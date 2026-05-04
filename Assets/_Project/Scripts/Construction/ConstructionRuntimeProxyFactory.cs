@@ -87,6 +87,18 @@ namespace Hecton8.Construction
             return true;
         }
 
+        internal static bool TryGetGhostProjectionResources(
+            out Mesh projectionMesh,
+            out Material validMaterial,
+            out Material blockedMaterial)
+        {
+            EnsureSharedMaterials();
+            projectionMesh = EnsureWireBoxMesh();
+            validMaterial = s_validGhostMaterial;
+            blockedMaterial = s_invalidGhostMaterial;
+            return projectionMesh != null && validMaterial != null && blockedMaterial != null;
+        }
+
         private static GameObject CreateProxyRoot(BuildableData data, Vector3 position, Quaternion rotation, bool ghostProxy)
         {
             BaseModuleTemplate template = data.ModuleTemplate;

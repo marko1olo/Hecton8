@@ -22,9 +22,16 @@ namespace Hecton8.World
             public FieldTargetRole SignalRole;
             public int SpeciesId;
             public int Layer;
+            public AbsoluteUniversePosition PositionAup;
+            public Vector3 RuntimePosition;
+            public bool IsPreyTag;
         }
 
         private const double CellSizeMeters = 20d;
+        private const float DensityCapCellSizeMeters = 2f;
+        private const float DensityCapCellRadiusSqr = DensityCapCellSizeMeters * DensityCapCellSizeMeters;
+        private const float DensityPenaltyMinimumDistanceSqr = 0.04f;
+        private const int DensityCapMaxBoidsPerCell = 8;
         private const int DefaultEntryCapacity = 128;
         private const int DefaultQueryCapacity = 128;
 
@@ -100,6 +107,66 @@ namespace Hecton8.World
         }
 
         public static bool TryGetNearestBioform(
+            in AbsoluteUniversePosition originAup,
+            float radius,
+            int layerMask,
+            Component ignoreOwner,
+            int excludedSpeciesId,
+            bool requirePreyTag,
+            out SpatialQueryHit hit)
+        {
+            hit = default;
+            int handleCount = CollectCandidateHandles(in originAup, radius, SpatialTargetKind.Bioform);
+            bool found = false;
+            float bestDistanceSqr = radius * radius;
+
+            for (int i = 0; i < handleCount; i++)
+            {
+                int handle = _queryHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
+                    continue;
+
+                if (!IsEntryQueryEligible(entry))
+                {
+                    Unregister(handle);
+                    continue;
+                }
+
+                if (ignoreOwner != null && entry.Owner == ignoreOwner)
+                    continue;
+
+                if (!MatchesLayer(entry.Layer, layerMask))
+                    continue;
+
+                if (excludedSpeciesId >= 0 && entry.SpeciesId == excludedSpeciesId)
+                    continue;
+
+                if (requirePreyTag && !entry.IsPreyTag)
+                    continue;
+
+                float distanceSqr = (float)math.min(
+                    AbsoluteUniversePosition.DistanceSq(in entry.PositionAup, in originAup),
+                    float.MaxValue);
+                if (distanceSqr > bestDistanceSqr)
+                    continue;
+
+                bestDistanceSqr = distanceSqr;
+                hit = new SpatialQueryHit(
+                    entry.Transform,
+                    entry.Owner,
+                    entry.RuntimePosition,
+                    distanceSqr,
+                    entry.Kind,
+                    entry.SignalRole,
+                    entry.SpeciesId,
+                    entry.Layer);
+                found = true;
+            }
+
+            return found;
+        }
+
+        public static bool TryGetNearestBioform(
             Vector3 origin,
             float radius,
             int layerMask,
@@ -160,6 +227,52 @@ namespace Hecton8.World
         }
 
         public static int CollectContactsNonAlloc(
+            in AbsoluteUniversePosition originAup,
+            float radius,
+            SpatialTargetKind kindMask,
+            SpatialQueryHit[] results)
+        {
+            if (results == null || results.Length == 0 || kindMask == SpatialTargetKind.None)
+                return 0;
+
+            int handleCount = CollectCandidateHandles(in originAup, radius, kindMask);
+            int count = 0;
+            float maxDistanceSqr = radius * radius;
+
+            for (int i = 0; i < handleCount && count < results.Length; i++)
+            {
+                int handle = _queryHandles[i];
+                if (!_entries.TryGetValue(handle, out Entry entry) || entry == null)
+                    continue;
+
+                if (!IsEntryQueryEligible(entry))
+                {
+                    Unregister(handle);
+                    continue;
+                }
+
+                float distanceSqr = (float)math.min(
+                    AbsoluteUniversePosition.DistanceSq(in entry.PositionAup, in originAup),
+                    float.MaxValue);
+                if (distanceSqr > maxDistanceSqr)
+                    continue;
+
+                results[count] = new SpatialQueryHit(
+                    entry.Transform,
+                    entry.Owner,
+                    entry.RuntimePosition,
+                    distanceSqr,
+                    entry.Kind,
+                    entry.SignalRole,
+                    entry.SpeciesId,
+                    entry.Layer);
+                count++;
+            }
+
+            return count;
+        }
+
+        public static int CollectContactsNonAlloc(
             Vector3 origin,
             float radius,
             SpatialTargetKind kindMask,
@@ -205,6 +318,56 @@ namespace Hecton8.World
             return count;
         }
 
+        public static bool TryResolveDensityPenalty(int handle, out Vector3 penaltyDirection, out int densityCount)
+        {
+            penaltyDirection = default;
+            densityCount = 0;
+            if (handle <= 0 || !_entries.TryGetValue(handle, out Entry sourceEntry) || sourceEntry == null)
+                return false;
+
+            if (!IsEntryQueryEligible(sourceEntry))
+                return false;
+
+            int handleCount = CollectCandidateHandles(in sourceEntry.PositionAup, DensityCapCellSizeMeters, SpatialTargetKind.Bioform);
+            float3 penalty = float3.zero;
+            for (int i = 0; i < handleCount; i++)
+            {
+                int candidateHandle = _queryHandles[i];
+                if (!_entries.TryGetValue(candidateHandle, out Entry candidateEntry) || candidateEntry == null)
+                    continue;
+
+                if (!IsEntryQueryEligible(candidateEntry))
+                {
+                    Unregister(candidateHandle);
+                    continue;
+                }
+
+                FaunaBrain candidateBrain = candidateEntry.Owner as FaunaBrain;
+                if (candidateBrain == null || !candidateBrain.IsFlockingRuntime)
+                    continue;
+
+                double aupDistanceSq = AUPMath.AUPDistanceSq(in candidateEntry.PositionAup, in sourceEntry.PositionAup);
+                if (aupDistanceSq > DensityCapCellRadiusSqr)
+                    continue;
+
+                densityCount++;
+                if (candidateHandle == handle)
+                    continue;
+
+                float3 awayFromNeighbor = AUPMath.AUPDirection(in candidateEntry.PositionAup, in sourceEntry.PositionAup);
+                float safeDistanceSqr = math.max((float)math.min(aupDistanceSq, float.MaxValue), DensityPenaltyMinimumDistanceSqr);
+                penalty += awayFromNeighbor * math.rcp(safeDistanceSqr);
+            }
+
+            if (densityCount <= DensityCapMaxBoidsPerCell || math.lengthsq(penalty) <= 0.0001f)
+                return false;
+
+            float overflow01 = math.saturate((densityCount - DensityCapMaxBoidsPerCell) / (float)DensityCapMaxBoidsPerCell);
+            float3 resolvedPenalty = math.normalizesafe(penalty, float3.zero) * (1f + overflow01 * 2.5f);
+            penaltyDirection = new Vector3(resolvedPenalty.x, resolvedPenalty.y, resolvedPenalty.z);
+            return penaltyDirection.sqrMagnitude > 0.0001f;
+        }
+
         private static void EnsureInitialized()
         {
             if (_nativeHash == null)
@@ -237,7 +400,10 @@ namespace Hecton8.World
                 Kind = kind,
                 SignalRole = signalRole,
                 SpeciesId = speciesId,
-                Layer = targetTransform.gameObject.layer
+                Layer = targetTransform.gameObject.layer,
+                PositionAup = positionAup,
+                RuntimePosition = targetTransform.position,
+                IsPreyTag = kind == SpatialTargetKind.Bioform && targetTransform.CompareTag("Prey")
             };
             return handle;
         }
@@ -253,14 +419,23 @@ namespace Hecton8.World
 
             entry.Layer = targetTransform.gameObject.layer;
             AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(targetTransform.position);
+            entry.PositionAup = positionAup;
+            entry.RuntimePosition = targetTransform.position;
+            entry.IsPreyTag = entry.Kind == SpatialTargetKind.Bioform && targetTransform.CompareTag("Prey");
             _nativeHash.UpdateEntry(handle, positionAup, float3.zero, (int)entry.Kind, ResolveEntityFlags(entry.Kind), 0);
+        }
+
+        private static int CollectCandidateHandles(in AbsoluteUniversePosition originAup, float radius, SpatialTargetKind kindMask)
+        {
+            EnsureInitialized();
+            return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, _queryHandles);
         }
 
         private static int CollectCandidateHandles(Vector3 origin, float radius, SpatialTargetKind kindMask)
         {
             EnsureInitialized();
             AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
-            return _nativeHash.CollectSphere(originAup, radius, (int)kindMask, _queryHandles);
+            return CollectCandidateHandles(in originAup, radius, kindMask);
         }
 
         private static ulong ResolveEntityFlags(SpatialTargetKind kind)

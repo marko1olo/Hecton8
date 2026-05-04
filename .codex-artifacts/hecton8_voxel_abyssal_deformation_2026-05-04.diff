@@ -1,0 +1,2640 @@
+diff --git a/Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader b/Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader
+index 08a6ae19..c1fcacc8 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader
++++ b/Assets/_Project/Art/Shaders/Hecton_AbyssalVoxelRock.shader
+@@ -109,6 +109,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
+             float4 positionOS : POSITION;
+             float3 normalOS : NORMAL;
+             float4 color : COLOR;
++            float bakedAmbientOcclusion : TEXCOORD1;
+             float3 absolutePositionWS : TEXCOORD3;
+         };
+ 
+@@ -122,6 +123,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
+             half skirtAlpha : TEXCOORD4;
+             float3 absolutePositionWS : TEXCOORD5;
+             half curvature : TEXCOORD6;
++            half bakedAmbientOcclusion : TEXCOORD7;
+         };
+ 
+         struct ClipVaryings
+@@ -436,6 +438,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
+             output.skirtAlpha = saturate(input.color.b);
+             output.absolutePositionWS = input.absolutePositionWS;
+             output.curvature = saturate(input.color.a);
++            output.bakedAmbientOcclusion = HectonCoreLitResolveVertexAmbientOcclusion(input.bakedAmbientOcclusion);
+             output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
+             output.fogFactor = ComputeFogFactor(output.positionCS.z);
+             return output;
+@@ -530,7 +533,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
+ 
+                 half metallic = 0.0h;
+                 half smoothness = saturate(lerp(_Smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
+-                half ambientOcclusion = saturate(maskSample.g * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
++                half ambientOcclusion = saturate(maskSample.g * input.bakedAmbientOcclusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
+                 half localCausticMask = ResolveLocalLightCaustic(samplePositionWS, normalWS, input.positionCS);
+                 HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
+ 
+diff --git a/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl b/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
+index 180c99ef..20615852 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
++++ b/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
+@@ -32,6 +32,9 @@ float4 _HectonBiolumVolumeParams;
+ float4 _HectonProjectedCausticsWorldRect;
+ float4 _HectonProjectedCausticsParams;
+ float4 _HectonProjectedCausticsColor;
++float4 _FinalGiantAbyssLight;
++float4 _SunDirection;
++float4 _AegirDirection;
+ float4 _HectonCausticsSimulationParamsA;
+ float4 _HectonCausticsSimulationParamsB;
+ float4 _HectonCausticsSimulationParamsC;
+@@ -55,6 +58,8 @@ TEXTURE3D(_HectonBiolumVolumeTex);
+ SAMPLER(sampler_HectonBiolumVolumeTex);
+ TEXTURE2D(_NoirFogLUT);
+ SAMPLER(sampler_NoirFogLUT);
++TEXTURE2D(_HectonProjectedCausticsTex);
++SAMPLER(sampler_HectonProjectedCausticsTex);
+ TEXTURE2D(_HectonSedimentMaskTex);
+ SAMPLER(sampler_HectonSedimentMaskTex);
+ float4 _HectonNoirFogLutParams;
+@@ -75,6 +80,11 @@ float3 HectonCoreLitSafeNormalize(float3 value)
+     return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 1.0, 0.0);
+ }
+ 
++half HectonCoreLitResolveVertexAmbientOcclusion(float bakedAo)
++{
++    return (half)saturate(bakedAo);
++}
++
+ float4 HectonCoreLitApplyClipSpaceDepthBias(float4 positionCS, float depthBias, float depthBiasMask)
+ {
+     float maskedBias = max(depthBias, 0.0) * saturate(depthBiasMask);
+@@ -265,6 +275,21 @@ float HectonCoreLitResolveFlashlightShadowFloor()
+ bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon);
+ float HectonCoreLitEvaluateCaveAmbientFactor(float3 positionWS, float3 normalWS);
+ 
++float HectonCoreLitEvaluateDirectionalCausticsWeight(float3 normalWS)
++{
++    float3 normal = HectonCoreLitSafeNormalize(normalWS);
++    float3 sunDirection = HectonCoreLitSafeNormalize(_SunDirection.xyz);
++    return saturate(dot(normal, -sunDirection));
++}
++
++half3 HectonCoreLitEvaluateGiantAbyssLight(float3 normalWS)
++{
++    float3 normal = HectonCoreLitSafeNormalize(normalWS);
++    float3 aegirDirection = HectonCoreLitSafeNormalize(_AegirDirection.xyz);
++    float facing = saturate(dot(normal, aegirDirection) * 0.5 + 0.5);
++    return (half3)(_FinalGiantAbyssLight.rgb * facing);
++}
++
+ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 normalWS)
+ {
+     if (_HectonProjectedCausticsParams.x <= 0.0001)
+@@ -285,15 +310,16 @@ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 norma
+         return 0.0;
+ 
+     float upFacing = saturate(normalWS.y * 1.25);
+-    float caustics = HectonCoreLitEvaluateProceduralCaustics(uv);
++    float directionalWeight = HectonCoreLitEvaluateDirectionalCausticsWeight(normalWS);
++    float caustics = SAMPLE_TEXTURE2D_LOD(_HectonProjectedCausticsTex, sampler_HectonProjectedCausticsTex, uv, 0).r;
+     float shadowTerm = HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
+-    return caustics * depthFade * upFacing * shadowTerm * _HectonProjectedCausticsParams.x;
++    return caustics * depthFade * upFacing * directionalWeight * shadowTerm * _HectonProjectedCausticsParams.x;
+ }
+ 
+ half3 HectonCoreLitEvaluateProjectedCausticsScattering(float3 positionWS, float3 normalWS)
+ {
+     float mask = HectonCoreLitEvaluateProjectedCausticsMask(positionWS, normalWS);
+-    return (half3)(_HectonProjectedCausticsColor.rgb * mask);
++    return (half3)(_HectonProjectedCausticsColor.rgb * mask) + (HectonCoreLitEvaluateGiantAbyssLight(normalWS) * (half)(mask * 0.35));
+ }
+ 
+ half HectonCoreLitEvaluateNoirFog(half fogRaw)
+@@ -342,7 +368,7 @@ half3 HectonCoreLitApplyNoirFog(half3 color, half fogRaw, float3 positionWS)
+     float3 absorption = max(lerp(sourceAbsorption, targetAbsorption, lutBlend), float3(0.0, 0.0, 0.0));
+     float3 ambientTint = lerp(sourceAmbient, targetAmbient, lutBlend);
+     float3 attenuatedColor = color * exp(-absorption * lutSample);
+-    float3 fogTarget = fogColor + ambientTint * 0.35;
++    float3 fogTarget = fogColor + ambientTint * 0.35 + _FinalGiantAbyssLight.rgb * (0.18 * saturate(lutSample));
+     return (half3)lerp(attenuatedColor, fogTarget, saturate(lutSample));
+ }
+ 
+diff --git a/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs b/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
+index 7dea5892..bf1d9f5a 100644
+--- a/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
++++ b/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
+@@ -49,6 +49,7 @@ namespace Hecton8.Bootstrap
+         private const string PersistentWorldRegistryRuntimeName = "[PersistentWorldRegistry]";
+         private const string RuntimePerformanceProfilerRuntimeName = "[RuntimePerformanceProfiler]";
+         private const string CrashTelemetryRuntimeName = "[CrashTelemetryBuffer]";
++        private const string RuntimeWatchdogRuntimeName = "[RuntimeWatchdog]";
+         private const string HeadlessCommandLineArg = "-headless";
+         private const int OptionalServiceTimeoutMilliseconds = 2000;
+         private const int ShaderWarmupTimeoutMilliseconds = 5000;
+@@ -366,6 +367,7 @@ namespace Hecton8.Bootstrap
+                 return;
+ 
+             EnsureCrashTelemetryBufferRegistered();
++            EnsureRuntimeWatchdogRegistered();
+             _bootstrapRunInProgress = true;
+             _ = RunBootstrapStateMachineAsync(destroyCancellationToken);
+         }
+@@ -739,6 +741,7 @@ namespace Hecton8.Bootstrap
+         private bool InitializeCoreLayer()
+         {
+             EnsureCrashTelemetryBufferRegistered();
++            EnsureRuntimeWatchdogRegistered();
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+             EnsureRuntimePerformanceProfilerRegistered();
+ #endif
+@@ -1264,6 +1267,7 @@ namespace Hecton8.Bootstrap
+             PersistRuntimeService(dispatcher);
+ 
+             dispatcher.InitializeService();
++            EnsureRuntimeWatchdogRegistered();
+             return dispatcher;
+         }
+ 
+@@ -1390,26 +1394,47 @@ namespace Hecton8.Bootstrap
+                 DontDestroyOnLoad(telemetry.gameObject);
+             }
+ 
++            BootstrapStatus.RegisterSafeHaltTelemetryReporter(CrashTelemetryBuffer.ReportBootstrapSafeHalt);
+             return telemetry;
+         }
+ 
++        private static Hecton8.Core.RuntimeWatchdog EnsureRuntimeWatchdogRegistered()
++        {
++            Hecton8.Core.RuntimeWatchdog watchdog = Hecton8.Core.RuntimeWatchdog.EnsureRuntimeInstance();
++            if (watchdog == null)
++            {
++                GameObject runtimeRoot = new GameObject(RuntimeWatchdogRuntimeName); // COLD ALLOC: GameObject[1] - bootstrap-owned runtime liveness watchdog root - owner: GameBootstrapper
++                watchdog = runtimeRoot.AddComponent<Hecton8.Core.RuntimeWatchdog>();
++            }
++
++            PersistRuntimeService(watchdog);
++            watchdog.InitializeService();
++            return watchdog;
++        }
++
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+         private static RuntimePerformanceProfiler EnsureRuntimePerformanceProfilerRegistered()
+         {
+             RuntimePerformanceProfiler profiler = RuntimePerformanceProfiler.Instance;
++            bool activateAfterConfigure = false;
+             if (profiler == null)
+             {
+                 GameObject runtimeRoot = new GameObject(RuntimePerformanceProfilerRuntimeName); // COLD ALLOC: GameObject[1] - development performance profiler root - owner: GameBootstrapper
++                runtimeRoot.SetActive(false);
+                 profiler = runtimeRoot.AddComponent<RuntimePerformanceProfiler>();
++                activateAfterConfigure = true;
+             }
+ 
+             profiler.ConfigureForDevRun(
+                 autoStartOnEnable: true,
+                 enableBudgetViolationLogging: true,
+                 enableWindowLogging: false,
++                autoStartNewGame: false,
+                 sampleWindow: 2f);
+ 
+             PersistRuntimeService(profiler);
++            if (activateAfterConfigure)
++                profiler.gameObject.SetActive(true);
+ 
+             return profiler;
+         }
+diff --git a/Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs b/Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs
+index f78d9537..147e2bdd 100644
+--- a/Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs
++++ b/Assets/_Project/Scripts/Core/FoveatedSimulationManager.cs
+@@ -1,5 +1,6 @@
+ using System;
+ using Hecton8.Bootstrap;
++using Hecton8.Gameplay;
+ using Hecton8.World;
+ using Unity.Burst;
+ using Unity.Collections;
+@@ -21,6 +22,7 @@ namespace Hecton8.Core
+         void NotifyTickCompleted(IUpdatable item);
+         void ScheduleFrameJobs();
+         void CompleteFrameJobs();
++        void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount);
+         void ResetRuntimeState();
+     }
+ 
+@@ -151,6 +153,7 @@ namespace Hecton8.Core
+         private const float SoundSpeedWaterMetersPerSecond = 1480.0f;
+         private const float MinimumPitch = 0.5f;
+         private const float MaximumPitch = 2.0f;
++        private const float VoxelTeardownBackpressureSwimSpeedMultiplier = 0.5f;
+         private const float CenterVelocitySmoothingSharpness = 18.0f;
+         private const float FocusVelocitySmoothingSharpness = 14.0f;
+         private const float PeripheryVelocitySmoothingSharpness = 10.0f;
+@@ -230,6 +233,8 @@ namespace Hecton8.Core
+         private bool _originShiftListenerRegistered;
+         private bool _nativeMemorySentinelRegistered;
+         private bool _nativeMemoryBudgetRegistered;
++        private bool _voxelTeardownBackpressureActive;
++        private int _voxelTeardownBackpressurePendingCount;
+         private int _queuedDeferredRaycastCount;
+         private int _lastDeferredRaycastScheduleFrame = -1;
+ 
+@@ -465,6 +470,25 @@ namespace Hecton8.Core
+             CompleteFrameJobsInternal(true);
+         }
+ 
++        public void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount)
++        {
++            if (_voxelTeardownBackpressureActive == active &&
++                _voxelTeardownBackpressurePendingCount == pendingChunkCount)
++            {
++                return;
++            }
++
++            _voxelTeardownBackpressureActive = active;
++            _voxelTeardownBackpressurePendingCount = math.max(0, pendingChunkCount);
++            HectonPlayerMovement movement = GlobalRegistry.Player != null
++                ? GlobalRegistry.Player.PlayerMovement
++                : null;
++            if (movement == null)
++                return;
++
++            movement.SetRuntimeSwimSpeedMultiplier(active ? VoxelTeardownBackpressureSwimSpeedMultiplier : 1f);
++        }
++
+         private void CompleteFrameJobsInternal(bool includeDeferredRaycasts)
+         {
+             if (_interpolationScheduled)
+@@ -500,6 +524,9 @@ namespace Hecton8.Core
+ 
+         public void ResetRuntimeState()
+         {
++            if (_voxelTeardownBackpressureActive)
++                SetVoxelTeardownBackpressure(false, 0);
++
+             CompleteFrameJobsInternal(true);
+             DisposeVisualTransformAccessArray();
+             DisposeNativeBuffers(JobHandle.CombineDependencies(_importanceHandle, JobHandle.CombineDependencies(_interpolationHandle, _deferredRaycastHandle)));
+@@ -541,6 +568,8 @@ namespace Hecton8.Core
+             _deferredRaycastScheduled = false;
+             _queuedDeferredRaycastCount = 0;
+             _lastDeferredRaycastScheduleFrame = -1;
++            _voxelTeardownBackpressureActive = false;
++            _voxelTeardownBackpressurePendingCount = 0;
+             _visualTransformArray = Array.Empty<Transform>();
+         }
+ 
+diff --git a/Assets/_Project/Scripts/Core/SystemDispatcher.cs b/Assets/_Project/Scripts/Core/SystemDispatcher.cs
+index f49108db..253583eb 100644
+--- a/Assets/_Project/Scripts/Core/SystemDispatcher.cs
++++ b/Assets/_Project/Scripts/Core/SystemDispatcher.cs
+@@ -43,6 +43,7 @@ namespace Hecton8.Core
+         private const int MaxPdaEventsPerFrame = 30;
+         private const int PdaCongestionWarningFrameThreshold = 5;
+         private const int LateFrameCircuitBreakerLaneCapacity = 32;
++        private const double LateFrameEventFlushBudgetMilliseconds = 2.0;
+         private const float CircuitBreakerLogIntervalSeconds = 5f;
+         private const float AupNanInquisitorLogIntervalSeconds = 5f;
+         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
+@@ -196,8 +197,10 @@ namespace Hecton8.Core
+         private static int _lateFrameEventDispatchBudget;
+         private static bool _lateFrameEventBudgetActive;
+         private static bool _lateFrameCircuitBreakerTripped;
++        private static bool _lateFrameTimeBudgetExhausted;
+         private static uint _activeLateFrameEventLaneHash;
+         private static uint _dominantLateFrameCircuitBreakerLaneHash;
++        private static long _lateFrameEventBudgetStartTimestamp;
+ 
+         internal static float CurrentFrameDeltaTime { get; private set; }
+ 
+@@ -248,8 +251,10 @@ namespace Hecton8.Core
+             _lateFrameEventDispatchBudget = 0;
+             _lateFrameEventBudgetActive = false;
+             _lateFrameCircuitBreakerTripped = false;
++            _lateFrameTimeBudgetExhausted = false;
+             _activeLateFrameEventLaneHash = 0u;
+             _dominantLateFrameCircuitBreakerLaneHash = 0u;
++            _lateFrameEventBudgetStartTimestamp = 0L;
+             _dominantLateFrameCircuitBreakerLaneCount = 0;
+             System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
+             System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
+@@ -264,6 +269,11 @@ namespace Hecton8.Core
+             ActiveRuntimeInstance = null;
+         }
+ 
++        internal static void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount)
++        {
++            _foveatedSimulationManager.SetVoxelTeardownBackpressure(active, pendingChunkCount);
++        }
++
+         internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
+         {
+             if (receiver == null)
+@@ -531,6 +541,7 @@ namespace Hecton8.Core
+ 
+         private void Update()
+         {
++            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
+             using (_updateProfilerMarker.Auto())
+             {
+ #if UNITY_EDITOR
+@@ -586,6 +597,7 @@ namespace Hecton8.Core
+ 
+         private void LateUpdate()
+         {
++            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherLateFrame);
+             long completeDispatcherTimestamp = 0L;
+             bool dispatcherPhaseTimingStarted = false;
+             try
+@@ -830,6 +842,21 @@ namespace Hecton8.Core
+             if (!_lateFrameEventBudgetActive)
+                 return true;
+ 
++            if (IsLateFrameEventFlushTimeBudgetExhausted())
++            {
++                _lateFrameCircuitBreakerTripped = true;
++                RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
++                if (!_lateFrameTimeBudgetExhausted)
++                {
++                    _lateFrameTimeBudgetExhausted = true;
++                    CrashTelemetryBuffer.ReportLateFrameLoadShedding(
++                        _activeLateFrameEventLaneHash,
++                        _lateFrameEventDispatchBudget);
++                }
++
++                return false;
++            }
++
+             if (_lateFrameEventDispatchBudget > 0)
+             {
+                 _lateFrameEventDispatchBudget--;
+@@ -887,10 +914,12 @@ namespace Hecton8.Core
+         {
+             _lateFrameEventDispatchBudget = MaxLateFrameEventsPerFrame;
+             _lateFrameCircuitBreakerTripped = false;
++            _lateFrameTimeBudgetExhausted = false;
+             _lateFrameEventBudgetActive = true;
+             _activeLateFrameEventLaneHash = 0u;
+             _dominantLateFrameCircuitBreakerLaneHash = 0u;
+             _dominantLateFrameCircuitBreakerLaneCount = 0;
++            _lateFrameEventBudgetStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+             System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
+             System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
+         }
+@@ -898,9 +927,12 @@ namespace Hecton8.Core
+         private static void EndLateFrameEventBudget()
+         {
+             bool circuitBreakerTripped = _lateFrameCircuitBreakerTripped;
++            bool timeBudgetExhausted = _lateFrameTimeBudgetExhausted;
+             _lateFrameEventBudgetActive = false;
+             _lateFrameEventDispatchBudget = 0;
+             _lateFrameCircuitBreakerTripped = false;
++            _lateFrameTimeBudgetExhausted = false;
++            _lateFrameEventBudgetStartTimestamp = 0L;
+ 
+             if (circuitBreakerTripped)
+             {
+@@ -916,11 +948,23 @@ namespace Hecton8.Core
+             if (circuitBreakerTripped && now >= _nextCircuitBreakerLogTime)
+             {
+                 _nextCircuitBreakerLogTime = now + CircuitBreakerLogIntervalSeconds;
+-                Debug.LogWarning("[SystemDispatcher] CircuitBreakerTripped: late-frame event budget exceeded; remaining events deferred.");
++                Debug.LogWarning(timeBudgetExhausted
++                    ? "[SystemDispatcher] TELEMETRY_LOAD_SHEDDING: late-frame event flush exceeded 2.0ms; remaining NativeQueues deferred."
++                    : "[SystemDispatcher] CircuitBreakerTripped: late-frame event budget exceeded; remaining events deferred.");
+             }
+ #endif
+         }
+ 
++        private static bool IsLateFrameEventFlushTimeBudgetExhausted()
++        {
++            if (_lateFrameEventBudgetStartTimestamp == 0L)
++                return false;
++
++            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _lateFrameEventBudgetStartTimestamp;
++            double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
++            return elapsedMilliseconds >= LateFrameEventFlushBudgetMilliseconds;
++        }
++
+         private static void RecordLateFrameCircuitBreakerLane(uint queueHash)
+         {
+             if (queueHash == 0u)
+diff --git a/Assets/_Project/Scripts/HectonVoxelEngine.cs b/Assets/_Project/Scripts/HectonVoxelEngine.cs
+index def3faab..2eae8acf 100644
+--- a/Assets/_Project/Scripts/HectonVoxelEngine.cs
++++ b/Assets/_Project/Scripts/HectonVoxelEngine.cs
+@@ -439,6 +439,9 @@ public struct MCRawVertex
+ [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+ public struct VoxelDensityJob : IJobParallelFor
+ {
++    private const byte DeltaModeAdditive = 1 << 0;
++    private const byte DeltaModeReplace = 1 << 1;
++
+     // ── Grid dimensions ──
+     public int ptsX, ptsY, ptsZ;
+     public float3 volumeOrigin;
+@@ -550,7 +553,12 @@ public struct VoxelDensityJob : IJobParallelFor
+             if (modifiedCells.TryGetValue(absoluteCell, out VoxelModifiedCell storedCell))
+             {
+                 float deltaDensity = (float)storedCell.Density;
+-                if ((storedCell.Flags & 0x01) != 0)
++                if ((storedCell.Flags & DeltaModeReplace) != 0)
++                {
++                    smoothDensityValue = deltaDensity;
++                    finalDensityValue = deltaDensity;
++                }
++                else if ((storedCell.Flags & DeltaModeAdditive) != 0)
+                 {
+                     smoothDensityValue = math.max(smoothDensityValue, deltaDensity);
+                     finalDensityValue = math.max(finalDensityValue, deltaDensity);
+@@ -644,7 +652,7 @@ public struct VoxelDensityJob : IJobParallelFor
+         for (int i = 0; i < caveEntrances.Length; i++)
+         {
+             CaveEntrance entrance = caveEntrances[i];
+-            float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
++            float3 direction = ResolveEntranceDirection(entrance);
+             float3 innerPoint = entrance.surfacePosition + direction * entrance.funnelLength;
+             float embedDepth = math.max(5f, math.max(voxelStep * 1.5f, entrance.radius * 0.35f));
+             float transitionZone = math.clamp(math.max(2.5f, entrance.radius * 0.18f), 2f, 3.5f);
+@@ -676,6 +684,18 @@ public struct VoxelDensityJob : IJobParallelFor
+         return skirtDist;
+     }
+ 
++    float3 ResolveEntranceDirection(CaveEntrance entrance)
++    {
++        float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
++        float normalBlend = math.saturate(entrance.terrainNormalBlend);
++        if (normalBlend <= 0f)
++            return direction;
++
++        float3 terrainNormal = math.normalizesafe(entrance.terrainNormal, new float3(0f, 1f, 0f));
++        float3 terrainInward = math.normalizesafe(-terrainNormal, direction);
++        return math.normalizesafe(math.lerp(direction, terrainInward, normalBlend * 0.55f), direction);
++    }
++
+ 
+     // ════════════════════════════════════════════════════════════════════════
+     //  CAVE SDF EVALUATION — Core of the cave generation system
+@@ -989,7 +1009,7 @@ public struct VoxelDensityJob : IJobParallelFor
+ 
+     float EvaluateEntrance(float3 warpedPos, CaveEntrance entrance)
+     {
+-        float3 direction = math.normalizesafe(entrance.inwardDirection, new float3(0f, -1f, 0f));
++        float3 direction = ResolveEntranceDirection(entrance);
+         float3 innerPoint = entrance.surfacePosition + direction * entrance.funnelLength;
+         float core = SDCapsuleConic(
+             warpedPos,
+@@ -1007,7 +1027,19 @@ public struct VoxelDensityJob : IJobParallelFor
+             entrance.radius * 1.3f,
+             math.max(entrance.innerRadius, entrance.radius * 0.85f));
+ 
+-        return SmoothMinExp(core, flare, caveParams.entranceBlendK * 0.4f);
++        float mouth = SmoothMinExp(core, flare, caveParams.entranceBlendK * 0.4f);
++        float normalBlend = math.saturate(entrance.terrainNormalBlend);
++        if (normalBlend <= 0f)
++            return mouth;
++
++        float3 terrainNormal = math.normalizesafe(entrance.terrainNormal, new float3(0f, 1f, 0f));
++        float horizontalDistance = math.length(warpedPos.xz - entrance.surfacePosition.xz);
++        float mouthWeight = 1f - math.smoothstep(
++            entrance.radius * 0.25f,
++            math.max(entrance.radius * 1.55f, voxelStep),
++            horizontalDistance);
++        float terrainPlane = math.dot(warpedPos - entrance.surfacePosition, terrainNormal);
++        return mouth + terrainPlane * (0.08f * normalBlend * mouthWeight);
+     }
+ 
+     void EvaluateStructuresSDF(float3 wp, out float smoothStructDist, out float finalStructDist)
+@@ -1884,6 +1916,7 @@ public struct VoxelNormalJob : IJobParallelFor
+     [ReadOnly] public NativeArray<float3> positions;
+     [WriteOnly] public NativeArray<float3> normals;
+     [WriteOnly] public NativeArray<float> curvatureValues;
++    [WriteOnly] public NativeArray<float> ambientOcclusionValues;
+ 
+     public void Execute(int idx)
+     {
+@@ -1905,7 +1938,8 @@ public struct VoxelNormalJob : IJobParallelFor
+         float dz = samplePosZ - sampleNegZ;
+ 
+         float3 gradient = new float3(dx, dy, dz);
+-        normals[idx] = math.normalizesafe(-gradient, new float3(0f, 1f, 0f));
++        float3 normal = math.normalizesafe(-gradient, new float3(0f, 1f, 0f));
++        normals[idx] = normal;
+ 
+         float invEpsilonSq = 1f / math.max(epsilon * epsilon, 0.0001f);
+         float centerDensity = SampleField(smoothDensityField, wp);
+@@ -1921,7 +1955,17 @@ public struct VoxelNormalJob : IJobParallelFor
+             (smoothPosZ + smoothNegZ - (2f * centerDensity));
+ 
+         float signedCurvature = (laplacian * invEpsilonSq) * epsilon;
+-        curvatureValues[idx] = math.saturate(0.5f + signedCurvature * 0.35f);
++        float curvature01 = math.saturate(0.5f + signedCurvature * 0.35f);
++        curvatureValues[idx] = curvature01;
++
++        float inwardDensity = SampleField(smoothDensityField, wp - normal * epsilon);
++        float outwardDensity = SampleField(smoothDensityField, wp + normal * epsilon);
++        float gradientMagnitude = math.length(gradient) / math.max(epsilon * 2f, 0.0001f);
++        float solidBackfill = math.saturate(inwardDensity / math.max(epsilon, 0.0001f));
++        float openForward = math.saturate((-outwardDensity) / math.max(epsilon, 0.0001f));
++        float cavityFold = math.saturate((0.5f - curvature01) * 2f);
++        float gradientOcclusion = math.saturate(1f - gradientMagnitude * 0.18f);
++        ambientOcclusionValues[idx] = math.saturate(1f - solidBackfill * 0.42f - cavityFold * 0.26f - openForward * gradientOcclusion * 0.14f);
+     }
+ 
+     float SampleField(NativeArray<float> field, float3 worldPosition)
+@@ -2376,6 +2420,13 @@ public class HectonVoxelEngine : MonoBehaviour
+     private const string RuntimeCaveMeshName = "CaveMesh";
+     private const int StreamingScratchLeaseTimeoutFrames = 1200;
+     private const int VoxelJobWaitWatchdogFrames = 1200;
++    private const int DeferredVoxelPhysicsBakeTeardownDrainBudget = 8;
++    private const int DeferredVoxelPhysicsBakeBackpressureThreshold = 64;
++    private const int DeferredVoxelPhysicsBakeBackpressureReleaseThreshold = 32;
++    private const int DeferredVoxelPhysicsBakeTeardownCapacity = 2048;
++    private const byte DeferredVoxelBakeDestroyOwner = 1 << 0;
++    private const byte DeltaModeAdditive = 1 << 0;
++    private const byte DeltaModeReplace = 1 << 1;
+     private const string NativeMemoryOwner = nameof(HectonVoxelEngine);
+     private const string ModifiedCellsNativeMemoryLabelPrefix = "VoxelPipelineData.ModifiedCells.";
+     private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+@@ -2443,7 +2494,35 @@ public class HectonVoxelEngine : MonoBehaviour
+         _activeGenerationOperations = 0;
+         _shutdownRequested = 0;
+         ActiveRuntimeInstance = null;
++        _deferredVoxelPhysicsBakeTeardowns.Clear();
++        _deferredVoxelPhysicsBakeTeardownRegistered = false;
++        _deferredVoxelPhysicsBakeBackpressureActive = false;
++    }
++    // COLD ALLOC: List<DeferredVoxelPhysicsBakeTeardown>[2048] - deferred voxel collider PhysX bake teardown queue - owner: HectonVoxelEngine
++    private static readonly List<DeferredVoxelPhysicsBakeTeardown> _deferredVoxelPhysicsBakeTeardowns = new List<DeferredVoxelPhysicsBakeTeardown>(DeferredVoxelPhysicsBakeTeardownCapacity);
++    // COLD ALLOC: DeferredVoxelPhysicsBakeTeardownDriver[1] - dispatcher late-frame adapter for voxel bake teardown - owner: HectonVoxelEngine
++    private static readonly DeferredVoxelPhysicsBakeTeardownDriver _deferredVoxelPhysicsBakeTeardownDriver = new DeferredVoxelPhysicsBakeTeardownDriver();
++    private static bool _deferredVoxelPhysicsBakeTeardownRegistered;
++    private static bool _deferredVoxelPhysicsBakeBackpressureActive;
++
++    private struct DeferredVoxelPhysicsBakeTeardown
++    {
++        public Mesh Mesh;
++        public GameObject Owner;
++        public MeshRenderer Renderer;
++        public MeshCollider Collider;
++        public JobHandle Handle;
++        public byte Flags;
++    }
++
++    private sealed class DeferredVoxelPhysicsBakeTeardownDriver : ILateFrameTickable
++    {
++        public void LateFrameTick()
++        {
++            DrainDeferredVoxelPhysicsBakeTeardowns();
++        }
+     }
++
+     // COLD ALLOC: List<GameObject>[64] - active voxel volume object registry - owner: HectonVoxelEngine
+     readonly List<GameObject> _activeVolumes = new List<GameObject>(ActiveVolumeRegistryCapacity);
+     // COLD ALLOC: List<HectonVoxelVolume>[64] - active voxel volume component registry - owner: HectonVoxelEngine
+@@ -2568,6 +2647,7 @@ public class HectonVoxelEngine : MonoBehaviour
+         public NativeArray<int> EdgeVertexZ;
+         public NativeArray<float3> Normals;
+         public NativeArray<float> CurvatureValues;
++        public NativeArray<float> AmbientOcclusionValues;
+         public NativeArray<float> BiomeValues;
+         public NativeArray<Color> Colors;
+         public NativeList<CaveSpawnData> SpawnPointList;
+@@ -2604,6 +2684,7 @@ public class HectonVoxelEngine : MonoBehaviour
+             HectonVoxelEngine.DisposeTrackedNativeArray(ref EdgeVertexZ);
+             HectonVoxelEngine.DisposeTrackedNativeArray(ref Normals);
+             HectonVoxelEngine.DisposeTrackedNativeArray(ref CurvatureValues);
++            HectonVoxelEngine.DisposeTrackedNativeArray(ref AmbientOcclusionValues);
+             HectonVoxelEngine.DisposeTrackedNativeArray(ref BiomeValues);
+             HectonVoxelEngine.DisposeTrackedNativeArray(ref Colors);
+             if (SpawnPointList.IsCreated) SpawnPointList.Dispose();
+@@ -2855,6 +2936,41 @@ public class HectonVoxelEngine : MonoBehaviour
+             EndGenerationOperation();
+         }
+     }
++    /// <summary>
++    /// Overload accepting pre-built cave data.
++    /// Use when you want to generate the graph externally (e.g. custom editor tool)
++    /// and pass raw NativeArrays directly.
++    ///
++    /// Caller is responsible for disposing input NativeArrays AFTER this method completes.
++    /// </summary>
++    internal async Awaitable<GameObject> GenerateVolumeFromDataAsync(
++        AbsoluteUniversePosition worldCenterAup,
++        int gridDimension,
++        float voxelSize,
++        NativeArray<CaveNode> nodes,
++        NativeArray<CaveTunnel> tunnels,
++        NativeArray<CaveEntrance> entrances,
++        NativeArray<CaveStructure> structures,
++        CaveGenerationParams caveParams,
++        int lodLevel,
++        bool buildCollider = true,
++        CancellationToken ct = default)
++    {
++        Vector3 runtimeCenter = (Vector3)worldCenterAup.ToRuntimeFloat3();
++        return await GenerateVolumeFromDataAsync(
++            runtimeCenter,
++            gridDimension,
++            voxelSize,
++            nodes,
++            tunnels,
++            entrances,
++            structures,
++            caveParams,
++            lodLevel,
++            buildCollider,
++            ct);
++    }
++
+     /// <summary>
+     /// Overload accepting pre-built cave data.
+     /// Use when you want to generate the graph externally (e.g. custom editor tool)
+@@ -3495,10 +3611,190 @@ public class HectonVoxelEngine : MonoBehaviour
+         }
+     }
+ 
++    static async Awaitable<bool> AwaitForPhysicsBakeCompletionOrDeferAsync(
++        JobHandle handle,
++        CancellationToken ct,
++        string context,
++        Mesh mesh,
++        GameObject owner,
++        MeshRenderer renderer,
++        MeshCollider collider,
++        byte flags)
++    {
++        int waitFrames = 0;
++        while (!handle.IsCompleted)
++        {
++            if (ct.IsCancellationRequested)
++            {
++                EnqueueDeferredVoxelPhysicsBakeTeardown(handle, mesh, owner, renderer, collider, flags);
++                return false;
++            }
++
++            if (waitFrames >= VoxelJobWaitWatchdogFrames)
++            {
++                LogVoxelJobWaitWatchdog(context, waitFrames);
++                EnqueueDeferredVoxelPhysicsBakeTeardown(handle, mesh, owner, renderer, collider, flags);
++                return false;
++            }
++
++            waitFrames++;
++            try
++            {
++                await Awaitable.NextFrameAsync(cancellationToken: ct);
++            }
++            catch (OperationCanceledException)
++            {
++                EnqueueDeferredVoxelPhysicsBakeTeardown(handle, mesh, owner, renderer, collider, flags);
++                return false;
++            }
++        }
++
++        return DispatcherJobSwap.TryComplete(ref handle, forceComplete: false);
++    }
++
++    private static void EnqueueDeferredVoxelPhysicsBakeTeardown(
++        JobHandle handle,
++        Mesh mesh,
++        GameObject owner,
++        MeshRenderer renderer,
++        MeshCollider collider,
++        byte flags)
++    {
++        DisableDeferredVoxelBakePresentation(owner, renderer, collider);
++        _deferredVoxelPhysicsBakeTeardowns.Add(new DeferredVoxelPhysicsBakeTeardown
++        {
++            Mesh = mesh,
++            Owner = owner,
++            Renderer = renderer,
++            Collider = collider,
++            Handle = handle,
++            Flags = flags
++        });
++
++        EnsureDeferredVoxelPhysicsBakeTeardownRegistered();
++        UpdateDeferredVoxelPhysicsBakeBackpressure();
++    }
++
++    private static void DisableDeferredVoxelBakePresentation(GameObject owner, MeshRenderer renderer, MeshCollider collider)
++    {
++        if (renderer == null && owner != null)
++            owner.TryGetComponent(out renderer);
++
++        if (renderer != null)
++            renderer.enabled = false;
++
++        if (collider != null)
++        {
++            collider.enabled = false;
++            collider.sharedMesh = null;
++        }
++    }
++
++    private static void EnsureDeferredVoxelPhysicsBakeTeardownRegistered()
++    {
++        if (_deferredVoxelPhysicsBakeTeardownRegistered ||
++            !Application.isPlaying ||
++            GlobalRegistry.Dispatcher == null)
++        {
++            return;
++        }
++
++        GlobalRegistry.RegisterLateFrameTickable(_deferredVoxelPhysicsBakeTeardownDriver, PriorityLayer.Environment);
++        _deferredVoxelPhysicsBakeTeardownRegistered = SystemDispatcher
++            .GetLateFrameLane(PriorityLayer.Environment)
++            .Contains(_deferredVoxelPhysicsBakeTeardownDriver);
++    }
++
++    private static void DrainDeferredVoxelPhysicsBakeTeardowns()
++    {
++        int drained = 0;
++        for (int i = _deferredVoxelPhysicsBakeTeardowns.Count - 1;
++             i >= 0 && drained < DeferredVoxelPhysicsBakeTeardownDrainBudget;
++             i--)
++        {
++            DeferredVoxelPhysicsBakeTeardown pending = _deferredVoxelPhysicsBakeTeardowns[i];
++            if (!DispatcherJobSwap.TryComplete(ref pending.Handle, forceComplete: false))
++                continue;
++
++            if (pending.Collider != null)
++            {
++                pending.Collider.enabled = false;
++                if (pending.Collider.sharedMesh == pending.Mesh)
++                    pending.Collider.sharedMesh = null;
++            }
++
++            if (pending.Mesh != null)
++            {
++                pending.Mesh.Clear(false);
++                DestroyDeferredVoxelObject(pending.Mesh);
++            }
++
++            if ((pending.Flags & DeferredVoxelBakeDestroyOwner) != 0 && pending.Owner != null)
++                DestroyDeferredVoxelObject(pending.Owner);
++
++            RemoveDeferredVoxelPhysicsBakeTeardownAt(i);
++            drained++;
++        }
++
++        if (_deferredVoxelPhysicsBakeTeardowns.Count == 0)
++            UnregisterDeferredVoxelPhysicsBakeTeardownDriver();
++
++        UpdateDeferredVoxelPhysicsBakeBackpressure();
++    }
++
++    private static void RemoveDeferredVoxelPhysicsBakeTeardownAt(int index)
++    {
++        int lastIndex = _deferredVoxelPhysicsBakeTeardowns.Count - 1;
++        if (index != lastIndex)
++            _deferredVoxelPhysicsBakeTeardowns[index] = _deferredVoxelPhysicsBakeTeardowns[lastIndex];
++
++        _deferredVoxelPhysicsBakeTeardowns.RemoveAt(lastIndex);
++    }
++
++    private static void UnregisterDeferredVoxelPhysicsBakeTeardownDriver()
++    {
++        if (!_deferredVoxelPhysicsBakeTeardownRegistered)
++            return;
++
++        GlobalRegistry.UnregisterLateFrameTickable(_deferredVoxelPhysicsBakeTeardownDriver, PriorityLayer.Environment);
++        _deferredVoxelPhysicsBakeTeardownRegistered = false;
++    }
++
++    private static void UpdateDeferredVoxelPhysicsBakeBackpressure()
++    {
++        int pendingCount = _deferredVoxelPhysicsBakeTeardowns.Count;
++        bool nextActive = _deferredVoxelPhysicsBakeBackpressureActive;
++        if (!nextActive && pendingCount > DeferredVoxelPhysicsBakeBackpressureThreshold)
++            nextActive = true;
++        else if (nextActive && pendingCount <= DeferredVoxelPhysicsBakeBackpressureReleaseThreshold)
++            nextActive = false;
++
++        if (nextActive == _deferredVoxelPhysicsBakeBackpressureActive)
++            return;
++
++        _deferredVoxelPhysicsBakeBackpressureActive = nextActive;
++        SystemDispatcher.SetVoxelTeardownBackpressure(nextActive, pendingCount);
++    }
++
++    private static void DestroyDeferredVoxelObject(UnityEngine.Object obj)
++    {
++        if (obj == null)
++            return;
++
++#if UNITY_EDITOR
++        if (!Application.isPlaying)
++            DestroyImmediate(obj);
++        else
++            Destroy(obj);
++#else
++        Destroy(obj);
++#endif
++    }
++
+     static void LogVoxelJobWaitWatchdog(string context, int waitFrames)
+     {
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+-        Debug.LogError($"[HectonVoxel] Job wait watchdog tripped. Context={context}. Frames={waitFrames}. Forcing completion as cleanup barrier.");
++        Debug.LogError($"[HectonVoxel] Job wait watchdog tripped. Context={context}. Frames={waitFrames}. Cleanup barrier required.");
+ #endif
+     }
+ 
+@@ -3783,10 +4079,12 @@ public class HectonVoxelEngine : MonoBehaviour
+ 
+         data.Normals = new NativeArray<float3>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+         data.CurvatureValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++        data.AmbientOcclusionValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+         data.BiomeValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+         data.Colors = new NativeArray<Color>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+         RegisterTrackedNativeArray(data.Normals, nameof(data.Normals));
+         RegisterTrackedNativeArray(data.CurvatureValues, nameof(data.CurvatureValues));
++        RegisterTrackedNativeArray(data.AmbientOcclusionValues, nameof(data.AmbientOcclusionValues));
+         RegisterTrackedNativeArray(data.BiomeValues, nameof(data.BiomeValues));
+         RegisterTrackedNativeArray(data.Colors, nameof(data.Colors));
+         if (data.ExtractSpawnPoints)
+@@ -3819,7 +4117,8 @@ public class HectonVoxelEngine : MonoBehaviour
+             smoothDensityField = smoothDensityField,
+             positions = data.WeldedPositions,
+             normals = data.Normals,
+-            curvatureValues = data.CurvatureValues
++            curvatureValues = data.CurvatureValues,
++            ambientOcclusionValues = data.AmbientOcclusionValues
+         }.Schedule(data.WeldedCount, JOB_BATCH, seamSnapHandle);
+ 
+         JobHandle seamNormalHandle = new VoxelSeamNormalBlendJob
+@@ -4333,6 +4632,7 @@ public class HectonVoxelEngine : MonoBehaviour
+         public Vector3 Position;
+         public Vector3 Normal;
+         public Color32 Color;
++        public float AmbientOcclusion;
+         public Vector3 AbsolutePositionWS;
+     }
+ 
+@@ -4429,6 +4729,7 @@ public class HectonVoxelEngine : MonoBehaviour
+         NativeArray<float3> positions,
+         NativeArray<float3> normals,
+         NativeArray<Color> colors,
++        NativeArray<float> ambientOcclusionValues,
+         NativeArray<int> triangleIndices,
+         int vertexCount,
+         int triangleIndexCount,
+@@ -4441,6 +4742,7 @@ public class HectonVoxelEngine : MonoBehaviour
+             new VertexAttributeDescriptor(VertexAttribute.Position, VertexAttributeFormat.Float32, 3),
+             new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
+             new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
++            new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 1),
+             new VertexAttributeDescriptor(VertexAttribute.TexCoord3, VertexAttributeFormat.Float32, 3));
+ 
+         meshData.SetIndexBufferParams(triangleIndexCount, IndexFormat.UInt32);
+@@ -4453,6 +4755,7 @@ public class HectonVoxelEngine : MonoBehaviour
+                 Position = positions[i],
+                 Normal = normals[i],
+                 Color = (Color32)colors[i],
++                AmbientOcclusion = ambientOcclusionValues.IsCreated && i < ambientOcclusionValues.Length ? ambientOcclusionValues[i] : 1f,
+                 AbsolutePositionWS = positions[i] + absolutePositionOffset
+             };
+         }
+@@ -4536,6 +4839,7 @@ public class HectonVoxelEngine : MonoBehaviour
+                                NativeArray<float3> positions,
+                                NativeArray<float3> normals,
+                                NativeArray<Color> colors,
++                               NativeArray<float> ambientOcclusionValues,
+                                NativeArray<int> triangleIndices,
+                                int triIndexCount,
+                                int vertCount,
+@@ -4564,7 +4868,7 @@ public class HectonVoxelEngine : MonoBehaviour
+             mesh.Clear();
+         }
+ 
+-        UploadSurfaceMesh(mesh, positions, normals, colors, triangleIndices, vertCount, triIndexCount, absolutePositionOffset);
++        UploadSurfaceMesh(mesh, positions, normals, colors, ambientOcclusionValues, triangleIndices, vertCount, triIndexCount, absolutePositionOffset);
+ 
+         var mr = go.GetComponent<MeshRenderer>();
+         if (mr == null) mr = go.AddComponent<MeshRenderer>();
+@@ -4598,6 +4902,7 @@ public class HectonVoxelEngine : MonoBehaviour
+                     meshLocalPositions,
+                     data.Normals,
+                     data.Colors,
++                    data.AmbientOcclusionValues,
+                     data.TriangleIndices,
+                     data.RawCount,
+                     data.WeldedCount,
+@@ -4627,7 +4932,18 @@ public class HectonVoxelEngine : MonoBehaviour
+                         Convex = false
+                     }.Schedule();
+ 
+-                    await AwaitForJobCompletionAsync(fallbackBakeHandle, ct, "fallback collider bake");
++                    if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
++                            fallbackBakeHandle,
++                            ct,
++                            "fallback collider bake",
++                            mesh,
++                            go,
++                            go.GetComponent<MeshRenderer>(),
++                            mcol,
++                            DeferredVoxelBakeDestroyOwner))
++                    {
++                        return;
++                    }
+ 
+                     ct.ThrowIfCancellationRequested();
+                     mcol.sharedMesh = mesh;
+@@ -4680,6 +4996,7 @@ public class HectonVoxelEngine : MonoBehaviour
+         NativeArray<int> bucketWriteHeads = default;
+         NativeArray<int> chunkTriangleIndices = default;
+         bool completed = false;
++        bool deferredBakeTeardown = false;
+ 
+         try
+         {
+@@ -4791,7 +5108,20 @@ public class HectonVoxelEngine : MonoBehaviour
+                     Convex = false
+                 }.Schedule();
+ 
+-                await AwaitForJobCompletionAsync(bakeHandle, ct, "collider chunk bake");
++                if (!await AwaitForPhysicsBakeCompletionOrDeferAsync(
++                        bakeHandle,
++                        ct,
++                        "collider chunk bake",
++                        chunkMesh,
++                        volume.gameObject,
++                        null,
++                        chunkCollider,
++                        0))
++                {
++                    volume.DetachColliderChunkBakeMesh(chunkIndex);
++                    deferredBakeTeardown = true;
++                    return;
++                }
+ 
+                 ct.ThrowIfCancellationRequested();
+                 volume.PublishColliderChunkMesh(chunkIndex);
+@@ -4805,7 +5135,7 @@ public class HectonVoxelEngine : MonoBehaviour
+         }
+         finally
+         {
+-            if (!completed)
++            if (!completed && !deferredBakeTeardown)
+                 volume.ClearColliderChunkBakeMeshes();
+ 
+             DisposeTrackedNativeArray(ref triangleBuckets);
+diff --git a/Assets/_Project/Scripts/HectonVoxelVolume.cs b/Assets/_Project/Scripts/HectonVoxelVolume.cs
+index 7a773fcd..8fd59915 100644
+--- a/Assets/_Project/Scripts/HectonVoxelVolume.cs
++++ b/Assets/_Project/Scripts/HectonVoxelVolume.cs
+@@ -612,6 +612,28 @@ namespace Hecton8.Caves
+             }
+         }
+ 
++        /// <summary>
++        /// Releases ownership of a staged collider bake mesh after its PhysX bake has been handed to deferred teardown.
++        /// </summary>
++        /// <param name="index">Collider chunk index.</param>
++        internal void DetachColliderChunkBakeMesh(int index)
++        {
++            if (index < 0 || index >= _colliderChunkBakeMeshes.Length)
++                return;
++
++            if (index < _colliderChunkColliders.Length)
++            {
++                MeshCollider collider = _colliderChunkColliders[index];
++                if (collider != null)
++                {
++                    collider.enabled = false;
++                    collider.sharedMesh = null;
++                }
++            }
++
++            _colliderChunkBakeMeshes[index] = null;
++        }
++
+         /// <summary>
+         /// Clears all pooled collider chunks. When destroyMeshes is true the mesh instances are destroyed permanently.
+         /// </summary>
+@@ -1188,22 +1210,27 @@ namespace Hecton8.Caves
+         /// Samples a trench line in absolute-universe space and converts each intersecting column into subtractive
+         /// crater stamps owned by the authoritative voxel delta pipeline.
+         /// </summary>
++        /// <param name="absoluteEpicenter">Absolute-universe event epicenter used for linear trench depth falloff.</param>
+         /// <param name="absoluteStart">Absolute-universe trench start position.</param>
+         /// <param name="absoluteEnd">Absolute-universe trench end position.</param>
+         /// <param name="trenchDepth">Peak trench depth at the center line.</param>
+         /// <param name="trenchSlope">Meters of depth loss per meter away from the center line.</param>
+         /// <param name="sampleSpacing">Meters between longitudinal trench samples.</param>
+         /// <param name="appliedStampCount">Count of accepted crater stamps.</param>
++        /// <param name="displacedVolumeCubicMeters">Estimated displaced solid mass volume from accepted stamps.</param>
+         /// <returns>True when at least one trench stamp was applied to this volume.</returns>
+         public bool TryApplySeismicTrench(
++            Vector3 absoluteEpicenter,
+             Vector3 absoluteStart,
+             Vector3 absoluteEnd,
+             float trenchDepth,
+             float trenchSlope,
+             float sampleSpacing,
+-            out int appliedStampCount)
++            out int appliedStampCount,
++            out float displacedVolumeCubicMeters)
+         {
+             appliedStampCount = 0;
++            displacedVolumeCubicMeters = 0f;
+             if (!_runtimeDataReady || _bakeState != VoxelBakeState.Complete || _gridDimension <= 0 || _voxelSize <= 0f)
+                 return false;
+ 
+@@ -1212,6 +1239,7 @@ namespace Hecton8.Caves
+ 
+             Vector3 runtimeStart = HectonFloatingOrigin.ToRuntimePosition(absoluteStart);
+             Vector3 runtimeEnd = HectonFloatingOrigin.ToRuntimePosition(absoluteEnd);
++            Vector3 runtimeEpicenter = HectonFloatingOrigin.ToRuntimePosition(absoluteEpicenter);
+             Vector3 line = runtimeEnd - runtimeStart;
+             float lineLength = line.magnitude;
+             if (lineLength <= 0.001f)
+@@ -1231,6 +1259,7 @@ namespace Hecton8.Caves
+             float longitudinalStep = Mathf.Max(_voxelSize, sampleSpacing);
+             float lateralStep = Mathf.Max(_voxelSize * 0.85f, longitudinalStep * 0.5f);
+             int longitudinalCount = Mathf.Clamp(Mathf.CeilToInt(lineLength / longitudinalStep) + 1, 2, 64);
++            float epicenterFadeDistance = Mathf.Max(_voxelSize, lineLength * 0.5f + influenceRadius);
+ 
+             for (int sampleIndex = 0; sampleIndex < longitudinalCount; sampleIndex++)
+             {
+@@ -1239,11 +1268,13 @@ namespace Hecton8.Caves
+ 
+                 for (float lateral = -influenceRadius; lateral <= influenceRadius + 0.001f; lateral += lateralStep)
+                 {
+-                    float cutDepth = Mathf.Max(0f, clampedDepth - Mathf.Abs(lateral) * clampedSlope);
++                    Vector3 runtimeColumn = runtimeCenter + right * lateral;
++                    float epicenterDistance = (runtimeColumn - runtimeEpicenter).magnitude;
++                    float epicenterDepth = clampedDepth * (1f - Mathf.Clamp01(epicenterDistance / epicenterFadeDistance));
++                    float cutDepth = Mathf.Max(0f, epicenterDepth - Mathf.Abs(lateral) * clampedSlope);
+                     if (cutDepth <= 0.0001f)
+                         continue;
+ 
+-                    Vector3 runtimeColumn = runtimeCenter + right * lateral;
+                     Vector3 localColumn = cachedTransform.InverseTransformPoint(runtimeColumn);
+                     if (localColumn.x < localBounds.min.x ||
+                         localColumn.x > localBounds.max.x ||
+@@ -1266,6 +1297,7 @@ namespace Hecton8.Caves
+                     }
+ 
+                     CarveCrater(cachedTransform.TransformPoint(localAnchor), craterRadius);
++                    displacedVolumeCubicMeters += EstimateSeismicCraterDisplacedVolume(craterRadius, cutDepth);
+                     appliedStampCount++;
+                 }
+             }
+@@ -1273,6 +1305,16 @@ namespace Hecton8.Caves
+             return appliedStampCount > 0;
+         }
+ 
++        private static float EstimateSeismicCraterDisplacedVolume(float craterRadius, float cutDepth)
++        {
++            float radius = Mathf.Max(0f, craterRadius);
++            float depth = Mathf.Clamp(cutDepth, 0f, radius * 2f);
++            if (radius <= 0f || depth <= 0f)
++                return 0f;
++
++            return Mathf.PI * depth * depth * (radius - depth / 3f);
++        }
++
+         /// <summary>
+         /// Marches a bounded DDA cut path through the runtime voxel volume and converts the traversed cells
+         /// into subtractive crater stamps owned by the authoritative rebuild pipeline.
+@@ -1967,14 +2009,34 @@ namespace Hecton8.Caves
+             float impulseMagnitude = Mathf.Clamp(clusterCount * 3f + halfExtents.y * 2f, 12f, 48f);
+             ApplyCollapseImpulse(runtimeCenter, halfExtents, impulseRadius, impulseMagnitude);
+ 
++            Vector3 trenchDirection = ResolveCollapseTrenchDirection(absoluteCenter);
++            float halfTrenchLength = Mathf.Max(2f, impulseRadius * 0.5f);
+             SeismicShockwaveEvent shockwaveEvent = new SeismicShockwaveEvent(
+                 runtimeCenter,
+                 impulseRadius,
+                 impulseMagnitude,
+-                clusterCount);
++                clusterCount,
++                absoluteCenter - trenchDirection * halfTrenchLength,
++                absoluteCenter + trenchDirection * halfTrenchLength);
+             RandomEventEvents.RaiseSeismicShockwave(in shockwaveEvent);
+         }
+ 
++        private static Vector3 ResolveCollapseTrenchDirection(Vector3 absoluteCenter)
++        {
++            uint seedA = unchecked((uint)Mathf.RoundToInt(absoluteCenter.x * 0.25f));
++            uint seedB = unchecked((uint)Mathf.RoundToInt(absoluteCenter.z * 0.25f));
++            uint state = seedA * 747796405u + seedB * 2891336453u + 0xB87F321Du;
++            state ^= state >> 16;
++            state *= 2246822519u;
++            state ^= state >> 13;
++            state *= 3266489917u;
++            state ^= state >> 16;
++
++            float angle = (state & 0x00FFFFFFu) * (Mathf.PI * 2f / 16777215f);
++            Vector3 direction = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
++            return direction.sqrMagnitude > 0.0001f ? direction.normalized : Vector3.forward;
++        }
++
+         private void ApplyCollapseImpulse(Vector3 runtimeCenter, Vector3 halfExtents, float impulseRadius, float impulseMagnitude)
+         {
+             int hitCount = UnityEngine.Physics.OverlapBoxNonAlloc(
+diff --git a/Assets/_Project/Scripts/LocalizationManager.cs b/Assets/_Project/Scripts/LocalizationManager.cs
+index 4d2c0276..3d843aae 100644
+--- a/Assets/_Project/Scripts/LocalizationManager.cs
++++ b/Assets/_Project/Scripts/LocalizationManager.cs
+@@ -82,6 +82,24 @@ namespace Hecton.Localization
+         private const int MadnessChancePercent = 15;
+         private const float MadnessRollInterval = 0.5f;
+         private const float MadnessBlinkDuration = 2f;
++        private static readonly int[] MadnessWhisperKeyHashes =
++        {
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_01),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_02),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_03),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_04),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_05),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_06),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_07),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_08),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_09),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_10),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_11),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_12),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_13),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_14),
++            LocHash.Compute(LocalizationKeys.MADNESS_WHISPERS_15)
++        };
+         private const string DeepAbyssZoneId = "zone_deep_abyss";
+         private const string CorruptionBlocks = "#%&█";
+         private const string LatinCorruptionAlphabet = "AEINORSTUVWXYZ";
+@@ -205,6 +223,24 @@ namespace Hecton.Localization
+             return key;
+         }
+ 
++        /// <summary>
++        /// Resolve a localized raw entry as a span for zero-allocation HUD writers.
++        /// </summary>
++        public ReadOnlySpan<char> GetRawSpanOrFallback(int keyHash, ReadOnlySpan<char> fallback)
++        {
++            return LocRegistry.TryGetRawBuffer(keyHash, out char[] buffer, out int length)
++                ? buffer.AsSpan(0, length)
++                : fallback;
++        }
++
++        /// <summary>
++        /// Resolve a localized raw entry buffer for TMP SetCharArray callers.
++        /// </summary>
++        public bool TryGetRawBuffer(int keyHash, out char[] buffer, out int length)
++        {
++            return LocRegistry.TryGetRawBuffer(keyHash, out buffer, out length);
++        }
++
+         /// <summary>
+         /// Resolve a formatted localized string.
+         /// </summary>
+@@ -359,11 +395,8 @@ namespace Hecton.Localization
+             if (text.Length == 0)
+                 return true;
+ 
+-            if (TryResolveMadnessOverride("hull_stress", out string madnessText))
+-            {
+-                length = CopyStringToBuffer(madnessText, destination);
++            if (TryResolveMadnessOverride("hull_stress".AsSpan(), destination, out length))
+                 return true;
+-            }
+ 
+             float intensity = GetHullStressCorruptionIntensity();
+             if (intensity <= 0f)
+@@ -892,6 +925,34 @@ namespace Hecton.Localization
+             return !string.IsNullOrEmpty(madnessText);
+         }
+ 
++        private bool TryResolveMadnessOverride(ReadOnlySpan<char> sourceToken, char[] destination, out int length)
++        {
++            length = 0;
++            if (destination == null || destination.Length == 0)
++                return false;
++
++            EvaluateMadnessOverrideState();
++            if (!IsMadnessOverrideActive())
++                return false;
++
++            ReadOnlySpan<char> normalizedSourceToken = sourceToken.Length == 0 ? "<null>".AsSpan() : sourceToken;
++            int seed = 17;
++            for (int i = 0; i < normalizedSourceToken.Length; i++)
++                seed = (seed * 31) + normalizedSourceToken[i];
++
++            seed = (seed * 31) + _madnessActiveWindowId;
++            seed = (seed * 31) + (int)CurrentLanguage;
++            int keyHash = MadnessWhisperKeyHashes[(seed & int.MaxValue) % MadnessWhisperKeyHashes.Length];
++            if (!LocRegistry.TryGetRawBuffer(keyHash, out char[] rawBuffer, out int rawLength) || rawLength <= 0)
++                return false;
++
++            length = CopySpanToBuffer(rawBuffer.AsSpan(0, rawLength), destination);
++            if (length > 0)
++                TriggerMadnessWhisperAudioIfNeeded();
++
++            return length > 0;
++        }
++
+         /// <summary>
+         /// True while the active madness whisper replacement window is live for PDA lore surfaces.
+         /// </summary>
+@@ -1054,6 +1115,27 @@ namespace Hecton.Localization
+             }
+         }
+ 
++        private static int ComputeMadnessSeed(ReadOnlySpan<char> sourceToken, int cycle, int languageIndex)
++        {
++            unchecked
++            {
++                ReadOnlySpan<char> token = sourceToken.Length == 0 ? "<null>".AsSpan() : sourceToken;
++                int hash = 17;
++                for (int i = 0; i < token.Length; i++)
++                    hash = (hash * 31) + token[i];
++
++                hash = (hash * 31) + cycle;
++                hash = (hash * 31) + languageIndex;
++                return hash & int.MaxValue;
++            }
++        }
++
++        private static int ResolveMadnessWhisperKeyHash(int hash)
++        {
++            int index = (hash & int.MaxValue) % MadnessWhisperKeyHashes.Length;
++            return MadnessWhisperKeyHashes[index];
++        }
++
+         private static string ResolveMadnessWhisperKey(int hash)
+         {
+             switch ((hash & int.MaxValue) % 15)
+diff --git a/Assets/_Project/Scripts/MapMagicBridge.cs b/Assets/_Project/Scripts/MapMagicBridge.cs
+index af410128..679474a3 100644
+--- a/Assets/_Project/Scripts/MapMagicBridge.cs
++++ b/Assets/_Project/Scripts/MapMagicBridge.cs
+@@ -37,8 +37,10 @@
+ 
+ using System;
+ using Hecton8.Core;
++using Hecton8.Environment;
+ using Hecton8.World;
+ using Unity.Collections;
++using Unity.Jobs;
+ using Unity.Mathematics;
+ using UnityEngine;
+ using MapMagic.Core;
+@@ -209,6 +211,7 @@ namespace Hecton8.Core
+         private const float SceneBindingRefreshInterval = 1f;
+         private const int MainTerrainBaseMapResolutionBudget = 512;
+         private const int DraftTerrainBaseMapResolutionBudget = 128;
++        private const int BiomeMatrixLayerCount = 108;
+ 
+         // ══════════════════════════════════════════════════════════
+         //  SINGLETON
+@@ -262,6 +265,15 @@ namespace Hecton8.Core
+                  "Должно совпадать с количеством выходов Biomes Set ноды.")]
+         [SerializeField] private int maxBiomeCount = 8;
+ 
++        [Header("Sandbox Generation")]
++        [Tooltip("When enabled, world-gen consumers treat MapMagic terrain as the only terrain authority and skip prebaked scene/fallback terrain reads.")]
++        [SerializeField] private bool sandboxProceduralTerrainOnly;
++        [Tooltip("When enabled, MapMagic alphamap layers 0..107 are interpreted as HECTON biome matrix IDs 1..108.")]
++        [SerializeField] private bool sandboxUseBiomeMatrixAlphamapLayers = true;
++        [SerializeField] private bool enableSandboxThermalWeathering = true;
++        [SerializeField, Range(0f, 1f)] private float sandboxThermalWeatheringStrength = 0.18f;
++        [SerializeField, Range(5f, 60f)] private float sandboxThermalWeatheringTalusAngleDegrees = 32f;
++
+         [Header("── Diagnostics ───────────────────────────────")]
+ #pragma warning disable CS0414
+         [SerializeField] private bool _debugMapMagicFound;
+@@ -329,6 +341,11 @@ namespace Hecton8.Core
+         /// <summary>MapMagic найден и доступен.</summary>
+         public bool IsAvailable => mapMagicObject != null;
+         public MapMagicObject RuntimeMapMagicObject => mapMagicObject;
++        public bool SandboxProceduralTerrainOnly => sandboxProceduralTerrainOnly;
++        public bool SandboxUseBiomeMatrixAlphamapLayers => sandboxUseBiomeMatrixAlphamapLayers;
++        public bool EnableSandboxThermalWeathering => enableSandboxThermalWeathering;
++        public float SandboxThermalWeatheringStrength => sandboxThermalWeatheringStrength;
++        public float SandboxThermalWeatheringTalusAngleDegrees => sandboxThermalWeatheringTalusAngleDegrees;
+ 
+         /// <summary>
+         /// Current biome ID under the player.
+@@ -551,6 +568,40 @@ namespace Hecton8.Core
+             return true;
+         }
+ 
++        /// <summary>
++        /// Samples a terrain normal through cached MapMagic height queries.
++        /// ZERO GC: central differences, no Unity global terrain fallback.
++        /// </summary>
++        public bool TryGetNormal(float x, float z, float sampleDistance, out Vector3 normal)
++        {
++            normal = Vector3.up;
++            if (!TryGetHeight(x, z, out float centerHeight))
++                return false;
++
++            float probe = Mathf.Max(0.25f, sampleDistance);
++            bool hasWest = TryGetHeight(x - probe, z, out float westHeight);
++            bool hasEast = TryGetHeight(x + probe, z, out float eastHeight);
++            bool hasSouth = TryGetHeight(x, z - probe, out float southHeight);
++            bool hasNorth = TryGetHeight(x, z + probe, out float northHeight);
++
++            if (!hasWest) westHeight = centerHeight;
++            if (!hasEast) eastHeight = centerHeight;
++            if (!hasSouth) southHeight = centerHeight;
++            if (!hasNorth) northHeight = centerHeight;
++
++            if (!hasWest && !hasEast && !hasSouth && !hasNorth)
++                return false;
++
++            Vector3 tangentX = new Vector3(probe * 2f, eastHeight - westHeight, 0f);
++            Vector3 tangentZ = new Vector3(0f, northHeight - southHeight, probe * 2f);
++            Vector3 sampledNormal = Vector3.Cross(tangentZ, tangentX);
++            if (sampledNormal.sqrMagnitude <= 0.0001f)
++                return false;
++
++            normal = sampledNormal.normalized;
++            return true;
++        }
++
+         /// <summary>
+         /// Resolves terrain height from an absolute-universe position so long-running async voxel pipelines
+         /// do not sample stale runtime coordinates after floating-origin shifts.
+@@ -561,6 +612,12 @@ namespace Hecton8.Core
+             return TryGetHeight(runtimePosition.x, runtimePosition.z, out height);
+         }
+ 
++        public bool TryGetNormalAUP(Vector3 absoluteUniversePosition, float sampleDistance, out Vector3 normal)
++        {
++            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
++            return TryGetNormal(runtimePosition.x, runtimePosition.z, sampleDistance, out normal);
++        }
++
+         /// <summary>
+         /// Returns MapMagic terrain height for an absolute-universe position.
+         /// Fallback is returned when no terrain tile can be resolved.
+@@ -717,7 +774,10 @@ namespace Hecton8.Core
+             int   maxIndex  = 0;
+             bool  anyValidTexture = false;
+ 
+-            int searchLimit = math.min(totalLayers, maxBiomeCount);
++            int configuredSearchLimit = sandboxProceduralTerrainOnly && sandboxUseBiomeMatrixAlphamapLayers
++                ? math.max(maxBiomeCount, BiomeMatrixLayerCount)
++                : maxBiomeCount;
++            int searchLimit = math.min(totalLayers, math.max(1, configuredSearchLimit));
+ 
+             for (int texIdx = 0; texIdx < textureCount; texIdx++)
+             {
+@@ -788,6 +848,53 @@ namespace Hecton8.Core
+             return true;
+         }
+ 
++        public bool TryGetMatrixBiomeId(float x, float z, out int matrixBiomeId)
++        {
++            return TryGetMatrixBiomeId(x, z, out matrixBiomeId, out _);
++        }
++
++        public bool TryGetMatrixBiomeId(float x, float z, out int matrixBiomeId, out int alphamapLayer)
++        {
++            matrixBiomeId = 0;
++            alphamapLayer = -1;
++
++            if (!sandboxProceduralTerrainOnly || !sandboxUseBiomeMatrixAlphamapLayers)
++                return false;
++
++            if (!TryGetBiomeIndex(x, z, out int dominantLayer))
++                return false;
++
++            if (!TryResolveBiomeMatrixAlphamapLayer(dominantLayer + 1, out int resolvedLayer))
++                return false;
++
++            matrixBiomeId = dominantLayer + 1;
++            alphamapLayer = resolvedLayer;
++            return true;
++        }
++
++        public bool TryGetMatrixBiomeId(
++            float x,
++            float z,
++            HectonBiomeMatrixCatalog catalog,
++            out int matrixBiomeId,
++            out int alphamapLayer)
++        {
++            if (!TryGetMatrixBiomeId(x, z, out matrixBiomeId, out alphamapLayer))
++                return false;
++
++            return catalog == null || catalog.GetByMatrixIndex(matrixBiomeId) != null;
++        }
++
++        public static bool TryResolveBiomeMatrixAlphamapLayer(int matrixBiomeId, out int alphamapLayer)
++        {
++            alphamapLayer = -1;
++            if (matrixBiomeId < 1 || matrixBiomeId > BiomeMatrixLayerCount)
++                return false;
++
++            alphamapLayer = matrixBiomeId - 1;
++            return true;
++        }
++
+         private bool TryGetCachedBiomeAlphaTextures(
+             TerrainData terrainData,
+             int expectedTextureCount,
+@@ -932,6 +1039,54 @@ namespace Hecton8.Core
+             waterSurfaceLevel = y;
+         }
+ 
++        public void SetSandboxProceduralTerrainOnly(bool enabled)
++        {
++            sandboxProceduralTerrainOnly = enabled;
++        }
++
++        public void SetSandboxBiomeMatrixAlphamapLayers(bool enabled)
++        {
++            sandboxUseBiomeMatrixAlphamapLayers = enabled;
++        }
++
++        public JobHandle ScheduleSandboxThermalWeatheringPostProcess(
++            NativeArray<float> inputHeights01,
++            NativeArray<float> outputHeights01,
++            int width,
++            int height,
++            float cellSizeMeters,
++            float heightScaleMeters,
++            JobHandle dependency = default)
++        {
++            if (!enableSandboxThermalWeathering ||
++                !inputHeights01.IsCreated ||
++                !outputHeights01.IsCreated ||
++                width <= 2 ||
++                height <= 2)
++            {
++                return dependency;
++            }
++
++            int cellCount = width * height;
++            if (inputHeights01.Length < cellCount || outputHeights01.Length < cellCount)
++                return dependency;
++
++            var job = new Hecton8.World.WorldProceduralTerrainThermalWeatheringJob
++            {
++                InputHeights01 = inputHeights01,
++                OutputHeights01 = outputHeights01,
++                Width = width,
++                Height = height,
++                CellSizeMeters = math.max(0.001f, cellSizeMeters),
++                HeightScaleMeters = math.max(0.001f, heightScaleMeters),
++                TalusAngleDegrees = sandboxThermalWeatheringTalusAngleDegrees,
++                Strength = sandboxThermalWeatheringStrength
++            };
++
++            int batchCount = math.max(1, math.min(64, cellCount / 16));
++            return job.Schedule(cellCount, batchCount, dependency);
++        }
++
+         /// <summary>
+         /// Applies the runtime object-generation budget to the bound
+         /// MapMagicObject.
+diff --git a/Assets/_Project/Scripts/VoxelDeltaProcessor.cs b/Assets/_Project/Scripts/VoxelDeltaProcessor.cs
+index 56e8b813..ba08fb2a 100644
+--- a/Assets/_Project/Scripts/VoxelDeltaProcessor.cs
++++ b/Assets/_Project/Scripts/VoxelDeltaProcessor.cs
+@@ -38,6 +38,8 @@ namespace Hecton8.Caves
+         private const int InitialChunkRegistryCapacity = 256;
+         private const int InitialVolumeRegistryCapacity = 16;
+         private const int InitialPendingCarveCapacity = 32;
++        private const int InitialPendingCompactionCapacity = 16;
++        private const int ChunkCompactionDirtyThreshold = (ChunkCellCount * 4) / 5;
+         private const int MortonSignedOffset = 1 << 20;
+         private const float MinRuntimeVoxelSize = 0.25f;
+         private const float MinCarveRadiusMeters = 0.9f;
+@@ -45,6 +47,7 @@ namespace Hecton8.Caves
+         private const float SphereVolumeFactor = 4f / 3f * math.PI;
+         private const byte DefaultMaterialId = 0;
+         private const byte DeltaModeAdditive = 1 << 0;
++        private const byte DeltaModeReplace = 1 << 1;
+         private const byte DeltaShapeSphere = 0;
+         private const byte DeltaShapeBox = 1;
+         private const byte DeltaShapeCapsule = 2;
+@@ -71,6 +74,10 @@ namespace Hecton8.Caves
+ 
+         // COLD ALLOC: Dictionary<ChunkAddress, ChunkDeltaState>[InitialChunkRegistryCapacity] â€” persistent voxel delta chunk registry â€” owner: VoxelDeltaProcessor
+         private readonly Dictionary<ChunkAddress, ChunkDeltaState> _chunkStates = new Dictionary<ChunkAddress, ChunkDeltaState>(InitialChunkRegistryCapacity);
++        // COLD ALLOC: Dictionary<ChunkAddress, CompactedChunkState>[InitialChunkRegistryCapacity] - compacted replacement SDF chunk registry - owner: VoxelDeltaProcessor
++        private readonly Dictionary<ChunkAddress, CompactedChunkState> _compactedChunkStates = new Dictionary<ChunkAddress, CompactedChunkState>(InitialChunkRegistryCapacity);
++        // COLD ALLOC: Dictionary<ChunkAddress, int>[InitialChunkRegistryCapacity] - dirty chunk write version registry for compaction conflict checks - owner: VoxelDeltaProcessor
++        private readonly Dictionary<ChunkAddress, int> _chunkWriteVersions = new Dictionary<ChunkAddress, int>(InitialChunkRegistryCapacity);
+         // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] â€” live voxel volume registry for load-time rebuild dispatch â€” owner: VoxelDeltaProcessor
+         private readonly List<HectonVoxelVolume> _registeredVolumes = new List<HectonVoxelVolume>(InitialVolumeRegistryCapacity);
+         // COLD ALLOC: List<HectonVoxelVolume>[InitialVolumeRegistryCapacity] â€” pending volume rebuild queue after loaded delta application â€” owner: VoxelDeltaProcessor
+@@ -84,6 +91,12 @@ namespace Hecton8.Caves
+         private int _scheduledCarveWriteCount;
+         // COLD ALLOC: NativeArray<CarveCellWrite>[capacity] â€” staged Burst carve results before managed delta-chunk commit â€” owner: VoxelDeltaProcessor
+         private NativeArray<CarveCellWrite> _scheduledCarveWrites;
++        // COLD ALLOC: PendingCompactionRequest[16] - bounded background dirty-chunk compaction queue - owner: VoxelDeltaProcessor
++        private readonly PendingCompactionRequest[] _pendingCompactions = new PendingCompactionRequest[InitialPendingCompactionCapacity];
++        private int _pendingCompactionCount;
++        private JobHandle _scheduledCompactionHandle;
++        private bool _scheduledCompactionRunning;
++        private ScheduledCompactionRequest _scheduledCompactionRequest;
+ 
+         public int SavePriority => 40;
+ 
+@@ -117,6 +130,7 @@ namespace Hecton8.Caves
+         private void OnDisable()
+         {
+             DisposeScheduledCarveBuffers();
++            DisposeScheduledCompactionBuffers();
+             if (_dispatcherRegistered)
+             {
+                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+@@ -136,9 +150,11 @@ namespace Hecton8.Caves
+             }
+ 
+             _pendingCarveCount = 0;
++            _pendingCompactionCount = 0;
+             _pendingRebuildVolumes.Clear();
+             _registeredVolumes.Clear();
+             DisposeChunkStates();
++            DisposeCompactedChunkStates();
+         }
+ 
+         /// <summary>
+@@ -149,6 +165,7 @@ namespace Hecton8.Caves
+         {
+             TryRegisterSaveService();
+             TrySchedulePendingCarve();
++            TrySchedulePendingCompaction();
+             FlushPendingRebuilds();
+         }
+ 
+@@ -156,6 +173,7 @@ namespace Hecton8.Caves
+         public void LateFrameTick()
+         {
+             TryCommitScheduledCarve();
++            TryCommitScheduledCompaction();
+         }
+ 
+         /// <summary>
+@@ -474,7 +492,7 @@ namespace Hecton8.Caves
+         public bool TryBuildDeltaMapForVolume(HectonVoxelVolume volume, out NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells)
+         {
+             modifiedCells = default;
+-            if (volume == null || !volume.HasRuntimeData || _chunkStates.Count == 0)
++            if (volume == null || !volume.HasRuntimeData || (_chunkStates.Count == 0 && _compactedChunkStates.Count == 0))
+                 return false;
+ 
+             ResolveVolumeCellBounds(volume, out int3 minCell, out int3 maxCell, out int3 minChunk, out int3 maxChunk);
+@@ -487,6 +505,9 @@ namespace Hecton8.Caves
+                     for (int x = minChunk.x; x <= maxChunk.x; x++)
+                     {
+                         ChunkAddress address = new ChunkAddress(new int3(x, y, z), volume.VoxelSize);
++                        if (_compactedChunkStates.ContainsKey(address))
++                            estimatedCount += ChunkCellCount;
++
+                         if (_chunkStates.TryGetValue(address, out ChunkDeltaState state))
+                             estimatedCount += CountDirtyCells(in state);
+                     }
+@@ -505,6 +526,23 @@ namespace Hecton8.Caves
+                     for (int x = minChunk.x; x <= maxChunk.x; x++)
+                     {
+                         ChunkAddress address = new ChunkAddress(new int3(x, y, z), volume.VoxelSize);
++                        if (_compactedChunkStates.TryGetValue(address, out CompactedChunkState compactedState))
++                        {
++                            for (int flatIndex = 0; flatIndex < ChunkCellCount; flatIndex++)
++                            {
++                                int3 cell = AbsoluteCellFromLocalIndex(compactedState.ChunkCoord, flatIndex);
++                                if (math.any(cell < minCell) || math.any(cell > maxCell))
++                                    continue;
++
++                                modifiedCells.TryAdd(cell, new VoxelModifiedCell
++                                {
++                                    Density = BitsToHalf(compactedState.SdfValueBits[flatIndex]),
++                                    MaterialId = compactedState.MaterialIds[flatIndex],
++                                    Flags = DeltaModeReplace
++                                });
++                            }
++                        }
++
+                         if (!_chunkStates.TryGetValue(address, out ChunkDeltaState state))
+                             continue;
+ 
+@@ -526,6 +564,7 @@ namespace Hecton8.Caves
+                                 if (math.any(cell < minCell) || math.any(cell > maxCell))
+                                     continue;
+ 
++                                modifiedCells.Remove(cell);
+                                 modifiedCells.TryAdd(cell, new VoxelModifiedCell
+                                 {
+                                     Density = BitsToHalf(state.SdfValueBits[flatIndex]),
+@@ -557,42 +596,28 @@ namespace Hecton8.Caves
+             if (data == null)
+                 return;
+ 
+-            data.voxelDeltaPersistence.EnsureCapacity(_chunkStates.Count);
++            data.voxelDeltaPersistence.EnsureCapacity(_chunkStates.Count + _compactedChunkStates.Count);
+             data.voxelDeltaPersistence.chunkCount = 0;
+             data.voxelDeltaPersistence.totalCellCount = 0;
+ 
++            Dictionary<ChunkAddress, CompactedChunkState>.Enumerator compactedEnumerator = _compactedChunkStates.GetEnumerator();
++            while (compactedEnumerator.MoveNext())
++            {
++                KeyValuePair<ChunkAddress, CompactedChunkState> pair = compactedEnumerator.Current;
++                CompactedChunkState compactedState = pair.Value;
++                _chunkStates.TryGetValue(pair.Key, out ChunkDeltaState overlayState);
++                WriteCompactedSaveChunk(data, pair.Key, in compactedState, in overlayState, overlayState.DirtyMaskWords.IsCreated);
++            }
++
+             Dictionary<ChunkAddress, ChunkDeltaState>.Enumerator enumerator = _chunkStates.GetEnumerator();
+             while (enumerator.MoveNext())
+             {
+                 KeyValuePair<ChunkAddress, ChunkDeltaState> pair = enumerator.Current;
+-                ChunkDeltaState state = pair.Value;
+-                int cellCount = CountDirtyCells(in state);
+-                if (cellCount <= 0)
++                if (_compactedChunkStates.ContainsKey(pair.Key))
+                     continue;
+ 
+-                int chunkIndex = data.voxelDeltaPersistence.chunkCount;
+-                VoxelDeltaChunkDTO chunkDto = data.voxelDeltaPersistence.chunks[chunkIndex];
+-                chunkDto.chunkX = pair.Key.ChunkCoord.x;
+-                chunkDto.chunkY = pair.Key.ChunkCoord.y;
+-                chunkDto.chunkZ = pair.Key.ChunkCoord.z;
+-                chunkDto.voxelSize = pair.Key.VoxelSize;
+-                chunkDto.EnsureCapacity(cellCount);
+-                chunkDto.cellCount = cellCount;
+-
+-                for (int i = 0; i < ChunkDirtyMaskWordCount; i++)
+-                    chunkDto.dirtyMaskWords[i] = state.DirtyMaskWords[i];
+-
+-                for (int i = 0; i < ChunkCellCount; i++)
+-                {
+-                    chunkDto.sdfValueBits[i] = state.SdfValueBits[i];
+-                    chunkDto.materialIds[i] = state.MaterialIds[i];
+-                    chunkDto.cellFlags[i] = state.CellFlags[i];
+-                }
+-
+-                chunkDto.cells = Array.Empty<VoxelDeltaCellDTO>();
+-                data.voxelDeltaPersistence.chunks[chunkIndex] = chunkDto;
+-                data.voxelDeltaPersistence.chunkCount = chunkIndex + 1;
+-                data.voxelDeltaPersistence.totalCellCount += cellCount;
++                ChunkDeltaState state = pair.Value;
++                WriteDirtySaveChunk(data, pair.Key, in state);
+             }
+ 
+             for (int i = data.voxelDeltaPersistence.chunkCount; i < data.voxelDeltaPersistence.chunks.Length; i++)
+@@ -603,6 +628,101 @@ namespace Hecton8.Caves
+             }
+         }
+ 
++        private static void WriteDirtySaveChunk(SaveData data, ChunkAddress address, in ChunkDeltaState state)
++        {
++            int cellCount = CountDirtyCells(in state);
++            if (cellCount <= 0)
++                return;
++
++            int chunkIndex = data.voxelDeltaPersistence.chunkCount;
++            VoxelDeltaChunkDTO chunkDto = data.voxelDeltaPersistence.chunks[chunkIndex];
++            chunkDto.chunkX = address.ChunkCoord.x;
++            chunkDto.chunkY = address.ChunkCoord.y;
++            chunkDto.chunkZ = address.ChunkCoord.z;
++            chunkDto.voxelSize = address.VoxelSize;
++            chunkDto.EnsureCapacity(cellCount);
++            chunkDto.cellCount = cellCount;
++
++            for (int i = 0; i < ChunkDirtyMaskWordCount; i++)
++                chunkDto.dirtyMaskWords[i] = state.DirtyMaskWords[i];
++
++            for (int i = 0; i < ChunkCellCount; i++)
++            {
++                chunkDto.sdfValueBits[i] = state.SdfValueBits[i];
++                chunkDto.materialIds[i] = state.MaterialIds[i];
++                chunkDto.cellFlags[i] = state.CellFlags[i];
++            }
++
++            chunkDto.cells = Array.Empty<VoxelDeltaCellDTO>();
++            data.voxelDeltaPersistence.chunks[chunkIndex] = chunkDto;
++            data.voxelDeltaPersistence.chunkCount = chunkIndex + 1;
++            data.voxelDeltaPersistence.totalCellCount += cellCount;
++        }
++
++        private static void WriteCompactedSaveChunk(
++            SaveData data,
++            ChunkAddress address,
++            in CompactedChunkState compactedState,
++            in ChunkDeltaState overlayState,
++            bool hasOverlay)
++        {
++            int chunkIndex = data.voxelDeltaPersistence.chunkCount;
++            VoxelDeltaChunkDTO chunkDto = data.voxelDeltaPersistence.chunks[chunkIndex];
++            chunkDto.chunkX = address.ChunkCoord.x;
++            chunkDto.chunkY = address.ChunkCoord.y;
++            chunkDto.chunkZ = address.ChunkCoord.z;
++            chunkDto.voxelSize = address.VoxelSize;
++            chunkDto.EnsureCapacity(ChunkCellCount);
++            chunkDto.cellCount = ChunkCellCount;
++
++            for (int i = 0; i < ChunkDirtyMaskWordCount; i++)
++                chunkDto.dirtyMaskWords[i] = uint.MaxValue;
++
++            for (int i = 0; i < ChunkCellCount; i++)
++            {
++                ResolveCompactedMergedCell(in compactedState, in overlayState, hasOverlay, i, out ushort sdfBits, out byte materialId);
++                chunkDto.sdfValueBits[i] = sdfBits;
++                chunkDto.materialIds[i] = materialId;
++                chunkDto.cellFlags[i] = DeltaModeReplace;
++            }
++
++            chunkDto.cells = Array.Empty<VoxelDeltaCellDTO>();
++            data.voxelDeltaPersistence.chunks[chunkIndex] = chunkDto;
++            data.voxelDeltaPersistence.chunkCount = chunkIndex + 1;
++            data.voxelDeltaPersistence.totalCellCount += ChunkCellCount;
++        }
++
++        private static void ResolveCompactedMergedCell(
++            in CompactedChunkState compactedState,
++            in ChunkDeltaState overlayState,
++            bool hasOverlay,
++            int flatIndex,
++            out ushort sdfBits,
++            out byte materialId)
++        {
++            float density = (float)BitsToHalf(compactedState.SdfValueBits[flatIndex]);
++            materialId = compactedState.MaterialIds[flatIndex];
++            if (hasOverlay)
++            {
++                uint localIndex = (uint)flatIndex;
++                if (IsDirty(in overlayState, localIndex))
++                {
++                    float overlayDensity = (float)BitsToHalf(overlayState.SdfValueBits[flatIndex]);
++                    byte overlayFlags = overlayState.CellFlags[flatIndex];
++                    if ((overlayFlags & DeltaModeReplace) != 0)
++                        density = overlayDensity;
++                    else if ((overlayFlags & DeltaModeAdditive) != 0)
++                        density = math.max(density, overlayDensity);
++                    else
++                        density = math.min(density, overlayDensity);
++
++                    materialId = overlayState.MaterialIds[flatIndex];
++                }
++            }
++
++            sdfBits = HalfToBits(ClampToHalf(density));
++        }
++
+         /// <summary>
+         /// Restores voxel delta chunks from the loaded save DTO.
+         /// </summary>
+@@ -610,6 +730,8 @@ namespace Hecton8.Caves
+         public void LoadFromSaveData(SaveData data)
+         {
+             DisposeChunkStates();
++            DisposeCompactedChunkStates();
++            _chunkWriteVersions.Clear();
+             _pendingRebuildVolumes.Clear();
+ 
+             if (data == null || data.voxelDeltaPersistence.chunkCount <= 0 || data.voxelDeltaPersistence.chunks == null)
+@@ -670,7 +792,7 @@ namespace Hecton8.Caves
+ 
+         public unsafe NativeArray<byte> CaptureNativeSnapshot(Allocator allocator)
+         {
+-            if (_chunkStates.Count <= 0)
++            if (_chunkStates.Count <= 0 && _compactedChunkStates.Count <= 0)
+                 return default;
+ 
+             int chunkCount = 0;
+@@ -682,9 +804,21 @@ namespace Hecton8.Caves
+                 + (ChunkCellCount * UnsafeUtility.SizeOf<byte>());
+             int totalBytes = UnsafeUtility.SizeOf<NativeSnapshotHeader>();
+ 
++            Dictionary<ChunkAddress, CompactedChunkState>.Enumerator compactedCountEnumerator = _compactedChunkStates.GetEnumerator();
++            while (compactedCountEnumerator.MoveNext())
++            {
++                chunkCount++;
++                totalDirtyCellCount += ChunkCellCount;
++                totalBytes += bytesPerChunk;
++            }
++
++            compactedCountEnumerator.Dispose();
+             Dictionary<ChunkAddress, ChunkDeltaState>.Enumerator countEnumerator = _chunkStates.GetEnumerator();
+             while (countEnumerator.MoveNext())
+             {
++                if (_compactedChunkStates.ContainsKey(countEnumerator.Current.Key))
++                    continue;
++
+                 ChunkDeltaState state = countEnumerator.Current.Value;
+                 int cellCount = CountDirtyCells(in state);
+                 if (cellCount <= 0)
+@@ -713,10 +847,30 @@ namespace Hecton8.Caves
+             UnsafeUtility.CopyStructureToPtr(ref header, snapshotPtr);
+             cursor += UnsafeUtility.SizeOf<NativeSnapshotHeader>();
+ 
++            Dictionary<ChunkAddress, CompactedChunkState>.Enumerator compactedWriteEnumerator = _compactedChunkStates.GetEnumerator();
++            while (compactedWriteEnumerator.MoveNext())
++            {
++                KeyValuePair<ChunkAddress, CompactedChunkState> pair = compactedWriteEnumerator.Current;
++                CompactedChunkState compactedState = pair.Value;
++                _chunkStates.TryGetValue(pair.Key, out ChunkDeltaState overlayState);
++                WriteCompactedNativeSnapshotChunk(
++                    snapshotPtr,
++                    snapshot.Length,
++                    ref cursor,
++                    pair.Key,
++                    in compactedState,
++                    in overlayState,
++                    overlayState.DirtyMaskWords.IsCreated);
++            }
++
++            compactedWriteEnumerator.Dispose();
+             Dictionary<ChunkAddress, ChunkDeltaState>.Enumerator writeEnumerator = _chunkStates.GetEnumerator();
+             while (writeEnumerator.MoveNext())
+             {
+                 KeyValuePair<ChunkAddress, ChunkDeltaState> pair = writeEnumerator.Current;
++                if (_compactedChunkStates.ContainsKey(pair.Key))
++                    continue;
++
+                 ChunkDeltaState state = pair.Value;
+                 int dirtyCellCount = CountDirtyCells(in state);
+                 if (dirtyCellCount <= 0)
+@@ -763,11 +917,63 @@ namespace Hecton8.Caves
+             return snapshot;
+         }
+ 
++        private static unsafe void WriteCompactedNativeSnapshotChunk(
++            byte* snapshotPtr,
++            int snapshotLength,
++            ref int cursor,
++            ChunkAddress address,
++            in CompactedChunkState compactedState,
++            in ChunkDeltaState overlayState,
++            bool hasOverlay)
++        {
++            NativeSnapshotChunkHeader chunkHeader = new NativeSnapshotChunkHeader
++            {
++                ChunkX = address.ChunkCoord.x,
++                ChunkY = address.ChunkCoord.y,
++                ChunkZ = address.ChunkCoord.z,
++                VoxelSize = address.VoxelSize,
++                DirtyCellCount = ChunkCellCount
++            };
++
++            UnsafeUtility.CopyStructureToPtr(ref chunkHeader, snapshotPtr + cursor);
++            cursor += UnsafeUtility.SizeOf<NativeSnapshotChunkHeader>();
++
++            int dirtyMaskBytes = ChunkDirtyMaskWordCount * UnsafeUtility.SizeOf<uint>();
++            for (int i = 0; i < ChunkDirtyMaskWordCount; i++)
++                UnsafeUtility.WriteArrayElement(snapshotPtr + cursor, i, uint.MaxValue);
++            cursor += dirtyMaskBytes;
++
++            int sdfCursor = cursor;
++            int sdfBytes = ChunkCellCount * UnsafeUtility.SizeOf<ushort>();
++            int materialCursor = sdfCursor + sdfBytes;
++            int materialBytes = ChunkCellCount * UnsafeUtility.SizeOf<byte>();
++            int flagsCursor = materialCursor + materialBytes;
++            int flagsBytes = ChunkCellCount * UnsafeUtility.SizeOf<byte>();
++            if (flagsCursor > snapshotLength - flagsBytes)
++            {
++                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(VoxelDeltaProcessor));
++                cursor = snapshotLength;
++                return;
++            }
++
++            for (int i = 0; i < ChunkCellCount; i++)
++            {
++                ResolveCompactedMergedCell(in compactedState, in overlayState, hasOverlay, i, out ushort sdfBits, out byte materialId);
++                UnsafeUtility.WriteArrayElement(snapshotPtr + sdfCursor, i, sdfBits);
++                UnsafeUtility.WriteArrayElement(snapshotPtr + materialCursor, i, materialId);
++                UnsafeUtility.WriteArrayElement(snapshotPtr + flagsCursor, i, DeltaModeReplace);
++            }
++
++            cursor += sdfBytes + materialBytes + flagsBytes;
++        }
++
+         public unsafe bool TryLoadNativeSnapshot(NativeArray<byte> snapshot, out string error)
+         {
+             error = string.Empty;
+ 
+             DisposeChunkStates();
++            DisposeCompactedChunkStates();
++            _chunkWriteVersions.Clear();
+             _pendingRebuildVolumes.Clear();
+ 
+             if (!snapshot.IsCreated || snapshot.Length <= 0)
+@@ -1105,6 +1311,9 @@ namespace Hecton8.Caves
+                     }
+ 
+                     SetCell(ref state, localIndex, resolvedValue, write.MaterialId, write.DeltaFlags);
++                    ChunkAddress address = new ChunkAddress(chunkCoord, voxelSize);
++                    IncrementChunkWriteVersion(address);
++                    TryQueueCompaction(volume, address, in state, CountDirtyCells(in state));
+                 }
+ 
+                 EnqueueVolumeRebuild(volume);
+@@ -1130,7 +1339,7 @@ namespace Hecton8.Caves
+ 
+         private bool HasOverlappingDelta(HectonVoxelVolume volume)
+         {
+-            if (volume == null || _chunkStates.Count == 0)
++            if (volume == null || (_chunkStates.Count == 0 && _compactedChunkStates.Count == 0))
+                 return false;
+ 
+             ResolveVolumeCellBounds(volume, out _, out _, out int3 minChunk, out int3 maxChunk);
+@@ -1140,7 +1349,11 @@ namespace Hecton8.Caves
+                 {
+                     for (int x = minChunk.x; x <= maxChunk.x; x++)
+                     {
+-                        if (_chunkStates.TryGetValue(new ChunkAddress(new int3(x, y, z), volume.VoxelSize), out ChunkDeltaState state) &&
++                        ChunkAddress address = new ChunkAddress(new int3(x, y, z), volume.VoxelSize);
++                        if (_compactedChunkStates.ContainsKey(address))
++                            return true;
++
++                        if (_chunkStates.TryGetValue(address, out ChunkDeltaState state) &&
+                             CountDirtyCells(in state) > 0)
+                             return true;
+                     }
+@@ -1201,6 +1414,228 @@ namespace Hecton8.Caves
+             return created;
+         }
+ 
++        private void IncrementChunkWriteVersion(ChunkAddress address)
++        {
++            _chunkWriteVersions.TryGetValue(address, out int version);
++            _chunkWriteVersions[address] = version + 1;
++        }
++
++        private int ResolveChunkWriteVersion(ChunkAddress address)
++        {
++            return _chunkWriteVersions.TryGetValue(address, out int version) ? version : 0;
++        }
++
++        private void TryQueueCompaction(HectonVoxelVolume volume, ChunkAddress address, in ChunkDeltaState state, int dirtyCount)
++        {
++            if (volume == null ||
++                dirtyCount < ChunkCompactionDirtyThreshold ||
++                IsCompactionQueuedOrRunning(address))
++            {
++                return;
++            }
++
++            if (_pendingCompactionCount >= _pendingCompactions.Length)
++                return;
++
++            _pendingCompactions[_pendingCompactionCount++] = new PendingCompactionRequest
++            {
++                Volume = volume,
++                Address = address,
++                RequiredSonarVersion = volume.PublishedSonarVersion + 1,
++                WriteVersion = ResolveChunkWriteVersion(address)
++            };
++        }
++
++        private bool IsCompactionQueuedOrRunning(ChunkAddress address)
++        {
++            if (_scheduledCompactionRunning && _scheduledCompactionRequest.Address.Equals(address))
++                return true;
++
++            for (int i = 0; i < _pendingCompactionCount; i++)
++            {
++                if (_pendingCompactions[i].Address.Equals(address))
++                    return true;
++            }
++
++            return false;
++        }
++
++        private void TrySchedulePendingCompaction()
++        {
++            if (_scheduledCompactionRunning || _pendingCompactionCount <= 0)
++                return;
++
++            PendingCompactionRequest request = _pendingCompactions[0];
++            for (int i = 1; i < _pendingCompactionCount; i++)
++                _pendingCompactions[i - 1] = _pendingCompactions[i];
++
++            _pendingCompactionCount--;
++            HectonVoxelVolume volume = request.Volume;
++            if (volume == null || !volume.HasRuntimeData)
++                return;
++
++            if (volume.PublishedSonarVersion < request.RequiredSonarVersion)
++            {
++                RequeueCompaction(in request);
++                return;
++            }
++
++            if (!_chunkStates.TryGetValue(request.Address, out ChunkDeltaState state) ||
++                !volume.TryGetPublishedSonarSdfPayload(
++                    out NativeArray<byte> encodedSdf,
++                    out Vector3Int gridDimensions,
++                    out Vector3 volumeOrigin,
++                    out Vector3 voxelCellSize,
++                    out float sdfRange,
++                    out _))
++            {
++                return;
++            }
++
++            NativeArray<byte> sourceSdf = default;
++            NativeArray<uint> dirtyMaskCopy = default;
++            NativeArray<ushort> deltaSdfCopy = default;
++            NativeArray<byte> materialCopy = default;
++            NativeArray<byte> flagsCopy = default;
++            NativeArray<ushort> outputSdf = default;
++            NativeArray<byte> outputMaterials = default;
++            NativeArray<byte> outputFlags = default;
++            bool scheduled = false;
++            try
++            {
++                // COLD ALLOC: NativeArray<byte>[encodedSdf.Length] - isolated SDF source for async compaction - owner: VoxelDeltaProcessor
++                sourceSdf = new NativeArray<byte>(encodedSdf.Length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                RegisterTrackedNativeArray(sourceSdf, nameof(sourceSdf));
++                NativeArray<byte>.Copy(encodedSdf, sourceSdf, encodedSdf.Length);
++
++                // COLD ALLOC: NativeArray<uint>[1024] - dirty mask snapshot for async compaction - owner: VoxelDeltaProcessor
++                dirtyMaskCopy = new NativeArray<uint>(ChunkDirtyMaskWordCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                // COLD ALLOC: NativeArray<ushort>[32768] - delta SDF snapshot for async compaction - owner: VoxelDeltaProcessor
++                deltaSdfCopy = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                // COLD ALLOC: NativeArray<byte>[32768] - delta material snapshot for async compaction - owner: VoxelDeltaProcessor
++                materialCopy = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                // COLD ALLOC: NativeArray<byte>[32768] - delta flag snapshot for async compaction - owner: VoxelDeltaProcessor
++                flagsCopy = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                // COLD ALLOC: NativeArray<ushort>[32768] - compacted replacement SDF output - owner: VoxelDeltaProcessor
++                outputSdf = new NativeArray<ushort>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                // COLD ALLOC: NativeArray<byte>[32768] - compacted replacement material output - owner: VoxelDeltaProcessor
++                outputMaterials = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                // COLD ALLOC: NativeArray<byte>[32768] - compacted replacement flag output - owner: VoxelDeltaProcessor
++                outputFlags = new NativeArray<byte>(ChunkCellCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                RegisterTrackedNativeArray(dirtyMaskCopy, nameof(dirtyMaskCopy));
++                RegisterTrackedNativeArray(deltaSdfCopy, nameof(deltaSdfCopy));
++                RegisterTrackedNativeArray(materialCopy, nameof(materialCopy));
++                RegisterTrackedNativeArray(flagsCopy, nameof(flagsCopy));
++                RegisterTrackedNativeArray(outputSdf, nameof(outputSdf));
++                RegisterTrackedNativeArray(outputMaterials, nameof(outputMaterials));
++                RegisterTrackedNativeArray(outputFlags, nameof(outputFlags));
++                NativeArray<uint>.Copy(state.DirtyMaskWords, dirtyMaskCopy, ChunkDirtyMaskWordCount);
++                NativeArray<ushort>.Copy(state.SdfValueBits, deltaSdfCopy, ChunkCellCount);
++                NativeArray<byte>.Copy(state.MaterialIds, materialCopy, ChunkCellCount);
++                NativeArray<byte>.Copy(state.CellFlags, flagsCopy, ChunkCellCount);
++
++                _scheduledCompactionRequest = new ScheduledCompactionRequest
++                {
++                    Volume = volume,
++                    Address = request.Address,
++                    RequiredSonarVersion = request.RequiredSonarVersion,
++                    WriteVersion = request.WriteVersion,
++                    SourceEncodedSdf = sourceSdf,
++                    DirtyMaskWords = dirtyMaskCopy,
++                    DeltaSdfValueBits = deltaSdfCopy,
++                    DeltaMaterialIds = materialCopy,
++                    DeltaCellFlags = flagsCopy,
++                    OutputSdfValueBits = outputSdf,
++                    OutputMaterialIds = outputMaterials,
++                    OutputCellFlags = outputFlags
++                };
++
++                VoxelDeltaCompactionJob job = new VoxelDeltaCompactionJob
++                {
++                    ChunkCoord = request.Address.ChunkCoord,
++                    VoxelSize = math.max(request.Address.VoxelSize, MinRuntimeVoxelSize),
++                    GridDimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z),
++                    VolumeOrigin = new float3(volumeOrigin.x, volumeOrigin.y, volumeOrigin.z),
++                    CellSize = new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z),
++                    SdfRange = sdfRange,
++                    EncodedSdf = sourceSdf,
++                    DirtyMaskWords = dirtyMaskCopy,
++                    DeltaSdfValueBits = deltaSdfCopy,
++                    DeltaMaterialIds = materialCopy,
++                    DeltaCellFlags = flagsCopy,
++                    OutputSdfValueBits = outputSdf,
++                    OutputMaterialIds = outputMaterials,
++                    OutputCellFlags = outputFlags
++                };
++                _scheduledCompactionHandle = job.Schedule(ChunkCellCount, 64);
++                _scheduledCompactionRunning = true;
++                scheduled = true;
++            }
++            finally
++            {
++                if (!scheduled)
++                {
++                    DisposeTrackedNativeArray(ref sourceSdf);
++                    DisposeTrackedNativeArray(ref dirtyMaskCopy);
++                    DisposeTrackedNativeArray(ref deltaSdfCopy);
++                    DisposeTrackedNativeArray(ref materialCopy);
++                    DisposeTrackedNativeArray(ref flagsCopy);
++                    DisposeTrackedNativeArray(ref outputSdf);
++                    DisposeTrackedNativeArray(ref outputMaterials);
++                    DisposeTrackedNativeArray(ref outputFlags);
++                    _scheduledCompactionRequest = default;
++                    _scheduledCompactionHandle = default;
++                    _scheduledCompactionRunning = false;
++                }
++            }
++        }
++
++        private void RequeueCompaction(in PendingCompactionRequest request)
++        {
++            if (_pendingCompactionCount >= _pendingCompactions.Length)
++                return;
++
++            _pendingCompactions[_pendingCompactionCount++] = request;
++        }
++
++        private void TryCommitScheduledCompaction()
++        {
++            if (!_scheduledCompactionRunning)
++                return;
++
++            if (!DispatcherJobSwap.TryComplete(ref _scheduledCompactionHandle, false))
++                return;
++
++            _scheduledCompactionRunning = false;
++            ScheduledCompactionRequest request = _scheduledCompactionRequest;
++            DisposeTrackedNativeArray(ref request.SourceEncodedSdf);
++            DisposeTrackedNativeArray(ref request.DirtyMaskWords);
++            DisposeTrackedNativeArray(ref request.DeltaSdfValueBits);
++            DisposeTrackedNativeArray(ref request.DeltaMaterialIds);
++            DisposeTrackedNativeArray(ref request.DeltaCellFlags);
++
++            if (_compactedChunkStates.TryGetValue(request.Address, out CompactedChunkState existingCompacted))
++                existingCompacted.Dispose();
++
++            _compactedChunkStates[request.Address] = new CompactedChunkState(
++                request.Address.ChunkCoord,
++                request.Address.VoxelSize,
++                request.OutputSdfValueBits,
++                request.OutputMaterialIds,
++                request.OutputCellFlags);
++
++            if (ResolveChunkWriteVersion(request.Address) == request.WriteVersion &&
++                _chunkStates.TryGetValue(request.Address, out ChunkDeltaState dirtyState))
++            {
++                dirtyState.Dispose();
++                _chunkStates.Remove(request.Address);
++                _chunkWriteVersions.Remove(request.Address);
++            }
++
++            _scheduledCompactionRequest = default;
++            _scheduledCompactionHandle = default;
++        }
++
+         private static float ResolveBlendStrength(in PendingCarveRequest request, float voxelSize)
+         {
+             return request.ExplicitBlendStrength > 0f
+@@ -1322,12 +1757,19 @@ namespace Hecton8.Caves
+             else
+             {
+                 byte existingFlags = state.CellFlags[flatIndex];
++                bool replace = (cellFlags & DeltaModeReplace) != 0;
++                bool existingReplace = (existingFlags & DeltaModeReplace) != 0;
+                 bool additive = (cellFlags & DeltaModeAdditive) != 0;
+                 bool existingAdditive = (existingFlags & DeltaModeAdditive) != 0;
+                 float existingValue = (float)BitsToHalf(state.SdfValueBits[flatIndex]);
+                 float nextValue = (float)value;
+ 
+-                if (additive == existingAdditive)
++                if (replace || existingReplace)
++                {
++                    state.SdfValueBits[flatIndex] = HalfToBits(value);
++                    state.CellFlags[flatIndex] = cellFlags;
++                }
++                else if (additive == existingAdditive)
+                 {
+                     float mergedValue = additive
+                         ? math.max(existingValue, nextValue)
+@@ -1456,6 +1898,32 @@ namespace Hecton8.Caves
+             _scheduledCarveWriteCount = 0;
+         }
+ 
++        private void DisposeScheduledCompactionBuffers()
++        {
++            JobHandle dependency = _scheduledCompactionRunning ? _scheduledCompactionHandle : default;
++            ScheduledCompactionRequest request = _scheduledCompactionRequest;
++            if (request.SourceEncodedSdf.IsCreated)
++                DisposeTrackedNativeArray(ref request.SourceEncodedSdf, dependency);
++            if (request.DirtyMaskWords.IsCreated)
++                DisposeTrackedNativeArray(ref request.DirtyMaskWords, dependency);
++            if (request.DeltaSdfValueBits.IsCreated)
++                DisposeTrackedNativeArray(ref request.DeltaSdfValueBits, dependency);
++            if (request.DeltaMaterialIds.IsCreated)
++                DisposeTrackedNativeArray(ref request.DeltaMaterialIds, dependency);
++            if (request.DeltaCellFlags.IsCreated)
++                DisposeTrackedNativeArray(ref request.DeltaCellFlags, dependency);
++            if (request.OutputSdfValueBits.IsCreated)
++                DisposeTrackedNativeArray(ref request.OutputSdfValueBits, dependency);
++            if (request.OutputMaterialIds.IsCreated)
++                DisposeTrackedNativeArray(ref request.OutputMaterialIds, dependency);
++            if (request.OutputCellFlags.IsCreated)
++                DisposeTrackedNativeArray(ref request.OutputCellFlags, dependency);
++
++            _scheduledCompactionRequest = default;
++            _scheduledCompactionHandle = default;
++            _scheduledCompactionRunning = false;
++        }
++
+         private void DisposeChunkStates()
+         {
+             Dictionary<ChunkAddress, ChunkDeltaState>.Enumerator enumerator = _chunkStates.GetEnumerator();
+@@ -1463,6 +1931,16 @@ namespace Hecton8.Caves
+                 enumerator.Current.Value.Dispose();
+ 
+             _chunkStates.Clear();
++            _chunkWriteVersions.Clear();
++        }
++
++        private void DisposeCompactedChunkStates()
++        {
++            Dictionary<ChunkAddress, CompactedChunkState>.Enumerator enumerator = _compactedChunkStates.GetEnumerator();
++            while (enumerator.MoveNext())
++                enumerator.Current.Value.Dispose();
++
++            _compactedChunkStates.Clear();
+         }
+ 
+         private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+@@ -1571,6 +2049,30 @@ namespace Hecton8.Caves
+             return value;
+         }
+ 
++        private struct PendingCompactionRequest
++        {
++            public HectonVoxelVolume Volume;
++            public ChunkAddress Address;
++            public int RequiredSonarVersion;
++            public int WriteVersion;
++        }
++
++        private struct ScheduledCompactionRequest
++        {
++            public HectonVoxelVolume Volume;
++            public ChunkAddress Address;
++            public int RequiredSonarVersion;
++            public int WriteVersion;
++            public NativeArray<byte> SourceEncodedSdf;
++            public NativeArray<uint> DirtyMaskWords;
++            public NativeArray<ushort> DeltaSdfValueBits;
++            public NativeArray<byte> DeltaMaterialIds;
++            public NativeArray<byte> DeltaCellFlags;
++            public NativeArray<ushort> OutputSdfValueBits;
++            public NativeArray<byte> OutputMaterialIds;
++            public NativeArray<byte> OutputCellFlags;
++        }
++
+         private struct PendingCarveRequest
+         {
+             public HectonVoxelVolume Volume;
+@@ -1664,6 +2166,132 @@ namespace Hecton8.Caves
+             public byte Reserved;
+         }
+ 
++        private struct CompactedChunkState : IDisposable
++        {
++            public readonly int3 ChunkCoord;
++            public readonly float VoxelSize;
++            public NativeArray<ushort> SdfValueBits;
++            public NativeArray<byte> MaterialIds;
++            public NativeArray<byte> CellFlags;
++
++            public CompactedChunkState(
++                int3 chunkCoord,
++                float voxelSize,
++                NativeArray<ushort> sdfValueBits,
++                NativeArray<byte> materialIds,
++                NativeArray<byte> cellFlags)
++            {
++                ChunkCoord = chunkCoord;
++                VoxelSize = voxelSize;
++                SdfValueBits = sdfValueBits;
++                MaterialIds = materialIds;
++                CellFlags = cellFlags;
++            }
++
++            public void Dispose()
++            {
++                DisposeTrackedNativeArray(ref SdfValueBits);
++                DisposeTrackedNativeArray(ref MaterialIds);
++                DisposeTrackedNativeArray(ref CellFlags);
++            }
++        }
++
++        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++        private struct VoxelDeltaCompactionJob : IJobParallelFor
++        {
++            public int3 ChunkCoord;
++            public float VoxelSize;
++            public int3 GridDimensions;
++            public float3 VolumeOrigin;
++            public float3 CellSize;
++            public float SdfRange;
++            [ReadOnly] public NativeArray<byte> EncodedSdf;
++            [ReadOnly] public NativeArray<uint> DirtyMaskWords;
++            [ReadOnly] public NativeArray<ushort> DeltaSdfValueBits;
++            [ReadOnly] public NativeArray<byte> DeltaMaterialIds;
++            [ReadOnly] public NativeArray<byte> DeltaCellFlags;
++            public NativeArray<ushort> OutputSdfValueBits;
++            public NativeArray<byte> OutputMaterialIds;
++            public NativeArray<byte> OutputCellFlags;
++
++            public void Execute(int flatIndex)
++            {
++                if (IsDirty(flatIndex))
++                {
++                    OutputSdfValueBits[flatIndex] = DeltaSdfValueBits[flatIndex];
++                    OutputMaterialIds[flatIndex] = DeltaMaterialIds[flatIndex];
++                    OutputCellFlags[flatIndex] = DeltaModeReplace;
++                    return;
++                }
++
++                int3 absoluteCell = AbsoluteCellFromFlatIndex(flatIndex);
++                float3 absolutePosition = (new float3(absoluteCell.x, absoluteCell.y, absoluteCell.z) + 0.5f) * VoxelSize;
++                float sampledDensity = SampleEncodedSdf(absolutePosition);
++                OutputSdfValueBits[flatIndex] = (ushort)math.f32tof16(math.clamp(sampledDensity, -8f, 8f));
++                OutputMaterialIds[flatIndex] = DefaultMaterialId;
++                OutputCellFlags[flatIndex] = DeltaModeReplace;
++            }
++
++            private bool IsDirty(int flatIndex)
++            {
++                int wordIndex = flatIndex >> 5;
++                uint bitMask = 1u << (flatIndex & 31);
++                return (DirtyMaskWords[wordIndex] & bitMask) != 0u;
++            }
++
++            private int3 AbsoluteCellFromFlatIndex(int flatIndex)
++            {
++                int localX = flatIndex & (ChunkResolution - 1);
++                int localY = (flatIndex >> 5) & (ChunkResolution - 1);
++                int localZ = flatIndex >> 10;
++                return (ChunkCoord * ChunkResolution) + new int3(localX, localY, localZ);
++            }
++
++            private float SampleEncodedSdf(float3 absolutePosition)
++            {
++                float sampleX = math.clamp((absolutePosition.x - VolumeOrigin.x) / math.max(CellSize.x, 0.0001f), 0f, GridDimensions.x - 1.001f);
++                float sampleY = math.clamp((absolutePosition.y - VolumeOrigin.y) / math.max(CellSize.y, 0.0001f), 0f, GridDimensions.y - 1.001f);
++                float sampleZ = math.clamp((absolutePosition.z - VolumeOrigin.z) / math.max(CellSize.z, 0.0001f), 0f, GridDimensions.z - 1.001f);
++
++                int x0 = (int)math.floor(sampleX);
++                int y0 = (int)math.floor(sampleY);
++                int z0 = (int)math.floor(sampleZ);
++                int x1 = math.min(x0 + 1, GridDimensions.x - 1);
++                int y1 = math.min(y0 + 1, GridDimensions.y - 1);
++                int z1 = math.min(z0 + 1, GridDimensions.z - 1);
++                float tx = sampleX - x0;
++                float ty = sampleY - y0;
++                float tz = sampleZ - z0;
++
++                float c000 = Decode(GridIndex(x0, y0, z0));
++                float c100 = Decode(GridIndex(x1, y0, z0));
++                float c010 = Decode(GridIndex(x0, y1, z0));
++                float c110 = Decode(GridIndex(x1, y1, z0));
++                float c001 = Decode(GridIndex(x0, y0, z1));
++                float c101 = Decode(GridIndex(x1, y0, z1));
++                float c011 = Decode(GridIndex(x0, y1, z1));
++                float c111 = Decode(GridIndex(x1, y1, z1));
++
++                float c00 = math.lerp(c000, c100, tx);
++                float c10 = math.lerp(c010, c110, tx);
++                float c01 = math.lerp(c001, c101, tx);
++                float c11 = math.lerp(c011, c111, tx);
++                float c0 = math.lerp(c00, c10, ty);
++                float c1 = math.lerp(c01, c11, ty);
++                return math.lerp(c0, c1, tz);
++            }
++
++            private int GridIndex(int x, int y, int z)
++            {
++                return x + y * GridDimensions.x + z * GridDimensions.x * GridDimensions.y;
++            }
++
++            private float Decode(int index)
++            {
++                return ((EncodedSdf[index] * (1f / 255f)) * 2f - 1f) * SdfRange;
++            }
++        }
++
+         [StructLayout(LayoutKind.Sequential, Pack = 1)]
+         private struct NativeSnapshotHeader
+         {
+@@ -1749,5 +2377,6 @@ namespace Hecton8.Caves
+                 DisposeTrackedNativeArray(ref CellFlags);
+             }
+         }
++
+     }
+ }
+diff --git a/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs b/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+index d0fc114a..5e591581 100644
+--- a/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
++++ b/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+@@ -198,6 +198,8 @@ namespace Hecton8.World
+         [SerializeField] private float seismicTrenchDepthBias = 6f;
+         [SerializeField] private float seismicTrenchSlope = 0.85f;
+         [SerializeField] private float seismicTrenchSampleSpacing = 3.5f;
++        [SerializeField] private OrganicDebrisProfile seismicRockDebrisProfile;
++        [SerializeField, Range(0, 8)] private int seismicMaxDebrisBursts = 6;
+ 
+         [Header("Diagnostics")]
+         [SerializeField] private bool _debugReady;
+@@ -404,8 +406,18 @@ namespace Hecton8.World
+             float trenchRadius = trenchDepth / trenchSlope;
+             float halfLength = trenchLength * 0.5f;
+             Vector3 trenchDirection = ResolveSeismicTrenchDirection(epicenterAbsolute);
+-            Vector3 absoluteStart = epicenterAbsolute - trenchDirection * halfLength;
+-            Vector3 absoluteEnd = epicenterAbsolute + trenchDirection * halfLength;
++            Vector3 absoluteStart = payload.HasAupLineSegment
++                ? payload.AupStart
++                : epicenterAbsolute - trenchDirection * halfLength;
++            Vector3 absoluteEnd = payload.HasAupLineSegment
++                ? payload.AupEnd
++                : epicenterAbsolute + trenchDirection * halfLength;
++            if (payload.HasAupLineSegment)
++            {
++                trenchLength = Mathf.Max(0.001f, (absoluteEnd - absoluteStart).magnitude);
++                trenchRadius = trenchDepth / trenchSlope;
++            }
++
+             long trenchId = BuildSeismicTrenchId(epicenterAbsolute, trenchLength, trenchDepth);
+ 
+             if (terrainApplier != null)
+@@ -420,6 +432,8 @@ namespace Hecton8.World
+                 terrainApplier.ReconcileTerrainSeams();
+             }
+ 
++            float displacedVolumeCubicMeters = 0f;
++            int appliedStampCount = 0;
+             Dictionary<long, GameObject>.Enumerator volumeEnumerator = _activeVolumes.GetEnumerator();
+             while (volumeEnumerator.MoveNext())
+             {
+@@ -431,13 +445,88 @@ namespace Hecton8.World
+                     continue;
+                 }
+ 
+-                volume.TryApplySeismicTrench(
++                if (!volume.TryApplySeismicTrench(
++                    epicenterAbsolute,
+                     absoluteStart,
+                     absoluteEnd,
+                     trenchDepth,
+                     trenchSlope,
+                     Mathf.Max(1f, seismicTrenchSampleSpacing),
+-                    out _);
++                    out int volumeStampCount,
++                    out float volumeDisplacedVolume))
++                {
++                    continue;
++                }
++
++                appliedStampCount += volumeStampCount;
++                displacedVolumeCubicMeters += volumeDisplacedVolume;
++            }
++
++            DispatchSeismicRockDebris(
++                displacedVolumeCubicMeters,
++                appliedStampCount,
++                epicenterAbsolute,
++                absoluteStart,
++                absoluteEnd,
++                trenchDepth,
++                trenchId);
++        }
++
++        private void DispatchSeismicRockDebris(
++            float displacedVolumeCubicMeters,
++            int appliedStampCount,
++            Vector3 epicenterAbsolute,
++            Vector3 absoluteStart,
++            Vector3 absoluteEnd,
++            float trenchDepth,
++            long trenchId)
++        {
++            if (displacedVolumeCubicMeters < 10f ||
++                appliedStampCount <= 0 ||
++                seismicRockDebrisProfile == null ||
++                !seismicRockDebrisProfile.IsValid ||
++                seismicMaxDebrisBursts <= 0)
++            {
++                return;
++            }
++
++            IDebrisService debris = GlobalRegistry.Debris;
++            if (debris == null || !debris.IsInitialized)
++                return;
++
++            int burstCount = Mathf.Clamp(Mathf.FloorToInt(displacedVolumeCubicMeters / 10f), 0, seismicMaxDebrisBursts);
++            if (burstCount <= 0)
++                return;
++
++            Vector3 line = absoluteEnd - absoluteStart;
++            float ceilingOffset = Mathf.Max(2f, trenchDepth * 0.65f);
++            float power01 = Mathf.Clamp01(displacedVolumeCubicMeters / Mathf.Max(10f, burstCount * 18f));
++            uint seedBase = unchecked((uint)trenchId);
++            for (int i = 0; i < burstCount; i++)
++            {
++                uint seed = seedBase + (uint)(i * 747796405u) + 1u;
++                float t = (i + 0.5f) / burstCount;
++                float jitter = (HashToFloat01(seed, (uint)appliedStampCount, 0xA53C91E7u) - 0.5f) * (1f / Mathf.Max(1, burstCount));
++                Vector3 absoluteAnchor = absoluteStart + line * Mathf.Clamp01(t + jitter);
++                float radialJitter = (HashToFloat01(seed, (uint)(i + 1), 0x7F4A7C15u) - 0.5f) * Mathf.Max(1f, trenchDepth * 0.25f);
++                Vector3 lateral = Vector3.Cross(Vector3.up, line.sqrMagnitude > 0.0001f ? line.normalized : Vector3.forward);
++                if (lateral.sqrMagnitude <= 0.0001f)
++                    lateral = Vector3.right;
++                absoluteAnchor += lateral.normalized * radialJitter;
++                Vector3 runtimeOrigin = HectonFloatingOrigin.ToRuntimePosition(absoluteAnchor + Vector3.up * ceilingOffset);
++                Vector3 runtimeHitPoint = runtimeOrigin + Vector3.down * Mathf.Max(0.5f, ceilingOffset * 0.35f);
++                Quaternion runtimeRotation = Quaternion.Euler(
++                    0f,
++                    HashToFloat01(seed, (uint)(i + 17), 0xD1B54A35u) * 360f,
++                    0f);
++                debris.SpawnBurst(
++                    seismicRockDebrisProfile,
++                    runtimeOrigin,
++                    runtimeRotation,
++                    runtimeHitPoint,
++                    Vector3.down,
++                    power01,
++                    seed);
+             }
+         }
+ 
+@@ -815,21 +904,33 @@ namespace Hecton8.World
+ 
+                 try
+                 {
+-                    Vector3 runtimeCenter = request.RuntimeCenter;
+                     // Entrances are forwarded into HectonVoxelEngine, which owns terrain-hole registration
+                     // through RegisterEntranceTerrainHoles -> RegisterTerrainHoleHandle.
+-                    GameObject volume = await voxelEngine.GenerateVolumeFromDataAsync(
+-                        runtimeCenter,
+-                        gridDimension,
+-                        voxelStep,
+-                        nodes,
+-                        tunnels,
+-                        entrances,
+-                        structureArray,
+-                        generationParams,
+-                        lodLevel: voxelLodLevel,
+-                        buildCollider: buildCollider,
+-                        ct: token);
++                    GameObject volume = request.hasAbsoluteUniverseCenterAup
++                        ? await voxelEngine.GenerateVolumeFromDataAsync(
++                            request.absoluteUniverseCenterAup,
++                            gridDimension,
++                            voxelStep,
++                            nodes,
++                            tunnels,
++                            entrances,
++                            structureArray,
++                            generationParams,
++                            voxelLodLevel,
++                            buildCollider,
++                            token)
++                        : await voxelEngine.GenerateVolumeFromDataAsync(
++                            request.RuntimeCenter,
++                            gridDimension,
++                            voxelStep,
++                            nodes,
++                            tunnels,
++                            entrances,
++                            structureArray,
++                            generationParams,
++                            lodLevel: voxelLodLevel,
++                            buildCollider: buildCollider,
++                            ct: token);
+ 
+                     if (volume == null)
+                         return;
+@@ -1200,16 +1301,33 @@ namespace Hecton8.World
+                 return new NativeArray<CaveEntrance>(0, Allocator.Persistent);
+ 
+             NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            Vector3 terrainNormal = ResolveCaveEntranceTerrainNormal(request);
+             entrances[0] = VoxelSeamDirector.BuildCaveEntrance(
+                 request.RuntimeTerrainContactPosition,
+                 request.RuntimeCenter,
+                 request.size,
+                 request.weight,
+                 request.seamBlendRadius,
+-                request.suggestedTerrainCut);
++                request.suggestedTerrainCut,
++                terrainNormal);
+             return entrances;
+         }
+ 
++        private static Vector3 ResolveCaveEntranceTerrainNormal(in WorldGenerativeGeologyVoxelBlendRequest request)
++        {
++            if (!request.hasTerrainSample)
++                return default;
++
++            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
++            if (mapMagicBridge == null)
++                return default;
++
++            float sampleDistance = Mathf.Clamp(request.seamBlendRadius * 0.18f, 1f, 4f);
++            return mapMagicBridge.TryGetNormalAUP(request.absoluteTerrainContactPosition, sampleDistance, out Vector3 terrainNormal)
++                ? terrainNormal
++                : default;
++        }
++
+         private void RegisterHydrothermalVent(in WorldGenerativeGeologyVoxelBlendRequest request)
+         {
+             if (!ShouldRegisterHydrothermalVent(request))

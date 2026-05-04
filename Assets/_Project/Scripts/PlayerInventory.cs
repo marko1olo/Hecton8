@@ -15,14 +15,17 @@ namespace Hecton8.Inventory
     using Hecton8.Modding;
     using Hecton8.Physics;
     using Hecton8.SaveSystem;
+    using Hecton8.World;
+    using Unity.Burst;
     using Unity.Collections;
     using Unity.Collections.LowLevel.Unsafe;
+    using Unity.Jobs;
     using Unity.Mathematics;
     using Unity.Profiling;
     using UnityEngine;
 
     [DisallowMultipleComponent]
-    public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, IPhysicsImpactEventListener
+    public sealed class PlayerInventory : MonoBehaviour, ISaveable, ISlowTickable, ILateFrameTickable, IPhysicsImpactEventListener
     {
         private const ushort CraftingLockedMask = ItemRuntimeStateFlags.CraftingLocked;
         private const ushort RadioactiveItemStateMask = ItemRuntimeStateFlags.Radioactive;
@@ -130,7 +133,8 @@ namespace Hecton8.Inventory
             }
         }
 
-        private struct InventoryMassVolumeKernel
+        [BurstCompile]
+        private struct InventoryMassVolumeJob : IJob
         {
             [ReadOnly] public NativeArray<int>.ReadOnly AnchorHashIds;
             [ReadOnly] public NativeArray<ushort> StackCounts;
@@ -307,14 +311,16 @@ namespace Hecton8.Inventory
                         continue;
                     }
 
-                    float nextRunaway = math.min(1f, ThermalRunawayByAnchor[anchorIndex] + heatDelta);
-                    if (nextRunaway != ThermalRunawayByAnchor[anchorIndex])
+                    float previousRunaway = ThermalRunawayByAnchor[anchorIndex];
+                    float nextRunaway = previousRunaway + heatDelta;
+                    float storedRunaway = math.min(1.25f, nextRunaway);
+                    if (storedRunaway != previousRunaway)
                     {
-                        ThermalRunawayByAnchor[anchorIndex] = nextRunaway;
+                        ThermalRunawayByAnchor[anchorIndex] = storedRunaway;
                         changed = 1;
                     }
 
-                    if (nextRunaway >= 1f && anchorIndex < adjacentAnchor && pairCount < RunawayPairs.Length)
+                    if (nextRunaway > 1f && anchorIndex < adjacentAnchor && pairCount < RunawayPairs.Length)
                         RunawayPairs[pairCount++] = new int2(anchorIndex, adjacentAnchor);
                 }
 
@@ -471,6 +477,11 @@ namespace Hecton8.Inventory
         private NativeArray<float> _anchorUnitMassKg;
         private NativeArray<float> _anchorUnitVolumeM3;
         private NativeArray<float> _anchorUnitRadiationSv;
+        private NativeArray<int> _massAnchorHashSnapshot;
+        private NativeArray<ushort> _massStackCountSnapshot;
+        private NativeArray<float> _massUnitMassSnapshot;
+        private NativeArray<float> _massUnitVolumeSnapshot;
+        private NativeArray<float> _massUnitRadiationSnapshot;
         private NativeArray<InventorySortEntry> _sortEntriesNative;
         private NativeArray<InventorySortEntry> _sortScratchNative;
         private NativeArray<int> _sortRadixCounts;
@@ -482,7 +493,12 @@ namespace Hecton8.Inventory
         private NativeArray<int> _thermalRunawayCounters;
         private ItemPlacement[] _sortBuffer;
         private ItemPlacement[] _sortedPlacements;
+        private JobHandle _massVolumeJobHandle;
+        private HectonPlayerMovement _movementLoadSink;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
+        private bool _massVolumeJobScheduled;
+        private int _massVolumeJobInventoryVersion;
         private ulong _playerImpactBodyId;
         private TraumaDispatcher _traumaDispatcher;
         private int _pressurizedContainerProtectionCount;
@@ -561,6 +577,11 @@ namespace Hecton8.Inventory
             _anchorUnitMassKg = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit mass cache for Burst-derived carry totals â€” owner: PlayerInventory
             _anchorUnitVolumeM3 = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] â€” per-anchor unit volume cache for Burst-derived carry totals â€” owner: PlayerInventory
             _anchorUnitRadiationSv = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] — per-anchor inventory radiation cache for Burst half-life and trauma totals — owner: PlayerInventory
+            _massAnchorHashSnapshot = new NativeArray<int>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[columns * rows] - SlowTick mass job hash snapshot - owner: PlayerInventory
+            _massStackCountSnapshot = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: ushort[columns * rows] - SlowTick mass job stack snapshot - owner: PlayerInventory
+            _massUnitMassSnapshot = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - SlowTick mass job mass snapshot - owner: PlayerInventory
+            _massUnitVolumeSnapshot = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - SlowTick mass job volume snapshot - owner: PlayerInventory
+            _massUnitRadiationSnapshot = new NativeArray<float>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: float[columns * rows] - SlowTick mass job radiation snapshot - owner: PlayerInventory
             _sortEntriesNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort input scratch â€” owner: PlayerInventory
             _sortScratchNative = new NativeArray<InventorySortEntry>(columns * rows, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: InventorySortEntry[columns * rows] â€” persistent radix-sort output scratch â€” owner: PlayerInventory
             _sortRadixCounts = new NativeArray<int>(256, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: int[256] â€” radix bucket counts reused by inventory sorting â€” owner: PlayerInventory
@@ -581,6 +602,7 @@ namespace Hecton8.Inventory
         {
             GlobalRegistry.Save?.Register(this);
             TryRegisterSlowTick();
+            TryRegisterLateFrameTick();
             PhysicsEvents.Register(this);
             ResolvePlayerImpactBodyId();
         }
@@ -590,10 +612,15 @@ namespace Hecton8.Inventory
             PhysicsEvents.Unregister(this);
             GlobalRegistry.Save?.Unregister(this);
             TryUnregisterSlowTick();
+            TryUnregisterLateFrameTick();
+            CompleteInventoryMassRecomputeJob(forceComplete: true);
         }
 
         private void OnDestroy()
         {
+            TryUnregisterLateFrameTick();
+            CompleteInventoryMassRecomputeJob(forceComplete: true);
+
             if (_grid != null)
             {
                 _grid.Dispose(default);
@@ -612,6 +639,11 @@ namespace Hecton8.Inventory
             DisposeNativeArray(ref _anchorUnitMassKg);
             DisposeNativeArray(ref _anchorUnitVolumeM3);
             DisposeNativeArray(ref _anchorUnitRadiationSv);
+            DisposeNativeArray(ref _massAnchorHashSnapshot);
+            DisposeNativeArray(ref _massStackCountSnapshot);
+            DisposeNativeArray(ref _massUnitMassSnapshot);
+            DisposeNativeArray(ref _massUnitVolumeSnapshot);
+            DisposeNativeArray(ref _massUnitRadiationSnapshot);
             DisposeNativeArray(ref _sortEntriesNative);
             DisposeNativeArray(ref _sortScratchNative);
             DisposeNativeArray(ref _sortRadixCounts);
@@ -640,6 +672,11 @@ namespace Hecton8.Inventory
             NativeMemorySentinel.RegisterNativeArray(_anchorUnitMassKg, NativeMemoryOwner, nameof(_anchorUnitMassKg), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_anchorUnitVolumeM3, NativeMemoryOwner, nameof(_anchorUnitVolumeM3), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_anchorUnitRadiationSv, NativeMemoryOwner, nameof(_anchorUnitRadiationSv), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_massAnchorHashSnapshot, NativeMemoryOwner, nameof(_massAnchorHashSnapshot), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_massStackCountSnapshot, NativeMemoryOwner, nameof(_massStackCountSnapshot), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_massUnitMassSnapshot, NativeMemoryOwner, nameof(_massUnitMassSnapshot), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_massUnitVolumeSnapshot, NativeMemoryOwner, nameof(_massUnitVolumeSnapshot), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_massUnitRadiationSnapshot, NativeMemoryOwner, nameof(_massUnitRadiationSnapshot), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_sortEntriesNative, NativeMemoryOwner, nameof(_sortEntriesNative), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_sortScratchNative, NativeMemoryOwner, nameof(_sortScratchNative), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_sortRadixCounts, NativeMemoryOwner, nameof(_sortRadixCounts), NativeMemoryLifetime);
@@ -908,7 +945,13 @@ namespace Hecton8.Inventory
                 ApplyInventoryReactiveChemistry();
                 ApplyInventoryDepthPressureCrush();
                 DispatchInventoryRadiationTrauma();
+                ScheduleInventoryMassRecomputeJob();
             }
+        }
+
+        public void LateFrameTick()
+        {
+            CompleteInventoryMassRecomputeJob(forceComplete: false);
         }
 
         public bool TryCopyAvailableItemCountsNonAlloc(
@@ -1878,6 +1921,26 @@ namespace Hecton8.Inventory
             _registeredSlowTick = false;
         }
 
+        private void TryRegisterLateFrameTick()
+        {
+            if (_registeredLateFrameTick)
+                return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Player).Contains(this);
+        }
+
+        private void TryUnregisterLateFrameTick()
+        {
+            if (!_registeredLateFrameTick)
+                return;
+
+            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Player);
+            _registeredLateFrameTick = false;
+        }
+
         private void ApplyInventoryEnvironmentalDegradation()
         {
             if (_grid == null ||
@@ -1919,14 +1982,12 @@ namespace Hecton8.Inventory
                 !_anchorUnitRadiationSv.IsCreated ||
                 !_derivedMassVolumeScratch.IsCreated)
             {
-                TotalMassKg = 0f;
-                TotalVolumeM3 = 0f;
-                TotalRadiationSv = 0f;
+                ApplyDerivedMassTotals(float3.zero);
             }
             else
             {
-                // ZERO-GC INLINE KERNEL: inventory-derived carry totals refresh only on authored inventory mutation.
-                new InventoryMassVolumeKernel
+                // ZERO-GC INLINE KERNEL: mutation seam refresh keeps public totals current before notifications.
+                new InventoryMassVolumeJob
                 {
                     AnchorHashIds = _grid.AnchorHashIds,
                     StackCounts = _stackCounts,
@@ -1936,14 +1997,118 @@ namespace Hecton8.Inventory
                     Totals = _derivedMassVolumeScratch
                 }.Execute();
 
-                float3 totals = _derivedMassVolumeScratch[0];
-                TotalMassKg = totals.x;
-                TotalVolumeM3 = totals.y;
-                TotalRadiationSv = totals.z;
+                ApplyDerivedMassTotals(_derivedMassVolumeScratch[0]);
             }
+        }
 
+        private void ApplyDerivedMassTotals(float3 totals)
+        {
+            TotalMassKg = math.max(0f, totals.x);
+            TotalVolumeM3 = math.max(0f, totals.y);
+            TotalRadiationSv = math.max(0f, totals.z);
+            TotalWeight = TotalMassKg;
             if (survival != null)
                 survival.SetWeight(TotalMassKg);
+
+            HectonPlayerMovement movement = TryResolveMovementLoadSink();
+            if (movement != null)
+                movement.ApplyRuntimeInventoryMassLoad(TotalMassKg, ResolveCarryCapacityKilograms());
+        }
+
+        private void ScheduleInventoryMassRecomputeJob()
+        {
+            if (_massVolumeJobScheduled ||
+                !_derivedMassVolumeScratch.IsCreated)
+            {
+                return;
+            }
+
+            if (!TryBuildMassVolumeSnapshot())
+                return;
+
+            _massVolumeJobInventoryVersion = InventoryVersion;
+            _massVolumeJobHandle = new InventoryMassVolumeJob
+            {
+                AnchorHashIds = _massAnchorHashSnapshot.AsReadOnly(),
+                StackCounts = _massStackCountSnapshot,
+                AnchorUnitMassKg = _massUnitMassSnapshot,
+                AnchorUnitVolumeM3 = _massUnitVolumeSnapshot,
+                AnchorUnitRadiationSv = _massUnitRadiationSnapshot,
+                Totals = _derivedMassVolumeScratch
+            }.Schedule();
+            _massVolumeJobScheduled = true;
+        }
+
+        private bool TryBuildMassVolumeSnapshot()
+        {
+            if (_grid == null ||
+                !_stackCounts.IsCreated ||
+                !_anchorUnitMassKg.IsCreated ||
+                !_anchorUnitVolumeM3.IsCreated ||
+                !_anchorUnitRadiationSv.IsCreated ||
+                !_massAnchorHashSnapshot.IsCreated ||
+                !_massStackCountSnapshot.IsCreated ||
+                !_massUnitMassSnapshot.IsCreated ||
+                !_massUnitVolumeSnapshot.IsCreated ||
+                !_massUnitRadiationSnapshot.IsCreated)
+            {
+                return false;
+            }
+
+            NativeArray<int>.ReadOnly anchorHashIds = _grid.AnchorHashIds;
+            int count = math.min(
+                math.min(math.min(anchorHashIds.Length, _stackCounts.Length), math.min(_anchorUnitMassKg.Length, _anchorUnitVolumeM3.Length)),
+                math.min(_anchorUnitRadiationSv.Length, _massAnchorHashSnapshot.Length));
+            count = math.min(
+                count,
+                math.min(math.min(_massStackCountSnapshot.Length, _massUnitMassSnapshot.Length), math.min(_massUnitVolumeSnapshot.Length, _massUnitRadiationSnapshot.Length)));
+            if (count <= 0)
+                return false;
+
+            for (int anchorIndex = 0; anchorIndex < count; anchorIndex++)
+            {
+                _massAnchorHashSnapshot[anchorIndex] = anchorHashIds[anchorIndex];
+                _massStackCountSnapshot[anchorIndex] = _stackCounts[anchorIndex];
+                _massUnitMassSnapshot[anchorIndex] = _anchorUnitMassKg[anchorIndex];
+                _massUnitVolumeSnapshot[anchorIndex] = _anchorUnitVolumeM3[anchorIndex];
+                _massUnitRadiationSnapshot[anchorIndex] = _anchorUnitRadiationSv[anchorIndex];
+            }
+
+            return true;
+        }
+
+        private bool CompleteInventoryMassRecomputeJob(bool forceComplete)
+        {
+            if (!_massVolumeJobScheduled)
+                return true;
+
+            if (!DispatcherJobSwap.TryComplete(ref _massVolumeJobHandle, forceComplete))
+                return false;
+
+            _massVolumeJobScheduled = false;
+            if (_massVolumeJobInventoryVersion == InventoryVersion &&
+                _derivedMassVolumeScratch.IsCreated &&
+                _derivedMassVolumeScratch.Length > 0)
+            {
+                ApplyDerivedMassTotals(_derivedMassVolumeScratch[0]);
+            }
+
+            return true;
+        }
+
+        private HectonPlayerMovement TryResolveMovementLoadSink()
+        {
+            if (_movementLoadSink != null)
+                return _movementLoadSink;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null)
+                _movementLoadSink = playerContext.PlayerMovement;
+
+            if (_movementLoadSink == null)
+                TryGetComponent(out _movementLoadSink);
+
+            return _movementLoadSink;
         }
 
         private bool ApplyEnvironmentalDegradation(
@@ -2155,19 +2320,19 @@ namespace Hecton8.Inventory
             if (_grid == null ||
                 !_stackCounts.IsCreated ||
                 !_itemStateFlags.IsCreated ||
-                !_qualityMilli.IsCreated ||
-                ResolveInventoryPressurizedContainerProtection())
+                !_qualityMilli.IsCreated)
             {
                 return;
             }
 
             float depthMeters = ResolveInventoryCarrierDepthMeters();
-            if (depthMeters <= PressureCrushDepthMeters)
+            if (!ShouldApplyDepthPressureCrush(depthMeters, ResolveInventoryPressurizedContainerProtection()))
                 return;
 
             bool changed = false;
-            float depthFactor = math.saturate((depthMeters - PressureCrushDepthMeters) / 1000f);
-            float damageMilli = PressureCrushDurabilityPerSecond * SlowTickIntervalSeconds * math.max(1f, depthFactor) * 1000f;
+            float damageMilli = ResolveDepthPressureCrushDamageMilli(depthMeters);
+            if (!(damageMilli > 0f))
+                return;
 
             for (int anchorIndex = 0; anchorIndex < _stackCounts.Length; anchorIndex++)
             {
@@ -2187,6 +2352,20 @@ namespace Hecton8.Inventory
 
             if (changed)
                 NotifyInventoryChanged();
+        }
+
+        internal static bool ShouldApplyDepthPressureCrush(float depthMeters, bool hasPressurizedProtection)
+        {
+            return !hasPressurizedProtection && depthMeters > PressureCrushDepthMeters;
+        }
+
+        internal static float ResolveDepthPressureCrushDamageMilli(float depthMeters)
+        {
+            if (depthMeters <= PressureCrushDepthMeters)
+                return 0f;
+
+            float depthFactor = math.saturate((depthMeters - PressureCrushDepthMeters) / 1000f);
+            return PressureCrushDurabilityPerSecond * SlowTickIntervalSeconds * math.max(1f, depthFactor) * 1000f;
         }
 
         private bool ApplyPressureCrushDamageToAnchor(int anchorIndex, float damageMilli)
@@ -2429,13 +2608,18 @@ namespace Hecton8.Inventory
 
         private bool IsDepthPressureFragileItem(int itemHashId, in ItemCatalog.ItemRuntimeDescriptor runtimeDescriptor)
         {
-            if (runtimeDescriptor.AudioMaterialId == (byte)ItemAudioMaterialId.Glass)
+            if (IsDepthPressureFragileResource(runtimeDescriptor.AudioMaterialId, ResourceFamily.None))
                 return true;
 
             ItemData itemData = itemCatalog != null ? itemCatalog.FindByHash(itemHashId) : null;
-            return itemData != null &&
-                   (itemData.resourceFamily == ResourceFamily.ElectronicsMetal ||
-                    itemData.resourceFamily == ResourceFamily.Power);
+            return itemData != null && IsDepthPressureFragileResource(runtimeDescriptor.AudioMaterialId, itemData.resourceFamily);
+        }
+
+        internal static bool IsDepthPressureFragileResource(byte audioMaterialId, ResourceFamily resourceFamily)
+        {
+            return audioMaterialId == (byte)ItemAudioMaterialId.Glass ||
+                   resourceFamily == ResourceFamily.ElectronicsMetal ||
+                   resourceFamily == ResourceFamily.Power;
         }
 
         private bool ApplyKineticDamageToAnchor(int anchorIndex)

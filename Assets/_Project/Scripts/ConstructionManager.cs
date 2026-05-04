@@ -373,16 +373,52 @@ namespace Hecton8.Construction
         /// </summary>
         public bool TryCreateTemporaryBypass(BaseModule sourceModule, BaseModule destinationModule)
         {
+            return TryCreateTemporaryBypass(
+                sourceModule,
+                destinationModule,
+                ResolveModuleHashId(sourceModule),
+                ResolveModuleHashId(destinationModule));
+        }
+
+        /// <summary>
+        /// Inserts a temporary external bypass cable between two placed habitat modules using captured module content hashes.
+        /// </summary>
+        public bool TryCreateTemporaryBypass(
+            BaseModule sourceModule,
+            BaseModule destinationModule,
+            int sourceModuleHashId,
+            int destinationModuleHashId)
+        {
             if (_habitatGraphManager == null || sourceModule == null || destinationModule == null)
                 return false;
 
-            if (!_habitatGraphManager.TryAddTemporaryBypass(sourceModule.gameObject, destinationModule.gameObject, out bool injectedDirectly))
+            if (!_habitatGraphManager.TryAddTemporaryBypass(
+                    sourceModule.gameObject,
+                    destinationModule.gameObject,
+                    sourceModuleHashId,
+                    destinationModuleHashId,
+                    out bool injectedDirectly))
+            {
                 return false;
+            }
 
             if (!injectedDirectly)
                 RefreshHabitatGraph();
 
             return true;
+        }
+
+        private static int ResolveModuleHashId(BaseModule module)
+        {
+            if (module != null &&
+                module.TryGetComponent(out ModuleMarker marker) &&
+                marker != null &&
+                marker.Data != null)
+            {
+                return marker.Data.ModuleHashId;
+            }
+
+            return 0;
         }
 
         // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

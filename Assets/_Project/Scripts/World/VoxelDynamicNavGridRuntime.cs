@@ -773,19 +773,32 @@ namespace Hecton8.World
 
             EnsureInitialized();
             for (int i = 0; i < destroyedEvents.Length; i++)
-            {
-                DestroyedOrganicEvent destroyedEvent = destroyedEvents[i];
-                float3 extents = destroyedEvent.NavObstacleExtents;
-                if (extents.x <= 0.0001f || extents.y <= 0.0001f || extents.z <= 0.0001f)
-                    continue;
+                EnqueueDestroyedOrganicEvent(destroyedEvents[i]);
+        }
 
-                RemovePersistentDynamicObstacles(destroyedEvent.NavObstacleCenter, extents);
-                TryEnqueueDynamicObstacleClear(new DynamicObstacleClearRequest
-                {
-                    Center = destroyedEvent.NavObstacleCenter,
-                    Extents = extents
-                });
-            }
+        internal static void EnqueueDestroyedOrganicEvents(NativeArray<DestroyedOrganicEvent> destroyedEvents, int count)
+        {
+            if (!destroyedEvents.IsCreated || count <= 0)
+                return;
+
+            EnsureInitialized();
+            int safeCount = math.min(count, destroyedEvents.Length);
+            for (int i = 0; i < safeCount; i++)
+                EnqueueDestroyedOrganicEvent(destroyedEvents[i]);
+        }
+
+        private static void EnqueueDestroyedOrganicEvent(in DestroyedOrganicEvent destroyedEvent)
+        {
+            float3 extents = destroyedEvent.NavObstacleExtents;
+            if (extents.x <= 0.0001f || extents.y <= 0.0001f || extents.z <= 0.0001f)
+                return;
+
+            RemovePersistentDynamicObstacles(destroyedEvent.NavObstacleCenter, extents);
+            TryEnqueueDynamicObstacleClear(new DynamicObstacleClearRequest
+            {
+                Center = destroyedEvent.NavObstacleCenter,
+                Extents = extents
+            });
         }
 
         internal static void CompletePendingDynamicObstacleUpdates()

@@ -106,9 +106,32 @@ namespace Hecton8.Gameplay
         internal void ApplyRadiationExposure(float exposureSeconds)
         {
             _radiationExposureSeconds = Mathf.Max(_radiationExposureSeconds, Mathf.Max(0f, exposureSeconds));
-            float fatigueScale = Mathf.Max(RadiationFatigueMinimumScale, 1f - (_radiationExposureSeconds * RadiationFatigueScalePerSecond));
+            float fatigueScale = ResolveRadiationFatigueScale(_radiationExposureSeconds);
             SetRuntimeMaxHealthScaleInternal(fatigueScale);
             EvaluateMutationThresholds();
+        }
+
+        internal static float ResolveRadiationFatigueScale(float exposureSeconds)
+        {
+            return Mathf.Max(RadiationFatigueMinimumScale, 1f - (Mathf.Max(0f, exposureSeconds) * RadiationFatigueScalePerSecond));
+        }
+
+        internal static bool ShouldActivateSurvivalGrace(
+            float currentHealth,
+            float maximumHealth,
+            float incomingDamage,
+            bool ignoreInvulnerability,
+            float lockoutTimer)
+        {
+            if (ignoreInvulnerability ||
+                lockoutTimer > 0f ||
+                incomingDamage < currentHealth)
+            {
+                return false;
+            }
+
+            float healthPercent = currentHealth / Mathf.Max(0.0001f, maximumHealth);
+            return healthPercent > SurvivalGraceEligibilityThresholdNormalized;
         }
 
         internal void ClearRadiationFatigue()
@@ -275,10 +298,12 @@ namespace Hecton8.Gameplay
         private bool TryActivateSurvivalGrace(float incomingDamage, bool ignoreInvulnerability, out float clampedDamage)
         {
             clampedDamage = incomingDamage;
-            if (ignoreInvulnerability ||
-                _survivalGraceLockoutTimer > 0f ||
-                incomingDamage < currentHealth ||
-                HealthPercent <= SurvivalGraceEligibilityThresholdNormalized)
+            if (!ShouldActivateSurvivalGrace(
+                    currentHealth,
+                    maxHealth,
+                    incomingDamage,
+                    ignoreInvulnerability,
+                    _survivalGraceLockoutTimer))
             {
                 return false;
             }
@@ -287,7 +312,7 @@ namespace Hecton8.Gameplay
             _invulnerabilityTimer = Mathf.Max(_invulnerabilityTimer, SurvivalGraceInvulnerabilitySeconds);
             _survivalGraceLockoutTimer = SurvivalGraceLockoutSeconds;
             PlaySurvivalGraceHeartbeatPulse();
-            NotificationEvents.PushCritical("CARDIAC OVERRIDE // SURVIVAL GRACE");
+            NotificationEvents.PushCritical("CARDIAC OVERRIDE");
             return true;
         }
 

@@ -21,6 +21,7 @@ namespace Hecton8.Core
         private bool _isInitialized;
         private bool _registeredUpdatable;
         private bool _registeredService;
+        private bool _syncInProgress;
         private GameObject _playerObject;
         private Transform _playerTransform;
         private HectonPlayerMovement _playerMovement;
@@ -34,6 +35,12 @@ namespace Hecton8.Core
 
         /// <inheritdoc />
         public bool IsInitialized => _isInitialized;
+        internal Camera CachedPlayerCamera => _playerCamera;
+        internal PlayerFlashlight CachedFlashlight => _flashlight;
+        internal PlayerThrusterAudio CachedThrusterAudio => _thrusterAudio;
+        internal HectonUnderwaterVisuals CachedUnderwaterVisuals => _underwaterVisuals;
+        internal VisorHUDController CachedVisorController => _visorController;
+        internal HUDNotification CachedHudNotification => _hudNotification;
 
         /// <inheritdoc />
         public Camera PlayerCamera
@@ -185,62 +192,77 @@ namespace Hecton8.Core
 
         private void SyncSensoryContext()
         {
-            GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject;
-            if (!ReferenceEquals(_playerObject, currentPlayerObject))
-            {
-                _playerObject = currentPlayerObject;
-                _playerTransform = _playerObject != null ? _playerObject.transform : null;
-                _playerMovement = null;
-                _playerCamera = null;
-                _flashlight = null;
-                _thrusterAudio = null;
-                _visorController = null;
-            }
+            if (_syncInProgress)
+                return;
 
-            if (_playerObject != null)
-            {
-                if (_playerMovement == null)
-                    _playerObject.TryGetComponent(out _playerMovement);
+            if (!GlobalRegistry.TryBeginResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerSensory))
+                return;
 
-                if (_playerMovement != null)
+            _syncInProgress = true;
+            try
+            {
+                GameObject currentPlayerObject = BootstrapState.CurrentPlayerObject;
+                if (!ReferenceEquals(_playerObject, currentPlayerObject))
                 {
-                    Transform playerCameraTransform = _playerMovement.PlayerCameraTransform;
-                    if (playerCameraTransform != null)
+                    _playerObject = currentPlayerObject;
+                    _playerTransform = _playerObject != null ? _playerObject.transform : null;
+                    _playerMovement = null;
+                    _playerCamera = null;
+                    _flashlight = null;
+                    _thrusterAudio = null;
+                    _visorController = null;
+                }
+
+                if (_playerObject != null)
+                {
+                    if (_playerMovement == null)
+                        _playerObject.TryGetComponent(out _playerMovement);
+
+                    if (_playerMovement != null)
                     {
-                        if (_playerCamera == null)
-                            playerCameraTransform.TryGetComponent(out _playerCamera);
+                        Transform playerCameraTransform = _playerMovement.PlayerCameraTransform;
+                        if (playerCameraTransform != null)
+                        {
+                            if (_playerCamera == null)
+                                playerCameraTransform.TryGetComponent(out _playerCamera);
 
-                        if (_flashlight == null)
-                            playerCameraTransform.TryGetComponent(out _flashlight);
+                            if (_flashlight == null)
+                                playerCameraTransform.TryGetComponent(out _flashlight);
 
-                        if (_thrusterAudio == null)
-                            playerCameraTransform.TryGetComponent(out _thrusterAudio);
+                            if (_thrusterAudio == null)
+                                playerCameraTransform.TryGetComponent(out _thrusterAudio);
+                        }
+                    }
+
+                    if (_playerCamera == null)
+                        _playerObject.TryGetComponent(out _playerCamera);
+
+                    if (_flashlight == null)
+                        _playerObject.TryGetComponent(out _flashlight);
+
+                    if (_thrusterAudio == null)
+                        _playerObject.TryGetComponent(out _thrusterAudio);
+
+                    if (_playerTransform != null && _visorController == null)
+                    {
+                        _visorResolveBuffer.Clear();
+                        _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
+                        if (_visorResolveBuffer.Count > 0)
+                            _visorController = _visorResolveBuffer[0];
                     }
                 }
 
-                if (_playerCamera == null)
-                    _playerObject.TryGetComponent(out _playerCamera);
+                if (_underwaterVisuals == null)
+                    _underwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
 
-                if (_flashlight == null)
-                    _playerObject.TryGetComponent(out _flashlight);
-
-                if (_thrusterAudio == null)
-                    _playerObject.TryGetComponent(out _thrusterAudio);
-
-                if (_playerTransform != null && _visorController == null)
-                {
-                    _visorResolveBuffer.Clear();
-                    _playerTransform.GetComponentsInChildren(true, _visorResolveBuffer);
-                    if (_visorResolveBuffer.Count > 0)
-                        _visorController = _visorResolveBuffer[0];
-                }
+                if (_hudNotification == null || !_hudNotification.isActiveAndEnabled)
+                    HUDNotification.TryGetActive(out _hudNotification);
             }
-
-            if (_underwaterVisuals == null)
-                _underwaterVisuals = HectonUnderwaterVisuals.ActiveRuntimeInstance;
-
-            if (_hudNotification == null || !_hudNotification.isActiveAndEnabled)
-                HUDNotification.TryGetActive(out _hudNotification);
+            finally
+            {
+                _syncInProgress = false;
+                GlobalRegistry.EndResolution(GlobalRegistry.GlobalRegistryResolutionScope.PlayerSensory);
+            }
         }
 
         private void TryRegisterUpdatable()

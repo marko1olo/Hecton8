@@ -9,6 +9,20 @@ using Unity.Mathematics;
 
 namespace Hecton8.AI
 {
+    public struct FaunaPerceptionSnapshot
+    {
+        public bool HasPlayer;
+        public Vector3 PlayerPosition;
+        public Vector3 PlayerVelocity;
+        public Vector3 PlayerForward;
+        public bool HasPlayerVelocity;
+        public bool HasPlayerForward;
+        public bool PlayerFlashlightOn;
+        public bool HasScavengeTool;
+        public Vector3 ScavengeToolPosition;
+        public Component ScavengeToolOwner;
+    }
+
     /// <summary>
     /// Optimized sensory system for HECTON-8 Fauna.
     /// [RULE] ZERO GC IN HOT PATHS.
@@ -57,13 +71,19 @@ namespace Hecton8.AI
         public bool hasNoisePlayerContact;
         public float distSqrToPlayer;
         public bool isThreatened;
-        public Transform currentThreat;
+        public bool hasCurrentThreat;
+        public Vector3 currentThreatPosition;
+        public Component currentThreatOwner;
         public bool isAvoidingObstacle;
         public Vector3 bestFreeDirection;
         public bool lodDisabled;
         public bool isSleeping;
-        public Transform currentDistractor;
-        public Transform currentScavengeTarget;
+        public bool hasCurrentDistractor;
+        public Vector3 currentDistractorPosition;
+        public Component currentDistractorOwner;
+        public bool hasCurrentScavengeTarget;
+        public Vector3 currentScavengeTargetPosition;
+        public Component currentScavengeTargetOwner;
 
         [Header("── Flocking ──────────────────────────────────")]
         public LayerMask flockMask;
@@ -80,13 +100,11 @@ namespace Hecton8.AI
 
         [Header("── Ecology ──────────────────────────────────────")]
         public LayerMask preyMask;
-        [HideInInspector] public Transform currentPrey;
+        [HideInInspector] public bool hasCurrentPrey;
+        [HideInInspector] public Vector3 currentPreyPosition;
+        [HideInInspector] public Component currentPreyOwner;
 
         private FaunaBrain _ownerBrain;
-        private Transform _selfTransform;
-        private Transform _playerTransform;
-        private Rigidbody _playerRigidbody;
-        private PlayerToolManager _playerToolManager;
         private FaunaSpeciesProfile _profile;
         private float _avoidanceTimeAccumulator;
         private NoiseSystem.PlayerNoiseSignal _lastReportedPlayerNoise;
@@ -116,6 +134,18 @@ namespace Hecton8.AI
         private bool _foveatedInsideFrustum = true;
         private Vector3 _cachedSelfPosition;
         private Vector3 _cachedSelfForward;
+        private AbsoluteUniversePosition _cachedSelfAup;
+        private AbsoluteUniversePosition _cachedPlayerAup;
+        private bool _hasPlayerSnapshot;
+        private bool _hasPlayerVelocitySnapshot;
+        private bool _hasPlayerForwardSnapshot;
+        private bool _playerFlashlightOn;
+        private Vector3 _cachedPlayerPosition;
+        private Vector3 _cachedPlayerVelocity;
+        private Vector3 _cachedPlayerForward;
+        private bool _hasScavengeToolSnapshot;
+        private Vector3 _cachedScavengeToolPosition;
+        private Component _cachedScavengeToolOwner;
         
         /// <summary>
         /// True if the creature has been failing to move forward due to obstacles.
@@ -130,10 +160,9 @@ namespace Hecton8.AI
         // COLD ALLOC: SpatialQueryHit[16] - fauna prey lookup buffer over spatial grid - owner: FaunaSensorSuite
         private static readonly SpatialQueryHit[] _preySpatialBuffer = new SpatialQueryHit[16];
 
-        public void Init(FaunaBrain ownerBrain, Transform self, FaunaSpeciesProfile profile)
+        public void Init(FaunaBrain ownerBrain, FaunaSpeciesProfile profile)
         {
             _ownerBrain = ownerBrain;
-            _selfTransform = self;
             _profile = profile;
             _lastReportedPlayerNoise = default;
             _hasReportedPlayerNoise = false;
@@ -143,10 +172,6 @@ namespace Hecton8.AI
             _lastKnownPlayerTimeSeconds = float.NegativeInfinity;
             _authoredTimeSeconds = 0f;
             _queuedObstacleRayLength = avoidanceRange;
-            Vector3 initialForward = self != null ? self.forward : Vector3.forward;
-            _queuedForwardObstacleRayDirection = initialForward;
-            _queuedLeftObstacleRayDirection = initialForward;
-            _queuedRightObstacleRayDirection = initialForward;
             _deferredForwardObstacleHit = default;
             _deferredLeftObstacleHit = default;
             _deferredRightObstacleHit = default;
@@ -161,35 +186,55 @@ namespace Hecton8.AI
             _foveatedTickIntervalSeconds = 1.0f / 60.0f;
             _foveatedImportanceScore = 1.0f;
             _foveatedInsideFrustum = true;
-            _cachedSelfPosition = self != null ? self.position : Vector3.zero;
-            _cachedSelfForward = self != null ? self.forward : Vector3.forward;
-            if (Hecton8.Core.GlobalRegistry.WorldState != null)
-                _playerTransform = Hecton8.Core.GlobalRegistry.WorldState.PlayerTransform;
-
-            if (_playerTransform != null)
-            {
-                _playerTransform.TryGetComponent(out _playerRigidbody);
-                _playerToolManager = Hecton8.Core.GlobalRegistry.Player != null && Hecton8.Core.GlobalRegistry.Player.ToolManager != null
-                    ? Hecton8.Core.GlobalRegistry.Player.ToolManager
-                    : Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<PlayerToolManager>(_playerTransform);
-                PlayerNoiseEmitter.EnsureAttached(_playerTransform);
-            }
+            Vector3 initialForward = Vector3.forward;
+            _queuedForwardObstacleRayDirection = initialForward;
+            _queuedLeftObstacleRayDirection = initialForward;
+            _queuedRightObstacleRayDirection = initialForward;
+            _cachedSelfPosition = Vector3.zero;
+            _cachedSelfForward = initialForward;
+            _cachedSelfAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedSelfPosition);
+            _cachedPlayerAup = default;
+            _hasPlayerSnapshot = false;
+            _hasPlayerVelocitySnapshot = false;
+            _hasPlayerForwardSnapshot = false;
+            _playerFlashlightOn = false;
+            _cachedPlayerPosition = default;
+            _cachedPlayerVelocity = default;
+            _cachedPlayerForward = Vector3.forward;
+            _hasScavengeToolSnapshot = false;
+            _cachedScavengeToolPosition = default;
+            _cachedScavengeToolOwner = null;
+            ClearSpatialTargets();
         }
 
-        public void Tick(float dt, Vector3 velocity, float currentTimeSeconds, bool forceLongRangeCognition)
+        public void Tick(
+            float dt,
+            Vector3 selfPosition,
+            Vector3 selfForward,
+            Vector3 velocity,
+            in FaunaPerceptionSnapshot perceptionSnapshot,
+            float currentTimeSeconds,
+            bool forceLongRangeCognition)
         {
             _authoredTimeSeconds = currentTimeSeconds;
-            if (_selfTransform != null)
-            {
-                _cachedSelfPosition = _selfTransform.position;
-                _cachedSelfForward = _selfTransform.forward;
-            }
+            _cachedSelfPosition = selfPosition;
+            _cachedSelfForward = selfForward.sqrMagnitude > 0.0001f ? selfForward.normalized : Vector3.forward;
+            _cachedSelfAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedSelfPosition);
+            CachePerceptionSnapshot(in perceptionSnapshot);
 
-            if (_playerTransform != null)
+            if (_hasPlayerSnapshot)
             {
-                distSqrToPlayer = (_playerTransform.position - _cachedSelfPosition).sqrMagnitude;
+                distSqrToPlayer = (float)math.min(
+                    AbsoluteUniversePosition.DistanceSq(in _cachedSelfAup, in _cachedPlayerAup),
+                    float.MaxValue);
                 lodDisabled = !forceLongRangeCognition && distSqrToPlayer > 150f * 150f;
                 isSleeping = !forceLongRangeCognition && distSqrToPlayer > sleepDistance * sleepDistance;
+            }
+            else
+            {
+                distSqrToPlayer = float.MaxValue;
+                lodDisabled = false;
+                isSleeping = false;
             }
 
             if (lodDisabled || isSleeping)
@@ -209,12 +254,47 @@ namespace Hecton8.AI
             if (IsStuck) UpdatePOISearch();
         }
 
+        private void CachePerceptionSnapshot(in FaunaPerceptionSnapshot perceptionSnapshot)
+        {
+            _hasPlayerSnapshot = perceptionSnapshot.HasPlayer;
+            _hasPlayerVelocitySnapshot = perceptionSnapshot.HasPlayerVelocity;
+            _hasPlayerForwardSnapshot = perceptionSnapshot.HasPlayerForward;
+            _playerFlashlightOn = perceptionSnapshot.PlayerFlashlightOn;
+            _cachedPlayerPosition = perceptionSnapshot.PlayerPosition;
+            _cachedPlayerVelocity = perceptionSnapshot.PlayerVelocity;
+            _cachedPlayerForward = perceptionSnapshot.PlayerForward.sqrMagnitude > 0.0001f
+                ? perceptionSnapshot.PlayerForward.normalized
+                : Vector3.forward;
+            _cachedPlayerAup = _hasPlayerSnapshot
+                ? AbsoluteUniversePosition.FromRuntimePosition(_cachedPlayerPosition)
+                : default;
+            _hasScavengeToolSnapshot = perceptionSnapshot.HasScavengeTool;
+            _cachedScavengeToolPosition = perceptionSnapshot.ScavengeToolPosition;
+            _cachedScavengeToolOwner = perceptionSnapshot.ScavengeToolOwner;
+        }
+
+        private void ClearSpatialTargets()
+        {
+            hasCurrentThreat = false;
+            currentThreatPosition = default;
+            currentThreatOwner = null;
+            hasCurrentDistractor = false;
+            currentDistractorPosition = default;
+            currentDistractorOwner = null;
+            hasCurrentScavengeTarget = false;
+            currentScavengeTargetPosition = default;
+            currentScavengeTargetOwner = null;
+            hasCurrentPrey = false;
+            currentPreyPosition = default;
+            currentPreyOwner = null;
+        }
+
         private void UpdateMajorSenses()
         {
             bool withinVisionCone = true;
-            if (_playerTransform != null)
+            if (_hasPlayerSnapshot)
             {
-                float3 toPlayer = (float3)(_playerTransform.position - _cachedSelfPosition);
+                float3 toPlayer = (float3)(_cachedPlayerPosition - _cachedSelfPosition);
                 float toPlayerLengthSq = math.lengthsq(toPlayer);
                 if (toPlayerLengthSq > 0.0001f && visionConeAngle < 359f)
                 {
@@ -224,17 +304,17 @@ namespace Hecton8.AI
                 }
             }
 
-            bool visualContact = _playerTransform != null &&
+            bool visualContact = _hasPlayerSnapshot &&
                                  withinVisionCone &&
                                  distSqrToPlayer < aggroDistance * aggroDistance &&
-                                 HasPlayerLineOfSightThroughCaveSdf(_cachedSelfPosition, _playerTransform.position);
+                                 HasPlayerLineOfSightThroughCaveSdf(_cachedSelfPosition, _cachedPlayerPosition);
             bool reportedContact = HasFreshReportedPlayerNoise();
             hasVisualPlayerContact = visualContact;
             hasNoisePlayerContact = reportedContact;
             canSeePlayer = visualContact || reportedContact;
 
-            if (visualContact && _playerTransform != null)
-                RememberPlayerPosition(_playerTransform.position);
+            if (visualContact)
+                RememberPlayerPosition(_cachedPlayerPosition);
         }
 
         public void ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal playerNoise)
@@ -244,12 +324,15 @@ namespace Hecton8.AI
             _lastReportedPlayerTimeSeconds = _authoredTimeSeconds;
             hasNoisePlayerContact = true;
             RememberPlayerPosition(playerNoise.Position);
-            distSqrToPlayer = (_lastKnownPlayerPosition - _cachedSelfPosition).sqrMagnitude;
+            AbsoluteUniversePosition noiseAup = AbsoluteUniversePosition.FromRuntimePosition(_lastKnownPlayerPosition);
+            distSqrToPlayer = (float)math.min(
+                AbsoluteUniversePosition.DistanceSq(in noiseAup, in _cachedSelfAup),
+                float.MaxValue);
         }
 
         private bool HasFreshReportedPlayerNoise()
         {
-            if (_playerTransform == null || !_hasReportedPlayerNoise)
+            if (!_hasReportedPlayerNoise)
                 return false;
 
             if (_authoredTimeSeconds - _lastReportedPlayerTimeSeconds > PlayerNoiseFreshSeconds)
@@ -270,23 +353,11 @@ namespace Hecton8.AI
             return _lastReportedPlayerNoise.MovementSpeedSqr >= 1.0f;
         }
 
-        public bool TryGetDirectPlayerTransform(out Transform playerTransform)
-        {
-            if (hasVisualPlayerContact && _playerTransform != null)
-            {
-                playerTransform = _playerTransform;
-                return true;
-            }
-
-            playerTransform = null;
-            return false;
-        }
-
         public bool TryGetPerceivedPlayerPosition(out Vector3 playerPosition)
         {
-            if (hasVisualPlayerContact && _playerTransform != null)
+            if (hasVisualPlayerContact && _hasPlayerSnapshot)
             {
-                playerPosition = _playerTransform.position;
+                playerPosition = _cachedPlayerPosition;
                 return true;
             }
 
@@ -303,13 +374,25 @@ namespace Hecton8.AI
 
         public bool TryGetPerceivedPlayerVelocity(out Vector3 playerVelocity)
         {
-            if (hasVisualPlayerContact && _playerRigidbody != null)
+            if (hasVisualPlayerContact && _hasPlayerVelocitySnapshot)
             {
-                playerVelocity = _playerRigidbody.linearVelocity;
+                playerVelocity = _cachedPlayerVelocity;
                 return true;
             }
 
             playerVelocity = default;
+            return false;
+        }
+
+        public bool TryGetPerceivedPlayerForward(out Vector3 playerForward)
+        {
+            if (hasVisualPlayerContact && _hasPlayerForwardSnapshot)
+            {
+                playerForward = _cachedPlayerForward;
+                return true;
+            }
+
+            playerForward = default;
             return false;
         }
 
@@ -323,22 +406,26 @@ namespace Hecton8.AI
         private void UpdateThreatDetection()
         {
             isThreatened = false;
-            currentThreat = null;
+            hasCurrentThreat = false;
+            currentThreatPosition = default;
+            currentThreatOwner = null;
             
             if (territoryMask == 0 || _profile == null)
                 return;
 
             if (FaunaSpatialHashRegistry.TryGetNearestBioform(
-                    _cachedSelfPosition,
+                    in _cachedSelfAup,
                     _profile.territoryThreatRadius,
                     _profile.predatorMask,
-                    _selfTransform,
+                    _ownerBrain,
                     _profile.speciesID,
                     false,
                     out SpatialQueryHit threatHit))
             {
-                currentThreat = threatHit.Transform;
-                isThreatened = currentThreat != null;
+                hasCurrentThreat = true;
+                currentThreatPosition = threatHit.Position;
+                currentThreatOwner = threatHit.Owner;
+                isThreatened = currentThreatOwner != null;
             }
         }
 
@@ -368,41 +455,64 @@ namespace Hecton8.AI
 
         private void UpdateDistractorDetection()
         {
-            Transform bleedingTarget = ResolveNearestBleedingDistractor();
-            if (bleedingTarget != null)
+            hasCurrentDistractor = false;
+            currentDistractorPosition = default;
+            currentDistractorOwner = null;
+
+            if (TryResolveNearestBleedingDistractor(out SpatialQueryHit bleedingHit))
             {
-                currentDistractor = bleedingTarget;
+                hasCurrentDistractor = true;
+                currentDistractorPosition = bleedingHit.Position;
+                currentDistractorOwner = bleedingHit.Owner;
                 return;
             }
 
-            currentDistractor = ResolveNearestDistractorByTag("Flare");
+            if (TryResolveNearestFlareDistractor(out SpatialQueryHit flareHit))
+            {
+                hasCurrentDistractor = true;
+                currentDistractorPosition = flareHit.Position;
+                currentDistractorOwner = flareHit.Owner;
+            }
         }
 
         private void UpdateScavengeTarget()
         {
-            currentScavengeTarget = null;
+            hasCurrentScavengeTarget = false;
+            currentScavengeTargetPosition = default;
+            currentScavengeTargetOwner = null;
             if (_profile == null)
                 return;
 
-            // 1. Dedicated scavengers still prioritize exposed player tools.
             if (_profile.isScavenger &&
-                _playerToolManager != null &&
-                _playerToolManager.CurrentTool != null)
+                _hasScavengeToolSnapshot &&
+                _cachedScavengeToolOwner != null)
             {
-                Transform toolTransform = _playerToolManager.CurrentTool.transform;
-                if ((toolTransform.position - _cachedSelfPosition).sqrMagnitude < distractorDetectRadius * distractorDetectRadius)
+                AbsoluteUniversePosition toolAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedScavengeToolPosition);
+                float toolDistanceSqr = (float)math.min(
+                    AbsoluteUniversePosition.DistanceSq(in toolAup, in _cachedSelfAup),
+                    float.MaxValue);
+                if (toolDistanceSqr < distractorDetectRadius * distractorDetectRadius)
                 {
-                    currentScavengeTarget = toolTransform;
+                    hasCurrentScavengeTarget = true;
+                    currentScavengeTargetPosition = _cachedScavengeToolPosition;
+                    currentScavengeTargetOwner = _cachedScavengeToolOwner;
                     return;
                 }
             }
 
-            currentScavengeTarget = ResolveNearestBaitPickup();
+            if (TryResolveNearestBaitPickup(out SpatialQueryHit baitHit))
+            {
+                hasCurrentScavengeTarget = true;
+                currentScavengeTargetPosition = baitHit.Position;
+                currentScavengeTargetOwner = baitHit.Owner;
+            }
         }
 
         private void UpdatePreyDetection()
         {
-            currentPrey = null;
+            hasCurrentPrey = false;
+            currentPreyPosition = default;
+            currentPreyOwner = null;
             if (_ownerBrain == null)
                 return;
 
@@ -410,7 +520,7 @@ namespace Hecton8.AI
             if (dietMaskBits != 0u)
             {
                 int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
-                    _cachedSelfPosition,
+                    in _cachedSelfAup,
                     aggroDistance,
                     SpatialTargetKind.Bioform,
                     _preySpatialBuffer);
@@ -431,10 +541,12 @@ namespace Hecton8.AI
                         continue;
 
                     bestDistanceSqr = hit.DistanceSqr;
-                    currentPrey = hit.Transform;
+                    hasCurrentPrey = true;
+                    currentPreyPosition = hit.Position;
+                    currentPreyOwner = hit.Owner;
                 }
 
-                if (currentPrey != null)
+                if (hasCurrentPrey)
                     return;
             }
 
@@ -446,15 +558,17 @@ namespace Hecton8.AI
                 return;
 
             if (FaunaSpatialHashRegistry.TryGetNearestBioform(
-                    _cachedSelfPosition,
+                    in _cachedSelfAup,
                     aggroDistance,
                     searchMask,
-                    _selfTransform,
+                    _ownerBrain,
                     -1,
                     true,
                     out SpatialQueryHit preyHit))
             {
-                currentPrey = preyHit.Transform;
+                hasCurrentPrey = true;
+                currentPreyPosition = preyHit.Position;
+                currentPreyOwner = preyHit.Owner;
             }
         }
 
@@ -463,51 +577,47 @@ namespace Hecton8.AI
             // Logic for finding EscapePoints via poiMask...
         }
 
-        private Transform ResolveNearestDistractorByTag(string requiredTag)
+        private bool TryResolveNearestFlareDistractor(out SpatialQueryHit nearestHit)
         {
+            nearestHit = default;
             int layerMaskValue = distractorMask.value;
             if (layerMaskValue == 0)
-                return null;
+                return false;
 
             int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
-                _cachedSelfPosition,
+                in _cachedSelfAup,
                 distractorDetectRadius,
                 SpatialTargetKind.Pickup | SpatialTargetKind.Signal,
                 _distractorSpatialBuffer);
-            Transform nearestTransform = null;
             float bestDistanceSqr = float.MaxValue;
 
             for (int i = 0; i < count; i++)
             {
                 SpatialQueryHit hit = _distractorSpatialBuffer[i];
-                Transform hitTransform = hit.Transform;
-                if (hitTransform == null)
-                    continue;
-
                 if ((layerMaskValue & (1 << hit.Layer)) == 0)
                     continue;
 
-                if (!hitTransform.CompareTag(requiredTag))
+                if (!(hit.Owner is DeployableFlare))
                     continue;
 
                 if (hit.DistanceSqr >= bestDistanceSqr)
                     continue;
 
                 bestDistanceSqr = hit.DistanceSqr;
-                nearestTransform = hitTransform;
+                nearestHit = hit;
             }
 
-            return nearestTransform;
+            return nearestHit.Owner != null;
         }
 
-        private Transform ResolveNearestBaitPickup()
+        private bool TryResolveNearestBaitPickup(out SpatialQueryHit nearestHit)
         {
+            nearestHit = default;
             int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
-                _cachedSelfPosition,
+                in _cachedSelfAup,
                 distractorDetectRadius,
                 SpatialTargetKind.Pickup,
                 _distractorSpatialBuffer);
-            Transform nearestTransform = null;
             float bestDistanceSqr = float.MaxValue;
 
             for (int i = 0; i < count; i++)
@@ -515,33 +625,32 @@ namespace Hecton8.AI
                 SpatialQueryHit hit = _distractorSpatialBuffer[i];
                 if (!(hit.Owner is Hecton8.Interaction.PickupItem pickupItem) ||
                     !pickupItem.IsFaunaBait ||
-                    hit.Transform == null ||
                     hit.DistanceSqr >= bestDistanceSqr)
                 {
                     continue;
                 }
 
                 bestDistanceSqr = hit.DistanceSqr;
-                nearestTransform = hit.Transform;
+                nearestHit = hit;
             }
 
-            return nearestTransform;
+            return nearestHit.Owner != null;
         }
 
-        private Transform ResolveNearestBleedingDistractor()
+        private bool TryResolveNearestBleedingDistractor(out SpatialQueryHit nearestHit)
         {
+            nearestHit = default;
             if (_profile == null)
-                return null;
+                return false;
 
             if (_profile.baseAggro < 0.45f)
-                return null;
+                return false;
 
             int count = FaunaSpatialHashRegistry.CollectContactsNonAlloc(
-                _cachedSelfPosition,
+                in _cachedSelfAup,
                 distractorDetectRadius,
                 SpatialTargetKind.Signal,
                 _distractorSpatialBuffer);
-            Transform nearestTransform = null;
             float bestWeightedDistance = float.MaxValue;
 
             for (int i = 0; i < count; i++)
@@ -557,10 +666,10 @@ namespace Hecton8.AI
                     continue;
 
                 bestWeightedDistance = weightedDistance;
-                nearestTransform = hit.Transform;
+                nearestHit = hit;
             }
 
-            return nearestTransform;
+            return nearestHit.Owner != null;
         }
 
         internal void SetFoveatedCadence(FoveatedTickRate tickRate, float tickIntervalSeconds, float importanceScore, bool insideFrustum)
@@ -576,7 +685,7 @@ namespace Hecton8.AI
             if (commands == null || commands.Length < DeferredRaycastCommandCount)
                 return 0;
 
-            if (_selfTransform == null || lodDisabled || isSleeping)
+            if (_ownerBrain == null || lodDisabled || isSleeping)
                 return 0;
 
             int obstacleLayerMask = obstacleMask.value != 0
@@ -671,8 +780,6 @@ namespace Hecton8.AI
             return obstaclePressure01 > 0f && surfaceNormal.sqrMagnitude > 0.0001f;
         }
 
-        public Transform GetPlayerTransform() => _playerTransform;
-
         internal bool HasPlayerLightLineOfSight()
         {
             if (!_hasQueuedPlayerLightOcclusionRay)
@@ -693,26 +800,18 @@ namespace Hecton8.AI
             _hasDeferredPlayerLightOcclusionHit = false;
             _queuedPlayerLightOcclusionDistance = 0f;
 
-            IPlayerRuntimeContext playerContext = Hecton8.Core.GlobalRegistry.Player;
-            if (_playerTransform == null && playerContext != null)
-                _playerTransform = playerContext.PlayerTransform;
-
             bool flashlightActive = _hasReportedPlayerNoise && _lastReportedPlayerNoise.FlashlightOn;
             if (!flashlightActive)
-            {
-                flashlightActive = playerContext != null &&
-                                   playerContext.Flashlight != null &&
-                                   playerContext.Flashlight.IsOn;
-            }
+                flashlightActive = _playerFlashlightOn;
 
             if (!reactToPlayerLight ||
                 !flashlightActive ||
-                _playerTransform == null)
+                !_hasPlayerSnapshot)
             {
                 return false;
             }
 
-            Vector3 lightOrigin = _playerTransform.position;
+            Vector3 lightOrigin = _cachedPlayerPosition;
             Vector3 toCreature = _cachedSelfPosition - lightOrigin;
             float distance = toCreature.magnitude;
             if (distance <= 0.01f)

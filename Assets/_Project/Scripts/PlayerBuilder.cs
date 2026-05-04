@@ -153,6 +153,11 @@ namespace Hecton8.Building
         private RaycastHit _hit;
         private readonly RaycastHit[] _buildHits = new RaycastHit[1]; // COLD ALLOC: single surface probe for build targeting.
         private float _ghostYawOffset;
+        private const int BuildGhostProjectionInstanceCount = 1;
+        private readonly Matrix4x4[] _buildGhostProjectionMatrices = new Matrix4x4[BuildGhostProjectionInstanceCount];
+        private Mesh _buildGhostProjectionMesh;
+        private Material _buildGhostValidProjectionMaterial;
+        private Material _buildGhostBlockedProjectionMaterial;
 
         private static readonly Vector3 ViewportCenter = new Vector3(0.5f, 0.5f, 0f);
 
@@ -505,6 +510,7 @@ namespace Hecton8.Building
             {
                 UpdateGhostPosition(deltaTime);
                 UpdatePlacementValidationState();
+                DrawBuildGhostProjection();
             }
         }
 
@@ -1441,6 +1447,75 @@ namespace Hecton8.Building
                 _currentGhost.SetExternalValidity(finalValid);
 
             return finalValid;
+        }
+
+        private void DrawBuildGhostProjection()
+        {
+            if (_currentGhostObj == null || activeBuildable == null)
+                return;
+
+            BaseModuleTemplate template = activeBuildable.ModuleTemplate;
+            if (template == null)
+                return;
+
+            Vector3 proxyBoundsSize = template.ProxyBoundsSize;
+            if (proxyBoundsSize.x <= 0.01f || proxyBoundsSize.y <= 0.01f || proxyBoundsSize.z <= 0.01f)
+                return;
+
+            EnsureBuildGhostProjectionResources();
+            if (_buildGhostProjectionMesh == null)
+                return;
+
+            bool placementAllowed =
+                _currentGhost != null &&
+                _currentGhost.CanBuild &&
+                _semanticPlacementValid &&
+                _integrityPlacementValid;
+            Material projectionMaterial = placementAllowed
+                ? _buildGhostValidProjectionMaterial
+                : _buildGhostBlockedProjectionMaterial;
+            if (projectionMaterial == null)
+                return;
+
+            Transform ghostTransform = _currentGhostObj.transform;
+            Vector3 targetRuntime = ghostTransform.TransformPoint(template.ProxyBoundsCenter);
+            Vector3 targetAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(targetRuntime);
+            Vector3 drawPosition = HectonFloatingOrigin.ToRuntimePosition(targetAup);
+            _buildGhostProjectionMatrices[0] = Matrix4x4.TRS(drawPosition, ghostTransform.rotation, proxyBoundsSize);
+
+            Graphics.DrawMeshInstanced(
+                _buildGhostProjectionMesh,
+                0,
+                projectionMaterial,
+                _buildGhostProjectionMatrices,
+                BuildGhostProjectionInstanceCount,
+                null,
+                UnityEngine.Rendering.ShadowCastingMode.Off,
+                false,
+                _currentGhostObj.layer,
+                playerCamera,
+                UnityEngine.Rendering.LightProbeUsage.Off,
+                null);
+        }
+
+        private void EnsureBuildGhostProjectionResources()
+        {
+            if (_buildGhostProjectionMesh != null &&
+                _buildGhostValidProjectionMaterial != null &&
+                _buildGhostBlockedProjectionMaterial != null)
+            {
+                return;
+            }
+
+            if (ConstructionRuntimeProxyFactory.TryGetGhostProjectionResources(
+                    out Mesh projectionMesh,
+                    out Material validMaterial,
+                    out Material blockedMaterial))
+            {
+                _buildGhostProjectionMesh = projectionMesh;
+                _buildGhostValidProjectionMaterial = validMaterial;
+                _buildGhostBlockedProjectionMaterial = blockedMaterial;
+            }
         }
 
         private void UpdatePlacementValidationState()

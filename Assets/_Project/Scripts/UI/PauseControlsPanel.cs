@@ -152,22 +152,20 @@ namespace Hecton8.UI
         private void OnEnable()
         {
             TryRegisterHotSwapListener();
-            Subscribe();
-            RefreshAllBindingsNow();
+            RefreshAllBindingsIfActive();
         }
 
         private void Start()
         {
             TryRegisterHotSwapListener();
-            Subscribe();
-            RefreshAllBindingsNow();
+            RefreshAllBindingsIfActive();
         }
 
         private void OnDisable()
         {
             // TASK 17: Save overrides when closing Settings section
-            IInputBindingService rebinding = _subscribedRebindingService ?? ResolveRebindingService();
-            if (rebinding != null)
+            IInputBindingService rebinding = _subscribedRebindingService;
+            if (ShouldSaveOverridesOnDisable(rebinding))
             {
                 rebinding.SaveOverrides();
             }
@@ -292,8 +290,24 @@ namespace Hecton8.UI
             if (!isActiveAndEnabled)
                 return;
 
-            Subscribe();
+            RefreshAllBindingsIfActive();
+        }
+
+        private void RefreshAllBindingsIfActive()
+        {
+            if (!IsActive)
+                return;
+
             RefreshAllBindingsNow();
+        }
+
+        private bool ShouldSaveOverridesOnDisable(IInputBindingService rebinding)
+        {
+            return Application.isPlaying &&
+                pauseMenu != null &&
+                pauseMenu.IsSettingsOpen &&
+                rebinding != null &&
+                ResolveInputManager() != null;
         }
 
         private void TryRegisterHotSwapListener()

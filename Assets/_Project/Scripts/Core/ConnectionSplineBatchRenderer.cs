@@ -188,6 +188,24 @@ namespace Hecton8.Core
             }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct BuildLineVerticesJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<SplineDescriptor> Descriptors;
+            public NativeArray<LineVertex> Vertices;
+            public NativeArray<int> Indices;
+
+            public void Execute(int linkIndex)
+            {
+                SplineDescriptor descriptor = Descriptors[linkIndex];
+                int vertexBaseIndex = linkIndex * 2;
+                Vertices[vertexBaseIndex] = new LineVertex { Position = descriptor.Start };
+                Vertices[vertexBaseIndex + 1] = new LineVertex { Position = descriptor.End };
+                Indices[vertexBaseIndex] = vertexBaseIndex;
+                Indices[vertexBaseIndex + 1] = vertexBaseIndex + 1;
+            }
+        }
+
         private sealed class BatchState
         {
             // COLD ALLOC: Dictionary<long,SplineDescriptor>[100] — active link registry per visual batch — owner: ConnectionSplineBatchRenderer.BatchState
@@ -676,9 +694,19 @@ namespace Hecton8.Core
                     return;
                 }
 
-                NativeArray<TubeVertex> swap = batch.VertexFront;
-                batch.VertexFront = batch.VertexBack;
-                batch.VertexBack = swap;
+                if (batch.Topology == MeshTopology.Lines)
+                {
+                    NativeArray<LineVertex> lineSwap = batch.LineFront;
+                    batch.LineFront = batch.LineBack;
+                    batch.LineBack = lineSwap;
+                }
+                else
+                {
+                    NativeArray<TubeVertex> tubeSwap = batch.VertexFront;
+                    batch.VertexFront = batch.VertexBack;
+                    batch.VertexBack = tubeSwap;
+                }
+
                 UploadBatchMesh(batch);
             }
 
@@ -701,7 +729,8 @@ namespace Hecton8.Core
                 return;
             }
 
-            EnsureBatchCapacity(batch, linkCount);
+            if (!EnsureBatchCapacity(batch, linkCount))
+                return;
 
             int writeIndex = 0;
             Dictionary<long, SplineDescriptor>.Enumerator enumerator = batch.Registrations.GetEnumerator();
@@ -713,7 +742,7 @@ namespace Hecton8.Core
 
             if (batch.Topology == MeshTopology.Lines)
             {
-                BuildLineBatch(batch, linkCount);
+                ScheduleLineBatchBuild(batch, linkCount);
                 batch.Dirty = false;
                 return;
             }
@@ -759,26 +788,23 @@ namespace Hecton8.Core
             batch.Dirty = false;
         }
 
-        private void BuildLineBatch(BatchState batch, int linkCount)
+        private void ScheduleLineBatchBuild(BatchState batch, int linkCount)
         {
             int vertexCount = linkCount * 2;
             batch.GeneratedVertexCount = vertexCount;
             batch.GeneratedIndexCount = vertexCount;
 
-            for (int linkIndex = 0; linkIndex < linkCount; linkIndex++)
+            BuildLineVerticesJob lineJob = new BuildLineVerticesJob
             {
-                SplineDescriptor descriptor = batch.Descriptors[linkIndex];
-                int vertexBaseIndex = linkIndex * 2;
-                batch.LineBack[vertexBaseIndex] = new LineVertex { Position = descriptor.Start };
-                batch.LineBack[vertexBaseIndex + 1] = new LineVertex { Position = descriptor.End };
-                batch.Indices[vertexBaseIndex] = vertexBaseIndex;
-                batch.Indices[vertexBaseIndex + 1] = vertexBaseIndex + 1;
-            }
+                Descriptors = batch.Descriptors,
+                Vertices = batch.LineBack,
+                Indices = batch.Indices
+            };
 
-            NativeArray<LineVertex> swap = batch.LineFront;
-            batch.LineFront = batch.LineBack;
-            batch.LineBack = swap;
-            UploadBatchMesh(batch);
+            batch.FrameBuildHandle = default;
+            batch.VertexBuildHandle = lineJob.Schedule(linkCount, 32);
+            batch.IndexBuildHandle = default;
+            batch.BuildPending = true;
         }
 
         private void UploadBatchMesh(BatchState batch)
@@ -911,10 +937,17 @@ namespace Hecton8.Core
             batch.Dirty = true;
         }
 
-        private static void EnsureBatchCapacity(BatchState batch, int linkCapacity)
+        private static bool EnsureBatchCapacity(BatchState batch, int linkCapacity)
         {
             int safeLinkCapacity = math.max(1, linkCapacity);
             CompletePendingBuildIfNeeded(batch);
+            if (batch.BuildPending)
+            {
+                batch.DiscardPendingBuild = true;
+                batch.Dirty = true;
+                return false;
+            }
+
             EnsureArrayCapacity(ref batch.Descriptors, safeLinkCapacity);
             EnsureArrayCapacity(ref batch.Indices, safeLinkCapacity * batch.IndicesPerLink);
 
@@ -922,7 +955,7 @@ namespace Hecton8.Core
             {
                 EnsureArrayCapacity(ref batch.LineFront, safeLinkCapacity * 2);
                 EnsureArrayCapacity(ref batch.LineBack, safeLinkCapacity * 2);
-                return;
+                return true;
             }
 
             EnsureArrayCapacity(ref batch.SampleCenters, safeLinkCapacity * SamplesPerLink);
@@ -930,6 +963,7 @@ namespace Hecton8.Core
             EnsureArrayCapacity(ref batch.SampleBinormals, safeLinkCapacity * SamplesPerLink);
             EnsureArrayCapacity(ref batch.VertexFront, safeLinkCapacity * batch.VerticesPerLink);
             EnsureArrayCapacity(ref batch.VertexBack, safeLinkCapacity * batch.VerticesPerLink);
+            return true;
         }
 
         private static void EnsureArrayCapacity(ref NativeArray<SplineDescriptor> array, int requiredLength)

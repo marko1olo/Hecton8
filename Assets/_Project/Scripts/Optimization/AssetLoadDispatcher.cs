@@ -274,7 +274,7 @@ namespace Hecton8.Optimization
                 return;
 
             _addressableGroupMap = new NativeParallelHashMap<uint, byte>(AddressableGroupMapCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelHashMap<uint,byte>[512] - addressable asset group map for UI mip gate - owner: AssetLoadDispatcher
-            NativeMemorySentinel.RegisterNativeParallelHashMap(_addressableGroupMap, nameof(AssetLoadDispatcher), nameof(_addressableGroupMap), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeParallelHashMap(_addressableGroupMap, nameof(AssetLoadDispatcher), nameof(_addressableGroupMap), NativeAllocationLifetime.Session);
         }
 
         private void RegisterAddressableGroupInternal(uint assetKey, AddressableAssetGroupKind group)

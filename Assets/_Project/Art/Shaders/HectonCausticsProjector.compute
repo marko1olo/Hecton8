@@ -7,6 +7,7 @@ float4 _HectonCausticsSimulationParamsB;
 float4 _HectonCausticsSimulationParamsC;
 float4 _HectonCausticsTexelSize;
 float4 _HectonProjectedCausticsWorldRect;
+float4 _AbyssalFlowWeatherCurrent;
 float4 _HectonCaveVoxelHalfExtents;
 float4x4 _HectonCaveVoxelWorldToLocal;
 float _HectonCaveVoxelActive;
@@ -158,16 +159,26 @@ void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
     float waveDisplacementAbs = abs(waveDisplacement);
     float2 waveOffset = waveFlow * 0.0125 + float2(waveDisplacement * 0.018, -waveDisplacement * 0.013);
     uv += waveOffset;
-    primaryDensity *= lerp(0.94, 1.08, saturate(waveDisplacementAbs * 0.2));
-    secondaryDensity *= lerp(0.92, 1.12, saturate(length(waveFlow) * 0.08));
 
-    float primaryTime = timeValue * primarySpeed + wavePhase;
-    float secondaryTime = timeValue * secondarySpeed + wavePhase * 1.37 + 17.0;
+    float3 abyssalFlow = clamp(_AbyssalFlowWeatherCurrent.xyz, -20.0, 20.0);
+    float2 flowXZ = abyssalFlow.xz;
+    float flowLenSq = dot(flowXZ, flowXZ);
+    float flowMagnitude = saturate(sqrt(flowLenSq) * 0.12);
+    float2 flowDir = flowLenSq > 0.0001 ? flowXZ * rsqrt(flowLenSq) : float2(0.37, 0.11);
+    float flowTime = _AbyssalFlowWeatherCurrent.w;
+    float2 flowShear = flowDir * (flowTime * (0.018 + flowMagnitude * 0.027));
+    uv += flowShear;
+
+    primaryDensity *= lerp(0.94, 1.08, saturate(waveDisplacementAbs * 0.2));
+    secondaryDensity *= lerp(0.92, 1.12, saturate(length(waveFlow) * 0.08 + flowMagnitude * 0.35));
+
+    float primaryTime = timeValue * primarySpeed + wavePhase + dot(flowDir, float2(0.61, -0.47)) * flowMagnitude;
+    float secondaryTime = timeValue * secondarySpeed + wavePhase * 1.37 + 17.0 + dot(flowDir, float2(-0.29, 0.83)) * flowMagnitude;
     float primaryLayer = VoronoiRidge(uv + float2(primaryTime, -primaryTime * 0.61), primaryDensity, primaryTime);
     float secondaryLayer = VoronoiRidge(uv + float2(-secondaryTime * 0.73, secondaryTime), secondaryDensity, secondaryTime);
     float combined = lerp(primaryLayer, max(primaryLayer, secondaryLayer), secondaryWeight);
     combined = pow(saturate(combined * 2.3), sharpness);
-    combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035));
+    combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035 + flowMagnitude * 0.22));
     combined = saturate(combined * 1.35);
 
     float2 worldXZ = float2(

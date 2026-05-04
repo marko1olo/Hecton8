@@ -4,6 +4,12 @@ using UnityEngine;
 
 namespace Hecton8.Audio
 {
+    public enum ProceduralAudioPingKind : byte
+    {
+        Sonar = 0,
+        PredatorKill = 1
+    }
+
     /// <summary>
     /// Zero-allocation payload for sample-accurate procedural audio triggers.
     /// </summary>
@@ -22,6 +28,28 @@ namespace Hecton8.Audio
             SampleRate = sampleRate > 0 ? sampleRate : 1;
             Intensity = intensity;
             ChirpDurationSeconds = chirpDurationSeconds;
+            WorldPosition = Vector3.zero;
+            AcousticTransmission01 = 1f;
+            LowPassCutoffHz = 22000f;
+            Kind = ProceduralAudioPingKind.Sonar;
+        }
+
+        public AudioPingTriggerInfo(
+            Vector3 worldPosition,
+            float intensity,
+            float chirpDurationSeconds,
+            float acousticTransmission01,
+            float lowPassCutoffHz,
+            ProceduralAudioPingKind kind)
+        {
+            StartSampleFrame = 0L;
+            SampleRate = 1;
+            Intensity = Mathf.Clamp01(intensity);
+            ChirpDurationSeconds = Mathf.Max(0f, chirpDurationSeconds);
+            WorldPosition = worldPosition;
+            AcousticTransmission01 = Mathf.Clamp01(acousticTransmission01);
+            LowPassCutoffHz = Mathf.Clamp(lowPassCutoffHz, 80f, 22000f);
+            Kind = kind;
         }
 
         /// <summary>Exact output-sample frame where the ping started rendering.</summary>
@@ -38,6 +66,18 @@ namespace Hecton8.Audio
 
         /// <summary>Primary chirp duration in seconds.</summary>
         public float ChirpDurationSeconds { get; }
+
+        /// <summary>World-space source for diegetic procedural pings.</summary>
+        public Vector3 WorldPosition { get; }
+
+        /// <summary>Acoustic occlusion transmission in the 0..1 range.</summary>
+        public float AcousticTransmission01 { get; }
+
+        /// <summary>Low-pass cutoff after acoustic occlusion.</summary>
+        public float LowPassCutoffHz { get; }
+
+        /// <summary>Semantic route for procedural rendering.</summary>
+        public ProceduralAudioPingKind Kind { get; }
     }
 
     /// <summary>
@@ -225,6 +265,33 @@ namespace Hecton8.Audio
                 return;
 
             AudioPingTriggerInfo info = new AudioPingTriggerInfo(startSampleFrame, sampleRate, intensity, chirpDurationSeconds);
+            EnqueueAudioPing(in info);
+        }
+
+        public static void RaiseAudioPingTriggered(
+            Vector3 worldPosition,
+            float intensity,
+            float chirpDurationSeconds,
+            float acousticTransmission01,
+            float lowPassCutoffHz,
+            ProceduralAudioPingKind kind)
+        {
+            EnsureInitialized();
+            if (_pendingAudioPingCount + _nextFrameAudioPingCount >= PendingAudioPingCapacity)
+                return;
+
+            AudioPingTriggerInfo info = new AudioPingTriggerInfo(
+                worldPosition,
+                intensity,
+                chirpDurationSeconds,
+                acousticTransmission01,
+                lowPassCutoffHz,
+                kind);
+            EnqueueAudioPing(in info);
+        }
+
+        private static void EnqueueAudioPing(in AudioPingTriggerInfo info)
+        {
             if (_isDispatching)
             {
                 _nextFrameAudioPings.Enqueue(info);

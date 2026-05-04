@@ -23,6 +23,7 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
             ZWrite Off
             ZTest LEqual
             ColorMask RG
+            AlphaToMask On
 
             HLSLPROGRAM
             #pragma target 4.5
@@ -537,18 +538,18 @@ Shader "Hidden/Hecton8/VegetationIndirectMotionVectors"
                 half instanceType = input.vegetationData.x;
                 half heightMask = input.vegetationData.y;
                 half cutMask = ResolveVegetationCutMask(instanceType, input.positionWS);
-                clip(0.08h - cutMask);
+                half coverageVisibility = saturate((0.08h - cutMask) / 0.025h);
 
                 if (instanceType > 1.5h)
                 {
                     half porousCoverage = ResolveSargassumMotionCoverage(input.positionWS, heightMask);
-                    clip(porousCoverage - 0.16h);
+                    coverageVisibility *= saturate((porousCoverage - 0.16h) / 0.08h);
                 }
 
                 half coverage = saturate(_Opacity);
-                clip(coverage - ResolveBayer4x4(floor(input.positionCS.xy)));
+                coverageVisibility *= (half)step(ResolveBayer4x4(floor(input.positionCS.xy)), coverage);
 
-                return float4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0, 0);
+                return float4(CalcNdcMotionVectorFromCsPositions(input.positionCSNoJitter, input.previousPositionCSNoJitter), 0, saturate(coverageVisibility));
             }
             ENDHLSL
         }

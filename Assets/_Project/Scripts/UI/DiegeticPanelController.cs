@@ -1054,7 +1054,8 @@ namespace Hecton8.UI
                 proxyLightRangeMeters,
                 intensity,
                 flickerWave,
-                _appliedPowerLevel,
+                flicker01,
+                0f,
                 now);
 
             if (ProxyLightRegistry.RegisterOrUpdate(_proxyLightKey, in lightData))

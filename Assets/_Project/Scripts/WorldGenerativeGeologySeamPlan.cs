@@ -42,17 +42,31 @@ namespace Hecton8.World
         public float planWeight;
         public Vector3 absoluteVoxelVolumeCenter;
         public Vector3 voxelVolumeSize;
+        internal AbsoluteUniversePosition absoluteUniverseAup;
+        internal AbsoluteUniversePosition absoluteTerrainContactAup;
+        internal AbsoluteUniversePosition absoluteVoxelVolumeCenterAup;
+        internal bool hasAbsoluteUniverseAup;
+        internal bool hasAbsoluteTerrainContactAup;
+        internal bool hasAbsoluteVoxelVolumeCenterAup;
 
         public bool RequiresTerrainBlend => terrainSeamMode != WorldGenerativeGeologyProfile.TerrainSeamMode.None && terrainBlendWeight > 0.01f;
         public bool RequiresVoxelBlend => caveBlendMode != WorldGenerativeGeologyProfile.CaveBlendMode.None && caveBlendWeight > 0.01f;
         public bool RequiresDebrisSeam => suggestedDebrisCount > 0 && debrisWeight > 0.01f;
         public WorldChunkCoordinate ChunkCoord => new WorldChunkCoordinate(chunkX, chunkZ);
         public WorldMacroZoneCoordinate MacroZoneCoord => new WorldMacroZoneCoordinate(macroZoneX, macroZoneZ);
-        public Vector3 RuntimeWorldPosition => HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
-        public Vector3 RuntimeVoxelVolumeCenter => HectonFloatingOrigin.ToRuntimePosition(absoluteVoxelVolumeCenter);
+        public Vector3 RuntimeWorldPosition => hasAbsoluteUniverseAup
+            ? (Vector3)absoluteUniverseAup.ToRuntimeFloat3()
+            : HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
+        public Vector3 RuntimeVoxelVolumeCenter => hasAbsoluteVoxelVolumeCenterAup
+            ? (Vector3)absoluteVoxelVolumeCenterAup.ToRuntimeFloat3()
+            : HectonFloatingOrigin.ToRuntimePosition(absoluteVoxelVolumeCenter);
         public float RuntimeTerrainHeight => hasTerrainSample
-            ? absoluteTerrainHeight - HectonFloatingOrigin.CurrentTotalOffset.y
+            ? hasAbsoluteTerrainContactAup
+                ? absoluteTerrainContactAup.ToRuntimeFloat3().y
+                : absoluteTerrainHeight - HectonFloatingOrigin.CurrentTotalOffset.y
             : RuntimeWorldPosition.y;
-        public Vector3 TerrainContactPosition => new Vector3(RuntimeWorldPosition.x, RuntimeTerrainHeight, RuntimeWorldPosition.z);
+        public Vector3 TerrainContactPosition => hasAbsoluteTerrainContactAup
+            ? (Vector3)absoluteTerrainContactAup.ToRuntimeFloat3()
+            : new Vector3(RuntimeWorldPosition.x, RuntimeTerrainHeight, RuntimeWorldPosition.z);
     }
 }

@@ -126,6 +126,11 @@ namespace Hecton8.Celestial
         /// </summary>
         public float AngularDiameterDegrees => angularDiameterDegrees;
 
+        /// <summary>
+        /// True when the body is locked to a fixed observer-relative sky direction.
+        /// </summary>
+        public bool UsesFixedDirection => placementMode == CelestialPlacementMode.FixedDirection;
+
         private void Awake()
         {
             CacheAuthoringReferences();
@@ -193,6 +198,23 @@ namespace Hecton8.Celestial
             _capturedDirection = fixedDirection;
             _hasCapturedDirection = true;
             ApplyPlacement();
+        }
+
+        /// <summary>
+        /// Forces tidal-lock presentation for parent bodies that must not orbit across the observer sky.
+        /// </summary>
+        public void EnforceFixedDirectionLock(Vector3 fallbackDirection)
+        {
+            Vector3 resolvedDirection = CurrentDirection;
+            if (resolvedDirection.sqrMagnitude <= DirectionEpsilon)
+                resolvedDirection = fallbackDirection;
+            if (resolvedDirection.sqrMagnitude <= DirectionEpsilon)
+                resolvedDirection = fixedDirection;
+            if (resolvedDirection.sqrMagnitude <= DirectionEpsilon)
+                resolvedDirection = Vector3.forward;
+
+            placementMode = CelestialPlacementMode.FixedDirection;
+            SetFixedDirection(resolvedDirection);
         }
 
         private void TryRegister()

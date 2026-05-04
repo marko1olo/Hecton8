@@ -151,7 +151,7 @@ namespace Hecton8.AI
         /// </summary>
         public void ApplySteering(float dt, FaunaBrain.AIState state)
         {
-            FixedTick(dt, desiredDirection, 1f, 1f, 1f, state == FaunaBrain.AIState.Retreat);
+            FixedTick(dt, desiredDirection, 1f, 1f, 1f, state == FaunaBrain.AIState.Retreat || state == FaunaBrain.AIState.ApexForcedRetreat);
         }
 
         public void Stop()

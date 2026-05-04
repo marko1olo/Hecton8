@@ -47,6 +47,7 @@ namespace Hecton8.UI
         private const string DefaultGaugeO2Label = "O2";
         private const string DefaultGaugePowerLabel = "PWR";
         private const string DefaultGaugeHullLabel = "HULL";
+        private const string DefaultHullStressWhisper = "THE SEA IS INSIDE THE GLASS";
         private const int QuickbarSlotCount = 4;
         private const string DefaultStatusPressureLimitExceeded = "PRESSURE LIMIT EXCEEDED";
         private const string DefaultStatusApproachingSafeDepth = "APPROACHING SAFE DEPTH LIMIT";
@@ -85,7 +86,7 @@ namespace Hecton8.UI
         private const float CriticalHapticCooldownSeconds = 0.65f;
         private const float CriticalHapticDurationSeconds = 0.5f;
         private const float CriticalHapticFrequencyHz = 7.5f;
-        private const byte CriticalHapticPriority = 4;
+        private const byte CriticalHapticPriority = ToolHapticsRuntime.PriorityCritical;
         private const byte BothMotorMask = 0b0011;
         private const byte CriticalMaskOxygen = 1 << 0;
         private const byte CriticalMaskPower = 1 << 1;
@@ -291,6 +292,32 @@ namespace Hecton8.UI
         [SerializeField, Range(0f, 0.35f)] private float stressPulseBrightnessBoost = 0.12f;
         [SerializeField, Range(0f, 0.4f)] private float stressPulseWarningBlend = 0.18f;
         [SerializeField, Range(0.25f, 12f)] private float stressPulseBlendSpeed = 3.4f;
+
+        [Header("Proxy Light")]
+        [SerializeField]
+        [Tooltip("Registers the diegetic HUD projection as a deferred proxy light when the canvas is world-space.")]
+        private bool enableHudProxyLight = true;
+        [SerializeField, Min(0.01f)]
+        [Tooltip("Proxy-light radius emitted by the projected HUD in meters.")]
+        private float hudProxyLightRangeMeters = 1.05f;
+        [SerializeField, Range(0f, 1f)]
+        [Tooltip("Base proxy-light intensity before power flicker and oxygen stress modulation.")]
+        private float hudProxyLightIntensity = 0.18f;
+        [SerializeField, Range(0f, 0.75f)]
+        [Tooltip("Maximum intensity boost applied as oxygen approaches zero.")]
+        private float hudProxyLightOxygenStressBoost = 0.28f;
+        [SerializeField, Range(0f, 0.5f)]
+        [Tooltip("Maximum power-light reduction applied by the stress pulse flicker.")]
+        private float hudProxyLightStressFlicker = 0.22f;
+        [SerializeField, Min(0f)]
+        [Tooltip("Forward offset from the projection canvas used to place the proxy light above the glass.")]
+        private float hudProxyLightForwardOffsetMeters = 0.03f;
+        [SerializeField]
+        [Tooltip("Normal HUD proxy-light color before oxygen stress warning tint is blended in.")]
+        private Color hudProxyLightColor = new Color(0.08f, 0.88f, 1f, 1f);
+        [SerializeField]
+        [Tooltip("Warning HUD proxy-light color reached as oxygen stress approaches one.")]
+        private Color hudProxyLightStressColor = new Color(1f, 0.18f, 0.12f, 1f);
 
         [Header("Layout Controls")]
         [SerializeField] private Vector2 headerOffset = new Vector2(0f, -34f);
@@ -627,7 +654,6 @@ namespace Hecton8.UI
         private readonly bool[] _quickbarSlotHashResolved = new bool[QuickbarSlotCount];
         private readonly GameObject[] _quickbarSlotPrefabCache = new GameObject[QuickbarSlotCount];
         private int _cachedHullStressWhisperBucket = int.MinValue;
-        private string _cachedHullStressWhisperText;
         private bool _cachedHullStressWhisperRtl;
         // COLD ALLOC: char[96] â€” cached hull-stress whisper text buffer â€” owner: SuitHUDV4CanvasOverlay
         private char[] _cachedHullStressWhisperBuffer = new char[96];
@@ -741,9 +767,15 @@ namespace Hecton8.UI
         public bool IsInitialized => isActiveAndEnabled && targetCanvas != null && _root != null && _layoutBuilt;
 
         private bool _ownsGlobalUiSlot;
+        private int _hudProxyLightKey;
+        private bool _hudProxyLightRegistered;
 
         private void Awake()
         {
+            _hudProxyLightKey = unchecked((int)(EntityId.ToULong(gameObject.GetEntityId()) ^ 0x48445544u));
+            if (_hudProxyLightKey == 0)
+                _hudProxyLightKey = 0x48445544;
+
             ResolveGraphicRaycasterCold();
             _scannerHologramPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] — scanner visor hologram per-draw properties — owner: SuitHUDV4CanvasOverlay
         }
@@ -776,6 +808,7 @@ namespace Hecton8.UI
 
             HectonFloatingOrigin.RegisterListener(this);
             TryRegisterUiService();
+            ToolHapticsRuntime.EnsureRuntimeInstance();
             QueueRuntimeCanvasRefresh(forceResolve: true, refreshDepthSignal: true);
             TryRegisterRuntimeTick();
             EnsureAcousticRadarRuntimeResources();
@@ -798,6 +831,7 @@ namespace Hecton8.UI
             UnregisterUiService();
             UnregisterActiveOverlay();
             UnregisterRuntimeTick();
+            UnregisterHudProxyLight();
             ClearDepthSignalSubscription();
             _stressPulseIntensity = 0f;
             _stressPulsePhase = 0f;
@@ -823,6 +857,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             UnregisterUiService();
+            UnregisterHudProxyLight();
             DisposeAcousticRadarRuntimeResources();
             DisposeThreatChevronRuntimeResources();
             DisposeScannerHologramRuntimeResources();
@@ -2784,6 +2819,7 @@ namespace Hecton8.UI
             _displayOxygen01 = DampHudValue(_displayOxygen01, oxygen, OxygenGaugeDamping, dt);
             _displayHealth01 = DampHudValue(_displayHealth01, health, HealthGaugeDamping, dt);
             _displayPower01 = DampHudValue(_displayPower01, power, BatteryGaugeDamping, dt);
+            UpdateHudProxyLightRegistration(_displayPower01, _displayOxygen01, stressPulse);
             float depthDelta = depth - _lastDepth;
             _lastDepth = depth;
             ApplySectionVisibility(_biosRecoveryMode);
@@ -3065,29 +3101,27 @@ namespace Hecton8.UI
 
         private void EvaluateCriticalHapticCoupling(float oxygen01, float power01, float health01)
         {
-            bool versionChanged = TryConsumeHapticSlotVersion(UIValueSlotId.Oxygen01, ref _lastHapticOxygenVersion);
-            versionChanged |= TryConsumeHapticSlotVersion(UIValueSlotId.Power01, ref _lastHapticPowerVersion);
-            versionChanged |= TryConsumeHapticSlotVersion(UIValueSlotId.Health01, ref _lastHapticHealthVersion);
-            if (!versionChanged)
-                return;
+            TryConsumeHapticSlotVersion(UIValueSlotId.Oxygen01, ref _lastHapticOxygenVersion);
+            TryConsumeHapticSlotVersion(UIValueSlotId.Power01, ref _lastHapticPowerVersion);
+            TryConsumeHapticSlotVersion(UIValueSlotId.Health01, ref _lastHapticHealthVersion);
 
-            byte criticalMask = 0;
-            criticalMask |= (byte)math.select(0, CriticalMaskOxygen, oxygen01 < OxygenCriticalHapticThreshold);
-            criticalMask |= (byte)math.select(0, CriticalMaskPower, power01 < PowerCriticalHapticThreshold);
-            criticalMask |= (byte)math.select(0, CriticalMaskHealth, health01 < HealthCriticalHapticThreshold);
-
+            byte criticalMask = ResolveCriticalHapticMask(oxygen01, power01, health01);
             byte enteredCriticalMask = (byte)(criticalMask & ~_activeCriticalHapticMask);
             _activeCriticalHapticMask = criticalMask;
-            if (enteredCriticalMask == 0)
+            byte hapticMask = enteredCriticalMask;
+            if ((criticalMask & CriticalMaskOxygen) != 0)
+                hapticMask |= CriticalMaskOxygen;
+
+            if (hapticMask == 0)
                 return;
 
             float now = Time.unscaledTime;
             if (now < _nextCriticalHapticTime)
                 return;
 
-            float oxygenCritical = math.select(0f, 1f, (enteredCriticalMask & CriticalMaskOxygen) != 0);
-            float powerCritical = math.select(0f, 1f, (enteredCriticalMask & CriticalMaskPower) != 0);
-            float healthCritical = math.select(0f, 1f, (enteredCriticalMask & CriticalMaskHealth) != 0);
+            float oxygenCritical = math.select(0f, 1f, (hapticMask & CriticalMaskOxygen) != 0);
+            float powerCritical = math.select(0f, 1f, (hapticMask & CriticalMaskPower) != 0);
+            float healthCritical = math.select(0f, 1f, (hapticMask & CriticalMaskHealth) != 0);
             float lowMotor = math.saturate(math.max(oxygenCritical, healthCritical) * 0.78f + powerCritical * 0.18f);
             float highMotor = math.saturate(math.max(powerCritical, healthCritical) * 0.86f + oxygenCritical * 0.34f);
 
@@ -3099,6 +3133,15 @@ namespace Hecton8.UI
                 CriticalHapticPriority,
                 BothMotorMask);
             _nextCriticalHapticTime = now + CriticalHapticCooldownSeconds;
+        }
+
+        internal static byte ResolveCriticalHapticMask(float oxygen01, float power01, float health01)
+        {
+            byte criticalMask = 0;
+            criticalMask |= (byte)math.select(0, CriticalMaskOxygen, oxygen01 < OxygenCriticalHapticThreshold);
+            criticalMask |= (byte)math.select(0, CriticalMaskPower, power01 < PowerCriticalHapticThreshold);
+            criticalMask |= (byte)math.select(0, CriticalMaskHealth, health01 < HealthCriticalHapticThreshold);
+            return criticalMask;
         }
 
         private static bool TryConsumeHapticSlotVersion(UIValueSlotId slotId, ref uint lastVersion)
@@ -3330,7 +3373,7 @@ namespace Hecton8.UI
         private void HandleCorruptionVisualStateChanged()
         {
             _cachedHullStressWhisperBucket = int.MinValue;
-            _cachedHullStressWhisperText = null;
+            _cachedHullStressWhisperLength = 0;
             InvalidateVisualCaches();
         }
 
@@ -3485,26 +3528,22 @@ namespace Hecton8.UI
             return manager != null && manager.GetHullStressCorruptionIntensity() > 0.9f;
         }
 
-        private string ResolveHullStressWhisperText(LocalizationManager manager)
+        private void ResolveHullStressWhisperText(LocalizationManager manager)
         {
             if (manager == null)
             {
-                const string defaultWhisper = "THE SEA IS INSIDE THE GLASS";
                 _cachedHullStressWhisperBucket = 0;
-                _cachedHullStressWhisperText = defaultWhisper;
-                CopyTextToBuffer(defaultWhisper.AsSpan(), ref _cachedHullStressWhisperBuffer, out _cachedHullStressWhisperLength);
-                return defaultWhisper;
+                CopyTextToBuffer(DefaultHullStressWhisper.AsSpan(), ref _cachedHullStressWhisperBuffer, out _cachedHullStressWhisperLength);
+                return;
             }
 
             int bucket = manager.GetHullStressCorruptionBucket();
-            if (_cachedHullStressWhisperBucket == bucket && !string.IsNullOrEmpty(_cachedHullStressWhisperText))
-                return _cachedHullStressWhisperText;
+            if (_cachedHullStressWhisperBucket == bucket && _cachedHullStressWhisperLength > 0)
+                return;
 
             _cachedHullStressWhisperBucket = bucket;
-            _cachedHullStressWhisperText = manager.ApplyHullStressCorruptionIfNeeded(
-                manager.GetHullStressHudWhisper("THE SEA IS INSIDE THE GLASS"));
-            CopyTextToBuffer(_cachedHullStressWhisperText.AsSpan(), ref _cachedHullStressWhisperBuffer, out _cachedHullStressWhisperLength);
-            return _cachedHullStressWhisperText;
+            if (!manager.TryGetHullStressHudWhisperBuffer(DefaultHullStressWhisper.AsSpan(), _cachedHullStressWhisperBuffer, out _cachedHullStressWhisperLength))
+                CopyTextToBuffer(DefaultHullStressWhisper.AsSpan(), ref _cachedHullStressWhisperBuffer, out _cachedHullStressWhisperLength);
         }
 
         private static Color PickAccent(float oxygen, float power, float health, float safeDepthNormalized, Color primary, Color warning)
@@ -4899,6 +4938,67 @@ namespace Hecton8.UI
         private static readonly Color VeilBaseBottom = new Color(0.01f, 0.04f, 0.06f, 1f);
         private static readonly Color VeilBaseSide = new Color(0.01f, 0.03f, 0.05f, 1f);
 
+        private void UpdateHudProxyLightRegistration(float power01, float oxygen01, float stressPulse01)
+        {
+            if (!enableHudProxyLight ||
+                !Application.isPlaying ||
+                targetCanvas == null ||
+                _hudProxyLightKey == 0 ||
+                (renderPath != RenderPath.ProjectionSource && targetCanvas.renderMode != RenderMode.WorldSpace))
+            {
+                UnregisterHudProxyLight();
+                return;
+            }
+
+            Transform canvasTransform = targetCanvas.transform;
+            Vector3 canvasPosition = canvasTransform.position;
+            Vector3 canvasForward = canvasTransform.forward;
+            float3 forward = math.normalizesafe(new float3(canvasForward.x, canvasForward.y, canvasForward.z), new float3(0f, 0f, 1f));
+            float3 runtimePosition = new float3(canvasPosition.x, canvasPosition.y, canvasPosition.z) +
+                                      forward * math.max(0f, hudProxyLightForwardOffsetMeters);
+            if (!math.all(math.isfinite(runtimePosition)) || !math.all(math.isfinite(forward)))
+            {
+                UnregisterHudProxyLight();
+                return;
+            }
+
+            float oxygenStress01 = math.saturate(1f - oxygen01);
+            float powerFlicker01 = math.saturate(power01 * (1f - (math.saturate(stressPulse01) * hudProxyLightStressFlicker)));
+            float intensity = math.saturate(hudProxyLightIntensity * powerFlicker01 * (1f + (oxygenStress01 * hudProxyLightOxygenStressBoost)));
+            if (intensity <= 0.0001f)
+            {
+                UnregisterHudProxyLight();
+                return;
+            }
+
+            Color proxyColor = Color.Lerp(hudProxyLightColor, hudProxyLightStressColor, oxygenStress01).linear;
+            AbsoluteUniversePosition aup = AbsoluteUniversePosition.FromRuntimePosition((Vector3)runtimePosition);
+            float now = Time.unscaledTime;
+            ProxyLightData lightData = ProxyLightData.CreateUiPanel(
+                in aup,
+                runtimePosition,
+                forward,
+                proxyColor,
+                hudProxyLightRangeMeters,
+                intensity,
+                stressPulse01,
+                powerFlicker01,
+                oxygenStress01,
+                now);
+
+            if (ProxyLightRegistry.RegisterOrUpdate(_hudProxyLightKey, in lightData))
+                _hudProxyLightRegistered = true;
+        }
+
+        private void UnregisterHudProxyLight()
+        {
+            if (!_hudProxyLightRegistered)
+                return;
+
+            ProxyLightRegistry.Unregister(_hudProxyLightKey);
+            _hudProxyLightRegistered = false;
+        }
+
         private float UpdateStressPulse(float dt)
         {
             float rawStress = playerMovement != null
@@ -5098,7 +5198,7 @@ namespace Hecton8.UI
             _cachedGraphicRaycasterCanvas = null;
             _cachedUiScaler = null;
             _cachedHullStressWhisperBucket = int.MinValue;
-            _cachedHullStressWhisperText = null;
+            _cachedHullStressWhisperLength = 0;
             _rootBaseAnchoredPositionCaptured = false;
         }
 

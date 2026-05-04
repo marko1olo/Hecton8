@@ -996,7 +996,7 @@ namespace Hecton8.Physics
         }
 
         /// <summary>
-        /// Queues a critically damped tractor-beam pull using reduced-mass PD force math.
+        /// Queues a critically damped tractor-beam pull using reduced-mass PD velocity-change math.
         /// </summary>
         public bool QueueTractorBeamPd(
             Rigidbody anchorBody,
@@ -1032,32 +1032,39 @@ namespace Hecton8.Physics
                 ? HectonPlayerMotor.SafeVelocity(anchorBody.GetPointVelocity(targetPosition))
                 : Vector3.zero;
             Vector3 currentVelocity = HectonPlayerMotor.SafeVelocity(payloadBody.GetPointVelocity(currentPosition));
-            float3 force3 = HectonContactJob.ResolveTractorBeamPdForce(
+            float maxVelocityChangeMagnitude = math.max(0f, maxForceMagnitude) / math.max(0.0001f, reducedMass);
+            float3 velocityChange3 = HectonContactJob.ResolveTractorBeamPdVelocityChange(
                 targetPosition3,
                 currentPosition3,
                 new float3(targetVelocity.x, targetVelocity.y, targetVelocity.z),
                 new float3(currentVelocity.x, currentVelocity.y, currentVelocity.z),
                 springStiffness,
                 dampingCoefficient,
-                math.max(0f, maxForceMagnitude));
-            Vector3 force = new Vector3(force3.x, force3.y, force3.z);
-            if (!IsFiniteNonZero(force))
+                reducedMass,
+                maxVelocityChangeMagnitude);
+            Vector3 payloadVelocityChange = new Vector3(velocityChange3.x, velocityChange3.y, velocityChange3.z);
+            if (!IsFiniteNonZero(payloadVelocityChange))
                 return false;
 
             bool payloadQueued = PhysicsForceRouter.QueueForceAtPosition(
                 payloadBody,
-                force,
+                payloadVelocityChange,
                 currentPosition,
-                ForceMode.Force,
+                ForceMode.VelocityChange,
                 wake);
             if (applyReactionForce && anchorBody != null && !anchorBody.isKinematic)
             {
-                PhysicsForceRouter.QueueForceAtPosition(
-                    anchorBody,
-                    -force,
-                    targetPosition,
-                    ForceMode.Force,
-                    wake);
+                float anchorVelocityScale = payloadMass / math.max(0.0001f, anchorMass);
+                Vector3 anchorVelocityChange = -payloadVelocityChange * anchorVelocityScale;
+                if (IsFiniteNonZero(anchorVelocityChange))
+                {
+                    PhysicsForceRouter.QueueForceAtPosition(
+                        anchorBody,
+                        anchorVelocityChange,
+                        targetPosition,
+                        ForceMode.VelocityChange,
+                        wake);
+                }
             }
 
             return payloadQueued;

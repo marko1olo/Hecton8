@@ -111,6 +111,8 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private Camera _cachedMainCamera; // Cache resolved gameplay camera
         private VolumeProfile _cachedVolumeProfile; // Cache Volume profile lookup
+        private bool _graphicsBindingStandby;
+        private bool _audioBindingStandby;
         private bool _pendingFieldOfViewApply;
         private int _cachedQualityLevel = -1;
         private float _cachedMasterVolume = -1f;
@@ -195,18 +197,27 @@ namespace Hecton8.UI
             object previousService,
             object currentService)
         {
-            if (serviceSlot != GlobalRegistryServiceSlot.UserOptionsRuntime)
-                return;
-
-            if (!TryAssignPersistence(currentService as UserOptionsPersistence, out bool changed) ||
-                !changed ||
-                !isActiveAndEnabled)
+            if (serviceSlot == GlobalRegistryServiceSlot.UserOptionsRuntime)
             {
+                if (!TryAssignPersistence(currentService as UserOptionsPersistence, out bool changed) ||
+                    !changed ||
+                    !isActiveAndEnabled)
+                {
+                    return;
+                }
+
+                LoadAllSettings();
+                ApplyAllSettings();
                 return;
             }
 
-            LoadAllSettings();
-            ApplyAllSettings();
+            if (!ShouldRetryStandbyBindings(serviceSlot) || !isActiveAndEnabled)
+                return;
+
+            if (!IsEnvironmentRuntimeReady())
+                return;
+
+            RetryStandbyBindings();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -856,11 +867,17 @@ namespace Hecton8.UI
                 failureCount++;
             }
 
+            bool environmentRuntimeReady = IsEnvironmentRuntimeReady();
+
             // Shadow Distance
-            if (!TryApplyShadowDistance(_cachedShadowDistance))
+            if (environmentRuntimeReady && !TryApplyShadowDistance(_cachedShadowDistance))
             {
                 success = false;
                 failureCount++;
+            }
+            else if (!environmentRuntimeReady)
+            {
+                _graphicsBindingStandby = true;
             }
 
             // Texture Quality
@@ -883,28 +900,27 @@ namespace Hecton8.UI
             }
 
             // Post-Processing
-            if (!ApplyPostProcessing())
+            if (!environmentRuntimeReady || !ApplyPostProcessing())
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Post-processing unavailable (URP Volume not found)");
-#endif
-                success = false;
-                failureCount++;
+                _graphicsBindingStandby = true;
+            }
+            else
+            {
+                _graphicsBindingStandby = false;
             }
 
             // Audio
-            if (!ApplyMixerVolume("MasterVolume", _cachedMasterVolume))
+            if (!environmentRuntimeReady || !ApplyMixerVolume("MasterVolume", _cachedMasterVolume))
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[SettingsManager] Audio settings unavailable (AudioMixer not found)");
-#endif
-                success = false;
-                failureCount++;
+                _audioBindingStandby = true;
             }
-
-            ApplyMixerVolume("MusicVolume", _cachedMusicVolume);
-            ApplyMixerVolume("SfxVolume", _cachedSfxVolume);
-            ApplyMixerVolume("AmbientVolume", _cachedAmbientVolume);
+            else
+            {
+                _audioBindingStandby = false;
+                ApplyMixerVolume("MusicVolume", _cachedMusicVolume);
+                ApplyMixerVolume("SfxVolume", _cachedSfxVolume);
+                ApplyMixerVolume("AmbientVolume", _cachedAmbientVolume);
+            }
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (failureCount > 0)
@@ -1143,8 +1159,54 @@ namespace Hecton8.UI
             if (_pendingFieldOfViewApply && ApplyCameraFOV(_cachedFieldOfView))
                 _pendingFieldOfViewApply = false;
 
-            ApplyPostProcessing();
+            if (IsEnvironmentRuntimeReady())
+                RetryStandbyBindings();
+
             ApplyWorldQualityPreset(_cachedGraphicsPreset);
+        }
+
+        private static bool ShouldRetryStandbyBindings(GlobalRegistryServiceSlot serviceSlot)
+        {
+            return serviceSlot == GlobalRegistryServiceSlot.Environment ||
+                serviceSlot == GlobalRegistryServiceSlot.Player ||
+                serviceSlot == GlobalRegistryServiceSlot.LODSystemRuntime ||
+                serviceSlot == GlobalRegistryServiceSlot.DynamicResolutionRuntime ||
+                serviceSlot == GlobalRegistryServiceSlot.Audio ||
+                serviceSlot == GlobalRegistryServiceSlot.CullingRuntime;
+        }
+
+        private void RetryStandbyBindings()
+        {
+            if (!IsEnvironmentRuntimeReady())
+                return;
+
+            if (_graphicsBindingStandby)
+            {
+                _cachedVolumeProfile = null;
+                _graphicsBindingStandby = !ApplyPostProcessing();
+            }
+
+            if (_audioBindingStandby)
+            {
+                _audioBindingStandby = !ApplyAudioMixerSettings();
+            }
+        }
+
+        private bool ApplyAudioMixerSettings()
+        {
+            if (!ApplyMixerVolume("MasterVolume", _cachedMasterVolume))
+                return false;
+
+            ApplyMixerVolume("MusicVolume", _cachedMusicVolume);
+            ApplyMixerVolume("SfxVolume", _cachedSfxVolume);
+            ApplyMixerVolume("AmbientVolume", _cachedAmbientVolume);
+            return true;
+        }
+
+        private static bool IsEnvironmentRuntimeReady()
+        {
+            IEnvironmentRuntimeContext environment = GlobalRegistry.Environment;
+            return environment != null && environment.IsInitialized;
         }
 
         private bool ApplyPostProcessing()

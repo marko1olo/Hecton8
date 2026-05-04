@@ -167,6 +167,7 @@ namespace Hecton8.Power
             if (!TryFinalizeSlowTickEvaluations())
                 return;
 
+            ProcessPendingSplitChecks();
             PublishTelemetrySnapshot();
             _slowTickFinalizationPending = false;
         }
@@ -242,7 +243,14 @@ namespace Hecton8.Power
             if (grid == null || grid.NodeCount <= 1)
                 return;
 
-            LogisticsNetworkGraph.TopologySummary topology = grid.AnalyzeTopology();
+            grid.RequestSplitCheck();
+        }
+
+        private static void SplitGridIfDisconnected(PowerGrid grid, LogisticsNetworkGraph.TopologySummary topology)
+        {
+            if (grid == null || grid.NodeCount <= 1)
+                return;
+
             if (topology.NodeCount <= 1)
                 return;
 
@@ -348,6 +356,25 @@ namespace Hecton8.Power
             }
 
             return allReady;
+        }
+
+        private static void ProcessPendingSplitChecks()
+        {
+            if (_allGrids == null)
+                return;
+
+            int gridCount = _allGrids.Count;
+            for (int gridIndex = gridCount - 1; gridIndex >= 0; gridIndex--)
+            {
+                PowerGrid grid = _allGrids[gridIndex];
+                if (grid == null)
+                    continue;
+
+                if (!grid.TryConsumePendingSplitCheck(out LogisticsNetworkGraph.TopologySummary topology))
+                    continue;
+
+                SplitGridIfDisconnected(grid, topology);
+            }
         }
 
         private static void CompleteAllPendingGridEvaluations()

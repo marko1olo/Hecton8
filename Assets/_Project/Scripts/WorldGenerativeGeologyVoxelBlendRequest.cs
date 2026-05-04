@@ -25,7 +25,15 @@ namespace Hecton8.World
         public WorldChunkCoordinate chunkCoord;
         public bool hasMacroZone;
         public WorldMacroZoneCoordinate macroZoneCoord;
-        public Vector3 RuntimeCenter => HectonFloatingOrigin.ToRuntimePosition(absoluteUniverseCenter);
-        public Vector3 RuntimeTerrainContactPosition => HectonFloatingOrigin.ToRuntimePosition(absoluteTerrainContactPosition);
+        internal AbsoluteUniversePosition absoluteUniverseCenterAup;
+        internal AbsoluteUniversePosition absoluteTerrainContactAup;
+        internal bool hasAbsoluteUniverseCenterAup;
+        internal bool hasAbsoluteTerrainContactAup;
+        public Vector3 RuntimeCenter => hasAbsoluteUniverseCenterAup
+            ? (Vector3)absoluteUniverseCenterAup.ToRuntimeFloat3()
+            : HectonFloatingOrigin.ToRuntimePosition(absoluteUniverseCenter);
+        public Vector3 RuntimeTerrainContactPosition => hasAbsoluteTerrainContactAup
+            ? (Vector3)absoluteTerrainContactAup.ToRuntimeFloat3()
+            : HectonFloatingOrigin.ToRuntimePosition(absoluteTerrainContactPosition);
     }
 }

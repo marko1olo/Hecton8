@@ -43,6 +43,7 @@ namespace Hecton8.Core
         private const int MaxPdaEventsPerFrame = 30;
         private const int PdaCongestionWarningFrameThreshold = 5;
         private const int LateFrameCircuitBreakerLaneCapacity = 32;
+        private const double LateFrameEventFlushBudgetMilliseconds = 2.0;
         private const float CircuitBreakerLogIntervalSeconds = 5f;
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
@@ -196,8 +197,10 @@ namespace Hecton8.Core
         private static int _lateFrameEventDispatchBudget;
         private static bool _lateFrameEventBudgetActive;
         private static bool _lateFrameCircuitBreakerTripped;
+        private static bool _lateFrameTimeBudgetExhausted;
         private static uint _activeLateFrameEventLaneHash;
         private static uint _dominantLateFrameCircuitBreakerLaneHash;
+        private static long _lateFrameEventBudgetStartTimestamp;
 
         internal static float CurrentFrameDeltaTime { get; private set; }
 
@@ -248,8 +251,10 @@ namespace Hecton8.Core
             _lateFrameEventDispatchBudget = 0;
             _lateFrameEventBudgetActive = false;
             _lateFrameCircuitBreakerTripped = false;
+            _lateFrameTimeBudgetExhausted = false;
             _activeLateFrameEventLaneHash = 0u;
             _dominantLateFrameCircuitBreakerLaneHash = 0u;
+            _lateFrameEventBudgetStartTimestamp = 0L;
             _dominantLateFrameCircuitBreakerLaneCount = 0;
             System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
             System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
@@ -262,6 +267,11 @@ namespace Hecton8.Core
             _temporalCompressionFrameCount = 0;
             _pdaOverBudgetConsecutiveFrames = 0;
             ActiveRuntimeInstance = null;
+        }
+
+        internal static void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount)
+        {
+            _foveatedSimulationManager.SetVoxelTeardownBackpressure(active, pendingChunkCount);
         }
 
         internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
@@ -531,6 +541,7 @@ namespace Hecton8.Core
 
         private void Update()
         {
+            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherUpdate);
             using (_updateProfilerMarker.Auto())
             {
 #if UNITY_EDITOR
@@ -586,6 +597,7 @@ namespace Hecton8.Core
 
         private void LateUpdate()
         {
+            RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.DispatcherLateFrame);
             long completeDispatcherTimestamp = 0L;
             bool dispatcherPhaseTimingStarted = false;
             try
@@ -830,6 +842,21 @@ namespace Hecton8.Core
             if (!_lateFrameEventBudgetActive)
                 return true;
 
+            if (IsLateFrameEventFlushTimeBudgetExhausted())
+            {
+                _lateFrameCircuitBreakerTripped = true;
+                RecordLateFrameCircuitBreakerLane(_activeLateFrameEventLaneHash);
+                if (!_lateFrameTimeBudgetExhausted)
+                {
+                    _lateFrameTimeBudgetExhausted = true;
+                    CrashTelemetryBuffer.ReportLateFrameLoadShedding(
+                        _activeLateFrameEventLaneHash,
+                        _lateFrameEventDispatchBudget);
+                }
+
+                return false;
+            }
+
             if (_lateFrameEventDispatchBudget > 0)
             {
                 _lateFrameEventDispatchBudget--;
@@ -887,10 +914,12 @@ namespace Hecton8.Core
         {
             _lateFrameEventDispatchBudget = MaxLateFrameEventsPerFrame;
             _lateFrameCircuitBreakerTripped = false;
+            _lateFrameTimeBudgetExhausted = false;
             _lateFrameEventBudgetActive = true;
             _activeLateFrameEventLaneHash = 0u;
             _dominantLateFrameCircuitBreakerLaneHash = 0u;
             _dominantLateFrameCircuitBreakerLaneCount = 0;
+            _lateFrameEventBudgetStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
             System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
             System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
         }
@@ -898,9 +927,12 @@ namespace Hecton8.Core
         private static void EndLateFrameEventBudget()
         {
             bool circuitBreakerTripped = _lateFrameCircuitBreakerTripped;
+            bool timeBudgetExhausted = _lateFrameTimeBudgetExhausted;
             _lateFrameEventBudgetActive = false;
             _lateFrameEventDispatchBudget = 0;
             _lateFrameCircuitBreakerTripped = false;
+            _lateFrameTimeBudgetExhausted = false;
+            _lateFrameEventBudgetStartTimestamp = 0L;
 
             if (circuitBreakerTripped)
             {
@@ -916,9 +948,21 @@ namespace Hecton8.Core
             if (circuitBreakerTripped && now >= _nextCircuitBreakerLogTime)
             {
                 _nextCircuitBreakerLogTime = now + CircuitBreakerLogIntervalSeconds;
-                Debug.LogWarning("[SystemDispatcher] CircuitBreakerTripped: late-frame event budget exceeded; remaining events deferred.");
+                Debug.LogWarning(timeBudgetExhausted
+                    ? "[SystemDispatcher] TELEMETRY_LOAD_SHEDDING: late-frame event flush exceeded 2.0ms; remaining NativeQueues deferred."
+                    : "[SystemDispatcher] CircuitBreakerTripped: late-frame event budget exceeded; remaining events deferred.");
             }
 #endif
+        }
+
+        private static bool IsLateFrameEventFlushTimeBudgetExhausted()
+        {
+            if (_lateFrameEventBudgetStartTimestamp == 0L)
+                return false;
+
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - _lateFrameEventBudgetStartTimestamp;
+            double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            return elapsedMilliseconds >= LateFrameEventFlushBudgetMilliseconds;
         }
 
         private static void RecordLateFrameCircuitBreakerLane(uint queueHash)

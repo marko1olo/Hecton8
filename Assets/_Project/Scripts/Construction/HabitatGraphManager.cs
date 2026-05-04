@@ -53,6 +53,7 @@ namespace Hecton8.Construction
         private const float DefaultHydrodynamicDamagePerSecondAtFullOverload = 1.5f;
         private const float DefaultHydroShearThresholdKilograms = 18000f;
         private const float PressureBucklingCompressionDeltaThreshold = 0.15f;
+        private const float RuptureCascadeNeighborStressMultiplier = 0.5f;
         private const float StructuralGroanStressThreshold01 = 0.8f;
         private const float StructuralGroanPitchRange = 0.32f;
         private const float MinimumHydrodynamicFlowSpeedMetersPerSecond = 0.1f;
@@ -82,6 +83,7 @@ namespace Hecton8.Construction
         private readonly List<EdgeRecord> _edgeBuffer;
         private readonly List<TemporaryBypassRecord> _temporaryBypassBuffer;
         private readonly List<long> _submittedLinkIds;
+        private readonly List<long> _emittedRuptureEdgeVfxKeys;
         private readonly Dictionary<uint, int> _moduleIndexByNodeId;
         private readonly Dictionary<SocketKey, SocketMatchEntry> _socketLookup;
 
@@ -116,6 +118,8 @@ namespace Hecton8.Construction
             _temporaryBypassBuffer = new List<TemporaryBypassRecord>(InitialTemporaryBypassCapacity);
             // COLD ALLOC: List<Int64>[128] — submitted visual spline link ids for removal during rebuild — owner: HabitatGraphManager
             _submittedLinkIds = new List<long>(InitialEdgeCapacity);
+            // COLD ALLOC: List<Int64>[128] - emitted rupture edge VFX keys - owner: HabitatGraphManager
+            _emittedRuptureEdgeVfxKeys = new List<long>(InitialEdgeCapacity);
             // COLD ALLOC: Dictionary<UInt32,Int32>[64] — node-id to module-index lookup for temporary bypass stitching — owner: HabitatGraphManager
             _moduleIndexByNodeId = new Dictionary<uint, int>(safeModuleCapacity);
             // COLD ALLOC: Dictionary<SocketKey,SocketMatchEntry>[128] — quantized socket lookup for zero-GC adjacency assembly — owner: HabitatGraphManager
@@ -304,12 +308,10 @@ namespace Hecton8.Construction
                     if (currentModule != null && currentModule.isActiveAndEnabled)
                     {
                         float floodMassKilograms = currentModule.ResolveFloodWaterMassKilograms();
-                        float parasiteMassKilograms = currentModule.ResolveParasiteAddedMassKilograms();
-                        float structuralMassKilograms = floodMassKilograms + parasiteMassKilograms;
-                        if (structuralMassKilograms > 0f && math.isfinite(structuralMassKilograms))
+                        if (floodMassKilograms > 0f && math.isfinite(floodMassKilograms))
                         {
-                            totalFloodMassKilograms += structuralMassKilograms;
-                            weightedFloodCentroid += (Vector3)currentRecord.Position * structuralMassKilograms;
+                            totalFloodMassKilograms += floodMassKilograms;
+                            weightedFloodCentroid += (Vector3)currentRecord.Position * floodMassKilograms;
                         }
                     }
 
@@ -383,6 +385,8 @@ namespace Hecton8.Construction
 
         private void EvaluatePressureBucklingStress(float deltaTime)
         {
+            ApplyQueuedRuptureCascadeFailures();
+
             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
             {
                 BaseModule baseModule = _moduleBuffer[moduleIndex].BaseModule;
@@ -419,14 +423,88 @@ namespace Hecton8.Construction
                 if (!sourceGroanAllowed && !destinationGroanAllowed)
                     continue;
 
-                Vector3 midpoint = new Vector3(
-                    (edge.StartSocketPosition.x + edge.EndSocketPosition.x) * 0.5f,
-                    (edge.StartSocketPosition.y + edge.EndSocketPosition.y) * 0.5f,
-                    (edge.StartSocketPosition.z + edge.EndSocketPosition.z) * 0.5f);
+                Vector3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.StartSocketPosition);
+                Vector3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.EndSocketPosition);
+                Vector3 midpoint = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5f);
                 ProceduralAudioEvents.RaiseStructuralStressTriggered(
                     midpoint,
                     stress01,
                     1f + (math.saturate(stress01) * StructuralGroanPitchRange));
+            }
+
+            ApplyRuptureCascadeStressFromRupturedNodes();
+        }
+
+        private void ApplyQueuedRuptureCascadeFailures()
+        {
+            int maxNodeCount = math.min(_nodeCount, _moduleBuffer.Count);
+            for (int nodeIndex = 0; nodeIndex < maxNodeCount; nodeIndex++)
+            {
+                BaseModule baseModule = _moduleBuffer[nodeIndex].BaseModule;
+                if (baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                if (!baseModule.TryConsumePendingRuptureCascadeFailure())
+                    continue;
+
+                MarkNodeRuptured(nodeIndex);
+                RuptureConnectedEdges(nodeIndex);
+            }
+        }
+
+        private void ApplyRuptureCascadeStressFromRupturedNodes()
+        {
+            if (_nodeCount <= 0 || !_edgeOffsets.IsCreated || !_edgeDestinations.IsCreated)
+                return;
+
+            int maxNodeCount = math.min(_nodeCount, _moduleBuffer.Count);
+            for (int nodeIndex = 0; nodeIndex < maxNodeCount; nodeIndex++)
+            {
+                LogisticsNodeFlags sourceFlags = _nodes[nodeIndex].Flags;
+                BaseModule sourceModule = _moduleBuffer[nodeIndex].BaseModule;
+                bool sourceRuptured = (sourceFlags & LogisticsNodeFlags.Ruptured) != 0 ||
+                                      (sourceModule != null && sourceModule.IntegrityState == BaseModuleIntegrityState.Ruptured);
+                if (!sourceRuptured)
+                    continue;
+
+                int edgeStart = _edgeOffsets[nodeIndex];
+                int edgeEnd = _edgeOffsets[nodeIndex + 1];
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    int neighborNodeIndex = _edgeDestinations[edgeIndex];
+                    if (neighborNodeIndex < 0 || neighborNodeIndex >= maxNodeCount)
+                        continue;
+
+                    LogisticsNodeFlags neighborFlags = _nodes[neighborNodeIndex].Flags;
+                    if ((neighborFlags & LogisticsNodeFlags.Ruptured) != 0)
+                        continue;
+
+                    BaseModule neighborModule = _moduleBuffer[neighborNodeIndex].BaseModule;
+                    if (neighborModule == null ||
+                        !neighborModule.isActiveAndEnabled ||
+                        neighborModule.IntegrityState == BaseModuleIntegrityState.Ruptured)
+                    {
+                        continue;
+                    }
+
+                    neighborModule.ApplyRuptureCascadeStress(RuptureCascadeNeighborStressMultiplier);
+                }
+            }
+        }
+
+        private void RuptureConnectedEdges(int nodeIndex)
+        {
+            for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
+            {
+                EdgeRecord edge = _edgeBuffer[edgeIndex];
+                if (edge.Severed || edge.IsSyntheticParasiteRoot)
+                    continue;
+
+                if (edge.SourceIndex != nodeIndex && edge.DestinationIndex != nodeIndex)
+                    continue;
+
+                MarkEdgeRuptured(ref edge);
+                _edgeBuffer[edgeIndex] = edge;
             }
         }
 
@@ -620,6 +698,16 @@ namespace Hecton8.Construction
 
         internal bool TryAddTemporaryBypass(GameObject sourceModule, GameObject destinationModule, out bool injectedDirectly)
         {
+            return TryAddTemporaryBypass(sourceModule, destinationModule, 0, 0, out injectedDirectly);
+        }
+
+        internal bool TryAddTemporaryBypass(
+            GameObject sourceModule,
+            GameObject destinationModule,
+            int sourceModuleHashId,
+            int destinationModuleHashId,
+            out bool injectedDirectly)
+        {
             injectedDirectly = false;
             if (sourceModule == null || destinationModule == null || ReferenceEquals(sourceModule, destinationModule))
                 return false;
@@ -629,12 +717,15 @@ namespace Hecton8.Construction
             if (sourceNodeId == 0u || destinationNodeId == 0u || sourceNodeId == destinationNodeId)
                 return false;
 
-            uint lowNodeId = math.min(sourceNodeId, destinationNodeId);
-            uint highNodeId = math.max(sourceNodeId, destinationNodeId);
+            sourceModuleHashId = ResolveTemporaryBypassModuleHashId(sourceModule, sourceModuleHashId);
+            destinationModuleHashId = ResolveTemporaryBypassModuleHashId(destinationModule, destinationModuleHashId);
+            if (sourceModuleHashId == 0 || destinationModuleHashId == 0)
+                return false;
+
             for (int i = 0; i < _temporaryBypassBuffer.Count; i++)
             {
                 TemporaryBypassRecord existing = _temporaryBypassBuffer[i];
-                if (existing.LowNodeId == lowNodeId && existing.HighNodeId == highNodeId)
+                if (existing.SourceNodeId == sourceNodeId && existing.DestinationNodeId == destinationNodeId)
                     return false;
             }
 
@@ -647,18 +738,39 @@ namespace Hecton8.Construction
                 return false;
             }
 
-            Vector3 lowPosition = sourceNodeId == lowNodeId ? sourcePosition : destinationPosition;
-            Vector3 highPosition = sourceNodeId == lowNodeId ? destinationPosition : sourcePosition;
+            int recordIndex = _temporaryBypassBuffer.Count;
             _temporaryBypassBuffer.Add(new TemporaryBypassRecord
             {
-                LowNodeId = lowNodeId,
-                HighNodeId = highNodeId,
-                SourcePosition = lowPosition,
-                DestinationPosition = highPosition
+                SourceNodeId = sourceNodeId,
+                DestinationNodeId = destinationNodeId,
+                SourceModuleHashId = sourceModuleHashId,
+                DestinationModuleHashId = destinationModuleHashId,
+                SourcePosition = sourcePosition,
+                DestinationPosition = destinationPosition
             });
 
-            injectedDirectly = TryInjectTemporaryBypassIntoLiveCsr(lowNodeId, highNodeId, lowPosition, highPosition);
-            return true;
+            injectedDirectly = TryInjectTemporaryBypassIntoLiveCsr(sourceNodeId, destinationNodeId, sourcePosition, destinationPosition);
+            if (injectedDirectly)
+                return true;
+
+            _temporaryBypassBuffer.RemoveAt(recordIndex);
+            return false;
+        }
+
+        private static int ResolveTemporaryBypassModuleHashId(GameObject module, int capturedModuleHashId)
+        {
+            if (capturedModuleHashId != 0)
+                return capturedModuleHashId;
+
+            if (module != null &&
+                module.TryGetComponent(out ModuleMarker marker) &&
+                marker != null &&
+                marker.Data != null)
+            {
+                return marker.Data.ModuleHashId;
+            }
+
+            return 0;
         }
 
         private bool TryResolveModuleGraphPosition(uint nodeId, GameObject fallbackModule, out Vector3 position)
@@ -681,16 +793,16 @@ namespace Hecton8.Construction
             return true;
         }
 
-        private bool TryInjectTemporaryBypassIntoLiveCsr(uint lowNodeId, uint highNodeId, Vector3 sourcePosition, Vector3 destinationPosition)
+        private bool TryInjectTemporaryBypassIntoLiveCsr(uint sourceNodeId, uint destinationNodeId, Vector3 sourcePosition, Vector3 destinationPosition)
         {
             if (_nodeCount <= 0 ||
                 !_edgeOffsets.IsCreated ||
                 !_edgeDestinations.IsCreated ||
                 !_edgeResistance.IsCreated ||
-                !_moduleIndexByNodeId.TryGetValue(lowNodeId, out int lowIndex) ||
-                !_moduleIndexByNodeId.TryGetValue(highNodeId, out int highIndex) ||
-                lowIndex == highIndex ||
-                _edgeCount + 2 > _edgeDestinations.Length ||
+                !_moduleIndexByNodeId.TryGetValue(sourceNodeId, out int sourceIndex) ||
+                !_moduleIndexByNodeId.TryGetValue(destinationNodeId, out int destinationIndex) ||
+                sourceIndex == destinationIndex ||
+                _edgeCount + 1 > _edgeDestinations.Length ||
                 _edgeBuffer.Count >= _edgeBuffer.Capacity)
             {
                 return false;
@@ -703,19 +815,19 @@ namespace Hecton8.Construction
 
             _edgeBuffer.Add(new EdgeRecord
             {
-                SourceIndex = lowIndex,
-                DestinationIndex = highIndex,
+                SourceIndex = sourceIndex,
+                DestinationIndex = destinationIndex,
                 StartSocketPosition = sourcePosition,
                 EndSocketPosition = destinationPosition,
                 StartForward = forward,
                 EndForward = -forward,
                 Resistance = resistance,
                 Flags = PipeRenderFlags.None,
-                Severed = false
+                Severed = false,
+                DirectedOnly = true
             });
 
-            InsertDirectedCsrEdge(lowIndex, highIndex, resistance);
-            InsertDirectedCsrEdge(highIndex, lowIndex, resistance);
+            InsertDirectedCsrEdge(sourceIndex, destinationIndex, resistance);
             EvaluateAnchorReachability();
             PublishAnchorState();
             PublishComponentPowerState();
@@ -748,29 +860,31 @@ namespace Hecton8.Construction
             for (int bypassIndex = 0; bypassIndex < _temporaryBypassBuffer.Count; bypassIndex++)
             {
                 TemporaryBypassRecord bypass = _temporaryBypassBuffer[bypassIndex];
-                if (!_moduleIndexByNodeId.TryGetValue(bypass.LowNodeId, out int lowIndex) ||
-                    !_moduleIndexByNodeId.TryGetValue(bypass.HighNodeId, out int highIndex) ||
-                    lowIndex == highIndex)
+                if (_edgeBuffer.Count >= _edgeBuffer.Capacity ||
+                    !_moduleIndexByNodeId.TryGetValue(bypass.SourceNodeId, out int sourceIndex) ||
+                    !_moduleIndexByNodeId.TryGetValue(bypass.DestinationNodeId, out int destinationIndex) ||
+                    sourceIndex == destinationIndex)
                 {
                     continue;
                 }
 
-                Vector3 sourcePosition = _moduleBuffer[lowIndex].Position;
-                Vector3 destinationPosition = _moduleBuffer[highIndex].Position;
+                Vector3 sourcePosition = _moduleBuffer[sourceIndex].Position;
+                Vector3 destinationPosition = _moduleBuffer[destinationIndex].Position;
                 Vector3 direction = destinationPosition - sourcePosition;
                 float sqrMagnitude = direction.sqrMagnitude;
                 Vector3 forward = sqrMagnitude > 0.0001f ? direction / math.sqrt(sqrMagnitude) : Vector3.up;
 
                 _edgeBuffer.Add(new EdgeRecord
                 {
-                    SourceIndex = lowIndex,
-                    DestinationIndex = highIndex,
+                    SourceIndex = sourceIndex,
+                    DestinationIndex = destinationIndex,
                     StartSocketPosition = sourcePosition,
                     EndSocketPosition = destinationPosition,
                     StartForward = forward,
                     EndForward = -forward,
                     Flags = PipeRenderFlags.None,
-                    Severed = false
+                    Severed = false,
+                    DirectedOnly = true
                 });
             }
         }
@@ -896,8 +1010,15 @@ namespace Hecton8.Construction
                     continue;
 
                 _edgeOffsets[edge.SourceIndex + 1] = _edgeOffsets[edge.SourceIndex + 1] + 1;
-                _edgeOffsets[edge.DestinationIndex + 1] = _edgeOffsets[edge.DestinationIndex + 1] + 1;
-                logicalDirectedEdgeCount += 2;
+                if (edge.DirectedOnly)
+                {
+                    logicalDirectedEdgeCount++;
+                }
+                else
+                {
+                    _edgeOffsets[edge.DestinationIndex + 1] = _edgeOffsets[edge.DestinationIndex + 1] + 1;
+                    logicalDirectedEdgeCount += 2;
+                }
             }
 
             for (int nodeIndex = 1; nodeIndex <= _nodeCount; nodeIndex++)
@@ -916,6 +1037,9 @@ namespace Hecton8.Construction
                 _edgeWriteCursor[edge.SourceIndex] = forwardWriteIndex + 1;
                 _edgeDestinations[forwardWriteIndex] = edge.DestinationIndex;
                 _edgeResistance[forwardWriteIndex] = edge.Resistance;
+
+                if (edge.DirectedOnly)
+                    continue;
 
                 int reverseWriteIndex = _edgeWriteCursor[edge.DestinationIndex];
                 _edgeWriteCursor[edge.DestinationIndex] = reverseWriteIndex + 1;
@@ -969,13 +1093,51 @@ namespace Hecton8.Construction
             edge.Severed = true;
             MarkNodeRuptured(edge.SourceIndex);
             MarkNodeRuptured(edge.DestinationIndex);
+            RegisterSeveredEdgeRuptureVfx(in edge);
         }
 
         private void MarkNodeRuptured(int nodeIndex)
         {
+            if (nodeIndex < 0 || nodeIndex >= _nodeCount)
+                return;
+
             LogisticsNetworkGraph.LogisticsNode node = _nodes[nodeIndex];
             node.Flags |= LogisticsNodeFlags.Ruptured;
             _nodes[nodeIndex] = node;
+
+            if (nodeIndex < _moduleBuffer.Count)
+                ConnectionSplineBatchRenderer.SetPipeNodeRuptured(_moduleBuffer[nodeIndex].NodeId, true);
+        }
+
+        private void RegisterSeveredEdgeRuptureVfx(in EdgeRecord edge)
+        {
+            if (edge.IsSyntheticParasiteRoot ||
+                edge.SourceIndex < 0 ||
+                edge.SourceIndex >= _moduleBuffer.Count ||
+                edge.DestinationIndex < 0 ||
+                edge.DestinationIndex >= _moduleBuffer.Count)
+            {
+                return;
+            }
+
+            long linkId = ComposeLinkId(_moduleBuffer[edge.SourceIndex].NodeId, _moduleBuffer[edge.DestinationIndex].NodeId);
+            for (int i = 0; i < _emittedRuptureEdgeVfxKeys.Count; i++)
+            {
+                if (_emittedRuptureEdgeVfxKeys[i] == linkId)
+                    return;
+            }
+
+            AbyssalFluidDecalManager fluidDecals = Hecton8.Core.GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals == null || _emittedRuptureEdgeVfxKeys.Count >= _emittedRuptureEdgeVfxKeys.Capacity)
+                return;
+
+            Vector3 startAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.StartSocketPosition);
+            Vector3 endAup = HectonFloatingOrigin.ToAbsoluteUniversePosition((Vector3)edge.EndSocketPosition);
+            Vector3 midpointRuntime = HectonFloatingOrigin.ToRuntimePosition((startAup + endAup) * 0.5f);
+            float spanMeters = math.distance(edge.StartSocketPosition, edge.EndSocketPosition);
+            float radiusScale = math.lerp(0.65f, 1.2f, math.saturate(spanMeters / LogisticsPipeBuilder.UnsupportedSpanMeters));
+            fluidDecals.RegisterRuptureFluid(midpointRuntime, radiusScale);
+            _emittedRuptureEdgeVfxKeys.Add(linkId);
         }
 
         private void EvaluateAnchorReachability()
@@ -1118,18 +1280,25 @@ namespace Hecton8.Construction
 
                 bool shouldLock = false;
                 bool blockManualOverride = false;
-                if (module.IsEmergencyAirlock && baseModule.IntegrityState == BaseModuleIntegrityState.Pristine)
+                if (module.IsEmergencyAirlock)
                 {
                     int edgeStart = _edgeOffsets[nodeIndex];
                     int edgeEnd = _edgeOffsets[nodeIndex + 1];
                     for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
                     {
-                        BaseModule adjacentModule = _moduleBuffer[_edgeDestinations[edgeIndex]].BaseModule;
-                        if (adjacentModule != null &&
-                            (adjacentModule.IntegrityState == BaseModuleIntegrityState.Ruptured || adjacentModule.IsFlooded))
+                        int adjacentNodeIndex = _edgeDestinations[edgeIndex];
+                        if (adjacentNodeIndex < 0 || adjacentNodeIndex >= _nodeCount)
+                            continue;
+
+                        LogisticsNodeFlags adjacentFlags = _nodes[adjacentNodeIndex].Flags;
+                        BaseModule adjacentModule = _moduleBuffer[adjacentNodeIndex].BaseModule;
+                        bool adjacentRuptured = (adjacentFlags & LogisticsNodeFlags.Ruptured) != 0 ||
+                                                (adjacentModule != null && adjacentModule.IntegrityState == BaseModuleIntegrityState.Ruptured);
+                        bool adjacentFlooded = adjacentModule != null && adjacentModule.IsFlooded;
+                        if (adjacentRuptured || adjacentFlooded)
                         {
                             shouldLock = true;
-                            if (adjacentModule.FloodLevel01 >= 0.2f)
+                            if (adjacentModule != null && adjacentModule.FloodLevel01 >= 0.2f)
                             {
                                 blockManualOverride = true;
                                 break;
@@ -1241,7 +1410,8 @@ namespace Hecton8.Construction
                     continue;
 
                 _graph.AddEdge(edge.SourceIndex, edge.DestinationIndex, edge.Resistance);
-                _graph.AddEdge(edge.DestinationIndex, edge.SourceIndex, edge.Resistance);
+                if (!edge.DirectedOnly)
+                    _graph.AddEdge(edge.DestinationIndex, edge.SourceIndex, edge.Resistance);
             }
 
             _graph.FinalizeBuild();
@@ -1309,6 +1479,9 @@ namespace Hecton8.Construction
                 if (_moduleBuffer[moduleIndex].IsSyntheticParasiteRoot)
                     continue;
 
+                if (!IsPipeSpanSupportModule(_moduleBuffer[moduleIndex]))
+                    continue;
+
                 float projection;
                 float distanceSq = DistancePointToSegmentSq(_moduleBuffer[moduleIndex].Position, start, end, out projection);
                 if (projection > 0.1f &&
@@ -1320,6 +1493,16 @@ namespace Hecton8.Construction
             }
 
             return false;
+        }
+
+        private static bool IsPipeSpanSupportModule(ModuleRecord module)
+        {
+            if (module.IsAnchorNode)
+                return true;
+
+            ModuleMarker marker = module.Marker;
+            string persistentId = marker != null ? marker.PrefabId : string.Empty;
+            return string.Equals(persistentId, "Build_Utility_Pylon", StringComparison.Ordinal);
         }
 
         private static float DistancePointToSegmentSq(float3 point, float3 start, float3 end, out float projection)
@@ -1761,12 +1944,15 @@ namespace Hecton8.Construction
             public PipeRenderFlags Flags;
             public bool Severed;
             public bool IsSyntheticParasiteRoot;
+            public bool DirectedOnly;
         }
 
         private struct TemporaryBypassRecord
         {
-            public uint LowNodeId;
-            public uint HighNodeId;
+            public uint SourceNodeId;
+            public uint DestinationNodeId;
+            public int SourceModuleHashId;
+            public int DestinationModuleHashId;
             public float3 SourcePosition;
             public float3 DestinationPosition;
         }

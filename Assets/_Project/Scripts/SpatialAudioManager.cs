@@ -116,11 +116,13 @@ namespace Hecton8.Audio
         private const float RearHemisphereLowPassMaximumCutoffHertz = 18000f;
         private const float RearHemisphereLowPassMinimumCutoffHertz = 3200f;
         private const float BinauralWaterBlendSharpness = 7f;
-        private const float ThreatBusDuckMaximumDb = -10f;
-        private const float ThreatBusDuckAttackSharpness = 18f;
-        private const float ThreatBusDuckReleaseSharpness = 5f;
+        private const float ThreatBusDuckMaximumDb = -12f;
+        private const float ThreatBusDuckAttackSeconds = 0.05f;
+        private const float ThreatBusDuckReleaseSeconds = 0.3f;
         private const float ParasiteRoomAudioAttackSharpness = 8f;
         private const float ParasiteRoomAudioReleaseSharpness = 3f;
+        private const float EclipseAcousticPitchShiftMinCents = -300f;
+        private const float EclipseAcousticPitchShiftMaxCents = 0f;
 
         internal static SpatialAudioManager ActiveRuntimeInstance { get; private set; }
 
@@ -341,6 +343,8 @@ namespace Hecton8.Audio
         private float _lastParasiteRoomLowPassCutoffHz = -1f;
         private float _lastParasiteOrganicLayerGainDb = float.PositiveInfinity;
         private int _parasiteRoomAcousticCount;
+        private float _eclipseAcousticPitchShiftCents;
+        private float _eclipseAcousticPitchRatio = 1f;
         private float _listenerWaterDensityMul;
         private float _radarDecayAccumulator;
         private HectonPlayerMovement _listenerPlayerMovement;
@@ -401,6 +405,7 @@ namespace Hecton8.Audio
             _listenerPlayerMovement = null;
             _listenerWaterDensityMul = 0f;
             SetParasiteRoomAcousticLoad(0);
+            SetEclipseAcousticPitchShiftCents(0f);
             ApplyThreatBusDucking(0f, 0f);
             ApplyParasiteRoomAcousticState(0f);
             _radarDecayAccumulator = 0f;
@@ -418,6 +423,33 @@ namespace Hecton8.Audio
         /// True once the audio runtime has been registered into the global service locator.
         /// </summary>
         public bool IsInitialized => _isInitialized;
+
+        /// <summary>
+        /// Current eclipse-driven pitch shift applied to ambient bed/drone world sources.
+        /// </summary>
+        public float EclipseAcousticPitchShiftCents => _eclipseAcousticPitchShiftCents;
+
+        /// <summary>
+        /// Current pitch ratio derived from <see cref="EclipseAcousticPitchShiftCents"/>.
+        /// </summary>
+        public float EclipseAcousticPitchRatio => _eclipseAcousticPitchRatio;
+
+        /// <summary>
+        /// Sets the eclipse pitch scalar in cents. Negative values lower ambient bed/drone sources.
+        /// </summary>
+        public void SetEclipseAcousticPitchShiftCents(float shiftCents)
+        {
+            float clampedCents = math.clamp(
+                shiftCents,
+                EclipseAcousticPitchShiftMinCents,
+                EclipseAcousticPitchShiftMaxCents);
+            if (math.abs(clampedCents - _eclipseAcousticPitchShiftCents) <= 0.01f)
+                return;
+
+            _eclipseAcousticPitchShiftCents = clampedCents;
+            _eclipseAcousticPitchRatio = math.pow(2f, clampedCents / 1200f);
+            ApplyEclipsePitchShiftToActiveWorldSources();
+        }
 
         /// <summary>
         /// Registers the audio runtime into <see cref="GlobalRegistry"/> and the environment update bucket.
@@ -844,10 +876,10 @@ namespace Hecton8.Audio
             source.clip = clip;
             source.volume = volume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
-            source.pitch = clampedPitch;
             _baseVolumes[index] = volume;
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
+            source.pitch = ResolveSourcePitch(index, source, 1f);
             _audioLodTiers[index] = lodTier;
             UpdateWorldSourceAudioLod(index, source, Time.unscaledTime, true);
             ApplyHaasMask(index, position);
@@ -896,10 +928,10 @@ namespace Hecton8.Audio
             source.clip = clip;
             source.volume = volume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
-            source.pitch = clampedPitch;
             _baseVolumes[index] = volume;
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
+            source.pitch = ResolveSourcePitch(index, source, 1f);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
             UpdateWorldSourceAudioLod(index, source, now, true);
@@ -1163,7 +1195,9 @@ namespace Hecton8.Audio
             float absAzimuth = math.abs(azimuth);
             float absSin = math.abs(math.sin(azimuth));
             float waterDensityMul = math.saturate(_listenerWaterDensityMul);
-            float soundSpeed = math.lerp(SoundSpeedAirMetersPerSecond, SoundSpeedWaterMetersPerSecond, waterDensityMul);
+            float airItdSeconds =
+                (BinauralHeadRadiusMeters / SoundSpeedAirMetersPerSecond) *
+                (absAzimuth + math.sin(absAzimuth));
             float airShadowCutoff = math.lerp(8000f, 1200f, absSin);
             float waterShadowCutoff = math.lerp(8000f, 3000f, absSin);
             float shadowCutoff = math.lerp(airShadowCutoff, waterShadowCutoff, waterDensityMul);
@@ -1182,7 +1216,7 @@ namespace Hecton8.Audio
                 Position = sourcePosition,
                 DistanceMeters = distance,
                 AzimuthRadians = azimuth,
-                ItdSeconds = (BinauralHeadRadiusMeters / math.max(soundSpeed, 0.0001f)) * (absAzimuth + math.sin(absAzimuth)),
+                ItdSeconds = airItdSeconds,
                 ShadowAmount01 = shadowAmount,
                 ShadowCutoffHertz = shadowCutoff,
                 Energy = energy,
@@ -1350,10 +1384,10 @@ private int AcquireSourceIndex()
             source.clip = clip;
             source.volume = volume;
             float clampedPitch = math.clamp(pitch, 0.1f, 3f);
-            source.pitch = clampedPitch;
             _baseVolumes[index] = volume;
             _basePitches[index] = clampedPitch;
             source.outputAudioMixerGroup = ResolveWorldMixerGroup(clip, mixerGroup);
+            source.pitch = ResolveSourcePitch(index, source, 1f);
             _audioLodTiers[index] = lodTier;
             float now = Time.unscaledTime;
             UpdateWorldSourceAudioLod(index, source, now, true);
@@ -2105,6 +2139,46 @@ private int AcquireSourceIndex()
             return source != null && threatGroup != null && source.outputAudioMixerGroup == threatGroup;
         }
 
+        private float ResolveSourcePitch(int sourceIndex, AudioSource source, float dopplerRatio)
+        {
+            if (_basePitches == null || sourceIndex < 0 || sourceIndex >= _basePitches.Length)
+                return 1f;
+
+            float eclipseRatio = ResolveEclipseAcousticPitchRatio(source);
+            return math.clamp(_basePitches[sourceIndex] * dopplerRatio * eclipseRatio, 0.1f, 3f);
+        }
+
+        private float ResolveEclipseAcousticPitchRatio(AudioSource source)
+        {
+            if (source == null || math.abs(_eclipseAcousticPitchRatio - 1f) <= 0.0001f)
+                return 1f;
+
+            AudioMixerGroup bedGroup = ResolvedBedBusGroup;
+            if (bedGroup == null || source.outputAudioMixerGroup != bedGroup)
+                return 1f;
+
+            return _eclipseAcousticPitchRatio;
+        }
+
+        private void ApplyEclipsePitchShiftToActiveWorldSources()
+        {
+            if (_pool == null || _activeWorldIndices == null || _smoothedDopplerRatios == null)
+                return;
+
+            for (int activeSlot = 0; activeSlot < _activeWorldCount; activeSlot++)
+            {
+                int sourceIndex = _activeWorldIndices[activeSlot];
+                if (sourceIndex < 0 || sourceIndex >= _pool.Length || sourceIndex >= _smoothedDopplerRatios.Length)
+                    continue;
+
+                AudioSource source = _pool[sourceIndex];
+                if (source == null || !source.isActiveAndEnabled || source.clip == null || !source.isPlaying)
+                    continue;
+
+                source.pitch = ResolveSourcePitch(sourceIndex, source, _smoothedDopplerRatios[sourceIndex]);
+            }
+        }
+
         private void ApplyThreatBusDucking(float threatActivity, float deltaTime)
         {
             AudioMixer mixer = ResolveThreatDuckingMixer();
@@ -2121,10 +2195,10 @@ private int AcquireSourceIndex()
             }
             else
             {
-                float duckSharpness = targetDuck01 > _threatBusDuck01
-                    ? ThreatBusDuckAttackSharpness
-                    : ThreatBusDuckReleaseSharpness;
-                float duckBlend = 1f - math.exp(-duckSharpness * deltaTime);
+                float duckTimeSeconds = targetDuck01 > _threatBusDuck01
+                    ? ThreatBusDuckAttackSeconds
+                    : ThreatBusDuckReleaseSeconds;
+                float duckBlend = 1f - math.exp(-deltaTime / math.max(duckTimeSeconds, 0.0001f));
                 _threatBusDuck01 = math.lerp(_threatBusDuck01, targetDuck01, duckBlend);
             }
 
@@ -2622,14 +2696,14 @@ private int AcquireSourceIndex()
                     : 1f - math.exp(-ManualDopplerFollowSharpness * math.max(deltaTime, 0f));
                 float smoothedRatio = math.lerp(_smoothedDopplerRatios[sourceIndex], targetRatio, followT);
                 _smoothedDopplerRatios[sourceIndex] = smoothedRatio;
-                source.pitch = math.clamp(_basePitches[sourceIndex] * smoothedRatio, 0.1f, 3f);
+                source.pitch = ResolveSourcePitch(sourceIndex, source, smoothedRatio);
                 return;
             }
 
             _smoothedDopplerRatios[sourceIndex] = 1f;
             if (_previousRelativeVelocities != null && sourceIndex < _previousRelativeVelocities.Length)
                 _previousRelativeVelocities[sourceIndex] = 0f;
-            source.pitch = math.clamp(_basePitches[sourceIndex], 0.1f, 3f);
+            source.pitch = ResolveSourcePitch(sourceIndex, source, 1f);
         }
 
         private bool TryResolveCaveExternalLowPassCutoff(AudioSource source, Vector3 sourcePosition, out float cutoffFrequency)

@@ -4,7 +4,9 @@ using Hecton8.Construction;
 using Hecton8.Inventory;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.Crafting
@@ -17,9 +19,13 @@ namespace Hecton8.Crafting
         public const int MaxRecipeIngredientCount = 32;
         public const int MaxDeconstructionOutputCount = MaxRecipeIngredientCount;
         public const int MaxRecursiveDeconstructionNodeCount = 64;
+        public const int MaxComplexRecipeDepth = 5;
+        public const int MaxComplexRecipeNodeCount = 64;
+        public const int MaxComplexRecipeEdgeCount = 128;
         private const int MaxDeconstructionRecursionDepth = 64;
 
-        private struct EvaluateRecipeAvailabilityKernel
+        [BurstCompile]
+        internal struct EvaluateRecipeAvailabilityJob : IJob
         {
             [ReadOnly] public NativeArray<int2> RecipeCosts;
             [ReadOnly] public NativeParallelHashMap<int, int> AvailableItemCounts;
@@ -47,7 +53,8 @@ namespace Hecton8.Crafting
             }
         }
 
-        private struct BuildDeconstructionYieldKernel
+        [BurstCompile]
+        private struct BuildDeconstructionYieldJob : IJob
         {
             [ReadOnly] public NativeArray<int2> RecipeCosts;
             public NativeArray<int2> OutputYields;
@@ -99,13 +106,129 @@ namespace Hecton8.Crafting
             }
         }
 
+        [BurstCompile]
+        internal struct KahnTotalRawCostJob : IJob
+        {
+            [ReadOnly] public NativeArray<int2> GraphNodes;
+            [ReadOnly] public NativeArray<int2> GraphEdges;
+            public NativeArray<int> InDegrees;
+            public NativeArray<int> Queue;
+            public NativeArray<int2> RawCosts;
+            public NativeArray<int> RawCostCount;
+            public NativeArray<byte> Status;
+            public int NodeCount;
+            public int EdgeCount;
+
+            public void Execute()
+            {
+                if (Status.IsCreated && Status.Length > 0)
+                    Status[0] = 0;
+
+                if (!RawCostCount.IsCreated || RawCostCount.Length == 0)
+                    return;
+
+                RawCostCount[0] = 0;
+                for (int index = 0; index < RawCosts.Length; index++)
+                    RawCosts[index] = int2.zero;
+
+                if (NodeCount <= 0 ||
+                    NodeCount > GraphNodes.Length ||
+                    NodeCount > InDegrees.Length ||
+                    NodeCount > Queue.Length ||
+                    EdgeCount < 0 ||
+                    EdgeCount > GraphEdges.Length)
+                {
+                    return;
+                }
+
+                int head = 0;
+                int tail = 0;
+                for (int nodeIndex = 0; nodeIndex < NodeCount; nodeIndex++)
+                {
+                    if (InDegrees[nodeIndex] == 0)
+                        Queue[tail++] = nodeIndex;
+                }
+
+                int processed = 0;
+                while (head < tail)
+                {
+                    int nodeIndex = Queue[head++];
+                    processed++;
+
+                    bool hasOutgoingEdge = false;
+                    for (int edgeIndex = 0; edgeIndex < EdgeCount; edgeIndex++)
+                    {
+                        int2 edge = GraphEdges[edgeIndex];
+                        if (edge.x != nodeIndex)
+                            continue;
+
+                        hasOutgoingEdge = true;
+                        int childIndex = edge.y;
+                        if ((uint)childIndex >= (uint)NodeCount)
+                            return;
+
+                        int remainingInDegree = InDegrees[childIndex] - 1;
+                        InDegrees[childIndex] = remainingInDegree;
+                        if (remainingInDegree == 0)
+                        {
+                            if (tail >= Queue.Length)
+                                return;
+
+                            Queue[tail++] = childIndex;
+                        }
+                    }
+
+                    if (!hasOutgoingEdge && !TryMergeRawCost(GraphNodes[nodeIndex]))
+                        return;
+                }
+
+                if (processed != NodeCount)
+                    return;
+
+                if (Status.IsCreated && Status.Length > 0)
+                    Status[0] = 1;
+            }
+
+            private bool TryMergeRawCost(int2 cost)
+            {
+                if (cost.x == 0 || cost.y <= 0)
+                    return true;
+
+                int count = RawCostCount[0];
+                for (int index = 0; index < count; index++)
+                {
+                    int2 existing = RawCosts[index];
+                    if (existing.x != cost.x)
+                        continue;
+
+                    existing.y = existing.y > int.MaxValue - cost.y ? int.MaxValue : existing.y + cost.y;
+                    RawCosts[index] = existing;
+                    return true;
+                }
+
+                if (count >= RawCosts.Length)
+                    return false;
+
+                RawCosts[count] = cost;
+                RawCostCount[0] = count + 1;
+                return true;
+            }
+        }
+
         public static bool CanCraft(
             RecipeData recipe,
             Fabricator fabricator,
             PlayerInventory inventory,
             NativeParallelHashMap<int, int> availableItemCounts,
             NativeArray<int2> recipeCosts,
-            NativeArray<byte> result)
+            NativeArray<byte> result,
+            NativeArray<int2> complexGraphNodes,
+            NativeArray<int2> complexGraphEdges,
+            NativeArray<int> complexGraphInDegrees,
+            NativeArray<int> complexGraphQueue,
+            NativeArray<int2> complexRawCosts,
+            NativeArray<int> complexRawCostCount,
+            NativeArray<byte> complexGraphStatus)
         {
             if (recipe == null ||
                 fabricator == null ||
@@ -115,6 +238,20 @@ namespace Hecton8.Crafting
                 recipeCosts.Length < MaxRecipeIngredientCount ||
                 !result.IsCreated ||
                 result.Length == 0 ||
+                !complexGraphNodes.IsCreated ||
+                complexGraphNodes.Length < MaxComplexRecipeNodeCount ||
+                !complexGraphEdges.IsCreated ||
+                complexGraphEdges.Length < MaxComplexRecipeEdgeCount ||
+                !complexGraphInDegrees.IsCreated ||
+                complexGraphInDegrees.Length < MaxComplexRecipeNodeCount ||
+                !complexGraphQueue.IsCreated ||
+                complexGraphQueue.Length < MaxComplexRecipeNodeCount ||
+                !complexRawCosts.IsCreated ||
+                complexRawCosts.Length < MaxRecipeIngredientCount ||
+                !complexRawCostCount.IsCreated ||
+                complexRawCostCount.Length == 0 ||
+                !complexGraphStatus.IsCreated ||
+                complexGraphStatus.Length == 0 ||
                 !inventory.TryCopyAvailableItemCountsNonAlloc(availableItemCounts, out _))
             {
                 return false;
@@ -126,7 +263,7 @@ namespace Hecton8.Crafting
             MergeAccessibleNetworkCounts(fabricator, availableItemCounts, recipeCosts, recipeCostCount);
 
             result[0] = 0;
-            new EvaluateRecipeAvailabilityKernel
+            new EvaluateRecipeAvailabilityJob
             {
                 RecipeCosts = recipeCosts,
                 AvailableItemCounts = availableItemCounts,
@@ -134,7 +271,235 @@ namespace Hecton8.Crafting
                 RecipeCostCount = recipeCostCount
             }.Execute();
 
+            if (result[0] != 0)
+                return true;
+
+            if (!TryBuildTotalRawCostBuffer(
+                    recipe,
+                    fabricator,
+                    inventory.ItemCatalog,
+                    complexGraphNodes,
+                    complexGraphEdges,
+                    complexGraphInDegrees,
+                    complexGraphQueue,
+                    complexRawCosts,
+                    complexRawCostCount,
+                    complexGraphStatus))
+            {
+                return false;
+            }
+
+            int rawCostCount = complexRawCostCount[0];
+            MergeAccessibleNetworkCounts(fabricator, availableItemCounts, complexRawCosts, rawCostCount);
+
+            result[0] = 0;
+            new EvaluateRecipeAvailabilityJob
+            {
+                RecipeCosts = complexRawCosts,
+                AvailableItemCounts = availableItemCounts,
+                Result = result,
+                RecipeCostCount = rawCostCount
+            }.Execute();
+
             return result[0] != 0;
+        }
+
+        public static bool TryBuildTotalRawCostBuffer(
+            RecipeData recipe,
+            Fabricator fabricator,
+            ItemCatalog itemCatalog,
+            NativeArray<int2> graphNodes,
+            NativeArray<int2> graphEdges,
+            NativeArray<int> graphInDegrees,
+            NativeArray<int> graphQueue,
+            NativeArray<int2> rawCosts,
+            NativeArray<int> rawCostCount,
+            NativeArray<byte> graphStatus)
+        {
+            if (recipe == null ||
+                fabricator == null ||
+                itemCatalog == null ||
+                !graphNodes.IsCreated ||
+                graphNodes.Length < MaxComplexRecipeNodeCount ||
+                !graphEdges.IsCreated ||
+                graphEdges.Length < MaxComplexRecipeEdgeCount ||
+                !graphInDegrees.IsCreated ||
+                graphInDegrees.Length < MaxComplexRecipeNodeCount ||
+                !graphQueue.IsCreated ||
+                graphQueue.Length < MaxComplexRecipeNodeCount ||
+                !rawCosts.IsCreated ||
+                rawCosts.Length < MaxRecipeIngredientCount ||
+                !rawCostCount.IsCreated ||
+                rawCostCount.Length == 0 ||
+                !graphStatus.IsCreated ||
+                graphStatus.Length == 0 ||
+                recipe.ingredients == null ||
+                recipe.ingredients.Count == 0)
+            {
+                return false;
+            }
+
+            for (int index = 0; index < graphNodes.Length; index++)
+                graphNodes[index] = int2.zero;
+            for (int index = 0; index < graphEdges.Length; index++)
+                graphEdges[index] = int2.zero;
+            for (int index = 0; index < graphInDegrees.Length; index++)
+                graphInDegrees[index] = 0;
+            for (int index = 0; index < graphQueue.Length; index++)
+                graphQueue[index] = 0;
+            for (int index = 0; index < rawCosts.Length; index++)
+                rawCosts[index] = int2.zero;
+
+            rawCostCount[0] = 0;
+            graphStatus[0] = 0;
+
+            int nodeCount = 0;
+            int edgeCount = 0;
+            bool expandedAnySubcomponent = false;
+
+            for (int ingredientIndex = 0; ingredientIndex < recipe.ingredients.Count; ingredientIndex++)
+            {
+                InventoryCost cost = recipe.ingredients[ingredientIndex];
+                if (cost == null || cost.item == null || cost.amount <= 0)
+                    continue;
+
+                int itemHashId = LocHash.Compute(cost.item.PersistentId);
+                int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
+                if (itemHashId == 0 || adjustedAmount <= 0)
+                    continue;
+
+                int nodeIndex = AppendComplexRecipeNode(graphNodes, ref nodeCount, itemHashId, adjustedAmount);
+                if (nodeIndex < 0)
+                    return false;
+
+                if (!TryAppendComplexRecipeChildren(
+                        itemCatalog,
+                        fabricator,
+                        graphNodes,
+                        graphEdges,
+                        graphInDegrees,
+                        ref nodeCount,
+                        ref edgeCount,
+                        nodeIndex,
+                        itemHashId,
+                        adjustedAmount,
+                        0,
+                        itemHashId,
+                        ref expandedAnySubcomponent))
+                {
+                    return false;
+                }
+            }
+
+            if (nodeCount <= 0 || !expandedAnySubcomponent)
+                return false;
+
+            new KahnTotalRawCostJob
+            {
+                GraphNodes = graphNodes,
+                GraphEdges = graphEdges,
+                InDegrees = graphInDegrees,
+                Queue = graphQueue,
+                RawCosts = rawCosts,
+                RawCostCount = rawCostCount,
+                Status = graphStatus,
+                NodeCount = nodeCount,
+                EdgeCount = edgeCount
+            }.Execute();
+
+            return graphStatus[0] != 0 && rawCostCount[0] > 0;
+        }
+
+        private static int AppendComplexRecipeNode(
+            NativeArray<int2> graphNodes,
+            ref int nodeCount,
+            int itemHashId,
+            int quantity)
+        {
+            if (itemHashId == 0 || quantity <= 0 || nodeCount >= graphNodes.Length)
+                return -1;
+
+            int nodeIndex = nodeCount;
+            graphNodes[nodeIndex] = new int2(itemHashId, quantity);
+            nodeCount++;
+            return nodeIndex;
+        }
+
+        private static bool TryAppendComplexRecipeChildren(
+            ItemCatalog itemCatalog,
+            Fabricator fabricator,
+            NativeArray<int2> graphNodes,
+            NativeArray<int2> graphEdges,
+            NativeArray<int> graphInDegrees,
+            ref int nodeCount,
+            ref int edgeCount,
+            int parentNodeIndex,
+            int parentItemHashId,
+            int parentQuantity,
+            int depth,
+            int rootHashId,
+            ref bool expandedAnySubcomponent)
+        {
+            if (depth >= MaxComplexRecipeDepth)
+                return true;
+
+            if (!Fabricator.TryResolveRecipeForResultHash(itemCatalog, parentItemHashId, out RecipeData subRecipe) ||
+                subRecipe == null ||
+                subRecipe.ingredients == null ||
+                subRecipe.ingredients.Count == 0)
+            {
+                return true;
+            }
+
+            int safeResultQuantity = math.max(1, subRecipe.resultQuantity);
+            bool appendedChild = false;
+            for (int ingredientIndex = 0; ingredientIndex < subRecipe.ingredients.Count; ingredientIndex++)
+            {
+                InventoryCost cost = subRecipe.ingredients[ingredientIndex];
+                if (cost == null || cost.item == null || cost.amount <= 0)
+                    continue;
+
+                int childHashId = LocHash.Compute(cost.item.PersistentId);
+                int adjustedAmount = fabricator.GetAdjustedIngredientAmount(cost);
+                if (childHashId == 0 || adjustedAmount <= 0)
+                    continue;
+
+                if (childHashId == parentItemHashId || childHashId == rootHashId)
+                    return false;
+
+                long scaledLong = ((long)adjustedAmount * parentQuantity + safeResultQuantity - 1L) / safeResultQuantity;
+                int childQuantity = scaledLong > int.MaxValue ? int.MaxValue : (int)scaledLong;
+                int childNodeIndex = AppendComplexRecipeNode(graphNodes, ref nodeCount, childHashId, childQuantity);
+                if (childNodeIndex < 0 || edgeCount >= graphEdges.Length)
+                    return false;
+
+                graphEdges[edgeCount++] = new int2(parentNodeIndex, childNodeIndex);
+                graphInDegrees[childNodeIndex] = graphInDegrees[childNodeIndex] + 1;
+                appendedChild = true;
+
+                if (!TryAppendComplexRecipeChildren(
+                        itemCatalog,
+                        fabricator,
+                        graphNodes,
+                        graphEdges,
+                        graphInDegrees,
+                        ref nodeCount,
+                        ref edgeCount,
+                        childNodeIndex,
+                        childHashId,
+                        childQuantity,
+                        depth + 1,
+                        rootHashId,
+                        ref expandedAnySubcomponent))
+                {
+                    return false;
+                }
+            }
+
+            if (appendedChild)
+                expandedAnySubcomponent = true;
+
+            return true;
         }
 
         public static bool TryBuildRecipeCostBuffer(
@@ -231,7 +596,7 @@ namespace Hecton8.Crafting
             }
 
             outputCount[0] = 0;
-            new BuildDeconstructionYieldKernel
+            new BuildDeconstructionYieldJob
             {
                 RecipeCosts = sourceCosts,
                 OutputYields = outputYields,

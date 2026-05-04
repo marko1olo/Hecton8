@@ -32,10 +32,11 @@ namespace Hecton8.World
         private const string SeafloorSourceRaycastLabel = "SceneRaycast";
         private const string SeafloorSourceFallbackLabel = "FallbackSynthetic";
         private const int MaxSeafloorHeightCacheEntries = 4096;
-        private const int MaxBiomeIndexCacheEntries = 4096;
         private const int NoiseLookupResolution = 512;
         private const int NoiseLookupMask = NoiseLookupResolution - 1;
         private const float NoiseLookupValueScale = 1f / ushort.MaxValue;
+        private GraphicsBuffer _biomeInfluenceGraphicsBuffer;
+        private int _biomeInfluenceGraphicsBufferCapacity;
 #if UNITY_EDITOR
         private static bool _assemblyReloadHookRegistered;
 #endif
@@ -121,6 +122,38 @@ namespace Hecton8.World
             public BiomeFamilyFlags Flags;
         }
 
+        [System.Flags]
+        public enum BiomeInfluenceFlags : byte
+        {
+            None = 0,
+            Placeholder = 1 << 0,
+            TransitionEdge = 1 << 1,
+            Hazard = 1 << 2,
+            PreviewOverride = 1 << 3,
+            Invalid = 1 << 7
+        }
+
+        public struct BiomeInfluenceCell
+        {
+            public uint Packed;
+
+            public byte PrimaryBiomeId => (byte)(Packed & 0xFFu);
+            public byte SecondaryBiomeId => (byte)((Packed >> 8) & 0xFFu);
+            public byte Blend255 => (byte)((Packed >> 16) & 0xFFu);
+            public byte Flags => (byte)((Packed >> 24) & 0xFFu);
+
+            public static BiomeInfluenceCell Create(byte primaryBiomeId, byte secondaryBiomeId, byte blend255, byte flags)
+            {
+                return new BiomeInfluenceCell
+                {
+                    Packed = primaryBiomeId |
+                             ((uint)secondaryBiomeId << 8) |
+                             ((uint)blend255 << 16) |
+                             ((uint)flags << 24)
+                };
+            }
+        }
+
         public struct CellInputData
         {
             public float3 Position;
@@ -131,6 +164,7 @@ namespace Hecton8.World
             public float WestHeight;
             public float WaterSurface;
             public int BiomeIndex;
+            public int BiomeMatrixId;
             public int CellX;
             public int CellZ;
             public int SeafloorSource;
@@ -210,6 +244,7 @@ namespace Hecton8.World
             public int SecondarySampleValid;
             public int SeafloorSource;
             public int IsValid;
+            public uint BiomeInfluencePacked;
         }
 
         public struct FieldSample
@@ -229,6 +264,7 @@ namespace Hecton8.World
             public int biomeFamilyDataIndex;
             public HectonBiomeMatrixProfile biomeProfile;
             public HectonBiomeFamilyProfile biomeFamily;
+            public BiomeInfluenceCell biomeInfluence;
             public WorldZoneAnchor zone;
             public float zoneWeight;
             public WorldZoneAnchor.ZoneKind resolvedZoneKind;
@@ -327,7 +363,6 @@ namespace Hecton8.World
         [SerializeField] private float _debugLastCurvature;
         [SerializeField] private float _debugLastCaveProximity;
         [SerializeField] private float _debugLastCompositionPotential;
-        [SerializeField] private int _debugBiomeCacheHits;
         [SerializeField] private int _debugBiomeCacheMisses;
 
         private readonly List<WorldZoneAnchor> _anchors = new List<WorldZoneAnchor>(32);
@@ -339,10 +374,10 @@ namespace Hecton8.World
         private readonly Dictionary<HectonBiomeMatrixProfile, int> _biomeMatrixDataIndexLookup = new Dictionary<HectonBiomeMatrixProfile, int>(160);
         private readonly Dictionary<HectonBiomeFamilyProfile, int> _biomeFamilyDataIndexLookup = new Dictionary<HectonBiomeFamilyProfile, int>(48);
         private readonly Dictionary<Vector2Int, CachedHeightSample> _seafloorHeightCache = new Dictionary<Vector2Int, CachedHeightSample>(1536);
-        private readonly Dictionary<Vector2Int, CachedBiomeSample> _biomeIndexCache = new Dictionary<Vector2Int, CachedBiomeSample>(1536);
         private readonly RaycastHit[] _seafloorRaycastHits = new RaycastHit[4]; // COLD ALLOC: reused non-alloc seafloor probes.
         private NativeArray<ZoneData> _burstZoneData;
         private NativeArray<BiomeMatrixData> _burstBiomeMatrixData;
+        private NativeArray<int> _burstBiomeMatrixIdToDataIndex;
         private NativeArray<BiomeFamilyData> _burstBiomeFamilyData;
         private NativeArray<CaveEntranceHintData> _burstCaveEntranceHints;
         private NativeArray<ushort> _noiseLookupTable;
@@ -373,18 +408,6 @@ namespace Hecton8.World
 
             public float Height;
             public SeafloorSource Source;
-            public int SamplingFrameId;
-        }
-
-        private struct CachedBiomeSample
-        {
-            public CachedBiomeSample(int biomeIndex, int samplingFrameId)
-            {
-                BiomeIndex = biomeIndex;
-                SamplingFrameId = samplingFrameId;
-            }
-
-            public int BiomeIndex;
             public int SamplingFrameId;
         }
 
@@ -424,10 +447,12 @@ namespace Hecton8.World
             [ReadOnly] public NativeArray<CellInputData> CellInputs;
             [ReadOnly] public NativeArray<ZoneData> Zones;
             [ReadOnly] public NativeArray<BiomeMatrixData> BiomeMatrices;
+            [ReadOnly] public NativeArray<int> BiomeMatrixIdToDataIndex;
             [ReadOnly] public NativeArray<BiomeFamilyData> BiomeFamilies;
             [ReadOnly] public NativeArray<CaveEntranceHintData> CaveEntranceHints;
             [ReadOnly] public NativeArray<ushort> NoiseLookupTable;
             [WriteOnly] public NativeArray<CellOutputData> CellOutputs;
+            [WriteOnly] public NativeArray<BiomeInfluenceCell> BiomeInfluences;
 
             public float SlopeProbeMeters;
             public float FieldNoiseScale;
@@ -463,7 +488,11 @@ namespace Hecton8.World
                 CellInputData input = CellInputs[index];
                 if (input.IsValid == 0)
                 {
-                    CellOutputs[index] = CreateInvalidCellOutput(input, CurrentBiomeMatrixDataIndex, CurrentBiomeFamilyDataIndex);
+                    CellOutputData invalidOutput = CreateInvalidCellOutput(input, CurrentBiomeMatrixDataIndex, CurrentBiomeFamilyDataIndex);
+                    BiomeInfluenceCell invalidInfluence = BiomeInfluenceCell.Create(0, 0, 0, (byte)BiomeInfluenceFlags.Invalid);
+                    invalidOutput.BiomeInfluencePacked = invalidInfluence.Packed;
+                    CellOutputs[index] = invalidOutput;
+                    BiomeInfluences[index] = invalidInfluence;
                     return;
                 }
 
@@ -471,6 +500,7 @@ namespace Hecton8.World
                     input,
                     Zones,
                     BiomeMatrices,
+                    BiomeMatrixIdToDataIndex,
                     BiomeFamilies,
                     CaveEntranceHints,
                     NoiseLookupTable,
@@ -503,7 +533,14 @@ namespace Hecton8.World
                     ChemosyntheticBrineFamilyIndex,
                     CrystalGrowthFamilyIndex);
 
+                BiomeInfluenceCell influence = BuildBiomeInfluenceCell(
+                    output,
+                    BiomeMatrices,
+                    BiomeMatrixCount,
+                    CurrentBiomeMatrixDataIndex);
+                output.BiomeInfluencePacked = influence.Packed;
                 CellOutputs[index] = output;
+                BiomeInfluences[index] = influence;
             }
         }
 
@@ -534,6 +571,7 @@ namespace Hecton8.World
             in CellInputData input,
             NativeArray<ZoneData> zones,
             NativeArray<BiomeMatrixData> biomeMatrices,
+            NativeArray<int> biomeMatrixIdToDataIndex,
             NativeArray<BiomeFamilyData> biomeFamilies,
             NativeArray<CaveEntranceHintData> caveEntranceHints,
             NativeArray<ushort> noiseLookupTable,
@@ -586,7 +624,10 @@ namespace Hecton8.World
                 BiomeIndex = input.BiomeIndex,
                 SeafloorSource = input.SeafloorSource,
                 ZoneDataIndex = -1,
-                BiomeMatrixDataIndex = currentBiomeMatrixDataIndex,
+                BiomeMatrixDataIndex = ResolveBiomeMatrixDataIndexFromMatrixId(
+                    input.BiomeMatrixId,
+                    biomeMatrixIdToDataIndex,
+                    currentBiomeMatrixDataIndex),
                 BiomeFamilyDataIndex = currentBiomeFamilyDataIndex,
                 ResolvedZoneKind = (int)WorldZoneAnchor.ZoneKind.Generic,
                 ResolvedPattern = (int)WorldProceduralPattern.SedimentResources,
@@ -706,6 +747,87 @@ namespace Hecton8.World
 
             ComputeHeatChannels(ref output, biomeMatrices, biomeMatrixCount);
             return output;
+        }
+
+        private static BiomeInfluenceCell BuildBiomeInfluenceCell(
+            in CellOutputData output,
+            NativeArray<BiomeMatrixData> biomeMatrices,
+            int biomeMatrixCount,
+            int currentBiomeMatrixDataIndex)
+        {
+            byte flags = 0;
+            if (output.IsValid == 0)
+                flags |= (byte)BiomeInfluenceFlags.Invalid;
+            if (output.PreviewOverrideActive != 0)
+                flags |= (byte)BiomeInfluenceFlags.PreviewOverride;
+            if (output.HazardBias >= 0.65f)
+                flags |= (byte)BiomeInfluenceFlags.Hazard;
+
+            byte primaryBiomeId = ResolveBiomeInfluenceMatrixId(
+                output.BiomeMatrixDataIndex,
+                biomeMatrices,
+                biomeMatrixCount,
+                ref flags);
+            byte secondaryBiomeId = 0;
+            byte blend255 = 0;
+
+            if (output.ZoneDataIndex >= 0 && output.ZoneWeight > 0.001f && output.ZoneWeight < 0.999f)
+            {
+                secondaryBiomeId = ResolveBiomeInfluenceMatrixId(
+                    currentBiomeMatrixDataIndex,
+                    biomeMatrices,
+                    biomeMatrixCount,
+                    ref flags);
+                if (secondaryBiomeId != 0 && secondaryBiomeId != primaryBiomeId)
+                {
+                    blend255 = (byte)math.round(math.saturate(1f - output.ZoneWeight) * 255f);
+                    flags |= (byte)BiomeInfluenceFlags.TransitionEdge;
+                }
+                else
+                {
+                    secondaryBiomeId = 0;
+                }
+            }
+
+            return BiomeInfluenceCell.Create(primaryBiomeId, secondaryBiomeId, blend255, flags);
+        }
+
+        private static byte ResolveBiomeInfluenceMatrixId(
+            int biomeMatrixDataIndex,
+            NativeArray<BiomeMatrixData> biomeMatrices,
+            int biomeMatrixCount,
+            ref byte flags)
+        {
+            if (biomeMatrixDataIndex < 0 ||
+                biomeMatrixDataIndex >= biomeMatrixCount ||
+                !biomeMatrices.IsCreated)
+            {
+                return 0;
+            }
+
+            BiomeMatrixData matrixData = biomeMatrices[biomeMatrixDataIndex];
+            if (matrixData.IsPlaceholder != 0)
+                flags |= (byte)BiomeInfluenceFlags.Placeholder;
+
+            return matrixData.MatrixIndex > 0 && matrixData.MatrixIndex <= 255
+                ? (byte)matrixData.MatrixIndex
+                : (byte)0;
+        }
+
+        private static int ResolveBiomeMatrixDataIndexFromMatrixId(
+            int matrixBiomeId,
+            NativeArray<int> biomeMatrixIdToDataIndex,
+            int fallbackDataIndex)
+        {
+            if (!biomeMatrixIdToDataIndex.IsCreated ||
+                matrixBiomeId <= 0 ||
+                matrixBiomeId >= biomeMatrixIdToDataIndex.Length)
+            {
+                return fallbackDataIndex;
+            }
+
+            int dataIndex = biomeMatrixIdToDataIndex[matrixBiomeId];
+            return dataIndex >= 0 ? dataIndex : fallbackDataIndex;
         }
 
         private static void ResolveSecondaryDomain(
@@ -1556,6 +1678,7 @@ namespace Hecton8.World
             BiomeMatrixEvents.Unregister(this);
             CompletePendingSamplingJob();
             DisposeBurstData();
+            ReleaseBiomeInfluenceGraphicsBuffer();
             _isDataDirty = true;
             _samplingFramePrepared = false;
 #if UNITY_EDITOR
@@ -1568,6 +1691,7 @@ namespace Hecton8.World
             BiomeMatrixEvents.Unregister(this);
             CompletePendingSamplingJob();
             DisposeBurstData();
+            ReleaseBiomeInfluenceGraphicsBuffer();
             _isDataDirty = true;
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
@@ -1634,7 +1758,6 @@ namespace Hecton8.World
             _samplingFramePrepared = true;
             if (enableLiveRuntimeDiagnostics)
             {
-                _debugBiomeCacheHits = 0;
                 _debugBiomeCacheMisses = 0;
             }
         }
@@ -1648,7 +1771,6 @@ namespace Hecton8.World
         {
             _isDataDirty = true;
             _seafloorHeightCache.Clear();
-            _biomeIndexCache.Clear();
         }
 
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile _)
@@ -1674,7 +1796,7 @@ namespace Hecton8.World
             if (!TryGetCellHeightContext(position, out CellHeightContext terrainContext))
                 return false;
 
-            TryResolveBiomeIndex(position.x, position.z, out int biomeIndex);
+            TryResolveBiomeReadout(position.x, position.z, out int biomeIndex, out int biomeMatrixId);
 
             float waterSurface = mapMagicBridge != null
                 ? mapMagicBridge.WaterSurfaceLevel
@@ -1690,6 +1812,7 @@ namespace Hecton8.World
                 WestHeight = terrainContext.WestHeight,
                 WaterSurface = waterSurface,
                 BiomeIndex = biomeIndex,
+                BiomeMatrixId = biomeMatrixId,
                 CellX = cellX,
                 CellZ = cellZ,
                 SeafloorSource = (int)terrainContext.CenterSource,
@@ -1698,20 +1821,32 @@ namespace Hecton8.World
             return true;
         }
 
-        public JobHandle ScheduleCellSamplingJob(NativeArray<CellInputData> cellInputs, NativeArray<CellOutputData> cellOutputs, int cellCount)
+        public JobHandle ScheduleCellSamplingJob(
+            NativeArray<CellInputData> cellInputs,
+            NativeArray<CellOutputData> cellOutputs,
+            NativeArray<BiomeInfluenceCell> biomeInfluences,
+            int cellCount)
         {
-            if (_isDataDirty || !_burstZoneData.IsCreated || !_burstBiomeMatrixData.IsCreated || !_burstBiomeFamilyData.IsCreated)
+            if (_isDataDirty ||
+                !_burstZoneData.IsCreated ||
+                !_burstBiomeMatrixData.IsCreated ||
+                !_burstBiomeMatrixIdToDataIndex.IsCreated ||
+                !_burstBiomeFamilyData.IsCreated)
+            {
                 PrepareBurstData();
+            }
 
             CellSamplingJob job = new CellSamplingJob
             {
                 CellInputs = cellInputs,
                 Zones = _burstZoneData,
                 BiomeMatrices = _burstBiomeMatrixData,
+                BiomeMatrixIdToDataIndex = _burstBiomeMatrixIdToDataIndex,
                 BiomeFamilies = _burstBiomeFamilyData,
                 CaveEntranceHints = _burstCaveEntranceHints,
                 NoiseLookupTable = _noiseLookupTable,
                 CellOutputs = cellOutputs,
+                BiomeInfluences = biomeInfluences,
                 SlopeProbeMeters = slopeProbeMeters,
                 FieldNoiseScale = fieldNoiseScale,
                 DetailNoiseScale = detailNoiseScale,
@@ -1748,6 +1883,57 @@ namespace Hecton8.World
             return handle;
         }
 
+        public bool TryUploadPackedBiomeInfluenceGrid(
+            NativeArray<uint> packedCells,
+            int cellCount,
+            out GraphicsBuffer buffer,
+            out int bufferCapacity)
+        {
+            buffer = null;
+            bufferCapacity = 0;
+            if (!packedCells.IsCreated || cellCount <= 0)
+                return false;
+
+            int safeCount = math.min(cellCount, packedCells.Length);
+            if (safeCount <= 0 || !EnsureBiomeInfluenceGraphicsBufferCapacity(safeCount))
+                return false;
+
+            GraphicsBufferUploadUtility.UploadNativeArray(_biomeInfluenceGraphicsBuffer, packedCells, safeCount);
+            buffer = _biomeInfluenceGraphicsBuffer;
+            bufferCapacity = _biomeInfluenceGraphicsBufferCapacity;
+            return buffer != null && buffer.IsValid();
+        }
+
+        private bool EnsureBiomeInfluenceGraphicsBufferCapacity(int requiredCapacity)
+        {
+            if (requiredCapacity <= 0)
+                return false;
+
+            if (_biomeInfluenceGraphicsBuffer != null &&
+                _biomeInfluenceGraphicsBuffer.IsValid() &&
+                _biomeInfluenceGraphicsBufferCapacity >= requiredCapacity)
+            {
+                return true;
+            }
+
+            ReleaseBiomeInfluenceGraphicsBuffer();
+            _biomeInfluenceGraphicsBufferCapacity = Mathf.NextPowerOfTwo(requiredCapacity);
+            // COLD ALLOC: GraphicsBuffer[_biomeInfluenceGraphicsBufferCapacity] - packed biome influence grid upload owned by WorldProceduralFieldSampler.
+            _biomeInfluenceGraphicsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(_biomeInfluenceGraphicsBufferCapacity);
+            return _biomeInfluenceGraphicsBuffer != null && _biomeInfluenceGraphicsBuffer.IsValid();
+        }
+
+        private void ReleaseBiomeInfluenceGraphicsBuffer()
+        {
+            if (_biomeInfluenceGraphicsBuffer != null)
+            {
+                _biomeInfluenceGraphicsBuffer.Release();
+                _biomeInfluenceGraphicsBuffer = null;
+            }
+
+            _biomeInfluenceGraphicsBufferCapacity = 0;
+        }
+
         internal bool TryPrewarmSamplingJob()
         {
             PrepareBurstData();
@@ -1755,6 +1941,7 @@ namespace Hecton8.World
             // COLD SYNC JOB: prewarm Burst compilation and worker setup before player activation so the first runtime scatter pass does not absorb one-time compilation debt.
             NativeArray<CellInputData> warmupInputs = new NativeArray<CellInputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             NativeArray<CellOutputData> warmupOutputs = new NativeArray<CellOutputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<BiomeInfluenceCell> warmupInfluences = new NativeArray<BiomeInfluenceCell>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
 
             try
             {
@@ -1769,13 +1956,14 @@ namespace Hecton8.World
                     WestHeight = 0f,
                     WaterSurface = 64f,
                     BiomeIndex = 0,
+                    BiomeMatrixId = 0,
                     CellX = 0,
                     CellZ = 0,
                     SeafloorSource = (int)SeafloorSource.FallbackSynthetic,
                     IsValid = 1
                 };
 
-                JobHandle warmupHandle = ScheduleCellSamplingJob(warmupInputs, warmupOutputs, 1);
+                JobHandle warmupHandle = ScheduleCellSamplingJob(warmupInputs, warmupOutputs, warmupInfluences, 1);
                 DispatcherJobSwap.TryComplete(ref warmupHandle, true);
                 _lastSamplingJobHandle = default;
                 _hasPendingSamplingJob = false;
@@ -1788,12 +1976,37 @@ namespace Hecton8.World
                     warmupInputs.Dispose();
                 if (warmupOutputs.IsCreated)
                     warmupOutputs.Dispose();
+                if (warmupInfluences.IsCreated)
+                    warmupInfluences.Dispose();
             }
         }
 
         public bool TryBuildFieldSample(in CellOutputData output, out FieldSample sample)
         {
             return TryBuildFieldSample(output, 0, out sample);
+        }
+
+        public bool TryResolveBiomeMatrixProfileById(int matrixBiomeId, out HectonBiomeMatrixProfile profile)
+        {
+            profile = null;
+            if (matrixBiomeId <= 0)
+                return false;
+
+            if (_isDataDirty)
+                PrepareBurstData();
+
+            int count = _biomeMatrixBakeList.Count;
+            for (int i = 0; i < count; i++)
+            {
+                HectonBiomeMatrixProfile candidate = _biomeMatrixBakeList[i];
+                if (candidate == null || candidate.matrixIndex != matrixBiomeId)
+                    continue;
+
+                profile = candidate;
+                return true;
+            }
+
+            return false;
         }
 
         public int GetFieldSampleDomainCount(in CellOutputData output)
@@ -1844,6 +2057,7 @@ namespace Hecton8.World
                 biomeFamilyDataIndex = output.BiomeFamilyDataIndex,
                 biomeProfile = output.BiomeMatrixDataIndex >= 0 && output.BiomeMatrixDataIndex < _biomeMatrixBakeList.Count ? _biomeMatrixBakeList[output.BiomeMatrixDataIndex] : null,
                 biomeFamily = output.BiomeFamilyDataIndex >= 0 && output.BiomeFamilyDataIndex < _biomeFamilyBakeList.Count ? _biomeFamilyBakeList[output.BiomeFamilyDataIndex] : null,
+                biomeInfluence = new BiomeInfluenceCell { Packed = output.BiomeInfluencePacked },
                 zone = output.ZoneDataIndex >= 0 && output.ZoneDataIndex < _zoneBakeList.Count ? _zoneBakeList[output.ZoneDataIndex] : null,
                 zoneWeight = output.ZoneWeight,
                 resolvedZoneKind = (WorldZoneAnchor.ZoneKind)output.ResolvedZoneKind,
@@ -2061,13 +2275,18 @@ namespace Hecton8.World
             }
 
             EnsureNativeArrayCapacity(ref _burstBiomeMatrixData, _biomeMatrixBakeList.Count);
+            EnsureNativeArrayCapacity(ref _burstBiomeMatrixIdToDataIndex, 256);
+            for (int i = 0; i < _burstBiomeMatrixIdToDataIndex.Length; i++)
+                _burstBiomeMatrixIdToDataIndex[i] = -1;
+
             _burstBiomeMatrixDataCount = _biomeMatrixBakeList.Count;
             for (int i = 0; i < _biomeMatrixBakeList.Count; i++)
             {
                 HectonBiomeMatrixProfile profile = _biomeMatrixBakeList[i];
+                int matrixIndex = profile != null ? profile.matrixIndex : -1;
                 _burstBiomeMatrixData[i] = new BiomeMatrixData
                 {
-                    MatrixIndex = profile != null ? profile.matrixIndex : -1,
+                    MatrixIndex = matrixIndex,
                     FamilyDataIndex = ResolveBiomeFamilyDataIndex(profile != null ? profile.familyProfile : null),
                     MinDepthMeters = profile != null ? profile.minDepthMeters : 0f,
                     MaxDepthMeters = profile != null ? profile.maxDepthMeters : 0f,
@@ -2083,6 +2302,9 @@ namespace Hecton8.World
                     SurvivalPressure = profile != null ? profile.survivalPressure : 0,
                     IsPlaceholder = profile != null && profile.isPlaceholder ? 1 : 0
                 };
+
+                if (matrixIndex > 0 && matrixIndex < _burstBiomeMatrixIdToDataIndex.Length)
+                    _burstBiomeMatrixIdToDataIndex[matrixIndex] = i;
             }
 
             EnsureNativeArrayCapacity(ref _burstZoneData, _anchors.Count);
@@ -2181,8 +2403,19 @@ namespace Hecton8.World
             SeafloorSource seafloorSource = terrainContext.CenterSource;
 
             int biomeIndex = 0;
+            int matrixBiomeId = ResolveCurrentMatrixBiomeId();
             if (mapMagicBridge != null)
-                mapMagicBridge.TryGetBiomeIndex(position.x, position.z, out biomeIndex);
+            {
+                if (mapMagicBridge.TryGetMatrixBiomeId(position.x, position.z, out int mapMagicMatrixBiomeId, out int mapMagicAlphamapLayer))
+                {
+                    matrixBiomeId = mapMagicMatrixBiomeId;
+                    biomeIndex = mapMagicAlphamapLayer;
+                }
+                else
+                {
+                    mapMagicBridge.TryGetBiomeIndex(position.x, position.z, out biomeIndex);
+                }
+            }
 
             float waterSurface = mapMagicBridge != null
                 ? mapMagicBridge.WaterSurfaceLevel
@@ -2192,7 +2425,9 @@ namespace Hecton8.World
             float curvature = terrainContext.Curvature;
             WorldZoneAnchor zone = ResolveZone(new Vector3(position.x, seafloorHeight, position.z), out float zoneWeight);
             int zoneDataIndex = ResolveZoneDataIndex(zone);
-            HectonBiomeMatrixProfile biomeProfile = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null;
+            HectonBiomeMatrixProfile biomeProfile = ResolveBiomeMatrixProfileById(matrixBiomeId);
+            if (biomeProfile == null)
+                biomeProfile = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null;
             HectonBiomeFamilyProfile biomeFamily = zone != null
                 ? zone.DominantBiomeFamily
                 : biomeMatrixDirector != null
@@ -2242,6 +2477,7 @@ namespace Hecton8.World
             }
             biomeMatrixDataIndex = ResolveBiomeMatrixDataIndex(biomeProfile);
             biomeFamilyDataIndex = ResolveBiomeFamilyDataIndex(biomeFamily);
+            float hazardBias = EvaluateHazardBias(zoneDataIndex, zone, resolvedZoneKind);
 
             sample = new FieldSample
             {
@@ -2260,6 +2496,13 @@ namespace Hecton8.World
                 biomeFamilyDataIndex = biomeFamilyDataIndex,
                 biomeProfile = biomeProfile,
                 biomeFamily = biomeFamily,
+                biomeInfluence = BuildManagedBiomeInfluenceCell(
+                    biomeProfile,
+                    biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null,
+                    zoneDataIndex,
+                    zoneWeight,
+                    previewOverrideApplied,
+                    hazardBias),
                 zone = zone,
                 zoneWeight = zoneWeight,
                 resolvedZoneKind = resolvedZoneKind,
@@ -2272,6 +2515,90 @@ namespace Hecton8.World
             if (ShouldUpdateDiagnostics())
                 UpdateDiagnostics(sample, "sample", 0f);
             return true;
+        }
+
+        public bool TrySampleBiomeInfluence(
+            Vector3 position,
+            out BiomeInfluenceCell influence,
+            out HectonBiomeMatrixProfile primaryProfile,
+            out HectonBiomeMatrixProfile secondaryProfile)
+        {
+            influence = default;
+            primaryProfile = null;
+            secondaryProfile = null;
+
+            CellSamplingContext context = PrecomputeCellContext(position);
+            if (!TrySampleSeafloor(position, in context, out FieldSample sample))
+                return false;
+
+            influence = sample.biomeInfluence;
+            TryResolveBiomeInfluenceProfiles(in influence, out primaryProfile, out secondaryProfile);
+            if (primaryProfile == null)
+                primaryProfile = sample.biomeProfile;
+
+            return influence.PrimaryBiomeId != 0 || primaryProfile != null;
+        }
+
+        public bool TryResolveBiomeInfluenceProfiles(
+            in BiomeInfluenceCell influence,
+            out HectonBiomeMatrixProfile primaryProfile,
+            out HectonBiomeMatrixProfile secondaryProfile)
+        {
+            primaryProfile = ResolveBiomeMatrixProfileById(influence.PrimaryBiomeId);
+            secondaryProfile = ResolveBiomeMatrixProfileById(influence.SecondaryBiomeId);
+            return primaryProfile != null || secondaryProfile != null;
+        }
+
+        private HectonBiomeMatrixProfile ResolveBiomeMatrixProfileById(int matrixBiomeId)
+        {
+            if (matrixBiomeId <= 0 || biomeMatrixDirector == null || biomeMatrixDirector.MatrixCatalog == null)
+                return null;
+
+            return biomeMatrixDirector.MatrixCatalog.GetByMatrixIndex(matrixBiomeId);
+        }
+
+        private static BiomeInfluenceCell BuildManagedBiomeInfluenceCell(
+            HectonBiomeMatrixProfile primaryProfile,
+            HectonBiomeMatrixProfile currentProfile,
+            int zoneDataIndex,
+            float zoneWeight,
+            bool previewOverrideApplied,
+            float hazardBias)
+        {
+            byte flags = 0;
+            if (primaryProfile != null && primaryProfile.isPlaceholder)
+                flags |= (byte)BiomeInfluenceFlags.Placeholder;
+            if (previewOverrideApplied)
+                flags |= (byte)BiomeInfluenceFlags.PreviewOverride;
+            if (hazardBias >= 0.65f)
+                flags |= (byte)BiomeInfluenceFlags.Hazard;
+
+            byte primaryBiomeId = ResolveManagedBiomeId(primaryProfile);
+            byte secondaryBiomeId = 0;
+            byte blend255 = 0;
+            if (zoneDataIndex >= 0 && zoneWeight > 0.001f && zoneWeight < 0.999f)
+            {
+                secondaryBiomeId = ResolveManagedBiomeId(currentProfile);
+                if (secondaryBiomeId != 0 && secondaryBiomeId != primaryBiomeId)
+                {
+                    blend255 = (byte)Mathf.RoundToInt(Mathf.Clamp01(1f - zoneWeight) * 255f);
+                    flags |= (byte)BiomeInfluenceFlags.TransitionEdge;
+                }
+                else
+                {
+                    secondaryBiomeId = 0;
+                }
+            }
+
+            return BiomeInfluenceCell.Create(primaryBiomeId, secondaryBiomeId, blend255, flags);
+        }
+
+        private static byte ResolveManagedBiomeId(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null || profile.matrixIndex <= 0 || profile.matrixIndex > 255)
+                return 0;
+
+            return (byte)profile.matrixIndex;
         }
 
         public bool TryResolveSeafloorSource(Vector3 position, out SeafloorSource seafloorSource)
@@ -2674,27 +3001,44 @@ namespace Hecton8.World
 
         private bool TryResolveBiomeIndex(float x, float z, out int biomeIndex)
         {
-            biomeIndex = 0;
-            Vector2Int cacheKey = GetHeightCacheKey(x, z);
-            if (_biomeIndexCache.TryGetValue(cacheKey, out CachedBiomeSample cachedSample) &&
-                cachedSample.SamplingFrameId == _samplingFrameId)
-            {
-                if (enableLiveRuntimeDiagnostics)
-                    _debugBiomeCacheHits++;
+            return TryResolveBiomeReadout(x, z, out biomeIndex, out _);
+        }
 
-                biomeIndex = cachedSample.BiomeIndex;
-                return true;
+        private bool TryResolveMatrixBiomeId(float x, float z, out int biomeMatrixId)
+        {
+            TryResolveBiomeReadout(x, z, out _, out biomeMatrixId);
+            return biomeMatrixId > 0;
+        }
+
+        private bool TryResolveBiomeReadout(float x, float z, out int biomeIndex, out int biomeMatrixId)
+        {
+            biomeMatrixId = ResolveCurrentMatrixBiomeId();
+            biomeIndex = biomeMatrixId;
+
+            if (mapMagicBridge != null)
+            {
+                if (mapMagicBridge.TryGetMatrixBiomeId(x, z, out int mapMagicMatrixBiomeId, out int alphamapLayer))
+                {
+                    biomeMatrixId = mapMagicMatrixBiomeId;
+                    biomeIndex = alphamapLayer;
+                }
+                else if (!mapMagicBridge.SandboxProceduralTerrainOnly &&
+                         mapMagicBridge.TryGetBiomeIndex(x, z, out int mapMagicBiomeIndex))
+                {
+                    biomeIndex = mapMagicBiomeIndex;
+                }
             }
 
             if (enableLiveRuntimeDiagnostics)
                 _debugBiomeCacheMisses++;
 
-            if (mapMagicBridge != null)
-                mapMagicBridge.TryGetBiomeIndex(x, z, out biomeIndex);
+            return biomeIndex > 0 || biomeMatrixId > 0;
+        }
 
-            TrimBiomeIndexCacheIfNeeded();
-            _biomeIndexCache[cacheKey] = new CachedBiomeSample(biomeIndex, _samplingFrameId);
-            return true;
+        private int ResolveCurrentMatrixBiomeId()
+        {
+            HectonBiomeMatrixProfile profile = biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null;
+            return profile != null && profile.matrixIndex > 0 ? profile.matrixIndex : 0;
         }
 
         private bool TryResolveSeafloorHeightUncached(Vector3 position, out float seafloorHeight, out SeafloorSource seafloorSource)
@@ -2707,6 +3051,9 @@ namespace Hecton8.World
                 seafloorSource = SeafloorSource.MapMagicHeight;
                 return true;
             }
+
+            if (mapMagicBridge != null && mapMagicBridge.SandboxProceduralTerrainOnly)
+                return false;
 
             float waterSurface = mapMagicBridge != null ? mapMagicBridge.WaterSurfaceLevel : Mathf.Max(position.y + 500f, 1000f);
             float rayOriginY = Mathf.Max(waterSurface + 1000f, position.y + 1000f);
@@ -3714,6 +4061,8 @@ namespace Hecton8.World
                 _burstZoneData.Dispose();
             if (_burstBiomeMatrixData.IsCreated)
                 _burstBiomeMatrixData.Dispose();
+            if (_burstBiomeMatrixIdToDataIndex.IsCreated)
+                _burstBiomeMatrixIdToDataIndex.Dispose();
             if (_burstBiomeFamilyData.IsCreated)
                 _burstBiomeFamilyData.Dispose();
             if (_burstCaveEntranceHints.IsCreated)
@@ -3866,14 +4215,6 @@ namespace Hecton8.World
                 return;
 
             _seafloorHeightCache.Clear();
-        }
-
-        private void TrimBiomeIndexCacheIfNeeded()
-        {
-            if (_biomeIndexCache.Count < MaxBiomeIndexCacheEntries)
-                return;
-
-            _biomeIndexCache.Clear();
         }
 
         private void ResolveReferences(bool force = false)

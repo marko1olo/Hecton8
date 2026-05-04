@@ -50,6 +50,7 @@ namespace Hecton8.Gameplay
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float CriticalEncumbranceRatio = 1.5f;
         private float _runtimeSwimSpeedMultiplier = 1f;
+        private float _runtimeVoxelBackpressureSwimSpeedMultiplier = 1f;
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
         private float _runtimeEmergencyMovementMultiplier = 1f;
         private float _runtimeInventoryLoadMovementMultiplier = 1f;
@@ -1297,6 +1298,14 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
+        /// Applies voxel streaming backpressure without overwriting buffs, injury penalties, or emergency movement gates.
+        /// </summary>
+        internal void SetRuntimeVoxelBackpressureSwimSpeedMultiplier(float multiplier)
+        {
+            _runtimeVoxelBackpressureSwimSpeedMultiplier = Mathf.Clamp(multiplier, 0.5f, 1f);
+        }
+
+        /// <summary>
         /// Applies a body-state penalty without overwriting external runtime swim buffs.
         /// </summary>
         internal void SetRuntimeInjurySwimSpeedMultiplier(float multiplier)
@@ -1321,6 +1330,13 @@ namespace Hecton8.Gameplay
             _runtimeInventoryLoadMovementMultiplier = Mathf.Clamp(multiplier, InventoryLoadMinimumMovementMultiplier, 1f);
             _playerMotor?.SetEncumbranceMovementMultiplier(_runtimeInventoryLoadMovementMultiplier);
             _playerState.SyncEncumbrance(_runtimeInventoryLoad01, _runtimeInventoryLoadMovementMultiplier);
+        }
+
+        public void ApplyRuntimeInventoryMassLoad(float totalMassKg, float carryCapacityKg)
+        {
+            _runtimeInventoryLoadRatio = ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg);
+            _runtimeInventoryLoad01 = math.saturate(_runtimeInventoryLoadRatio);
+            SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplierFromLoad(_runtimeInventoryLoad01));
         }
 
         /// <summary>Normalized 0-1 inventory mass load consumed by HUD and locomotion penalties.</summary>
@@ -2813,9 +2829,7 @@ namespace Hecton8.Gameplay
         {
             float totalMassKg = _inventoryLoadSource != null ? _inventoryLoadSource.TotalMassKg : 0f;
             float carryCapacityKg = ResolveInventoryCarryCapacityKg();
-            _runtimeInventoryLoadRatio = ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg);
-            _runtimeInventoryLoad01 = math.saturate(_runtimeInventoryLoadRatio);
-            SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplierFromLoad(_runtimeInventoryLoad01));
+            ApplyRuntimeInventoryMassLoad(totalMassKg, carryCapacityKg);
             InventoryEvents.NotifyEncumbranceChanged(new EncumbranceChangedEvent(
                 _inventoryLoadSource,
                 totalMassKg,
@@ -2853,6 +2867,20 @@ namespace Hecton8.Gameplay
         private static float ResolveInventoryLoadRatio(float totalMassKg, float carryCapacityKg)
         {
             return math.max(0f, totalMassKg) / math.max(0.01f, carryCapacityKg);
+        }
+
+        internal static bool IsCriticalInventoryLoad(float totalMassKg, float carryCapacityKg)
+        {
+            return ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg) >= CriticalEncumbranceRatio;
+        }
+
+        internal static Vector3 ResolveCriticalEncumbranceSwimForce(Vector3 swimForce, bool criticallyEncumbered)
+        {
+            if (!criticallyEncumbered || swimForce.y <= 0f)
+                return swimForce;
+
+            swimForce.y = 0f;
+            return swimForce;
         }
 
         private static float ResolveInventoryLoadMovementMultiplierFromLoad(float load01)
@@ -8277,7 +8305,7 @@ namespace Hecton8.Gameplay
 
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
-            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier();
+            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier();
             float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
@@ -8463,6 +8491,8 @@ namespace Hecton8.Gameplay
                 _forceVector.y += transportPropulsionDirection.y * transportPropulsionForce;
                 _forceVector.z += transportPropulsionDirection.z * transportPropulsionForce;
             }
+
+            _forceVector = ResolveCriticalEncumbranceSwimForce(_forceVector, IsCriticallyEncumbered);
 
             ApplyMotorAccelerationFromForce(_forceVector);
             ApplySargassumEntanglementForce(transportPreset);
@@ -8824,7 +8854,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier());
+                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier());
                 if (_isSurfaceSwimming)
                 {
                     maxSpd *= surfaceMaxSpeedMultiplier;

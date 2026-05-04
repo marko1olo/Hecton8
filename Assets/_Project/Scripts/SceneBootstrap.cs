@@ -56,6 +56,10 @@ using Unity.Profiling;
 using Unity.Profiling.LowLevel.Unsafe;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+#if UNITY_EDITOR
+using UnityEditor;
+using UnityEditor.SceneManagement;
+#endif
 
 namespace Hecton8.Bootstrap
 {
@@ -95,6 +99,7 @@ namespace Hecton8.Bootstrap
 
         public static int PendingEventCount => _pendingEventCount + _nextFrameEventCount;
 #if UNITY_EDITOR
+        private static string _pendingDirtySceneReloadPath;
         private static readonly List<GameObject> _dontDestroyRootScratch = new List<GameObject>(32); // COLD ALLOC: List<GameObject>[32] - editor-only DDOL residue scan scratch - owner: SceneBootstrap
 #endif
 
@@ -616,8 +621,60 @@ namespace Hecton8.Bootstrap
         /// </summary>
         private void Start()
         {
+#if UNITY_EDITOR
+            if (RejectDirtyEditorSceneAndReloadFromDisk())
+                return;
+#endif
             GameBootstrapper.RequestSceneActivation(this);
         }
+
+#if UNITY_EDITOR
+        private bool RejectDirtyEditorSceneAndReloadFromDisk()
+        {
+            if (!Application.isEditor)
+                return false;
+
+            Scene scene = gameObject.scene;
+            if (!scene.IsValid() || !scene.isDirty)
+                return false;
+
+            string scenePath = scene.path;
+            if (string.IsNullOrEmpty(scenePath))
+            {
+                enabled = false;
+                Debug.LogError("[SceneBootstrap] Dirty editor scene rejected, but scene has no disk path. Save or reopen the scene before Play Mode.");
+                return true;
+            }
+
+            enabled = false;
+            Debug.LogError("[SceneBootstrap] Dirty editor scene rejected; reloading from disk: " + scenePath);
+            RequestDirtySceneReloadFromDisk(scenePath);
+            return true;
+        }
+
+        private static void RequestDirtySceneReloadFromDisk(string scenePath)
+        {
+            _pendingDirtySceneReloadPath = scenePath;
+            EditorApplication.delayCall -= ProcessDirtySceneReloadFromDisk;
+            EditorApplication.delayCall += ProcessDirtySceneReloadFromDisk;
+        }
+
+        private static void ProcessDirtySceneReloadFromDisk()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                EditorApplication.ExitPlaymode();
+                EditorApplication.delayCall -= ProcessDirtySceneReloadFromDisk;
+                EditorApplication.delayCall += ProcessDirtySceneReloadFromDisk;
+                return;
+            }
+
+            string scenePath = _pendingDirtySceneReloadPath;
+            _pendingDirtySceneReloadPath = null;
+            if (!string.IsNullOrEmpty(scenePath))
+                EditorSceneManager.OpenScene(scenePath, UnityEditor.SceneManagement.OpenSceneMode.Single);
+        }
+#endif
 
         internal async Awaitable<bool> ExecuteSceneActivationAsync(CancellationToken ownerToken)
         {

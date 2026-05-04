@@ -1,5 +1,6 @@
 using System;
 using Hecton8.Bootstrap;
+using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -21,6 +22,7 @@ namespace Hecton8.Core
         void NotifyTickCompleted(IUpdatable item);
         void ScheduleFrameJobs();
         void CompleteFrameJobs();
+        void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount);
         void ResetRuntimeState();
     }
 
@@ -151,6 +153,7 @@ namespace Hecton8.Core
         private const float SoundSpeedWaterMetersPerSecond = 1480.0f;
         private const float MinimumPitch = 0.5f;
         private const float MaximumPitch = 2.0f;
+        private const float VoxelTeardownBackpressureSwimSpeedMultiplier = 0.5f;
         private const float CenterVelocitySmoothingSharpness = 18.0f;
         private const float FocusVelocitySmoothingSharpness = 14.0f;
         private const float PeripheryVelocitySmoothingSharpness = 10.0f;
@@ -230,6 +233,8 @@ namespace Hecton8.Core
         private bool _originShiftListenerRegistered;
         private bool _nativeMemorySentinelRegistered;
         private bool _nativeMemoryBudgetRegistered;
+        private bool _voxelTeardownBackpressureActive;
+        private int _voxelTeardownBackpressurePendingCount;
         private int _queuedDeferredRaycastCount;
         private int _lastDeferredRaycastScheduleFrame = -1;
 
@@ -465,6 +470,25 @@ namespace Hecton8.Core
             CompleteFrameJobsInternal(true);
         }
 
+        public void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount)
+        {
+            if (_voxelTeardownBackpressureActive == active &&
+                _voxelTeardownBackpressurePendingCount == pendingChunkCount)
+            {
+                return;
+            }
+
+            _voxelTeardownBackpressureActive = active;
+            _voxelTeardownBackpressurePendingCount = math.max(0, pendingChunkCount);
+            HectonPlayerMovement movement = GlobalRegistry.Player != null
+                ? GlobalRegistry.Player.PlayerMovement
+                : null;
+            if (movement == null)
+                return;
+
+            movement.SetRuntimeVoxelBackpressureSwimSpeedMultiplier(active ? VoxelTeardownBackpressureSwimSpeedMultiplier : 1f);
+        }
+
         private void CompleteFrameJobsInternal(bool includeDeferredRaycasts)
         {
             if (_interpolationScheduled)
@@ -500,6 +524,9 @@ namespace Hecton8.Core
 
         public void ResetRuntimeState()
         {
+            if (_voxelTeardownBackpressureActive)
+                SetVoxelTeardownBackpressure(false, 0);
+
             CompleteFrameJobsInternal(true);
             DisposeVisualTransformAccessArray();
             DisposeNativeBuffers(JobHandle.CombineDependencies(_importanceHandle, JobHandle.CombineDependencies(_interpolationHandle, _deferredRaycastHandle)));
@@ -541,6 +568,8 @@ namespace Hecton8.Core
             _deferredRaycastScheduled = false;
             _queuedDeferredRaycastCount = 0;
             _lastDeferredRaycastScheduleFrame = -1;
+            _voxelTeardownBackpressureActive = false;
+            _voxelTeardownBackpressurePendingCount = 0;
             _visualTransformArray = Array.Empty<Transform>();
         }
 

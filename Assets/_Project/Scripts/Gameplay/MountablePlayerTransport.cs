@@ -943,7 +943,11 @@ namespace Hecton8.Gameplay
                 return false;
 
             Vector3 direction = velocity / math.max(speed, 0.0001f);
-            float density = SampleMacroFloraDensityAlongVelocity(vegetationBridge, _transportBody.position, direction, speed, fixedDeltaTime);
+            float density = _vehicleMotor.SampleMacroFloraDensityAlongVelocity(
+                vegetationBridge,
+                entanglementProbeLengthMeters,
+                EntanglementDensityProbeCount,
+                fixedDeltaTime);
             float entanglementScore = density * speed;
             if (entanglementScore < entanglementThreshold)
                 return false;
@@ -983,28 +987,6 @@ namespace Hecton8.Gameplay
             _vehicleMotor.AdvanceEntanglement(anchorFlowVelocity, entanglementCurrentAcceleration, entanglementCurrentDamping, fixedDeltaTime);
             ApplyEntanglementStressAndCavitation(fixedDeltaTime, initialThrottleOutput, thrustAcceleration, safeMass);
             return true;
-        }
-
-        private float SampleMacroFloraDensityAlongVelocity(
-            HectonMapMagicVegetationBridge vegetationBridge,
-            Vector3 origin,
-            Vector3 direction,
-            float speed,
-            float fixedDeltaTime)
-        {
-            if (vegetationBridge == null || direction.sqrMagnitude <= 0.0001f)
-                return 0f;
-
-            float probeDistance = math.max(1f, math.max(entanglementProbeLengthMeters, speed * math.max(fixedDeltaTime, 0.0001f)));
-            float accumulatedDensity = 0f;
-            for (int i = 0; i < EntanglementDensityProbeCount; i++)
-            {
-                float sampleT = (i + 1f) / EntanglementDensityProbeCount;
-                Vector3 samplePosition = origin + direction * (probeDistance * sampleT);
-                accumulatedDensity += vegetationBridge.SampleMacroFloraDensityImmediate(samplePosition);
-            }
-
-            return accumulatedDensity / EntanglementDensityProbeCount;
         }
 
         private void ClearMacroFloraEntanglement()

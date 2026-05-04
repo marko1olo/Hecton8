@@ -280,6 +280,12 @@ namespace Hecton8.Physics
         [SerializeField, Min(0f)] private float dentDepthFromSeverityMeters = 0.18f;
         [Tooltip("Local-space tolerance used to limit denting to vertices near the struck face.")]
         [SerializeField, Min(0.001f)] private float dentFrontFaceToleranceMeters = 0.08f;
+        [Tooltip("Minimum collision kinetic energy before the hull queues structural damage or a visual dent.")]
+        [SerializeField, Min(0f)] private float hullCollisionYieldEnergyJoules = 12000f;
+        [Tooltip("Kinetic energy at or above this value maps to full dent severity.")]
+        [SerializeField, Min(1f)] private float hullCollisionFullDentEnergyJoules = 65000f;
+        [Tooltip("Maximum integrity delta contributed by a single heavy hull collision.")]
+        [SerializeField, Range(1f, 255f)] private float hullCollisionMaxIntegrityDelta = 96f;
 
         [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional authored hull collider used for automatic local bounds fitting.")]
@@ -329,6 +335,8 @@ namespace Hecton8.Physics
         private JobHandle _damageJobHandle;
         private JobHandle _dentJobHandle;
         private IDamageSignalEmitter _damageEmitter;
+        private Rigidbody _cachedHullRigidbody;
+        private SubmarineHullImpactRelay _hullImpactRelay;
         private Mesh _runtimeHullDentMesh;
         private Bounds _hullDentBoundsLocal;
         private SubMeshDescriptor[] _hullDentSubMeshes;
@@ -383,10 +391,12 @@ namespace Hecton8.Physics
             GlobalRegistry.RegisterSubmarineHullBreach(this);
             TryRegister();
             TryRegisterDamageReceiver();
+            EnsureHullCollisionRelay();
         }
 
         private void OnDisable()
         {
+            ClearHullCollisionRelay();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
@@ -396,6 +406,7 @@ namespace Hecton8.Physics
 
         private void OnDestroy()
         {
+            ClearHullCollisionRelay();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
@@ -430,6 +441,62 @@ namespace Hecton8.Physics
         {
             ConsumeCompletedDamageJob();
             ConsumeCompletedHullDentJob();
+        }
+
+        private void OnCollisionEnter(Collision collision)
+        {
+            ProcessHullCollision(collision);
+        }
+
+        private void ProcessRelayedHullCollision(Collision collision)
+        {
+            ProcessHullCollision(collision);
+        }
+
+        private void ProcessHullCollision(Collision collision)
+        {
+            if (!_nativeStateReady ||
+                collision == null ||
+                collision.contactCount <= 0)
+            {
+                return;
+            }
+
+            Rigidbody hullBody = ResolveHullRigidbody();
+            if (hullBody == null)
+                return;
+
+            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            if (submarine == null || !ReferenceEquals(submarine.HullRigidbody, hullBody))
+                return;
+
+            float impactSpeed = collision.relativeVelocity.magnitude;
+            if (impactSpeed <= Epsilon)
+                return;
+
+            float effectiveMass = ResolveEffectiveCollisionMass(hullBody, collision.rigidbody);
+            float kineticEnergy = 0.5f * effectiveMass * impactSpeed * impactSpeed;
+            float yieldEnergy = math.max(Epsilon, hullCollisionYieldEnergyJoules);
+            if (kineticEnergy < yieldEnergy)
+                return;
+
+            float fullDentEnergy = math.max(yieldEnergy + Epsilon, hullCollisionFullDentEnergyJoules);
+            float severity01 = math.saturate((kineticEnergy - yieldEnergy) / (fullDentEnergy - yieldEnergy));
+            ContactPoint contact = collision.GetContact(0);
+            Transform cachedTransform = transform;
+            Vector3 localPointVector = cachedTransform.InverseTransformPoint(contact.point);
+            Vector3 localNormalVector = cachedTransform.InverseTransformDirection(contact.normal);
+            float3 localPoint = new float3(localPointVector.x, localPointVector.y, localPointVector.z);
+            float3 localNormal = ResolveOutwardHullNormal(
+                localPoint,
+                new float3(localNormalVector.x, localNormalVector.y, localNormalVector.z));
+            byte integrityDelta = (byte)math.clamp(
+                (int)math.round(math.lerp(1f, math.max(1f, hullCollisionMaxIntegrityDelta), severity01)),
+                1,
+                255);
+
+            QueueImpactLocal(localPoint, impactSpeed, integrityDelta);
+            QueueHullDentLocal(localPoint, localNormal, impactSpeed, severity01);
         }
 
         /// <summary>
@@ -493,6 +560,35 @@ namespace Hecton8.Physics
             };
         }
 
+        internal static float3 DebugEvaluateHullDentVertex(
+            float3 vertex,
+            float3 localPoint,
+            float3 localNormal,
+            float radiusMeters,
+            float depthMeters,
+            float sigmaMeters,
+            float frontFaceToleranceMeters)
+        {
+            if (depthMeters <= Epsilon || radiusMeters <= Epsilon)
+                return vertex;
+
+            float3 safeNormal = math.normalizesafe(localNormal, new float3(0f, 1f, 0f));
+            float3 delta = vertex - localPoint;
+            float normalDistance = math.dot(delta, safeNormal);
+            if (normalDistance < -frontFaceToleranceMeters || normalDistance > radiusMeters)
+                return vertex;
+
+            float3 radial = delta - safeNormal * normalDistance;
+            float radialSq = math.lengthsq(radial);
+            float radiusSq = radiusMeters * radiusMeters;
+            if (radialSq > radiusSq)
+                return vertex;
+
+            float safeSigma = math.max(sigmaMeters, Epsilon);
+            float weight = math.exp(-radialSq / (2f * safeSigma * safeSigma));
+            return vertex - safeNormal * (depthMeters * weight);
+        }
+
         /// <inheritdoc />
         public ulong GetHullBreachMaskWord(int wordIndex)
         {
@@ -534,6 +630,52 @@ namespace Hecton8.Physics
             QueueImpactLocal(localPoint, math.max(pressureDelta, 1f) * 12f, FullIntegrity);
         }
 
+        private Rigidbody ResolveHullRigidbody()
+        {
+            ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
+            Rigidbody registryBody = submarine != null ? submarine.HullRigidbody : null;
+            if (registryBody != null)
+            {
+                _cachedHullRigidbody = registryBody;
+                return registryBody;
+            }
+
+            if (_cachedHullRigidbody != null)
+                return _cachedHullRigidbody;
+
+            if (hullCollider != null && hullCollider.attachedRigidbody != null)
+            {
+                _cachedHullRigidbody = hullCollider.attachedRigidbody;
+                return _cachedHullRigidbody;
+            }
+
+            TryGetComponent(out _cachedHullRigidbody);
+            return _cachedHullRigidbody;
+        }
+
+        private static float ResolveEffectiveCollisionMass(Rigidbody hullBody, Rigidbody otherBody)
+        {
+            float hullMass = hullBody != null ? math.max(1f, hullBody.mass) : 1f;
+            if (otherBody == null || otherBody.isKinematic)
+                return hullMass;
+
+            float otherMass = math.max(1f, otherBody.mass);
+            return (hullMass * otherMass) / math.max(1f, hullMass + otherMass);
+        }
+
+        private float3 ResolveOutwardHullNormal(float3 localPoint, float3 candidateNormal)
+        {
+            float3 outward = localPoint - new float3(localGridCenter.x, localGridCenter.y, localGridCenter.z);
+            float3 resolvedNormal = math.normalizesafe(candidateNormal, float3.zero);
+            if (math.lengthsq(resolvedNormal) <= Epsilon)
+                return math.normalizesafe(outward, new float3(0f, 1f, 0f));
+
+            if (math.dot(resolvedNormal, outward) < 0f)
+                resolvedNormal = -resolvedNormal;
+
+            return resolvedNormal;
+        }
+
         private void CacheReferences()
         {
             if (fluidDynamics == null)
@@ -544,6 +686,8 @@ namespace Hecton8.Physics
 
             if (hullCollider == null)
                 TryGetComponent(out hullCollider);
+
+            ResolveHullRigidbody();
 
             if (hullDeformMeshFilter == null)
             {
@@ -855,6 +999,34 @@ namespace Hecton8.Physics
             layout.NormalStream = normalStream;
             layout.UvStream = uvStream;
             return true;
+        }
+
+        private void EnsureHullCollisionRelay()
+        {
+            Rigidbody hullBody = ResolveHullRigidbody();
+            if (hullBody == null || hullBody.gameObject == gameObject)
+                return;
+
+            if (_hullImpactRelay != null && _hullImpactRelay.gameObject == hullBody.gameObject)
+            {
+                _hullImpactRelay.Bind(this);
+                return;
+            }
+
+            if (!hullBody.TryGetComponent(out SubmarineHullImpactRelay relay))
+                relay = hullBody.gameObject.AddComponent<SubmarineHullImpactRelay>(); // COLD ALLOC: SubmarineHullImpactRelay[1] - hull-rigidbody collision forwarding to structural grid - owner: SubmarineStructuralGrid
+
+            relay.Bind(this);
+            _hullImpactRelay = relay;
+        }
+
+        private void ClearHullCollisionRelay()
+        {
+            if (_hullImpactRelay == null)
+                return;
+
+            _hullImpactRelay.Clear(this);
+            _hullImpactRelay = null;
         }
 
         private static bool ValidateHullDentAttribute(
@@ -1308,6 +1480,31 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_hullDentNormals, NativeMemoryOwner, nameof(_hullDentNormals), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_hullDentUvs, NativeMemoryOwner, nameof(_hullDentUvs), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_hullDentIndices, NativeMemoryOwner, nameof(_hullDentIndices), NativeMemoryLifetime);
+        }
+
+        private sealed class SubmarineHullImpactRelay : MonoBehaviour
+        {
+            private SubmarineStructuralGrid _owner;
+
+            public void Bind(SubmarineStructuralGrid owner)
+            {
+                _owner = owner;
+            }
+
+            public void Clear(SubmarineStructuralGrid owner)
+            {
+                if (ReferenceEquals(_owner, owner))
+                    _owner = null;
+            }
+
+            private void OnCollisionEnter(Collision collision)
+            {
+                SubmarineStructuralGrid owner = _owner;
+                if (owner == null || !owner.isActiveAndEnabled)
+                    return;
+
+                owner.ProcessRelayedHullCollision(collision);
+            }
         }
     }
 }

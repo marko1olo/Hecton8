@@ -37,6 +37,7 @@ namespace Hecton8.Visor
         private static readonly int _CausticsSimulationParamsAId = Shader.PropertyToID("_HectonCausticsSimulationParamsA");
         private static readonly int _CausticsSimulationParamsBId = Shader.PropertyToID("_HectonCausticsSimulationParamsB");
         private static readonly int _CausticsSimulationParamsCId = Shader.PropertyToID("_HectonCausticsSimulationParamsC");
+        private static readonly int _AbyssalFlowWeatherCurrentId = Shader.PropertyToID("_AbyssalFlowWeatherCurrent");
         private static readonly int _CausticsHeightTextureId = Shader.PropertyToID("_HectonCausticsHeightTexture");
         private static readonly int _CausticsHeightResolutionId = Shader.PropertyToID("_HectonCausticsHeightResolution");
         private static readonly int _CausticsTerrainPositionId = Shader.PropertyToID("_HectonCausticsTerrainPosition");
@@ -102,6 +103,7 @@ namespace Hecton8.Visor
         [SerializeField] private float _debugFade01;
         [SerializeField] private float _debugDepthMeters;
         [SerializeField] private Vector4 _debugWorldRect;
+        [SerializeField] private Vector4 _debugAbyssalFlowWeatherCurrent;
 
         private bool _registeredTick;
         private bool _registeredSlowTick;
@@ -168,10 +170,12 @@ namespace Hecton8.Visor
             float waterLevel = ResolveWaterLevel();
             float timeValue = Time.unscaledTime;
             Vector4 waveCoupling = ResolveWaveCoupling(waterLevel);
+            Vector4 abyssalFlowWeatherCurrent = ResolveAbyssalFlowWeatherCurrent(timeValue);
             causticsCompute.SetTexture(_kernelIndex, _CausticsOutputId, _causticsTexture);
             causticsCompute.SetVector(_CausticsSimulationParamsAId, new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed));
             causticsCompute.SetVector(_CausticsSimulationParamsBId, new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, waterLevel));
             causticsCompute.SetVector(_CausticsSimulationParamsCId, waveCoupling);
+            causticsCompute.SetVector(_AbyssalFlowWeatherCurrentId, abyssalFlowWeatherCurrent);
             causticsCompute.SetVector(_CausticsTexelSizeId, new Vector4(1f / FieldResolution, 1f / FieldResolution, FieldResolution, FieldResolution));
             causticsCompute.SetVector(_CausticsWorldRectId, _worldRect);
             BindTerrainHeightPayload();
@@ -184,6 +188,7 @@ namespace Hecton8.Visor
             Shader.SetGlobalVector(_CausticsSimulationParamsAId, new Vector4(primaryCellDensity, secondaryCellDensity, primaryScrollSpeed, secondaryScrollSpeed));
             Shader.SetGlobalVector(_CausticsSimulationParamsBId, new Vector4(ridgeSharpness, secondaryLayerWeight, timeValue, waterLevel));
             Shader.SetGlobalVector(_CausticsSimulationParamsCId, waveCoupling);
+            Shader.SetGlobalVector(_AbyssalFlowWeatherCurrentId, abyssalFlowWeatherCurrent);
             Shader.SetGlobalVector(
                 _CausticsParamsId,
                 new Vector4(
@@ -356,6 +361,28 @@ namespace Hecton8.Visor
             _debugWaveFlow = new Vector2(surfaceVelocity.x, surfaceVelocity.z);
             float couplingPhase = displacement.y * 0.31f + math.length(surfaceVelocity.xz) * 0.08f;
             return new Vector4(displacement.y, surfaceVelocity.x, surfaceVelocity.z, couplingPhase);
+        }
+
+        private Vector4 ResolveAbyssalFlowWeatherCurrent(float timeValue)
+        {
+            float3 flow = float3.zero;
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            if (fluidEngine != null)
+            {
+                Vector3 samplePosition = _playerTransform != null
+                    ? _playerTransform.position
+                    : transform.position;
+
+                if (!fluidEngine.TrySampleModAbyssalFlow(samplePosition, out flow))
+                    flow = float3.zero;
+            }
+
+            if (!math.all(math.isfinite(flow)))
+                flow = float3.zero;
+
+            Vector4 resolved = new Vector4(flow.x, flow.y, flow.z, timeValue);
+            _debugAbyssalFlowWeatherCurrent = resolved;
+            return resolved;
         }
 
         private void ReleaseResources()

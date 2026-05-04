@@ -371,6 +371,14 @@ namespace Hecton8.World
                 planWeight = plan.planWeight,
                 hasTerrainSample = plan.hasTerrainSample,
                 absoluteTerrainContactPosition = new Vector3(plan.absoluteUniversePosition.x, plan.absoluteTerrainHeight, plan.absoluteUniversePosition.z),
+                absoluteUniverseCenterAup = plan.hasAbsoluteVoxelVolumeCenterAup
+                    ? plan.absoluteVoxelVolumeCenterAup
+                    : AbsoluteUniversePosition.FromRuntimePosition(plan.RuntimeVoxelVolumeCenter),
+                absoluteTerrainContactAup = plan.hasAbsoluteTerrainContactAup
+                    ? plan.absoluteTerrainContactAup
+                    : AbsoluteUniversePosition.FromRuntimePosition(plan.TerrainContactPosition),
+                hasAbsoluteUniverseCenterAup = true,
+                hasAbsoluteTerrainContactAup = true,
                 slopeDegrees = plan.slopeDegrees,
                 seamBlendRadius = plan.seamBlendRadius,
                 suggestedTerrainCut = plan.suggestedTerrainCut,

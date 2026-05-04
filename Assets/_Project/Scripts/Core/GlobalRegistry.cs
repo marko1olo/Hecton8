@@ -30,6 +30,17 @@ using UnityEngine;
 namespace Hecton8.Core
 {
     /// <summary>
+    /// Raised when a GlobalRegistry service getter re-enters an active dependency resolution lane.
+    /// </summary>
+    public sealed class DependencyCycleException : InvalidOperationException
+    {
+        public DependencyCycleException(string message)
+            : base(message)
+        {
+        }
+    }
+
+    /// <summary>
     /// Static runtime service locator and dense bucket registry for first-party core systems.
     /// </summary>
     public static class GlobalRegistry
@@ -46,6 +57,19 @@ namespace Hecton8.Core
         private static readonly IInputService _noOpInputService = new NoOpInputService();
         private static readonly uint _inputDependencyWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.Input"));
         private const int MaxPendingServiceRebounds = 64;
+        private const uint PlayerResolutionMask =
+            (1u << (int)GlobalRegistryResolutionScope.PlayerContext) |
+            (1u << (int)GlobalRegistryResolutionScope.PlayerInventory) |
+            (1u << (int)GlobalRegistryResolutionScope.PlayerSensory);
+        [ThreadStatic] private static uint _resolutionMask;
+
+        internal enum GlobalRegistryResolutionScope : byte
+        {
+            PlayerContext = 0,
+            PlayerInventory = 1,
+            PlayerSensory = 2,
+            Settings = 3,
+        }
 
         private struct RegistryReboundReferenceSlot
         {
@@ -259,7 +283,18 @@ namespace Hecton8.Core
         /// <summary>
         /// Registered player runtime context slot.
         /// </summary>
-        public static IPlayerRuntimeContext Player => _player;
+        public static IPlayerRuntimeContext Player
+        {
+            get
+            {
+                if (IsResolvingAny(PlayerResolutionMask))
+                    ThrowDependencyCycle(GlobalRegistryResolutionScope.PlayerContext);
+
+                return _player;
+            }
+        }
+
+        internal static IPlayerRuntimeContext RegisteredPlayer => _player;
 
         /// <summary>
         /// Registered player motor service slot.
@@ -269,12 +304,33 @@ namespace Hecton8.Core
         /// <summary>
         /// Registered player inventory/tooling service slot.
         /// </summary>
-        public static IPlayerInventoryService PlayerInventory => _playerInventory;
+        public static IPlayerInventoryService PlayerInventory
+        {
+            get
+            {
+                if (IsResolving(GlobalRegistryResolutionScope.PlayerContext) ||
+                    IsResolving(GlobalRegistryResolutionScope.PlayerInventory))
+                {
+                    ThrowDependencyCycle(GlobalRegistryResolutionScope.PlayerInventory);
+                }
+
+                return _playerInventory;
+            }
+        }
+
+        internal static IPlayerInventoryService RegisteredPlayerInventory => _playerInventory;
 
         /// <summary>
         /// Registered concrete player inventory owner mirrored by <see cref="PlayerInventory"/>.
         /// </summary>
-        public static Hecton8.Inventory.PlayerInventory PlayerInventoryRuntime => _playerInventory != null ? _playerInventory.Inventory : null;
+        public static Hecton8.Inventory.PlayerInventory PlayerInventoryRuntime
+        {
+            get
+            {
+                IPlayerInventoryService inventoryService = PlayerInventory;
+                return inventoryService != null ? inventoryService.Inventory : null;
+            }
+        }
 
         /// <summary>
         /// Registered modular-equipment runtime service slot.
@@ -284,7 +340,21 @@ namespace Hecton8.Core
         /// <summary>
         /// Registered player sensory/presentation service slot.
         /// </summary>
-        public static IPlayerSensoryService PlayerSensory => _playerSensory;
+        public static IPlayerSensoryService PlayerSensory
+        {
+            get
+            {
+                if (IsResolving(GlobalRegistryResolutionScope.PlayerContext) ||
+                    IsResolving(GlobalRegistryResolutionScope.PlayerSensory))
+                {
+                    ThrowDependencyCycle(GlobalRegistryResolutionScope.PlayerSensory);
+                }
+
+                return _playerSensory;
+            }
+        }
+
+        internal static IPlayerSensoryService RegisteredPlayerSensory => _playerSensory;
 
         /// <summary>
         /// Registered environment runtime context slot.
@@ -905,6 +975,7 @@ namespace Hecton8.Core
             _serviceReboundReferencePendingCount = 0;
             _serviceReboundOverflowLogged = false;
             _isDispatchingServiceRebounds = false;
+            _resolutionMask = 0u;
             _updatables.Clear();
             _fixedTickables.Clear();
             _slowTickables.Clear();
@@ -2862,6 +2933,7 @@ namespace Hecton8.Core
         /// </summary>
         public static void ClearRuntimeBuckets()
         {
+            WorldSpatialHashGrid.ClearRuntimeState();
             NativeMemorySentinel.ReportSceneLifetimeLeaks(nameof(ClearRuntimeBuckets));
             _updatables.Clear();
             _fixedTickables.Clear();
@@ -2883,6 +2955,68 @@ namespace Hecton8.Core
             }
 #endif
             return false;
+        }
+
+        internal static bool TryBeginResolution(GlobalRegistryResolutionScope scope)
+        {
+            uint scopeMask = 1u << (int)scope;
+            if ((_resolutionMask & scopeMask) != 0u)
+            {
+                ThrowDependencyCycle(scope);
+            }
+
+            if (IsPlayerResolutionScope(scope) && (_resolutionMask & PlayerResolutionMask) != 0u)
+            {
+                ThrowDependencyCycle(scope);
+            }
+
+            _resolutionMask |= scopeMask;
+            return true;
+        }
+
+        internal static void EndResolution(GlobalRegistryResolutionScope scope)
+        {
+            _resolutionMask &= ~(1u << (int)scope);
+        }
+
+        private static bool IsResolving(GlobalRegistryResolutionScope scope)
+        {
+            return (_resolutionMask & (1u << (int)scope)) != 0u;
+        }
+
+        private static bool IsResolvingAny(uint mask)
+        {
+            return (_resolutionMask & mask) != 0u;
+        }
+
+        private static bool IsPlayerResolutionScope(GlobalRegistryResolutionScope scope)
+        {
+            return scope == GlobalRegistryResolutionScope.PlayerContext ||
+                scope == GlobalRegistryResolutionScope.PlayerInventory ||
+                scope == GlobalRegistryResolutionScope.PlayerSensory;
+        }
+
+        private static void ThrowDependencyCycle(GlobalRegistryResolutionScope requestedScope)
+        {
+            CrashTelemetryBuffer.ReportRecursiveCascadeCritical();
+            throw new DependencyCycleException(ResolveDependencyCycleMessage(requestedScope));
+        }
+
+        private static string ResolveDependencyCycleMessage(GlobalRegistryResolutionScope requestedScope)
+        {
+            switch (requestedScope)
+            {
+                case GlobalRegistryResolutionScope.PlayerContext:
+                    return "[GlobalRegistry] Dependency cycle while resolving PlayerContext.";
+                case GlobalRegistryResolutionScope.PlayerInventory:
+                    return "[GlobalRegistry] Dependency cycle while resolving PlayerInventory.";
+                case GlobalRegistryResolutionScope.PlayerSensory:
+                    return "[GlobalRegistry] Dependency cycle while resolving PlayerSensory.";
+                case GlobalRegistryResolutionScope.Settings:
+                    return "[GlobalRegistry] Dependency cycle while resolving Settings.";
+                default:
+                    return "[GlobalRegistry] Dependency cycle while resolving service.";
+            }
         }
 
         private static void PublishInputFallbackWarning()

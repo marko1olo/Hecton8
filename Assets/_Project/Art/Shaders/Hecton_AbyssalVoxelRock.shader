@@ -109,6 +109,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float4 positionOS : POSITION;
             float3 normalOS : NORMAL;
             float4 color : COLOR;
+            float4 bakedAmbientOcclusion : TEXCOORD1;
             float3 absolutePositionWS : TEXCOORD3;
         };
 
@@ -122,6 +123,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half skirtAlpha : TEXCOORD4;
             float3 absolutePositionWS : TEXCOORD5;
             half curvature : TEXCOORD6;
+            half bakedAmbientOcclusion : TEXCOORD7;
         };
 
         struct ClipVaryings
@@ -436,6 +438,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             output.skirtAlpha = saturate(input.color.b);
             output.absolutePositionWS = input.absolutePositionWS;
             output.curvature = saturate(input.color.a);
+            output.bakedAmbientOcclusion = HectonCoreLitResolveVertexAmbientOcclusion(input.bakedAmbientOcclusion.w);
             output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
             return output;
@@ -530,7 +533,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
                 half metallic = 0.0h;
                 half smoothness = saturate(lerp(_Smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
-                half ambientOcclusion = saturate(maskSample.g * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
+                half ambientOcclusion = saturate(maskSample.g * input.bakedAmbientOcclusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
                 half localCausticMask = ResolveLocalLightCaustic(samplePositionWS, normalWS, input.positionCS);
                 HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
 

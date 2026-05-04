@@ -1,5 +1,7 @@
 using System.Collections.Generic;
 using Hecton8.Core;
+using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.World
@@ -18,6 +20,9 @@ namespace Hecton8.World
             public float InfluenceRadius;
         }
 
+        private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyTerrainSeamApplier);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+
         internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance { get; private set; }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -30,11 +35,21 @@ namespace Hecton8.World
         {
             public Terrain terrain;
             public TerrainData terrainData;
-            public float[,] baselineHeights;
+            public NativeArray<float> baselineHeights;
             public int heightmapResolution;
             public RectInt previousRect;
             public bool hasPreviousRect;
             public float[,] patchBuffer;
+
+            public void ReleaseBaseline()
+            {
+                if (!baselineHeights.IsCreated)
+                    return;
+
+                NativeMemorySentinel.UnregisterNativeArray(baselineHeights);
+                baselineHeights.Dispose();
+                baselineHeights = default;
+            }
         }
 
         [Header("References")]
@@ -92,6 +107,7 @@ namespace Hecton8.World
         {
             TryUnregisterFromTickManager();
             RestoreAllTerrains();
+            DisposeTerrainStateNativeBuffers();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -101,6 +117,7 @@ namespace Hecton8.World
         {
             TryUnregisterFromTickManager();
             RestoreAllTerrains();
+            DisposeTerrainStateNativeBuffers();
 
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -256,7 +273,7 @@ namespace Hecton8.World
         {
             Terrain terrain = state.terrain;
             TerrainData terrainData = terrain.terrainData;
-            if (terrainData == null || state.baselineHeights == null)
+            if (terrainData == null || !state.baselineHeights.IsCreated)
                 return;
 
             RectInt currentRect = default;
@@ -332,9 +349,12 @@ namespace Hecton8.World
             float invHeight = terrainSize.y > 0.001f ? 1f / terrainSize.y : 0f;
             float effectiveRadius = Mathf.Max(2f, plan.seamBlendRadius + radiusPaddingMeters);
             float desiredDelta = ResolveDesiredWorldDelta(plan);
-            float desiredNormalizedDelta = desiredDelta * invHeight;
-            if (Mathf.Abs(desiredNormalizedDelta) < 0.00001f)
+            if (Mathf.Abs(desiredDelta * invHeight) < 0.00001f)
                 return;
+
+            Vector3 planRuntimePosition = plan.RuntimeWorldPosition;
+            Vector2 planRuntimeXZ = new Vector2(planRuntimePosition.x, planRuntimePosition.z);
+            bool snapVoxelCut = desiredDelta < -0.0001f && plan.RequiresVoxelBlend;
 
             for (int patchZ = 0; patchZ < patchRect.height; patchZ++)
             {
@@ -345,9 +365,7 @@ namespace Hecton8.World
                 {
                     int heightmapX = patchRect.x + patchX;
                     float worldX = terrainPosition.x + (heightmapX / (float)(terrainData.heightmapResolution - 1)) * terrainSize.x;
-                    float distance = Vector2.Distance(
-                        new Vector2(worldX, worldZ),
-                        new Vector2(plan.RuntimeWorldPosition.x, plan.RuntimeWorldPosition.z));
+                    float distance = Vector2.Distance(new Vector2(worldX, worldZ), planRuntimeXZ);
                     if (distance > effectiveRadius)
                         continue;
 
@@ -361,10 +379,55 @@ namespace Hecton8.World
                         plan.compositionPotential * 0.15f +
                         plan.caveProximity * 0.10f);
 
-                    float normalizedDelta = desiredNormalizedDelta * falloff * rim * shapeBias;
-                    patch[patchZ, patchX] = Mathf.Clamp01(patch[patchZ, patchX] + normalizedDelta);
+                    float sourceNormalized = patch[patchZ, patchX];
+                    float targetWorldHeight = terrainPosition.y + sourceNormalized * terrainSize.y + desiredDelta * falloff * rim * shapeBias;
+                    if (snapVoxelCut &&
+                        TryResolveVoxelSnappedRuntimeHeight(worldX, worldZ, targetWorldHeight, in plan, out float snappedRuntimeHeight))
+                    {
+                        targetWorldHeight = snappedRuntimeHeight;
+                    }
+
+                    patch[patchZ, patchX] = Mathf.Clamp01((targetWorldHeight - terrainPosition.y) * invHeight);
                 }
             }
+        }
+
+        private static bool TryResolveVoxelSnappedRuntimeHeight(
+            float runtimeWorldX,
+            float runtimeWorldZ,
+            float runtimeTargetHeight,
+            in WorldGenerativeGeologySeamPlan plan,
+            out float snappedRuntimeHeight)
+        {
+            snappedRuntimeHeight = runtimeTargetHeight;
+            if (!plan.hasAbsoluteVoxelVolumeCenterAup && plan.voxelVolumeSize.sqrMagnitude <= 0.0001f)
+                return false;
+
+            Vector3 committedOffset = HectonFloatingOrigin.CurrentTotalOffset;
+            double3 targetAbsolute = new double3(
+                (double)runtimeWorldX + committedOffset.x,
+                (double)runtimeTargetHeight + committedOffset.y,
+                (double)runtimeWorldZ + committedOffset.z);
+            AbsoluteUniversePosition targetAup = AbsoluteUniversePosition.FromAbsolutePosition(targetAbsolute);
+            double targetAbsoluteY = targetAup.ToAbsoluteDouble3().y;
+            double3 centerAbsolute = plan.hasAbsoluteVoxelVolumeCenterAup
+                ? plan.absoluteVoxelVolumeCenterAup.ToAbsoluteDouble3()
+                : new double3(
+                    plan.absoluteVoxelVolumeCenter.x,
+                    plan.absoluteVoxelVolumeCenter.y,
+                    plan.absoluteVoxelVolumeCenter.z);
+            float snapStepMeters = VoxelSeamDirector.ResolveTerrainVoxelSnapStep(plan.voxelVolumeSize, plan.seamBlendRadius);
+            double originY = centerAbsolute.y - plan.voxelVolumeSize.y * 0.5d;
+            double snappedAbsoluteY = VoxelSeamDirector.SnapAbsoluteHeightToVoxelLayer(
+                targetAbsoluteY,
+                originY,
+                snapStepMeters);
+            float resolvedRuntimeHeight = (float)(snappedAbsoluteY - committedOffset.y);
+            if (float.IsNaN(resolvedRuntimeHeight) || float.IsInfinity(resolvedRuntimeHeight))
+                return false;
+
+            snappedRuntimeHeight = resolvedRuntimeHeight;
+            return true;
         }
 
         private float ResolveDesiredWorldDelta(in WorldGenerativeGeologySeamPlan plan)
@@ -472,7 +535,7 @@ namespace Hecton8.World
             int currentResolution = currentTerrainData.heightmapResolution;
             if (currentTerrainData != state.terrainData ||
                 currentResolution != state.heightmapResolution ||
-                state.baselineHeights == null)
+                !state.baselineHeights.IsCreated)
             {
                 RefreshTerrainBaseline(state, state.terrain, currentTerrainData, currentResolution);
                 return;
@@ -509,7 +572,7 @@ namespace Hecton8.World
             }
             else if (state.terrain != terrain ||
                      state.terrainData != terrainData ||
-                     state.baselineHeights == null ||
+                     !state.baselineHeights.IsCreated ||
                      state.heightmapResolution != resolution)
             {
                 RefreshTerrainBaseline(state, terrain, terrainData, resolution);
@@ -538,7 +601,7 @@ namespace Hecton8.World
                 state.patchBuffer = new float[rect.height, rect.width];
             }
 
-            CopyBaselinePatch(state.baselineHeights, rect, state.patchBuffer);
+            CopyBaselinePatch(state.baselineHeights, state.heightmapResolution, rect, state.patchBuffer);
             return state.patchBuffer;
         }
 
@@ -551,25 +614,69 @@ namespace Hecton8.World
             if (state == null || terrain == null || terrainData == null)
                 return;
 
-            // COLD ALLOC: full baseline snapshot is refreshed only when the
-            // bound Terrain/TerrainData owner changes or heightmap resolution changes.
+            state.ReleaseBaseline();
+
             state.terrain = terrain;
             state.terrainData = terrainData;
             state.heightmapResolution = resolution;
-            state.baselineHeights = terrainData.GetHeights(0, 0, resolution, resolution);
+            int totalHeights = Mathf.Max(0, resolution * resolution);
+            if (totalHeights > 0)
+            {
+                // COLD ALLOC: persistent native baseline for seam restoration, refreshed only when TerrainData or resolution changes.
+                state.baselineHeights = new NativeArray<float>(totalHeights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    state.baselineHeights,
+                    NativeMemoryOwner,
+                    $"{nameof(TerrainApplyState.baselineHeights)}:{terrain.GetInstanceID()}",
+                    NativeMemoryLifetime);
+                PopulateTerrainBaselineNative(state.baselineHeights, terrain, terrainData, resolution);
+            }
             state.patchBuffer = null;
             state.previousRect = default;
             state.hasPreviousRect = false;
         }
 
-        private static void CopyBaselinePatch(float[,] baseline, RectInt rect, float[,] destination)
+        private static void PopulateTerrainBaselineNative(
+            NativeArray<float> baseline,
+            Terrain terrain,
+            TerrainData terrainData,
+            int resolution)
+        {
+            if (!baseline.IsCreated || terrain == null || terrainData == null || resolution <= 0)
+                return;
+
+            Vector3 terrainSize = terrainData.size;
+            float invHeight = terrainSize.y > 0.001f ? 1f / terrainSize.y : 0f;
+            float denominator = Mathf.Max(1f, resolution - 1f);
+            for (int z = 0; z < resolution; z++)
+            {
+                float normalizedZ = z / denominator;
+                int rowOffset = z * resolution;
+                for (int x = 0; x < resolution; x++)
+                {
+                    float normalizedX = x / denominator;
+                    float localHeight = terrainData.GetInterpolatedHeight(normalizedX, normalizedZ);
+                    baseline[rowOffset + x] = Mathf.Clamp01(localHeight * invHeight);
+                }
+            }
+        }
+
+        private static void CopyBaselinePatch(NativeArray<float> baseline, int resolution, RectInt rect, float[,] destination)
         {
             for (int z = 0; z < rect.height; z++)
             {
                 int sourceZ = rect.y + z;
+                int sourceOffset = sourceZ * resolution;
                 for (int x = 0; x < rect.width; x++)
-                    destination[z, x] = baseline[sourceZ, rect.x + x];
+                    destination[z, x] = baseline[sourceOffset + rect.x + x];
             }
+        }
+
+        private void DisposeTerrainStateNativeBuffers()
+        {
+            Dictionary<int, TerrainApplyState>.Enumerator enumerator = _terrainStates.GetEnumerator();
+            while (enumerator.MoveNext())
+                enumerator.Current.Value?.ReleaseBaseline();
         }
 
         private void ClearBuckets()

@@ -114,6 +114,9 @@ namespace Hecton8.Editor
             if (Application.isBatchMode)
                 return;
 
+            if (IsPlayModeUnsafeForRepairs())
+                return;
+
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
             {
                 QueueInitialRepair();
@@ -158,6 +161,9 @@ namespace Hecton8.Editor
         {
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
                 return;
+
+            if (applyRepairs && IsPlayModeUnsafeForRepairs())
+                applyRepairs = false;
 
             UniversalRenderPipelineAsset urpAsset = ResolveActiveUrpAsset();
             if (urpAsset == null)
@@ -234,6 +240,13 @@ namespace Hecton8.Editor
             }
 
             return changed;
+        }
+
+        private static bool IsPlayModeUnsafeForRepairs()
+        {
+            return Application.isPlaying ||
+                   EditorApplication.isPlaying ||
+                   EditorApplication.isPlayingOrWillChangePlaymode;
         }
 
         private static bool EnsureRequiredRendererFeatures(UniversalRenderPipelineAsset urpAsset)

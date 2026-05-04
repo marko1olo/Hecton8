@@ -280,6 +280,9 @@ namespace Hecton8.Environment
         private const string LivelyFaunaMoodLabel = "Lively";
         private const string MixedFaunaMoodLabel = "Mixed";
         private const string HostileFaunaMoodLabel = "Hostile";
+        private const int TectonicDustBiomeIdA = 7;
+        private const int TectonicDustBiomeIdB = 9;
+        private const int TectonicDustBiomeIdC = 11;
 
         [Header("References")]
         [SerializeField] private Transform playerTransform;
@@ -289,6 +292,9 @@ namespace Hecton8.Environment
         [SerializeField] private float surfaceOffsetMeters = 0f;
         [SerializeField] private Vector3 worldOrigin = Vector3.zero;
         [SerializeField] private float regionDeadZone = 24f;
+
+        [Header("Transition VFX")]
+        [SerializeField, Range(1f, 30f)] private float seismicDustCooldownSeconds = 8f;
 
         [Header("Diagnostics")]
         [SerializeField] private int _debugTier = 1;
@@ -368,6 +374,7 @@ namespace Hecton8.Environment
         [SerializeField] private string _debugPrimaryStructureFocus = "None";
         [SerializeField] private string _debugSecondaryStructureFocus = "None";
         [SerializeField] private string _debugFaunaMoodValue = "None";
+        [SerializeField] private int _debugLastSeismicDustBiomeId = -1;
 
         private bool _registeredToTickManager;
         private HectonBiomeMatrixProfile _currentProfile;
@@ -381,6 +388,7 @@ namespace Hecton8.Environment
         private Transform _editorLastEvaluationTransform;
         private Vector3 _editorLastEvaluationPosition;
         private float _editorLastSurfaceLevelY = float.NaN;
+        private float _lastSeismicDustTime = -999f;
 
         internal static BiomeMatrixDirector ActiveRuntimeInstance { get; private set; }
 
@@ -584,15 +592,62 @@ namespace Hecton8.Environment
 
             if (forcePublish || next != _currentProfile)
             {
+                bool changedProfile = next != _currentProfile;
                 _currentProfile = next;
                 if (Application.isPlaying)
                 {
+                    if (changedProfile)
+                        TryEmitSeismicDustForBiome(next, evaluationTransform.position);
+
                     GlobalTelemetryBus.PublishBiomeVisited(next != null ? next.biomeName : string.Empty, tier, depth);
                     BiomeMatrixEvents.RaiseMatrixBiomeChanged(_currentProfile);
                 }
             }
 
             UpdateDiagnostics(_currentProfile, tier, region);
+        }
+
+        private void TryEmitSeismicDustForBiome(HectonBiomeMatrixProfile profile, Vector3 evaluationPosition)
+        {
+            if (profile == null || !ShouldEmitSeismicDust(profile))
+                return;
+
+            float now = Time.time;
+            if (now - _lastSeismicDustTime < Mathf.Max(1f, seismicDustCooldownSeconds))
+                return;
+
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals != null
+                ? GlobalRegistry.AbyssalFluidDecals
+                : AbyssalFluidDecalManager.Instance;
+            if (fluidDecals == null)
+                return;
+
+            if (_resolvedMapMagicBridge == null)
+                _resolvedMapMagicBridge = MapMagicBridge.Instance;
+            if (_resolvedMapMagicBridge == null ||
+                !_resolvedMapMagicBridge.TryGetHeight(evaluationPosition.x, evaluationPosition.z, out float seafloorHeight))
+            {
+                return;
+            }
+
+            Vector3 dustPosition = new Vector3(
+                evaluationPosition.x,
+                seafloorHeight + Mathf.Max(0f, profile.seismicDustSeafloorOffsetMeters),
+                evaluationPosition.z);
+            fluidDecals.RegisterSeismicDust(dustPosition, profile.seismicDustRadiusScale);
+            _lastSeismicDustTime = now;
+            _debugLastSeismicDustBiomeId = profile.matrixIndex;
+        }
+
+        private static bool ShouldEmitSeismicDust(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null)
+                return false;
+
+            return profile.emitsSeismicDustOnEntry ||
+                   profile.matrixIndex == TectonicDustBiomeIdA ||
+                   profile.matrixIndex == TectonicDustBiomeIdB ||
+                   profile.matrixIndex == TectonicDustBiomeIdC;
         }
 
         private void ResolveReferences()

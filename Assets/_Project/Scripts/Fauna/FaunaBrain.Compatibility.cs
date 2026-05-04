@@ -528,6 +528,7 @@ namespace Hecton8.AI
                 case FaunaBrain.AIState.Starving:
                     PredatorCognitionDomain.ApplyExternalState(_slot, PredatorUtilityState.Attacking, currentTime);
                     break;
+                case FaunaBrain.AIState.ApexForcedRetreat:
                 case FaunaBrain.AIState.Retreat:
                 case FaunaBrain.AIState.Escape:
                     PredatorCognitionDomain.ApplyExternalState(_slot, PredatorUtilityState.Fleeing, currentTime);

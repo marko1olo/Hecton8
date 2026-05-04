@@ -1,0 +1,48 @@
+#pragma kernel ResolveHudFogLuminance
+#pragma target 5.0
+
+Texture2D<float4> _HectonHudFogSource;
+RWTexture2D<float> _HectonHudFogLuminanceOutput;
+
+float4 _HectonHudFogLuminanceParams;
+
+groupshared float s_HudLuminance[256];
+
+float SampleHudLuminance(float2 uv)
+{
+    uint2 sourceSize = uint2(
+        (uint)max(_HectonHudFogLuminanceParams.x, 1.0),
+        (uint)max(_HectonHudFogLuminanceParams.y, 1.0));
+    uint2 pixel = min((uint2)(saturate(uv) * (float2)sourceSize), sourceSize - uint2(1u, 1u));
+    float3 rgb = max(_HectonHudFogSource.Load(int3(pixel, 0)).rgb, 0.0);
+    return dot(rgb, float3(0.2126, 0.7152, 0.0722));
+}
+
+[numthreads(16, 16, 1)]
+void ResolveHudFogLuminance(uint3 groupThreadId : SV_GroupThreadID)
+{
+    uint localIndex = groupThreadId.y * 16u + groupThreadId.x;
+    float2 sampleCell = (float2(groupThreadId.xy) + 0.5) * (1.0 / 16.0);
+    float2 pixelOffset = _HectonHudFogLuminanceParams.zw * 0.75;
+
+    float luminance =
+        SampleHudLuminance(sampleCell + pixelOffset * float2(-1.0, -1.0)) +
+        SampleHudLuminance(sampleCell + pixelOffset * float2( 1.0, -1.0)) +
+        SampleHudLuminance(sampleCell + pixelOffset * float2(-1.0,  1.0)) +
+        SampleHudLuminance(sampleCell + pixelOffset * float2( 1.0,  1.0));
+
+    s_HudLuminance[localIndex] = saturate(luminance * 0.25);
+    GroupMemoryBarrierWithGroupSync();
+
+    [unroll]
+    for (uint stride = 128u; stride > 0u; stride >>= 1u)
+    {
+        if (localIndex < stride)
+            s_HudLuminance[localIndex] += s_HudLuminance[localIndex + stride];
+
+        GroupMemoryBarrierWithGroupSync();
+    }
+
+    if (localIndex == 0u)
+        _HectonHudFogLuminanceOutput[uint2(0u, 0u)] = saturate(s_HudLuminance[0] * (1.0 / 256.0));
+}

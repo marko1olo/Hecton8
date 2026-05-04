@@ -565,6 +565,19 @@ namespace Hecton8.Tools
             return true;
         }
 
+        internal bool TryGetToolBrownoutFeedback(uint toolId, out float flickerScalar)
+        {
+            flickerScalar = 0f;
+            if (!_wirelessBrownoutActive || !_isInitialized || !_toolIndexById.TryGetValue(toolId, out int slotIndex))
+                return false;
+
+            if (slotIndex < 0 || slotIndex >= MaxTrackedTools || !_slotUsed[slotIndex])
+                return false;
+
+            flickerScalar = math.saturate(0.5f + (0.5f * Mathf.Sin(Time.time * 8f)));
+            return true;
+        }
+
         private void TryUnregisterService()
         {
             if (!_registeredService)
