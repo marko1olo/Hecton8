@@ -10,7 +10,7 @@ Current-state boundary:
 
 - This document defines the required dispatch contract.
 - It is not proof that all current sources comply.
-- `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` supersedes the older literal `.Complete()` call-site list. Current strict grep finds dispatcher request completion callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs` and one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`.
+- `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` supersedes the older literal `.Complete()` call-site list. Current strict grep finds dispatcher request completion callbacks in `ItemCatalog.cs` / `AssetLifecycleGovernor.cs` and one explicit `JobHandle.Complete()` in `World/DispatcherJobSwap.cs`.
 - Any future edit must keep job barriers inside explicit dispatcher-owned swap windows or document why the owner is a permitted end-window.
 
 ## Core Rule

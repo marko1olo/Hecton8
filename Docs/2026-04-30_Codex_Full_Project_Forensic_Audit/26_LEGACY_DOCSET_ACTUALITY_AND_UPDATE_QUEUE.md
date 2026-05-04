@@ -2,6 +2,10 @@
 
 Status: PENDING VERIFICATION
 
+## 2026-05-04 Supersession Note
+
+This file is a May 1/May 2 docset actuality queue. Current global source/doc counts are superseded by `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`: `1118` first-party `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, `519952` static script lines, `325` scripts directly under `Assets/_Project/Scripts`, active `Docs/**/*.md` count `188`, and active/root markdown surface `214`.
+
 Mandates followed:
 - `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
 - `PROJECT_LTS_Compatibility_Layer.txt`
@@ -17,7 +21,7 @@ Scope:
 
 ## 1. Current Doc Inventory
 
-Snapshot date: 2026-05-01.
+Historical snapshot date: 2026-05-01.
 
 | Surface | Count |
 |---|---:|
@@ -90,14 +94,16 @@ They are dated audit snapshots, so rewriting them as current truth would destroy
 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_ARCHIVARIUS_DOCSET_REVERIFICATION.md` | keep as dated recheck; superseded by `2026-04-30` layers for counts |
 | `Docs/Legacy_Backlog/Что_и_как_исправляем_—_живой_план.md` | legacy reference; stale embedded counts should not be used as current evidence |
 
-Current scale truth:
+Historical May 2 scale truth:
 
-| Counter | Current value |
+| Counter | Historical May 2 value |
 |---|---:|
 | first-party C# under `Assets/_Project` | 1087 |
 | C# under `Assets/_Project/Scripts` | 1047 |
 | script lines under `Assets/_Project/Scripts` | 571562 |
 | scripts directly in `Assets/_Project/Scripts` root | 317 |
+
+Current May 4 scale truth is in the supersession note above.
 
 ## 4. Status Metadata Findings
 

@@ -25,6 +25,10 @@ public class AtmosphereProfile : ScriptableObject
     [Range(0f, 0.15f)]
     public float fogDensity = 0.008f;
 
+    [Tooltip("Approximate clear-view distance in meters used by biome fog attenuation and visual consumers.")]
+    [Range(5f, 200f)]
+    public float fogAttenuationDistanceMeters = 100f;
+
     [Header("══ Небо ══")]
     [Tooltip("Экспозиция неба — яркость скайбокса / HDRI (передаётся в URP Volume)")]
     [Range(0f, 10f)]

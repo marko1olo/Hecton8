@@ -39,6 +39,8 @@ namespace Hecton8.Gameplay
         private const float MaxHydrodynamicGhostBlend = 0.15f;
         private const float DenormalVelocityFlushThresholdMetersPerSecond = 0.001f;
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
+        private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
+        private const float WakeSiltEmissionCooldownSeconds = 0.35f;
 
         private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _scheduledSweepConsumeProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Consume");
@@ -62,6 +64,7 @@ namespace Hecton8.Gameplay
         private bool _registeredPostFixedTick;
         private bool _registeredMotorService;
         private float _encumbranceMovementMultiplier = 1f;
+        private float _wakeSiltEmissionCooldown;
 
         /// <inheritdoc />
         public Rigidbody Body => _body;
@@ -601,6 +604,7 @@ namespace Hecton8.Gameplay
         public void PostFixedTick(float fixedDeltaTime)
         {
             CompleteScheduledSweepInPostFixedSwapWindow();
+            TryEmitWakeSiltDecal(fixedDeltaTime);
         }
 
         private static bool IsFiniteNonZero(Vector3 value)
@@ -612,6 +616,39 @@ namespace Hecton8.Gameplay
         private static int GetHitColliderInstanceId(in RaycastHit hit)
         {
             return unchecked((int)EntityId.ToULong(hit.colliderEntityId));
+        }
+
+        private void TryEmitWakeSiltDecal(float fixedDeltaTime)
+        {
+            if (_body == null)
+                return;
+
+            float safeDeltaTime = math.max(0f, fixedDeltaTime);
+            _wakeSiltEmissionCooldown = math.max(0f, _wakeSiltEmissionCooldown - safeDeltaTime);
+            if (_wakeSiltEmissionCooldown > 0f)
+                return;
+
+            Vector3 velocity = SafeVelocity(_body.linearVelocity);
+            float speedSq = velocity.sqrMagnitude;
+            float thresholdSq = WakeSiltEmissionSpeedThresholdMetersPerSecond * WakeSiltEmissionSpeedThresholdMetersPerSecond;
+            if (speedSq <= thresholdSq)
+                return;
+
+            Vector3 emitPosition = _body.worldCenterOfMass;
+            float3 emitPosition3 = new float3(emitPosition.x, emitPosition.y, emitPosition.z);
+            if (!math.all(math.isfinite(emitPosition3)))
+                return;
+
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals == null)
+                return;
+
+            AbsoluteUniversePosition emitAup = AbsoluteUniversePosition.FromRuntimePosition(emitPosition);
+            float3 runtimeFromAup = emitAup.ToRuntimeFloat3();
+            Vector3 aupRuntimePosition = new Vector3(runtimeFromAup.x, runtimeFromAup.y, runtimeFromAup.z);
+            float intensity01 = math.saturate((math.sqrt(speedSq) - WakeSiltEmissionSpeedThresholdMetersPerSecond) / 8f);
+            fluidDecals.RegisterWakeSilt(aupRuntimePosition, velocity, intensity01);
+            _wakeSiltEmissionCooldown = WakeSiltEmissionCooldownSeconds;
         }
 
         private bool TryFindNearestBlockingHit(
@@ -682,6 +719,40 @@ namespace Hecton8.Gameplay
             float normalVelocity = Vector3.Dot(safeVelocity, safeNormal);
             Vector3 projectedVelocity = safeVelocity - (safeNormal * normalVelocity);
             return SafeVelocity(projectedVelocity, Vector3.zero);
+        }
+
+        internal static float ResolveHeavyBrineSinkMultiplier(float fluidDensityKgPerCubicMeter, float referenceSeaWaterDensityKgPerCubicMeter)
+        {
+            if (!math.isfinite(fluidDensityKgPerCubicMeter) ||
+                !math.isfinite(referenceSeaWaterDensityKgPerCubicMeter) ||
+                fluidDensityKgPerCubicMeter <= referenceSeaWaterDensityKgPerCubicMeter)
+            {
+                return 0f;
+            }
+
+            float densityExcess01 = math.saturate(
+                (fluidDensityKgPerCubicMeter - referenceSeaWaterDensityKgPerCubicMeter) /
+                math.max(1f, referenceSeaWaterDensityKgPerCubicMeter * 0.25f));
+            return -math.lerp(0.35f, 0.85f, densityExcess01);
+        }
+
+        internal static Vector3 ResolveBuoyancyInversionVelocity(
+            Vector3 velocity,
+            bool insideHeavyBrine,
+            bool thrusterActive,
+            float sinkMultiplier)
+        {
+            Vector3 safeVelocity = SafeVelocity(velocity);
+            if (!insideHeavyBrine ||
+                thrusterActive ||
+                safeVelocity.y >= 0f ||
+                sinkMultiplier >= 0f)
+            {
+                return safeVelocity;
+            }
+
+            safeVelocity.y *= sinkMultiplier;
+            return SafeVelocity(safeVelocity, Vector3.zero);
         }
 
         private void EnsureScheduledSweepState()

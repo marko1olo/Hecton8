@@ -15,6 +15,7 @@ StructuredBuffer<BiolumPoint> _HectonBiolumPoints;
 float4 _HectonBiolumVolumeHalfExtents;
 float4x4 _HectonBiolumVolumeWorldToLocal;
 float4 _HectonBiolumVolumeParams;
+float4 _HectonBiolumCascadeParams;
 float4 _HectonBiolumVolumeTexelSize;
 uint _HectonBiolumPointCount;
 
@@ -68,7 +69,20 @@ void DiffuseBiolumVolume(uint3 dispatchThreadId : SV_DispatchThreadID)
     float deltaTime = max(_HectonBiolumVolumeParams.w, 0.0);
     float blend = saturate(diffusion * deltaTime);
     float attenuation = saturate(1.0 - decay * deltaTime);
-    _HectonBiolumVolumeOutput[dispatchThreadId] = lerp(center, neighborAverage, blend) * attenuation;
+
+    float spikeThreshold = saturate(_HectonBiolumCascadeParams.x);
+    float cascadeGain = max(_HectonBiolumCascadeParams.y, 0.0);
+    float cascadeSpeed = max(_HectonBiolumCascadeParams.z, 0.0);
+    float cascadeTime = _HectonBiolumCascadeParams.w;
+    float neighborLuminance = dot(max(neighborAverage.rgb, 0.0), float3(0.2126, 0.7152, 0.0722));
+    float spike01 = saturate((neighborLuminance - spikeThreshold) / max(1.0 - spikeThreshold, 0.001));
+    float3 worldPosition = ResolveVoxelWorldPosition(dispatchThreadId);
+    float wavePhase = cascadeTime * cascadeSpeed - length(worldPosition.xz) * 0.17 - worldPosition.y * 0.035;
+    float waveGate = 0.5 + 0.5 * sin(wavePhase);
+    float3 cascadeRadiance = neighborAverage.rgb * (spike01 * spike01 * cascadeGain * waveGate * deltaTime);
+    float4 resolved = lerp(center, neighborAverage, blend) * attenuation;
+    resolved.rgb += cascadeRadiance;
+    _HectonBiolumVolumeOutput[dispatchThreadId] = float4(max(resolved.rgb, 0.0), 1.0);
 }
 
 [numthreads(4, 4, 4)]

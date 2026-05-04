@@ -7,7 +7,7 @@ Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Glob
 
 2026-05-01 trust note:
 
-- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
+- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this map as current project truth.
 - This file is still useful as a player-domain ownership map, but its source-line evidence was not fully revalidated in this pass.
 - Current player-domain risks include oversized `HectonPlayerMovement`, presentation-dependent gameplay branches, service authority drift, and unmeasured hot-path GC/CPU.
 

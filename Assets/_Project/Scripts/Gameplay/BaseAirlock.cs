@@ -20,6 +20,7 @@
 
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Input;
 using Hecton8.Interaction;
 using Hecton8.Physics;
 using UnityEngine;
@@ -62,6 +63,15 @@ namespace Hecton8.Gameplay
         [Header("── Airlock Settings ───────────────────────────")]
         [Tooltip("Duration of the airlock cycle animation (seconds).")]
         [SerializeField, Range(1f, 10f)] private float cycleDuration = 3f;
+
+        [Tooltip("Internal airlock chamber volume used to calculate pressure equalization time.")]
+        [SerializeField, Min(0.1f)] private float airlockVolumeM3 = 18f;
+
+        [Tooltip("Equalization flow coefficient in m3 per sqrt(kPa) per second.")]
+        [SerializeField, Min(0.01f)] private float equalizationFlowM3PerSqrtKPaSecond = 1.35f;
+
+        [Tooltip("Maximum pressure equalization time before mechanical bypass valves saturate.")]
+        [SerializeField, Min(1f)] private float maximumEqualizationSeconds = 18f;
 
         [Tooltip("Transform where the player spawns when entering the base.")]
         [SerializeField] private Transform interiorSpawnPoint;
@@ -122,6 +132,11 @@ namespace Hecton8.Gameplay
         private float _weldOverrideProgressSeconds;
         private int _emissionPropertyId;
         private Transform _cycleInteractor;
+        private Vector3 _pendingDestinationPosition;
+        private Quaternion _pendingDestinationRotation = Quaternion.identity;
+        private bool _hasPendingDestination;
+        private bool _inputWasEnabledBeforeCycle;
+        private InputManager _cycleInputManager;
         private Transform _cachedInteractorTransform;
         private Rigidbody _cachedInteractorBody;
         private BuoyancyObject _cachedInteractorBuoyancy;
@@ -208,6 +223,7 @@ namespace Hecton8.Gameplay
 
         private void OnDisable()
         {
+            ReleaseCycleInputLock();
             LocalizationEvents.UnregisterLanguageListener(this);
             TryUnregister();
             ClearInteractorComponentCache();
@@ -215,6 +231,7 @@ namespace Hecton8.Gameplay
 
         private void OnDestroy()
         {
+            ReleaseCycleInputLock();
             TryUnregister();
         }
 
@@ -368,8 +385,12 @@ namespace Hecton8.Gameplay
                 return;
 
             _state = AirlockState.Cycling;
-            _cycleTimer = cycleDuration;
+            _cycleTimer = ResolveEqualizationDurationSeconds();
             _cycleInteractor = player;
+            _pendingDestinationPosition = destinationPosition;
+            _pendingDestinationRotation = destinationRotation;
+            _hasPendingDestination = true;
+            CaptureCycleInputLock();
 
             // Update status light to red
             UpdateStatusLight(cyclingColor);
@@ -384,14 +405,14 @@ namespace Hecton8.Gameplay
 
             // Fire event
             OnCycleStarted?.Invoke();
-
-            // Teleport player to spawn point immediately
-            // (The "cycle" is the animation/sound, teleport happens at start)
-            TeleportPlayer(player, destinationPosition, destinationRotation);
         }
 
         private void CompleteCycle()
         {
+            Transform completedInteractor = _cycleInteractor;
+            if (completedInteractor != null && _hasPendingDestination)
+                TeleportPlayer(completedInteractor, _pendingDestinationPosition, _pendingDestinationRotation);
+
             _state = AirlockState.Ready;
 
             // Restore state light after the cycle ends.
@@ -403,8 +424,10 @@ namespace Hecton8.Gameplay
                 audio.PlayAtPoint(cycleEndSound, _cachedTransform.position);
             }
 
-            BaseAirlockEvents.RaiseCycleCompleted(this, _cycleInteractor);
+            BaseAirlockEvents.RaiseCycleCompleted(this, completedInteractor);
             _cycleInteractor = null;
+            _hasPendingDestination = false;
+            ReleaseCycleInputLock();
 
             // Fire event
             OnCycleCompleted?.Invoke();
@@ -570,6 +593,44 @@ namespace Hecton8.Gameplay
             return Mathf.Max(0.1f, weldOverrideDurationSeconds);
         }
 
+        private float ResolveEqualizationDurationSeconds()
+        {
+            CacheOwningModule();
+            float pressureDeltaKPa = owningModule != null
+                ? owningModule.ResolveExternalPressureDeltaKPa()
+                : 0f;
+            float equalizationSeconds = airlockVolumeM3 *
+                                        Mathf.Sqrt(Mathf.Max(0f, pressureDeltaKPa)) /
+                                        Mathf.Max(0.01f, equalizationFlowM3PerSqrtKPaSecond);
+            if (!float.IsFinite(equalizationSeconds))
+                equalizationSeconds = cycleDuration;
+
+            return Mathf.Clamp(
+                Mathf.Max(cycleDuration, equalizationSeconds),
+                cycleDuration,
+                Mathf.Max(cycleDuration, maximumEqualizationSeconds));
+        }
+
+        private void CaptureCycleInputLock()
+        {
+            _cycleInputManager = GlobalRegistry.NativeInputManager;
+            if (_cycleInputManager == null)
+                return;
+
+            _inputWasEnabledBeforeCycle = _cycleInputManager.IsPlayerInputEnabled;
+            if (_inputWasEnabledBeforeCycle)
+                _cycleInputManager.DisablePlayerInput();
+        }
+
+        private void ReleaseCycleInputLock()
+        {
+            if (_cycleInputManager != null && _inputWasEnabledBeforeCycle)
+                _cycleInputManager.EnablePlayerInput();
+
+            _cycleInputManager = null;
+            _inputWasEnabledBeforeCycle = false;
+        }
+
         private static float ResolveSignalWeldDeltaSeconds(in global::Hecton8.Interaction.InteractionSignal signal)
         {
             if (signal.PowerDelivered <= 0f || !float.IsFinite(signal.PowerDelivered))
@@ -677,6 +738,7 @@ namespace Hecton8.Gameplay
         private void OnValidate()
         {
             if (cycleDuration < 0.5f) cycleDuration = 0.5f;
+            if (maximumEqualizationSeconds < cycleDuration) maximumEqualizationSeconds = cycleDuration;
             RebuildLocalizedTextCache();
         }
 

@@ -5,11 +5,11 @@ Verification: `PENDING VERIFICATION`
 
 This file is the compact implementation plan for the HECTON-8 flora pipeline. It exists so future dialogs can start from `/Docs` instead of scanning large legacy markdown files in the repo root.
 
-## 2026-05-02 Current-State Boundary
+## 2026-05-04 Current-State Boundary
 
 - This plan is a current execution contract, not runtime certification.
 - Generated starter finals, texture request paths, and owner stack references require source/asset readback before surgery.
-- Current project truth starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 
 ## Read Order
 

@@ -1266,6 +1266,18 @@ namespace Hecton8.Construction
             MarkHabitatGraphDirty();
         }
 
+        internal void NotifyModuleDetachedAsDebris(BaseModule module)
+        {
+            if (_habitatGraphManager == null || module == null)
+                return;
+
+            GameObject moduleObject = module.gameObject;
+            SwapRemove(moduleObject);
+            RemoveBaseModule(moduleObject);
+            MarkHabitatGraphDirty();
+            UpdateDiagnostics();
+        }
+
         internal void NotifyModuleParasiteRootStateChanged(BaseModule module)
         {
             if (_habitatGraphManager == null || module == null)

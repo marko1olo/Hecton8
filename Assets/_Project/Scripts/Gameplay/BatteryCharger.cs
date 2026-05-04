@@ -230,6 +230,7 @@ namespace Hecton8.Gameplay
             // If tool has a battery, try to remove and insert into charger
             if (batteryTool.HasBattery)
             {
+                float toolBatteryCharge = batteryTool.BatteryCharge;
                 ItemData toolBattery = batteryTool.RemoveBattery();
                 if (toolBattery != null)
                 {
@@ -237,13 +238,13 @@ namespace Hecton8.Gameplay
                     int emptySlot = FindEmptySlot();
                     if (emptySlot >= 0)
                     {
-                        InsertBattery(emptySlot, toolBattery, batteryTool.BatteryCharge);
+                        InsertBattery(emptySlot, toolBattery, toolBatteryCharge);
                         return true;
                     }
                     else
                     {
                         // Charger full, return battery to tool
-                        batteryTool.InsertBattery(toolBattery, batteryTool.BatteryCharge);
+                        batteryTool.InsertBattery(toolBattery, toolBatteryCharge);
                         return false;
                     }
                 }

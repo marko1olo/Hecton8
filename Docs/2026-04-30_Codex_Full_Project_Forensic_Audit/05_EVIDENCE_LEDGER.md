@@ -2,6 +2,10 @@
 
 Status: PENDING VERIFICATION
 
+## 2026-05-04 Supersession Note
+
+The project-surface counters below were refreshed on May 2. Current global source/doc authority is `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` plus `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`: `1118` first-party `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, and current post-repair guard scan exit `0`. Treat the detailed broad grep counters below as historical until rerun as a full evidence-ledger pass.
+
 ## Mandates Applied
 
 - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
@@ -13,7 +17,7 @@ Status: PENDING VERIFICATION
 
 ## Project Surface Counts
 
-2026-05-02 refresh source: `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+Historical 2026-05-02 refresh source: `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.
 
 - First-party C# files under `Assets/_Project/`: 1087
 - First-party C# files under `Assets/_Project/Scripts`: 1047

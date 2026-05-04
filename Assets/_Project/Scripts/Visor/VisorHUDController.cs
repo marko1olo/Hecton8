@@ -1025,8 +1025,8 @@ namespace NASAPunk.Visor
             {
                 float oxygenNormalized = Mathf.Clamp01(_subscribedSurvivalSystem.OxygenNormalized);
                 float safeThreshold = Mathf.Clamp(_hypoxiaStartThreshold, 0.01f, 1f);
-                if (oxygenNormalized < safeThreshold)
-                    targetHypoxia = 1f - Mathf.Clamp01(oxygenNormalized / safeThreshold);
+                float nitrogenBlur01 = Mathf.Clamp01(_subscribedSurvivalSystem.NitrogenNarcosisVisionBlur01);
+                targetHypoxia = ResolveHypoxiaNarcosisTarget(oxygenNormalized, safeThreshold, nitrogenBlur01);
             }
 
             float blendT = 1f - Mathf.Exp(-Mathf.Max(0.1f, _hypoxiaBlendSharpness) * deltaTime);
@@ -1036,6 +1036,15 @@ namespace NASAPunk.Visor
                 _hudHypoxiaLevel = nextHypoxia;
                 _materialPropertiesDirty = true;
             }
+        }
+
+        internal static float ResolveHypoxiaNarcosisTarget(float oxygenNormalized, float safeThreshold, float nitrogenVisionBlur01)
+        {
+            float safe = Mathf.Clamp(safeThreshold, 0.01f, 1f);
+            float hypoxia = oxygenNormalized < safe
+                ? 1f - Mathf.Clamp01(oxygenNormalized / safe)
+                : 0f;
+            return Mathf.Max(hypoxia, Mathf.Clamp01(nitrogenVisionBlur01));
         }
 
         private void UpdatePressureFlickerState(float deltaTime)

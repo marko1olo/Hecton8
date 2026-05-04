@@ -1,7 +1,7 @@
 # PROJECT ATLAS
 
-Version: 1.4.8
-Date: 2026-05-03
+Version: 1.4.9
+Date: 2026-05-04
 Status: PENDING VERIFICATION
 Scope: live orientation map for the current HECTON-8 workspace
 Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`
@@ -20,7 +20,7 @@ It answers four narrow questions:
 
 ## 2. Workspace Snapshot
 
-Repository root observed on 2026-05-02 contains these top-level entries of interest:
+Repository root observed on 2026-05-04 contains these top-level entries of interest:
 
 - `.agents-skills`
 - `Assets`
@@ -36,6 +36,7 @@ Repository root observed on 2026-05-02 contains these top-level entries of inter
 - `Logs`
 - `AGENTS.md`
 - active root text files: `AGENTS.md`, `MASTER_RELEASE_WORK_PLAN.md`, `BUILD_PLAYTEST_ISSUES.md`
+- non-canonical root compatibility mirror: `TERRAIN_AND_BIOME_REALITY_MAP.md`
 
 High-noise surfaces also exist:
 
@@ -55,9 +56,9 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project`: `1087`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1047`
-Observed first-party C# line count under `Assets/_Project/Scripts`: `571562`
+Observed first-party C# file count under `Assets/_Project`: `1118`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1078`
+Observed first-party C# line count under `Assets/_Project/Scripts`: `519952`
 
 This is physical file count only.
 It does not imply quality, cohesion, or compile health.
@@ -116,7 +117,10 @@ Current active anchors include:
 - `ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
 - `ARCHITECTURE/DISPATCH_PIPELINE.md`
 - `ARCHITECTURE/SYSTEM_INTERCONNECT_MATRIX.md`
-- `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
+- `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+- `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+- `Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
+- `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
 - `Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
 - `Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
 - `Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`
@@ -174,8 +178,8 @@ Canonical entry files inside this bundle:
 
 ### 6.3 Current Live Console Truth
 
-Latest documentation sweep is `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.
-Latest MCP console snapshot cited by the May 1 documentation pass returned `0` error/warning entries.
+Latest documentation sweep is `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+Latest current MCP readback after the May 4 guard repair reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, and console error/warning entries `0`. The earlier May 4 sweep readback with `18` warnings during `01_MAIN_MENU` Play Mode transition is historical, not the current editor-console boundary.
 
 This is not Play Mode proof and not runtime certification.
 
@@ -384,17 +388,19 @@ Current source-only guard artifact:
 - `Tools/ReloadAudit/Scan-FoundationGuards.ps1`
 - `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`
 
-Current guard result from the May 3 scan:
+Current guard result from the May 4 scan:
 
-- Scanner exit code: `0`.
-- Global registry self-registration inventory: `496` informational sites from the broad `GlobalRegistry.Register*(this)` scan.
+- Scanner exit code after the May 4 unsafe-copy/menu-loop repair: `0`.
+- Global registry self-registration inventory: `500` informational sites from the broad `GlobalRegistry.Register*(this)` scan.
 - Blind registry flag drift: `0`.
 - `UnsafeUtility.MemCpy` outside `UnsafeMemoryCopyGuard`: `0`.
 - Legacy `PlayerSignalEvents.On*` subscriptions: `0`.
-- Runtime `Find*`/`GameObject.Find*` hits outside Editor folders: `0`.
+- Runtime `Find*`/`GameObject.Find*` hits outside Editor folders: `8` review hits, including `ModalWindow.EnsureInstanceAvailable` and `Dev/CelestialSyncSmokeTester.AutoResolve`.
 - Synchronous job `.Run(` inventory: `0`.
 - Hot-path synchronous `.Run(` review queue: `0`.
+- `.Complete(` text inventory: `5`.
 - Guarded dispatcher completion inventory: `1`, `DispatcherJobSwap.TryComplete` with the source-level `IsCompleted`/swap-window contract.
+- Unauthorized Unity loop methods: `0`.
 - Direct `InputManager.Instance` inventory: `0`; hot-path direct input singleton review sites remain `0`.
 - `GlobalRegistry.NativeInputManager` now exposes the bootstrap-bound native input owner from the registered `InputDispatcher` for cold UI/Input-System bridge code that still requires concrete `InputAction` APIs.
 - Release-reachable one-hop `Debug.Log` review inventory: `0` after dev-build-only guards were added to hot-path-adjacent diagnostics.
@@ -404,7 +410,7 @@ This is a source scan and CI candidate, not Unity Play Mode proof. Do not claim 
 
 STATUS: PENDING VERIFICATION
 
-## 2026-05-02 Atlas Delta
+## 2026-05-04 Atlas Delta
 
 Mandates followed for this update:
 
@@ -416,8 +422,9 @@ Mandates followed for this update:
 
 Current measured source surface:
 
-- `Assets/_Project/Scripts`: `1047` C# files.
-- Script LOC by PowerShell line count: `571562`.
+- `Assets/_Project`: `1118` C# files.
+- `Assets/_Project/Scripts`: `1078` C# files.
+- Script LOC by PowerShell line count: `519952`.
 - Strict `StartCoroutine(` hits under `Assets/_Project/Scripts`: `0`.
 - `Docs`: `595` non-meta files in the current filesystem view.
 - `Docs/ARCHIVARIUS REPORTS`: `119` non-meta files in the current filesystem view.
@@ -426,20 +433,23 @@ These counts are orientation data only. They are not readiness metrics and shoul
 
 Current active forensic reports to read before older atlas claims:
 
-1. `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
+1. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 2. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-3. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
-4. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
-5. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
-6. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
-7. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
-8. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
-9. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
+3. `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
+4. `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
+5. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+6. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
+7. `Docs/Reports/DOOMSDAY_FLAW_REPORT.md`
+8. `Docs/Reports/AWAITABLE_MEMORY_COMPACTION_SURGERY_LOG.md`
+9. `Docs/Reports/OMEGA_CORE_ENFORCEMENT_2026-05-01.md`
+10. `Docs/Reports/CI_VALIDATION_HOOKS_SURGERY_LOG.md`
+11. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
+12. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
 
 Current risk corrections:
 
 - Headless simulation remains a first-order risk. The older `FaunaBrain.UpdateBioluminescentHypnosis()` player-camera dependency is stale by current source recheck; remaining fauna headless risk is perception/LOD logic still using player Transform/Rigidbody paths plus absent no-camera Play Mode proof. `StorageCrate` no longer relies on an Animator event for the `Opening -> Open` source transition, but Play Mode proof is absent.
-- Jobs/Burst compliance improved at the attribute level. The older `.Complete()` barrier call-site list is stale by May 2 grep; remaining risk is dispatcher-owned completion-window proof and runtime stall profiling.
+- Jobs/Burst compliance improved at the `.Run(` level, but the May 4 guard scan still reports `.Complete(` inventory `5`; remaining risk is owner classification plus dispatcher-owned completion-window proof and runtime stall profiling.
 - Event topology is stronger than old docs implied because late-frame dispatch budgeting and `HectonEventBus.MaxDispatchDepth = 4` exist, but recursive generation/depth is not globally proven safe.
 - Core asmdef purification is not complete. The current safe position is staged bridge extraction, not blind reference removal.
 - Object pool exhaustion behavior is safer by source review: spawn exhaustion publishes pool-exhausted telemetry and returns `null`; no global runtime instantiation purity claim is made for the entire project.
@@ -447,8 +457,8 @@ Current risk corrections:
 
 Verification state:
 
-- Unity console: latest May 1 MCP `read_console` returned `0` error/warning entries after the event-bus/spatial-hash compile refresh.
-- Runtime: Play Mode was not launched.
+- Unity console: latest May 4 current MCP recheck returned `0` error/warning entries. The earlier May 4 documentation sweep saw `18` warning entries from `GlobalRegistry` unregister-for-non-registered tick buckets and `SystemDispatcher` slow-threshold telemetry during `01_MAIN_MENU` Play Mode transition; that snapshot is historical.
+- Runtime: latest MCP recheck reported active scene `00_BOOTSTRAP` with Play Mode off. Earlier MCP reported active scene `01_MAIN_MENU` and Play Mode transition state. Gameplay proof was not captured.
 - GC/frame/memory: no fresh profiler or GCMonitor measurement.
 
 STATUS: PENDING VERIFICATION

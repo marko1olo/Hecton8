@@ -27,14 +27,15 @@ namespace Hecton8.World
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static float Terrace01(float h, float stepCount, float sharpness, float strength)
         {
+            float normalized = math.saturate(h);
             float steps = math.max(1f, stepCount);
-            float scaled = math.saturate(h) * steps;
+            float scaled = normalized * steps;
             float baseStep = math.floor(scaled);
             float frac = scaled - baseStep;
-            float s = math.saturate(sharpness);
-            float eased = math.smoothstep(0.5f - s * 0.5f, 0.5f + s * 0.5f, frac);
+            float halfWidth = math.max(0.0001f, math.saturate(sharpness) * 0.5f);
+            float eased = math.smoothstep(0.5f - halfWidth, 0.5f + halfWidth, frac);
             float terraced = (baseStep + eased) / steps;
-            return math.lerp(h, terraced, math.saturate(strength));
+            return math.saturate(math.lerp(normalized, terraced, math.saturate(strength)));
         }
     }
 }

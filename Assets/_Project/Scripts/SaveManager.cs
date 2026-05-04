@@ -14,8 +14,10 @@ using System.Diagnostics;
 using System.IO;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Modding;
 using Hecton8.Quest;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -36,6 +38,10 @@ namespace Hecton8.SaveSystem
         private static readonly long LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
         private const float IntegrityScanIntervalSeconds = 10f;
         private const float IndexedDefragCheckIntervalSeconds = 5f;
+        private const float PredictiveIndexedPagingLookaheadSeconds = 20f;
+        private const float PredictiveIndexedPagingCheckIntervalSeconds = 0.5f;
+        private const float PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond = 0.5f;
+        private const float CompressionFastModeFrameTimeThresholdSeconds = 0.014f;
         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
         private const int MaxRegisteredSaveables = 256;
         private const string NativeMemoryOwner = nameof(SaveManager);
@@ -135,10 +141,14 @@ namespace Hecton8.SaveSystem
         private bool _serviceRegistered;
         private bool _emergencyBackupScheduled;
         private bool _indexedDefragInFlight;
+        private bool _predictiveIndexedPagingInFlight;
         private string _integritySlotName;
         private string _pendingIntegritySlotName;
         private string _activeIndexedSavePath;
         private float _nextIndexedDefragCheckTime;
+        private float _nextPredictiveIndexedPagingCheckTime;
+        private int _activeIndexedSaveChunkSizeMeters = SaveBinaryStorage.DefaultIndexedPersistentWorldChunkSizeMeters;
+        private long _lastPredictiveIndexedPagedSectorHash = long.MinValue;
 
         private sealed class MemoryCorruptionException : Exception
         {
@@ -362,9 +372,12 @@ namespace Hecton8.SaveSystem
 
         public void Tick(float deltaTime)
         {
+            SaveBinaryStorage.SetRuntimeLz4FastMode(deltaTime > CompressionFastModeFrameTimeThresholdSeconds);
+
             if (!_isBusy &&
                 !_integrityScanScheduled &&
                 !_indexedDefragInFlight &&
+                !_predictiveIndexedPagingInFlight &&
                 !string.IsNullOrEmpty(_activeIndexedSavePath) &&
                 Time.unscaledTime >= _nextIndexedDefragCheckTime)
             {
@@ -373,6 +386,8 @@ namespace Hecton8.SaveSystem
                 _ = RunIndexedSaveDefragAsync(_activeIndexedSavePath);
                 return;
             }
+
+            TrySchedulePredictiveIndexedSectorPrewarm();
 
             if (_isBusy ||
                 _integrityScanScheduled ||
@@ -552,6 +567,172 @@ namespace Hecton8.SaveSystem
             }
         }
 
+        private void TrySchedulePredictiveIndexedSectorPrewarm()
+        {
+            if (_isBusy ||
+                _indexedDefragInFlight ||
+                _predictiveIndexedPagingInFlight ||
+                string.IsNullOrEmpty(_activeIndexedSavePath) ||
+                Time.unscaledTime < _nextPredictiveIndexedPagingCheckTime)
+            {
+                return;
+            }
+
+            _nextPredictiveIndexedPagingCheckTime = Time.unscaledTime + PredictiveIndexedPagingCheckIntervalSeconds;
+            if (!TryResolvePredictiveIndexedPagingPlayer(out HectonPlayerMovement playerMovement, out Transform playerTransform))
+                return;
+
+            Vector3 currentRuntimePosition = playerTransform.position;
+            Vector3 playerVelocity = playerMovement.CurrentWorldVelocity;
+            if (!IsFinite(currentRuntimePosition) || !IsFinite(playerVelocity))
+                return;
+
+            float planarSpeedSq = (playerVelocity.x * playerVelocity.x) + (playerVelocity.z * playerVelocity.z);
+            float minPlanarSpeedSq = PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond * PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond;
+            if (planarSpeedSq < minPlanarSpeedSq)
+                return;
+
+            int chunkSizeMeters = math.max(1, _activeIndexedSaveChunkSizeMeters);
+            if (!TryComputePredictiveIndexedPagingSectorHash(
+                    currentRuntimePosition,
+                    playerVelocity,
+                    PredictiveIndexedPagingLookaheadSeconds,
+                    chunkSizeMeters,
+                    out long currentSectorHash,
+                    out long projectedSectorHash,
+                    out int3 currentChunkId,
+                    out int3 projectedChunkId))
+            {
+                return;
+            }
+
+            bool projectedChunkChanged = !math.all(currentChunkId == projectedChunkId);
+            if ((!projectedChunkChanged && projectedSectorHash == currentSectorHash) ||
+                projectedSectorHash == _lastPredictiveIndexedPagedSectorHash)
+            {
+                return;
+            }
+
+            _lastPredictiveIndexedPagedSectorHash = projectedSectorHash;
+            _predictiveIndexedPagingInFlight = true;
+            _ = RunPredictiveIndexedSectorPrewarmAsync(_activeIndexedSavePath, projectedSectorHash);
+        }
+
+        internal static bool TryComputePredictiveIndexedPagingSectorHash(
+            Vector3 currentRuntimePosition,
+            Vector3 worldVelocity,
+            float lookaheadSeconds,
+            int chunkSizeMeters,
+            out long currentSectorHash,
+            out long projectedSectorHash,
+            out int3 currentChunkId,
+            out int3 projectedChunkId)
+        {
+            currentSectorHash = 0L;
+            projectedSectorHash = 0L;
+            currentChunkId = default;
+            projectedChunkId = default;
+
+            if (!IsFinite(currentRuntimePosition) ||
+                !IsFinite(worldVelocity) ||
+                !math.isfinite(lookaheadSeconds) ||
+                lookaheadSeconds <= 0f)
+            {
+                return false;
+            }
+
+            Vector3 projectedRuntimePosition = currentRuntimePosition + (worldVelocity * lookaheadSeconds);
+            if (!IsFinite(projectedRuntimePosition))
+                return false;
+
+            AbsoluteUniversePosition currentAup = AbsoluteUniversePosition.FromRuntimePosition(currentRuntimePosition);
+            AbsoluteUniversePosition projectedAup = AbsoluteUniversePosition.FromRuntimePosition(projectedRuntimePosition);
+            int safeChunkSizeMeters = math.max(1, chunkSizeMeters);
+            currentChunkId = AbsoluteUniversePosition.ResolveChunkId(in currentAup, safeChunkSizeMeters);
+            projectedChunkId = AbsoluteUniversePosition.ResolveChunkId(in projectedAup, safeChunkSizeMeters);
+            currentSectorHash = SaveBinaryStorage.ComputePersistentWorldPagedSectorHash(in currentAup);
+            projectedSectorHash = SaveBinaryStorage.ComputePersistentWorldPagedSectorHash(in projectedAup);
+            return true;
+        }
+
+        private static bool TryResolvePredictiveIndexedPagingPlayer(out HectonPlayerMovement playerMovement, out Transform playerTransform)
+        {
+            playerMovement = null;
+            playerTransform = null;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext == null)
+                return false;
+
+            playerMovement = playerContext.PlayerMovement;
+            playerTransform = playerContext.PlayerTransform;
+            return playerMovement != null && playerTransform != null;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
+        }
+
+        private async Awaitable RunPredictiveIndexedSectorPrewarmAsync(string absolutePath, long sectorHash)
+        {
+            bool sectorExists = false;
+            bool usedBackup = false;
+            string error = string.Empty;
+            try
+            {
+                await Awaitable.BackgroundThreadAsync();
+                bool prewarmSucceeded = SaveBinaryStorage.TryPrewarmIndexedPersistentWorldSector(
+                    absolutePath,
+                    sectorHash,
+                    out sectorExists,
+                    out usedBackup,
+                    out error);
+                await Awaitable.MainThreadAsync();
+
+                if (!prewarmSucceeded)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm failed for 0x{sectorHash:X16}: {error}");
+#endif
+                }
+                else if (usedBackup)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm used .bak for 0x{sectorHash:X16}; primary will promote through CRITICAL_RECOVERY on load.");
+#endif
+                }
+                else if (verboseLogging && sectorExists)
+                {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                    Debug.Log($"[SaveManager] Predictive indexed sector prewarmed 0x{sectorHash:X16}.");
+#endif
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                await Awaitable.MainThreadAsync();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm threw for 0x{sectorHash:X16}: {ex.Message}");
+#endif
+            }
+            finally
+            {
+                await Awaitable.MainThreadAsync();
+                _predictiveIndexedPagingInFlight = false;
+                _nextPredictiveIndexedPagingCheckTime = Time.unscaledTime + PredictiveIndexedPagingCheckIntervalSeconds;
+            }
+        }
+
+        private async Awaitable WaitForIndexedSaveMaintenanceIdleAsync()
+        {
+            while (_indexedDefragInFlight || _predictiveIndexedPagingInFlight)
+                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
+        }
+
         private async Awaitable RunIndexedSaveDefragAsync(string absolutePath)
         {
             long reclaimedBytes = 0L;
@@ -582,6 +763,13 @@ namespace Hecton8.SaveSystem
             catch (OperationCanceledException)
             {
             }
+            catch (Exception ex)
+            {
+                await Awaitable.MainThreadAsync();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogError($"[SaveManager] Indexed save defrag threw for '{absolutePath}': {ex.Message}");
+#endif
+            }
             finally
             {
                 await Awaitable.MainThreadAsync();
@@ -593,6 +781,9 @@ namespace Hecton8.SaveSystem
         private void UpdateActiveIndexedSavePath(string absolutePath)
         {
             _activeIndexedSavePath = string.Empty;
+            _activeIndexedSaveChunkSizeMeters = SaveBinaryStorage.DefaultIndexedPersistentWorldChunkSizeMeters;
+            _lastPredictiveIndexedPagedSectorHash = long.MinValue;
+            _nextPredictiveIndexedPagingCheckTime = 0f;
             if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
                 return;
 
@@ -600,7 +791,7 @@ namespace Hecton8.SaveSystem
             if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(
                     absolutePath,
                     _indexedSectorDirectoryScratch,
-                    out _,
+                    out _activeIndexedSaveChunkSizeMeters,
                     out string directoryError))
             {
                 ReportIndexedDirectoryReadFailure(absolutePath, directoryError);
@@ -819,6 +1010,7 @@ namespace Hecton8.SaveSystem
 
             try
             {
+                await WaitForIndexedSaveMaintenanceIdleAsync();
                 SortRegistryIfDirty(SavePriorityComparer);
                 for (int i = 0; i < _saveableCount; i++)
                 {
@@ -838,6 +1030,7 @@ namespace Hecton8.SaveSystem
                     saveable.PopulateSaveData(data);
                 }
 
+                StampRuntimeWorldSeed(data);
                 ModSaveStateStore.PopulateSaveData(data);
                 Stopwatch divergenceSnapshotTimer = Stopwatch.StartNew();
                 if (persistentWorldRegistry != null)
@@ -946,6 +1139,41 @@ namespace Hecton8.SaveSystem
                 $"Budget is {MainThreadSnapshotBudgetMs}ms. Snapshot purity is pending verification.");
         }
 
+        private static void StampRuntimeWorldSeed(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            global::HectonWorldGenerator generator = global::HectonWorldGenerator.ActiveRuntimeInstance;
+            if (generator == null)
+                return;
+
+            data.ecosystemState.worldSeed = generator.RuntimeWorldSeed;
+        }
+
+        private static void ValidateRuntimeWorldSeed(SaveData data)
+        {
+            if (data == null)
+                return;
+
+            int savedSeed = data.ecosystemState.worldSeed;
+            if (savedSeed == 0)
+                return;
+
+            global::HectonWorldGenerator generator = global::HectonWorldGenerator.ActiveRuntimeInstance;
+            if (generator == null)
+                return;
+
+            int runtimeSeed = generator.RuntimeWorldSeed;
+            if (runtimeSeed == 0 || runtimeSeed == savedSeed)
+                return;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning($"[SaveManager] Geological Anomaly: saved world seed {savedSeed} != runtime world seed {runtimeSeed}.");
+#endif
+            NotificationEvents.PushWarning("GEOLOGICAL ANOMALY");
+        }
+
         public async Awaitable LoadGameAsync(string slotName)
         {
             LastOperationSucceeded = false;
@@ -990,6 +1218,7 @@ namespace Hecton8.SaveSystem
 
             try
             {
+                await WaitForIndexedSaveMaintenanceIdleAsync();
                 await Awaitable.BackgroundThreadAsync();
                 SaveData data = null;
                 QuestSaveHeader loadedQuestHeader = default;
@@ -1125,6 +1354,7 @@ namespace Hecton8.SaveSystem
                     Debug.Log($"[SaveManager] Migrated save '{slotName}' from v{originalVersion}: {summary}");
                 }
 
+                ValidateRuntimeWorldSeed(data);
                 _totalPlayTime = data.totalPlayTime;
                 _sessionStartTime = Time.realtimeSinceStartupAsDouble;
                 PersistentWorldRegistry persistentWorldRegistryForLoad = GlobalRegistry.PersistentWorldRegistry;

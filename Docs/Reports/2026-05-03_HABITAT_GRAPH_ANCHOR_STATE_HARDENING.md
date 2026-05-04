@@ -2,6 +2,10 @@
 
 Status: PENDING VERIFICATION
 
+## 2026-05-04 Supersession Note
+
+This report is May 3 source/build evidence for the habitat graph anchor-state patch. Current global documentation/build/guard truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`: Core/Editor compile `0 Warning(s)` / `0 Error(s)`, DOTS restore build `1 Warning(s)` / `0 Error(s)`, PlayModeTests restore build `0 Warning(s)` / `0 Error(s)`, post-repair Core compile `0 Warning(s)` / `0 Error(s)`, and foundation guard scan exit `0`.
+
 ## Mandates Followed
 
 - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
@@ -49,7 +53,7 @@ Fresh baseline before this patch:
 - Command: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false`
 - Result: `0 Error(s)`, `18 Warning(s)`
 - Warning class: `MSB3245 Unity.Cecil.Awesome` generated-project reference warnings
-- Current note: this warning class is superseded by the May 3 generated-reference pruning in `Directory.Build.targets` and `HectonGeneratedProjectReferencePruner`; the latest warning-gate Core build reports `0 Error(s)` / `0 Warning(s)` with `-clp:ErrorsOnly`.
+- May 3 note: this warning class was superseded by generated-reference pruning in `Directory.Build.targets` and `HectonGeneratedProjectReferencePruner`; the May 3 warning-gate Core build reported `0 Error(s)` / `0 Warning(s)` with `-clp:ErrorsOnly`.
 
 Fresh compile after this patch:
 

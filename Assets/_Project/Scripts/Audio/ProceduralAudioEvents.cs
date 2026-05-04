@@ -7,7 +7,9 @@ namespace Hecton8.Audio
     public enum ProceduralAudioPingKind : byte
     {
         Sonar = 0,
-        PredatorKill = 1
+        PredatorKill = 1,
+        MeteorBoom = 2,
+        MechanicalWhirr = 3
     }
 
     /// <summary>

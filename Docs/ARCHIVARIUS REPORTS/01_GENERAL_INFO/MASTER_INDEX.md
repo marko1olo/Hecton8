@@ -16,7 +16,7 @@ This index is path-accurate, not truth-uniform.
 
 - files dated `2026-04-28_*` inside `02_ACTUAL_REPORTS` still physically exist in the active folder
 - several of those dated bundles are now historical static snapshots, not the preferred current-state authority
-- for current project-state orientation outside this folder, read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` first
+- for current project-state orientation outside this folder, read `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` first, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
 - for the current blunt project-level verdict, read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
 - for Archivarius-local current-source corrections and editor-state caveats, prefer `PROJECT_ATLAS.md` and `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`
 

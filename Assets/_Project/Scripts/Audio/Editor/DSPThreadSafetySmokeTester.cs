@@ -63,7 +63,8 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(onAudioFilterRead, "new ", "OnAudioFilterRead has no explicit allocation", builder, ref failureCount);
                 AssertNotContains(onAudioFilterRead, ".ToList(", "OnAudioFilterRead has no LINQ ToList", builder, ref failureCount);
                 AssertNotContains(onAudioFilterRead, ".Where(", "OnAudioFilterRead has no LINQ Where", builder, ref failureCount);
-                AssertNotContains(onAudioFilterRead, "lock", "OnAudioFilterRead has no lock", builder, ref failureCount);
+                AssertNotContains(onAudioFilterRead, "lock (", "OnAudioFilterRead has no lock statement", builder, ref failureCount);
+                AssertNotContains(onAudioFilterRead, "lock(", "OnAudioFilterRead has no compact lock statement", builder, ref failureCount);
                 AssertNotContains(onAudioFilterRead, "Complete(", "OnAudioFilterRead has no JobHandle.Complete", builder, ref failureCount);
                 AssertNotContains(onAudioFilterRead, "ResolveCriticalSidechainDuckingGain", "Compressor is outside managed callback", builder, ref failureCount);
 
@@ -87,6 +88,9 @@ namespace Hecton8.Audio.Editor
                 AssertContains(renderer, "PsychoacousticPressureMinimumCutoffHertz", "Depth LPF has intelligibility floor", builder, ref failureCount);
                 AssertContains(renderer, "openCutoff / math.max(pressureScalar, 1f)", "Depth LPF follows openCutoff / (1 + depth/reference)", builder, ref failureCount);
 
+                AssertContains(renderer, "private static void RenderMinnaertBubbleBurstKernel(", "Minnaert bubble burst producer kernel exists", builder, ref failureCount);
+                AssertContains(renderer, "_bubbleScratch", "Producer path injects bubble bursts into the reusable native scratch buffer", builder, ref failureCount);
+                AssertContains(renderer, "RenderMinnaertBubbleBurstKernel(", "Producer path injects bubble bursts through the Minnaert kernel", builder, ref failureCount);
                 AssertContains(renderer, "ResolveMinnaertFrequency", "Minnaert bubble frequency kernel exists", builder, ref failureCount);
                 AssertContains(renderer, "math.rcp(2f * math.PI * safeRadius) * root", "Minnaert formula uses 1/(2*pi*R)*sqrt term", builder, ref failureCount);
                 AssertContains(renderer, "RenderMinnaertBubbleSample", "Bubble burst sample kernel exists", builder, ref failureCount);
@@ -114,7 +118,8 @@ namespace Hecton8.Audio.Editor
                 AssertNotContains(mixInterleavedInto, "new ", "SPSC consumer bridge has no explicit allocation", builder, ref failureCount);
                 AssertNotContains(mixInterleavedInto, ".ToList(", "SPSC consumer bridge has no LINQ ToList", builder, ref failureCount);
                 AssertNotContains(mixInterleavedInto, ".Where(", "SPSC consumer bridge has no LINQ Where", builder, ref failureCount);
-                AssertNotContains(mixInterleavedInto, "lock", "SPSC consumer bridge has no lock", builder, ref failureCount);
+                AssertNotContains(mixInterleavedInto, "lock (", "SPSC consumer bridge has no lock statement", builder, ref failureCount);
+                AssertNotContains(mixInterleavedInto, "lock(", "SPSC consumer bridge has no compact lock statement", builder, ref failureCount);
                 AssertNotContains(mixInterleavedInto, "Complete(", "SPSC consumer bridge has no JobHandle.Complete", builder, ref failureCount);
             }
 

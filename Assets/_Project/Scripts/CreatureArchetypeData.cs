@@ -91,6 +91,13 @@ namespace Hecton8.AI
         public float packFlankDistance = 6f;
         public float packCommitDistance = 7f;
 
+        [Header("Ecology Traits")]
+        public bool thermophilic;
+        public bool parasiteAttachCapable;
+        public bool laysEggClutches;
+        public float eggIncubationSeconds = 1800f;
+        public float parasiteDrainPerSlowTick = 0.02f;
+
         [Header("Leviathan Presence")]
         public bool useLeviathanPresence;
         public LeviathanEncounterType leviathanEncounterType = LeviathanEncounterType.PresenceCircle;
@@ -163,6 +170,8 @@ namespace Hecton8.AI
             if (packSupportRadius < 0f) packSupportRadius = 0f;
             if (packFlankDistance < 0f) packFlankDistance = 0f;
             if (packCommitDistance < 0f) packCommitDistance = 0f;
+            if (eggIncubationSeconds < 1f) eggIncubationSeconds = 1f;
+            if (parasiteDrainPerSlowTick < 0f) parasiteDrainPerSlowTick = 0f;
             if (loomingDuration < 0f) loomingDuration = 0f;
             if (loomingDistance < 0f) loomingDistance = 0f;
             if (loomingCommitDistance < 0f) loomingCommitDistance = 0f;

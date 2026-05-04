@@ -77,6 +77,10 @@ namespace Hecton8.Dev
                 if (!ValidateSdfMerge())
                     return;
 
+                _debugLastPhase = "CompactionQueue";
+                if (!ValidateCompactionQueuePriority())
+                    return;
+
                 _debugLastPhase = "PureVoidNav";
                 if (!ValidatePureVoidNavGrid())
                     return;
@@ -130,6 +134,18 @@ namespace Hecton8.Dev
                 math.abs(subtractiveCompactedCarve + 0.2f) < 0.0001f &&
                 math.abs(additiveCompactedRepair - 0.2f) < 0.0001f,
                 "Additive/subtractive SDF merge failed.");
+        }
+
+        private bool ValidateCompactionQueuePriority()
+        {
+            bool replacesLowerDirtyChunk = VoxelDeltaProcessor.DebugShouldReplaceQueuedCompaction(32000, 28000);
+            bool keepsHigherDirtyChunk = VoxelDeltaProcessor.DebugShouldReplaceQueuedCompaction(28000, 32000);
+            bool keepsEqualDirtyChunk = VoxelDeltaProcessor.DebugShouldReplaceQueuedCompaction(30000, 30000);
+            return Require(
+                replacesLowerDirtyChunk &&
+                !keepsHigherDirtyChunk &&
+                !keepsEqualDirtyChunk,
+                "Compaction queue priority replacement failed.");
         }
 
         private bool ValidatePureVoidNavGrid()

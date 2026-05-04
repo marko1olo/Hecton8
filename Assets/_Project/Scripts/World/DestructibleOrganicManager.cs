@@ -22,7 +22,7 @@ namespace Hecton8.World
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-120)] // Manager order must stay ahead of gameplay consumers that read/wire destruction state.
-    public sealed class DestructibleOrganicManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable
+    public sealed class DestructibleOrganicManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
     {
         private static DestructibleOrganicManager _activeRuntimeInstance;
 
@@ -62,6 +62,9 @@ namespace Hecton8.World
         private const byte FloraRuntimeFlagDead = 1 << 6;
         private const int DefaultCorpseNodeCapacity = 96;
         private const float DefaultCorpseBloodIntensity = 6f;
+        private const float CorpseDiseaseActivationSeconds = 120f;
+        private const float CorpseDiseaseRadiusMeters = 22f;
+        private const float CorpseDiseaseSeverity = 1f;
         private const int MaterialClassCount = 5;
         private const string NativeMemoryOwner = nameof(DestructibleOrganicManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
@@ -78,10 +81,12 @@ namespace Hecton8.World
         {
             public uint NodeId;
             public int SpeciesId;
+            public AbsoluteUniversePosition PositionAup;
             public Vector3 Position;
             public float InitialUnits;
             public float RemainingUnits;
             public float BloodIntensity;
+            public float SpawnTime;
             public float ExpireTime;
             public byte Active;
         }
@@ -341,6 +346,7 @@ namespace Hecton8.World
         private bool _tickRegistered;
         private bool _slowTickRegistered;
         private bool _lateFrameTickRegistered;
+        private bool _originShiftListenerRegistered;
         private bool _yieldScheduled;
 
         private NativeArray<Matrix4x4> _surfaceMatrices;
@@ -375,6 +381,18 @@ namespace Hecton8.World
 
         internal bool RegisterCorpseResourceNode(Vector3 worldPosition, int speciesId, float capacityUnits)
         {
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return RegisterCorpseResourceNode(in positionAup, worldPosition, speciesId, capacityUnits);
+        }
+
+        internal bool RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, int speciesId, float capacityUnits)
+        {
+            Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
+            return RegisterCorpseResourceNode(in positionAup, runtimePosition, speciesId, capacityUnits);
+        }
+
+        private bool RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, Vector3 worldPosition, int speciesId, float capacityUnits)
+        {
             if (_corpseResourceNodes == null || _corpseResourceNodes.Length == 0 || capacityUnits <= 0f)
                 return false;
 
@@ -397,12 +415,14 @@ namespace Hecton8.World
             float initialUnits = Mathf.Max(0.25f, capacityUnits);
             CorpseResourceNodeRecord record = new CorpseResourceNodeRecord
             {
-                NodeId = (uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(worldPosition) & uint.MaxValue),
+                NodeId = (uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in positionAup) & uint.MaxValue),
                 SpeciesId = speciesId,
+                PositionAup = positionAup,
                 Position = worldPosition,
                 InitialUnits = initialUnits,
                 RemainingUnits = initialUnits,
                 BloodIntensity = DefaultCorpseBloodIntensity,
+                SpawnTime = Time.time,
                 ExpireTime = Time.time + OrganicDecompositionDurationSeconds,
                 Active = 1
             };
@@ -416,19 +436,25 @@ namespace Hecton8.World
 
         internal bool TryResolveNearestCorpseResourceNode(Vector3 worldPosition, float searchRadius, out Vector3 corpsePosition, out uint corpseNodeId)
         {
+            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return TryResolveNearestCorpseResourceNode(in queryAup, searchRadius, out corpsePosition, out corpseNodeId);
+        }
+
+        internal bool TryResolveNearestCorpseResourceNode(in AbsoluteUniversePosition queryAup, float searchRadius, out Vector3 corpsePosition, out uint corpseNodeId)
+        {
             corpsePosition = default;
             corpseNodeId = 0u;
             if (_corpseResourceNodes == null || _corpseResourceNodeCount <= 0)
                 return false;
 
-            float bestDistanceSq = searchRadius * searchRadius;
+            double bestDistanceSq = (double)searchRadius * searchRadius;
             for (int i = 0; i < _corpseResourceNodeCount; i++)
             {
                 CorpseResourceNodeRecord record = _corpseResourceNodes[i];
                 if (record.Active == 0 || record.RemainingUnits <= 0f)
                     continue;
 
-                float distanceSq = (record.Position - worldPosition).sqrMagnitude;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in queryAup, in record.PositionAup);
                 if (distanceSq > bestDistanceSq)
                     continue;
 
@@ -472,10 +498,16 @@ namespace Hecton8.World
 
         internal float ResolveCorpseSpawnInfluence01(Vector3 worldPosition, float searchRadius)
         {
+            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
+            return ResolveCorpseSpawnInfluence01(in queryAup, searchRadius);
+        }
+
+        internal float ResolveCorpseSpawnInfluence01(in AbsoluteUniversePosition queryAup, float searchRadius)
+        {
             if (_corpseResourceNodes == null || _corpseResourceNodeCount <= 0 || searchRadius <= 0f)
                 return 0f;
 
-            float maxDistanceSq = searchRadius * searchRadius;
+            double maxDistanceSq = (double)searchRadius * searchRadius;
             float bestInfluence01 = 0f;
             for (int i = 0; i < _corpseResourceNodeCount; i++)
             {
@@ -483,11 +515,11 @@ namespace Hecton8.World
                 if (record.Active == 0 || record.RemainingUnits <= 0f)
                     continue;
 
-                float distanceSq = (record.Position - worldPosition).sqrMagnitude;
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in queryAup, in record.PositionAup);
                 if (distanceSq > maxDistanceSq)
                     continue;
 
-                float distance01 = 1f - Mathf.Clamp01(Mathf.Sqrt(distanceSq) / searchRadius);
+                float distance01 = 1f - Mathf.Clamp01((float)math.sqrt(distanceSq) / searchRadius);
                 float mass01 = ResolveCorpseCapacityFraction01(in record);
                 float influence01 = distance01 * mass01;
                 if (influence01 > bestInfluence01)
@@ -495,6 +527,41 @@ namespace Hecton8.World
             }
 
             return bestInfluence01;
+        }
+
+        internal bool TryResolveCorpseDiseaseExposure(
+            in AbsoluteUniversePosition queryAup,
+            float currentTimeSeconds,
+            out float severity01,
+            out Vector3 sourcePosition)
+        {
+            severity01 = 0f;
+            sourcePosition = default;
+            if (_corpseResourceNodes == null || _corpseResourceNodeCount <= 0)
+                return false;
+
+            double radiusSq = (double)CorpseDiseaseRadiusMeters * CorpseDiseaseRadiusMeters;
+            for (int i = 0; i < _corpseResourceNodeCount; i++)
+            {
+                CorpseResourceNodeRecord record = _corpseResourceNodes[i];
+                if (record.Active == 0 ||
+                    record.RemainingUnits <= 0f ||
+                    currentTimeSeconds - record.SpawnTime < CorpseDiseaseActivationSeconds)
+                {
+                    continue;
+                }
+
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in queryAup, in record.PositionAup);
+                if (distanceSq > radiusSq)
+                    continue;
+
+                float distance01 = 1f - Mathf.Clamp01((float)math.sqrt(distanceSq) / CorpseDiseaseRadiusMeters);
+                float mass01 = ResolveCorpseCapacityFraction01(in record);
+                severity01 = Mathf.Max(severity01, distance01 * mass01 * CorpseDiseaseSeverity);
+                sourcePosition = record.Position;
+            }
+
+            return severity01 > 0.001f;
         }
 
         private void Awake()
@@ -572,7 +639,12 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+            if (!Application.isPlaying)
+                return;
+
+            RegisterOriginShiftListener();
+
+            if (GlobalRegistry.Dispatcher == null)
                 return;
 
             if (!_tickRegistered)
@@ -620,6 +692,7 @@ namespace Hecton8.World
             }
 
             CompleteYieldJobIfNeeded();
+            UnregisterOriginShiftListener();
         }
 
         private void OnDestroy()
@@ -628,6 +701,7 @@ namespace Hecton8.World
                 _activeRuntimeInstance = null;
 
             CompleteYieldJobIfNeeded();
+            UnregisterOriginShiftListener();
             DisposeNativeArray(ref _surfaceInstanceUids);
             DisposeNativeArray(ref _underwaterInstanceUids);
             DisposeNativeArray(ref _surfaceMaterialClasses);
@@ -663,6 +737,50 @@ namespace Hecton8.World
             DisposeNativeList(ref _destroyedFloraScratch, nameof(_destroyedFloraScratch));
             DisposeNativeList(ref _floraStateOverrideScratch, nameof(_floraStateOverrideScratch));
             DisposeNativeList(ref _pendingYieldEvents, nameof(_pendingYieldEvents));
+        }
+
+        /// <summary>
+        /// Rebuilds live corpse attractor runtime caches from authoritative Absolute Universe Positions after a committed origin shift.
+        /// </summary>
+        /// <param name="shiftData">Committed floating-origin shift data.</param>
+        public void OnOriginShift(in OriginShiftEventData shiftData)
+        {
+            if (_corpseResourceNodes == null || _corpseResourceNodeCount <= 0)
+                return;
+
+            float3 committedOriginOffset = new float3(
+                shiftData.NewTotalOffset.x,
+                shiftData.NewTotalOffset.y,
+                shiftData.NewTotalOffset.z);
+
+            for (int i = 0; i < _corpseResourceNodeCount; i++)
+            {
+                CorpseResourceNodeRecord record = _corpseResourceNodes[i];
+                if (record.Active == 0)
+                    continue;
+
+                float3 runtimePosition = AUPMath.ToRuntimeFloat3(in record.PositionAup, committedOriginOffset);
+                record.Position = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
+                _corpseResourceNodes[i] = record;
+            }
+        }
+
+        private void RegisterOriginShiftListener()
+        {
+            if (_originShiftListenerRegistered)
+                return;
+
+            HectonFloatingOrigin.RegisterListener(this);
+            _originShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
+        }
+
+        private void UnregisterOriginShiftListener()
+        {
+            if (!_originShiftListenerRegistered)
+                return;
+
+            HectonFloatingOrigin.UnregisterListener(this);
+            _originShiftListenerRegistered = false;
         }
 
         /// <summary>

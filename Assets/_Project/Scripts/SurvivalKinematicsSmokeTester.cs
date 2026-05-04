@@ -35,6 +35,7 @@ namespace Hecton8.Dev
         private const int FailureStressOxygen = 1 << 8;
         private const int FailurePressureCrush = 1 << 9;
         private const int FailureBrownoutSiphon = 1 << 10;
+        private const int FailureNitrogenNarcosis = 1 << 11;
 
         [Header("Execution")]
         [SerializeField] private bool runOnStart;
@@ -157,6 +158,24 @@ namespace Hecton8.Dev
                 VisorHUDController.ShouldTriggerThermalShockBiosRecovery(79f, 20f, 80f, 80f))
             {
                 failureMask |= FailureThermalShock;
+            }
+
+            float nitrogenBuildDelta = HectonSurvivalSystem.ResolveNitrogenBuildUpDelta(10f, 800f, 2f);
+            float shallowNitrogenBuildDelta = HectonSurvivalSystem.ResolveNitrogenBuildUpDelta(10f, 399f, 2f);
+            float slowNitrogenBuildDelta = HectonSurvivalSystem.ResolveNitrogenBuildUpDelta(5f, 800f, 2f);
+            float nitrogenNarcosis01 = HectonSurvivalSystem.ResolveNitrogenNarcosis01(125f);
+            float nitrogenStaminaPenalty = HectonSurvivalSystem.ResolveNitrogenStaminaMultiplier(101f);
+            float nitrogenSafeStamina = HectonSurvivalSystem.ResolveNitrogenStaminaMultiplier(100f);
+            float nitrogenVisorTarget = VisorHUDController.ResolveHypoxiaNarcosisTarget(1f, 0.15f, 0.35f);
+            if (math.abs(nitrogenBuildDelta - 120f) > 0.0001f ||
+                shallowNitrogenBuildDelta > 0.0001f ||
+                slowNitrogenBuildDelta > 0.0001f ||
+                math.abs(nitrogenNarcosis01 - 0.5f) > 0.0001f ||
+                math.abs(nitrogenStaminaPenalty - 0.8f) > 0.0001f ||
+                math.abs(nitrogenSafeStamina - 1f) > 0.0001f ||
+                math.abs(nitrogenVisorTarget - 0.35f) > 0.0001f)
+            {
+                failureMask |= FailureNitrogenNarcosis;
             }
 
             return failureMask;

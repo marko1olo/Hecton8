@@ -2,21 +2,44 @@
 
 Generated: 2026-05-01  
 Mode: Deep Flaw Discovery / Forensics / QA Architecture  
-Status: PENDING VERIFICATION - previous MCP console read was clean, current session not rechecked
+Status: PENDING VERIFICATION - May 4 MCP console read returned `0` errors and `18` warnings; no PlayMode/profiler/GC proof
 Scope: `Assets/_Project/Scripts/`
 
 ## Executive Read
 
 This is a static forensic report. No Play Mode was launched. No GCMonitor, Jobs Debugger, Memory Profiler, RenderDoc, or 10-minute retention run was captured. Findings are code-review evidence, not runtime measurements.
 
+## 2026-05-04 Source Recheck Delta
+
+Follow-up evidence: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`.
+
+Current scan surface now reads:
+
+- `Assets/_Project/**/*.cs`: `1118` first-party C# files.
+- `Assets/_Project/Scripts/**/*.cs`: `1078` C# files.
+- Current filesystem LOC under `Assets/_Project/Scripts`: `519952`.
+- `.agents-skills`: `52` mandate files indexed.
+
+Current post-repair foundation guard scan exits `0`:
+
+- `.Run(` sites: `0`.
+- Hot-path `.Run(` review sites: `0`.
+- `.Complete(` text hits: `5`.
+- Guarded dispatcher completion sites: `1`.
+- `UnsafeUtility.MemCpy outside guard`: `0`.
+- Unauthorized Unity loop methods: `0`.
+- Runtime Find API review hits outside Editor folders: `8`.
+
+The May 2 `.Complete(` count and source-size snapshot below are historical. Current risk classification remains static/source-only until PlayMode, profiler, GC, and memory-retention evidence exists.
+
 ## 2026-05-02 Source Recheck Delta
 
 Follow-up evidence: `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`.
 
-Scan surface now reads:
+Historical May 2 scan surface read:
 
 - `Assets/_Project/Scripts/`: `1047` C# files.
-- Current filesystem LOC under `Assets/_Project/Scripts`: `571562`.
+- May 2 filesystem LOC under `Assets/_Project/Scripts`: `571562`.
 - `.agents-skills`: `52` mandate files indexed.
 
 Current strict `.Complete(` grep under `Assets/_Project/Scripts` finds `6` text hits:
@@ -40,7 +63,7 @@ Original May 1 scan surface:
 
 - `Assets/_Project/Scripts/`: 1020 C# files.
 - First-party C# LOC scanned during the original Doomsday pass: 466768.
-- Current 2026-05-01 filesystem LOC under `Assets/_Project/Scripts`: 544728. Superseded for count purposes by the May 2 scan above.
+- Historical 2026-05-01 filesystem LOC under `Assets/_Project/Scripts`: 544728. Superseded for count purposes by the May 4 scan above.
 - `.agents-skills`: 52 mandate files indexed.
 - Mandates loaded for classification: `OPT_Zero_GC_Policy_AllocFree_Mandate`, `OPT_Native_Memory_Collections_JobSystem_Protocol`, `MATH_Coordinate_Precision_AUP_FloatingOrigin`, `CORE_Submarine_Vehicles_Kinematics_AUP`, `PHYS_Physics_Integrity_Determinism_ForceMode`, `ARCH_Global_Registry_ServiceLocator_DI_Init`, `DBG_Telemetry_Crash_Reporting_PostMortem`.
 
@@ -416,11 +439,11 @@ while (processed < MaxEventsPerFrame && front.TryDequeue(out payload))
 
 ## Verification State
 
-MCP console log: `read_console(types=["error"], count=50)` returned 0 entries after this report-only pass.  
-Play Mode: not launched.  
-GC validation: measured proof absent.  
-Regression check: measured proof absent.  
-Memory retention guard: measured proof absent.  
+MCP console log: May 4 readback returned `0` error entries and `18` warning entries.
+Play Mode: editor was seen in Play Mode transition on May 4, but no bounded gameplay run or assertion pass was captured.
+GC validation: measured proof absent.
+Regression check: measured proof absent.
+Memory retention guard: measured proof absent.
 In-game result: not verified; this is a report-only operation.
 
 ## Evidence Commands

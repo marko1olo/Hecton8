@@ -2,6 +2,10 @@
 
 Status: PENDING VERIFICATION
 
+## 2026-05-04 Supersession Note
+
+This file is a May 2 audit-bundle recheck. Current global source/doc counts are superseded by `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`: `1118` first-party `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, `519952` static script lines, active `Docs/**/*.md` count `188`, and active/root markdown surface `214`.
+
 Mandates followed:
 - `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
 - `PROJECT_LTS_Compatibility_Layer.txt`
@@ -43,7 +47,7 @@ Status discipline:
 
 ## 2. Fresh Repository Counters
 
-Snapshot date: 2026-05-02.
+Historical snapshot date: 2026-05-02.
 
 | Surface | Fresh count |
 |---|---:|
@@ -98,7 +102,7 @@ Interpretation:
 | `02_SYSTEM_REALITY_MATRIX.md` | current as model | System readiness percentages remain audit estimates, not measured runtime proof. |
 | `03_CODE_HEALTH_AND_RUNTIME_ARCHITECTURE.md` | current with caution | Architecture risks remain relevant; compile/editor claims must be read through `07`. |
 | `04_PLAYER_PERSPECTIVE_AND_READINESS.md` | current as qualitative assessment | Player-facing readiness remains non-metric and must not be used as a shipping proof. |
-| `05_EVIDENCE_LEDGER.md` | refreshed | First-party C# count updated to 1087 and script count to 1047. Other grep evidence remains static-code evidence. |
+| `05_EVIDENCE_LEDGER.md` | refreshed historically | First-party C# count was updated to 1087 and script count to 1047 at the May 2 boundary. Current May 4 counts are in the supersession note. Other grep evidence remains static-code evidence. |
 | `06_CRITICAL_ACTION_QUEUE.md` | current with caution | Queue remains directionally valid; exact priorities require compile/runtime verification. |
 | `07_REVERIFICATION_ADDENDUM_2026-04-30.md` | current as correction layer | Supersedes earlier compile-error assumptions. |
 | `08_SUBSYSTEM_IMPLEMENTATION_CATALOG.md` | refreshed | World/Core/Visor line counts updated. |

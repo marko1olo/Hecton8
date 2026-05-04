@@ -70,6 +70,8 @@ namespace Hecton8.World
         private static readonly int _PredatorAUPBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
         private static readonly int _PredatorAUPCountId = Shader.PropertyToID("_PredatorAUPCount");
         private static readonly int _PredatorAUPParamsId = Shader.PropertyToID("_PredatorAUPParams");
+        private static readonly int _BiolumFlashBangAUPId = Shader.PropertyToID("_BiolumFlashBangAUP");
+        private static readonly int _BiolumFlashBangParamsId = Shader.PropertyToID("_BiolumFlashBangParams");
 
         [StructLayout(LayoutKind.Sequential)]
         private struct SectorPopulationState
@@ -83,6 +85,7 @@ namespace Hecton8.World
             public float CamouflageIndex;
             public int PreyPopulationRounded;
             public int PredatorPopulationRounded;
+            public int BiomeId;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -234,6 +237,11 @@ namespace Hecton8.World
             public float MaximumCamouflageIndex;
             public int MaxPreyPopulation;
             public int MaxPredatorPopulation;
+            public float PreyMassUnits;
+            public float PredatorMassUnits;
+            public float BiomassHardCapTemperate;
+            public float BiomassHardCapThermal;
+            public float BiomassHardCapHadal;
 
             public void Execute(int index)
             {
@@ -254,6 +262,7 @@ namespace Hecton8.World
                 predator = math.clamp(predator + (predatorDelta * DeltaTimeSeconds), 0f, MaxPredatorPopulation);
                 prey = math.clamp(prey + (preyMigration * PreyMigrationRate * DeltaTimeSeconds), 0f, MaxPreyPopulation);
                 predator = math.clamp(predator + (predatorMigration * PredatorMigrationRate * DeltaTimeSeconds), 0f, MaxPredatorPopulation);
+                ApplyBiomassHardCap(state.BiomeId, ref prey, ref predator);
 
                 float currentFitness = math.saturate(state.Fitness);
                 float fitnessTarget = math.clamp(
@@ -331,6 +340,33 @@ namespace Hecton8.World
             private static long PackSectorKey(int2 sectorCoord)
             {
                 return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
+            }
+
+            private void ApplyBiomassHardCap(int biomeId, ref float prey, ref float predator)
+            {
+                float cap = ResolveBiomeBiomassHardCap(biomeId);
+                if (cap <= 0f)
+                    return;
+
+                float preyMass = math.max(0.001f, PreyMassUnits);
+                float predatorMass = math.max(0.001f, PredatorMassUnits);
+                float biomass = (prey * preyMass) + (predator * predatorMass);
+                if (biomass <= cap)
+                    return;
+
+                float scale = cap / math.max(0.001f, biomass);
+                prey = math.clamp(prey * scale, 0f, MaxPreyPopulation);
+                predator = math.clamp(predator * scale, 0f, MaxPredatorPopulation);
+            }
+
+            private float ResolveBiomeBiomassHardCap(int biomeId)
+            {
+                if (biomeId == 1)
+                    return math.max(1f, BiomassHardCapThermal);
+                if (biomeId == 2)
+                    return math.max(1f, BiomassHardCapHadal);
+
+                return math.max(1f, BiomassHardCapTemperate);
             }
         }
 
@@ -423,6 +459,16 @@ namespace Hecton8.World
         [SerializeField, Min(1)] private int maxPreyPopulation = 1024;
         [Tooltip("Upper clamp for predator population values after each solve.")]
         [SerializeField, Min(1)] private int maxPredatorPopulation = 128;
+        [Tooltip("Mass units per prey used by sector biomass conservation.")]
+        [SerializeField, Min(0.001f)] private float preyMassUnits = 1f;
+        [Tooltip("Mass units per predator used by sector biomass conservation.")]
+        [SerializeField, Min(0.001f)] private float predatorMassUnits = 12f;
+        [Tooltip("Default biomass hardcap for a 1 km sector.")]
+        [SerializeField, Min(1f)] private float temperateSectorBiomassHardCap = 1600f;
+        [Tooltip("Thermal-vent biome biomass hardcap for a 1 km sector.")]
+        [SerializeField, Min(1f)] private float thermalSectorBiomassHardCap = 2600f;
+        [Tooltip("Hadal biome biomass hardcap for a 1 km sector.")]
+        [SerializeField, Min(1f)] private float hadalSectorBiomassHardCap = 1200f;
         [Tooltip("Exponential decay applied to harvest pressure each cold solve.")]
         [SerializeField, Min(0f)] private float harvestPressureDecay = 0.18f;
         [Tooltip("Additional prey loss applied while harvest pressure remains elevated.")]
@@ -762,11 +808,31 @@ namespace Hecton8.World
             return MigrationDirector.TryResolveMigrationTarget(speciesId, origin, out target);
         }
 
+        internal bool TryResolveNearestThermalVentAttractor(
+            in AbsoluteUniversePosition queryAup,
+            float searchRadiusMeters,
+            out Vector3 target,
+            out float heat01)
+        {
+            target = default;
+            heat01 = 0f;
+            AbyssalThermalManager thermalManager = AbyssalThermalManager.Instance;
+            return thermalManager != null &&
+                   thermalManager.TryResolveNearestActiveVentAttractor(in queryAup, searchRadiusMeters, out target, out heat01);
+        }
+
         internal void RegisterCorpseResourceNode(Vector3 worldPosition, int speciesId, float capacityUnits)
         {
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             if (organicManager != null)
                 organicManager.RegisterCorpseResourceNode(worldPosition, speciesId, capacityUnits);
+        }
+
+        internal void RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, int speciesId, float capacityUnits)
+        {
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            if (organicManager != null)
+                organicManager.RegisterCorpseResourceNode(in positionAup, speciesId, capacityUnits);
         }
 
         internal bool TryResolveCorpseScavengeTarget(Vector3 worldPosition, out Vector3 corpsePosition, out uint corpseNodeId)
@@ -778,10 +844,32 @@ namespace Hecton8.World
                    organicManager.TryResolveNearestCorpseResourceNode(worldPosition, scavengerCorpseSearchRadiusMeters, out corpsePosition, out corpseNodeId);
         }
 
+        internal bool TryResolveCorpseScavengeTarget(in AbsoluteUniversePosition queryAup, out Vector3 corpsePosition, out uint corpseNodeId)
+        {
+            corpsePosition = default;
+            corpseNodeId = 0u;
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            return organicManager != null &&
+                   organicManager.TryResolveNearestCorpseResourceNode(in queryAup, scavengerCorpseSearchRadiusMeters, out corpsePosition, out corpseNodeId);
+        }
+
         internal bool TryConsumeCorpseScavengeTarget(uint corpseNodeId, float consumeUnits)
         {
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
             return organicManager != null && organicManager.TryConsumeCorpseResourceNode(corpseNodeId, consumeUnits);
+        }
+
+        internal bool TryResolveCorpseDiseaseExposure(
+            in AbsoluteUniversePosition queryAup,
+            float currentTimeSeconds,
+            out float severity01,
+            out Vector3 sourcePosition)
+        {
+            severity01 = 0f;
+            sourcePosition = default;
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            return organicManager != null &&
+                   organicManager.TryResolveCorpseDiseaseExposure(in queryAup, currentTimeSeconds, out severity01, out sourcePosition);
         }
 
         internal bool TryResolveNearestOrganicMass(Vector3 worldPosition, out Vector3 organicPosition)
@@ -815,6 +903,37 @@ namespace Hecton8.World
             return found;
         }
 
+        internal bool TryResolveNearestOrganicMass(in AbsoluteUniversePosition queryAup, out Vector3 organicPosition)
+        {
+            organicPosition = default;
+            DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
+            if (organicManager == null)
+                return false;
+
+            Vector3 worldPosition = queryAup.ToRuntimeFloat3();
+            float searchRadius = math.max(scavengerCorpseSearchRadiusMeters, herbivoreGrazeSearchRadiusMeters);
+            bool found = false;
+            float bestDistanceSq = float.MaxValue;
+            if (organicManager.TryResolveNearestCorpseResourceNode(in queryAup, searchRadius, out Vector3 corpsePosition, out _))
+            {
+                organicPosition = corpsePosition;
+                bestDistanceSq = (corpsePosition - worldPosition).sqrMagnitude;
+                found = true;
+            }
+
+            if (organicManager.TryResolveNearestConsumableFlora(worldPosition, searchRadius, out Vector3 floraPosition, out _))
+            {
+                float floraDistanceSq = (floraPosition - worldPosition).sqrMagnitude;
+                if (floraDistanceSq < bestDistanceSq)
+                {
+                    organicPosition = floraPosition;
+                    found = true;
+                }
+            }
+
+            return found;
+        }
+
         internal bool TryConsumeOrganicMassAtPosition(Vector3 worldPosition, float searchRadius)
         {
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
@@ -829,6 +948,13 @@ namespace Hecton8.World
                 return false;
 
             return organicManager.TryConsumeCorpseResourceNode(corpseNodeId, scavengerConsumeUnitsPerSecond);
+        }
+
+        internal void PublishBiolumFlashBang(in AbsoluteUniversePosition flashAup, float currentTimeSeconds, float radiusMeters = 42f)
+        {
+            Vector3 flashPosition = flashAup.ToRuntimeFloat3();
+            Shader.SetGlobalVector(_BiolumFlashBangAUPId, new Vector4(flashPosition.x, flashPosition.y, flashPosition.z, Mathf.Max(0.1f, radiusMeters)));
+            Shader.SetGlobalVector(_BiolumFlashBangParamsId, new Vector4(currentTimeSeconds, 0.1f, 4f, 0f));
         }
 
         internal bool DoesSpeciesRespondToBait(FaunaBrain faunaBrain)
@@ -932,7 +1058,8 @@ namespace Hecton8.World
                     SpeedMultiplier = 1f,
                     CamouflageIndex = 0f,
                     PreyPopulationRounded = preyPopulation,
-                    PredatorPopulationRounded = predatorPopulation
+                    PredatorPopulationRounded = predatorPopulation,
+                    BiomeId = ResolveBiomeIdForSector(saveRecord.SectorCoord)
                 };
 
                 UnpackAdaptationTraits(
@@ -1811,7 +1938,12 @@ namespace Hecton8.World
                 MaximumSpeedMultiplier = maximumSpeedMultiplier,
                 MaximumCamouflageIndex = maximumCamouflageIndex,
                 MaxPreyPopulation = maxPreyPopulation,
-                MaxPredatorPopulation = maxPredatorPopulation
+                MaxPredatorPopulation = maxPredatorPopulation,
+                PreyMassUnits = preyMassUnits,
+                PredatorMassUnits = predatorMassUnits,
+                BiomassHardCapTemperate = temperateSectorBiomassHardCap,
+                BiomassHardCapThermal = thermalSectorBiomassHardCap,
+                BiomassHardCapHadal = hadalSectorBiomassHardCap
             };
 
             _scheduledSolveHandle = solveJob.Schedule(_activeSectorCount, 16);
@@ -2105,6 +2237,7 @@ namespace Hecton8.World
             state.CamouflageIndex = 0f;
             state.PreyPopulationRounded = preyPopulation;
             state.PredatorPopulationRounded = predatorPopulation;
+            state.BiomeId = ResolveBiomeIdForSector(sectorCoord);
             return state;
         }
 
@@ -2131,6 +2264,18 @@ namespace Hecton8.World
         private static long PackSectorKey(int2 sectorCoord)
         {
             return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
+        }
+
+        private static int ResolveBiomeIdForSector(int2 sectorCoord)
+        {
+            uint hash = math.hash(new uint2((uint)sectorCoord.x ^ 0x4D2u, (uint)sectorCoord.y ^ 0x8B3u));
+            uint bucket = hash % 10u;
+            if (bucket < 2u)
+                return 1;
+            if (bucket < 5u)
+                return 2;
+
+            return 0;
         }
 
         private static uint PackPopulationCounts(int preyPopulation, int predatorPopulation)

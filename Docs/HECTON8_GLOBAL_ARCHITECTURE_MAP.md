@@ -1,6 +1,6 @@
 # HECTON-8 Global Architecture Map
 
-Date: 2026-05-02
+Date: 2026-05-04
 Status: PENDING VERIFICATION
 Scope: source-backed architecture map only, not a profiler capture and not a build-certification report
 
@@ -13,25 +13,25 @@ Mandates followed:
 - `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`
 - `AGENTS.md`
 
-## 2026-05-02 Current-State Boundary
+## 2026-05-04 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this map as current project truth.
+- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this map as current project truth.
 - This map is source-backed architecture orientation, not Play Mode proof, profiler proof, console certification, or scene/prefab wiring proof.
 - Line counts and interface counts are orientation data only; source files and fresh verification logs win.
 
 ## 1. Scope
 
 - Audit target: `Assets/_Project/**/*.cs`
-- Current first-party `.cs` inventory under `Assets/_Project`: `1087`
-- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1047`
-- Current script line count under `Assets/_Project/Scripts`: `571562`
-- Average lines per script: `545.90`
-- Scripts still living directly in `Assets/_Project/Scripts` root: `317`
+- Current first-party `.cs` inventory under `Assets/_Project`: `1118`
+- Current first-party `.cs` inventory under `Assets/_Project/Scripts`: `1078`
+- Current script line count under `Assets/_Project/Scripts`: `519952`
+- Average lines per script: `482.33`
+- Scripts still living directly in `Assets/_Project/Scripts` root: `325`
 
 This file replaces the older generated map whose `808`-script snapshot and some interface conclusions are no longer true.
 
-2026-05-02 correction:
-- Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, and earlier May 2 `489893` snapshots.
+2026-05-04 correction:
+- Counts above supersede the April 30 `1038/998/444135`, earlier May 1 `1060/1020/466768`, May 1 `1020/544728`, earlier May 2 `489893`, and May 2 `1087/1047/571562/317` snapshots.
 - Current `GlobalRegistryContracts.cs` contains `33` direct public interfaces.
 - Older interface coverage ratios in this document are stale orientation only; re-open `GlobalRegistryContracts.cs` and implementors before making interface-completion claims.
 
@@ -112,13 +112,17 @@ Meaning:
 
 Current documentation pass status:
 
-- no fresh Unity console readback was obtained for this May 2 documentation update
-- Play Mode was not launched
-- `Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest documentation/build-evidence addendum
+- `Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority map
+- `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest documentation/build/guard/MCP addendum
+- `Reports/2026-05-04_WARNING_CLEANUP.md` is the latest first-party warning cleanup and post-refresh console-readback addendum
+- `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` is the latest foundation guard repair addendum
 - `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` remains the stable conceptual state anchor
-- fresh local `dotnet build .\Hecton8.Core.csproj` exited `0` with `136 Warning(s)` and `0 Error(s)`; latest post-restore `--no-restore` rerun exited `0` with `73 Warning(s)` and `0 Error(s)`
+- May 4 local Core and Editor builds returned `0 Warning(s)` / `0 Error(s)`
+- latest May 4 DOTS and PlayModeTests builds returned `0 Warning(s)` / `0 Error(s)`
+- May 4 post-repair foundation guard scan exits `0`; `.Run(` remains `0`, raw `UnsafeUtility.MemCpy` outside guard is `0`, and unauthorized Unity loop methods are `0`
+- earlier May 4 MCP readback found active scene `01_MAIN_MENU`, editor in Play Mode transition, console errors `0`, and console warnings present; latest warning-cleanup readback after clear/script refresh returned `0` error/warning entries
 
-Historical Unity Editor readback from the previous recheck:
+Historical Unity Editor readback from older rechecks:
 
 - Build Settings scenes: `00_BOOTSTRAP`, `01_MAIN_MENU`, `02_HECTON_WORLD`
 - Loaded active scene: `02_HECTON_WORLD`
@@ -130,7 +134,7 @@ Latest console slice observed:
 - repeated message pattern: `Failed to convert -1 to a unsigned 32 bit int`
 - affected assets: `Assets/_Project/Data/Scavenging/ResourceNodes/ResourceNodeTemplate_*`
 
-This is a historical editor snapshot only and was not refreshed in the 2026-05-02 documentation actuality pass.
+This older package-side MCP error slice is historical and was not reproduced by the May 4 console error query.
 It is not proof of stable play-mode behavior, shipping build health, or zero-GC runtime.
 
 ## 6. Concentration Risks
@@ -155,7 +159,7 @@ They are risk multipliers because runtime ownership, visuals, simulation, and in
 
 - bootstrap ownership is split between `GameBootstrapper` and `SceneBootstrap`
 - event architecture is mixed between queue-backed and direct static buses
-- root-folder ownership is still noisy with `317` scripts in `Assets/_Project/Scripts`
+- root-folder ownership is still noisy with `325` scripts in `Assets/_Project/Scripts`
 - codebase health is stronger than some old reports claimed, but file-size concentration and ownership spread remain real
 
 ## 8. Regression Model

@@ -1,10 +1,29 @@
 # HECTON-8 Current Project State
 
-Date: `2026-05-03`
+Date: `2026-05-04`
 Status: `PENDING VERIFICATION`
 Scope: conceptual source-backed project state, not a runtime certification report
 
-Path note: filename retained as the stable current-state anchor. This file now includes May 2 documentation/build-evidence plus May 3 event-generation, foundation-hardening, settings persistence, registry truth-state, and job-barrier guard addenda.
+Path note: filename retained as the stable current-state anchor. This file now includes May 2 documentation/build-evidence, May 3 event-generation/foundation/settings/registry/job-barrier addenda, and a May 4 documentation/build/guard addendum.
+
+## 2026-05-04 Current Addendum
+
+- Latest broad documentation sweep: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+- Latest first-party warning cleanup: `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`.
+- Latest foundation guard repair addendum: `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`.
+- Latest local Core compile after the warning cleanup reports `0 Warning(s)` and `0 Error(s)`.
+- Fresh local Editor compile now reports `0 Warning(s)` and `0 Error(s)`.
+- Latest `Hecton8.World.Dots.csproj --no-restore` build reports `0 Warning(s)` and `0 Error(s)`.
+- Latest `Hecton8.PlayModeTests.csproj --no-restore` build reports `0 Warning(s)` and `0 Error(s)`.
+- Fresh foundation guard scan after the repair exits `0`.
+- Current guard inventory: `.Run(` sites `0`, hot-path `.Run(` review sites `0`, `.Complete(` text hits `5`, guarded dispatcher completion sites `1`, `UnsafeUtility.MemCpy outside guard` `0`, unauthorized Unity loop methods `0`, runtime Find API text hits `8`.
+- Current source snapshot: `1118` first-party `.cs` under `Assets/_Project`, `1078` `.cs` under `Assets/_Project/Scripts`.
+- Current active `Docs/**/*.md` inventory excluding archive/deprecated/obsolete: `191`.
+- Current active/root markdown surface excluding archive/deprecated/packages/third-party readmes: `217`.
+- Earlier documentation-sweep MCP readback after retry: active scene `01_MAIN_MENU`, editor in Play Mode transition, console errors `0`, console warnings `18`, render textures `32`, render texture bytes `68215964`.
+- Latest current MCP recheck after the foundation guard repair: Unity `6000.4.1f1`, active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, console error/warning entries `0`. This is editor evidence only, not Play Mode proof.
+- May 4 celestial/orbital/meteor/terrain reports are source/build/console evidence only. They do not prove PlayMode behavior, profiler GC, memory retention, in-scene visuals, in-scene audio, or save/load/runtime correctness.
+- Root `TERRAIN_AND_BIOME_REALITY_MAP.md` is not active authority; use `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
 
 ## Mandates Followed
 
@@ -30,14 +49,20 @@ This file is not proof of:
 - stable memory retention
 - shipping readiness
 
-No Play Mode was launched for this update.
+No bounded PlayMode gameplay run, GCMonitor capture, profiler pass, or memory-retention soak was captured for this update.
 Local `Editor.log` evidence exists in `Docs/Reports/2026-05-01_EDITOR_LOG_CONSOLE_STABILIZATION.md`, `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`, and `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md`.
-The latest May 1 continuation pass was compile-clean by local `Editor.log`, and MCP console returned `0` error/warning entries after Bee/backend recovery. The May 2 documentation sweep added local dotnet evidence: `dotnet build .\Hecton8.Core.csproj` returned exit code `0`, `136 Warning(s)`, and `0 Error(s)`; latest post-restore `dotnet build .\Hecton8.Core.csproj --no-restore` returned exit code `0`, `73 Warning(s)`, and `0 Error(s)`. The May 3 foundation-hardening continuation added fresh Unity batchmode success, Unity EditMode spatial-hash self-test `3/3` passed, latest full local Core build `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -v:minimal -clp:ErrorsOnly` returned `0 Error(s)` / `0 Warning(s)`, local `Hecton8.World.Dots.csproj`, `Hecton8.Editor.csproj`, plus `Hecton8.Input.csproj` checks returned `0 Error(s)` / `0 Warning(s)`, and scoped PlayMode test compile returned `0 Error(s)` / `0 Warning(s)` after test asmdef/Core wiring, generated `Temp\bin\Debug` missing-reference pruning, and `LogAssert` API repair. Earlier full verbose ProjectReferences builds reported third-party/package warnings from URP, GPUInstancer, Crest, Den.Tools, WaveHarmonic.Crest, and ShaderGraph. Local dotnet evidence must be collected serially because Unity-generated projects share `Temp\obj` and parallel builds can create false `CS2012` file-lock failures. The May 3 habitat graph anchor-state pass previously produced `MSB3026` file-copy retry on `Temp\obj\Hecton8.Core\Hecton8.Core.dll`; latest full Core and warning-gate reruns did not reproduce it. The May 3 registry service/renderable/origin-listener/job-barrier guard pass added `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md` with `Blind registry flag drift = 0`, `Origin shift listener blind flag drift = 0`, `Global registry self-registration sites = 495`, `.Run(` inventory now `0` and promoted to a hard gate, hot-path `.Run(` review sites `0`, `.Complete(` text inventory `1`, direct raw-array listener dispatch `0`, `GlobalRegistry.Input` nullable misuse `0`, direct `InputManager.Instance` sites `0`, hot-path direct `InputManager.Instance` review sites `0`, `Optimization singleton residue = 0`, unauthorized Unity loop methods `0`, legacy coroutine sites `0`, forbidden runtime asset API sites `0`, release-reachable direct hot-path `Debug.Log` sites `0`, release-reachable one-hop `Debug.Log` review sites `0`, broad physics layer masks outside Editor `0`, runtime Find API text hits outside Editor folder `0`, and full local Core build `0 Warning(s)` / `0 Error(s)` after tether visual, `PlayerInventory`, `CraftingSystem`, `QuestStateManager`, `SargassumMicroFaunaBoids`, `FaunaSimulationEngine` direct-kernel `.Run()` removal, service/origin-listener truth-state expansion, `PlayerFlashlight`/`HectonFabricatorUI`/interaction prompt UI/PDA intrusion lifecycle-hot-swap input rebinding, `PlayerInteraction.ActiveInteractKey` cache hardening, direct `InputManager.Instance` inventory removal, release-reachable one-hop debug-log cleanup, Optimization singleton residue purge, `AssetLoadDispatcher.Complete(int, bool)` rename to `AcknowledgeDispatchRequest(int, bool)`, and stale `Hecton8.Core.csproj` inclusion of the existing NativeQueue-backed `BaseAirlockEvents.cs`. The May 2 source inventory was `1087` first-party `.cs` files under `Assets/_Project`, `1047` `.cs` files under `Assets/_Project/Scripts`, and `571562` static script lines. This is still not Play Mode, GC, profiler, scene/prefab, or runtime-stability proof.
+May 1, May 2, and May 3 build/guard details remain historical evidence in their dated reports. The May 4 addendum above supersedes source counts, build status, guard inventory, and MCP console boundary for current work. This file still does not provide Play Mode, GC, profiler, scene/prefab, or runtime-stability proof.
 The May 3 settings persistence rebind added a `SettingsManager`/`UserOptionsPersistence` registry-order hardening pass and a fresh `dotnet build .\Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:UseSharedCompilation=false /clp:Summary /v:minimal` result with `0 Warning(s)` / `0 Error(s)`.
-The latest May 3 interaction prompt cache pass moved `EndingTerminalInteractable.GetInteractText()` to cached localized strings refreshed in lifecycle/language-change paths and produced a fresh full `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false` result with `0 Warning(s)` / `0 Error(s)`. This is still source/build evidence only.
+The May 3 interaction prompt cache pass moved `EndingTerminalInteractable.GetInteractText()` to cached localized strings refreshed in lifecycle/language-change paths and produced a full `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false` result with `0 Warning(s)` / `0 Error(s)`. This is historical source/build evidence only.
 
 Latest high-authority addenda:
 
+- `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+- `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
+- `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+- `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
+- `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md`
+- `Docs/Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md`
 - `Docs/Reports/2026-05-03_CONSOLE_VR_READINESS_AUDIT.md`
 - `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`
 - `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SIGNAL_CLEANUP.md`
@@ -46,7 +71,7 @@ Latest high-authority addenda:
 - `Docs/Reports/2026-05-03_REGISTRY_RENDERABLE_AND_JOB_BARRIER_GUARD.md`
 - `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`
 - `Docs/Reports/2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md`
-- `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
+- `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` - historical May 2 broad sweep, not latest authority.
 
 ## Current Runtime Shape
 
@@ -100,9 +125,9 @@ Use that file when the question is not "which exact class owns this line" but "i
 
 These are the current high-level truths to preserve across future docs:
 
-- Latest foundation-hardening evidence is May 3: Unity batchmode success from the earlier foundation pass, Unity EditMode spatial-hash self-test `3/3` passed, latest full local Core build `0 Error(s)` / `0 Warning(s)`, local `Hecton8.World.Dots.csproj`, `Hecton8.Editor.csproj`, plus `Hecton8.Input.csproj` checks `0 Error(s)` / `0 Warning(s)`, and scoped PlayMode test compile `0 Error(s)` / `0 Warning(s)` after generated-output reference pruning. Earlier full verbose builds showed third-party/package warnings. Treat this as compile/import/editor-test evidence only.
-- Latest registry guard evidence is May 3: `Tools/ReloadAudit/Scan-FoundationGuards.ps1` generated `Blind registry flag drift = 0`, `Origin shift listener blind flag drift = 0`, `Global registry self-registration sites = 495`, synchronous job `.Run(` sites `0` as a hard gate, hot-path synchronous job `.Run(` review sites `0`, completion `.Complete(` text hits `1`, direct raw-array listener dispatch `0`, `GlobalRegistry.Input` nullable misuse `0`, direct `InputManager.Instance` sites `0`, hot-path direct `InputManager.Instance` review sites `0`, `Optimization singleton residue = 0`, unauthorized Unity loop methods `0`, legacy coroutine sites `0`, forbidden runtime asset API sites `0`, release-reachable direct hot-path `Debug.Log` sites `0`, release-reachable one-hop `Debug.Log` review sites `0`, broad physics layer masks outside Editor `0`, and runtime Find API text hits outside Editor folder `0` after the tether visual `.Run()` purge, `PlayerInventory` inline-kernel `.Run()` purge, `CraftingSystem` inline-kernel `.Run()` purge, `QuestStateManager` direct-kernel `.Run()` purge, `SargassumMicroFaunaBoids` foveated-prime `.Run()` purge, `FaunaSimulationEngine` hibernation catch-up `.Run()` purge, broad service truth-state expansion, floating-origin listener truth-state expansion, `PlayerFlashlight`/`HectonFabricatorUI`/interaction prompt UI/PDA intrusion lifecycle-hot-swap input rebinding, `PlayerInteraction.ActiveInteractKey` cache hardening, Optimization singleton residue purge, asset-dispatch acknowledgement rename, and Fabricator/SaveManager release-reachable one-hop debug-log cleanup. Latest Unity batchmode import/compile rerun for the guard-signal cleanup reported strict C# failure scan `0`. Treat this as source/import evidence only, not runtime stall proof.
-- Latest interaction prompt cache evidence is May 3: `EndingTerminalInteractable` now registers as a localization language listener, returns cached localized prompt strings from `GetInteractText()`, caches the ATLAS-6 data-loaded warning text, and avoids redundant hover/active-indicator `SetActive` calls. Local Core build returned `0 Warning(s)` / `0 Error(s)`. Treat this as source/build evidence only, not runtime localization or UI-flow proof.
+- Latest broad compile evidence is May 4: serial local `Hecton8.Core.csproj`, `Hecton8.Editor.csproj`, `Hecton8.World.Dots.csproj`, and `Hecton8.PlayModeTests.csproj` builds returned `0 Warning(s)` / `0 Error(s)`. Treat this as command-line compile evidence only.
+- Latest registry/foundation guard evidence is May 4 after the unsafe-copy and menu-loop repair: `Tools/ReloadAudit/Scan-FoundationGuards.ps1` exits `0`. Current inventory: self-registration sites `500`, blind registry flag drift `0`, origin-shift listener drift `0`, `.Run(` sites `0`, hot-path `.Run(` review sites `0`, `.Complete(` text hits `5`, guarded dispatcher completion sites `1`, `UnsafeUtility.MemCpy outside guard` `0`, direct `InputManager.Instance` sites `0`, optimization singleton residue `0`, unauthorized Unity loop methods `0`, legacy coroutine sites `0`, forbidden runtime asset API sites `0`, release-reachable direct hot-path `Debug.Log` sites `0`, release-reachable one-hop debug-log review sites `0`, broad physics masks outside Editor `0`, and runtime Find API review hits `8`. Fresh MCP editor readback after script refresh reports `00_BOOTSTRAP`, Play Mode off, console errors `0`, warnings `0`. Treat this as source/guard/editor-compile evidence only, not runtime stall proof.
+- May 3 interaction prompt cache evidence: `EndingTerminalInteractable` now registers as a localization language listener, returns cached localized prompt strings from `GetInteractText()`, caches the ATLAS-6 data-loaded warning text, and avoids redundant hover/active-indicator `SetActive` calls. Local Core build returned `0 Warning(s)` / `0 Error(s)`. Treat this as historical source/build evidence only, not runtime localization or UI-flow proof.
 - Earlier May 2 local dotnet build evidence is clean for `Hecton8.Core.csproj`: restore build `0 Error(s)`, `136 Warning(s)`; latest post-restore `--no-restore` rerun `0 Error(s)`, `73 Warning(s)`. Treat this as compile evidence only.
 - Do not claim the Play Mode/editor deadlock is fixed. Static patches reduced candidate classes; runtime proof is absent.
 - Do not claim global zero-GC. Some systems are designed for zero-GC, but project-wide profiler proof is absent.
@@ -130,17 +155,20 @@ Use this read order for current state:
 1. `../AGENTS.md`
 2. task-relevant files under `.agents-skills/`
 3. `Docs/README.md`
-4. `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`
-5. `Docs/Reports/2026-05-03_SETTINGS_PERSISTENCE_REGISTRY_REBIND.md`
-6. `Docs/Reports/2026-05-03_REGISTRY_RENDERABLE_AND_JOB_BARRIER_GUARD.md`
-7. `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
-8. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-9. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
-10. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
-11. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
-12. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
-13. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
-14. system-specific docs and source files
+4. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+5. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
+6. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+7. `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
+8. `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`
+9. `Docs/Reports/2026-05-03_SETTINGS_PERSISTENCE_REGISTRY_REBIND.md`
+10. `Docs/Reports/2026-05-03_REGISTRY_RENDERABLE_AND_JOB_BARRIER_GUARD.md`
+11. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+12. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+13. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
+14. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+15. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md`
+16. `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md`
+17. system-specific docs and source files
 
 `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` is the current blunt project-level verdict.
 It does not replace this file as the system-shape entry point; it summarizes the overall risk/readiness conclusion.
@@ -185,15 +213,15 @@ Line-number evidence inside older maps may drift after source edits. Treat class
 
 ## Verification State
 
-- Play Mode: not launched.
-- Unity console: no fresh MCP runtime-console proof was captured in the May 3 foundation-hardening continuation or the May 2 documentation sweep. May 1 MCP `read_console` returned `0` error/warning entries after Bee/backend recovery. Treat that as older editor/script evidence only.
-- MCP: not available for this May 3 documentation/current-state update. Earlier MCP was used for script refresh/console read/editor-state read; earlier editor state reported Play Mode false, compiling false, domain reload pending false, active scene `00_BOOTSTRAP`, and `ready_for_tools: true`.
+- Play Mode: MCP saw editor state in Play Mode transition with active scene `01_MAIN_MENU`; no bounded gameplay run, scene-flow assertion, profiler pass, or GC capture was recorded.
+- Unity console: earlier May 4 documentation-sweep MCP readback returned console errors `0` and console warnings `18`; latest current recheck returned `0` error/warning entries. Treat both as editor-console readback only, not Play Mode proof.
+- MCP: earlier May 4 readback saw `ready_for_tools: true`, active scene `01_MAIN_MENU`, build settings `00_BOOTSTRAP -> 01_MAIN_MENU -> 02_HECTON_WORLD`, render textures `32`, and render texture bytes `68215964`; latest current recheck saw `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, and console error/warning entries `0`.
 - Runtime GC: not measured.
 - Memory retention: not measured.
-- Code compilation: latest May 3 registry/origin guard command `dotnet build Hecton8.Core.csproj -v:minimal -nr:false -m:1 -p:UseSharedCompilation=false` returned `0 Error(s)` and `0 Warning(s)`; log `.codex-artifacts/dotnet-Hecton8.Core-2026-05-03-foundation-guard-physicsmask.log` after removing dead `UIAudioFeedback` pitch-variation inspector fields. Earlier May 3 full local Core command `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false` returned `0 Error(s)` and `0 Warning(s)` after generated Entities package reference pruning. `Hecton8.World.Dots.csproj`, `Hecton8.Editor.csproj`, and `Hecton8.Input.csproj` also returned `0 Error(s)` / `0 Warning(s)`. Scoped `Hecton8.PlayModeTests.csproj --no-restore` returned `0 Error(s)` / `0 Warning(s)` after test reference/API repair and generated `Temp\bin\Debug` missing-reference pruning. Earlier full verbose ProjectReferences builds reported third-party/package warnings from URP, GPUInstancer, Crest, Den.Tools, WaveHarmonic.Crest, and ShaderGraph. Earlier May 2 local command `dotnet build .\Hecton8.Core.csproj` exited `0` with `136 Warning(s)` and `0 Error(s)`; latest post-restore `dotnet build .\Hecton8.Core.csproj --no-restore` rerun exited `0` with `73 Warning(s)` and `0 Error(s)`. This is dotnet compile evidence, not Unity Play Mode proof.
+- Code compilation: latest May 4 serial `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 Warning(s)` / `0 Error(s)`; latest May 4 serial `Hecton8.Editor.csproj`, `Hecton8.World.Dots.csproj`, and `Hecton8.PlayModeTests.csproj` builds also returned `0 Warning(s)` / `0 Error(s)`. May 3 and May 2 build results remain historical compile evidence. This is dotnet compile evidence, not Unity Play Mode proof.
 - Settings persistence rebind compile: `dotnet build .\Hecton8.Core.csproj --no-restore /m:1 /nr:false /p:UseSharedCompilation=false /clp:Summary /v:minimal` returned `0 Warning(s)` and `0 Error(s)`. This is compile evidence only, not settings-panel scene flow or PlayerPrefs persistence proof.
 - Console/VR readiness cleanup compile: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal -m:1 -nr:false -p:UseSharedCompilation=false` returned `0 Warning(s)` and `0 Error(s)` after URP shadow-distance authority and cached haptic-device dispatch cleanup. This is source compile evidence only, not console/VR runtime proof.
-- Unity batchmode: fresh May 3 log `Temp/CodexArtifacts/unity-batch-2026-05-03-foundation-hardening-after-watchdogs.log` exits batchmode successfully, reports Tundra build success, reports Mono reload success, and strict compiler-failure scan found `0` matches. Older conflicting artifacts remain historical unless re-run cleanly.
+- Unity batchmode: historical May 3 log `Temp/CodexArtifacts/unity-batch-2026-05-03-foundation-hardening-after-watchdogs.log` exits batchmode successfully, reports Tundra build success, reports Mono reload success, and strict compiler-failure scan found `0` matches. Older conflicting artifacts remain historical unless re-run cleanly.
 - Unity EditMode tests: May 3 spatial-hash self-test evidence passed `3/3` in `Temp/CodexArtifacts/editmode-results-2026-05-03-spatialhash-selftest-after-collections.xml`. This does not prove runtime pressure or Play Mode behavior.
 
 ## Regression Model
@@ -202,7 +230,7 @@ CPU: habitat graph anchor-state patch adds no new traversal pass; it redirects e
 GC: no managed allocations were added in the habitat graph hot paths or service/renderable registration hot paths; measured 0 B/frame proof is absent.
 Memory: `HabitatGraphManager` now owns one additional persistent `NativeArray<byte>` sized to node capacity. Runtime retention is unmeasured. Registry guard tooling changes no runtime memory.
 Cadence: the prior tether visual, `PlayerInventory`, `CraftingSystem`, `QuestStateManager`, `SargassumMicroFaunaBoids`, `FaunaSimulationEngine`, scatter, flora, and wreck `.Run(` inventory is now absent from the current first-party source guard. `FloraInteractionManager` cascade phase seeds now schedule an `IJobParallelFor` and publish after late-frame completion. This is source inventory only; runtime frame-time and cascade latency remain unverified.
-Correctness: current evidence includes May 3 Unity batchmode success from the earlier foundation pass, latest full Core/Editor/DOTS dotnet historical checks mostly `0 Error(s)` / `0 Warning(s)`, registry guard Core build `0 Error(s)` / `0 Warning(s)`, and spatial-hash EditMode self-test `3/3`. Gameplay behavior, lore save/load roundtrip, construction graph traversal behavior, tether visual scene behavior, inventory degradation/reactive chemistry, crafting/deconstruction gameplay behavior, quest signal progression, service/renderable scene registration pressure, and construction graph teardown remain unverified.
+Correctness: current evidence includes May 4 serial Core/Editor/DOTS/PlayModeTests compile `0 Warning(s)` / `0 Error(s)`, post-repair May 4 guard scan exit `0`, latest warning-cleanup Unity console readback `0` error/warning entries after clear/script refresh, May 3 Unity batchmode success from the earlier foundation pass, and May 3 spatial-hash EditMode self-test `3/3`. Gameplay behavior, lore save/load roundtrip, construction graph traversal behavior, tether visual scene behavior, inventory degradation/reactive chemistry, crafting/deconstruction gameplay behavior, quest signal progression, service/renderable scene registration pressure, and construction graph teardown remain unverified.
 
 ## Hot Path Impact
 

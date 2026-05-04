@@ -1,6 +1,6 @@
 # Documentation Governance
 
-Date: `2026-05-02`
+Date: `2026-05-04`
 Status: `PENDING VERIFICATION`
 
 Purpose: prevent workspace documentation from collapsing back into root-level noise.
@@ -9,20 +9,26 @@ Current-state boundary:
 
 - This file defines documentation placement and authority order only.
 - It is not runtime proof and does not certify that every listed document is current by itself.
-- Current project truth starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, current source files, and fresh verification logs.
+- Current documentation sorting truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
+- Current project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, current source files, and fresh verification logs.
+- Current warning-cleanup evidence starts at `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`.
 
 ## Authority Order
 
 1. `../AGENTS.md`
 2. task-relevant `.agents-skills/*` mandates
 3. `Docs/README.md`
-4. `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
-5. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-6. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
-7. active execution docs under `Docs/`
-8. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
-9. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
-10. archive bundles under `Docs/_Archive/`
+4. `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
+5. `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
+6. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+7. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
+8. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+9. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+10. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+11. active execution docs under `Docs/`
+12. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
+13. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
+14. archive bundles under `Docs/_Archive/`
 
 ## What Belongs In Root
 

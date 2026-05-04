@@ -72,6 +72,10 @@ namespace Hecton8.Audio
         {
             RegisterAnchor(this);
             _activeRuntimeInstance = this;
+        }
+
+        private void Start()
+        {
             HectonMusicDirector.EnsureRuntimeInstanceForScene(gameObject.scene);
         }
 

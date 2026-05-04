@@ -61,7 +61,20 @@ namespace Hecton8.Core
             (1u << (int)GlobalRegistryResolutionScope.PlayerContext) |
             (1u << (int)GlobalRegistryResolutionScope.PlayerInventory) |
             (1u << (int)GlobalRegistryResolutionScope.PlayerSensory);
+        private const uint ForceOverrideTokenValue = 0x484F5453u; // "HOTS"
         [ThreadStatic] private static uint _resolutionMask;
+
+        public readonly struct ForceOverrideToken
+        {
+            internal readonly uint Value;
+
+            internal ForceOverrideToken(uint value)
+            {
+                Value = value;
+            }
+
+            internal bool IsValid => Value == ForceOverrideTokenValue;
+        }
 
         internal enum GlobalRegistryResolutionScope : byte
         {
@@ -2801,7 +2814,7 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
-            _updatables.Unregister(item);
+            _updatables.TryUnregister(item);
             SystemDispatcher.Unregister(item, layer);
         }
 
@@ -2815,7 +2828,7 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
-            _fixedTickables.Unregister(item);
+            _fixedTickables.TryUnregister(item);
             SystemDispatcher.Unregister(item, layer);
         }
 
@@ -2829,7 +2842,7 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
-            _slowTickables.Unregister(item);
+            _slowTickables.TryUnregister(item);
             SystemDispatcher.Unregister(item, layer);
         }
 
@@ -3030,6 +3043,11 @@ namespace Hecton8.Core
 
         private static void RegisterService<T>(ref T slot, T instance) where T : class
         {
+            RegisterService(ref slot, instance, default);
+        }
+
+        private static void RegisterService<T>(ref T slot, T instance, ForceOverrideToken forceOverrideToken) where T : class
+        {
             if (instance == null)
             {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
@@ -3042,6 +3060,9 @@ namespace Hecton8.Core
             T previousService = slot;
             if (ReferenceEquals(previousService, instance))
                 return;
+
+            if (previousService != null && !forceOverrideToken.IsValid)
+                ThrowSlotHijack(previousService, instance);
 
             Volatile.Write(ref slot, instance);
             if (previousService != null)
@@ -3058,12 +3079,40 @@ namespace Hecton8.Core
 
         private static void ReplaceService<T>(ref T slot, T instance, GlobalRegistryServiceSlot serviceSlot) where T : class
         {
+            ReplaceService(ref slot, instance, serviceSlot, CreateHotSwapOverrideToken());
+        }
+
+        private static void ReplaceService<T>(
+            ref T slot,
+            T instance,
+            GlobalRegistryServiceSlot serviceSlot,
+            ForceOverrideToken forceOverrideToken) where T : class
+        {
+            if (!forceOverrideToken.IsValid)
+                throw new InvalidOperationException("[GlobalRegistry] Invalid ForceOverride token for hot-swap.");
+
             T previousService = slot;
             if (ReferenceEquals(previousService, instance))
                 return;
 
             Volatile.Write(ref slot, instance);
             QueueServiceRebound(serviceSlot, previousService, instance);
+        }
+
+        private static ForceOverrideToken CreateHotSwapOverrideToken()
+        {
+            return new ForceOverrideToken(ForceOverrideTokenValue);
+        }
+
+        private static void ThrowSlotHijack<T>(T previousService, T replacementService) where T : class
+        {
+            throw new InvalidOperationException(
+                "[GlobalRegistry] Registry slot hijack blocked for " +
+                typeof(T).Name +
+                ". occupiedBy=" +
+                previousService.GetType().Name +
+                " replacement=" +
+                replacementService.GetType().Name);
         }
 
         private static void UnregisterService<T>(ref T slot, T instance) where T : class

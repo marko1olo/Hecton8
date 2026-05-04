@@ -61,6 +61,7 @@ namespace Hecton8.Gameplay
         private const float WakeEmitterOffsetMeters = 4f;
         private const float WakeAccelerationPerExcessMeterPerSecond = 0.85f;
         private const float WakeMaxAccelerationMetersPerSecondSq = 24f;
+        private const float WakeSiltDecalCooldownSeconds = 0.24f;
         private const float MinEntanglementTetherMeters = 1.25f;
         private const float EntanglementFacingSharpness = 8f;
         private const float KelpPushbackProbeRadiusMeters = 6f;
@@ -124,6 +125,7 @@ namespace Hecton8.Gameplay
         private float _lastBlockingImpactSpeedMetersPerSecond;
         private Vector3 _lastBlockingImpactPoint;
         private Vector3 _lastBlockingImpactNormal = Vector3.up;
+        private float _wakeSiltDecalCooldown;
 
         /// <summary>Current kinematic linear velocity in world space.</summary>
         public Vector3 LinearVelocity => _linearVelocity;
@@ -896,6 +898,7 @@ namespace Hecton8.Gameplay
         {
             EnsureHydrodynamicWakeState();
             DecayHydrodynamicWakeSamples(deltaTime);
+            _wakeSiltDecalCooldown = math.max(0f, _wakeSiltDecalCooldown - math.max(0f, deltaTime));
             if (_body == null || _hydrodynamicSubmersionFactor <= 0.01f)
                 return;
 
@@ -926,6 +929,29 @@ namespace Hecton8.Gameplay
 
             _hydrodynamicWakeSamples[_hydrodynamicWakeWriteIndex] = sample;
             _hydrodynamicWakeWriteIndex = (_hydrodynamicWakeWriteIndex + 1) % _hydrodynamicWakeSamples.Length;
+            TryEmitWakeSiltDecal(emitterPosition, wakeAcceleration, speed);
+        }
+
+        private void TryEmitWakeSiltDecal(Vector3 emitterPosition, Vector3 wakeVelocity, float speedMetersPerSecond)
+        {
+            if (_wakeSiltDecalCooldown > 0f)
+                return;
+
+            float3 emitter = new float3(emitterPosition.x, emitterPosition.y, emitterPosition.z);
+            float3 velocity = new float3(wakeVelocity.x, wakeVelocity.y, wakeVelocity.z);
+            if (!math.all(math.isfinite(emitter)) || !math.all(math.isfinite(velocity)))
+                return;
+
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals == null)
+                return;
+
+            AbsoluteUniversePosition emitAup = AbsoluteUniversePosition.FromRuntimePosition(emitterPosition);
+            float3 runtimeFromAup = emitAup.ToRuntimeFloat3();
+            Vector3 aupRuntimePosition = new Vector3(runtimeFromAup.x, runtimeFromAup.y, runtimeFromAup.z);
+            float intensity01 = math.saturate((speedMetersPerSecond - WakeEmissionSpeedThresholdMetersPerSecond) / 18f);
+            fluidDecals.RegisterWakeSilt(aupRuntimePosition, wakeVelocity, intensity01);
+            _wakeSiltDecalCooldown = WakeSiltDecalCooldownSeconds;
         }
 
         private void DecayHydrodynamicWakeSamples(float deltaTime)

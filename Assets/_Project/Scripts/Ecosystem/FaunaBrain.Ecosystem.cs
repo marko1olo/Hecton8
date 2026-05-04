@@ -2,6 +2,7 @@ using Hecton8.Gameplay;
 using Hecton8.Ecosystem;
 using Hecton8.Meta;
 using Hecton8.Core;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.AI
@@ -34,12 +35,15 @@ namespace Hecton8.AI
         private FaunaGeneticTraits _geneticTraits;
         private bool _hasGeneticTraits;
         private bool _isInfected;
+        private bool _isDiseased;
         private float _infectionSeverity;
+        private float _diseaseSeverity;
         private int _infectionHazardSourceId;
         private string _lootProfileId = string.Empty;
 
         /// <summary>Returns true when this fauna instance currently carries the infection overlay.</summary>
         public bool IsInfected => _isInfected;
+        public bool IsDiseased => _isDiseased;
 
         /// <summary>Returns true when the instance represents poisoned non-predator loot.</summary>
         public bool HasPoisonedYield => _isInfected && !isAggressive;
@@ -78,6 +82,13 @@ namespace Hecton8.AI
             UpdateInfectionHazardRegistration();
         }
 
+        public void SetDiseasedState(bool diseased, float severity)
+        {
+            _isDiseased = diseased;
+            _diseaseSeverity = diseased ? Mathf.Clamp01(severity) : 0f;
+            ApplyRuntimeEcosystemOverlays();
+        }
+
         private void RefreshRuntimeEcosystemState()
         {
             if (_isDead)
@@ -98,8 +109,31 @@ namespace Hecton8.AI
                 ApplyRuntimeEcosystemOverlays();
             }
 
+            RefreshCorpseDiseaseState();
             UpdateInfectionHazardRegistration();
             UpdatePredatorThreatPulse();
+        }
+
+        private void RefreshCorpseDiseaseState()
+        {
+            if (!(GlobalRegistry.EcosystemDirector is EcosystemDirector ecosystemDirector))
+            {
+                if (_isDiseased)
+                    SetDiseasedState(false, 0f);
+
+                return;
+            }
+
+            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            if (ecosystemDirector.TryResolveCorpseDiseaseExposure(in selfAup, _cognitionTimeSeconds, out float severity01, out _))
+            {
+                if (!_isDiseased || Mathf.Abs(severity01 - _diseaseSeverity) > 0.01f)
+                    SetDiseasedState(true, severity01);
+                return;
+            }
+
+            if (_isDiseased)
+                SetDiseasedState(false, 0f);
         }
 
         private void ApplyRuntimeEcosystemOverlays()
@@ -116,6 +150,9 @@ namespace Hecton8.AI
                 aggressionMultiplier *= Mathf.Lerp(1f, 1.12f, _infectionSeverity);
                 healthMultiplier *= Mathf.Lerp(1f, 1.18f, _infectionSeverity);
             }
+
+            if (_isDiseased)
+                moveMultiplier *= Mathf.Lerp(1f, 0.7f, _diseaseSeverity);
 
             transform.localScale = _baseLocalScale * scaleMultiplier;
 
@@ -166,10 +203,13 @@ namespace Hecton8.AI
                     if (_isInfected)
                         multiplier *= Mathf.Lerp(1f, 1.08f, _infectionSeverity);
 
+                    if (_isDiseased)
+                        multiplier *= Mathf.Lerp(1f, 0.7f, _diseaseSeverity);
+
                     return Mathf.Clamp(multiplier, 0.8f, 1.8f);
 
                 default:
-                    return 1f;
+                    return _isDiseased ? Mathf.Lerp(1f, 0.7f, _diseaseSeverity) : 1f;
             }
         }
 

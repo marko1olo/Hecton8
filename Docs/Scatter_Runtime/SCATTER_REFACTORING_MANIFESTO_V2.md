@@ -3,9 +3,9 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-## 2026-05-02 Current-State Boundary
+## 2026-05-04 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this manifesto as current project truth.
+- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this manifesto as current project truth.
 - This manifesto is a refactor reference, not a runtime proof or current mandate override.
 - Any `Complete()` / `Dispose()` teardown examples below are superseded by `OPT_Native_Memory_Collections_JobSystem_Protocol.txt` and `AGENTS.md`: prefer owner-safe deferred disposal and do not introduce local gameplay barriers without current source proof.
 - `WorldProceduralScatterDirector` remains the runtime owner; do not create a parallel scatter/flora owner.

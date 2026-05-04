@@ -1366,10 +1366,118 @@ namespace Hecton8.Gameplay
             if (coneAngle <= 0f)
                 return;
 
-            if (TryResolveQueuedRaycast(origin, forward, range, scanLayerMask.value, QueryTriggerInteraction.Collide, out RaycastHit hit))
+            if (HectonVoxelVolume.TryRaymarchAnyPublishedSdf(
+                    origin,
+                    forward,
+                    range,
+                    Mathf.Max(0.1f, focusedScanSurfaceInset * 2f),
+                    out HectonVoxelVolume sdfVolume,
+                    out VoxelSdfRaycastHit sdfHit))
+            {
+                ConsumeScientificVoxelHit(sdfVolume, sdfHit);
+            }
+            else if (TryResolveQueuedRaycast(origin, forward, range, scanLayerMask.value, QueryTriggerInteraction.Collide, out RaycastHit hit))
+            {
                 ConsumeScientificHit(hit);
+            }
 
             _scientificNextResampleAt = Time.time + Mathf.Max(0.05f, focusedScanResampleInterval);
+        }
+
+        private void ConsumeScientificVoxelHit(HectonVoxelVolume volume, in VoxelSdfRaycastHit sdfHit)
+        {
+            if (volume == null || sdfHit.Hit == 0)
+                return;
+
+            StopScientificFragmentScan();
+            _activeScientificVoxelVolume = volume;
+
+            Vector3 sampleWorldPosition = sdfHit.Point - sdfHit.Normal * Mathf.Max(0.01f, focusedScanSurfaceInset);
+            if (!TrySampleScientificDensity(volume, sampleWorldPosition, out float density, out float density01))
+            {
+                ClearScientificSnapshot();
+                return;
+            }
+
+            float chemicalLoad01 = 0f;
+            float organicBloodPeak01 = 0f;
+            float exhaustPeak01 = 0f;
+            if (TrySampleScientificChemicalSignal(sdfHit.Point, out float4 chemicalSignal))
+            {
+                chemicalLoad01 = Mathf.Clamp01(math.cmax(math.abs(chemicalSignal)));
+                organicBloodPeak01 = Mathf.Clamp01(chemicalSignal.x);
+            }
+
+            float3 bloodGradientAccumulator = float3.zero;
+            float3 exhaustGradientAccumulator = float3.zero;
+            float bloodGradientWeight = 0f;
+            float exhaustGradientWeight = 0f;
+            if (TrySampleScientificAttractantGradient(
+                    sdfHit.Point,
+                    out float bloodSignal01,
+                    out float exhaustSignal01,
+                    out float3 bloodGradient,
+                    out float3 exhaustGradient))
+            {
+                organicBloodPeak01 = Mathf.Max(organicBloodPeak01, bloodSignal01);
+                exhaustPeak01 = Mathf.Max(exhaustPeak01, exhaustSignal01);
+                if (bloodSignal01 > 0.0001f && math.lengthsq(bloodGradient) > 0.0001f)
+                {
+                    bloodGradientAccumulator = bloodGradient * bloodSignal01;
+                    bloodGradientWeight = bloodSignal01;
+                }
+
+                if (exhaustSignal01 > 0.0001f && math.lengthsq(exhaustGradient) > 0.0001f)
+                {
+                    exhaustGradientAccumulator = exhaustGradient * exhaustSignal01;
+                    exhaustGradientWeight = exhaustSignal01;
+                }
+            }
+
+            ResolveScientificAttractantTrace(
+                organicBloodPeak01,
+                exhaustPeak01,
+                bloodGradientAccumulator,
+                bloodGradientWeight,
+                exhaustGradientAccumulator,
+                exhaustGradientWeight,
+                out float attractantScent01,
+                out Vector3 scentDirection,
+                out ScientificAttractantChannel attractantChannel);
+            ResolveScientificWaterMetrics(
+                sdfHit.Point,
+                chemicalLoad01,
+                out float temperatureC,
+                out float salinityPpt,
+                out float toxicity01,
+                out float depthMeters);
+
+            ScientificMaterialClass materialClass = ClassifyScientificMaterial(density01);
+            _scientificLastContactTime = Time.time;
+            PlayerSignalEvents.RaiseInteractionSignal(new InteractionSignal(
+                0f,
+                Mathf.Clamp01(density01),
+                materialClass == ScientificMaterialClass.Basalt ? 1.08f : 0.96f,
+                Mathf.Clamp01(density01)));
+
+            UpdateScientificSnapshot(
+                null,
+                density,
+                density01,
+                materialClass,
+                temperatureC,
+                salinityPpt,
+                toxicity01,
+                chemicalLoad01,
+                organicBloodPeak01,
+                attractantScent01,
+                scentDirection,
+                attractantChannel,
+                depthMeters,
+                null,
+                0u,
+                false,
+                false);
         }
 
         private void ConsumeScientificHit(RaycastHit hit)

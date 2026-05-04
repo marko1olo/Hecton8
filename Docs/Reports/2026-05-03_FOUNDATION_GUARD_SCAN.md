@@ -1,6 +1,6 @@
 ﻿# Foundation Guard Scan
 
-- Generated: 2026-05-03 22:32:21
+- Generated: 2026-05-04 23:33:55
 - Project root: C:\hades\Hecton8
 - Scope: Assets/_Project/Scripts/**/*.cs
 - Status: PENDING VERIFICATION
@@ -9,12 +9,12 @@
 
 | Guard | Count | Meaning |
 |---|---:|---|
-| Global registry self-registration sites | 495 | Informational. Broad GlobalRegistry.Register*(this) and Renderables.Register(this) scan. Must use registry truth-state checks, not blind flags. |
+| Global registry self-registration sites | 500 | Informational. Broad GlobalRegistry.Register*(this) and Renderables.Register(this) scan. Must use registry truth-state checks, not blind flags. |
 | Blind registry flag drift | 0 | Must be 0. Pattern: Register*(this, ...) followed by _field = true. |
 | Origin shift listener blind flag drift | 0 | Must be 0. Pattern: HectonFloatingOrigin.RegisterListener(this) followed by _field = true. |
 | Synchronous job .Run( sites | 0 | Must be 0. Synchronous JobSystem barriers are no longer allowed in first-party runtime source. |
 | Hot-path synchronous job .Run( review sites | 0 | Must be 0. Secondary classifier for stale sync job barriers in gameplay cadence. |
-| Completion .Complete( text hits | 1 | Review queue. Custom dispatcher completions must be classified separately from JobHandle.Complete. |
+| Completion .Complete( text hits | 5 | Review queue. Custom dispatcher completions must be classified separately from JobHandle.Complete. |
 | Guarded dispatcher completion sites | 1 | Source-level IsCompleted/swap-window helper pattern, not runtime proof. |
 | UnsafeUtility.MemCpy outside guard | 0 | Must be 0 outside UnsafeMemoryCopyGuard. |
 | Legacy PlayerSignalEvents.On* subscriptions | 0 | Must be 0 after NativeQueue/listener migration. |
@@ -29,8 +29,8 @@
 | Release-reachable direct hot-path Debug.Log sites | 0 | Must be 0. Debug.Log/Warning/Error directly inside gameplay cadence is forbidden outside UNITY_EDITOR/DEVELOPMENT_BUILD guards. |
 | Release-reachable one-hop Debug.Log review sites | 0 | Review queue. Conservative same-file call classifier; owner review required before promotion to hard gate. |
 | Broad physics layer masks outside Editor | 0 | Must be 0. Forbids LayerMask=-1, ~0, and direct all-layer masks in Physics/RaycastCommand lines. |
-| Runtime Find API text hits outside Editor folder | 0 | Review queue. Bootstrap cold paths must be documented; gameplay hot paths must be removed. |
-| One-hop hot-path callee names | 2413 | Audit classifier only. Used to mark .Run/.Complete/MemCpy/Find hits inside methods called by hot members. |
+| Runtime Find API text hits outside Editor folder | 8 | Review queue. Bootstrap cold paths must be documented; gameplay hot paths must be removed. |
+| One-hop hot-path callee names | 2473 | Audit classifier only. Used to mark .Run/.Complete/MemCpy/Find hits inside methods called by hot members. |
 
 ## Blind Registry Flag Hits
 
@@ -46,7 +46,11 @@
 
 ## Completion Text Hits
 
+- Assets\_Project\Scripts\VoxelDeformationSmokeTester.cs:170 [ValidatePureVoidNavGrid; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\VoxelDeformationSmokeTester.cs:232 [ValidateVertexAmbientOcclusion; cold/unknown review] - handle.Complete();
+- Assets\_Project\Scripts\World\BiomeTransitionSmokeTester.cs:136 [RunFogBlendSmokeTest; cold/unknown review] - job.Schedule(1, 1).Complete();
 - Assets\_Project\Scripts\World\DispatcherJobSwap.cs:71 [TryComplete; guarded review: guarded by DispatcherJobSwap.TryComplete IsCompleted/swap-window contract] - handle.Complete();
+- Assets\_Project\Scripts\World\HectonBiomeMatrixMapMagicPostProcessNode.cs:134 [Generate; cold/unknown review] - handle.Complete();
 
 ## Unsafe MemCpy Outside Guard
 
@@ -98,7 +102,14 @@
 
 ## Runtime Find API Text Hits Outside Editor Folder
 
-- none
+- Assets\_Project\Scripts\ModalWindow.cs:294 [EnsureInstanceAvailable; cold/unknown review] - ModalWindow candidate = FindAnyObjectByType<ModalWindow>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:120 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<HectonCelestialEngine>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:125 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<EclipseGameplaySystem>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:128 [AutoResolve; cold/unknown review] - depthCacheBootstrap = UnityEngine.Object.FindAnyObjectByType<HectonCrestOceanDepthCacheBootstrap>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:131 [AutoResolve; cold/unknown review] - ecosystemDirector = UnityEngine.Object.FindAnyObjectByType<EcosystemDirector>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:134 [AutoResolve; cold/unknown review] - biolumController = UnityEngine.Object.FindAnyObjectByType<HectonBiolumController>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:139 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
+- Assets\_Project\Scripts\Dev\CelestialSyncSmokeTester.cs:144 [AutoResolve; cold/unknown review] - : UnityEngine.Object.FindAnyObjectByType<RandomEventSystem>(FindObjectsInactive.Include);
 
 ## Failure Policy
 

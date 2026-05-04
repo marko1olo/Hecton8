@@ -340,6 +340,7 @@ namespace Hecton8.SaveSystem
                 && writer.WriteFloat(value.environmentTemperature)
                 && writer.WriteFloat(value.coldStressSeverity01)
                 && writer.WriteFloat(value.heatStressSeverity01)
+                && writer.WriteFloat(value.nitrogenBuildUp)
                 && writer.WriteBool(value.hasLastDeathRecord)
                 && writer.WriteByte(value.lastDeathCause)
                 && writer.WriteFloat(value.lastDeathPosX)
@@ -386,6 +387,7 @@ namespace Hecton8.SaveSystem
                 && reader.ReadFloat(out value.environmentTemperature)
                 && reader.ReadFloat(out value.coldStressSeverity01)
                 && reader.ReadFloat(out value.heatStressSeverity01)
+                && ReadNitrogenBuildUp(ref reader, version, ref value)
                 && reader.ReadBool(out value.hasLastDeathRecord)
                 && reader.ReadByte(out value.lastDeathCause)
                 && reader.ReadFloat(out value.lastDeathPosX)
@@ -419,6 +421,17 @@ namespace Hecton8.SaveSystem
             return reader.ReadFloat(out value.velX)
                 && reader.ReadFloat(out value.velY)
                 && reader.ReadFloat(out value.velZ);
+        }
+
+        private static bool ReadNitrogenBuildUp(ref BufferReader reader, int version, ref PlayerStatsDTO value)
+        {
+            if (version < 57)
+            {
+                value.nitrogenBuildUp = 0f;
+                return true;
+            }
+
+            return reader.ReadFloat(out value.nitrogenBuildUp);
         }
 
         private static bool ReadTotalPlayTime(ref BufferReader reader, int version, out double value)

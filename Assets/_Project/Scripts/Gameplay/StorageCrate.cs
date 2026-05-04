@@ -565,6 +565,36 @@ namespace Hecton8.Gameplay
             return false;
         }
 
+        public bool TryConsumeItemByHash(int itemHashId)
+        {
+            if (containedItems == null || itemHashId == 0)
+                return false;
+
+            EnsureContainedItemHashCache();
+            for (int i = 0; i < containedItems.Length; i++)
+            {
+                if (containedItems[i] == null || IsReservedSlot(i))
+                    continue;
+
+                if (_containedItemHashIds == null ||
+                    i >= _containedItemHashIds.Length ||
+                    _containedItemHashIds[i] != itemHashId)
+                {
+                    continue;
+                }
+
+                containedItems[i] = null;
+                _reservedSlotIds[i] = 0;
+                SetContainedItemHash(i, null);
+                if (IsEmpty())
+                    OnEmpty?.Invoke();
+
+                return true;
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Takes an item from the crate.
         /// </summary>

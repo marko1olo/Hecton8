@@ -100,6 +100,46 @@ namespace Hecton8.World
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct UpdateNavCellsJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float> DensityField;
+            public NativeArray<byte> Passability;
+            public int3 Dimensions;
+            public int3 RegionMin;
+            public int3 RegionSize;
+            public float SolidThreshold;
+
+            public void Execute(int index)
+            {
+                int regionXY = RegionSize.x * RegionSize.y;
+                if (!DensityField.IsCreated ||
+                    !Passability.IsCreated ||
+                    regionXY <= 0 ||
+                    RegionSize.z <= 0)
+                {
+                    return;
+                }
+
+                int z = index / regionXY;
+                int remainder = index - z * regionXY;
+                int y = remainder / RegionSize.x;
+                int x = remainder - y * RegionSize.x;
+                int3 cell = RegionMin + new int3(x, y, z);
+                if (cell.x < 0 || cell.y < 0 || cell.z < 0 ||
+                    cell.x >= Dimensions.x || cell.y >= Dimensions.y || cell.z >= Dimensions.z)
+                {
+                    return;
+                }
+
+                int flatIndex = cell.x + cell.y * Dimensions.x + cell.z * Dimensions.x * Dimensions.y;
+                if (flatIndex < 0 || flatIndex >= DensityField.Length || flatIndex >= Passability.Length)
+                    return;
+
+                Passability[flatIndex] = DensityField[flatIndex] < SolidThreshold ? OpenCell : SolidCell;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         internal struct ClearanceDilationJob : Unity.Jobs.IJob
         {
             public NativeArray<byte> Passability;
@@ -566,6 +606,34 @@ namespace Hecton8.World
                 RuntimeStamp = volume.RuntimeStamp
             });
             _dirtyVolumeQueueCount++;
+        }
+
+        internal static void QueueLocalizedSdfPatch(HectonVoxelVolume volume, int3 minAbsoluteCell, int3 maxAbsoluteCell, float voxelSize)
+        {
+            if (volume == null || voxelSize <= 0f)
+                return;
+
+            EnsureInitialized();
+            int volumeInstanceId = GetStableVolumeEntityId(volume);
+            if (!_records.TryGetValue(volumeInstanceId, out VolumeRecord record) ||
+                record == null ||
+                !record.Current.IsCreated ||
+                record.CellSize <= 0f)
+            {
+                QueueDirtyVolume(volume);
+                return;
+            }
+
+            float3 minAup = new float3(minAbsoluteCell.x, minAbsoluteCell.y, minAbsoluteCell.z) * voxelSize;
+            float3 maxAup = (new float3(maxAbsoluteCell.x, maxAbsoluteCell.y, maxAbsoluteCell.z) + 1f) * voxelSize;
+            float3 centerAup = (minAup + maxAup) * 0.5f;
+            float3 extents = math.max((maxAup - minAup) * 0.5f, new float3(voxelSize));
+            Vector3 runtimeCenter = HectonFloatingOrigin.ToRuntimePosition(new Vector3(centerAup.x, centerAup.y, centerAup.z));
+            TryEnqueueDynamicObstacleClear(new DynamicObstacleClearRequest
+            {
+                Center = new float3(runtimeCenter.x, runtimeCenter.y, runtimeCenter.z),
+                Extents = extents
+            });
         }
 
         internal static bool TryPrepareBuild(

@@ -1,6 +1,8 @@
 # CELESTIAL MECHANICS SPECIFICATION
 
-STATUS: ASTRONOMICALLY ALIGNED for static ledger, compile contract, shader import, and event-bus wiring. PlayMode behavior, profiler allocation trace, and long-duration orbital drift are not proven in this pass.
+STATUS: PENDING VERIFICATION
+
+Reason: this specification has static ledger, compile-contract, shader-import, and event-bus evidence, but PlayMode behavior, profiler allocation trace, and long-duration orbital drift are not proven. May 4 documentation sweep evidence supersedes the older warning-free compile line for current global build truth.
 
 ## Mandates Applied
 
@@ -16,7 +18,8 @@ STATUS: ASTRONOMICALLY ALIGNED for static ledger, compile contract, shader impor
 - Project authority: `AGENTS.md`, `Docs/DOC_GOVERNANCE.md`.
 - Unity version observed through MCP: `6000.4.1f1`.
 - World scene readback source: `Assets/_Project/Scenes/02_HECTON_WORLD.unity`, captured through Unity MCP before editor reload returned to `00_BOOTSTRAP`.
-- C# verification: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` completed with `0 Warning(s), 0 Error(s)`.
+- C# verification from the original spec pass: `dotnet build Hecton8.Core.csproj --no-restore -v:minimal` completed with `0 Warning(s), 0 Error(s)`.
+- Current May 4 documentation-sweep compile truth: `Hecton8.Core.csproj` completed with `0 Warning(s), 0 Error(s)`.
 - Unity import verification: console cleared, Unity refresh completed, post-refresh console returned `0 log entries`.
 - `RenderSettings.skybox` scan result: only `HectonAtmosphereManager.AtmosphereDirector` owns the direct read/write.
 

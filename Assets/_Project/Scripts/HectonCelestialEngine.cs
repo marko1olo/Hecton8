@@ -536,7 +536,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [SerializeField] private LensFlareComponentSRP _sunLensFlare;
         [SerializeField] private float sunDistance = 100000f;
         [SerializeField] private Transform sunVisualTransform;
-        [SerializeField] private float flareFadeMarginDegrees = 2.0f;
         [SerializeField] private float flareFadeSpeed = 5.0f;
 
         [Header("═══ SKYBOX ═══")]
@@ -568,6 +567,10 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [SerializeField] private float eclipseHysteresisMargin = 0.5f;
         [SerializeField, Range(0.01f, 5f)] private float sunAngularRadiusDegrees = 0.27f;
         [SerializeField, Range(0.01f, 1f)] private float eclipseEventStartPenumbraThreshold = 0.5f;
+
+        [Header("Lunar Resonance")]
+        [SerializeField, Range(0.5f, 15f)] private float lunarResonanceAlignmentDegrees = 5f;
+        [SerializeField, Range(1f, 5f)] private float lunarResonanceBiolumMultiplier = 3f;
 
         [Header("═══ ECLIPSE BACKLIGHT ═══")]
         [SerializeField] private float backlitAlignmentSoftStart = 0.97f;
@@ -608,9 +611,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private float _currentSunAngle;
         private float _currentBlend;
         private float _currentStarIntensity;
+        private float _currentAtmosphereDensity;
         private float _resolvedStarMapSeed = 99173f;
+        private float _lunarResonanceMultiplier = 1f;
         private float _currentPhase;
         private bool _isEclipseActive;
+        private bool _lunarResonanceActive;
         private float _eclipseAngularRadius;
         private float _accumulatedOrbitalAngle;
         private float _currentBacklitFactor;
@@ -750,6 +756,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private static readonly int _ID_CelestialAtmosphereBlendPower = Shader.PropertyToID("_CelestialAtmosphereBlendPower");
         private static readonly int _ID_AtmosphereTransmittanceWeight = Shader.PropertyToID("_AtmosphereTransmittanceWeight");
         private static readonly int _ID_AtmosphereInscatterWeight = Shader.PropertyToID("_AtmosphereInscatterWeight");
+        private static readonly int _ID_AtmosphereDensity = Shader.PropertyToID("_AtmosphereDensity");
         private static readonly int _ID_GameTime           = Shader.PropertyToID("_GameTime");
         private static readonly int _ID_WindDirection      = Shader.PropertyToID("_WindDirection");
         private static readonly int _ID_NightBlend         = Shader.PropertyToID("_NightBlend");
@@ -1146,6 +1153,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
             CalculateEclipseBacklight();
             DetectEclipse();
+            DetectLunarResonance();
             UpdateSunOcclusion(deltaTime);
 
             UpdateSkyboxBlend(sunElevation);
@@ -1419,6 +1427,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 dayWeight * dayAtmosphereExposure +
                 sunsetWeight * sunsetAtmosphereExposure +
                 nightWeight * nightAtmosphereExposure;
+            _currentAtmosphereDensity = Mathf.Clamp01(EvaluateAtmosphereDensityRaw(0f, dayWeight, sunsetWeight, nightWeight));
 
             bool sunMovedEnough = float.IsPositiveInfinity(_lastAtmosphereBakeSunElevation) ||
                                   Mathf.Abs(Mathf.DeltaAngle(_lastAtmosphereBakeSunElevation, sunElevation)) >= atmosphereLutRebuildSunAngleThreshold;
@@ -1500,6 +1509,16 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             float sunsetWeight,
             float nightWeight)
         {
+            float density = EvaluateAtmosphereDensityRaw(t, dayWeight, sunsetWeight, nightWeight);
+            return 1f - Mathf.Clamp01(density);
+        }
+
+        private float EvaluateAtmosphereDensityRaw(
+            float t,
+            float dayWeight,
+            float sunsetWeight,
+            float nightWeight)
+        {
             float density =
                 dayAtmosphereDensity.Evaluate(t) * dayWeight * dayAtmosphereDensityScale +
                 sunsetAtmosphereDensity.Evaluate(t) * sunsetWeight * sunsetAtmosphereDensityScale +
@@ -1510,9 +1529,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 Mathf.Max(0f, horizonDensity),
                 zenithDensityScale,
                 t);
-            density *= altitudeDensityScale;
-
-            return 1f - Mathf.Clamp01(density);
+            return Mathf.Max(0f, density * altitudeDensityScale);
         }
 
         private float EvaluateAtmosphereBlend01(float t)
@@ -3119,6 +3136,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             Shader.SetGlobalFloat(_ID_PenumbraFactor, _penumbraFactor);
             Shader.SetGlobalFloat(_ID_AtmosphereTransmittanceWeight, _atmosphereTransmittanceWeight);
             Shader.SetGlobalFloat(_ID_AtmosphereInscatterWeight, _atmosphereInscatterWeight);
+            Shader.SetGlobalFloat(_ID_AtmosphereDensity, _currentAtmosphereDensity);
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereLutReady, _celestialAtmosphereLutTexture != null ? 1f : 0f);
             Shader.SetGlobalFloat(_ID_AtmosphereExposure, _currentAtmosphereExposure);
             Shader.SetGlobalFloat(_ID_StarSeed, _resolvedStarMapSeed);
@@ -3293,6 +3311,50 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 _isEclipseActive = false;
                 CelestialEvents.RaiseEclipseEnded();
             }
+        }
+
+        private void DetectLunarResonance()
+        {
+            bool active = false;
+            float thresholdDegrees = Mathf.Max(0.01f, lunarResonanceAlignmentDegrees);
+
+            for (int i = 0; i < _observerBodyCache.Count && !active; i++)
+            {
+                ObserverRelativeCelestialBody first = _observerBodyCache[i];
+                if (!TryGetMoonDirection(first, out Vector3 firstDirection))
+                    continue;
+
+                for (int j = i + 1; j < _observerBodyCache.Count; j++)
+                {
+                    ObserverRelativeCelestialBody second = _observerBodyCache[j];
+                    if (!TryGetMoonDirection(second, out Vector3 secondDirection))
+                        continue;
+
+                    if (Vector3.Angle(firstDirection, secondDirection) <= thresholdDegrees)
+                    {
+                        active = true;
+                        break;
+                    }
+                }
+            }
+
+            _lunarResonanceActive = active;
+            _lunarResonanceMultiplier = active ? Mathf.Max(1f, lunarResonanceBiolumMultiplier) : 1f;
+        }
+
+        private bool TryGetMoonDirection(ObserverRelativeCelestialBody body, out Vector3 direction)
+        {
+            direction = Vector3.zero;
+            if (body == null || body == aegirObserverRelativeBody)
+                return false;
+
+            Vector3 rawDirection = body.CurrentDirection;
+            float sqrMagnitude = rawDirection.sqrMagnitude;
+            if (sqrMagnitude <= 0.0001f || !float.IsFinite(sqrMagnitude))
+                return false;
+
+            direction = rawDirection / Mathf.Sqrt(sqrMagnitude);
+            return true;
         }
 
         private bool TryResolveSunOcclusion(out bool sunOccluded, out bool insideExitBand, out float penumbraFactor)
@@ -3492,6 +3554,9 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         public Vector3 ResolvedSunDirection => (Vector3)_resolvedSunDirection;
         public float SunOcclusionFactor => _smoothedOcclusionFactor;
         public float PenumbraFactor => _penumbraFactor;
+        public bool IsLunarResonanceActive => _lunarResonanceActive;
+        public float LunarResonanceBiolumMultiplier => _lunarResonanceMultiplier;
+        public float AtmosphereDensity => _currentAtmosphereDensity;
         public bool IsAegirFixedDirectionLocked =>
             aegirObserverRelativeBody != null && aegirObserverRelativeBody.UsesFixedDirection;
         public float RotationTimer => _rotationTimer;

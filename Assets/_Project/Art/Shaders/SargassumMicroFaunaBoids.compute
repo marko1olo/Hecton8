@@ -905,6 +905,42 @@ float3 ResolveAcousticPanicChaos(float3 positionWS, uint boidIndex, out float pa
     return SafeNormalize((chaos * 0.65) + (radialDirection * 0.55) + (vortexDirection * 0.85));
 }
 
+float3 ResolveHeadlightPhotophobiaForce(float3 positionWS, float headlightPanic01)
+{
+    float panicGate = saturate(headlightPanic01);
+    if (panicGate <= 0.001)
+        return float3(0.0, 0.0, 0.0);
+
+    float3 lightDirectionWS = SafeNormalize(_PlayerForwardWS);
+    if (dot(lightDirectionWS, lightDirectionWS) <= EPSILON)
+        return float3(0.0, 0.0, 0.0);
+
+    float3 toBoid = positionWS - _PlayerPositionWS;
+    float axialDistance = dot(toBoid, lightDirectionWS);
+    float coneLength = max(_PanicPlayerRadius * 2.6, 8.0);
+    if (axialDistance <= 0.0 || axialDistance >= coneLength)
+        return float3(0.0, 0.0, 0.0);
+
+    float axial01 = saturate(axialDistance / coneLength);
+    float coneRadius = lerp(max(_BoidBodyRadius * 4.0, 0.35), max(_PanicPlayerRadius, 0.5), axial01);
+    float3 coneCenter = _PlayerPositionWS + lightDirectionWS * axialDistance;
+    float3 radialOffset = positionWS - coneCenter;
+    float radialDistanceSq = dot(radialOffset, radialOffset);
+    float coneRadiusSq = coneRadius * coneRadius;
+    if (radialDistanceSq >= coneRadiusSq)
+        return float3(0.0, 0.0, 0.0);
+
+    float radial01 = sqrt(max(radialDistanceSq, 0.0)) / max(coneRadius, EPSILON);
+    float centerlineGate = 1.0 - saturate(radial01);
+    float3 awayFromCenterline = SafeNormalize(radialOffset + lightDirectionWS * 0.12);
+    if (dot(awayFromCenterline, awayFromCenterline) <= EPSILON)
+        awayFromCenterline = SafeNormalize(positionWS - _PlayerPositionWS);
+
+    float nearOriginFade = saturate(axialDistance / max(_PanicPlayerRadius * 0.35, 0.25));
+    float force = centerlineGate * centerlineGate * panicGate * nearOriginFade * max(_PanicWeight, 1.0) * 2.2;
+    return awayFromCenterline * force;
+}
+
 uint LoadSpatialGridCount(int flatIndex)
 {
     uint maxCount = (uint)max(_SpatialGridMeta.w, 1);
@@ -1475,6 +1511,8 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     {
         acceleration += sonarScatterDirectionWS * (_SonarScatterAcceleration * panicFromSonar);
     }
+
+    acceleration += ResolveHeadlightPhotophobiaForce(positionWS, _HeadlightPanic);
 
     if (panicFromAcoustic > 0.0 && dot(acousticPanicDirectionWS, acousticPanicDirectionWS) > EPSILON)
     {

@@ -37,6 +37,8 @@ namespace Hecton8.Audio
         private const float SonarTotalDurationSeconds = 4.0f;
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float PredatorKillAudioRadiusMeters = 90f;
+        private const float MeteorBoomAudioRadiusMeters = 42f;
+        private const float MechanicalWhirrAudioRadiusMeters = 18f;
         private const float SonarEchoReferenceDistanceMeters = 24f;
         private const float SonarEchoMaximumDistanceMeters = 1800f;
         private const float SonarEchoMaximumDelaySeconds = 2.2f;
@@ -2119,6 +2121,10 @@ namespace Hecton8.Audio
         {
             if (info.Kind == ProceduralAudioPingKind.PredatorKill)
                 HandlePredatorKillAudioPing(in info);
+            else if (info.Kind == ProceduralAudioPingKind.MeteorBoom)
+                HandleMeteorBoomAudioPing(in info);
+            else if (info.Kind == ProceduralAudioPingKind.MechanicalWhirr)
+                HandleMechanicalWhirrAudioPing(in info);
         }
 
         void IProceduralAudioEventListener.OnStructuralStressTriggered(in StructuralStressAudioInfo info)
@@ -2157,6 +2163,63 @@ namespace Hecton8.Audio
                 transmission01,
                 echoLowPassCutoffHz,
                 0.78f);
+        }
+
+        private void HandleMeteorBoomAudioPing(in AudioPingTriggerInfo info)
+        {
+            if (_boundPlayerTransform == null)
+                return;
+
+            float distance = Vector3.Distance(_boundPlayerTransform.position, info.WorldPosition);
+            if (distance > MeteorBoomAudioRadiusMeters)
+                return;
+
+            float proximity = 1f - math.saturate(distance / MeteorBoomAudioRadiusMeters);
+            float audible01 = math.saturate(info.Intensity * proximity * math.max(0.2f, info.AcousticTransmission01));
+            if (audible01 <= 0.001f)
+                return;
+
+            float echoDelaySeconds = math.clamp(distance / SoundSpeedWaterMetersPerSecond, 0f, SonarEchoMaximumDelaySeconds);
+            float lowPassCutoffHz = math.clamp(
+                info.LowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                800f);
+            TryEnqueueImpactAudioEvent(
+                audible01 * 0.62f,
+                0f,
+                0f,
+                audible01 * 0.9f,
+                echoDelaySeconds,
+                math.saturate(info.AcousticTransmission01),
+                lowPassCutoffHz,
+                0.65f);
+            _impactStressImpulseTickValue = math.max(_impactStressImpulseTickValue, audible01 * 0.28f);
+        }
+
+        private void HandleMechanicalWhirrAudioPing(in AudioPingTriggerInfo info)
+        {
+            if (_boundPlayerTransform == null)
+                return;
+
+            float distance = Vector3.Distance(_boundPlayerTransform.position, info.WorldPosition);
+            if (distance > MechanicalWhirrAudioRadiusMeters)
+                return;
+
+            float proximity = 1f - math.saturate(distance / MechanicalWhirrAudioRadiusMeters);
+            float audible01 = math.saturate(info.Intensity * proximity * math.max(0.18f, info.AcousticTransmission01));
+            if (audible01 <= 0.001f)
+                return;
+
+            float pitchScale = math.clamp(info.LowPassCutoffHz / 1200f, 0.75f, 1.45f);
+            TryEnqueueImpactAudioEvent(
+                audible01 * 0.1f,
+                audible01 * 0.55f,
+                audible01 * 0.08f,
+                audible01 * 0.22f,
+                0f,
+                math.saturate(info.AcousticTransmission01),
+                math.clamp(info.LowPassCutoffHz, 900f, AcousticOcclusionUtility.OpenLowPassCutoffHertz),
+                pitchScale);
         }
 
         private void HandleStructuralStressTriggered(in StructuralStressAudioInfo stressInfo)
@@ -3239,37 +3302,15 @@ namespace Hecton8.Audio
                 return;
             }
 
-            for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
-            {
-                float frameT = frameCount > 1 ? frameIndex / (float)(frameCount - 1) : 1f;
-                float boilIntensity = math.lerp(startIntensity, bubbleBoilTarget, frameT);
-                float deltaSeconds = (float)invSampleRate;
-                state.TimeToNextSpawnSeconds -= deltaSeconds;
-                if (boilIntensity > HullNoiseFloor && state.TimeToNextSpawnSeconds <= 0f)
-                {
-                    uint sampleIndex = (uint)math.max(0L, blockStartFrame + frameIndex);
-                    state.SpawnSeed = sampleIndex ^ 0x5E17A4C3u;
-                    float radius = math.lerp(BubbleRadiusMinimumMeters, BubbleRadiusMaximumMeters, Hash01(state.SpawnSeed));
-                    float ambientPressure =
-                        WaterAmbientPressureSeaLevelPascals +
-                        WaterDensityKilogramsPerCubicMeter * WaterGravityMetersPerSecondSquared * math.max(0f, absoluteDepthMeters);
-                    state.FrequencyHertz = math.clamp(
-                        ResolveMinnaertFrequency(radius, ambientPressure),
-                        120f,
-                        3800f);
-                    state.DecayPerSecond = math.lerp(BubbleDecayMinimumPerSecond, BubbleDecayMaximumPerSecond, boilIntensity);
-                    state.Envelope = math.lerp(0.15f, 1f, boilIntensity);
-                    state.TimeToNextSpawnSeconds = math.rcp(math.lerp(BubbleBoilSpawnRateMinimum, BubbleBoilSpawnRateMaximum, boilIntensity));
-                }
-
-                if (state.Envelope <= HullNoiseFloor)
-                {
-                    _bubbleScratch[frameIndex] = 0f;
-                    continue;
-                }
-
-                _bubbleScratch[frameIndex] = RenderMinnaertBubbleSample(ref state, invSampleRate);
-            }
+            RenderMinnaertBubbleBurstKernel(
+                _bubbleScratch,
+                frameCount,
+                blockStartFrame,
+                invSampleRate,
+                startIntensity,
+                bubbleBoilTarget,
+                absoluteDepthMeters,
+                ref state);
 
             _bubbleSynthesisState = state;
             _audioBubbleBoilIntensity = bubbleBoilTarget;
@@ -5280,6 +5321,48 @@ namespace Hecton8.Audio
             float numerator = 3f * WaterHeatRatioGamma * pressure;
             float root = math.sqrt(numerator / WaterDensityKilogramsPerCubicMeter);
             return math.rcp(2f * math.PI * safeRadius) * root;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private static void RenderMinnaertBubbleBurstKernel(
+            NativeArray<float> output,
+            int frameCount,
+            long blockStartFrame,
+            double invSampleRate,
+            float startIntensity,
+            float targetIntensity,
+            float absoluteDepthMeters,
+            ref BubbleSynthesisState state)
+        {
+            float ambientPressure =
+                WaterAmbientPressureSeaLevelPascals +
+                WaterDensityKilogramsPerCubicMeter * WaterGravityMetersPerSecondSquared * math.max(0f, absoluteDepthMeters);
+            float deltaSeconds = math.max((float)invSampleRate, 0f);
+
+            for (int frameIndex = 0; frameIndex < frameCount; frameIndex++)
+            {
+                float frameT = frameCount > 1 ? frameIndex / (float)(frameCount - 1) : 1f;
+                float boilIntensity = math.lerp(startIntensity, targetIntensity, frameT);
+                state.TimeToNextSpawnSeconds -= deltaSeconds;
+                if (boilIntensity > HullNoiseFloor && state.TimeToNextSpawnSeconds <= 0f)
+                {
+                    long sampleFrame = blockStartFrame + frameIndex;
+                    uint sampleIndex = sampleFrame > 0L ? (uint)sampleFrame : 0u;
+                    state.SpawnSeed = sampleIndex ^ 0x5E17A4C3u;
+                    float radius = math.lerp(BubbleRadiusMinimumMeters, BubbleRadiusMaximumMeters, Hash01(state.SpawnSeed));
+                    state.FrequencyHertz = math.clamp(
+                        ResolveMinnaertFrequency(radius, ambientPressure),
+                        120f,
+                        3800f);
+                    state.DecayPerSecond = math.lerp(BubbleDecayMinimumPerSecond, BubbleDecayMaximumPerSecond, boilIntensity);
+                    state.Envelope = math.lerp(0.15f, 1f, boilIntensity);
+                    state.TimeToNextSpawnSeconds = math.rcp(math.lerp(BubbleBoilSpawnRateMinimum, BubbleBoilSpawnRateMaximum, boilIntensity));
+                }
+
+                output[frameIndex] = state.Envelope > HullNoiseFloor
+                    ? RenderMinnaertBubbleSample(ref state, invSampleRate)
+                    : 0f;
+            }
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

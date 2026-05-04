@@ -49,10 +49,15 @@ namespace Hecton8.Gameplay
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float CriticalEncumbranceRatio = 1.5f;
+        private const float CriticalStaminaFailureThreshold01 = 0.1f;
+        private const float CriticalStaminaFailureDurationSeconds = 2f;
+        private const float ReferenceSeaWaterDensityKgPerCubicMeter = 1025f;
         private float _runtimeSwimSpeedMultiplier = 1f;
         private float _runtimeVoxelBackpressureSwimSpeedMultiplier = 1f;
         private float _runtimeInjurySwimSpeedMultiplier = 1f;
         private float _runtimeEmergencyMovementMultiplier = 1f;
+        private float _runtimeStaminaMultiplier = 1f;
+        private float _criticalStaminaFailureTimer;
         private float _runtimeInventoryLoadMovementMultiplier = 1f;
         private float _runtimeInventoryLoad01;
         private float _runtimeInventoryLoadRatio;
@@ -1322,6 +1327,34 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
+        /// Applies body-state stamina loss without overwriting injury, emergency, or inventory gates.
+        /// </summary>
+        internal void SetRuntimeStaminaMultiplier(float multiplier)
+        {
+            _runtimeStaminaMultiplier = Mathf.Clamp(multiplier, 0.2f, 1f);
+        }
+
+        internal void TriggerCriticalStaminaFailure(float durationSeconds = CriticalStaminaFailureDurationSeconds)
+        {
+            _criticalStaminaFailureTimer = Mathf.Max(_criticalStaminaFailureTimer, Mathf.Max(0f, durationSeconds));
+        }
+
+        internal void ApplyRuntimeNarcosisConvulsion(float severity01, float durationSeconds)
+        {
+            float clampedSeverity = math.saturate(severity01);
+            float clampedDuration = math.max(0f, durationSeconds);
+            if (clampedSeverity <= 0f || clampedDuration <= 0f)
+                return;
+
+            _wipeoutSeverity = math.max(_wipeoutSeverity, clampedSeverity);
+            _wipeoutTimer = math.max(_wipeoutTimer, clampedDuration);
+            _stateMachine?.BeginWipeout(_wipeoutSeverity, _wipeoutTimer);
+
+            if (_juiceProcessor != null)
+                _juiceProcessor.RegisterEntanglementStrain(math.lerp(0.35f, 0.95f, clampedSeverity));
+        }
+
+        /// <summary>
         /// Applies a runtime-only movement penalty sourced from carried inventory mass.
         /// </summary>
         /// <param name="multiplier">Runtime carry-load movement multiplier.</param>
@@ -1344,6 +1377,8 @@ namespace Hecton8.Gameplay
 
         /// <summary>True when carried inventory mass exceeds the emergency locomotion cutoff.</summary>
         public bool IsCriticallyEncumbered => _runtimeInventoryLoadRatio >= CriticalEncumbranceRatio;
+
+        public bool IsCriticalStaminaFailureActive => _criticalStaminaFailureTimer > 0f;
 
         /// <summary>Resolved movement multiplier after inventory mass encumbrance.</summary>
         public float InventoryLoadMovementMultiplier => ResolveRuntimeInventoryLoadMovementMultiplier();
@@ -1368,6 +1403,8 @@ namespace Hecton8.Gameplay
         public Vector3 InterpolatedLinearVelocity => _renderInterpolationStateInitialized
             ? _renderInterpolatedLinearVelocity
             : (_rb != null ? HectonPlayerMotor.SafeVelocity(_rb.linearVelocity) : Vector3.zero);
+        /// <summary>Current physics world velocity used by predictive streaming and runtime telemetry.</summary>
+        public Vector3 CurrentWorldVelocity => _rb != null ? HectonPlayerMotor.SafeVelocity(_rb.linearVelocity) : Vector3.zero;
         /// <summary>Effective water surface Y from Crest or the serialized fallback.</summary>
         public float CurrentWaterSurfaceY => EffectiveWaterSurfaceY;
         /// <summary>Current depth below the effective water surface in metres.</summary>
@@ -2872,6 +2909,14 @@ namespace Hecton8.Gameplay
         internal static bool IsCriticalInventoryLoad(float totalMassKg, float carryCapacityKg)
         {
             return ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg) >= CriticalEncumbranceRatio;
+        }
+
+        internal static bool ShouldTriggerCriticalStaminaFailure(float encumbranceRatio, float stamina01)
+        {
+            return math.isfinite(encumbranceRatio) &&
+                   math.isfinite(stamina01) &&
+                   encumbranceRatio >= CriticalEncumbranceRatio &&
+                   stamina01 < CriticalStaminaFailureThreshold01;
         }
 
         internal static Vector3 ResolveCriticalEncumbranceSwimForce(Vector3 swimForce, bool criticallyEncumbered)
@@ -5639,6 +5684,13 @@ namespace Hecton8.Gameplay
                     _impulseBypassTimer = 0f;
             }
 
+            if (_criticalStaminaFailureTimer > 0f)
+            {
+                _criticalStaminaFailureTimer -= fixedDeltaTime;
+                if (_criticalStaminaFailureTimer < 0f)
+                    _criticalStaminaFailureTimer = 0f;
+            }
+
             if (_fatalPressureSequenceTimer > 0f)
             {
                 _fatalPressureSequenceTimer -= fixedDeltaTime;
@@ -8249,6 +8301,22 @@ namespace Hecton8.Gameplay
         private void SwimPhysics(SuitData suit, float fixedDeltaTime, PlayerTransportPreset transportPreset)
         {
             _velocity = _rb.linearVelocity;
+            if (TryResolveHeavyBrineSinkMultiplier(_cachedTransform.position, out float brineSinkMultiplier))
+            {
+                bool thrusterActive = math.abs(_inputVertical) > 0.01f || ResolveActiveTransportPropulsionForce() > 0.01f;
+                Vector3 brineVelocity = HectonPlayerMotor.ResolveBuoyancyInversionVelocity(
+                    _velocity,
+                    true,
+                    thrusterActive,
+                    brineSinkMultiplier);
+                Vector3 brineDelta = brineVelocity - _velocity;
+                if (brineDelta.sqrMagnitude > 0.000001f)
+                {
+                    ApplyMotorVelocityChange(brineDelta);
+                    _velocity = brineVelocity;
+                }
+            }
+
             float speed = math.sqrt(
                 _velocity.x * _velocity.x +
                 _velocity.y * _velocity.y +
@@ -8291,7 +8359,10 @@ namespace Hecton8.Gameplay
                 sargassumSpeedMultiplier *
                 externalEnvironmentalThrustMultiplier *
                 ResolveWipeoutTransportControl01();
-            bool hasInput = _inputH != 0f || _inputV != 0f || _inputVertical != 0f;
+            float gatedInputH = IsCriticalStaminaFailureActive ? 0f : _inputH;
+            float gatedInputV = IsCriticalStaminaFailureActive ? 0f : _inputV;
+            float gatedInputVertical = IsCriticalStaminaFailureActive ? 0f : _inputVertical;
+            bool hasInput = gatedInputH != 0f || gatedInputV != 0f || gatedInputVertical != 0f;
             bool surfaceDiveAssistActive = _surfaceDiveAssistTimer > 0f;
             if (!hasInput && rawTransportPropulsionForce <= 0f && !surfaceDiveAssistActive)
                 return;
@@ -8305,7 +8376,7 @@ namespace Hecton8.Gameplay
 
             bool heavyCarryActive = IsHeavyCarryActive();
             float sprintMult = _isSprinting && !heavyCarryActive ? suit.sprintMultiplier : 1f;
-            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier();
+            float runtimeSwimSpeedScale = _runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier();
             float effectiveSwimForce = suit.swimForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float effectiveVerticalForce = suit.swimVerticalForce * depthSlowdown * sprintMult * runtimeSwimSpeedScale;
             float heavyCarryForceMultiplier = ResolveHeavyCarryForceMultiplier();
@@ -8382,7 +8453,7 @@ namespace Hecton8.Gameplay
 
             float forwardScale = isSurfaceSwim ? surfaceForwardForceMultiplier : 1f;
             float strafeScale = (isSurfaceSwim ? surfaceStrafeForceMultiplier : 1f) * transportStrafeInputScale;
-            float forwardInput = _inputV;
+            float forwardInput = gatedInputV;
             if (forwardInput < 0f)
                 forwardInput *= transportReverseThrustScale;
 
@@ -8403,9 +8474,9 @@ namespace Hecton8.Gameplay
                 ResolveTransportCavitationEfficiency(fixedDeltaTime, false, forwardVelocity, 0f);
             }
 
-            float dirX = fwdX * (forwardInput * forwardScale) + rightX * (_inputH * strafeScale);
+            float dirX = fwdX * (forwardInput * forwardScale) + rightX * (gatedInputH * strafeScale);
             float dirY = fwdY * (forwardInput * forwardScale);
-            float dirZ = fwdZ * (forwardInput * forwardScale) + rightZ * (_inputH * strafeScale);
+            float dirZ = fwdZ * (forwardInput * forwardScale) + rightZ * (gatedInputH * strafeScale);
 
             float sqrMag = dirX * dirX + dirY * dirY + dirZ * dirZ;
             if (sqrMag > 1.0001f)
@@ -8414,7 +8485,7 @@ namespace Hecton8.Gameplay
                 dirX *= invMag; dirY *= invMag; dirZ *= invMag;
             }
 
-            float verticalInput = _inputVertical;
+            float verticalInput = gatedInputVertical;
             if (IsCriticallyEncumbered && verticalInput > 0f)
                 verticalInput = 0f;
 
@@ -8515,6 +8586,22 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private static bool TryResolveHeavyBrineSinkMultiplier(Vector3 worldPosition, out float sinkMultiplier)
+        {
+            sinkMultiplier = 0f;
+            ResourceDistributionDirector director = ResourceDistributionDirector.ActiveRuntimeInstance;
+            if (director == null ||
+                !director.TrySampleBrineFluidDensity(worldPosition, out float fluidDensityKgPerCubicMeter))
+            {
+                return false;
+            }
+
+            sinkMultiplier = HectonPlayerMotor.ResolveHeavyBrineSinkMultiplier(
+                fluidDensityKgPerCubicMeter,
+                ReferenceSeaWaterDensityKgPerCubicMeter);
+            return sinkMultiplier < 0f;
+        }
+
         private void ApplySargassumRestRecovery(float fixedDeltaTime)
         {
             float targetBlend = 0f;
@@ -8558,6 +8645,9 @@ namespace Hecton8.Gameplay
 
         private void WalkPhysics(SuitData suit, float fixedDeltaTime)
         {
+            if (IsCriticalStaminaFailureActive)
+                return;
+
             if (_inputH == 0f && _inputV == 0f) return;
 
             bool exosuitActive = _currentLocomotionMode == PlayerLocomotionMode.ExosuitLocomotion;
@@ -8607,6 +8697,7 @@ namespace Hecton8.Gameplay
                 suit.walkForce *
                 wadeMultiplier *
                 sprintMult *
+                _runtimeStaminaMultiplier *
                 ResolveRuntimeInventoryLoadMovementMultiplier() *
                 ResolveHeavyCarryForceMultiplier() *
                 ResolveExternalEnvironmentalThrustMultiplier();
@@ -8813,6 +8904,7 @@ namespace Hecton8.Gameplay
                 float wadeMultiplier = exosuitActive ? 1f : 1f - _waterImmersionRatio * suit.wadeSlowdownFactor;
                 maxSpd *= math.max(wadeMultiplier, 0.2f);
                 if (CanUseLandSprint()) maxSpd *= suit.sprintMultiplier;
+                maxSpd *= _runtimeStaminaMultiplier;
                 maxSpd *= ResolveRuntimeInventoryLoadMovementMultiplier();
                 maxSpd *= ResolveHeavyCarrySpeedMultiplier();
                 maxSpd *= ResolveExternalEnvironmentalSpeedMultiplier();
@@ -8854,7 +8946,7 @@ namespace Hecton8.Gameplay
             }
             else
             {
-                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier());
+                float maxSpd = suit.maxSwimSpeed * (_runtimeSwimSpeedMultiplier * _runtimeVoxelBackpressureSwimSpeedMultiplier * _runtimeInjurySwimSpeedMultiplier * _runtimeEmergencyMovementMultiplier * _runtimeStaminaMultiplier * ResolveRuntimeInventoryLoadMovementMultiplier());
                 if (_isSurfaceSwimming)
                 {
                     maxSpd *= surfaceMaxSpeedMultiplier;

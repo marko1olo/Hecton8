@@ -11,7 +11,7 @@
 
 **Violation Count:** 101 listed rows in this historical document expose `public static Instance` (or equivalent) instead of routing through `GlobalRegistry`.
 
-**2026-05-03 Source Delta:** This file is not a live count. Current source scan for `Assets/_Project/Scripts/Optimization` reports no `_instance`, `Instance =>`, `public static .*Instance`, `internal static .*Instance`, `DontDestroyOnLoad(`, or `SINGLETON` matches. Rows for `CameraRTManager`, `PostFXRTManager`, `RenderTextureLifecycleTracker`, `RenderTexturePool`, `UIRTManager`, `VRAMMonitor`, and `VisorRTManager` are superseded by `Docs/Reports/2026-05-03_OPTIMIZATION_REGISTRY_OWNERSHIP.md`.
+**2026-05-04 Source Delta:** This file is not a live count. The May 3 source scan for `Assets/_Project/Scripts/Optimization` reported no `_instance`, `Instance =>`, `public static .*Instance`, `internal static .*Instance`, `DontDestroyOnLoad(`, or `SINGLETON` matches. The May 4 post-repair foundation guard scan reports `Optimization singleton residue = 0` and exits `0`. Rows for `CameraRTManager`, `PostFXRTManager`, `RenderTextureLifecycleTracker`, `RenderTexturePool`, `UIRTManager`, `VRAMMonitor`, and `VisorRTManager` are superseded by `Docs/Reports/2026-05-03_OPTIMIZATION_REGISTRY_OWNERSHIP.md`, the May 4 sweep, and `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`.
 
 **Categories:**
 - Core infrastructure (tick, physics, dispatcher)

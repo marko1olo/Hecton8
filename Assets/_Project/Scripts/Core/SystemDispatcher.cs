@@ -24,6 +24,26 @@ using Hecton8.World;
 
 namespace Hecton8.Core
 {
+    public readonly struct CriticalMemoryPressureEvent
+    {
+        public readonly int Frame;
+        public readonly long ReservedMemoryBytes;
+        public readonly long PhysicalMemoryBytes;
+        public readonly double UsageRatio;
+
+        public CriticalMemoryPressureEvent(
+            int frame,
+            long reservedMemoryBytes,
+            long physicalMemoryBytes,
+            double usageRatio)
+        {
+            Frame = frame;
+            ReservedMemoryBytes = reservedMemoryBytes;
+            PhysicalMemoryBytes = physicalMemoryBytes;
+            UsageRatio = usageRatio;
+        }
+    }
+
     /// <summary>
     /// Priority-lane dispatcher for registry-managed <see cref="IUpdatable"/> systems.
     /// </summary>
@@ -44,12 +64,8 @@ namespace Hecton8.Core
         private const int PdaCongestionWarningFrameThreshold = 5;
         private const int LateFrameCircuitBreakerLaneCapacity = 32;
         private const double LateFrameEventFlushBudgetMilliseconds = 2.0;
-        private const float CircuitBreakerLogIntervalSeconds = 5f;
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
-        private const string SlowDispatcherPhaseWarningMessage = "[SystemDispatcher] Dispatcher phase exceeded slow threshold.";
-        private const string FoveatedFrameCompleteWarningMessage = "[SystemDispatcher] Foveated frame completion exceeded slow threshold.";
-        private const string JobHandleCompleteWarningMessage = "[SystemDispatcher] Job handle completion exceeded slow threshold.";
         private const string AupNanInquisitorWarningMessage = "[SystemDispatcher] AUP NaN-Inquisitor detected invalid camera-relative results.";
         private static readonly ProfilerMarker _updateProfilerMarker = new ProfilerMarker("H8.Dispatcher.Update");
         private static readonly ProfilerMarker _fixedUpdateProfilerMarker = new ProfilerMarker("H8.Dispatcher.FixedUpdate");
@@ -207,8 +223,15 @@ namespace Hecton8.Core
         internal static float CurrentFrameUnscaledDeltaTime { get; private set; }
 
         internal static SystemDispatcher ActiveRuntimeInstance { get; private set; }
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static object _currentPostFixedGcOwner;
+        private static object _lastPostFixedGcOwner;
+        private static int _lastPostFixedGcFrame = -1;
+        private static int _lastPostFixedGcDelta;
+        private static int _lastPostFixedGcLaneIndex = -1;
+        private static int _lastPostFixedGcItemIndex = -1;
+#endif
         private static ushort _dominantLateFrameCircuitBreakerLaneCount;
-        private static float _nextCircuitBreakerLogTime;
         private static float _nextAupNanInquisitorLogTime;
         private static float _nextDispatcherPhaseWarningLogTime;
         private static float _nextFoveatedFrameWarningLogTime;
@@ -239,6 +262,34 @@ namespace Hecton8.Core
         /// </summary>
         public static int TemporalCompressionFrameCount => _temporalCompressionFrameCount;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal static bool TryGetLastPostFixedGcAttribution(
+            out string ownerName,
+            out int frame,
+            out int delta,
+            out int laneIndex,
+            out int itemIndex)
+        {
+            object owner = _lastPostFixedGcOwner ?? _currentPostFixedGcOwner;
+            if (owner == null)
+            {
+                ownerName = "UNATTRIBUTED_POSTFIXED_SYSTEM";
+                frame = _lastPostFixedGcFrame;
+                delta = _lastPostFixedGcDelta;
+                laneIndex = _lastPostFixedGcLaneIndex;
+                itemIndex = _lastPostFixedGcItemIndex;
+                return false;
+            }
+
+            ownerName = owner.GetType().Name;
+            frame = _lastPostFixedGcFrame;
+            delta = _lastPostFixedGcDelta;
+            laneIndex = _lastPostFixedGcLaneIndex;
+            itemIndex = _lastPostFixedGcItemIndex;
+            return true;
+        }
+#endif
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -258,7 +309,6 @@ namespace Hecton8.Core
             _dominantLateFrameCircuitBreakerLaneCount = 0;
             System.Array.Clear(_lateFrameCircuitBreakerLaneHashes, 0, _lateFrameCircuitBreakerLaneHashes.Length);
             System.Array.Clear(_lateFrameCircuitBreakerLaneCounts, 0, _lateFrameCircuitBreakerLaneCounts.Length);
-            _nextCircuitBreakerLogTime = 0f;
             _nextAupNanInquisitorLogTime = 0f;
             _nextDispatcherPhaseWarningLogTime = 0f;
             _nextFoveatedFrameWarningLogTime = 0f;
@@ -267,6 +317,14 @@ namespace Hecton8.Core
             _temporalCompressionFrameCount = 0;
             _pdaOverBudgetConsecutiveFrames = 0;
             ActiveRuntimeInstance = null;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _currentPostFixedGcOwner = null;
+            _lastPostFixedGcOwner = null;
+            _lastPostFixedGcFrame = -1;
+            _lastPostFixedGcDelta = 0;
+            _lastPostFixedGcLaneIndex = -1;
+            _lastPostFixedGcItemIndex = -1;
+#endif
         }
 
         internal static void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount)
@@ -428,7 +486,7 @@ namespace Hecton8.Core
             if (item is IFoveatedSimulationTarget foveatedTarget)
                 _foveatedSimulationManager.UnregisterTarget(foveatedTarget);
 
-            GetLane(layer).Unregister(item);
+            GetLane(layer).TryUnregister(item);
         }
 
         /// <summary>
@@ -441,7 +499,7 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
-            GetFixedLane(layer).Unregister(item);
+            GetFixedLane(layer).TryUnregister(item);
         }
 
         /// <summary>
@@ -454,7 +512,7 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
-            GetSlowLane(layer).Unregister(item);
+            GetSlowLane(layer).TryUnregister(item);
         }
 
         /// <summary>
@@ -467,7 +525,7 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
-            GetLateFrameLane(layer).Unregister(item);
+            GetLateFrameLane(layer).TryUnregister(item);
         }
 
         /// <summary>
@@ -480,7 +538,7 @@ namespace Hecton8.Core
             if (item == null)
                 return;
 
-            GetPostFixedLane(layer).Unregister(item);
+            GetPostFixedLane(layer).TryUnregister(item);
         }
 
         /// <summary>
@@ -868,6 +926,20 @@ namespace Hecton8.Core
             return false;
         }
 
+        public static void DispatchCriticalMemoryPressure(in CriticalMemoryPressureEvent memoryPressureEvent)
+        {
+            CrashTelemetryBuffer.ReportCriticalMemoryPressure(
+                memoryPressureEvent.ReservedMemoryBytes,
+                memoryPressureEvent.PhysicalMemoryBytes,
+                memoryPressureEvent.UsageRatio);
+
+            ObjectPoolManager objectPool = GlobalRegistry.ObjectPool;
+            if (objectPool != null)
+                objectPool.FlushInactivePoolsForMemoryPressure();
+
+            System.GC.Collect(0, System.GCCollectionMode.Optimized, blocking: false);
+        }
+
         internal static void MarkLateFrameEventDispatchDeferred()
         {
             if (_lateFrameEventBudgetActive)
@@ -927,7 +999,6 @@ namespace Hecton8.Core
         private static void EndLateFrameEventBudget()
         {
             bool circuitBreakerTripped = _lateFrameCircuitBreakerTripped;
-            bool timeBudgetExhausted = _lateFrameTimeBudgetExhausted;
             _lateFrameEventBudgetActive = false;
             _lateFrameEventDispatchBudget = 0;
             _lateFrameCircuitBreakerTripped = false;
@@ -942,17 +1013,6 @@ namespace Hecton8.Core
                     _dominantLateFrameCircuitBreakerLaneHash,
                     _dominantLateFrameCircuitBreakerLaneCount);
             }
-
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            float now = Time.unscaledTime;
-            if (circuitBreakerTripped && now >= _nextCircuitBreakerLogTime)
-            {
-                _nextCircuitBreakerLogTime = now + CircuitBreakerLogIntervalSeconds;
-                Debug.LogWarning(timeBudgetExhausted
-                    ? "[SystemDispatcher] TELEMETRY_LOAD_SHEDDING: late-frame event flush exceeded 2.0ms; remaining NativeQueues deferred."
-                    : "[SystemDispatcher] CircuitBreakerTripped: late-frame event budget exceeded; remaining events deferred.");
-            }
-#endif
         }
 
         private static bool IsLateFrameEventFlushTimeBudgetExhausted()
@@ -1075,7 +1135,33 @@ namespace Hecton8.Core
                             IPostFixedTickable[] rawArray = lane.RawArray;
                             int count = lane.Count;
                             for (int itemIndex = count - 1; itemIndex >= 0; itemIndex--)
+                            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                                IPostFixedTickable postFixedTickable = rawArray[itemIndex];
+                                int gen0Before = System.GC.CollectionCount(0);
+                                _currentPostFixedGcOwner = postFixedTickable;
+                                try
+                                {
+                                    postFixedTickable.PostFixedTick(fixedDeltaTime);
+                                }
+                                finally
+                                {
+                                    int gen0After = System.GC.CollectionCount(0);
+                                    if (gen0After != gen0Before)
+                                    {
+                                        _lastPostFixedGcOwner = postFixedTickable;
+                                        _lastPostFixedGcFrame = Time.frameCount;
+                                        _lastPostFixedGcDelta = gen0After - gen0Before;
+                                        _lastPostFixedGcLaneIndex = laneIndex;
+                                        _lastPostFixedGcItemIndex = itemIndex;
+                                    }
+
+                                    _currentPostFixedGcOwner = null;
+                                }
+#else
                                 rawArray[itemIndex].PostFixedTick(fixedDeltaTime);
+#endif
+                            }
                         }
                     }
                     finally
@@ -1347,7 +1433,6 @@ namespace Hecton8.Core
                         nameof(SystemDispatcher),
                         phaseName,
                         (float)elapsedMilliseconds);
-                    Debug.LogWarning(SlowDispatcherPhaseWarningMessage);
                 }
             }
 #endif
@@ -1374,7 +1459,6 @@ namespace Hecton8.Core
                         "FoveatedSimulationManager",
                         "LateFrameComplete",
                         (float)elapsedMilliseconds);
-                    Debug.LogWarning(FoveatedFrameCompleteWarningMessage);
                 }
             }
 #else
@@ -1402,7 +1486,6 @@ namespace Hecton8.Core
                         systemName,
                         "LateFrameComplete",
                         (float)elapsedMilliseconds);
-                    Debug.LogWarning(JobHandleCompleteWarningMessage);
                 }
             }
 #else

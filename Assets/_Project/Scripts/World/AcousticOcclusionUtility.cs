@@ -89,6 +89,22 @@ namespace Hecton8.World
         }
     }
 
+    internal struct AcousticVoxelOcclusionResult
+    {
+        public float AccumulatedDensity;
+        public float Transmission01;
+        public float LowPassCutoffHz;
+        public int SampledVoxelCount;
+
+        public AcousticVoxelOcclusionResult(float accumulatedDensity, float transmission01, float lowPassCutoffHz, int sampledVoxelCount)
+        {
+            AccumulatedDensity = accumulatedDensity;
+            Transmission01 = transmission01;
+            LowPassCutoffHz = lowPassCutoffHz;
+            SampledVoxelCount = sampledVoxelCount;
+        }
+    }
+
     /// <summary>
     /// Shared zero-GC acoustic occlusion evaluation for sonar, hearing, and world-geometry filtering.
     /// </summary>
@@ -126,6 +142,11 @@ namespace Hecton8.World
         private const float FloraScatteringDensityThreshold = 0.08f;
         private const float FloraScatteringTransmissionFloor = 0.18f;
         private const float FloraScatteringLowPassFloorHertz = 220f;
+        private const byte CaveSignedDistanceSolidThreshold = 128;
+        private const float CaveVoxelDdaEpsilon = 0.000001f;
+        private const float VoxelDensityTransmissionScale = 1.65f;
+        private const float VoxelDensityLowPassScale = 7.5f;
+        private const int VoxelDensityMaximumDdaSteps = 4096;
 
         private static int PlayerLayer = -1;
         private static int TriggerZoneLayer = -1;
@@ -628,6 +649,99 @@ namespace Hecton8.World
             };
 
             return TryFindCachedForwardEchoResult(queryKey, out result);
+        }
+
+        public static bool TryTraceVoxelDensityOcclusion(
+            Vector3 sourcePosition,
+            Vector3 listenerPosition,
+            out AcousticVoxelOcclusionResult result)
+        {
+            result = new AcousticVoxelOcclusionResult(0f, 1f, OpenLowPassCutoffHertz, 0);
+
+            HectonCaveVoxelLightingVolume volume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
+            if (volume == null ||
+                !volume.TryGetPublishedSignedDistanceVoxelPayload(
+                    out NativeArray<byte> signedDistanceVoxels,
+                    out Vector3Int gridDimensions,
+                    out Vector3 gridOrigin,
+                    out Vector3 voxelCellSize))
+            {
+                return false;
+            }
+
+            int3 dimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
+            float3 origin = new float3(gridOrigin.x, gridOrigin.y, gridOrigin.z);
+            float3 cellSize = new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z);
+            float3 start = new float3(sourcePosition.x, sourcePosition.y, sourcePosition.z);
+            float3 end = new float3(listenerPosition.x, listenerPosition.y, listenerPosition.z);
+            if (!TryWorldToCaveVoxel(start, origin, cellSize, dimensions, out int3 startVoxel) ||
+                !TryWorldToCaveVoxel(end, origin, cellSize, dimensions, out int3 endVoxel))
+            {
+                return false;
+            }
+
+            float3 delta = end - start;
+            float distanceSq = math.lengthsq(delta);
+            if (distanceSq <= CaveVoxelDdaEpsilon)
+            {
+                float density = ResolveCaveVoxelDensity01(SampleCaveVoxel(signedDistanceVoxels, startVoxel, dimensions));
+                result = new AcousticVoxelOcclusionResult(
+                    density,
+                    math.exp(-density * VoxelDensityTransmissionScale),
+                    ResolveVoxelDensityLowPassCutoff(density),
+                    1);
+                return true;
+            }
+
+            float3 rayDirection = delta * math.rsqrt(distanceSq);
+            bool3 positiveMask = rayDirection >= 0f;
+            bool3 activeAxisMask = math.abs(rayDirection) > CaveVoxelDdaEpsilon;
+            int3 step = math.select(new int3(-1, -1, -1), new int3(1, 1, 1), positiveMask);
+            float3 cellMin = origin + (new float3(startVoxel.x, startVoxel.y, startVoxel.z) * cellSize);
+            float3 voxelBoundary = cellMin + math.select(float3.zero, cellSize, positiveMask);
+            float3 safeAbsDirection = math.max(math.abs(rayDirection), new float3(CaveVoxelDdaEpsilon, CaveVoxelDdaEpsilon, CaveVoxelDdaEpsilon));
+            float3 rayDirectionInverse = 1f / safeAbsDirection;
+            float3 tMax = math.abs((voxelBoundary - start) * rayDirectionInverse);
+            float3 tDelta = cellSize * rayDirectionInverse;
+            float3 sentinel = new float3(1000000f, 1000000f, 1000000f);
+            tMax = math.select(sentinel, tMax, activeAxisMask);
+            tDelta = math.select(sentinel, tDelta, activeAxisMask);
+
+            int3 currentVoxel = startVoxel;
+            int maxSteps = math.min(
+                VoxelDensityMaximumDdaSteps,
+                math.max(1, dimensions.x + dimensions.y + dimensions.z));
+            float accumulatedDensity = 0f;
+            int sampledVoxelCount = 0;
+
+            for (int i = 0; i < maxSteps; i++)
+            {
+                accumulatedDensity += ResolveCaveVoxelDensity01(SampleCaveVoxel(signedDistanceVoxels, currentVoxel, dimensions));
+                sampledVoxelCount++;
+
+                if (math.all(currentVoxel == endVoxel))
+                    break;
+
+                bool3 axisMask = (tMax <= tMax.yzx) & (tMax <= tMax.zxy);
+                tMax += math.select(float3.zero, tDelta, axisMask);
+                currentVoxel += math.select(int3.zero, step, axisMask);
+                if (!IsCaveVoxelInside(currentVoxel, dimensions))
+                    break;
+            }
+
+            float normalizedDensity = sampledVoxelCount > 0
+                ? accumulatedDensity / sampledVoxelCount
+                : 0f;
+            float transmission01 = math.clamp(
+                math.exp(-normalizedDensity * VoxelDensityTransmissionScale),
+                0.02f,
+                1f);
+            result = new AcousticVoxelOcclusionResult(
+                accumulatedDensity,
+                transmission01,
+                ResolveVoxelDensityLowPassCutoff(normalizedDensity),
+                sampledVoxelCount);
+            return sampledVoxelCount > 0;
         }
 
         public static AcousticOcclusionResult EvaluateOcclusionPath(
@@ -1283,6 +1397,64 @@ namespace Hecton8.World
                    math.abs(cached.ProbeDistance - current.ProbeDistance) <= 0.01f &&
                    math.lengthsq((float3)(cached.OriginPosition - current.OriginPosition)) <= ForwardEchoReuseDistanceSqr &&
                    math.dot((float3)cached.ForwardDirection, (float3)current.ForwardDirection) >= ForwardEchoDirectionReuseDot;
+        }
+
+        private static bool TryWorldToCaveVoxel(float3 worldPosition, float3 gridOrigin, float3 voxelCellSize, int3 dimensions, out int3 voxel)
+        {
+            float3 local = worldPosition - gridOrigin;
+            if (local.x < 0f || local.y < 0f || local.z < 0f)
+            {
+                voxel = int3.zero;
+                return false;
+            }
+
+            int3 candidate = new int3(
+                (int)math.floor(local.x / math.max(voxelCellSize.x, CaveVoxelDdaEpsilon)),
+                (int)math.floor(local.y / math.max(voxelCellSize.y, CaveVoxelDdaEpsilon)),
+                (int)math.floor(local.z / math.max(voxelCellSize.z, CaveVoxelDdaEpsilon)));
+            if (!IsCaveVoxelInside(candidate, dimensions))
+            {
+                voxel = int3.zero;
+                return false;
+            }
+
+            voxel = candidate;
+            return true;
+        }
+
+        private static bool IsCaveVoxelInside(int3 voxel, int3 dimensions)
+        {
+            return voxel.x >= 0 &&
+                   voxel.y >= 0 &&
+                   voxel.z >= 0 &&
+                   voxel.x < dimensions.x &&
+                   voxel.y < dimensions.y &&
+                   voxel.z < dimensions.z;
+        }
+
+        private static byte SampleCaveVoxel(NativeArray<byte> signedDistanceVoxels, int3 voxel, int3 dimensions)
+        {
+            int flatIndex = voxel.x + (voxel.y * dimensions.x) + (voxel.z * dimensions.x * dimensions.y);
+            if (flatIndex < 0 || flatIndex >= signedDistanceVoxels.Length)
+                return 255;
+
+            return signedDistanceVoxels[flatIndex];
+        }
+
+        private static float ResolveCaveVoxelDensity01(byte encodedSignedDistance)
+        {
+            if (encodedSignedDistance >= CaveSignedDistanceSolidThreshold)
+                return 0f;
+
+            return math.saturate((CaveSignedDistanceSolidThreshold - encodedSignedDistance) / (float)CaveSignedDistanceSolidThreshold);
+        }
+
+        private static float ResolveVoxelDensityLowPassCutoff(float density01)
+        {
+            return math.clamp(
+                OpenLowPassCutoffHertz / (1f + (math.saturate(density01) * VoxelDensityLowPassScale)),
+                MinimumLowPassCutoffHertz,
+                OpenLowPassCutoffHertz);
         }
 
         private static bool ShouldIgnoreCollider(

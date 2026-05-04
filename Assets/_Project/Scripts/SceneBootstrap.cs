@@ -87,6 +87,7 @@ namespace Hecton8.Bootstrap
     public sealed class SceneBootstrap : MonoBehaviour
     {
         private const int PendingEventCapacity = 12;
+        private const int SceneRootGraphLimit = 512;
         // COLD ALLOC: RegistryBucket<ISceneBootstrapEventListener>[12] - bootstrap listeners drained on dispatcher LateUpdate - owner: SceneBootstrap
         private static readonly RegistryBucket<ISceneBootstrapEventListener> _listeners = new RegistryBucket<ISceneBootstrapEventListener>(PendingEventCapacity);
         // COLD ALLOC: Dictionary<uint,string>[8] - hashed bootstrap failure reasons for cold-path diagnostics resolution - owner: SceneBootstrap
@@ -98,6 +99,36 @@ namespace Hecton8.Bootstrap
         private static bool _isDispatching;
 
         public static int PendingEventCount => _pendingEventCount + _nextFrameEventCount;
+
+        public static bool TryValidateSceneRootBudget(string sceneName, string context)
+        {
+            if (string.IsNullOrEmpty(sceneName))
+                return true;
+
+            Scene scene = SceneManager.GetSceneByName(sceneName);
+            return TryValidateSceneRootBudget(scene, context);
+        }
+
+        public static bool TryValidateSceneRootBudget(Scene scene, string context)
+        {
+            if (!scene.IsValid() || !scene.isLoaded)
+                return true;
+
+            int rootCount = scene.rootCount;
+            if (rootCount <= SceneRootGraphLimit)
+                return true;
+
+            Debug.LogError(
+                "[SceneBootstrap] SCENE_GRAPH_CORRUPTION_GUARD abort. context=" +
+                context +
+                " scene=" +
+                scene.name +
+                " rootCount=" +
+                rootCount +
+                " limit=" +
+                SceneRootGraphLimit);
+            return false;
+        }
 #if UNITY_EDITOR
         private static string _pendingDirtySceneReloadPath;
         private static readonly List<GameObject> _dontDestroyRootScratch = new List<GameObject>(32); // COLD ALLOC: List<GameObject>[32] - editor-only DDOL residue scan scratch - owner: SceneBootstrap
@@ -768,6 +799,13 @@ namespace Hecton8.Bootstrap
                 SetStep("Step 8.9: Scene Gate Verification");
                 await WaitForSceneInstantiationGateAsync(ct);
                 ct.ThrowIfCancellationRequested();
+
+                SetStep("Step 8.95: Scene Graph Guard");
+                if (!TryValidateSceneRootBudget(gameObject.scene, "scene-bootstrap"))
+                {
+                    Fail("Scene graph corruption guard aborted activation.");
+                    return false;
+                }
 
                 ActivatePlayer();
 

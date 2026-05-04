@@ -5,10 +5,10 @@ Status: `PENDING VERIFICATION`
 
 Purpose: canonical architecture contract for habitat logistics links, Bishop-frame pipe rendering, rupture buckling, and CSR adjacency rebuilds.
 
-2026-05-03 current-state boundary:
+2026-05-04 current-state boundary:
 
 - This is the habitat logistics architecture contract, not construction stress-test proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md`, `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the May 3 habitat/foundation reports for dated implementation evidence.
 - `HabitatGraphManager`, `BaseModule`, `BaseAirlock`, `ConstructionManager`, and pipe rendering remain active review surfaces for native lifetime, save/load restoration, graph rebuild storms, and authority boundaries.
 
 Supersedes: transient construction notes spread across dated audit bundles. Older one-shot construction writeups remain historical material, not architecture authority.

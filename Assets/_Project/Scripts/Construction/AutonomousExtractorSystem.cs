@@ -590,6 +590,14 @@ namespace Hecton8.Construction
         [Tooltip("Brownout priority for extractor loads.")]
         private int powerPriority = 34;
 
+        [Header("Output")]
+        [SerializeField] private Transform outputSocket;
+        [SerializeField] private Vector3 outputDirectionLocal = Vector3.forward;
+        [SerializeField, Range(0f, 3f)] private float outputForwardOffset = 0.5f;
+        [SerializeField, Range(0f, 2f)] private float outputLiftOffset = 0.15f;
+        [SerializeField, Range(0f, 8f)] private float outputVelocityChange = 1.4f;
+        [SerializeField, Range(0f, 4f)] private float outputUpwardVelocityChange = 0.35f;
+
         [Header("Diagnostics")]
         [SerializeField] private bool _debugHasPower = true;
         [SerializeField] private bool _debugIsOperating;
@@ -751,8 +759,48 @@ namespace Hecton8.Construction
             if (item == null || bufferedUnitCount <= 0 || _powerNode == null)
                 return false;
 
-            PowerGrid grid = _powerNode.Grid;
-            return BaseLogisticsNetwork.TryDepositItem(grid, item, bufferedUnitCount, out routedCount);
+            if (BaseLogisticsNetwork.TryDepositItem(_powerNode, item, bufferedUnitCount, out int depositedCount))
+                routedCount = depositedCount;
+
+            int remainingCount = bufferedUnitCount - routedCount;
+            if (remainingCount <= 0)
+                return routedCount > 0;
+
+            if (TrySpillBufferedOutput(item, remainingCount))
+            {
+                routedCount += remainingCount;
+                return true;
+            }
+
+            return routedCount > 0;
+        }
+
+        private bool TrySpillBufferedOutput(ItemData item, int quantity)
+        {
+            if (item == null || quantity <= 0)
+                return false;
+
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            if (registry == null)
+                return false;
+
+            ResolveOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange);
+            return registry.TryRegisterDroppedItem(item, quantity, spawnPosition, Vector3.zero, velocityChange);
+        }
+
+        private void ResolveOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange)
+        {
+            Transform origin = outputSocket != null ? outputSocket : transform;
+            Vector3 localDirection = outputDirectionLocal.sqrMagnitude > 0.0001f
+                ? outputDirectionLocal.normalized
+                : Vector3.forward;
+            Vector3 worldDirection = origin.TransformDirection(localDirection);
+            if (worldDirection.sqrMagnitude <= 0.0001f)
+                worldDirection = origin.forward;
+
+            worldDirection.Normalize();
+            spawnPosition = origin.position + worldDirection * outputForwardOffset + Vector3.up * outputLiftOffset;
+            velocityChange = worldDirection * outputVelocityChange + Vector3.up * outputUpwardVelocityChange;
         }
 
         private void TryRegister()

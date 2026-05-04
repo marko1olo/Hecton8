@@ -130,6 +130,9 @@ namespace Hecton8.World
             TransitionEdge = 1 << 1,
             Hazard = 1 << 2,
             PreviewOverride = 1 << 3,
+            VolumetricDepth = 1 << 4,
+            SargassumCanopy = 1 << 5,
+            ThermalVent = 1 << 6,
             Invalid = 1 << 7
         }
 
@@ -241,6 +244,7 @@ namespace Hecton8.World
             public int ResolvedZoneKind;
             public int ResolvedPattern;
             public int PreviewOverrideActive;
+            public int VolumetricOverrideActive;
             public int SecondarySampleValid;
             public int SeafloorSource;
             public int IsValid;
@@ -537,6 +541,8 @@ namespace Hecton8.World
                     output,
                     BiomeMatrices,
                     BiomeMatrixCount,
+                    BiomeFamilies,
+                    BiomeFamilyCount,
                     CurrentBiomeMatrixDataIndex);
                 output.BiomeInfluencePacked = influence.Packed;
                 CellOutputs[index] = output;
@@ -745,6 +751,20 @@ namespace Hecton8.World
                     output.BiomeFamilyDataIndex = previewMatrixBiomeFamilyDataIndex;
             }
 
+            int volumetricBiomeMatrixIndex = ResolveVolumetricBiomeMatrixDataIndex(
+                output.DepthMeters,
+                output.BiomeMatrixDataIndex,
+                output.BiomeFamilyDataIndex,
+                biomeMatrices,
+                biomeMatrixCount);
+            if (volumetricBiomeMatrixIndex >= 0 && volumetricBiomeMatrixIndex != output.BiomeMatrixDataIndex)
+            {
+                output.BiomeMatrixDataIndex = volumetricBiomeMatrixIndex;
+                output.VolumetricOverrideActive = 1;
+                if (volumetricBiomeMatrixIndex < biomeMatrixCount)
+                    output.BiomeFamilyDataIndex = biomeMatrices[volumetricBiomeMatrixIndex].FamilyDataIndex;
+            }
+
             ComputeHeatChannels(ref output, biomeMatrices, biomeMatrixCount);
             return output;
         }
@@ -753,6 +773,8 @@ namespace Hecton8.World
             in CellOutputData output,
             NativeArray<BiomeMatrixData> biomeMatrices,
             int biomeMatrixCount,
+            NativeArray<BiomeFamilyData> biomeFamilies,
+            int biomeFamilyCount,
             int currentBiomeMatrixDataIndex)
         {
             byte flags = 0;
@@ -760,8 +782,15 @@ namespace Hecton8.World
                 flags |= (byte)BiomeInfluenceFlags.Invalid;
             if (output.PreviewOverrideActive != 0)
                 flags |= (byte)BiomeInfluenceFlags.PreviewOverride;
+            if (output.VolumetricOverrideActive != 0)
+                flags |= (byte)BiomeInfluenceFlags.VolumetricDepth;
             if (output.HazardBias >= 0.65f)
                 flags |= (byte)BiomeInfluenceFlags.Hazard;
+            BiomeFamilyFlags familyFlags = ResolveBiomeFamilyFlags(output.BiomeFamilyDataIndex, biomeFamilies, biomeFamilyCount);
+            if ((familyFlags & BiomeFamilyFlags.Volcanic) != 0 && (familyFlags & BiomeFamilyFlags.Hadal) != 0)
+                flags |= (byte)BiomeInfluenceFlags.ThermalVent;
+            if ((familyFlags & BiomeFamilyFlags.Silt) != 0 && output.DepthMeters >= 160f && output.DepthMeters <= 260f)
+                flags |= (byte)BiomeInfluenceFlags.SargassumCanopy;
 
             byte primaryBiomeId = ResolveBiomeInfluenceMatrixId(
                 output.BiomeMatrixDataIndex,
@@ -812,6 +841,82 @@ namespace Hecton8.World
             return matrixData.MatrixIndex > 0 && matrixData.MatrixIndex <= 255
                 ? (byte)matrixData.MatrixIndex
                 : (byte)0;
+        }
+
+        private static int ResolveVolumetricBiomeMatrixDataIndex(
+            float depthMeters,
+            int currentBiomeMatrixDataIndex,
+            int preferredFamilyDataIndex,
+            NativeArray<BiomeMatrixData> biomeMatrices,
+            int biomeMatrixCount)
+        {
+            if (!biomeMatrices.IsCreated || biomeMatrixCount <= 0)
+                return currentBiomeMatrixDataIndex;
+
+            if (IsBiomeDepthMatch(depthMeters, currentBiomeMatrixDataIndex, biomeMatrices, biomeMatrixCount))
+                return currentBiomeMatrixDataIndex;
+
+            int bestIndex = -1;
+            int bestScore = int.MinValue;
+            for (int i = 0; i < biomeMatrixCount; i++)
+            {
+                BiomeMatrixData candidate = biomeMatrices[i];
+                if (!IsDepthWithinBand(depthMeters, candidate.MinDepthMeters, candidate.MaxDepthMeters))
+                    continue;
+
+                int score = candidate.FamilyDataIndex == preferredFamilyDataIndex ? 1000 : 0;
+                if (candidate.IsPlaceholder == 0)
+                    score += 100;
+
+                float bandSize = math.max(0.001f, candidate.MaxDepthMeters - candidate.MinDepthMeters);
+                score += (int)math.round(50f / math.min(50f, bandSize));
+
+                if (score <= bestScore)
+                    continue;
+
+                bestScore = score;
+                bestIndex = i;
+            }
+
+            return bestIndex >= 0 ? bestIndex : currentBiomeMatrixDataIndex;
+        }
+
+        private static bool IsBiomeDepthMatch(
+            float depthMeters,
+            int biomeMatrixDataIndex,
+            NativeArray<BiomeMatrixData> biomeMatrices,
+            int biomeMatrixCount)
+        {
+            if (biomeMatrixDataIndex < 0 || biomeMatrixDataIndex >= biomeMatrixCount || !biomeMatrices.IsCreated)
+                return false;
+
+            BiomeMatrixData current = biomeMatrices[biomeMatrixDataIndex];
+            return IsDepthWithinBand(depthMeters, current.MinDepthMeters, current.MaxDepthMeters);
+        }
+
+        private static bool IsDepthWithinBand(float depthMeters, float minDepthMeters, float maxDepthMeters)
+        {
+            float minDepth = math.min(minDepthMeters, maxDepthMeters);
+            float maxDepth = math.max(minDepthMeters, maxDepthMeters);
+            if (maxDepth <= 0f && minDepth <= 0f)
+                return true;
+
+            return depthMeters >= minDepth && depthMeters <= maxDepth;
+        }
+
+        private static BiomeFamilyFlags ResolveBiomeFamilyFlags(
+            int biomeFamilyDataIndex,
+            NativeArray<BiomeFamilyData> biomeFamilies,
+            int biomeFamilyCount)
+        {
+            if (!biomeFamilies.IsCreated ||
+                biomeFamilyDataIndex < 0 ||
+                biomeFamilyDataIndex >= biomeFamilyCount)
+            {
+                return BiomeFamilyFlags.None;
+            }
+
+            return biomeFamilies[biomeFamilyDataIndex].Flags;
         }
 
         private static int ResolveBiomeMatrixDataIndexFromMatrixId(
@@ -2475,6 +2580,20 @@ namespace Hecton8.World
                     seafloorSource,
                     resolvedPattern);
             }
+
+            bool volumetricOverrideApplied = false;
+            HectonBiomeMatrixProfile volumetricProfile = ResolveVolumetricBiomeProfile(
+                depthMeters,
+                biomeFamily,
+                biomeProfile,
+                out volumetricOverrideApplied);
+            if (volumetricProfile != null)
+            {
+                biomeProfile = volumetricProfile;
+                if (volumetricProfile.familyProfile != null)
+                    biomeFamily = volumetricProfile.familyProfile;
+            }
+
             biomeMatrixDataIndex = ResolveBiomeMatrixDataIndex(biomeProfile);
             biomeFamilyDataIndex = ResolveBiomeFamilyDataIndex(biomeFamily);
             float hazardBias = EvaluateHazardBias(zoneDataIndex, zone, resolvedZoneKind);
@@ -2502,7 +2621,8 @@ namespace Hecton8.World
                     zoneDataIndex,
                     zoneWeight,
                     previewOverrideApplied,
-                    hazardBias),
+                    hazardBias,
+                    volumetricOverrideApplied),
                 zone = zone,
                 zoneWeight = zoneWeight,
                 resolvedZoneKind = resolvedZoneKind,
@@ -2549,6 +2669,32 @@ namespace Hecton8.World
             return primaryProfile != null || secondaryProfile != null;
         }
 
+        public bool TrySampleBiomePhysicsInfluence(Vector3 position, out float buoyancyMultiplier)
+        {
+            buoyancyMultiplier = 1f;
+
+            if (!TrySampleBiomeInfluence(
+                    position,
+                    out BiomeInfluenceCell influence,
+                    out HectonBiomeMatrixProfile primaryProfile,
+                    out HectonBiomeMatrixProfile secondaryProfile))
+            {
+                return false;
+            }
+
+            float primaryMultiplier = primaryProfile != null ? Mathf.Max(0.05f, primaryProfile.buoyancyMultiplier) : 1f;
+            if (secondaryProfile == null || influence.SecondaryBiomeId == 0)
+            {
+                buoyancyMultiplier = primaryMultiplier;
+                return true;
+            }
+
+            float secondaryMultiplier = Mathf.Max(0.05f, secondaryProfile.buoyancyMultiplier);
+            float blend = influence.Blend255 * (1f / 255f);
+            buoyancyMultiplier = Mathf.Lerp(primaryMultiplier, secondaryMultiplier, Mathf.Clamp01(blend));
+            return true;
+        }
+
         private HectonBiomeMatrixProfile ResolveBiomeMatrixProfileById(int matrixBiomeId)
         {
             if (matrixBiomeId <= 0 || biomeMatrixDirector == null || biomeMatrixDirector.MatrixCatalog == null)
@@ -2563,15 +2709,22 @@ namespace Hecton8.World
             int zoneDataIndex,
             float zoneWeight,
             bool previewOverrideApplied,
-            float hazardBias)
+            float hazardBias,
+            bool volumetricOverrideApplied)
         {
             byte flags = 0;
             if (primaryProfile != null && primaryProfile.isPlaceholder)
                 flags |= (byte)BiomeInfluenceFlags.Placeholder;
             if (previewOverrideApplied)
                 flags |= (byte)BiomeInfluenceFlags.PreviewOverride;
+            if (volumetricOverrideApplied)
+                flags |= (byte)BiomeInfluenceFlags.VolumetricDepth;
             if (hazardBias >= 0.65f)
                 flags |= (byte)BiomeInfluenceFlags.Hazard;
+            if (IsManagedFamilyMatch(primaryProfile, "biome.family.volcanic_hadal"))
+                flags |= (byte)BiomeInfluenceFlags.ThermalVent;
+            if (IsManagedFamilyMatch(primaryProfile, "biome.family.abyssal_silt"))
+                flags |= (byte)BiomeInfluenceFlags.SargassumCanopy;
 
             byte primaryBiomeId = ResolveManagedBiomeId(primaryProfile);
             byte secondaryBiomeId = 0;
@@ -2591,6 +2744,18 @@ namespace Hecton8.World
             }
 
             return BiomeInfluenceCell.Create(primaryBiomeId, secondaryBiomeId, blend255, flags);
+        }
+
+        private static bool IsManagedFamilyMatch(HectonBiomeMatrixProfile profile, string expectedFamilyId)
+        {
+            if (profile == null || string.IsNullOrEmpty(expectedFamilyId))
+                return false;
+
+            if (string.Equals(profile.familyId, expectedFamilyId, System.StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            HectonBiomeFamilyProfile family = profile.familyProfile;
+            return family != null && string.Equals(family.familyId, expectedFamilyId, System.StringComparison.OrdinalIgnoreCase);
         }
 
         private static byte ResolveManagedBiomeId(HectonBiomeMatrixProfile profile)
@@ -3879,6 +4044,72 @@ namespace Hecton8.World
 
             HectonBiomeMatrixProfile representativeProfile = ResolveRepresentativeBiomeProfileForFamily(biomeFamily);
             return representativeProfile != null ? representativeProfile : currentProfile;
+        }
+
+        private HectonBiomeMatrixProfile ResolveVolumetricBiomeProfile(
+            float depthMeters,
+            HectonBiomeFamilyProfile biomeFamily,
+            HectonBiomeMatrixProfile currentProfile,
+            out bool overrideApplied)
+        {
+            overrideApplied = false;
+            if (currentProfile != null && IsManagedDepthWithinBand(depthMeters, currentProfile.minDepthMeters, currentProfile.maxDepthMeters))
+                return currentProfile;
+
+            if (biomeMatrixDirector == null || biomeMatrixDirector.MatrixCatalog == null || biomeMatrixDirector.MatrixCatalog.Profiles == null)
+                return currentProfile;
+
+            HectonBiomeMatrixProfile[] profiles = biomeMatrixDirector.MatrixCatalog.Profiles;
+            HectonBiomeMatrixProfile best = null;
+            int bestScore = int.MinValue;
+            for (int i = 0; i < profiles.Length; i++)
+            {
+                HectonBiomeMatrixProfile candidate = profiles[i];
+                if (candidate == null || !IsManagedDepthWithinBand(depthMeters, candidate.minDepthMeters, candidate.maxDepthMeters))
+                    continue;
+
+                int score = IsSameBiomeFamily(candidate, biomeFamily) ? 1000 : 0;
+                if (!candidate.isPlaceholder)
+                    score += 100;
+
+                score += candidate.rewardPull + candidate.landmarkStrength + candidate.survivalPressure;
+                if (score <= bestScore)
+                    continue;
+
+                bestScore = score;
+                best = candidate;
+            }
+
+            if (best != null && best != currentProfile)
+            {
+                overrideApplied = true;
+                return best;
+            }
+
+            return currentProfile;
+        }
+
+        private static bool IsManagedDepthWithinBand(float depthMeters, float minDepthMeters, float maxDepthMeters)
+        {
+            float minDepth = Mathf.Min(minDepthMeters, maxDepthMeters);
+            float maxDepth = Mathf.Max(minDepthMeters, maxDepthMeters);
+            if (maxDepth <= 0f && minDepth <= 0f)
+                return true;
+
+            return depthMeters >= minDepth && depthMeters <= maxDepth;
+        }
+
+        private static bool IsSameBiomeFamily(HectonBiomeMatrixProfile profile, HectonBiomeFamilyProfile family)
+        {
+            if (profile == null || family == null)
+                return false;
+
+            if (profile.familyProfile == family)
+                return true;
+
+            return !string.IsNullOrEmpty(profile.familyId) &&
+                   !string.IsNullOrEmpty(family.familyId) &&
+                   string.Equals(profile.familyId, family.familyId, System.StringComparison.Ordinal);
         }
 
         private HectonBiomeMatrixProfile ResolvePreviewMatrixBiomeOverride(SeafloorSource source)

@@ -528,6 +528,13 @@ namespace Hecton8.World
                     power01,
                     seed);
             }
+
+            AbyssalFluidDecalManager fluidDecalManager = AbyssalFluidDecalManager.Instance;
+            if (fluidDecalManager != null)
+            {
+                Vector3 dustRuntimePosition = HectonFloatingOrigin.ToRuntimePosition((absoluteStart + absoluteEnd) * 0.5f + Vector3.up * ceilingOffset);
+                fluidDecalManager.RegisterSeismicDust(dustRuntimePosition, Mathf.Clamp(displacedVolumeCubicMeters / 120f, 0.5f, 3f));
+            }
         }
 
         private Vector3 ResolveSeismicTrenchDirection(Vector3 absoluteEpicenter)

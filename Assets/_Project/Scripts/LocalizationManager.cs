@@ -1231,62 +1231,22 @@ namespace Hecton.Localization
             if (threshold <= 0)
                 return text;
 
-            System.Text.StringBuilder builder = StringBuilderPool.Get();
-            bool insideRichTag = false;
-            bool previousCorrupted = false;
-            int visibleIndex = 0;
-            int seed = ComputeCorruptionSeed(text);
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                return text;
 
-            for (int i = 0; i < text.Length; i++)
+            try
             {
-                char current = text[i];
+                if (!lease.IsValid || text.Length > lease.Buffer.Length)
+                    return text;
 
-                if (current == '<')
-                {
-                    insideRichTag = true;
-                    previousCorrupted = false;
-                    builder.Append(current);
-                    continue;
-                }
-
-                if (insideRichTag)
-                {
-                    builder.Append(current);
-                    if (current == '>')
-                        insideRichTag = false;
-                    continue;
-                }
-
-                if (current == '[' && TryAppendBracketedMarker(text, ref i, builder))
-                {
-                    previousCorrupted = false;
-                    continue;
-                }
-
-                if (!ShouldCorruptCharacter(current))
-                {
-                    previousCorrupted = false;
-                    builder.Append(current);
-                    continue;
-                }
-
-                int hash = seed ^ (visibleIndex * 486187739);
-                visibleIndex++;
-                bool shouldCorrupt = !previousCorrupted && (hash & 1023) < threshold;
-                if (!shouldCorrupt)
-                {
-                    builder.Append(current);
-                    previousCorrupted = false;
-                    continue;
-                }
-
-                builder.Append(ResolveCorruptionGlyph(hash, alphabet, !IsRightToLeftLanguage(language)));
-                previousCorrupted = true;
+                return TryCorruptVisibleText(text.AsSpan(), intensity, language, lease.Buffer, out int length) && length > 0
+                    ? new string(lease.Buffer, 0, length)
+                    : text;
             }
-
-            string corrupted = builder.ToString();
-            StringBuilderPool.Return(builder);
-            return corrupted;
+            finally
+            {
+                CharBufferPool.Release(in lease);
+            }
         }
 
         private static bool TryCorruptVisibleText(
@@ -1372,46 +1332,6 @@ namespace Hecton.Localization
                 previousCorrupted = true;
             }
 
-            return true;
-        }
-
-        private static bool TryAppendBracketedMarker(string text, ref int index, System.Text.StringBuilder builder)
-        {
-            int markerStart = index;
-            int current = markerStart + 1;
-            bool sawDigit = false;
-            bool sawDot = false;
-
-            while (current < text.Length)
-            {
-                char markerChar = text[current];
-                if (markerChar >= '0' && markerChar <= '9')
-                {
-                    sawDigit = true;
-                    current++;
-                    continue;
-                }
-
-                if (markerChar == '.' && !sawDot)
-                {
-                    sawDot = true;
-                    current++;
-                    continue;
-                }
-
-                break;
-            }
-
-            if (!sawDigit || current >= text.Length || text[current] != ']')
-            {
-                builder.Append(text[markerStart]);
-                return false;
-            }
-
-            for (int i = markerStart; i <= current; i++)
-                builder.Append(text[i]);
-
-            index = current;
             return true;
         }
 

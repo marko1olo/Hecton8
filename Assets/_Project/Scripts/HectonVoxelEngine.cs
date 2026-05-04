@@ -12,6 +12,7 @@ using Unity.Burst;
 using Unity.Collections;
 using Unity.Mathematics;
 using Hecton8.Caves;
+using Hecton8.Bootstrap;
 using Unity.Collections.LowLevel.Unsafe;
 using Hecton8.Core;
 using Hecton8.Dev;
@@ -2321,6 +2322,44 @@ public struct VoxelColorJob : IJobParallelFor
 //  ensuring save system consistency regardless of parallel execution order.
 // ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+public struct VoxelDirtyBlendJob : IJobParallelFor
+{
+    [ReadOnly] public NativeArray<float3> positions;
+    [ReadOnly] public NativeParallelHashMap<int3, VoxelModifiedCell> modifiedCells;
+    public float voxelStep;
+    public float3 absoluteUniverseOffset;
+    [WriteOnly] public NativeArray<float> dirtyBlendValues;
+
+    public void Execute(int index)
+    {
+        if (!dirtyBlendValues.IsCreated || index < 0 || index >= dirtyBlendValues.Length)
+            return;
+
+        if (!modifiedCells.IsCreated || !positions.IsCreated || index >= positions.Length || voxelStep <= 0.0001f)
+        {
+            dirtyBlendValues[index] = 0f;
+            return;
+        }
+
+        float3 absolutePosition = positions[index] + absoluteUniverseOffset;
+        int3 cell = (int3)math.floor(absolutePosition / voxelStep);
+        float blend = modifiedCells.ContainsKey(cell) ? 1f : 0f;
+        blend = math.max(blend, HasDirtyNeighbor(cell, new int3(1, 0, 0)));
+        blend = math.max(blend, HasDirtyNeighbor(cell, new int3(-1, 0, 0)));
+        blend = math.max(blend, HasDirtyNeighbor(cell, new int3(0, 1, 0)));
+        blend = math.max(blend, HasDirtyNeighbor(cell, new int3(0, -1, 0)));
+        blend = math.max(blend, HasDirtyNeighbor(cell, new int3(0, 0, 1)));
+        blend = math.max(blend, HasDirtyNeighbor(cell, new int3(0, 0, -1)));
+        dirtyBlendValues[index] = blend;
+    }
+
+    private float HasDirtyNeighbor(int3 cell, int3 offset)
+    {
+        return modifiedCells.ContainsKey(cell + offset) ? 0.65f : 0f;
+    }
+}
+
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelSpawnPointJob : IJobParallelFor
 {
     [ReadOnly] public NativeArray<float3> positions;
@@ -2428,6 +2467,7 @@ public class HectonVoxelEngine : MonoBehaviour
     private const int DeferredVoxelPhysicsBakeBackpressureReleaseThreshold = 32;
     private const int DeferredVoxelPhysicsBakeTeardownCapacity = 2048;
     private const byte DeferredVoxelBakeDestroyOwner = 1 << 0;
+    private const float VoxelLodColliderDisableDistanceMeters = 200f;
     private const byte DeltaModeAdditive = 1 << 0;
     private const byte DeltaModeReplace = 1 << 1;
     private const string NativeMemoryOwner = nameof(HectonVoxelEngine);
@@ -2476,6 +2516,7 @@ public class HectonVoxelEngine : MonoBehaviour
     const float TerrainVoxelSeamTransitionBand = VoxelSeamDirector.SeamTransitionBandMeters;
     const int JOB_BATCH = 64;
     const int ActiveVolumeRegistryCapacity = 64;
+    const int AirPocketRegistryCapacity = 64;
 
     /// <summary>
     /// MC raw buffer multiplier. 2× totalCells instead of 15× (worst case).
@@ -2489,6 +2530,10 @@ public class HectonVoxelEngine : MonoBehaviour
     static int _activeGenerationOperations;
     static int _shutdownRequested;
     internal static HectonVoxelEngine ActiveRuntimeInstance { get; private set; }
+    private static int _airPocketCount;
+    private static readonly Vector3[] _airPocketCenters = new Vector3[AirPocketRegistryCapacity]; // COLD ALLOC: Vector3[64] - fixed voxel air-pocket centers - owner: HectonVoxelEngine
+    private static readonly Vector3[] _airPocketHalfExtents = new Vector3[AirPocketRegistryCapacity]; // COLD ALLOC: Vector3[64] - fixed voxel air-pocket AABB extents - owner: HectonVoxelEngine
+    private static readonly float[] _airPocketRefillFractions = new float[AirPocketRegistryCapacity]; // COLD ALLOC: float[64] - fixed voxel air-pocket O2 refill scalars - owner: HectonVoxelEngine
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetStaticRuntimeState()
@@ -2497,6 +2542,7 @@ public class HectonVoxelEngine : MonoBehaviour
         _activeGenerationOperations = 0;
         _shutdownRequested = 0;
         ActiveRuntimeInstance = null;
+        ClearAirPocketRegistry();
         _deferredVoxelPhysicsBakeTeardowns.Clear();
         _deferredVoxelPhysicsBakeTeardownRegistered = false;
         _deferredVoxelPhysicsBakeBackpressureActive = false;
@@ -2526,6 +2572,93 @@ public class HectonVoxelEngine : MonoBehaviour
         {
             DrainDeferredVoxelPhysicsBakeTeardowns();
         }
+    }
+
+    internal static int RegisterAirPocket(Vector3 centerWS, Vector3 halfExtentsWS, float oxygenRefillFraction = 1f)
+    {
+        if (_airPocketCount >= AirPocketRegistryCapacity ||
+            !IsFiniteVector(centerWS) ||
+            !IsFiniteVector(halfExtentsWS))
+        {
+            return 0;
+        }
+
+        Vector3 safeExtents = new Vector3(
+            math.max(0.01f, math.abs(halfExtentsWS.x)),
+            math.max(0.01f, math.abs(halfExtentsWS.y)),
+            math.max(0.01f, math.abs(halfExtentsWS.z)));
+        int slot = _airPocketCount++;
+        _airPocketCenters[slot] = centerWS;
+        _airPocketHalfExtents[slot] = safeExtents;
+        _airPocketRefillFractions[slot] = math.saturate(oxygenRefillFraction);
+        return slot + 1;
+    }
+
+    internal static void UnregisterAirPocket(int handle)
+    {
+        int slot = handle - 1;
+        if ((uint)slot >= (uint)_airPocketCount)
+            return;
+
+        int lastSlot = _airPocketCount - 1;
+        _airPocketCenters[slot] = _airPocketCenters[lastSlot];
+        _airPocketHalfExtents[slot] = _airPocketHalfExtents[lastSlot];
+        _airPocketRefillFractions[slot] = _airPocketRefillFractions[lastSlot];
+        _airPocketCenters[lastSlot] = Vector3.zero;
+        _airPocketHalfExtents[lastSlot] = Vector3.zero;
+        _airPocketRefillFractions[lastSlot] = 0f;
+        _airPocketCount = lastSlot;
+    }
+
+    internal static void ClearAirPocketRegistry()
+    {
+        for (int i = 0; i < _airPocketCount; i++)
+        {
+            _airPocketCenters[i] = Vector3.zero;
+            _airPocketHalfExtents[i] = Vector3.zero;
+            _airPocketRefillFractions[i] = 0f;
+        }
+
+        _airPocketCount = 0;
+    }
+
+    internal static bool TrySampleAirPocket(Vector3 worldPosition, out float oxygenRefillFraction)
+    {
+        oxygenRefillFraction = 0f;
+        if (!IsFiniteVector(worldPosition))
+            return false;
+
+        for (int i = 0; i < _airPocketCount; i++)
+        {
+            Vector3 center = _airPocketCenters[i];
+            Vector3 extents = _airPocketHalfExtents[i];
+            if (math.abs(worldPosition.x - center.x) > extents.x ||
+                math.abs(worldPosition.y - center.y) > extents.y ||
+                math.abs(worldPosition.z - center.z) > extents.z)
+            {
+                continue;
+            }
+
+            oxygenRefillFraction = math.max(0.01f, _airPocketRefillFractions[i]);
+            return true;
+        }
+
+        return false;
+    }
+
+    internal static bool IsCeilingConcavityAirPocketCandidate(float ceilingNormalY, float sealedVolume01, float waterlineClearanceMeters)
+    {
+        return math.isfinite(ceilingNormalY) &&
+               math.isfinite(sealedVolume01) &&
+               math.isfinite(waterlineClearanceMeters) &&
+               ceilingNormalY <= -0.55f &&
+               sealedVolume01 >= 0.65f &&
+               waterlineClearanceMeters >= 0.35f;
+    }
+
+    private static bool IsFiniteVector(Vector3 value)
+    {
+        return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
     }
 
     // COLD ALLOC: List<GameObject>[64] - active voxel volume object registry - owner: HectonVoxelEngine
@@ -2654,6 +2787,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<float> CurvatureValues;
         public NativeArray<float> AmbientOcclusionValues;
         public NativeArray<float> BiomeValues;
+        public NativeArray<float> DirtyBlendValues;
         public NativeArray<Color> Colors;
         public NativeList<CaveSpawnData> SpawnPointList;
         public int PartitionDimX;
@@ -2691,6 +2825,7 @@ public class HectonVoxelEngine : MonoBehaviour
             HectonVoxelEngine.DisposeTrackedNativeArray(ref CurvatureValues);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref AmbientOcclusionValues);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref BiomeValues);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref DirtyBlendValues);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref Colors);
             if (SpawnPointList.IsCreated) SpawnPointList.Dispose();
             HectonVoxelEngine.DisposeTrackedNativeArray(ref NodeBucketOffsets);
@@ -2776,7 +2911,7 @@ public class HectonVoxelEngine : MonoBehaviour
         CavePreset preset = null,
         CancellationToken ct = default)
     {
-        return await GenerateVolumeAsync(worldCenter, seed, preset, 0, ct);
+        return await GenerateVolumeAsync(worldCenter, seed, preset, ResolveDistanceBasedVoxelLodLevel(worldCenter), ct);
     }
 
     /// <summary>
@@ -2884,7 +3019,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 VolumeOrigin = volumeOrigin,
                 Seed = seed,
                 CaveParams = caveParams,
-                BuildCollider = true,
+                BuildCollider = clampedLodLevel == 0,
                 ExtractSpawnPoints = true,
                 Nodes = caveNodes,
                 Tunnels = caveTunnels,
@@ -3004,7 +3139,7 @@ public class HectonVoxelEngine : MonoBehaviour
             entrances,
             structures,
             caveParams,
-            0,
+            ResolveDistanceBasedVoxelLodLevel(worldCenter),
             buildCollider,
             ct);
     }
@@ -3087,7 +3222,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 VolumeOrigin = volumeOrigin,
                 Seed = caveParams.seed,
                 CaveParams = caveParams,
-                BuildCollider = buildCollider,
+                BuildCollider = buildCollider && clampedLodLevel == 0,
                 ExtractSpawnPoints = true,
                 Nodes = nodes,
                 Tunnels = tunnels,
@@ -3836,6 +3971,29 @@ public class HectonVoxelEngine : MonoBehaviour
         return ResolveDeferredVoxelPhysicsBakeBackpressureState(pendingCount, currentlyActive);
     }
 
+    internal static int DebugResolveDistanceBasedVoxelLodLevel(Vector3 worldCenter, Vector3 observerPosition)
+    {
+        return ResolveDistanceBasedVoxelLodLevel(worldCenter, observerPosition);
+    }
+
+    private static int ResolveDistanceBasedVoxelLodLevel(Vector3 worldCenter)
+    {
+        if (SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null)
+            return ResolveDistanceBasedVoxelLodLevel(worldCenter, playerTransform.position);
+
+        Transform bootstrapPlayer = BootstrapState.CurrentPlayerTransform;
+        return bootstrapPlayer != null
+            ? ResolveDistanceBasedVoxelLodLevel(worldCenter, bootstrapPlayer.position)
+            : 0;
+    }
+
+    private static int ResolveDistanceBasedVoxelLodLevel(Vector3 worldCenter, Vector3 observerPosition)
+    {
+        float distanceSq = (worldCenter - observerPosition).sqrMagnitude;
+        float thresholdSq = VoxelLodColliderDisableDistanceMeters * VoxelLodColliderDisableDistanceMeters;
+        return distanceSq > thresholdSq ? 1 : 0;
+    }
+
     private static bool ResolveDeferredVoxelPhysicsBakeBackpressureState(int pendingCount, bool currentlyActive)
     {
         bool nextActive = currentlyActive;
@@ -4152,11 +4310,13 @@ public class HectonVoxelEngine : MonoBehaviour
         data.CurvatureValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         data.AmbientOcclusionValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         data.BiomeValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+        data.DirtyBlendValues = new NativeArray<float>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
         data.Colors = new NativeArray<Color>(data.WeldedCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
         RegisterTrackedNativeArray(data.Normals, nameof(data.Normals));
         RegisterTrackedNativeArray(data.CurvatureValues, nameof(data.CurvatureValues));
         RegisterTrackedNativeArray(data.AmbientOcclusionValues, nameof(data.AmbientOcclusionValues));
         RegisterTrackedNativeArray(data.BiomeValues, nameof(data.BiomeValues));
+        RegisterTrackedNativeArray(data.DirtyBlendValues, nameof(data.DirtyBlendValues));
         RegisterTrackedNativeArray(data.Colors, nameof(data.Colors));
         if (data.ExtractSpawnPoints)
         {
@@ -4238,7 +4398,16 @@ public class HectonVoxelEngine : MonoBehaviour
             colors = data.Colors
         }.Schedule(data.WeldedCount, JOB_BATCH, colorDeps);
 
-        JobHandle phase5Handle = colorHandle;
+        JobHandle dirtyBlendHandle = new VoxelDirtyBlendJob
+        {
+            positions = data.WeldedPositions,
+            modifiedCells = data.ModifiedCells,
+            voxelStep = data.VoxelStep,
+            absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
+            dirtyBlendValues = data.DirtyBlendValues
+        }.Schedule(data.WeldedCount, JOB_BATCH, seamSnapHandle);
+
+        JobHandle phase5Handle = JobHandle.CombineDependencies(colorHandle, dirtyBlendHandle);
         if (data.ExtractSpawnPoints)
         {
             JobHandle spawnHandle = new VoxelSpawnPointJob
@@ -4254,7 +4423,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 spawnPoints = data.SpawnPointList.AsParallelWriter()
             }.Schedule(data.WeldedCount, JOB_BATCH, normalHandle);
 
-            phase5Handle = JobHandle.CombineDependencies(colorHandle, spawnHandle);
+            phase5Handle = JobHandle.CombineDependencies(phase5Handle, spawnHandle);
         }
 
         await AwaitForJobCompletionAsync(phase5Handle, ct, "normal/color/spawn phase");
@@ -4464,7 +4633,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
     static string BuildModifiedCellsNativeMemoryLabel(HectonVoxelVolume volume, int runtimeStamp)
     {
-        int volumeId = volume != null ? volume.GetInstanceID() : 0;
+        EntityId volumeId = volume != null ? volume.GetEntityId() : default;
         return ModifiedCellsNativeMemoryLabelPrefix + volumeId + ":" + runtimeStamp;
     }
 
@@ -4704,6 +4873,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public Vector3 Normal;
         public Color32 Color;
         public Vector4 BakedOcclusionUv1;
+        public Vector4 DirtyBlendUv2;
         public Vector3 AbsolutePositionWS;
     }
 
@@ -4801,6 +4971,7 @@ public class HectonVoxelEngine : MonoBehaviour
         NativeArray<float3> normals,
         NativeArray<Color> colors,
         NativeArray<float> ambientOcclusionValues,
+        NativeArray<float> dirtyBlendValues,
         NativeArray<int> triangleIndices,
         int vertexCount,
         int triangleIndexCount,
@@ -4814,6 +4985,7 @@ public class HectonVoxelEngine : MonoBehaviour
             new VertexAttributeDescriptor(VertexAttribute.Normal, VertexAttributeFormat.Float32, 3),
             new VertexAttributeDescriptor(VertexAttribute.Color, VertexAttributeFormat.UNorm8, 4),
             new VertexAttributeDescriptor(VertexAttribute.TexCoord1, VertexAttributeFormat.Float32, 4),
+            new VertexAttributeDescriptor(VertexAttribute.TexCoord2, VertexAttributeFormat.Float32, 4),
             new VertexAttributeDescriptor(VertexAttribute.TexCoord3, VertexAttributeFormat.Float32, 3));
 
         meshData.SetIndexBufferParams(triangleIndexCount, IndexFormat.UInt32);
@@ -4827,6 +4999,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 Normal = normals[i],
                 Color = (Color32)colors[i],
                 BakedOcclusionUv1 = new Vector4(0f, 0f, 0f, ambientOcclusionValues.IsCreated && i < ambientOcclusionValues.Length ? ambientOcclusionValues[i] : 1f),
+                DirtyBlendUv2 = new Vector4(dirtyBlendValues.IsCreated && i < dirtyBlendValues.Length ? dirtyBlendValues[i] : 0f, 0f, 0f, 0f),
                 AbsolutePositionWS = positions[i] + absolutePositionOffset
             };
         }
@@ -4911,6 +5084,7 @@ public class HectonVoxelEngine : MonoBehaviour
                                NativeArray<float3> normals,
                                NativeArray<Color> colors,
                                NativeArray<float> ambientOcclusionValues,
+                               NativeArray<float> dirtyBlendValues,
                                NativeArray<int> triangleIndices,
                                int triIndexCount,
                                int vertCount,
@@ -4939,7 +5113,7 @@ public class HectonVoxelEngine : MonoBehaviour
             mesh.Clear();
         }
 
-        UploadSurfaceMesh(mesh, positions, normals, colors, ambientOcclusionValues, triangleIndices, vertCount, triIndexCount, absolutePositionOffset);
+        UploadSurfaceMesh(mesh, positions, normals, colors, ambientOcclusionValues, dirtyBlendValues, triangleIndices, vertCount, triIndexCount, absolutePositionOffset);
 
         var mr = go.GetComponent<MeshRenderer>();
         if (mr == null) mr = go.AddComponent<MeshRenderer>();
@@ -4974,6 +5148,7 @@ public class HectonVoxelEngine : MonoBehaviour
                     data.Normals,
                     data.Colors,
                     data.AmbientOcclusionValues,
+                    data.DirtyBlendValues,
                     data.TriangleIndices,
                     data.RawCount,
                     data.WeldedCount,

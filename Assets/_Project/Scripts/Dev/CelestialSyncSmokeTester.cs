@@ -2,7 +2,8 @@
 // HECTON-8 - CelestialSyncSmokeTester.cs
 // Dev-only smoke coverage for orbital/environment sync.
 // Verifies eclipse penumbra math, Aegir fixed sky lock, star seed path,
-// depth-cache presence, biolum bridge presence, and eclipse audio pitch scalar.
+// depth-cache presence, biolum bridge presence, eclipse audio pitch scalar,
+// and meteor-shower event/audio contracts.
 // ============================================================================
 
 using Hecton8.Atmosphere;
@@ -28,6 +29,7 @@ namespace Hecton8.Dev
         [SerializeField] private EcosystemDirector ecosystemDirector;
         [SerializeField] private HectonBiolumController biolumController;
         [SerializeField] private SpatialAudioManager spatialAudioManager;
+        [SerializeField] private RandomEventSystem randomEventSystem;
 
         [Header("Execution")]
         [SerializeField] private bool runOnStart = false;
@@ -42,6 +44,7 @@ namespace Hecton8.Dev
         [SerializeField] private float _debugStarSeed;
         [SerializeField] private float _debugPenumbraPartial;
         [SerializeField] private float _debugEclipsePitchRatio;
+        [SerializeField] private float _debugMeteorFlash;
 #pragma warning restore CS0414
 
         private void Awake()
@@ -100,6 +103,9 @@ namespace Hecton8.Dev
             if (!ValidateAudioPitchScalar())
                 return false;
 
+            if (!ValidateMeteorContracts())
+                return false;
+
             _debugLastPass = true;
             _debugLastIssue = string.Empty;
             LogVerbose("[CelestialSyncSmoke] COMPLETE pass=True");
@@ -131,6 +137,11 @@ namespace Hecton8.Dev
                 spatialAudioManager = SpatialAudioManager.ActiveRuntimeInstance != null
                     ? SpatialAudioManager.ActiveRuntimeInstance
                     : UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
+
+            if (randomEventSystem == null)
+                randomEventSystem = RandomEventSystem.Instance != null
+                    ? RandomEventSystem.Instance
+                    : UnityEngine.Object.FindAnyObjectByType<RandomEventSystem>(FindObjectsInactive.Include);
         }
 
         private bool ValidateReferences()
@@ -147,6 +158,8 @@ namespace Hecton8.Dev
                 return Fail("Missing HectonBiolumController.");
             if (spatialAudioManager == null)
                 return Fail("Missing SpatialAudioManager.");
+            if (randomEventSystem == null)
+                return Fail("Missing RandomEventSystem.");
 
             return true;
         }
@@ -217,6 +230,36 @@ namespace Hecton8.Dev
                 return Fail("Eclipse acoustic pitch ratio mismatch.");
 
             return true;
+        }
+
+        private bool ValidateMeteorContracts()
+        {
+            if (ResolveRandomEventTypeCountForSmoke() <= ResolveMeteorEventIndexForSmoke())
+                return Fail("RandomEventSystem event timer capacity excludes MeteorShower.");
+
+            if (ResolveMeteorBoomKindForSmoke() != 2)
+                return Fail("MeteorBoom procedural audio kind contract changed.");
+
+            _debugMeteorFlash = RandomEventSystem.EvaluateMeteorFlashForSmoke(1.25f, 99173f, 2.1f);
+            if (float.IsNaN(_debugMeteorFlash) || _debugMeteorFlash < 0f || _debugMeteorFlash > 1f)
+                return Fail("Meteor flash evaluator returned out-of-range value.");
+
+            return true;
+        }
+
+        private static int ResolveRandomEventTypeCountForSmoke()
+        {
+            return RandomEventSystem.EventTypeCount;
+        }
+
+        private static int ResolveMeteorEventIndexForSmoke()
+        {
+            return (int)RandomEventType.MeteorShower;
+        }
+
+        private static int ResolveMeteorBoomKindForSmoke()
+        {
+            return (int)ProceduralAudioPingKind.MeteorBoom;
         }
 
         private bool Fail(string issue)

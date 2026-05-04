@@ -5,12 +5,14 @@ Approved For Use: `2026-04-05`
 Primary Target: `NVIDIA MX350 2 GB VRAM / 12 GB RAM / i5-1135G7`
 Direction: `NASA-Punk + Deep Sea Noir`
 
-## 2026-05-02 Current-State Boundary
+## 2026-05-04 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this roadmap as current project truth.
+- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, and `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` before using this roadmap as current project truth.
 - This file is a product roadmap and historical working ledger, not a runtime proof document.
 - Where this roadmap says "source of truth", treat that as roadmap/product authority only; current source code, active docs indexes, and fresh verification logs win for implementation.
-- Current May 2 dotnet compile evidence is clean for `Hecton8.Core.csproj` only: `0 Error(s)`, `117 Warning(s)`.
+- Current May 4 local Core and Editor compile evidence is `0 Warning(s)` / `0 Error(s)`.
+- Current May 4 DOTS restore build is `1 Warning(s)` / `0 Error(s)`; PlayModeTests restore build is `0 Warning(s)` / `0 Error(s)`.
+- Current May 4 post-repair foundation guard scan exits `0`; this is source-gate proof only, not runtime proof.
 - Play Mode deadlock, Unity editor/batch truth, zero-GC, memory retention, and build readiness remain `PENDING VERIFICATION`.
 
 ## Summary

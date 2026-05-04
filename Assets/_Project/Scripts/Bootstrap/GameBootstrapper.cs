@@ -60,8 +60,8 @@ namespace Hecton8.Bootstrap
         private const int FatalBootCrashLogBufferBytes = 24576;
         private const string BiosErrorMessageTemplate =
             "BIOS ERROR 0xBOOT\nEXPECTED: 00_BOOTSTRAP [0]\nDETECTED: {0} [{1}]\nACTION: FORCED RECOVERY";
-        private const int BootstrapSceneLoadWatchdogFrames = 1200;
-        private const int BootstrapJobWaitWatchdogFrames = 1200;
+        private const double BootstrapSceneLoadWatchdogSeconds = 10.0d;
+        private const double BootstrapJobWaitWatchdogSeconds = 10.0d;
         private const int BootstrapSceneRootScratchCapacity = 256;
         private const int BootstrapTransformScratchCapacity = 4096;
         private static readonly UTF8Encoding _fatalBootCrashEncoding = new UTF8Encoding(false);
@@ -690,12 +690,13 @@ namespace Hecton8.Bootstrap
 
                 loadOperation.allowSceneActivation = false;
                 int waitFrames = 0;
+                long waitStartTimestamp = Stopwatch.GetTimestamp();
                 while (loadOperation.progress < 0.9f)
                 {
                     ct.ThrowIfCancellationRequested();
-                    if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
+                    if (HasWatchdogElapsed(waitStartTimestamp, BootstrapSceneLoadWatchdogSeconds, out double elapsedSeconds))
                     {
-                        LogBootstrapSceneLoadWatchdog("main-menu load", loadOperation.progress, waitFrames);
+                        LogBootstrapSceneLoadWatchdog("main-menu load", loadOperation.progress, waitFrames, elapsedSeconds);
                         return false;
                     }
 
@@ -706,14 +707,18 @@ namespace Hecton8.Bootstrap
                 if (!await WaitForBootstrapActivationGatesAsync(ct))
                     return false;
 
+                if (!SceneBootstrap.TryValidateSceneRootBudget(MainMenuSceneName, "bootstrap-main-menu-preactivation"))
+                    return false;
+
                 loadOperation.allowSceneActivation = true;
                 waitFrames = 0;
+                waitStartTimestamp = Stopwatch.GetTimestamp();
                 while (!loadOperation.isDone)
                 {
                     ct.ThrowIfCancellationRequested();
-                    if (waitFrames >= BootstrapSceneLoadWatchdogFrames)
+                    if (HasWatchdogElapsed(waitStartTimestamp, BootstrapSceneLoadWatchdogSeconds, out double elapsedSeconds))
                     {
-                        LogBootstrapSceneLoadWatchdog("main-menu activation", loadOperation.progress, waitFrames);
+                        LogBootstrapSceneLoadWatchdog("main-menu activation", loadOperation.progress, waitFrames, elapsedSeconds);
                         return false;
                     }
 
@@ -733,10 +738,10 @@ namespace Hecton8.Bootstrap
             }
         }
 
-        private static void LogBootstrapSceneLoadWatchdog(string stageName, float progress, int waitFrames)
+        private static void LogBootstrapSceneLoadWatchdog(string stageName, float progress, int waitFrames, double elapsedSeconds)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[GameBootstrapper] Scene load watchdog tripped during {stageName}. progress={progress:0.000} frames={waitFrames} target={MainMenuSceneName}.");
+            Debug.LogError($"[GameBootstrapper] Scene load watchdog tripped during {stageName}. progress={progress:0.000} frames={waitFrames} elapsed={elapsedSeconds:0.000}s target={MainMenuSceneName}.");
 #endif
         }
 
@@ -1019,17 +1024,25 @@ namespace Hecton8.Bootstrap
             return registry != null && registry.AreResidentWorldPrefabPoolsReady();
         }
 
+        private static bool HasWatchdogElapsed(long startTimestamp, double timeoutSeconds, out double elapsedSeconds)
+        {
+            long elapsedTicks = Stopwatch.GetTimestamp() - startTimestamp;
+            elapsedSeconds = elapsedTicks / (double)Stopwatch.Frequency;
+            return elapsedSeconds >= timeoutSeconds;
+        }
+
         private static async Awaitable<bool> WaitForBootstrapActivationGatesAsync(CancellationToken ct)
         {
             try
             {
                 int waitFrames = 0;
+                long waitStartTimestamp = Stopwatch.GetTimestamp();
                 while (!AreBootstrapActivationGatesReady())
                 {
                     ct.ThrowIfCancellationRequested();
-                    if (waitFrames >= BootstrapJobWaitWatchdogFrames)
+                    if (HasWatchdogElapsed(waitStartTimestamp, BootstrapJobWaitWatchdogSeconds, out double elapsedSeconds))
                     {
-                        LogBootstrapSceneLoadWatchdog("asset activation gates", 0.9f, waitFrames);
+                        LogBootstrapSceneLoadWatchdog("asset activation gates", 0.9f, waitFrames, elapsedSeconds);
                         return false;
                     }
 
@@ -2062,15 +2075,16 @@ namespace Hecton8.Bootstrap
         private static async Awaitable WaitForJobCompletionAsync(JobHandle handle, CancellationToken ct)
         {
             int waitFrames = 0;
+            long waitStartTimestamp = Stopwatch.GetTimestamp();
             try
             {
                 while (!handle.IsCompleted)
                 {
                     ct.ThrowIfCancellationRequested();
-                    if (waitFrames >= BootstrapJobWaitWatchdogFrames)
+                    if (HasWatchdogElapsed(waitStartTimestamp, BootstrapJobWaitWatchdogSeconds, out double elapsedSeconds))
                     {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogError($"[GameBootstrapper] Job wait watchdog tripped after {waitFrames} frames. Forcing completion as cleanup barrier.");
+                        Debug.LogError($"[GameBootstrapper] Job wait watchdog tripped after {waitFrames} frames ({elapsedSeconds:0.000}s). Forcing completion as cleanup barrier.");
 #endif
                         break;
                     }

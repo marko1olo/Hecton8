@@ -138,6 +138,7 @@ namespace Hecton8.World
             public float CanopyVerticalMaxMeters;
             public float CanopyMinHeightScale;
             public float LightStarvationStrength;
+            public float LunarResonanceGrowthMultiplier;
             [WriteOnly] public NativeArray<FloraMaturationResult> Results;
 
             public void Execute(int index)
@@ -154,7 +155,9 @@ namespace Hecton8.World
                 FloraMaturationState state = States[index];
                 float durationSeconds = math.max(1f, state.GrowthDurationSeconds);
                 float ageSeconds = math.max(0f, CurrentPlayTimeSeconds - state.SpawnPlayTimeSeconds);
-                float progress01 = math.saturate((ageSeconds / durationSeconds) * ResolveSymbioticGrowthMultiplier(state.InstanceUid));
+                float growthRateMultiplier = ResolveSymbioticGrowthMultiplier(state.InstanceUid) *
+                                             math.max(1f, LunarResonanceGrowthMultiplier);
+                float progress01 = math.saturate((ageSeconds / durationSeconds) * growthRateMultiplier);
                 float maturationMultiplier = ResolveMaturationMultiplier(progress01);
                 float growthMultiplier = ResolveLightStarvationGrowthMultiplier(index, state, progress01);
                 Results[index] = new FloraMaturationResult
@@ -366,6 +369,8 @@ namespace Hecton8.World
         private bool _maturationJobScheduled;
         private bool _symbioticMstJobScheduled;
         private int _symbioticMstResultCount;
+        private float _lunarResonanceExpirePlayTimeSeconds;
+        private float _lunarResonanceGrowthMultiplier = 1f;
         private float _lastSeedPlayTime;
         private bool _tickRegistered;
         private bool _slowTickRegistered;
@@ -679,6 +684,7 @@ namespace Hecton8.World
                 CanopyVerticalMaxMeters = CanopyVerticalMaxMeters,
                 CanopyMinHeightScale = CanopyMinHeightScale,
                 LightStarvationStrength = LightStarvationStrength,
+                LunarResonanceGrowthMultiplier = ResolveLunarResonanceGrowthMultiplier(currentPlayTime),
                 Results = _maturationResults
             }.Schedule(_maturationStates.Length, 32);
             _maturationJobScheduled = true;
@@ -794,6 +800,34 @@ namespace Hecton8.World
 
             return bestInstanceUid != 0u &&
                    TryApplySymbioticFungalFertilizer(bestInstanceUid, growthMultiplier, durationSeconds);
+        }
+
+        public void ApplyLunarResonance(float growthMultiplier, float durationSeconds)
+        {
+            if (growthMultiplier <= 1f ||
+                durationSeconds <= 0f ||
+                !float.IsFinite(growthMultiplier) ||
+                !float.IsFinite(durationSeconds))
+            {
+                return;
+            }
+
+            float currentPlayTime = GetCurrentPlayTimeSeconds();
+            _lunarResonanceGrowthMultiplier = Mathf.Max(_lunarResonanceGrowthMultiplier, growthMultiplier);
+            _lunarResonanceExpirePlayTimeSeconds = Mathf.Max(
+                _lunarResonanceExpirePlayTimeSeconds,
+                currentPlayTime + durationSeconds);
+        }
+
+        private float ResolveLunarResonanceGrowthMultiplier(float currentPlayTime)
+        {
+            if (currentPlayTime > _lunarResonanceExpirePlayTimeSeconds)
+            {
+                _lunarResonanceGrowthMultiplier = 1f;
+                return 1f;
+            }
+
+            return Mathf.Max(1f, _lunarResonanceGrowthMultiplier);
         }
 
         private void ScheduleSymbioticMstJob(uint rootInstanceUid, float growthMultiplier, float durationSeconds)

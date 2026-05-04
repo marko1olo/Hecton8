@@ -141,6 +141,10 @@ namespace Hecton8.World
         [Tooltip("Low-alpha silt tint used for biome transition seismic dust.")]
         private Color seismicDustColor = new Color(0.34f, 0.32f, 0.26f, 0.42f);
 
+        [SerializeField]
+        [Tooltip("Low-alpha disturbed-silt tint used for KCC and submarine wake trails.")]
+        private Color wakeSiltColor = new Color(0.28f, 0.31f, 0.29f, 0.34f);
+
         private FluidDecalState[] _decalStates;
         private Mesh _quadMesh;
         private Material _runtimeMaterial;
@@ -234,6 +238,30 @@ namespace Hecton8.World
             EnsureRenderingResources(true);
             float clampedScale = Mathf.Clamp01(radiusScale);
             RegisterDecal(positionWS, seismicDustColor, Mathf.Lerp(0.6f, 1.6f, clampedScale), Mathf.Lerp(2.2f, 5.4f, clampedScale), 8f);
+        }
+
+        /// <summary>
+        /// Registers a disturbed-silt sheet emitted by fast KCC or vehicle wake motion.
+        /// </summary>
+        public void RegisterWakeSilt(Vector3 positionWS, Vector3 sourceVelocityWS, float intensity01)
+        {
+            EnsureRenderingResources(true);
+            float3 position3 = new float3(positionWS.x, positionWS.y, positionWS.z);
+            float3 velocity3 = new float3(sourceVelocityWS.x, sourceVelocityWS.y, sourceVelocityWS.z);
+            if (!math.all(math.isfinite(position3)) || !math.all(math.isfinite(velocity3)))
+                return;
+
+            float clampedIntensity = math.saturate(intensity01);
+            if (clampedIntensity <= 0.001f)
+                return;
+
+            float speed = math.sqrt(math.lengthsq(velocity3));
+            Color color = wakeSiltColor;
+            color.a *= Mathf.Lerp(0.35f, 1f, clampedIntensity);
+            float startRadius = Mathf.Lerp(0.45f, 1.4f, clampedIntensity);
+            float targetRadius = Mathf.Lerp(1.6f, 5.2f, clampedIntensity) + speed * 0.04f;
+            float lifetime = Mathf.Lerp(2.2f, 6.5f, clampedIntensity);
+            RegisterDecal(positionWS, color, startRadius, targetRadius, lifetime);
         }
 
         /// <summary>
@@ -512,6 +540,7 @@ namespace Hecton8.World
             wakeTearStrength = Mathf.Clamp01(wakeTearStrength);
             wakeDistortion = Mathf.Clamp01(wakeDistortion);
             wakeThreshold = Mathf.Clamp01(wakeThreshold);
+            wakeSiltColor.a = Mathf.Clamp01(wakeSiltColor.a);
         }
 
 #if UNITY_EDITOR

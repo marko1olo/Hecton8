@@ -16,6 +16,7 @@ namespace Hecton8.Audio
         private int _sourceChannels = 1;
         private int _underrunCount;
         private int _overflowDropCount;
+        private int _lastTelemetryOverflowDropCount;
 
         public bool IsCreated => _frames.IsCreated && _sharedState.IsCreated;
         public int CapacityFrames => _capacityFrames;
@@ -75,6 +76,7 @@ namespace Hecton8.Audio
             _sourceChannels = resolvedChannels;
             Volatile.Write(ref _underrunCount, 0);
             Volatile.Write(ref _overflowDropCount, 0);
+            Volatile.Write(ref _lastTelemetryOverflowDropCount, 0);
             Clear();
         }
 
@@ -112,7 +114,19 @@ namespace Hecton8.Audio
             int freeFrames = _capacityFrames - availableFrames - 1;
             if (safeFrameCount > freeFrames)
             {
-                Interlocked.Increment(ref _overflowDropCount);
+                int overflowDropCount = Interlocked.Increment(ref _overflowDropCount);
+                bool shouldReport = overflowDropCount == 1 ||
+                                    (overflowDropCount & (overflowDropCount - 1)) == 0;
+                if (shouldReport &&
+                    overflowDropCount != Volatile.Read(ref _lastTelemetryOverflowDropCount) &&
+                    Interlocked.Exchange(ref _lastTelemetryOverflowDropCount, overflowDropCount) != overflowDropCount)
+                {
+                    CrashTelemetryBuffer.ReportAudioOverflowDropWarning(
+                        overflowDropCount,
+                        availableFrames,
+                        freeFrames);
+                }
+
                 return false;
             }
 

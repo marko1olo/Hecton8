@@ -597,7 +597,7 @@ namespace Hecton8.World
                 state.patchBuffer.GetLength(0) != rect.height ||
                 state.patchBuffer.GetLength(1) != rect.width)
             {
-                // COLD ALLOC: resized only when seam footprint dimensions change.
+                // COLD ALLOC: Single[rect.height*rect.width] - Unity SetHeightsDelayLOD bridge resized only when seam footprint changes - owner: WorldGenerativeGeologyTerrainSeamApplier
                 state.patchBuffer = new float[rect.height, rect.width];
             }
 
@@ -622,12 +622,12 @@ namespace Hecton8.World
             int totalHeights = Mathf.Max(0, resolution * resolution);
             if (totalHeights > 0)
             {
-                // COLD ALLOC: persistent native baseline for seam restoration, refreshed only when TerrainData or resolution changes.
+                // COLD ALLOC: NativeArray<Single>[resolution*resolution] - persistent terrain baseline refreshed only when TerrainData or resolution changes - owner: WorldGenerativeGeologyTerrainSeamApplier
                 state.baselineHeights = new NativeArray<float>(totalHeights, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
                 NativeMemorySentinel.RegisterNativeArray(
                     state.baselineHeights,
                     NativeMemoryOwner,
-                    $"{nameof(TerrainApplyState.baselineHeights)}:{terrain.GetInstanceID()}",
+                    $"{nameof(TerrainApplyState.baselineHeights)}:{EntityId.ToULong(terrain.GetEntityId())}",
                     NativeMemoryLifetime);
                 PopulateTerrainBaselineNative(state.baselineHeights, terrain, terrainData, resolution);
             }

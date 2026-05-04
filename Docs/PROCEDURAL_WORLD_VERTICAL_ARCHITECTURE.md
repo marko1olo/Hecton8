@@ -1,15 +1,16 @@
 # Procedural World Vertical Architecture
 
+Date: `2026-05-04`
 Status: `ACTIVE`
 Verification: `PENDING VERIFICATION`
 
 This file defines how HECTON-8 expands from flora into a full procedural asset pipeline without creating parallel runtime systems.
 
-2026-05-02 current-state boundary:
+2026-05-04 current-state boundary:
 
 - This document defines the vertical procedural architecture contract.
 - It does not prove that every category below has production-ready prefabs, materials, scatter profiles, or runtime validation.
-- Current conceptual project truth starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current conceptual project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - Current scatter runtime remains owned by `WorldProceduralScatterDirector` and adjacent backend seams; no category may create a parallel scatter stack.
 - Encoding-damaged geology production notes were moved to `Docs/DEPRECATED/Encoding_Damaged_2026-05-01/`; use `Docs/ARCHITECTURE/SEISMIC_GEOLOGY_SYSTEM.md` for readable geology/seismic reference.
 

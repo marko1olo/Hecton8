@@ -23,6 +23,7 @@ namespace Hecton8.Biolum
         private static readonly int _HalfExtentsId = Shader.PropertyToID("_HectonBiolumVolumeHalfExtents");
         private static readonly int _WorldToLocalId = Shader.PropertyToID("_HectonBiolumVolumeWorldToLocal");
         private static readonly int _VolumeParamsId = Shader.PropertyToID("_HectonBiolumVolumeParams");
+        private static readonly int _CascadeParamsId = Shader.PropertyToID("_HectonBiolumCascadeParams");
         private static readonly int _TexelSizeId = Shader.PropertyToID("_HectonBiolumVolumeTexelSize");
         private static readonly int _GlobalTextureId = Shader.PropertyToID("_HectonBiolumVolumeTex");
         private static readonly int _GlobalActiveId = Shader.PropertyToID("_HectonBiolumVolumeActive");
@@ -57,6 +58,18 @@ namespace Hecton8.Biolum
         [SerializeField, Range(0f, 1f)]
         [Tooltip("Per-second volume decay applied before each reinjection pass.")]
         private float decayRate = 0.08f;
+
+        [SerializeField, Range(0.05f, 0.95f)]
+        [Tooltip("Radiance threshold above which a biolum voxel propagates a local cascade wave into adjacent voxels.")]
+        private float cascadeSpikeThreshold = 0.32f;
+
+        [SerializeField, Range(0f, 3f)]
+        [Tooltip("Propagation gain applied when adjacent biolum voxels spike above the cascade threshold.")]
+        private float cascadePropagationGain = 0.75f;
+
+        [SerializeField, Range(0f, 12f)]
+        [Tooltip("Wave speed used to phase-offset the biolum cascade through the player-centered volume.")]
+        private float cascadeWaveSpeed = 4.4f;
 
         [SerializeField, Range(8f, 160f)]
         [Tooltip("Maximum radius used when gathering nearby biolum zone emitters.")]
@@ -163,6 +176,11 @@ namespace Hecton8.Biolum
                 math.saturate(diffusionStrength),
                 resolvedDecayRate,
                 math.max(0f, deltaTime));
+            Vector4 cascadeParams = new Vector4(
+                math.saturate(cascadeSpikeThreshold),
+                math.max(0f, cascadePropagationGain),
+                math.max(0f, cascadeWaveSpeed),
+                Time.time);
             Vector4 texelSize = new Vector4(
                 1f / volumeResolution,
                 1f / volumeResolution,
@@ -171,7 +189,7 @@ namespace Hecton8.Biolum
 
             if (_needsClear)
             {
-                BindSharedParameters(_clearKernel, halfExtents, worldToLocal, volumeParams, texelSize, 0);
+                BindSharedParameters(_clearKernel, halfExtents, worldToLocal, volumeParams, cascadeParams, texelSize, 0);
                 biolumDiffusionCompute.SetTexture(_clearKernel, _VolumeOutputId, _volumeA);
                 DispatchVolumeKernel(_clearKernel);
                 biolumDiffusionCompute.SetTexture(_clearKernel, _VolumeOutputId, _volumeB);
@@ -182,12 +200,12 @@ namespace Hecton8.Biolum
             if (pointCount > 0)
                 GraphicsBufferUploadUtility.UploadArray(_pointBuffer, _pointUpload, pointCount);
 
-            BindSharedParameters(_diffuseKernel, halfExtents, worldToLocal, volumeParams, texelSize, pointCount);
+            BindSharedParameters(_diffuseKernel, halfExtents, worldToLocal, volumeParams, cascadeParams, texelSize, pointCount);
             biolumDiffusionCompute.SetTexture(_diffuseKernel, _VolumeInputId, _volumeA);
             biolumDiffusionCompute.SetTexture(_diffuseKernel, _VolumeOutputId, _volumeB);
             DispatchVolumeKernel(_diffuseKernel);
 
-            BindSharedParameters(_injectKernel, halfExtents, worldToLocal, volumeParams, texelSize, pointCount);
+            BindSharedParameters(_injectKernel, halfExtents, worldToLocal, volumeParams, cascadeParams, texelSize, pointCount);
             biolumDiffusionCompute.SetTexture(_injectKernel, _VolumeInputId, _volumeB);
             biolumDiffusionCompute.SetTexture(_injectKernel, _VolumeOutputId, _volumeA);
             DispatchVolumeKernel(_injectKernel);
@@ -294,11 +312,19 @@ namespace Hecton8.Biolum
             return safeCount;
         }
 
-        private void BindSharedParameters(int kernelIndex, Vector4 halfExtents, Matrix4x4 worldToLocal, Vector4 volumeParams, Vector4 texelSize, int pointCount)
+        private void BindSharedParameters(
+            int kernelIndex,
+            Vector4 halfExtents,
+            Matrix4x4 worldToLocal,
+            Vector4 volumeParams,
+            Vector4 cascadeParams,
+            Vector4 texelSize,
+            int pointCount)
         {
             biolumDiffusionCompute.SetVector(_HalfExtentsId, halfExtents);
             biolumDiffusionCompute.SetMatrix(_WorldToLocalId, worldToLocal);
             biolumDiffusionCompute.SetVector(_VolumeParamsId, volumeParams);
+            biolumDiffusionCompute.SetVector(_CascadeParamsId, cascadeParams);
             biolumDiffusionCompute.SetVector(_TexelSizeId, texelSize);
             biolumDiffusionCompute.SetInt(_PointCountId, pointCount);
             biolumDiffusionCompute.SetBuffer(kernelIndex, _PointBufferId, _pointBuffer);

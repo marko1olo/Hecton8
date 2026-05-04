@@ -5,7 +5,10 @@
 // ╚══════════════════════════════════════════════════════════════════════════════╝
 
 using System;
+using System.Collections.Generic;
+using Unity.Burst;
 using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 using Hecton8.Core;
@@ -35,6 +38,118 @@ namespace Hecton8.Caves
         Pending = 1,
         Baking = 2,
         Complete = 3
+    }
+
+    /// <summary>
+    /// Scanner-grade CPU SDF raymarch hit resolved without Unity Physics.
+    /// </summary>
+    public struct VoxelSdfRaycastHit
+    {
+        public Vector3 Point;
+        public Vector3 Normal;
+        public float Distance;
+        public float Density;
+        public byte Hit;
+    }
+
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct VoxelSdfRaymarchJob : IJob
+    {
+        [ReadOnly] public NativeArray<byte> EncodedSdf;
+        public int3 GridDimensions;
+        public float3 VolumeOrigin;
+        public float3 CellSize;
+        public float SdfRange;
+        public float3 Origin;
+        public float3 Direction;
+        public float MaxDistance;
+        public float StepMeters;
+        public NativeArray<VoxelSdfRaycastHit> Result;
+
+        public void Execute()
+        {
+            if (!EncodedSdf.IsCreated ||
+                !Result.IsCreated ||
+                Result.Length <= 0 ||
+                GridDimensions.x <= 1 ||
+                GridDimensions.y <= 1 ||
+                GridDimensions.z <= 1 ||
+                SdfRange <= 0f ||
+                MaxDistance <= 0f)
+            {
+                return;
+            }
+
+            float3 direction = math.normalizesafe(Direction, new float3(0f, 0f, 1f));
+            float step = math.max(0.05f, StepMeters);
+            float previousDensity = 0f;
+            float3 previousPosition = Origin;
+            bool hasPrevious = false;
+            for (float distance = 0f; distance <= MaxDistance; distance += step)
+            {
+                float3 position = Origin + direction * distance;
+                float density = Sample(position);
+                if ((density >= 0f && (!hasPrevious || previousDensity < 0f)) ||
+                    (hasPrevious && previousDensity < 0f && density >= 0f))
+                {
+                    float denom = math.max(0.0001f, density - previousDensity);
+                    float t = hasPrevious ? math.saturate(-previousDensity / denom) : 0f;
+                    float3 resolvedPoint = math.lerp(previousPosition, position, t);
+                    Result[0] = new VoxelSdfRaycastHit
+                    {
+                        Point = new Vector3(resolvedPoint.x, resolvedPoint.y, resolvedPoint.z),
+                        Normal = new Vector3(0f, 1f, 0f),
+                        Distance = math.max(0f, distance - step + step * t),
+                        Density = density,
+                        Hit = 1
+                    };
+                    return;
+                }
+
+                previousDensity = density;
+                previousPosition = position;
+                hasPrevious = true;
+            }
+        }
+
+        private float Sample(float3 worldPosition)
+        {
+            float3 safeCell = math.max(CellSize, new float3(0.0001f));
+            float3 sample = (worldPosition - VolumeOrigin) / safeCell;
+            sample = math.clamp(sample, float3.zero, new float3(GridDimensions.x - 1.001f, GridDimensions.y - 1.001f, GridDimensions.z - 1.001f));
+            int x0 = (int)math.floor(sample.x);
+            int y0 = (int)math.floor(sample.y);
+            int z0 = (int)math.floor(sample.z);
+            int x1 = math.min(x0 + 1, GridDimensions.x - 1);
+            int y1 = math.min(y0 + 1, GridDimensions.y - 1);
+            int z1 = math.min(z0 + 1, GridDimensions.z - 1);
+            float tx = sample.x - x0;
+            float ty = sample.y - y0;
+            float tz = sample.z - z0;
+
+            float c000 = DecodeAt(x0, y0, z0);
+            float c100 = DecodeAt(x1, y0, z0);
+            float c010 = DecodeAt(x0, y1, z0);
+            float c110 = DecodeAt(x1, y1, z0);
+            float c001 = DecodeAt(x0, y0, z1);
+            float c101 = DecodeAt(x1, y0, z1);
+            float c011 = DecodeAt(x0, y1, z1);
+            float c111 = DecodeAt(x1, y1, z1);
+            float c00 = math.lerp(c000, c100, tx);
+            float c10 = math.lerp(c010, c110, tx);
+            float c01 = math.lerp(c001, c101, tx);
+            float c11 = math.lerp(c011, c111, tx);
+            return math.lerp(math.lerp(c00, c10, ty), math.lerp(c01, c11, ty), tz);
+        }
+
+        private float DecodeAt(int x, int y, int z)
+        {
+            int index = x + GridDimensions.x * (y + GridDimensions.y * z);
+            if (index < 0 || index >= EncodedSdf.Length)
+                return 0f;
+
+            return ((EncodedSdf[index] / 255f) * 2f - 1f) * SdfRange;
+        }
     }
 
     /// <summary>
@@ -69,6 +184,9 @@ namespace Hecton8.Caves
         private const float OrganicRootMoundMinimumOverlapMeters = 0.25f;
         private const float OrganicRootMoundSeabedProbeStepMeters = 0.5f;
         private const int OrganicRootMoundSeabedProbeSteps = 16;
+
+        // COLD ALLOC: List<HectonVoxelVolume>[32] - scanner SDF raymarch candidates - owner: HectonVoxelVolume
+        private static readonly List<HectonVoxelVolume> s_activePublishedVolumes = new List<HectonVoxelVolume>(32);
 
         private HectonVoxelEngine _engine;
         private VoxelDeltaProcessor _deltaProcessor;
@@ -213,6 +331,66 @@ namespace Hecton8.Caves
         /// <summary>Published PDA sonar snapshot revision.</summary>
         public int PublishedSonarVersion => _publishedSonarVersion;
 
+        public static bool TryRaymarchAnyPublishedSdf(
+            Vector3 runtimeOrigin,
+            Vector3 runtimeDirection,
+            float maxDistance,
+            float stepMeters,
+            out HectonVoxelVolume volume,
+            out VoxelSdfRaycastHit hit)
+        {
+            volume = null;
+            hit = default;
+            float bestDistance = float.MaxValue;
+            bool resolved = false;
+            for (int i = s_activePublishedVolumes.Count - 1; i >= 0; i--)
+            {
+                HectonVoxelVolume candidate = s_activePublishedVolumes[i];
+                if (candidate == null || !candidate._runtimeDataReady)
+                {
+                    s_activePublishedVolumes.RemoveAt(i);
+                    continue;
+                }
+
+                if (!candidate.TryRaymarchPublishedSdf(runtimeOrigin, runtimeDirection, maxDistance, stepMeters, out VoxelSdfRaycastHit candidateHit) ||
+                    candidateHit.Hit == 0 ||
+                    candidateHit.Distance >= bestDistance)
+                {
+                    continue;
+                }
+
+                bestDistance = candidateHit.Distance;
+                hit = candidateHit;
+                volume = candidate;
+                resolved = true;
+            }
+
+            return resolved;
+        }
+
+        private static void RegisterPublishedVolume(HectonVoxelVolume volume)
+        {
+            if (volume == null)
+                return;
+
+            for (int i = 0; i < s_activePublishedVolumes.Count; i++)
+            {
+                if (ReferenceEquals(s_activePublishedVolumes[i], volume))
+                    return;
+            }
+
+            s_activePublishedVolumes.Add(volume);
+        }
+
+        private static void UnregisterPublishedVolume(HectonVoxelVolume volume)
+        {
+            for (int i = s_activePublishedVolumes.Count - 1; i >= 0; i--)
+            {
+                if (ReferenceEquals(s_activePublishedVolumes[i], volume) || s_activePublishedVolumes[i] == null)
+                    s_activePublishedVolumes.RemoveAt(i);
+            }
+        }
+
         /// <summary>
         /// Samples the published runtime SDF payload at one runtime-space position.
         /// Positive densities indicate denser solid mass; negative densities indicate cavity/open water.
@@ -263,6 +441,68 @@ namespace Hecton8.Caves
         public bool TrySampleDensity(Vector3 worldPosition, out float density)
         {
             return TrySampleDensity(worldPosition, out density, out _);
+        }
+
+        /// <summary>
+        /// Raymarches the published SDF snapshot in runtime space and returns the first open-to-solid crossing.
+        /// This path bypasses Unity Physics for scanner tools.
+        /// </summary>
+        public bool TryRaymarchPublishedSdf(
+            Vector3 runtimeOrigin,
+            Vector3 runtimeDirection,
+            float maxDistance,
+            float stepMeters,
+            out VoxelSdfRaycastHit hit)
+        {
+            hit = default;
+            if (!_runtimeDataReady ||
+                !_publishedSonarSdf.IsCreated ||
+                _publishedSonarGridDimensions.x <= 1 ||
+                _publishedSonarGridDimensions.y <= 1 ||
+                _publishedSonarGridDimensions.z <= 1 ||
+                maxDistance <= 0f)
+            {
+                return false;
+            }
+
+            Vector3 direction = runtimeDirection.sqrMagnitude > 0.0001f
+                ? runtimeDirection.normalized
+                : Vector3.forward;
+            float step = Mathf.Max(0.05f, stepMeters);
+            float previousDensity = 0f;
+            bool hasPrevious = false;
+            Vector3 previousPosition = runtimeOrigin;
+            for (float distance = 0f; distance <= maxDistance; distance += step)
+            {
+                Vector3 position = runtimeOrigin + direction * distance;
+                if (!TrySampleDensity(position, out float density, out _))
+                    continue;
+
+                if ((density >= 0f && (!hasPrevious || previousDensity < 0f)) ||
+                    (hasPrevious && previousDensity < 0f && density >= 0f))
+                {
+                    float denom = Mathf.Max(0.0001f, density - previousDensity);
+                    float t = hasPrevious ? Mathf.Clamp01(-previousDensity / denom) : 0f;
+                    Vector3 resolvedPoint = Vector3.Lerp(previousPosition, position, t);
+                    Vector3 normal = Vector3.up;
+                    TrySampleSurfaceNormal(resolvedPoint, step, out normal);
+                    hit = new VoxelSdfRaycastHit
+                    {
+                        Point = resolvedPoint,
+                        Normal = normal,
+                        Distance = Mathf.Max(0f, distance - step + step * t),
+                        Density = density,
+                        Hit = 1
+                    };
+                    return true;
+                }
+
+                previousDensity = density;
+                previousPosition = position;
+                hasPrevious = true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -430,6 +670,7 @@ namespace Hecton8.Caves
         /// </summary>
         public void PrepareForReuse()
         {
+            UnregisterPublishedVolume(this);
             _deltaProcessor?.UnregisterVolume(this);
             UnregisterTerrainHoles();
             ResetColliderChunks(false);
@@ -817,6 +1058,7 @@ namespace Hecton8.Caves
             _runtimeStamp++;
             CacheRuntimeComponents();
             SetBakeState(VoxelBakeState.Complete);
+            RegisterPublishedVolume(this);
             _deltaProcessor?.RegisterVolume(this);
         }
 
@@ -1812,6 +2054,7 @@ namespace Hecton8.Caves
 
         private void OnDestroy()
         {
+            UnregisterPublishedVolume(this);
             _deltaProcessor?.UnregisterVolume(this);
             VoxelDynamicNavGridRuntime.UnregisterVolume(this);
             UnregisterTerrainHoles();

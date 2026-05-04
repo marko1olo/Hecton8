@@ -777,14 +777,9 @@ namespace Hecton8.Audio
                 return false;
             }
 
-            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            ObjectPoolManager pool = ResolveRuntimeObjectPool();
             if (pool == null)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[HectonMusicDirector] ObjectPoolManager is unavailable. Runtime director spawn aborted.");
-#endif
                 return false;
-            }
 
             GameObject runtimeDirectorPrefab = sceneConfig.RuntimeDirectorPrefab.gameObject;
             if (pool.GetAvailableCount(runtimeDirectorPrefab) <= 0)
@@ -792,6 +787,12 @@ namespace Hecton8.Audio
 
             pool.Spawn(runtimeDirectorPrefab, Vector3.zero, Quaternion.identity);
             return _instance != null;
+        }
+
+        private static ObjectPoolManager ResolveRuntimeObjectPool()
+        {
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            return pool != null ? pool : ObjectPoolManager.ActiveRuntimeInstance;
         }
 
         private void BindAuthoredVoicePool()

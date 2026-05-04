@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Hecton8.Core;
 using Hecton8.Quest;
 using Hecton8.World;
@@ -297,13 +298,36 @@ namespace Hecton8.SaveSystem
         internal const int IndexedSectorDirectoryCapacity = IndexedSectorDirectorySlotCount;
         internal const long IndexedSectorDefragSlackThresholdBytes = 50L * 1024L * 1024L;
         private const int PersistentWorldSectorEdgeLengthMeters = 1000;
-        private const int DefaultIndexedPersistentWorldChunkSizeMeters = 64;
+        internal const int DefaultIndexedPersistentWorldChunkSizeMeters = 64;
         private const ushort PersistentWorldDeletedItemHashIndex = ushort.MaxValue;
         private const uint ModPayloadMagic = 0x50444F4Du; // "MODP"
         private const ushort ModPayloadVersion = 1;
         private const ulong ModPayloadSectorPrefix = 0x4D50000000000000UL;
         private const ulong ModPayloadSectorMask = 0xFFFF000000000000UL;
         private const string Lz4DllName = "liblz4";
+        private const int Lz4HighCompressionLevel = 9;
+        private static int s_runtimeLz4CompressionProfile = (int)Lz4CompressionProfile.HighCompression;
+
+        internal enum Lz4CompressionProfile : int
+        {
+            HighCompression = 0,
+            Fast = 1
+        }
+
+        internal static void SetRuntimeLz4FastMode(bool useFastMode)
+        {
+            Volatile.Write(
+                ref s_runtimeLz4CompressionProfile,
+                useFastMode ? (int)Lz4CompressionProfile.Fast : (int)Lz4CompressionProfile.HighCompression);
+        }
+
+        private static Lz4CompressionProfile ResolveRuntimeLz4CompressionProfile()
+        {
+            int profile = Volatile.Read(ref s_runtimeLz4CompressionProfile);
+            return profile == (int)Lz4CompressionProfile.Fast
+                ? Lz4CompressionProfile.Fast
+                : Lz4CompressionProfile.HighCompression;
+        }
 
         [StructLayout(LayoutKind.Sequential, Pack = 1, Size = TokenizedPayloadHeaderSize)]
         private struct TokenizedPayloadHeader
@@ -594,6 +618,7 @@ namespace Hecton8.SaveSystem
             public NativeArray<int> ResultLength;
             public long SectorHash;
             public int DictionaryLength;
+            public Lz4CompressionProfile CompressionProfile;
 
             public void Execute()
             {
@@ -617,7 +642,8 @@ namespace Hecton8.SaveSystem
                     FileBytes.Length - UnsafeUtility.SizeOf<SectorEntityStateFileHeader>(),
                     dictionaryScratchPtr,
                     DictionaryLength,
-                    protectSubBlocks: true);
+                    protectSubBlocks: true,
+                    compressionProfile: CompressionProfile);
                 if (compressedLength <= 0)
                 {
                     ResultLength[0] = 0;
@@ -1308,6 +1334,7 @@ namespace Hecton8.SaveSystem
             if (!AsyncWriteManager.TryOpenReadOnlyMapping(absolutePath, out mapping, out error))
                 return false;
 
+            bool success = false;
             try
             {
                 if (mapping.Length < SaveFileHeaderPrefixSize)
@@ -1357,12 +1384,13 @@ namespace Hecton8.SaveSystem
                     return false;
                 }
 
+                success = true;
                 return true;
             }
-            catch
+            finally
             {
-                AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
-                throw;
+                if (!success)
+                    AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
             }
         }
 
@@ -1383,7 +1411,8 @@ namespace Hecton8.SaveSystem
             }
 
             int directoryOffset = CurrentHeaderSize;
-            if (mapping.Length < directoryOffset + IndexedSectorDirectoryHeaderSize)
+            if (mapping.Length < directoryOffset ||
+                (long)directoryOffset > mapping.Length - IndexedSectorDirectoryHeaderSize)
             {
                 error = "Indexed sector directory header is truncated.";
                 return false;
@@ -1402,14 +1431,15 @@ namespace Hecton8.SaveSystem
             }
 
             int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
-            if ((long)directoryOffset + directoryBytes > mapping.Length)
+            if ((long)directoryOffset > mapping.Length - directoryBytes)
             {
                 error = "Indexed sector directory exceeds the file bounds.";
                 return false;
             }
 
+            long directoryEndOffset = directoryOffset + (long)directoryBytes;
             long metadataOffset = header.PlayerOffset;
-            if (metadataOffset < directoryOffset + directoryBytes || metadataOffset >= mapping.Length)
+            if (metadataOffset < directoryEndOffset || metadataOffset >= mapping.Length)
             {
                 error = "Indexed metadata block offset is out of bounds.";
                 return false;
@@ -1952,6 +1982,12 @@ namespace Hecton8.SaveSystem
                 return false;
 
             int saveDataLength = checked((int)prefix.SaveDataByteLength);
+            if (!IsByteRangeWithin(cursor, saveDataLength, metadataRawLength))
+            {
+                error = "Indexed metadata save-data range is invalid.";
+                return false;
+            }
+
             if (!SaveBinaryPayloadCodec.TryRead(AddByteOffset(rawPtr, cursor), saveDataLength, out data, out int bytesRead, out error))
                 return false;
             if (bytesRead != saveDataLength)
@@ -1963,7 +1999,7 @@ namespace Hecton8.SaveSystem
             int payloadCursor = cursor + saveDataLength;
             if (header.DeltaCount > 0)
             {
-                if (payloadCursor + PackedQuestStateSectionHeaderSize > metadataRawLength)
+                if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
                 {
                     error = "Indexed packed quest section header is truncated.";
                     return false;
@@ -1989,6 +2025,12 @@ namespace Hecton8.SaveSystem
                     fixed (uint* destinationPtr = packedQuestStateWords)
                     {
                         int packedQuestBytes = checked((int)packedQuestHeader.FlagCount) * UnsafeUtility.SizeOf<uint>();
+                        if (!IsByteRangeWithin(payloadCursor, packedQuestBytes, metadataRawLength))
+                        {
+                            error = "Indexed packed quest section exceeds the metadata payload bounds.";
+                            return false;
+                        }
+
                         if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, packedQuestStateWords.Length * UnsafeUtility.SizeOf<uint>(), AddByteOffset(rawPtr, payloadCursor), packedQuestBytes))
                         {
                             error = "Indexed packed quest-state copy exceeded destination bounds.";
@@ -2011,7 +2053,7 @@ namespace Hecton8.SaveSystem
                 packedQuestStateWords = Array.Empty<uint>();
             }
 
-            if (payloadCursor + EcosystemSectionHeaderSize > metadataRawLength)
+            if (!IsByteRangeWithin(payloadCursor, EcosystemSectionHeaderSize, metadataRawLength))
             {
                 error = "Indexed ecosystem section header is truncated.";
                 return false;
@@ -2020,7 +2062,7 @@ namespace Hecton8.SaveSystem
             EcosystemSectionHeader ecosystemHeader = UnsafeUtility.ReadArrayElement<EcosystemSectionHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
             int ecosystemRecordCount = checked((int)ecosystemHeader.RecordCount);
             int ecosystemSectionLength = ComputeEcosystemSectionLength(ecosystemRecordCount);
-            if (payloadCursor + ecosystemSectionLength > metadataRawLength)
+            if (!IsByteRangeWithin(payloadCursor, ecosystemSectionLength, metadataRawLength))
             {
                 error = "Indexed ecosystem section exceeds the metadata payload bounds.";
                 return false;
@@ -2062,6 +2104,9 @@ namespace Hecton8.SaveSystem
                     if (entry.CompressedSize <= 0 || entry.DecompressedSize <= 0)
                         continue;
 
+                    if (!IsPersistentWorldPagedSectorWithinLoadWindow(entry.SectorHash, in prefix.PlayerPosition))
+                        continue;
+
                     using NativeArray<byte> sectorRaw = new NativeArray<byte>(entry.DecompressedSize, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
                     if (!TryReadIndexedCompressedBlock(ref mapping, entry.ByteOffset, entry.CompressedSize, entry.DecompressedSize, sectorRaw, out _, out error))
                     {
@@ -2073,8 +2118,9 @@ namespace Hecton8.SaveSystem
                             continue;
                         }
 
-                        error = $"{sectorError} Backup sector recovery failed: {backupError}";
-                        return false;
+                        ReportIndexedSectorQuarantine(entry.SectorHash, sectorError, backupError);
+                        error = string.Empty;
+                        continue;
                     }
 
                     byte* sectorRawPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(sectorRaw);
@@ -2088,8 +2134,9 @@ namespace Hecton8.SaveSystem
                             continue;
                         }
 
-                        error = $"{sectorError} Backup sector recovery failed: {backupError}";
-                        return false;
+                        ReportIndexedSectorQuarantine(entry.SectorHash, sectorError, backupError);
+                        error = string.Empty;
+                        continue;
                     }
 
                     if (!TryReadPersistentWorldSectionFromBuffer(sectorRawPtr, entry.DecompressedSize, out PersistentWorldDeltaRecord[] sectorRecords, out error))
@@ -2102,8 +2149,9 @@ namespace Hecton8.SaveSystem
                             continue;
                         }
 
-                        error = $"{sectorError} Backup sector recovery failed: {backupError}";
-                        return false;
+                        ReportIndexedSectorQuarantine(entry.SectorHash, sectorError, backupError);
+                        error = string.Empty;
+                        continue;
                     }
 
                     if (sectorRecords != null && sectorRecords.Length > 0)
@@ -2697,7 +2745,8 @@ namespace Hecton8.SaveSystem
                 FileBytes = writeHandle.FileBytes,
                 ResultLength = writeHandle.ResultLength,
                 SectorHash = sectorHash,
-                DictionaryLength = dictionaryLength
+                DictionaryLength = dictionaryLength,
+                CompressionProfile = ResolveRuntimeLz4CompressionProfile()
             };
 
             try
@@ -2865,6 +2914,15 @@ namespace Hecton8.SaveSystem
             int2 sectorCoord = new int2(
                 (int)math.floor(absoluteX / PersistentWorldSectorEdgeLengthMeters),
                 (int)math.floor(absoluteZ / PersistentWorldSectorEdgeLengthMeters));
+            return PackSectorHash(sectorCoord);
+        }
+
+        internal static long ComputePersistentWorldPagedSectorHash(in AbsoluteUniversePosition position)
+        {
+            double3 absolute = position.ToAbsoluteDouble3();
+            int2 sectorCoord = new int2(
+                (int)math.floor(absolute.x / PersistentWorldSectorEdgeLengthMeters),
+                (int)math.floor(absolute.z / PersistentWorldSectorEdgeLengthMeters));
             return PackSectorHash(sectorCoord);
         }
 
@@ -3066,6 +3124,114 @@ namespace Hecton8.SaveSystem
             {
                 AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
             }
+        }
+
+        internal static bool TryPrewarmIndexedPersistentWorldSector(
+            string absolutePath,
+            long desiredSectorHash,
+            out bool sectorExists,
+            out bool usedBackup,
+            out string error)
+        {
+            sectorExists = false;
+            usedBackup = false;
+            error = string.Empty;
+
+            if (string.IsNullOrEmpty(absolutePath))
+            {
+                error = "Indexed sector prewarm path is empty.";
+                return false;
+            }
+
+            if (TryPrewarmIndexedPersistentWorldSectorCore(absolutePath, desiredSectorHash, out sectorExists, out string primaryError))
+                return true;
+
+            bool primarySectorExists = sectorExists;
+            string backupPath = ResolveIndexedSaveBackupPath(absolutePath);
+            string backupError = "backup not attempted";
+            bool backupSectorExists = false;
+            if (!string.IsNullOrEmpty(backupPath) && File.Exists(backupPath) &&
+                TryPrewarmIndexedPersistentWorldSectorCore(backupPath, desiredSectorHash, out backupSectorExists, out backupError) &&
+                (backupSectorExists || !primarySectorExists))
+            {
+                sectorExists = backupSectorExists;
+                usedBackup = true;
+                error = string.Empty;
+                return true;
+            }
+
+            error = $"Indexed sector 0x{desiredSectorHash:X16} prewarm failed. Primary: {primaryError} Backup: {backupError}";
+            return false;
+        }
+
+        private static bool TryPrewarmIndexedPersistentWorldSectorCore(
+            string absolutePath,
+            long desiredSectorHash,
+            out bool sectorExists,
+            out string error)
+        {
+            sectorExists = false;
+            error = string.Empty;
+            if (!TryReadValidatedHeader(absolutePath, out AsyncWriteManager.ReadOnlyMapping mapping, out SaveFileHeader header, out _, out error))
+                return false;
+
+            try
+            {
+                if (!TryReadIndexedDirectory(in header, ref mapping, out _, out SectorEntry[] sectorEntries, out error))
+                    return false;
+
+                if (!TryFindIndexedSectorEntryIndex(sectorEntries, desiredSectorHash, out int sectorEntryIndex))
+                    return true;
+
+                SectorEntry entry = sectorEntries[sectorEntryIndex];
+                sectorExists = true;
+                return TryPrewarmIndexedPersistentWorldSectorEntry(ref mapping, in entry, out error);
+            }
+            finally
+            {
+                AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
+            }
+        }
+
+        private static bool TryPrewarmIndexedPersistentWorldSectorEntry(
+            ref AsyncWriteManager.ReadOnlyMapping mapping,
+            in SectorEntry entry,
+            out string error)
+        {
+            error = string.Empty;
+            if (entry.DecompressedSize <= 0 || entry.DecompressedSize > RawPayloadCapacityBytes)
+            {
+                error = $"Indexed sector 0x{entry.SectorHash:X16} prewarm decompressed size is invalid.";
+                return false;
+            }
+
+            using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(entry.DecompressedSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            if (!TryReadIndexedCompressedBlock(
+                    ref mapping,
+                    entry.ByteOffset,
+                    entry.CompressedSize,
+                    entry.DecompressedSize,
+                    rawBlockBytes,
+                    out int decompressedLength,
+                    out error))
+            {
+                return false;
+            }
+
+            if (decompressedLength != entry.DecompressedSize)
+            {
+                error = $"Indexed sector 0x{entry.SectorHash:X16} prewarm length mismatch.";
+                return false;
+            }
+
+            byte* rawBlockPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlockBytes);
+            if (ComputeIndexedSectorChecksum(rawBlockPtr, decompressedLength) != entry.Checksum)
+            {
+                error = $"Indexed sector checksum mismatch for prewarm sector 0x{entry.SectorHash:X16}.";
+                return false;
+            }
+
+            return true;
         }
 
         internal static bool TryReadIndexedModPayloads(
@@ -3368,7 +3534,8 @@ namespace Hecton8.SaveSystem
                 return false;
 
             int directoryOffset = CurrentHeaderSize;
-            if (mapping.Length < directoryOffset + IndexedSectorDirectoryHeaderSize)
+            if (mapping.Length < directoryOffset ||
+                (long)directoryOffset > mapping.Length - IndexedSectorDirectoryHeaderSize)
             {
                 error = "Indexed sector directory header is truncated.";
                 return false;
@@ -3385,14 +3552,15 @@ namespace Hecton8.SaveSystem
             directoryHeader.ChunkSizeMeters = math.max(1, directoryHeader.ChunkSizeMeters);
 
             int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
-            if ((long)directoryOffset + directoryBytes > mapping.Length)
+            if ((long)directoryOffset > mapping.Length - directoryBytes)
             {
                 error = "Indexed sector directory exceeds the file bounds.";
                 return false;
             }
 
+            long directoryEndOffset = directoryOffset + (long)directoryBytes;
             long metadataOffset = header.PlayerOffset;
-            if (metadataOffset < directoryOffset + directoryBytes || metadataOffset >= mapping.Length)
+            if (metadataOffset < directoryEndOffset || metadataOffset >= mapping.Length)
             {
                 error = "Indexed metadata block offset is out of bounds.";
                 return false;
@@ -3852,7 +4020,7 @@ namespace Hecton8.SaveSystem
                 return false;
 
             int saveDataLength = checked((int)prefix.SaveDataByteLength);
-            if (saveDataLength < 0 || cursor + saveDataLength > rawPayloadLength)
+            if (!IsByteRangeWithin(cursor, saveDataLength, rawPayloadLength))
             {
                 error = "Save payload byte range is invalid.";
                 return false;
@@ -4003,6 +4171,15 @@ namespace Hecton8.SaveSystem
             return (byte*)source + byteOffset;
         }
 
+        private static bool IsByteRangeWithin(int byteOffset, int byteLength, int totalByteLength)
+        {
+            return byteOffset >= 0 &&
+                   byteLength >= 0 &&
+                   totalByteLength >= 0 &&
+                   byteOffset <= totalByteLength &&
+                   byteLength <= totalByteLength - byteOffset;
+        }
+
         private static long ComputePersistentWorldSectorHash(in PersistentWorldDeltaRecord record, int chunkSizeMeters)
         {
             AbsoluteUniversePosition position = record.UnpackPosition(chunkSizeMeters);
@@ -4070,7 +4247,8 @@ namespace Hecton8.SaveSystem
                     destinationCapacity,
                     null,
                     0,
-                    protectSubBlocks);
+                    protectSubBlocks,
+                    ResolveRuntimeLz4CompressionProfile());
             }
 
             int protectedBlockSize = protectSubBlocks ? SaveBinaryPayloadCodec.ProtectedLz4BlockSizeBytes : BlockSizeBytes;
@@ -4089,7 +4267,8 @@ namespace Hecton8.SaveSystem
                     destinationCapacity,
                     dictionaryScratchPtr,
                     dictionaryLength,
-                    protectSubBlocks);
+                    protectSubBlocks,
+                    ResolveRuntimeLz4CompressionProfile());
             }
             finally
             {
@@ -4105,7 +4284,8 @@ namespace Hecton8.SaveSystem
             int destinationCapacity,
             byte* dictionaryScratchPtr,
             int dictionaryLength,
-            bool protectSubBlocks)
+            bool protectSubBlocks,
+            Lz4CompressionProfile compressionProfile = Lz4CompressionProfile.HighCompression)
         {
             if (source == null || destination == null || sourceLength <= 0 || destinationCapacity <= 8)
                 return 0;
@@ -4137,7 +4317,7 @@ namespace Hecton8.SaveSystem
 
                 byte* blockDestination = destination + destinationOffset + blockHeaderBytes;
                 int blockDestinationCapacity = destinationCapacity - destinationOffset - blockHeaderBytes;
-                int blockCompressedLength = LZ4Compress(blockSource, blockDestination, blockSourceLength, blockDestinationCapacity);
+                int blockCompressedLength = LZ4CompressBlock(blockSource, blockDestination, blockSourceLength, blockDestinationCapacity, compressionProfile);
                 if (blockCompressedLength <= 0)
                     return 0;
 
@@ -4151,6 +4331,22 @@ namespace Hecton8.SaveSystem
             }
 
             return destinationOffset;
+        }
+
+        private static int LZ4CompressBlock(
+            byte* source,
+            byte* destination,
+            int sourceLength,
+            int destinationCapacity,
+            Lz4CompressionProfile compressionProfile)
+        {
+            if (compressionProfile == Lz4CompressionProfile.Fast)
+                return LZ4Compress(source, destination, sourceLength, destinationCapacity);
+
+            int compressedLength = LZ4CompressHigh(source, destination, sourceLength, destinationCapacity, Lz4HighCompressionLevel);
+            return compressedLength > 0
+                ? compressedLength
+                : LZ4Compress(source, destination, sourceLength, destinationCapacity);
         }
 
         private static bool TryReadPayload(
@@ -5578,7 +5774,7 @@ namespace Hecton8.SaveSystem
             value = string.Empty;
             error = string.Empty;
 
-            if (byteLength < 0 || cursor < 0 || cursor + byteLength > sourceLength)
+            if (!IsByteRangeWithin(cursor, byteLength, sourceLength))
             {
                 error = "UTF-16 metadata block exceeds the payload bounds.";
                 return false;
@@ -5797,6 +5993,9 @@ namespace Hecton8.SaveSystem
 
         [DllImport(Lz4DllName, EntryPoint = "LZ4_compress_default")]
         private static extern int LZ4Compress(byte* source, byte* destination, int sourceLength, int destinationCapacity);
+
+        [DllImport(Lz4DllName, EntryPoint = "LZ4_compress_HC")]
+        private static extern int LZ4CompressHigh(byte* source, byte* destination, int sourceLength, int destinationCapacity, int compressionLevel);
 
         [DllImport(Lz4DllName, EntryPoint = "LZ4_decompress_safe")]
         private static extern int LZ4Decompress(byte* source, byte* destination, int compressedLength, int destinationCapacity);

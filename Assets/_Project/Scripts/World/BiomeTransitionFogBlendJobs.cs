@@ -5,42 +5,100 @@ using Unity.Mathematics;
 
 namespace Hecton8.World
 {
+    /// <summary>
+    /// Biome transition lane sample packed for Burst fog blending.
+    /// </summary>
     public struct BiomeTransitionSample
     {
+        /// <summary>Biome id used as the transition source.</summary>
         public byte FromBiomeId;
+
+        /// <summary>Biome id used as the transition target.</summary>
         public byte ToBiomeId;
+
+        /// <summary>Fallback transition blend when AUP segment data is unavailable.</summary>
         public byte Blend255;
+
+        /// <summary>Caller-owned bit flags carried through the result.</summary>
         public byte Flags;
     }
 
+    /// <summary>
+    /// Source fog parameters indexed by biome id.
+    /// </summary>
     public struct BiomeTransitionFogSource
     {
+        /// <summary>Linear fog color RGBA.</summary>
         public float4 FogColor;
+
+        /// <summary>Fog density scalar or density scale, depending on caller integration.</summary>
         public float Density;
+
+        /// <summary>Suspended matter turbidity multiplier.</summary>
         public float Turbidity;
+
+        /// <summary>Medium absorption scalar.</summary>
         public float Absorption;
+
+        /// <summary>Approximate clear-view attenuation distance in meters.</summary>
+        public float FogAttenuationDistance;
     }
 
+    /// <summary>
+    /// Burst-computed fog blend result for one biome transition lane.
+    /// </summary>
     public struct BiomeTransitionFogResult
     {
+        /// <summary>Result sample with smoothed Blend255.</summary>
         public BiomeTransitionSample Sample;
+
+        /// <summary>Blended fog color RGBA.</summary>
         public float4 FogColor;
+
+        /// <summary>Blended fog density scalar.</summary>
         public float Density;
+
+        /// <summary>Blended turbidity multiplier.</summary>
         public float Turbidity;
+
+        /// <summary>Blended medium absorption scalar.</summary>
         public float Absorption;
+
+        /// <summary>Blended clear-view attenuation distance in meters.</summary>
+        public float FogAttenuationDistance;
     }
 
+    /// <summary>
+    /// Blends biome fog parameters using AUP-projected transition position with a packed Blend255 fallback.
+    /// </summary>
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct BiomeTransitionFogBlendJob : IJobParallelFor
     {
+        /// <summary>Transition samples to evaluate.</summary>
         [ReadOnly] public NativeArray<BiomeTransitionSample> Samples;
+
+        /// <summary>Fog sources addressed by biome id.</summary>
         [ReadOnly] public NativeArray<BiomeTransitionFogSource> FogSourcesByBiomeId;
+
+        /// <summary>AUP transition source anchors.</summary>
         [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit128> FromAup;
+
+        /// <summary>AUP transition target anchors.</summary>
         [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit128> ToAup;
+
+        /// <summary>Current player AUP samples.</summary>
         [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit128> PlayerAup;
+
+        /// <summary>Job output lane.</summary>
         [WriteOnly] public NativeArray<BiomeTransitionFogResult> Results;
+
+        /// <summary>World-space width of the transition band in meters.</summary>
         public float TransitionLengthMeters;
 
+        /// <summary>
+        /// Evaluates one biome transition fog lane.
+        /// </summary>
+        /// <param name="index">Transition lane index.</param>
         public void Execute(int index)
         {
             BiomeTransitionSample sample = Samples[index];
@@ -62,7 +120,10 @@ namespace Hecton8.World
                 FogColor = math.lerp(from.FogColor, to.FogColor, smoothBlend),
                 Density = math.lerp(from.Density, to.Density, smoothBlend),
                 Turbidity = math.lerp(from.Turbidity, to.Turbidity, smoothBlend),
-                Absorption = math.lerp(from.Absorption, to.Absorption, smoothBlend)
+                Absorption = math.lerp(from.Absorption, to.Absorption, smoothBlend),
+                FogAttenuationDistance = math.max(
+                    0.001f,
+                    math.lerp(from.FogAttenuationDistance, to.FogAttenuationDistance, smoothBlend))
             };
         }
 
@@ -91,7 +152,11 @@ namespace Hecton8.World
             double3 to = ToAbsoluteDouble3(ToAup[index]);
             double3 player = ToAbsoluteDouble3(PlayerAup[index]);
             double3 segment = to - from;
-            double lengthSq = math.max(1e-6d, math.dot(segment, segment));
+            double rawLengthSq = math.dot(segment, segment);
+            if (rawLengthSq <= 1e-6d)
+                return math.saturate(fallbackBlend);
+
+            double lengthSq = math.max(1e-6d, rawLengthSq);
             double projected = math.dot(player - from, segment) / lengthSq;
             float segmentBlend = math.saturate((float)projected);
 
@@ -105,12 +170,12 @@ namespace Hecton8.World
                 segmentBlend = math.saturate((segmentBlend - lower) / math.max(0.001f, upper - lower));
             }
 
-            return segmentBlend;
+            return math.max(segmentBlend, math.saturate(fallbackBlend));
         }
 
         private static double3 ToAbsoluteDouble3(AbsoluteUniversePositionBlit128 position)
         {
-            const double CellSizeMeters = 5000d;
+            const double CellSizeMeters = AbsoluteUniversePosition.CellSizeMeters;
             return new double3(
                 position.GridX * CellSizeMeters + position.Local.x,
                 position.GridY * CellSizeMeters + position.Local.y,

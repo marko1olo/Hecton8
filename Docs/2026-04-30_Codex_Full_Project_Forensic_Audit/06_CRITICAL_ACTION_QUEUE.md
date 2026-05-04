@@ -171,8 +171,8 @@ Reason: `HectonBatchRendererGroupUtility` allocates direct-draw `TempJob` memory
 - Do not claim Unity batchmode is globally clean from old logs alone. May 2 fresh dotnet build is clean for `Hecton8.Core.csproj`, but older Unity batch artifacts still include stale compile/path failures and must be re-run cleanly before Unity editor import truth is claimed.
 - Do not claim Play Mode deadlock is fixed. Play Mode was intentionally not launched.
 - Do not claim GC is zero. GCMonitor/profiler proof is absent.
-- Do not claim MCP VERIFIED as a global runtime state. Current May 1 evidence is local `Editor.log` compile/reload success plus MCP console `0` error/warning entries for editor/script state only. Play Mode, GCMonitor, profiler, and long-run memory proof are absent.
-- Do not claim the docs are fully current. This queue now points to current deltas, but older dated documents still contain historical and stale claims.
+- Do not claim MCP VERIFIED as a global runtime state. Current May 4 evidence is editor-only MCP readback: latest current recheck reports active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, and console error/warning entries `0`. Earlier May 4 documentation-sweep readback reported `01_MAIN_MENU` in Play Mode transition with `18` warnings. Bounded Play Mode gameplay, GCMonitor, profiler, and long-run memory proof are absent.
+- Do not claim older dated reports are current. This queue points to current deltas, but historical report bodies retain scan-time claims.
 - Do not treat `2026-05-01_CURRENT_PROJECT_STATE.md` as runtime verification. It is a conceptual source-backed snapshot only.
 
 ## 2026-05-02 Documentation / Compile Evidence Delta
@@ -189,8 +189,29 @@ Queue corrections:
 
 - Priority 0 item 1 remains open. Observability improved for dotnet compile only; Unity batchmode, MCP, Play Mode, GCMonitor, profiler, and memory retention are still not one reliable verification surface.
 - Priority 3 item 1 remains open. This pass updated active indexes and current-state anchors, not every historical document body.
-- The documentation authority path is now `Docs/README.md` -> `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
-- Current source inventory for this queue boundary: `1087` first-party `.cs` files under `Assets/_Project`, `1047` under `Assets/_Project/Scripts`, `571562` static script lines, and `0` strict `StartCoroutine(` hits under `Assets/_Project/Scripts`.
+- The documentation authority path is now `Docs/README.md` -> `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current source inventory for this queue boundary is superseded by the May 4 sweep: `1118` first-party `.cs` files under `Assets/_Project`, `1078` under `Assets/_Project/Scripts`, `519952` static script lines, and `0` strict `StartCoroutine(` hits under `Assets/_Project/Scripts`.
+
+STATUS: PENDING VERIFICATION
+
+## 2026-05-04 Documentation / Guard Evidence Delta
+
+Follow-up evidence files: `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`.
+
+Fresh May 4 evidence:
+
+- `Hecton8.Core.csproj --no-restore`: `0 Warning(s)`, `0 Error(s)`.
+- `Hecton8.Editor.csproj --no-restore`: `0 Warning(s)`, `0 Error(s)`.
+- `Hecton8.World.Dots.csproj --no-restore`: blocked by missing `Temp\obj\Hecton8.World.Dots\project.assets.json`; restore build then returned `1 Warning(s)`, `0 Error(s)`.
+- `Hecton8.PlayModeTests.csproj --no-restore`: blocked by missing `Temp\obj\Hecton8.PlayModeTests\project.assets.json`; restore build then returned `0 Warning(s)`, `0 Error(s)`.
+- Post-repair foundation guard scan exits `0`; `UnsafeUtility.MemCpy outside guard` is `0` and unauthorized Unity loop methods are `0`.
+- MCP readback: earlier documentation-sweep retry saw active scene `01_MAIN_MENU`, editor in Play Mode transition, console errors `0`, console warnings `18`; latest current recheck saw active scene `00_BOOTSTRAP`, Play Mode off, compiling false, ready for tools, and console error/warning entries `0`.
+
+Queue corrections:
+
+- Priority 0 observability remains open. Compile, source-guard, and current editor-console evidence improved; bounded Play Mode gameplay, profiler, GCMonitor, and memory-retention proof are still absent.
+- Priority 1 `.Complete()` audit remains open. Current strict text inventory is `.Complete(` hits `5`, with only `SystemDispatcher` counted as guarded dispatcher completion.
+- Documentation authority path is now `Docs/README.md` -> `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 
 STATUS: PENDING VERIFICATION
 

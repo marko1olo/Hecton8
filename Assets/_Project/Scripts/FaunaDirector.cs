@@ -2842,14 +2842,13 @@ namespace Hecton8.AI
             bool isLargeThreat,
             in AbsoluteUniversePosition position)
         {
-            Vector3 runtimePosition = position.ToRuntimeFloat3();
             EcosystemDirector ecosystemDirector = ResolveConcreteEcosystemDirector();
             if (ecosystemDirector != null)
             {
                 float capacityUnits = archetype != null
                     ? math.max(25f, archetype.maxHealth)
                     : 25f;
-                ecosystemDirector.RegisterCorpseResourceNode(runtimePosition, speciesId, capacityUnits);
+                ecosystemDirector.RegisterCorpseResourceNode(in position, speciesId, capacityUnits);
             }
 
             if (!isLargeThreat)

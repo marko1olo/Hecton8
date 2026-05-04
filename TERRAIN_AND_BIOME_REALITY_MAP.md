@@ -1,6 +1,11 @@
 # TERRAIN AND BIOME REALITY MAP
 
-Generated: 2026-05-03
+CURRENT CANONICAL PATH: `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
+ROOT PATH STATUS: compatibility mirror / stale legacy surface. Use the canonical report before trusting any fact below.
+
+Generated: 2026-05-04
+
+ROOT MIRROR WARNING: this root file is a compatibility mirror. Current canonical terrain/biome authority is `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`.
 
 STATUS: PENDING VERIFICATION. "SOVEREIGN VERIFIED" is not claimed for runtime. Static source audit, edited-script validation, and Unity console error check are verified; Play Mode traversal, 100 km floating-origin soak, and GC capture were not executed.
 
@@ -24,8 +29,8 @@ STATUS: PENDING VERIFICATION. "SOVEREIGN VERIFIED" is not claimed for runtime. S
 - There is no explicit biome `HashID` field in `HectonBiomeMatrixProfile`. Stable identity currently equals `matrixIndex` plus Unity asset GUID. Table below uses the asset GUID as the stable HashID surrogate.
 - Scatter does not consume a GPU `NativeArray<byte>` biome influence grid today. It samples through `WorldProceduralFieldSampler`, then scores rules in `WorldProceduralScatterDirector`.
 - Terrain-to-voxel seam uses concrete directors and structs, not `ICaveProvider` or `IVoxelBridge`. Those interface names were not found.
-- Phase 4 active terrain sweep was executed. Runtime code references to `Terrain.activeTerrain`, `Terrain.activeTerrains`, and `Terrain.SampleHeight` under `Assets/_Project/Scripts` are now zero.
-- Remaining terrain API violation: `WorldGenerativeGeologyTerrainSeamApplier.RefreshTerrainBaseline` still uses `TerrainData.GetHeights(0, 0, resolution, resolution)`.
+- Phase 4 active terrain sweep was executed. Runtime code references to `Terrain.activeTerrain`, `Terrain.activeTerrains`, `Terrain.SampleHeight`, and `TerrainData.GetHeights(` under `Assets/_Project/Scripts` are now zero by May 4 source scan.
+- The earlier `WorldGenerativeGeologyTerrainSeamApplier.RefreshTerrainBaseline` `TerrainData.GetHeights(...)` claim is stale for the current source snapshot.
 
 ## MapMagic Audit
 
@@ -389,7 +394,7 @@ Post-edit grep:
 - `Terrain.activeTerrain`: 0 runtime code hits.
 - `Terrain.activeTerrains`: 0 runtime code hits.
 - `Terrain.SampleHeight`: 0 runtime code hits.
-- `TerrainData.GetHeights`: 1 runtime code hit, `WorldGenerativeGeologyTerrainSeamApplier.cs:559`.
+- `TerrainData.GetHeights`: 0 runtime code hits by May 4 source scan.
 
 ## Biome Transition Protocol
 
@@ -429,7 +434,7 @@ public struct BiomeTransitionSample
 
 ## Known Defects And Blockers
 
-- `WorldGenerativeGeologyTerrainSeamApplier` still snapshots full terrain baseline through `TerrainData.GetHeights`. This violates the heightmap cache mandate and can allocate a full `float[,]`.
+- The previous `WorldGenerativeGeologyTerrainSeamApplier` `TerrainData.GetHeights` baseline defect is no longer present by May 4 source scan. Runtime seam traversal and GC proof are still absent.
 - `MapMagicBridge.TryGetBiomeIndex` reads dominant alphamap texture layer. It is not a 108-biome matrix sampler.
 - Active MapMagic graph has no `BiomesSet200`.
 - `HectonBiomeMatrixProfile` lacks an explicit stable `HashID`; asset GUID is the only stable source identity today.
@@ -442,7 +447,7 @@ public struct BiomeTransitionSample
 - Biome profile parse found 108 assets, 108 unique indices, 44 placeholders, 0 missing.
 - Heightmap analyzed from `heightmap.png`.
 - `rg -n "Terrain\\.activeTerrain|Terrain\\.activeTerrains|Terrain\\.SampleHeight" Assets/_Project/Scripts -g "*.cs"` returned no matches.
-- `rg -n "GetHeights\\(" Assets/_Project/Scripts -g "*.cs"` returns one remaining hit in `WorldGenerativeGeologyTerrainSeamApplier.cs`.
+- `rg -n "GetHeights\\(" Assets/_Project/Scripts -g "*.cs"` returns no matches in the May 4 source snapshot.
 - Unity MCP `validate_script`:
   - `MapMagicBridge.cs`: 0 warnings, 0 errors.
   - `WorldGenerativeGeologyTerrainSeamApplier.cs`: 0 warnings, 0 errors.

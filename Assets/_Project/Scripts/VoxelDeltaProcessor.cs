@@ -26,6 +26,16 @@ namespace Hecton8.Caves
     }
 
     /// <summary>
+    /// Authoritative absolute-universe thermal melt request produced by lava/vent gameplay.
+    /// </summary>
+    public struct ThermalMeltEvent
+    {
+        public Vector3 AbsoluteUniversePosition;
+        public float RadiusMeters;
+        public float Heat01;
+    }
+
+    /// <summary>
     /// Owns carved voxel-cell deltas, save/load projection, and deferred carve batching for runtime voxel volumes.
     /// </summary>
     [DisallowMultipleComponent]
@@ -39,15 +49,21 @@ namespace Hecton8.Caves
         private const int InitialVolumeRegistryCapacity = 16;
         private const int InitialPendingCarveCapacity = 32;
         private const int InitialPendingCompactionCapacity = 16;
+        private const int MaxActiveThermalMeltEvents = 16;
         private const int ChunkCompactionDirtyThreshold = (ChunkCellCount * 4) / 5;
         private const int MortonSignedOffset = 1 << 20;
         private const float MinRuntimeVoxelSize = 0.25f;
         private const float MinCarveRadiusMeters = 0.9f;
         private const float MaxCarveRadiusMeters = 4f;
+        private const float ThermalMeltDurationSeconds = 10f;
+        private const float ThermalMeltStepIntervalSeconds = 0.25f;
+        private const float ThermalMeltMinimumHeat = 0.01f;
         private const float SphereVolumeFactor = 4f / 3f * math.PI;
         private const byte DefaultMaterialId = 0;
+        private const byte ThermalMeltMaterialId = 2;
         private const byte DeltaModeAdditive = 1 << 0;
         private const byte DeltaModeReplace = 1 << 1;
+        private const byte DeltaModeThermalMelt = 1 << 2;
         private const byte DeltaShapeSphere = 0;
         private const byte DeltaShapeBox = 1;
         private const byte DeltaShapeCapsule = 2;
@@ -84,7 +100,10 @@ namespace Hecton8.Caves
         private readonly List<HectonVoxelVolume> _pendingRebuildVolumes = new List<HectonVoxelVolume>(InitialVolumeRegistryCapacity);
         // COLD ALLOC: PendingCarveRequest[InitialPendingCarveCapacity] â€” deferred plasma-cut carve staging buffer â€” owner: VoxelDeltaProcessor
         private readonly PendingCarveRequest[] _pendingCarves = new PendingCarveRequest[InitialPendingCarveCapacity];
+        // COLD ALLOC: ThermalMeltRuntime[16] - bounded lava melt erosion requests - owner: VoxelDeltaProcessor
+        private readonly ThermalMeltRuntime[] _thermalMeltEvents = new ThermalMeltRuntime[MaxActiveThermalMeltEvents];
         private int _pendingCarveCount;
+        private int _thermalMeltCount;
         private JobHandle _scheduledCarveHandle;
         private bool _scheduledCarveRunning;
         private PendingCarveRequest _scheduledCarveRequest;
@@ -151,6 +170,7 @@ namespace Hecton8.Caves
 
             _pendingCarveCount = 0;
             _pendingCompactionCount = 0;
+            _thermalMeltCount = 0;
             _pendingRebuildVolumes.Clear();
             _registeredVolumes.Clear();
             DisposeChunkStates();
@@ -164,6 +184,7 @@ namespace Hecton8.Caves
         public void Tick(float deltaTime)
         {
             TryRegisterSaveService();
+            AdvanceThermalMeltEvents(deltaTime);
             TrySchedulePendingCarve();
             TrySchedulePendingCompaction();
             FlushPendingRebuilds();
@@ -191,6 +212,16 @@ namespace Hecton8.Caves
         internal static float DebugBakeDeltaIntoBaseDensity(float baseValue, float deltaValue, byte deltaFlags)
         {
             return BakeDeltaIntoBaseDensity(baseValue, deltaValue, deltaFlags);
+        }
+
+        internal static bool DebugShouldReplaceQueuedCompaction(int requestDirtyCount, int candidateDirtyCount)
+        {
+            return ShouldReplaceQueuedCompaction(requestDirtyCount, candidateDirtyCount);
+        }
+
+        internal static float DebugResolveThermalMeltProgress(float elapsedSeconds)
+        {
+            return ResolveThermalMeltProgress(elapsedSeconds);
         }
 
         /// <summary>
@@ -249,6 +280,147 @@ namespace Hecton8.Caves
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Queues a bounded ten-second lava/vent erosion event in absolute-universe coordinates.
+        /// </summary>
+        /// <param name="meltEvent">Absolute melt request.</param>
+        /// <returns>True when one live volume accepted the melt request.</returns>
+        public bool AcceptThermalMeltEvent(in ThermalMeltEvent meltEvent)
+        {
+            float radius = math.max(MinCarveRadiusMeters, meltEvent.RadiusMeters);
+            float heat01 = math.saturate(meltEvent.Heat01);
+            if (radius <= 0f || heat01 < ThermalMeltMinimumHeat || _registeredVolumes.Count <= 0)
+                return false;
+
+            HectonVoxelVolume targetVolume = ResolveThermalMeltVolume(meltEvent.AbsoluteUniversePosition, radius);
+            if (targetVolume == null)
+                return false;
+
+            for (int i = 0; i < _thermalMeltCount; i++)
+            {
+                ThermalMeltRuntime existing = _thermalMeltEvents[i];
+                if (!ReferenceEquals(existing.Volume, targetVolume))
+                    continue;
+
+                float mergeRadius = math.max(radius, existing.RadiusMeters);
+                if ((existing.AbsoluteCenter - meltEvent.AbsoluteUniversePosition).sqrMagnitude > mergeRadius * mergeRadius)
+                    continue;
+
+                existing.AbsoluteCenter = Vector3.Lerp(existing.AbsoluteCenter, meltEvent.AbsoluteUniversePosition, 0.5f);
+                existing.RadiusMeters = math.max(existing.RadiusMeters, radius);
+                existing.Heat01 = math.max(existing.Heat01, heat01);
+                existing.ElapsedSeconds = math.min(existing.ElapsedSeconds, ThermalMeltDurationSeconds * 0.5f);
+                _thermalMeltEvents[i] = existing;
+                return true;
+            }
+
+            if (_thermalMeltCount >= _thermalMeltEvents.Length)
+                return false;
+
+            _thermalMeltEvents[_thermalMeltCount++] = new ThermalMeltRuntime
+            {
+                Volume = targetVolume,
+                AbsoluteCenter = meltEvent.AbsoluteUniversePosition,
+                RadiusMeters = radius,
+                Heat01 = heat01,
+                ElapsedSeconds = 0f,
+                StepAccumulatorSeconds = ThermalMeltStepIntervalSeconds
+            };
+            return true;
+        }
+
+        private HectonVoxelVolume ResolveThermalMeltVolume(Vector3 absoluteCenter, float radius)
+        {
+            float bestDistanceSq = float.MaxValue;
+            HectonVoxelVolume bestVolume = null;
+            for (int i = 0; i < _registeredVolumes.Count; i++)
+            {
+                HectonVoxelVolume volume = _registeredVolumes[i];
+                if (volume == null || !volume.HasRuntimeData || volume.GridDimension <= 0 || volume.VoxelSize <= 0f)
+                    continue;
+
+                float halfExtent = volume.GridDimension * volume.VoxelSize * 0.5f;
+                float acceptedRadius = halfExtent + radius;
+                float distanceSq = (volume.GenerationAbsoluteUniversePosition - absoluteCenter).sqrMagnitude;
+                if (distanceSq > acceptedRadius * acceptedRadius || distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                bestVolume = volume;
+            }
+
+            return bestVolume;
+        }
+
+        private void AdvanceThermalMeltEvents(float deltaTime)
+        {
+            if (_thermalMeltCount <= 0)
+                return;
+
+            float safeDelta = math.max(0f, deltaTime);
+            for (int i = 0; i < _thermalMeltCount;)
+            {
+                ThermalMeltRuntime melt = _thermalMeltEvents[i];
+                if (melt.Volume == null || !melt.Volume.HasRuntimeData)
+                {
+                    RemoveThermalMeltAt(i);
+                    continue;
+                }
+
+                melt.ElapsedSeconds += safeDelta;
+                melt.StepAccumulatorSeconds += safeDelta;
+                bool expired = melt.ElapsedSeconds >= ThermalMeltDurationSeconds;
+                if (melt.StepAccumulatorSeconds >= ThermalMeltStepIntervalSeconds && !expired)
+                {
+                    if (TryStageThermalMeltStep(in melt))
+                        melt.StepAccumulatorSeconds = 0f;
+                }
+
+                if (expired)
+                    RemoveThermalMeltAt(i);
+                else
+                {
+                    _thermalMeltEvents[i] = melt;
+                    i++;
+                }
+            }
+        }
+
+        private bool TryStageThermalMeltStep(in ThermalMeltRuntime melt)
+        {
+            float progress = ResolveThermalMeltProgress(melt.ElapsedSeconds);
+            float radius = math.max(MinCarveRadiusMeters, melt.RadiusMeters * math.lerp(0.35f, 1f, progress));
+            float strength = math.max(MinRuntimeVoxelSize, radius * math.lerp(0.18f, 0.42f, melt.Heat01));
+            return TryEnqueuePendingCarve(new PendingCarveRequest
+            {
+                Volume = melt.Volume,
+                AbsoluteHitPoint = melt.AbsoluteCenter,
+                ExplicitRadiusMeters = radius,
+                ExplicitBlendStrength = strength,
+                MaterialId = ThermalMeltMaterialId,
+                DeltaFlags = DeltaModeThermalMelt,
+                Shape = DeltaShapeSphere
+            });
+        }
+
+        private void RemoveThermalMeltAt(int index)
+        {
+            if (index < 0 || index >= _thermalMeltCount)
+                return;
+
+            for (int i = index + 1; i < _thermalMeltCount; i++)
+                _thermalMeltEvents[i - 1] = _thermalMeltEvents[i];
+
+            _thermalMeltEvents[_thermalMeltCount - 1] = default;
+            _thermalMeltCount--;
+        }
+
+        private static float ResolveThermalMeltProgress(float elapsedSeconds)
+        {
+            float t = math.saturate(elapsedSeconds / ThermalMeltDurationSeconds);
+            return t * t * (3f - 2f * t);
         }
 
         /// <summary>
@@ -497,6 +669,24 @@ namespace Hecton8.Caves
                 DeltaFlags = DeltaModeAdditive,
                 Shape = DeltaShapeCapsule
             };
+        }
+
+        private bool TryEnqueuePendingCarve(in PendingCarveRequest request)
+        {
+            if (request.Volume == null || !request.Volume.HasRuntimeData)
+                return false;
+
+            if (_pendingCarveCount >= _pendingCarves.Length)
+            {
+                if (!_scheduledCarveRunning)
+                    TrySchedulePendingCarve();
+
+                if (_pendingCarveCount >= _pendingCarves.Length)
+                    return false;
+            }
+
+            _pendingCarves[_pendingCarveCount++] = request;
+            return true;
         }
 
         /// <summary>
@@ -1306,6 +1496,9 @@ namespace Hecton8.Caves
 
                 float voxelSize = math.max(volume.VoxelSize, MinRuntimeVoxelSize);
                 int writeCount = math.min(_scheduledCarveWriteCount, _scheduledCarveWrites.Length);
+                int3 touchedMinCell = new int3(int.MaxValue);
+                int3 touchedMaxCell = new int3(int.MinValue);
+                bool touchedAnyCell = false;
                 for (int i = 0; i < writeCount; i++)
                 {
                     CarveCellWrite write = _scheduledCarveWrites[i];
@@ -1328,13 +1521,20 @@ namespace Hecton8.Caves
                     }
 
                     SetCell(ref state, localIndex, resolvedValue, write.MaterialId, write.DeltaFlags);
+                    touchedMinCell = math.min(touchedMinCell, write.AbsoluteCell);
+                    touchedMaxCell = math.max(touchedMaxCell, write.AbsoluteCell);
+                    touchedAnyCell = true;
                     ChunkAddress address = new ChunkAddress(chunkCoord, voxelSize);
                     IncrementChunkWriteVersion(address);
                     TryQueueCompaction(volume, address, in state, CountDirtyCells(in state));
                 }
 
+                if (touchedAnyCell)
+                    VoxelDynamicNavGridRuntime.QueueLocalizedSdfPatch(volume, touchedMinCell, touchedMaxCell, voxelSize);
+
                 EnqueueVolumeRebuild(volume);
                 if ((_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
+                    (_scheduledCarveRequest.DeltaFlags & DeltaModeThermalMelt) == 0 &&
                     _scheduledCarveRequest.Shape != DeltaShapeBox)
                 {
                     EmitCarveDebris(in _scheduledCarveRequest, ResolveCarveRadius(in _scheduledCarveRequest, volume));
@@ -1445,36 +1645,69 @@ namespace Hecton8.Caves
         private void TryQueueCompaction(HectonVoxelVolume volume, ChunkAddress address, in ChunkDeltaState state, int dirtyCount)
         {
             if (volume == null ||
-                dirtyCount < ChunkCompactionDirtyThreshold ||
-                IsCompactionQueuedOrRunning(address))
+                dirtyCount < ChunkCompactionDirtyThreshold)
             {
                 return;
             }
 
-            if (_pendingCompactionCount >= _pendingCompactions.Length)
-                return;
+            int requiredSonarVersion = volume.PublishedSonarVersion + 1;
+            int writeVersion = ResolveChunkWriteVersion(address);
+            for (int i = 0; i < _pendingCompactionCount; i++)
+            {
+                PendingCompactionRequest pending = _pendingCompactions[i];
+                if (!pending.Address.Equals(address))
+                    continue;
 
-            _pendingCompactions[_pendingCompactionCount++] = new PendingCompactionRequest
+                pending.Volume = volume;
+                pending.RequiredSonarVersion = math.max(pending.RequiredSonarVersion, requiredSonarVersion);
+                pending.WriteVersion = writeVersion;
+                pending.DirtyCount = math.max(pending.DirtyCount, dirtyCount);
+                _pendingCompactions[i] = pending;
+                return;
+            }
+
+            PendingCompactionRequest request = new PendingCompactionRequest
             {
                 Volume = volume,
                 Address = address,
-                RequiredSonarVersion = volume.PublishedSonarVersion + 1,
-                WriteVersion = ResolveChunkWriteVersion(address)
+                RequiredSonarVersion = requiredSonarVersion,
+                WriteVersion = writeVersion,
+                DirtyCount = dirtyCount
             };
+
+            TryEnqueueCompaction(in request);
         }
 
-        private bool IsCompactionQueuedOrRunning(ChunkAddress address)
+        private bool TryEnqueueCompaction(in PendingCompactionRequest request)
         {
-            if (_scheduledCompactionRunning && _scheduledCompactionRequest.Address.Equals(address))
-                return true;
-
-            for (int i = 0; i < _pendingCompactionCount; i++)
+            if (_pendingCompactionCount < _pendingCompactions.Length)
             {
-                if (_pendingCompactions[i].Address.Equals(address))
-                    return true;
+                _pendingCompactions[_pendingCompactionCount++] = request;
+                return true;
             }
 
-            return false;
+            int replacementIndex = -1;
+            int lowestDirtyCount = request.DirtyCount;
+            for (int i = 0; i < _pendingCompactionCount; i++)
+            {
+                int candidateDirtyCount = _pendingCompactions[i].DirtyCount;
+                if (!ShouldReplaceQueuedCompaction(lowestDirtyCount, candidateDirtyCount))
+                    continue;
+
+                lowestDirtyCount = candidateDirtyCount;
+                replacementIndex = i;
+            }
+
+            if (replacementIndex < 0)
+                return false;
+
+            _pendingCompactions[replacementIndex] = request;
+            return true;
+        }
+
+        private static bool ShouldReplaceQueuedCompaction(int requestDirtyCount, int candidateDirtyCount)
+        {
+            return candidateDirtyCount < requestDirtyCount;
         }
 
         private void TrySchedulePendingCompaction()
@@ -1497,18 +1730,35 @@ namespace Hecton8.Caves
                 return;
             }
 
-            if (!_chunkStates.TryGetValue(request.Address, out ChunkDeltaState state) ||
-                !volume.TryGetPublishedSonarSdfPayload(
+            if (!_chunkStates.TryGetValue(request.Address, out ChunkDeltaState state))
+                return;
+
+            int currentDirtyCount = CountDirtyCells(in state);
+            if (currentDirtyCount < ChunkCompactionDirtyThreshold)
+                return;
+
+            if (!volume.TryGetPublishedSonarSdfPayload(
                     out NativeArray<byte> encodedSdf,
                     out Vector3Int gridDimensions,
                     out Vector3 volumeOrigin,
                     out Vector3 voxelCellSize,
                     out float sdfRange,
-                    out _))
+                    out int publishedSonarVersion))
             {
+                volume.RequestDeltaRebuild();
+                request.RequiredSonarVersion = volume.PublishedSonarVersion + 1;
+                request.DirtyCount = currentDirtyCount;
+                RequeueCompaction(in request);
                 return;
             }
 
+            if (publishedSonarVersion < request.RequiredSonarVersion)
+            {
+                RequeueCompaction(in request);
+                return;
+            }
+
+            int snapshotWriteVersion = ResolveChunkWriteVersion(request.Address);
             NativeArray<byte> sourceSdf = default;
             NativeArray<uint> dirtyMaskCopy = default;
             NativeArray<ushort> deltaSdfCopy = default;
@@ -1556,7 +1806,7 @@ namespace Hecton8.Caves
                     Volume = volume,
                     Address = request.Address,
                     RequiredSonarVersion = request.RequiredSonarVersion,
-                    WriteVersion = request.WriteVersion,
+                    WriteVersion = snapshotWriteVersion,
                     SourceEncodedSdf = sourceSdf,
                     DirtyMaskWords = dirtyMaskCopy,
                     DeltaSdfValueBits = deltaSdfCopy,
@@ -1609,10 +1859,7 @@ namespace Hecton8.Caves
 
         private void RequeueCompaction(in PendingCompactionRequest request)
         {
-            if (_pendingCompactionCount >= _pendingCompactions.Length)
-                return;
-
-            _pendingCompactions[_pendingCompactionCount++] = request;
+            TryEnqueueCompaction(in request);
         }
 
         private void TryCommitScheduledCompaction()
@@ -2094,6 +2341,7 @@ namespace Hecton8.Caves
             public ChunkAddress Address;
             public int RequiredSonarVersion;
             public int WriteVersion;
+            public int DirtyCount;
         }
 
         private struct ScheduledCompactionRequest
@@ -2110,6 +2358,16 @@ namespace Hecton8.Caves
             public NativeArray<ushort> OutputSdfValueBits;
             public NativeArray<byte> OutputMaterialIds;
             public NativeArray<byte> OutputCellFlags;
+        }
+
+        private struct ThermalMeltRuntime
+        {
+            public HectonVoxelVolume Volume;
+            public Vector3 AbsoluteCenter;
+            public float RadiusMeters;
+            public float Heat01;
+            public float ElapsedSeconds;
+            public float StepAccumulatorSeconds;
         }
 
         private struct PendingCarveRequest

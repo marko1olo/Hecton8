@@ -48,7 +48,7 @@ namespace Hecton8.Core
         private const double SafeHaltTimeoutSeconds = 10.0;
         private const int RecentStepCapacity = 10;
         private const string SafeHaltMessage =
-            "BIOS ERROR 0xBOOT_TIMEOUT\nEXPECTED: 01_MAIN_MENU <= 10.0S\nDETECTED: BOOT STALL\nACTION: SAFE HALT";
+            "BIOS ERROR 0xBOOT_TIMEOUT\nEXPECTED: ACTIVE BOOT STEP <= 10.0S\nDETECTED: BOOT STALL\nACTION: SAFE HALT";
 
         // COLD ALLOC: BootstrapStepToken[10] - safe-halt forensic step ring - owner: BootstrapStatus
         private static readonly BootstrapStepToken[] _recentSteps = new BootstrapStepToken[RecentStepCapacity];
@@ -236,8 +236,12 @@ namespace Hecton8.Core
             if (!BootStarted || MainMenuReached || SafeHaltTriggered)
                 return false;
 
-            double elapsedSeconds = Time.realtimeSinceStartupAsDouble - _bootStartTimeSeconds;
-            if (elapsedSeconds < SafeHaltTimeoutSeconds)
+            double nowSeconds = Time.realtimeSinceStartupAsDouble;
+            double bootElapsedSeconds = nowSeconds - _bootStartTimeSeconds;
+            double watchedElapsedSeconds = _stepActive
+                ? nowSeconds - _stepStartTimeSeconds
+                : bootElapsedSeconds;
+            if (watchedElapsedSeconds < SafeHaltTimeoutSeconds)
                 return false;
 
             SafeHaltTriggered = true;
@@ -256,12 +260,12 @@ namespace Hecton8.Core
                 out uint recentStepHash8,
                 out uint recentStepHash9);
             double activeElapsedMilliseconds = _stepActive
-                ? (Time.realtimeSinceStartupAsDouble - _stepStartTimeSeconds) * 1000.0
+                ? (nowSeconds - _stepStartTimeSeconds) * 1000.0
                 : 0.0;
             _safeHaltTelemetryReporter?.Invoke(
                 _activeStep,
                 LongestStep,
-                elapsedSeconds,
+                bootElapsedSeconds,
                 activeElapsedMilliseconds,
                 recentStepMaskLow,
                 recentStepMaskHigh,

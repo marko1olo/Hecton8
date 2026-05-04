@@ -149,6 +149,7 @@ namespace Hecton8.AI
         private const float FeedingObservationRadiusMetersSqr = FeedingObservationRadiusMeters * FeedingObservationRadiusMeters;
         private const float HibernationStarvationHuntDurationSeconds = 24f;
         private const float HibernationStarvationOrganicConsumeRadiusMeters = 2.75f;
+        private const float LargeCorpseResourceMinHealth = 45f;
         private const float PredatorKillAudioRadiusMeters = 90f;
         private const float PredatorKillAudioRadiusMetersSqr = PredatorKillAudioRadiusMeters * PredatorKillAudioRadiusMeters;
         private const float PredatorKillAudioDurationSeconds = 0.18f;
@@ -379,6 +380,7 @@ namespace Hecton8.AI
             _runtimeAggressionScale = 1f;
             ClearGeneticTraits();
             SetInfectedState(false, 0f);
+            SetDiseasedState(false, 0f);
             _currentHealth = _maxHealth;
             _utilityBrain.ResetRuntimeState(transform.position);
             _utilityBrain.SetRuntimeActive(true);
@@ -403,6 +405,7 @@ namespace Hecton8.AI
             _runtimeAggressionScale = 1f;
             ClearGeneticTraits();
             SetInfectedState(false, 0f);
+            SetDiseasedState(false, 0f);
             _rb.linearVelocity = Vector3.zero;
             _rb.angularVelocity = Vector3.zero;
             _utilityBrain.ResetRuntimeState(transform.position);
@@ -1342,7 +1345,8 @@ namespace Hecton8.AI
             }
 
             Vector3 selfWorldPosition = selfPosition;
-            if (!ecosystemDirector.TryResolveCorpseScavengeTarget(selfWorldPosition, out Vector3 corpsePosition, out uint corpseNodeId))
+            AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfWorldPosition);
+            if (!ecosystemDirector.TryResolveCorpseScavengeTarget(in selfAup, out Vector3 corpsePosition, out uint corpseNodeId))
                 return false;
 
             _baitFeedingTarget = null;
@@ -1356,7 +1360,8 @@ namespace Hecton8.AI
                 return true;
             }
 
-            ApplyDirectedStateOverride(selfPosition, corpsePosition, AIState.Wander);
+            _utilityBrain.ApplyExternalState(AIState.Investigate, _cognitionTimeSeconds);
+            ApplyDirectedStateOverride(selfPosition, corpsePosition, AIState.Investigate);
             return true;
         }
 
@@ -2401,12 +2406,28 @@ namespace Hecton8.AI
             if (ecosystemDirector == null)
                 return;
 
-            bool shouldSpawnCorpseNode = IsApexPredator() ||
-                                         (_archetype != null && (_archetype.roleType == CreatureRoleType.Hunter || _archetype.roleType == CreatureRoleType.Territorial));
-            if (!shouldSpawnCorpseNode)
+            if (!ShouldRegisterLargeCorpseResourceNode())
                 return;
 
-            ecosystemDirector.RegisterCorpseResourceNode(transform.position, ComputeStableSpeciesId(), Mathf.Max(6f, _maxHealth * 0.2f));
+            Vector3 runtimePosition = transform.position;
+            AbsoluteUniversePosition corpseAup = AbsoluteUniversePosition.FromRuntimePosition(runtimePosition);
+            ecosystemDirector.RegisterCorpseResourceNode(in corpseAup, ComputeStableSpeciesId(), Mathf.Max(12f, _maxHealth * 0.35f));
+        }
+
+        private bool ShouldRegisterLargeCorpseResourceNode()
+        {
+            if (IsApexPredator())
+                return true;
+
+            if (_archetype == null)
+                return _maxHealth >= LargeCorpseResourceMinHealth;
+
+            if (_archetype.maxHealth < LargeCorpseResourceMinHealth)
+                return false;
+
+            return _archetype.roleType == CreatureRoleType.Hunter ||
+                   _archetype.roleType == CreatureRoleType.Territorial ||
+                   _archetype.roleType == CreatureRoleType.Leviathan;
         }
 
         private void ReportApexPredatorKill()

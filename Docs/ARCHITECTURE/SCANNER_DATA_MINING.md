@@ -3,9 +3,9 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-## 2026-05-02 Current-State Boundary
+## 2026-05-04 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this scanner map as current runtime truth.
+- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this scanner map as current runtime truth.
 - This document is a PDA/scanner/data-mining contract, not proof that sonar SDF, lore unlocks, scan fragments, or UI text paths are runtime-validated.
 - Re-open PDA, scanner, lore, shader, and save owners before surgery.
 

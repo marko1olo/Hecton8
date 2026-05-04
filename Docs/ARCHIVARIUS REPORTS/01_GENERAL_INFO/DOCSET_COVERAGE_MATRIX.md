@@ -44,14 +44,14 @@ Correction:
 - The current source-backed coverage map includes `PLAYER_GAMEPLAY_CORE_MAP.md`, `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md`, and `2026-04-29_SAVE_LOAD_RUNTIME_TRUTH.md`.
 - Patch artifacts are evidence files, not independent current-state authority.
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` is still the first conceptual current-state entry point outside this Archivarius folder.
-- `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest docset/source-count synchronization pass.
+- `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest docset/source-count synchronization pass.
 
 ## Domain Coverage
 
 | Domain | Current coverage | Primary files | Secondary files | Authority | Current gap |
 |---|---|---|---|---|---|
-| Workspace orientation | strong | `PROJECT_ATLAS.md`, `MASTER_INDEX.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`, `DOC_AUTHORITY_CLASSIFICATION.md`, `STRUCTURAL_NARRATIVE.md` | PRIMARY | none beyond drift risk |
-| Docset health / trust boundaries | strong | `DOC_AUTHORITY_CLASSIFICATION.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`, `PROJECT_ATLAS.md`, `MASTER_INDEX.md` | `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`, this file | PRIMARY | older active bundles still need periodic downgrade checks |
+| Workspace orientation | strong | `PROJECT_ATLAS.md`, `MASTER_INDEX.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `DOC_AUTHORITY_CLASSIFICATION.md`, `STRUCTURAL_NARRATIVE.md` | PRIMARY | none beyond drift risk |
+| Docset health / trust boundaries | strong | `DOC_AUTHORITY_CLASSIFICATION.md`, `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `PROJECT_ATLAS.md`, `MASTER_INDEX.md` | `2026-04-30_ARCHIVARIUS_CONTINUATION_REVERIFICATION.md`, this file | PRIMARY | older active bundles still need periodic downgrade checks |
 | Bootstrap / init order | strong | `2026-04-30_BOOTSTRAP_RUNTIME_AUTHORITY_TRUTH.md`, `BUILD_DEPENDENCY_GRAPH.md` | `DEPENDENCY_GRAPH.md`, `FRAME_TIMELINE.md` | PRIMARY | no live bootstrap branch traversal proof |
 | Scene / prefab service-owner truth | medium | `2026-04-29_SCENE_PREFAB_SERVICE_OWNER_TRUTH.md` | `PROJECT_ATLAS.md`, `BUILD_DEPENDENCY_GRAPH.md` | PRIMARY | scan is bounded to current first-party scenes/prefabs, not all runtime states |
 | GlobalRegistry / service ownership | strong | `INTERFACE_CONTRACT_TABLE.md`, `INTERFACE_HEALTH_DASHBOARD.md` | `INTERFACE_STRATEGY.md`, `DEPENDENCY_GRAPH.md`, `PROJECT_ATLAS.md` | PRIMARY | prefab/scene wiring proof still absent |
@@ -99,7 +99,7 @@ Correction:
 
 | Task | Recommended read path |
 |---|---|
-| Need repo orientation fast | `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` -> `PROJECT_ATLAS.md` -> `MASTER_INDEX.md` -> this file |
+| Need repo orientation fast | `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` -> `PROJECT_ATLAS.md` -> `MASTER_INDEX.md` -> this file |
 | Need blunt project-level verdict | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` -> `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` -> `CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` -> source |
 | Need broad gameplay ownership | `GAMEPLAY_SYSTEM_OWNERSHIP_LEDGER.md` -> `PLAYER_GAMEPLAY_CORE_MAP.md` -> `CONSTRUCTION_RUNTIME_INTEGRATION_MAP.md` |
 | Need survival / damage / hazard ownership | `SURVIVAL_DAMAGE_HAZARD_SYSTEM_MAP.md` -> `PLAYER_GAMEPLAY_CORE_MAP.md` -> `WORLD_ENVIRONMENT_SUBMARINE_SYSTEM_MAP.md` -> `2026-04-30_SAVE_PARTICIPANT_LEDGER.md` |
@@ -128,7 +128,7 @@ Correction:
 
 For current-source truth, prefer in this order:
 
-1. `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
+1. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 2. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
 3. `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
 4. `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md`
@@ -189,13 +189,13 @@ New high-authority May 1 report inputs:
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | PRIMARY | updated current remediation queue |
 | `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` | PRIMARY | current conceptual system-ownership entry point |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY | current blunt project-level verdict; source/doc-backed, not runtime proof |
-| `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | PRIMARY DOCSET ACTUALITY | latest full root/`Docs` markdown read-pass, source-count sync, and link-integrity update |
+| `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` | PRIMARY DOCSET ACTUALITY | latest full root/`Docs` markdown read-pass, source-count sync, and link-integrity update |
 | `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | PRIMARY COMPILE DELTA | current editor compile/MCP console evidence for event-bus listener migration and spatial-hash repair |
 | `Docs/Reports/2026-05-01_COMPILE_STABILIZATION_CONTINUATION.md` | PRIMARY COMPILE DELTA | current editor compile/reload evidence after `VegetationJobRecovery.cs.meta` restoration and Bee/backend recovery |
 
 Coverage corrections:
 
-- The older trust boundary remains valid only as a read-order policy. For current runtime risk, read the May 2 sweep and May 1 reports first.
+- The older trust boundary remains valid only as a read-order policy. For current runtime risk, read `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, then `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, then the relevant dated subsystem report.
 - `EVENT_FLOW_MAP.md` remains current on late-frame dispatch budgeting, but current risk is no proven same-frame generation split for all event cascade paths. `HectonEventBus.MaxDispatchDepth = 4` exists by May 2 source grep.
 - `PROJECT_CONTENT_LEDGER.md` remains the content ledger, but validator execution proof is still not a live runtime proof.
 - `DEAD_CODE_GRAVEYARD.md` remains the deletion ledger. Its conclusions must be cross-checked before deleting additional code because the worktree is currently heavily modified by multiple agents.

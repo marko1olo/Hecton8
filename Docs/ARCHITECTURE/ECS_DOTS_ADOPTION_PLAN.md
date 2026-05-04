@@ -6,7 +6,7 @@ Scope: roadmap only. No `com.unity.entities` production migration was performed 
 
 2026-05-01 trust note:
 
-- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as current project truth.
+- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as current project truth.
 - DOTS/Entities remains prototype/experimental architecture, not the production backbone.
 - The removal criteria below are future gates, not current proof.
 - Do not enable live ECS ownership for save, UI, player, bootstrap, active fauna, pooled physics, or scatter placement without profiler parity and runtime validation.

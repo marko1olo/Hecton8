@@ -45,7 +45,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 56; // v56: PDA Morton exploration mask persists 64-byte alignment metadata and deterministic build salt.
+        public const int CurrentVersion = 57; // v57: Player nitrogen build-up persists across save/load.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -287,6 +287,7 @@ namespace Hecton8.SaveSystem
         public float environmentTemperature;
         public float coldStressSeverity01;
         public float heatStressSeverity01;
+        public float nitrogenBuildUp;
         public bool hasLastDeathRecord;
         public byte lastDeathCause;
         public float lastDeathPosX;

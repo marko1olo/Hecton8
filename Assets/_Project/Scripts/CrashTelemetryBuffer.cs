@@ -99,6 +99,8 @@ namespace Hecton8.Core
             RuntimeWatchdogStall = 1u << 15,
             AupJitterCorrection = 1u << 16,
             CriticalRecovery = 1u << 17,
+            CriticalMemoryPressure = 1u << 18,
+            AudioOverflowDropWarning = 1u << 19,
         }
 
         [Flags]
@@ -113,6 +115,7 @@ namespace Hecton8.Core
             OriginShift = 1u << 5,
             EventBus = 1u << 6,
             Save = 1u << 7,
+            Audio = 1u << 8,
         }
 
         private enum ExportReason : uint
@@ -131,6 +134,8 @@ namespace Hecton8.Core
             RuntimeWatchdogStall = 11u,
             AupJitterCorrection = 12u,
             CriticalRecovery = 13u,
+            CriticalMemoryPressure = 14u,
+            AudioOverflowDropWarning = 15u,
         }
 
         [StructLayout(LayoutKind.Sequential, Size = CrashExportHeaderSizeBytes)]
@@ -330,6 +335,25 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Records an out-of-memory precursor event and forces a synchronous crash-telemetry snapshot.
+        /// </summary>
+        public static void ReportCriticalMemoryPressure(long reservedBytes, long physicalBytes, double usageRatio)
+        {
+            uint flags = (uint)ErrorBits.CriticalMemoryPressure;
+            OrRuntimeFaultFlags(unchecked((int)flags));
+
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteCriticalMemoryPressureTelemetry(reservedBytes, physicalBytes, usageRatio);
+            instance.TryExportSnapshot(
+                ExportReason.CriticalMemoryPressure,
+                flags,
+                writeSynchronously: true);
+        }
+
+        /// <summary>
         /// Reports a dropped event payload caused by recursive cascade protection.
         /// </summary>
         public static void ReportEventCascadeWarning()
@@ -410,6 +434,16 @@ namespace Hecton8.Core
                 return;
 
             instance.WriteLateFrameLoadSheddingTelemetry(queueHash, remainingDispatchBudget);
+        }
+
+        public static void ReportAudioOverflowDropWarning(int overflowDropCount, int bufferedFrames, int writableFrames)
+        {
+            OrRuntimeFaultFlags((int)ErrorBits.AudioOverflowDropWarning);
+            CrashTelemetryBuffer instance = _instance;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteAudioOverflowDropTelemetry(overflowDropCount, bufferedFrames, writableFrames);
         }
 
         /// <summary>
@@ -813,6 +847,31 @@ namespace Hecton8.Core
             _writeCursor++;
         }
 
+        private void WriteAudioOverflowDropTelemetry(int overflowDropCount, int bufferedFrames, int writableFrames)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.Audio;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = (float)Time.unscaledTimeAsDouble;
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = unchecked((uint)math.max(0, bufferedFrames));
+            entry.ErrorFlags = (uint)ErrorBits.AudioOverflowDropWarning;
+            entry.ExportReason = (uint)ExportReason.AudioOverflowDropWarning;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = unchecked((uint)math.max(0, overflowDropCount));
+            entry.SubsystemHeatPacked = unchecked((uint)math.max(0, writableFrames));
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
         private void WriteBootstrapSafeHaltTelemetry(
             BootstrapStepToken activeStep,
             BootstrapStepToken longestStep,
@@ -900,7 +959,16 @@ namespace Hecton8.Core
                         byte* destination = mappedBaseAddress +
                             (int)_crashTelemetryView.PointerOffset +
                             BootstrapSafeHaltDumpOffsetBytes;
-                        UnsafeUtility.MemCpy(destination, &dump, BootstrapSafeHaltDumpSizeBytes);
+                        if (!UnsafeMemoryCopyGuard.TryMemCpy(
+                                destination,
+                                ExportScratchSizeBytes - BootstrapSafeHaltDumpOffsetBytes,
+                                &dump,
+                                BootstrapSafeHaltDumpSizeBytes))
+                        {
+                            UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(CrashTelemetryBuffer));
+                            return;
+                        }
+
                         _crashTelemetryView.Flush();
                         _crashTelemetryStream?.Flush(true);
                     }
@@ -952,6 +1020,30 @@ namespace Hecton8.Core
             _writeCursor++;
         }
 
+        private void WriteCriticalMemoryPressureTelemetry(long reservedBytes, long physicalBytes, double usageRatio)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.EventBus;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = usageRatio > float.MaxValue ? float.MaxValue : (float)usageRatio;
+            entry.MemoryUsedMb = reservedBytes * (1f / (1024f * 1024f));
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.CriticalMemoryPressure;
+            entry.ExportReason = (uint)ExportReason.CriticalMemoryPressure;
+            entry.AupShiftSequence = HectonFloatingOrigin.LastShiftEvent.Sequence;
+            entry.AiStatePacked = PackBytesToMegabytes(reservedBytes);
+            entry.SubsystemHeatPacked = PackBytesToMegabytes(physicalBytes);
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, HectonFloatingOrigin.LastShiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
         private void WriteAupJitterCorrectionTelemetry(Vector3 runtimePosition, float correctionMeters)
         {
             uint frameIndex = unchecked((uint)Time.frameCount);
@@ -975,6 +1067,15 @@ namespace Hecton8.Core
             entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
             _writeCursor++;
+        }
+
+        private static uint PackBytesToMegabytes(long bytes)
+        {
+            if (bytes <= 0L)
+                return 0u;
+
+            long megabytes = bytes / (1024L * 1024L);
+            return megabytes >= uint.MaxValue ? uint.MaxValue : (uint)megabytes;
         }
 
         private static double LongestStepMillisecondsSafe()

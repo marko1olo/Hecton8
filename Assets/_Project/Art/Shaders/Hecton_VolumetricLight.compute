@@ -22,6 +22,7 @@ CBUFFER_START(HectonVolumetricLightParams)
     float4 _HectonVolumetricScatteringParams;
     float4 _HectonHudFogPerturbation;
     float4 _HectonVolumetricMarchParams;
+    float4 _HectonVolumetricShadowParams;
     float4 _HectonVolumetricCompositeParams;
     float _FogScatteringCoeff;
     float4x4 _HectonVolumetricInverseViewProjection;
@@ -151,6 +152,59 @@ float ResolveMainLightShadow(float3 samplePositionWS)
 #endif
 }
 
+float ResolveDepthOcclusionAtWorldPosition(float3 samplePositionWS, float depthBias)
+{
+    float4 samplePositionCS = mul(_HectonVolumetricViewProjection, float4(samplePositionWS, 1.0));
+    if (samplePositionCS.w <= 0.0001)
+        return 0.0;
+
+    float2 sampleUv = samplePositionCS.xy * SafeRcp(samplePositionCS.w) * 0.5 + 0.5;
+    if (sampleUv.x <= 0.0 || sampleUv.x >= 1.0 || sampleUv.y <= 0.0 || sampleUv.y >= 1.0)
+        return 0.0;
+
+    float rawDepth;
+    float validMask;
+    float linearEyeDepth;
+    float3 scenePositionWS;
+    ResolveDepthData(sampleUv, rawDepth, validMask, linearEyeDepth, scenePositionWS);
+    if (validMask <= 0.5)
+        return 0.0;
+
+    float sceneDistance = distance(_WorldSpaceCameraPos, scenePositionWS);
+    float sampleDistance = distance(_WorldSpaceCameraPos, samplePositionWS);
+    return step(sceneDistance + depthBias, sampleDistance);
+}
+
+float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirectionWS, float density)
+{
+    float strength = max(_HectonVolumetricShadowParams.w, 0.0);
+    if (strength <= 0.0001 || density <= 0.0001)
+        return 1.0;
+
+    int stepCount = clamp((int)round(_HectonVolumetricShadowParams.x), 1, 15);
+    float marchDistance = max(_HectonVolumetricShadowParams.y, 0.1);
+    float depthBias = max(_HectonVolumetricShadowParams.z, 0.001);
+    float stepLength = marchDistance * SafeRcp((float)stepCount);
+    float3 toLightDirectionWS = -SafeNormalize3(lightDirectionWS);
+    float transmittance = 1.0;
+
+    [loop]
+    for (int stepIndex = 0; stepIndex < 15; stepIndex++)
+    {
+        if (stepIndex >= stepCount)
+            break;
+
+        float travel = (stepIndex + 0.5) * stepLength;
+        float3 raySampleWS = samplePositionWS + toLightDirectionWS * travel;
+        float occlusion = ResolveDepthOcclusionAtWorldPosition(raySampleWS, depthBias);
+        transmittance *= exp(-occlusion * density * strength * stepLength);
+        if (transmittance <= 0.02)
+            return 0.02;
+    }
+
+    return saturate(transmittance);
+}
+
 [numthreads(8, 8, 1)]
 void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -223,6 +277,7 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
         float cosTheta = saturate(dot(rayDirectionWS, lightDirectionWS));
         float phase = PhaseHG(cosTheta, anisotropy);
         float shadowTerm = ResolveMainLightShadow(samplePositionWS);
+        shadowTerm *= ResolveVolumetricShadowRaymarch(samplePositionWS, lightDirectionWS, density);
         transmittance *= exp(-extinction * stepSize);
         accumulatedLight += density * localScatterCoeff * phase * shadowTerm * transmittance * stepSize;
 

@@ -128,7 +128,19 @@ namespace Hecton8.Gameplay
         private Rigidbody _currentInteriorCarrierBody;
         private bool _suppressInventoryChangedHandling;
         private PlayerRuntimeContext _runtimeContext;
+        private PlayerTool _batterySiphonTool;
+        private IBatteryTool _batterySiphonBatteryTool;
+        private int _batterySiphonSlotIndex = -1;
+        private int _batterySiphonItemHashId;
+        private float _batterySiphonRemainingSeconds;
+        private float _batterySiphonDurationSeconds;
 
+        private const float BatterySiphonLockoutSeconds = 1.5f;
+        private const float BatteryDeadThreshold01 = 0.0001f;
+        private const string StandardBatteryPersistentId = "Comp_BatteryCell";
+        private const string HighCapacityBatteryPersistentId = "Comp_HighCapacityCell";
+        private static readonly int _standardBatteryHashId = LocHash.Compute(StandardBatteryPersistentId);
+        private static readonly int _highCapacityBatteryHashId = LocHash.Compute(HighCapacityBatteryPersistentId);
         public event Action<int> ActiveSlotChanged;
         public event Action ToolAssignmentsChanged;
 
@@ -280,14 +292,26 @@ namespace Hecton8.Gameplay
         {
             RefreshInputSubscriptions();
             bool handheldToolsBlocked = IsHandheldToolUsageBlocked();
+            bool batterySiphonLockout = IsBatterySiphonLockoutActive;
             // ── 1. Обработка ввода переключения слотов ──
-            if (!handheldToolsBlocked)
+            if (!handheldToolsBlocked && !batterySiphonLockout)
                 ProcessSlotInput();
-            else if (_currentTool != null && _swapState == SwapState.Idle && _pendingSlotIndex < 0)
+            else if (handheldToolsBlocked && _currentTool != null && _swapState == SwapState.Idle && _pendingSlotIndex < 0)
                 Holster();
 
             // ── 2. Анимация смены инструмента ──
             ProcessSwapAnimation(deltaTime);
+
+            if (IsBatterySiphonLockoutActive)
+            {
+                ProcessBatterySiphonLockout(deltaTime);
+                PublishRuntimeContextState();
+#if UNITY_EDITOR
+                _debugCurrentSlot = _currentSlotIndex;
+                _debugStateName   = GetSwapStateDebugName(_swapState);
+#endif
+                return;
+            }
 
             if (handheldToolsBlocked)
             {
@@ -303,6 +327,16 @@ namespace Hecton8.Gameplay
             if (_currentTool != null && _swapState == SwapState.Idle)
             {
                 // ── Tick инструмента (idle-анимация, покачивание) ──
+                if (TryBeginBatterySiphonLockoutIfNeeded())
+                {
+                    PublishRuntimeContextState();
+#if UNITY_EDITOR
+                    _debugCurrentSlot = _currentSlotIndex;
+                    _debugStateName   = GetSwapStateDebugName(_swapState);
+#endif
+                    return;
+                }
+
                 _currentTool.ToolTick(deltaTime);
 
                 IInputService inputService = GlobalRegistry.Input;
@@ -343,7 +377,7 @@ namespace Hecton8.Gameplay
             if (slotIndex < -1 || slotIndex >= toolPrefabs.Length)
                 return;
 
-            if (slotIndex >= 0 && IsHandheldToolUsageBlocked())
+            if (slotIndex >= 0 && (IsHandheldToolUsageBlocked() || IsBatterySiphonLockoutActive))
                 return;
 
             RequestSwap(slotIndex);
@@ -376,6 +410,10 @@ namespace Hecton8.Gameplay
         /// <summary>Идёт ли сейчас анимация смены инструмента.</summary>
         public bool IsSwapping => _swapState != SwapState.Idle;
 
+        public bool IsBatterySiphonLockoutActive => _batterySiphonRemainingSeconds > 0f;
+
+        public float BatterySiphonProgress01 => ResolveBatterySiphonProgress01();
+
         public int SlotCount => toolPrefabs != null ? toolPrefabs.Length : 0;
 
         public string GetSlotName(int slotIndex)
@@ -388,6 +426,9 @@ namespace Hecton8.Gameplay
 
         public string GetCurrentToolOperationalSummary()
         {
+            if (IsBatterySiphonLockoutActive)
+                return "CELL SWAP // LOCKOUT";
+
             return _currentTool != null
                 ? _currentTool.GetOperationalSummary()
                 : "NO TOOL ARMED";
@@ -398,6 +439,16 @@ namespace Hecton8.Gameplay
             length = 0;
             if (destination.Length == 0)
                 return false;
+
+            if (IsBatterySiphonLockoutActive)
+            {
+                int cursor = 0;
+                cursor = AppendLiteral(destination, cursor, "CELL SWAP // ");
+                cursor = AppendInt(destination, cursor, Mathf.Clamp(Mathf.RoundToInt(ResolveBatterySiphonProgress01() * 100f), 0, 100));
+                cursor = AppendLiteral(destination, cursor, "%");
+                length = cursor;
+                return cursor > 0;
+            }
 
             if (_currentTool == null)
             {
@@ -474,6 +525,9 @@ namespace Hecton8.Gameplay
 
         public string GetCurrentToolOperationalDirective()
         {
+            if (IsBatterySiphonLockoutActive)
+                return "Battery auto-swap in progress. Tool interaction locked.";
+
             if (IsSwapping)
                 return "Tool swap in progress. Wait for the active handoff.";
 
@@ -829,10 +883,12 @@ namespace Hecton8.Gameplay
                 flags |= (uint)PlayerRuntimeSnapshotFlags.HasTransport;
             if (_currentTool != null)
                 flags |= (uint)PlayerRuntimeSnapshotFlags.ToolEquipped;
-            if (IsHandheldToolUsageBlocked())
+            if (IsHandheldToolUsageBlocked() || IsBatterySiphonLockoutActive)
                 flags |= (uint)PlayerRuntimeSnapshotFlags.HandheldToolBlocked;
 
-            float swapProgress01 = math.saturate(_swapProgress);
+            float swapProgress01 = IsBatterySiphonLockoutActive
+                ? ResolveBatterySiphonProgress01()
+                : math.saturate(_swapProgress);
             float transportBoost01 = 0f;
             IPlayerTransportSource transportSource = CurrentToolTransportSource;
             if (transportSource != null)
@@ -963,7 +1019,7 @@ namespace Hecton8.Gameplay
             if (_swapState != SwapState.Idle)
                 return;
 
-            if (IsHandheldToolUsageBlocked())
+            if (IsHandheldToolUsageBlocked() || IsBatterySiphonLockoutActive)
                 return;
 
             if (index < 0 || index >= toolPrefabs.Length)
@@ -987,7 +1043,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         private void RequestSwap(int newSlotIndex)
         {
-            if (newSlotIndex >= 0 && IsHandheldToolUsageBlocked())
+            if (newSlotIndex >= 0 && (IsHandheldToolUsageBlocked() || IsBatterySiphonLockoutActive))
                 return;
 
             LogToolDebug(
@@ -1237,6 +1293,9 @@ namespace Hecton8.Gameplay
             LogToolDebug(
                 $"DespawnCurrentTool begin currentTool={(_currentTool != null ? _currentTool.GetType().Name : "null")} " +
                 $"currentInstance={(_currentInstance != null ? _currentInstance.name : "null")} currentSlot={_currentSlotIndex}");
+            if (ReferenceEquals(_currentTool, _batterySiphonTool))
+                ClearBatterySiphonLockout();
+
             if (_currentTool != null)
             {
                 _currentTool.OnToolBroken -= HandleEquippedToolBroken;
@@ -1274,6 +1333,166 @@ namespace Hecton8.Gameplay
         /// Время: O(cols × rows) в worst case, но вызывается только
         /// при нажатии кнопки (не каждый кадр).
         /// </summary>
+        // Timed battery siphon; no SOA inventory mutation until the lockout completes.
+        private bool TryBeginBatterySiphonLockoutIfNeeded()
+        {
+            if (_currentTool == null ||
+                _currentSlotIndex < 0 ||
+                _pendingSlotIndex >= 0 ||
+                _swapState != SwapState.Idle ||
+                playerInventory == null)
+            {
+                return false;
+            }
+
+            if (!(_currentTool is IBatteryTool batteryTool) || !IsBatteryToolDead(batteryTool))
+                return false;
+
+            if (!TryResolveInventoryBatteryCandidate(batteryTool, out int batteryHashId, out _))
+                return false;
+
+            _batterySiphonTool = _currentTool;
+            _batterySiphonBatteryTool = batteryTool;
+            _batterySiphonSlotIndex = _currentSlotIndex;
+            _batterySiphonItemHashId = batteryHashId;
+            _batterySiphonDurationSeconds = BatterySiphonLockoutSeconds;
+            _batterySiphonRemainingSeconds = BatterySiphonLockoutSeconds;
+            return true;
+        }
+
+        private void ProcessBatterySiphonLockout(float deltaTime)
+        {
+            if (!IsBatterySiphonContextValid())
+            {
+                ClearBatterySiphonLockout();
+                return;
+            }
+
+            _batterySiphonRemainingSeconds = math.max(0f, _batterySiphonRemainingSeconds - math.max(0f, deltaTime));
+            if (_batterySiphonRemainingSeconds > 0f)
+                return;
+
+            CompleteBatterySiphonLockout();
+        }
+
+        private void CompleteBatterySiphonLockout()
+        {
+            IBatteryTool batteryTool = _batterySiphonBatteryTool;
+            int batteryHashId = _batterySiphonItemHashId;
+            if (batteryTool == null ||
+                batteryHashId == 0 ||
+                playerInventory == null ||
+                !TryResolveInventoryBatteryItem(batteryHashId, out ItemData batteryItem) ||
+                !playerInventory.TryConsumeFirstMatchingItemByHash(batteryHashId, out _, out ushort qualityMilli, out ulong geneticsMask))
+            {
+                ClearBatterySiphonLockout();
+                return;
+            }
+
+            ItemData removedBattery = batteryTool.HasBattery ? batteryTool.RemoveBattery() : null;
+            if (!batteryTool.InsertBattery(batteryItem, 1f))
+            {
+                playerInventory.TryAddItemWithState(batteryHashId, geneticsMask, qualityMilli, 1);
+                if (removedBattery != null)
+                    batteryTool.InsertBattery(removedBattery, 0f);
+            }
+
+            ClearBatterySiphonLockout();
+        }
+
+        private bool IsBatterySiphonContextValid()
+        {
+            return _batterySiphonTool != null &&
+                   _batterySiphonBatteryTool != null &&
+                   ReferenceEquals(_currentTool, _batterySiphonTool) &&
+                   _currentSlotIndex == _batterySiphonSlotIndex &&
+                   _swapState == SwapState.Idle &&
+                   !IsHandheldToolUsageBlocked() &&
+                   IsBatterySiphonToolStillOwned() &&
+                   IsBatteryToolDead(_batterySiphonBatteryTool);
+        }
+
+        private bool IsBatterySiphonToolStillOwned()
+        {
+            if (_batterySiphonSlotIndex < 0 || _batterySiphonSlotIndex >= SlotCount)
+                return false;
+
+            GameObject assignedPrefab = GetAssignedToolPrefab(_batterySiphonSlotIndex);
+            return assignedPrefab != null && HasToolInInventory(assignedPrefab);
+        }
+
+        private void ClearBatterySiphonLockout()
+        {
+            _batterySiphonTool = null;
+            _batterySiphonBatteryTool = null;
+            _batterySiphonSlotIndex = -1;
+            _batterySiphonItemHashId = 0;
+            _batterySiphonRemainingSeconds = 0f;
+            _batterySiphonDurationSeconds = 0f;
+        }
+
+        private float ResolveBatterySiphonProgress01()
+        {
+            if (_batterySiphonTool == null)
+                return 0f;
+
+            if (_batterySiphonDurationSeconds <= 0f)
+                return 1f;
+
+            return math.saturate(1f - (_batterySiphonRemainingSeconds / _batterySiphonDurationSeconds));
+        }
+
+        private bool TryResolveInventoryBatteryCandidate(
+            IBatteryTool batteryTool,
+            out int batteryHashId,
+            out ItemData batteryItem)
+        {
+            batteryHashId = 0;
+            batteryItem = null;
+
+            ItemData installedBattery = batteryTool != null ? batteryTool.BatteryItem : null;
+            int installedBatteryHash = installedBattery != null
+                ? LocHash.Compute(installedBattery.PersistentId)
+                : 0;
+
+            if (TryResolveInventoryBatteryItem(installedBatteryHash, out batteryItem))
+            {
+                batteryHashId = installedBatteryHash;
+                return true;
+            }
+
+            if (TryResolveInventoryBatteryItem(_highCapacityBatteryHashId, out batteryItem))
+            {
+                batteryHashId = _highCapacityBatteryHashId;
+                return true;
+            }
+
+            if (TryResolveInventoryBatteryItem(_standardBatteryHashId, out batteryItem))
+            {
+                batteryHashId = _standardBatteryHashId;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TryResolveInventoryBatteryItem(int batteryHashId, out ItemData batteryItem)
+        {
+            batteryItem = null;
+            if (batteryHashId == 0 || playerInventory == null || playerInventory.CountAvailableTotal(batteryHashId) <= 0)
+                return false;
+
+            var catalog = playerInventory.ItemCatalog;
+            batteryItem = catalog != null ? catalog.FindByHash(batteryHashId) : null;
+            return batteryItem != null;
+        }
+
+        private static bool IsBatteryToolDead(IBatteryTool batteryTool)
+        {
+            return batteryTool != null &&
+                   (!batteryTool.HasBattery || batteryTool.BatteryCharge <= BatteryDeadThreshold01);
+        }
+
         private bool HasToolInInventory(GameObject toolPrefab)
         {
             if (playerInventory == null)

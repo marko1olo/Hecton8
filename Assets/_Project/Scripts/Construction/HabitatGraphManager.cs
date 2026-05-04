@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Core;
@@ -57,6 +58,8 @@ namespace Hecton8.Construction
         private const float StructuralGroanStressThreshold01 = 0.8f;
         private const float StructuralGroanPitchRange = 0.32f;
         private const float MinimumHydrodynamicFlowSpeedMetersPerSecond = 0.1f;
+        private const float CondensationInteriorTemperatureCelsius = 40f;
+        private const float CondensationExternalTemperatureCelsius = 4f;
         private const float SupportCaptureRadiusMeters = 3f;
         private const float SupportCaptureRadiusSq = SupportCaptureRadiusMeters * SupportCaptureRadiusMeters;
         private const int InitialSocketCapacity = 32;
@@ -66,6 +69,7 @@ namespace Hecton8.Construction
         internal const int MaxSiegeTargetCount = 64;
         private const float SiegeVulnerableIntegrityThreshold01 = 0.72f;
         private const uint ParasiteRootNodeIdSalt = 0x8F3A5C7Du;
+        private static readonly int CarbonFilterItemHashId = LocHash.Compute("Data_CarbonFilter");
         private const string NativeMemoryOwner = nameof(HabitatGraphManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly Color PipeSplineColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
@@ -84,6 +88,7 @@ namespace Hecton8.Construction
         private readonly List<TemporaryBypassRecord> _temporaryBypassBuffer;
         private readonly List<long> _submittedLinkIds;
         private readonly List<long> _emittedRuptureEdgeVfxKeys;
+        private readonly List<uint> _ruptureCascadeAppliedNodeIds;
         private readonly Dictionary<uint, int> _moduleIndexByNodeId;
         private readonly Dictionary<SocketKey, SocketMatchEntry> _socketLookup;
 
@@ -120,6 +125,8 @@ namespace Hecton8.Construction
             _submittedLinkIds = new List<long>(InitialEdgeCapacity);
             // COLD ALLOC: List<Int64>[128] - emitted rupture edge VFX keys - owner: HabitatGraphManager
             _emittedRuptureEdgeVfxKeys = new List<long>(InitialEdgeCapacity);
+            // COLD ALLOC: List<UInt32>[64] - one-shot rupture cascade source guard - owner: HabitatGraphManager
+            _ruptureCascadeAppliedNodeIds = new List<uint>(safeModuleCapacity);
             // COLD ALLOC: Dictionary<UInt32,Int32>[64] — node-id to module-index lookup for temporary bypass stitching — owner: HabitatGraphManager
             _moduleIndexByNodeId = new Dictionary<uint, int>(safeModuleCapacity);
             // COLD ALLOC: Dictionary<SocketKey,SocketMatchEntry>[128] — quantized socket lookup for zero-GC adjacency assembly — owner: HabitatGraphManager
@@ -175,6 +182,7 @@ namespace Hecton8.Construction
             PopulateModuleBuffer(modules);
             AppendParasiteRootNodes();
             _nodeCount = _moduleBuffer.Count;
+            EnsureRuptureCascadeStateCapacity(_nodeCount);
             if (_nodeCount <= 0)
             {
                 ClearSiegeTargetSnapshot();
@@ -187,6 +195,7 @@ namespace Hecton8.Construction
             BuildSocketAdjacency();
             AppendTemporaryBypassEdges();
             BuildNodeRecords();
+            PruneRuptureCascadeState();
             BuildEdgeRecords();
             EvaluateAnchorReachability();
             PublishAnchorState();
@@ -204,10 +213,16 @@ namespace Hecton8.Construction
             if (deltaTime <= 0f || _moduleBuffer.Count <= 0)
                 return;
 
+            ApplyWaterPumpDrainage(deltaTime);
+            ApplyOxygenScrubberFilterConsumption(deltaTime);
+            ApplyThermalCondensationState();
             QueueFloodMassLoads(deltaTime);
             ApplyIslandFloodCenterOfMassShifts(deltaTime);
-            EvaluateBulkheadFloodStress(deltaTime);
-            EvaluatePressureBucklingStress(deltaTime);
+            bool runtimeTopologyChanged = EvaluateBulkheadFloodStress(deltaTime);
+            runtimeTopologyChanged |= EvaluatePressureBucklingStress(deltaTime);
+            runtimeTopologyChanged |= EvaluateDetachedDebrisState();
+            if (runtimeTopologyChanged)
+                PublishRuntimeRuptureTopologyState();
 
             HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
             if (bridge == null)
@@ -249,6 +264,153 @@ namespace Hecton8.Construction
             }
 
             PublishSiegeTargetSnapshot();
+        }
+
+        private void ApplyWaterPumpDrainage(float deltaTime)
+        {
+            if (deltaTime <= 0f ||
+                _nodeCount <= 0 ||
+                !_traversalVisited.IsCreated ||
+                !_anchorTraversalQueue.IsCreated)
+            {
+                return;
+            }
+
+            int pumpCount = WaterPumpModule.ActivePumpCount;
+            for (int pumpIndex = 0; pumpIndex < pumpCount; pumpIndex++)
+            {
+                WaterPumpModule pump = WaterPumpModule.GetActivePump(pumpIndex);
+                if (pump == null || !pump.CanPump || !TryResolveModuleNodeIndex(pump.HostModule, out int startNodeIndex))
+                    continue;
+
+                float remainingDrainM3 = pump.ResolveDrainBudgetM3(deltaTime);
+                if (remainingDrainM3 <= 0f)
+                    continue;
+
+                DrainConnectedFloodComponent(startNodeIndex, ref remainingDrainM3);
+            }
+        }
+
+        private void DrainConnectedFloodComponent(int startNodeIndex, ref float remainingDrainM3)
+        {
+            if (remainingDrainM3 <= 0f || startNodeIndex < 0 || startNodeIndex >= _nodeCount)
+                return;
+
+            for (int nodeIndex = 0; nodeIndex < _nodeCount; nodeIndex++)
+                _traversalVisited[nodeIndex] = 0;
+
+            int queueHead = 0;
+            int queueTail = 0;
+            _traversalVisited[startNodeIndex] = 1;
+            _anchorTraversalQueue[queueTail++] = startNodeIndex;
+
+            while (queueHead < queueTail && remainingDrainM3 > 0f)
+            {
+                int currentNodeIndex = _anchorTraversalQueue[queueHead++];
+                BaseModule baseModule = _moduleBuffer[currentNodeIndex].BaseModule;
+                if (baseModule != null && baseModule.isActiveAndEnabled)
+                    remainingDrainM3 -= baseModule.DrainWaterVolumeM3(remainingDrainM3);
+
+                int edgeStart = _edgeOffsets[currentNodeIndex];
+                int edgeEnd = _edgeOffsets[currentNodeIndex + 1];
+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                {
+                    int neighborNodeIndex = _edgeDestinations[edgeIndex];
+                    if (neighborNodeIndex < 0 ||
+                        neighborNodeIndex >= _nodeCount ||
+                        _traversalVisited[neighborNodeIndex] != 0)
+                    {
+                        continue;
+                    }
+
+                    _traversalVisited[neighborNodeIndex] = 1;
+                    _anchorTraversalQueue[queueTail++] = neighborNodeIndex;
+                }
+            }
+        }
+
+        private void ApplyOxygenScrubberFilterConsumption(float deltaTime)
+        {
+            int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+            {
+                BaseModule baseModule = _moduleBuffer[moduleIndex].BaseModule;
+                if (baseModule != null && baseModule.isActiveAndEnabled)
+                    baseModule.UpdateCarbonFilterLogistics(deltaTime, CarbonFilterItemHashId);
+            }
+        }
+
+        private void ApplyThermalCondensationState()
+        {
+            int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+            {
+                BaseModule baseModule = _moduleBuffer[moduleIndex].BaseModule;
+                if (baseModule == null || !baseModule.isActiveAndEnabled)
+                    continue;
+
+                float internalTemperatureCelsius = baseModule.ResolveHostRoomTemperatureCelsius();
+                float externalTemperatureCelsius = baseModule.PressureCompressionDepthMeters > 100f
+                    ? 2f
+                    : 12f;
+                baseModule.SetCondensationState(
+                    internalTemperatureCelsius > CondensationInteriorTemperatureCelsius &&
+                    externalTemperatureCelsius < CondensationExternalTemperatureCelsius);
+            }
+        }
+
+        private bool EvaluateDetachedDebrisState()
+        {
+            bool topologyChanged = false;
+            int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
+            for (int nodeIndex = 0; nodeIndex < moduleCount; nodeIndex++)
+            {
+                BaseModule baseModule = _moduleBuffer[nodeIndex].BaseModule;
+                if (baseModule == null ||
+                    !baseModule.isActiveAndEnabled ||
+                    baseModule.IsDetachedDebris ||
+                    baseModule.CurrentIntegrity > 0f)
+                {
+                    continue;
+                }
+
+                if (!AreConnectingEdgesSevered(nodeIndex))
+                    continue;
+
+                topologyChanged |= baseModule.TryDetachAsSinkingDebris();
+            }
+
+            return topologyChanged;
+        }
+
+        private bool AreConnectingEdgesSevered(int nodeIndex)
+        {
+            bool hasConnection = false;
+            for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
+            {
+                EdgeRecord edge = _edgeBuffer[edgeIndex];
+                if (edge.SourceIndex != nodeIndex && edge.DestinationIndex != nodeIndex)
+                    continue;
+
+                hasConnection = true;
+                if (!edge.Severed)
+                    return false;
+            }
+
+            return hasConnection;
+        }
+
+        private bool TryResolveModuleNodeIndex(BaseModule module, out int nodeIndex)
+        {
+            nodeIndex = -1;
+            if (module == null)
+                return false;
+
+            uint nodeId = unchecked((uint)EntityId.ToULong(module.GetEntityId()));
+            return nodeId != 0u &&
+                   _moduleIndexByNodeId.TryGetValue(nodeId, out nodeIndex) &&
+                   nodeIndex >= 0 &&
+                   nodeIndex < _nodeCount;
         }
 
         private void QueueFloodMassLoads(float deltaTime)
@@ -344,8 +506,9 @@ namespace Hecton8.Construction
             }
         }
 
-        private void EvaluateBulkheadFloodStress(float deltaTime)
+        private bool EvaluateBulkheadFloodStress(float deltaTime)
         {
+            bool topologyChanged = false;
             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
             {
                 BaseModule baseModule = _moduleBuffer[moduleIndex].BaseModule;
@@ -367,8 +530,11 @@ namespace Hecton8.Construction
                 {
                     MarkEdgeRuptured(ref edge);
                     _edgeBuffer[edgeIndex] = edge;
+                    topologyChanged = true;
                 }
             }
+
+            return topologyChanged;
         }
 
         private static bool ApplyBulkheadFloodStress(BaseModule floodedModule, BaseModule candidateAirlock, float deltaTime)
@@ -383,9 +549,9 @@ namespace Hecton8.Construction
             return candidateAirlock.AccumulateBulkheadFloodStress(floodWaterMassKilograms, deltaTime);
         }
 
-        private void EvaluatePressureBucklingStress(float deltaTime)
+        private bool EvaluatePressureBucklingStress(float deltaTime)
         {
-            ApplyQueuedRuptureCascadeFailures();
+            bool topologyChanged = ApplyQueuedRuptureCascadeFailures();
 
             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
             {
@@ -433,10 +599,12 @@ namespace Hecton8.Construction
             }
 
             ApplyRuptureCascadeStressFromRupturedNodes();
+            return topologyChanged;
         }
 
-        private void ApplyQueuedRuptureCascadeFailures()
+        private bool ApplyQueuedRuptureCascadeFailures()
         {
+            bool topologyChanged = false;
             int maxNodeCount = math.min(_nodeCount, _moduleBuffer.Count);
             for (int nodeIndex = 0; nodeIndex < maxNodeCount; nodeIndex++)
             {
@@ -449,7 +617,10 @@ namespace Hecton8.Construction
 
                 MarkNodeRuptured(nodeIndex);
                 RuptureConnectedEdges(nodeIndex);
+                topologyChanged = true;
             }
+
+            return topologyChanged;
         }
 
         private void ApplyRuptureCascadeStressFromRupturedNodes()
@@ -467,6 +638,13 @@ namespace Hecton8.Construction
                 if (!sourceRuptured)
                     continue;
 
+                uint sourceNodeId = _moduleBuffer[nodeIndex].NodeId;
+                if (sourceNodeId != 0u && HasRuptureCascadeBeenApplied(sourceNodeId))
+                    continue;
+
+                if (sourceNodeId != 0u)
+                    MarkRuptureCascadeApplied(sourceNodeId);
+
                 int edgeStart = _edgeOffsets[nodeIndex];
                 int edgeEnd = _edgeOffsets[nodeIndex + 1];
                 for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
@@ -477,6 +655,9 @@ namespace Hecton8.Construction
 
                     LogisticsNodeFlags neighborFlags = _nodes[neighborNodeIndex].Flags;
                     if ((neighborFlags & LogisticsNodeFlags.Ruptured) != 0)
+                        continue;
+
+                    if (!HasUnseveredRuntimeEdge(nodeIndex, neighborNodeIndex))
                         continue;
 
                     BaseModule neighborModule = _moduleBuffer[neighborNodeIndex].BaseModule;
@@ -490,6 +671,89 @@ namespace Hecton8.Construction
                     neighborModule.ApplyRuptureCascadeStress(RuptureCascadeNeighborStressMultiplier);
                 }
             }
+        }
+
+        private bool HasUnseveredRuntimeEdge(int sourceIndex, int destinationIndex)
+        {
+            for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
+            {
+                EdgeRecord edge = _edgeBuffer[edgeIndex];
+                if (edge.Severed)
+                    continue;
+
+                if (edge.SourceIndex == sourceIndex && edge.DestinationIndex == destinationIndex)
+                    return true;
+
+                if (!edge.DirectedOnly &&
+                    edge.SourceIndex == destinationIndex &&
+                    edge.DestinationIndex == sourceIndex)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void EnsureRuptureCascadeStateCapacity(int requiredCapacity)
+        {
+            int safeCapacity = NextPowerOfTwo(math.max(1, requiredCapacity));
+            if (_ruptureCascadeAppliedNodeIds.Capacity >= safeCapacity)
+                return;
+
+            _ruptureCascadeAppliedNodeIds.Capacity = safeCapacity;
+        }
+
+        private bool HasRuptureCascadeBeenApplied(uint nodeId)
+        {
+            for (int i = 0; i < _ruptureCascadeAppliedNodeIds.Count; i++)
+            {
+                if (_ruptureCascadeAppliedNodeIds[i] == nodeId)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private void MarkRuptureCascadeApplied(uint nodeId)
+        {
+            if (nodeId == 0u || HasRuptureCascadeBeenApplied(nodeId))
+                return;
+
+            if (_ruptureCascadeAppliedNodeIds.Count < _ruptureCascadeAppliedNodeIds.Capacity)
+                _ruptureCascadeAppliedNodeIds.Add(nodeId);
+        }
+
+        private void PruneRuptureCascadeState()
+        {
+            for (int i = _ruptureCascadeAppliedNodeIds.Count - 1; i >= 0; i--)
+            {
+                uint nodeId = _ruptureCascadeAppliedNodeIds[i];
+                if (nodeId != 0u && IsRuptureCascadeSourceStillRuptured(nodeId))
+                    continue;
+
+                int lastIndex = _ruptureCascadeAppliedNodeIds.Count - 1;
+                _ruptureCascadeAppliedNodeIds[i] = _ruptureCascadeAppliedNodeIds[lastIndex];
+                _ruptureCascadeAppliedNodeIds.RemoveAt(lastIndex);
+            }
+        }
+
+        private bool IsRuptureCascadeSourceStillRuptured(uint nodeId)
+        {
+            int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
+            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+            {
+                ModuleRecord module = _moduleBuffer[moduleIndex];
+                if (module.NodeId != nodeId)
+                    continue;
+
+                LogisticsNodeFlags nodeFlags = moduleIndex < _nodes.Length ? _nodes[moduleIndex].Flags : LogisticsNodeFlags.None;
+                BaseModule baseModule = module.BaseModule;
+                return (nodeFlags & LogisticsNodeFlags.Ruptured) != 0 ||
+                       (baseModule != null && baseModule.IntegrityState == BaseModuleIntegrityState.Ruptured);
+            }
+
+            return false;
         }
 
         private void RuptureConnectedEdges(int nodeIndex)
@@ -613,6 +877,9 @@ namespace Hecton8.Construction
 
                 ModuleMarker marker = moduleObject.TryGetComponent(out ModuleMarker resolvedMarker) ? resolvedMarker : null;
                 BaseModule baseModule = moduleObject.TryGetComponent(out BaseModule resolvedBaseModule) ? resolvedBaseModule : null;
+                if (baseModule != null && baseModule.IsDetachedDebris)
+                    continue;
+
                 EntityId entityId = moduleObject.GetEntityId();
                 uint nodeId = unchecked((uint)EntityId.ToULong(entityId));
                 Vector3 modulePosition = moduleObject.transform.position;
@@ -1091,8 +1358,6 @@ namespace Hecton8.Construction
         {
             edge.Flags |= PipeRenderFlags.MaskRuptured;
             edge.Severed = true;
-            MarkNodeRuptured(edge.SourceIndex);
-            MarkNodeRuptured(edge.DestinationIndex);
             RegisterSeveredEdgeRuptureVfx(in edge);
         }
 
@@ -1415,6 +1680,20 @@ namespace Hecton8.Construction
             }
 
             _graph.FinalizeBuild();
+        }
+
+        private void PublishRuntimeRuptureTopologyState()
+        {
+            BuildEdgeRecords();
+            EvaluateAnchorReachability();
+            PublishAnchorState();
+            PublishComponentPowerState();
+            PublishEmergencyLockdownState();
+            PublishDegradationState();
+            PublishSiegeTargetSnapshot();
+            PublishGraphKernel();
+            ClearVisualLinks();
+            PublishVisualLinks();
         }
 
         private void PublishVisualLinks()

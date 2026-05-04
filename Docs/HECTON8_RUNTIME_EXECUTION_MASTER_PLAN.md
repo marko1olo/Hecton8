@@ -2,15 +2,18 @@
 
 Status: `ACTIVE`
 Verification: `PENDING VERIFICATION`
-Date: `2026-05-02`
+Date: `2026-05-04`
 
 This is the working execution plan for getting HECTON-8 to a stable, optimized, verifiable runtime state.
 
 Current-state boundary:
 
-- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as execution guidance.
+- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as execution guidance.
 - This plan is still directionally valid, but it is not a runtime verification report.
-- Current May 2 dotnet compile evidence is clean for `Hecton8.Core.csproj` only: `0 Error(s)`, `117 Warning(s)`.
+- Current May 4 local Core and Editor compile evidence is `0 Warning(s)` / `0 Error(s)`.
+- Latest May 4 warning-cleanup Unity console readback after clear/script refresh is `0` error/warning entries; this is not Play Mode proof.
+- Latest May 4 DOTS and PlayModeTests builds are `0 Warning(s)` / `0 Error(s)`.
+- Current May 4 post-repair foundation guard scan exits `0`; this is source-gate proof only.
 - Play Mode deadlock, Unity editor responsiveness, zero-GC, and memory retention remain `PENDING VERIFICATION`.
 - DOTS remains optional/prototype-only until source and profiler evidence prove otherwise.
 

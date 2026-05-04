@@ -189,12 +189,15 @@ namespace Hecton8.UI
 
         private void Awake()
         {
-            CacheListenerActions();
+            EnsureListenerActionsCached();
             BindButtons();
         }
 
         private void OnEnable()
         {
+            EnsureListenerActionsCached();
+            BindButtons();
+
             if (!_initialized)
                 Initialize();
             else
@@ -278,6 +281,19 @@ namespace Hecton8.UI
             _ambientVolumeChangedAction = OnAmbientVolumeChanged; // COLD ALLOC: UnityAction<float>[1] - cached ambient volume listener - owner: SettingsPanel
             _fieldOfViewChangedAction = OnFieldOfViewChanged; // COLD ALLOC: UnityAction<float>[1] - cached field of view listener - owner: SettingsPanel
             _shadowDistanceChangedAction = OnShadowDistanceChanged; // COLD ALLOC: UnityAction<float>[1] - cached shadow distance listener - owner: SettingsPanel
+        }
+
+        private void EnsureListenerActionsCached()
+        {
+            if (_applyAction != null &&
+                _cancelAction != null &&
+                _masterVolumeChangedAction != null &&
+                _shadowDistanceChangedAction != null)
+            {
+                return;
+            }
+
+            CacheListenerActions();
         }
 
         private void BindButtons()
@@ -407,6 +423,8 @@ namespace Hecton8.UI
         {
             if (_slidersBound)
                 return;
+
+            EnsureListenerActionsCached();
 
             if (sliderMasterVolume != null)
             {

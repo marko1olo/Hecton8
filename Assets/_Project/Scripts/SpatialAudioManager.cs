@@ -76,6 +76,12 @@ namespace Hecton8.Audio
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float SoundSpeedAirMetersPerSecond = 343f;
+        private const float ThermalSoundSpeedMinimumMetersPerSecond = 1360f;
+        private const float ThermalSoundSpeedMaximumMetersPerSecond = 1565f;
+        private const float ThermalSoundSpeedSampleRadiusMeters = 12f;
+        private const float ThermalFlowHeatReferenceCelsius = 60f;
+        private const float ThermalFlowTemperatureBoostCelsius = 18f;
+        private const float ThermalShimmerMaximumPitchRatio = 0.018f;
         private const float HaasArrivalWindowSeconds = 0.035f;
         private const float HaasReleaseThresholdSeconds = 0.04f;
         private const float HaasSecondarySpatialBlendFactor = 0.2f;
@@ -179,6 +185,9 @@ namespace Hecton8.Audio
             public float DelaySeconds;
             public float Volume;
             public float Pitch;
+            public float AcousticTransmission01;
+            public float LowPassCutoffHz;
+            public float ThermalShimmer01;
             public float TraumaRangeMeters;
             public float TraumaImpulse;
             public float TraumaWeight;
@@ -796,6 +805,24 @@ namespace Hecton8.Audio
         public void PlayBedAtPoint(AudioClip clip, Vector3 position, float volume = 1f, float pitch = 1f)
         {
             PlayAtPoint(clip, position, volume, pitch, ResolvedBedBusGroup);
+        }
+
+        /// <summary>
+        /// Routes meteor-shower flash energy into the procedural low-frequency boom path.
+        /// </summary>
+        public void PlayMeteorShowerBoom(Vector3 position, float intensity01, float lowPassCutoffHz)
+        {
+            float clampedIntensity = math.saturate(intensity01);
+            if (clampedIntensity <= 0.001f)
+                return;
+
+            ProceduralAudioEvents.RaiseAudioPingTriggered(
+                position,
+                clampedIntensity,
+                1.15f,
+                1f,
+                math.clamp(lowPassCutoffHz, 80f, 800f),
+                ProceduralAudioPingKind.MeteorBoom);
         }
 
         internal void PlayHarvestAtAup(in AbsoluteUniversePosition positionAup, AudioClip clip, float volume = 1f, float pitch = 1f)
@@ -1473,14 +1500,26 @@ private int AcquireSourceIndex()
                 ? HectonFloatingOrigin.ToAbsoluteUniversePosition(_listenerTransform.position)
                 : implosionEvent.RuntimePosition;
             float distanceMeters = math.length(implosionEvent.RuntimePosition - listenerAbsolutePosition);
+            float soundSpeedMetersPerSecond = ResolveThermalSoundSpeedMetersPerSecond(
+                implosionEvent.RuntimePosition,
+                listenerAbsolutePosition,
+                out float thermalShimmer01);
+            ResolveDelayedAcousticPath(
+                implosionEvent.RuntimePosition,
+                listenerAbsolutePosition,
+                out float acousticTransmission01,
+                out float lowPassCutoffHz);
             DelayedAudioEvent delayedEvent = new DelayedAudioEvent
             {
                 Kind = DelayedAudioEventKind.FatalPressureImplosion,
                 Position = implosionEvent.RuntimePosition,
                 EventTimeSeconds = Time.time,
-                DelaySeconds = distanceMeters / SoundSpeedWaterMetersPerSecond,
+                DelaySeconds = distanceMeters / soundSpeedMetersPerSecond,
                 Volume = FatalPressureImplosionEventVolume,
                 Pitch = FatalPressureImplosionEventPitch,
+                AcousticTransmission01 = acousticTransmission01,
+                LowPassCutoffHz = lowPassCutoffHz,
+                ThermalShimmer01 = thermalShimmer01,
                 TraumaRangeMeters = FatalPressureImplosionTraumaRangeMeters,
                 TraumaImpulse = FatalPressureImplosionTraumaImpulse,
                 TraumaWeight = FatalPressureImplosionTraumaWeight
@@ -1506,14 +1545,26 @@ private int AcquireSourceIndex()
                 ? HectonFloatingOrigin.ToAbsoluteUniversePosition(_listenerTransform.position)
                 : absolutePosition;
             float distanceMeters = math.length(absolutePosition - listenerAbsolutePosition);
+            float soundSpeedMetersPerSecond = ResolveThermalSoundSpeedMetersPerSecond(
+                absolutePosition,
+                listenerAbsolutePosition,
+                out float thermalShimmer01);
+            ResolveDelayedAcousticPath(
+                absolutePosition,
+                listenerAbsolutePosition,
+                out float acousticTransmission01,
+                out float lowPassCutoffHz);
             DelayedAudioEvent delayedEvent = new DelayedAudioEvent
             {
                 Kind = DelayedAudioEventKind.InventoryRunawayExplosion,
                 Position = absolutePosition,
                 EventTimeSeconds = Time.time,
-                DelaySeconds = distanceMeters / SoundSpeedWaterMetersPerSecond,
+                DelaySeconds = distanceMeters / soundSpeedMetersPerSecond,
                 Volume = math.saturate(volume01),
                 Pitch = 0.72f,
+                AcousticTransmission01 = acousticTransmission01,
+                LowPassCutoffHz = lowPassCutoffHz,
+                ThermalShimmer01 = thermalShimmer01,
                 TraumaRangeMeters = 0f,
                 TraumaImpulse = 0f,
                 TraumaWeight = 0f
@@ -1577,11 +1628,13 @@ private int AcquireSourceIndex()
                 case DelayedAudioEventKind.FatalPressureImplosion:
                     if (_fatalPressureImplosionClip != null)
                     {
-                        PlayThreatAtPoint(
+                        PlayAtPointWithLowPass(
                             _fatalPressureImplosionClip,
                             delayedEvent.Position,
-                            delayedEvent.Volume,
-                            delayedEvent.Pitch);
+                            ResolveDelayedEventVolume(in delayedEvent),
+                            ResolveDelayedEventPitch(in delayedEvent),
+                            ResolvedThreatBusGroup,
+                            ResolveDelayedEventLowPass(in delayedEvent));
                     }
 
                     ApplyDelayedTrauma(in delayedEvent, listenerAbsolutePosition);
@@ -1590,15 +1643,104 @@ private int AcquireSourceIndex()
                 case DelayedAudioEventKind.InventoryRunawayExplosion:
                     if (_inventoryRunawayExplosionClip != null)
                     {
-                        PlayThreatAtPoint(
+                        PlayAtPointWithLowPass(
                             _inventoryRunawayExplosionClip,
                             delayedEvent.Position,
-                            delayedEvent.Volume,
-                            delayedEvent.Pitch);
+                            ResolveDelayedEventVolume(in delayedEvent),
+                            ResolveDelayedEventPitch(in delayedEvent),
+                            ResolvedThreatBusGroup,
+                            ResolveDelayedEventLowPass(in delayedEvent));
                     }
 
                     break;
             }
+        }
+
+        private static float ResolveDelayedEventVolume(in DelayedAudioEvent delayedEvent)
+        {
+            float transmission01 = delayedEvent.AcousticTransmission01 > 0f
+                ? math.saturate(delayedEvent.AcousticTransmission01)
+                : 1f;
+            return math.saturate(delayedEvent.Volume * transmission01);
+        }
+
+        private static float ResolveDelayedEventLowPass(in DelayedAudioEvent delayedEvent)
+        {
+            float cutoffHz = delayedEvent.LowPassCutoffHz > 0f
+                ? delayedEvent.LowPassCutoffHz
+                : AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            return math.clamp(
+                cutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+        }
+
+        private static float ResolveDelayedEventPitch(in DelayedAudioEvent delayedEvent)
+        {
+            float shimmer01 = math.saturate(delayedEvent.ThermalShimmer01);
+            if (shimmer01 <= 0.0001f)
+                return math.clamp(delayedEvent.Pitch, 0.1f, 3f);
+
+            float phase = (Time.time * 47.3f) +
+                          (delayedEvent.Position.x * 0.013f) +
+                          (delayedEvent.Position.z * 0.017f);
+            float shimmer = math.sin(phase) * ThermalShimmerMaximumPitchRatio * shimmer01;
+            return math.clamp(delayedEvent.Pitch * (1f + shimmer), 0.1f, 3f);
+        }
+
+        private static float ResolveThermalSoundSpeedMetersPerSecond(
+            Vector3 sourceAbsolutePosition,
+            Vector3 listenerAbsolutePosition,
+            out float thermalShimmer01)
+        {
+            Vector3 samplePosition = (sourceAbsolutePosition + listenerAbsolutePosition) * 0.5f;
+            float temperatureCelsius = 2f;
+            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+            if (vegetationBridge != null)
+                temperatureCelsius = vegetationBridge.GetWaterTemperature(samplePosition);
+
+            thermalShimmer01 = 0f;
+            IThermodynamicsService thermodynamicsService = GlobalRegistry.ThermodynamicsService;
+            if (thermodynamicsService != null &&
+                thermodynamicsService.IsInitialized &&
+                thermodynamicsService.SampleThermalFlow(
+                    samplePosition,
+                    ThermalSoundSpeedSampleRadiusMeters,
+                    out AbyssalThermalManager.ThermalFlowSample thermalFlowSample))
+            {
+                float heat01 = math.saturate(thermalFlowSample.Heat01 / math.max(ThermalFlowHeatReferenceCelsius, 0.001f));
+                temperatureCelsius += heat01 * ThermalFlowTemperatureBoostCelsius;
+                thermalShimmer01 = heat01;
+            }
+
+            float soundSpeed = 1440f + (4.6f * temperatureCelsius) - (0.05f * temperatureCelsius * temperatureCelsius);
+            return math.clamp(
+                soundSpeed,
+                ThermalSoundSpeedMinimumMetersPerSecond,
+                ThermalSoundSpeedMaximumMetersPerSecond);
+        }
+
+        private static void ResolveDelayedAcousticPath(
+            Vector3 sourceAbsolutePosition,
+            Vector3 listenerAbsolutePosition,
+            out float acousticTransmission01,
+            out float lowPassCutoffHz)
+        {
+            acousticTransmission01 = 1f;
+            lowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            if (!AcousticOcclusionUtility.TryTraceVoxelDensityOcclusion(
+                    sourceAbsolutePosition,
+                    listenerAbsolutePosition,
+                    out AcousticVoxelOcclusionResult voxelOcclusion))
+            {
+                return;
+            }
+
+            acousticTransmission01 = math.saturate(voxelOcclusion.Transmission01);
+            lowPassCutoffHz = math.clamp(
+                voxelOcclusion.LowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
         }
 
         private void HandleRepairDroneTorchAcoustic(in RepairDroneTorchAcousticEvent acousticEvent)

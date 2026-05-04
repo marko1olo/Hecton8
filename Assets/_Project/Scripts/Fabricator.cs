@@ -77,6 +77,9 @@ namespace Hecton8.Crafting
                  "Если игрок отойдёт дальше — крафт отменяется.")]
         [SerializeField] private float maxUseDistance = 3.5f;
 
+        [Tooltip("When enabled, a completed recipe immediately queues again if unlocks, ingredients, capacity, and power still pass.")]
+        [SerializeField] private bool isContinuous;
+
         [Header("── Power ─────────────────────────────────────")]
         [Tooltip("Потребление энергии ВО ВРЕМЯ КРАФТА (Ватты). " +
                  "В idle фабрикатор не потребляет дополнительно. " +
@@ -178,6 +181,9 @@ namespace Hecton8.Crafting
         private const int MaxLocalCraftReservations = 64;
         private const int MaxNetworkCraftCosts = 32;
         private const int MaxQueuedCraftingTasks = 1;
+        private const int MaxUnlockedRecipeWords = 8;
+        private const int RecipeUnlockWordShift = 6;
+        private const int RecipeUnlockBitMask = 63;
         private const float SlowTickDeltaSeconds = 0.5f;
         private const float ThermalThrottleTemperatureCelsius = 50f;
         private const float ThermalThrottleProgressMultiplier = 0.5f;
@@ -200,6 +206,8 @@ namespace Hecton8.Crafting
         private NativeArray<int2> _complexRecipeRawCosts;
         private NativeArray<int> _complexRecipeRawCostCount;
         private NativeArray<byte> _complexRecipeGraphStatus;
+        private NativeArray<ulong> _unlockedRecipes;
+        private bool _unlockMaskDirty = true;
 
         private BaseLogisticsNetwork.LogisticsReservation _networkReservation;
 
@@ -214,6 +222,12 @@ namespace Hecton8.Crafting
 
         /// <summary>Идёт ли сейчас процесс крафта.</summary>
         public bool IsCrafting => _isCrafting;
+
+        public bool IsContinuous
+        {
+            get => isContinuous;
+            set => isContinuous = value;
+        }
 
         /// <summary>Нормализованный прогресс (0..1).</summary>
         public float CraftProgress => _isCrafting && _activeRecipe != null
@@ -612,6 +626,7 @@ namespace Hecton8.Crafting
             }
 
             _activeCraftPowerMultiplier = Mathf.Max(1f, task.PowerMultiplier);
+            float previousProgress = task.Progress;
             bool craftCompleted = AdvanceCraftingTask(
                 ref task,
                 SlowTickDeltaSeconds,
@@ -619,6 +634,8 @@ namespace Hecton8.Crafting
                 out float durationSeconds,
                 out float progress);
             _craftTimer = task.Progress * durationSeconds;
+            if (progress > previousProgress)
+                RaiseFabricatorProgressAudioPing();
 
             if (progress - _lastPublishedProgress > ProgressPublishThreshold
                 || progress >= 1f)
@@ -771,6 +788,15 @@ namespace Hecton8.Crafting
                 CraftingEvents.RaiseCraftCompleted(result);
 
             PlaySound(craftCompleteSound);
+            TryRestartContinuousCraft(recipe);
+        }
+
+        private void TryRestartContinuousCraft(RecipeData recipe)
+        {
+            if (!isContinuous || recipe == null || _isCrafting)
+                return;
+
+            StartCraft(recipe);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -979,6 +1005,14 @@ namespace Hecton8.Crafting
                 _complexRecipeGraphStatus = new NativeArray<byte>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterTrackedNativeArray(_complexRecipeGraphStatus, nameof(_complexRecipeGraphStatus));
             }
+
+            if (!_unlockedRecipes.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<UInt64>[8] - recipe unlock bitset for fabricator craft gate - owner: Fabricator
+                _unlockedRecipes = new NativeArray<ulong>(MaxUnlockedRecipeWords, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                RegisterTrackedNativeArray(_unlockedRecipes, nameof(_unlockedRecipes));
+                _unlockMaskDirty = true;
+            }
         }
 
         private void DisposeCraftingScratch()
@@ -1014,6 +1048,7 @@ namespace Hecton8.Crafting
             DisposeTrackedNativeArray(ref _complexRecipeRawCosts);
             DisposeTrackedNativeArray(ref _complexRecipeRawCostCount);
             DisposeTrackedNativeArray(ref _complexRecipeGraphStatus);
+            DisposeTrackedNativeArray(ref _unlockedRecipes);
         }
 
         private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
@@ -1099,6 +1134,7 @@ namespace Hecton8.Crafting
                 return false;
             }
 
+            ClampDeconstructionYieldToSourceMass(targetItem, itemCatalog);
             int outputCount = _deconstructionOutputCount[0];
             if (outputCount <= 0)
             {
@@ -1131,6 +1167,46 @@ namespace Hecton8.Crafting
                 _playerInventory.TryAddItem(itemHashId, 1);
 
             return emittedAny;
+        }
+
+        private void ClampDeconstructionYieldToSourceMass(ItemData sourceItem, Hecton8.SaveSystem.ItemCatalog itemCatalog)
+        {
+            if (sourceItem == null ||
+                itemCatalog == null ||
+                !_deconstructionRecipeOutputs.IsCreated ||
+                !_deconstructionOutputCount.IsCreated ||
+                _deconstructionOutputCount.Length <= 0)
+            {
+                return;
+            }
+
+            float remainingMassKg = Mathf.Max(0f, sourceItem.MassKg);
+            int outputCount = Mathf.Clamp(_deconstructionOutputCount[0], 0, _deconstructionRecipeOutputs.Length);
+            int writeIndex = 0;
+            for (int outputIndex = 0; outputIndex < outputCount; outputIndex++)
+            {
+                int2 output = _deconstructionRecipeOutputs[outputIndex];
+                if (output.x == 0 || output.y <= 0 || remainingMassKg <= 0.0001f)
+                    continue;
+
+                ItemData outputItem = itemCatalog.FindByHash(output.x);
+                if (outputItem == null)
+                    continue;
+
+                float unitMassKg = Mathf.Max(0.0001f, outputItem.MassKg);
+                int maxQuantityByMass = Mathf.FloorToInt((remainingMassKg + 0.0001f) / unitMassKg);
+                int clampedQuantity = Mathf.Min(output.y, maxQuantityByMass);
+                if (clampedQuantity <= 0)
+                    continue;
+
+                remainingMassKg -= clampedQuantity * unitMassKg;
+                _deconstructionRecipeOutputs[writeIndex++] = new int2(output.x, clampedQuantity);
+            }
+
+            for (int clearIndex = writeIndex; clearIndex < outputCount; clearIndex++)
+                _deconstructionRecipeOutputs[clearIndex] = int2.zero;
+
+            _deconstructionOutputCount[0] = writeIndex;
         }
 
         private bool TryEmitDeconstructionYield(
@@ -1371,6 +1447,18 @@ namespace Hecton8.Crafting
                 Hecton8.Core.GlobalRegistry.Audio.PlayAtPoint(clip, transform.position);
         }
 
+        private void RaiseFabricatorProgressAudioPing()
+        {
+            float pitchCarrierHz = Mathf.Clamp(900f + (_activeCraftPowerMultiplier * 180f), 900f, 2200f);
+            ProceduralAudioEvents.RaiseAudioPingTriggered(
+                transform.position,
+                Mathf.Clamp01(0.18f + _activeCraftPowerMultiplier * 0.08f),
+                0.08f,
+                1f,
+                pitchCarrierHz,
+                ProceduralAudioPingKind.MechanicalWhirr);
+        }
+
         private void EnsureScanLogSystem()
         {
             if (_scanLogSystem == null)
@@ -1397,6 +1485,7 @@ namespace Hecton8.Crafting
         private void MarkRecipeCacheDirty()
         {
             _recipeCacheDirty = true;
+            _unlockMaskDirty = true;
         }
 
         private void EnsureRecipeCache()
@@ -1430,9 +1519,113 @@ namespace Hecton8.Crafting
             _recipeCacheDirty = false;
         }
 
+        private void EnsureRecipeUnlockMask()
+        {
+            EnsureCraftingScratch();
+            if (!_unlockMaskDirty || !_unlockedRecipes.IsCreated)
+                return;
+
+            EnsureScanLogSystem();
+            for (int wordIndex = 0; wordIndex < _unlockedRecipes.Length; wordIndex++)
+                _unlockedRecipes[wordIndex] = 0UL;
+
+            int unlockIndex = 0;
+            if (availableRecipes != null)
+            {
+                for (int i = 0; i < availableRecipes.Count && unlockIndex < MaxUnlockedRecipeWords * 64; i++)
+                    WriteRecipeUnlockBit(availableRecipes[i], unlockIndex++);
+            }
+
+            int runtimeRecipeCount = ModRecipeRegistry.Count;
+            for (int i = 0; i < runtimeRecipeCount && unlockIndex < MaxUnlockedRecipeWords * 64; i++)
+            {
+                RecipeData recipe = ModRecipeRegistry.GetAt(i);
+                if (recipe == null || ContainsAuthoredRecipeReference(recipe))
+                    continue;
+
+                WriteRecipeUnlockBit(recipe, unlockIndex++);
+            }
+
+            _unlockMaskDirty = false;
+        }
+
+        private void WriteRecipeUnlockBit(RecipeData recipe, int unlockIndex)
+        {
+            if (recipe == null || !_unlockedRecipes.IsCreated)
+                return;
+
+            int wordIndex = unlockIndex >> RecipeUnlockWordShift;
+            if (wordIndex < 0 || wordIndex >= _unlockedRecipes.Length)
+                return;
+
+            if (recipe.IsUnlocked(_scanLogSystem))
+                _unlockedRecipes[wordIndex] = _unlockedRecipes[wordIndex] | (1UL << (unlockIndex & RecipeUnlockBitMask));
+        }
+
+        private bool TryResolveRecipeUnlockIndex(RecipeData recipe, out int unlockIndex)
+        {
+            unlockIndex = -1;
+            if (recipe == null)
+                return false;
+
+            int cursor = 0;
+            if (availableRecipes != null)
+            {
+                for (int i = 0; i < availableRecipes.Count; i++)
+                {
+                    if (ReferenceEquals(availableRecipes[i], recipe))
+                    {
+                        unlockIndex = cursor;
+                        return IsUnlockIndexInRange(unlockIndex);
+                    }
+
+                    cursor++;
+                }
+            }
+
+            int runtimeRecipeCount = ModRecipeRegistry.Count;
+            for (int i = 0; i < runtimeRecipeCount; i++)
+            {
+                RecipeData runtimeRecipe = ModRecipeRegistry.GetAt(i);
+                if (runtimeRecipe == null || ContainsAuthoredRecipeReference(runtimeRecipe))
+                    continue;
+
+                if (ReferenceEquals(runtimeRecipe, recipe))
+                {
+                    unlockIndex = cursor;
+                    return IsUnlockIndexInRange(unlockIndex);
+                }
+
+                cursor++;
+            }
+
+            return false;
+        }
+
+        private static bool IsUnlockIndexInRange(int unlockIndex)
+        {
+            return unlockIndex >= 0 && unlockIndex < MaxUnlockedRecipeWords * 64;
+        }
+
+        private bool IsRecipeUnlockBitSet(int unlockIndex)
+        {
+            if (!_unlockedRecipes.IsCreated || !IsUnlockIndexInRange(unlockIndex))
+                return false;
+
+            int wordIndex = unlockIndex >> RecipeUnlockWordShift;
+            return (_unlockedRecipes[wordIndex] & (1UL << (unlockIndex & RecipeUnlockBitMask))) != 0UL;
+        }
+
         private bool IsRecipeUnlocked(RecipeData recipe)
         {
-            return recipe != null && recipe.IsUnlocked(_scanLogSystem);
+            if (recipe == null)
+                return false;
+
+            EnsureRecipeUnlockMask();
+            if (TryResolveRecipeUnlockIndex(recipe, out int unlockIndex))
+                return IsRecipeUnlockBitSet(unlockIndex);
+
+            return recipe.IsUnlocked(_scanLogSystem);
         }
 
         private void AppendRecipeToCache(RecipeData recipe)

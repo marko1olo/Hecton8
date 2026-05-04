@@ -30,6 +30,7 @@ Scope: MapMagic terrain bridge, 108 biome matrix, scatter influence grid, biome 
 - `SoundscapeSystem` and `HectonMusicDirector` are wired to biome matrix changes for profile-driven audio transitions.
 - `AmbientWaterMotionManager` interpolates biome current overrides over five seconds on matrix biome changes.
 - `BiomeMatrixDirector` triggers seismic dust on IDs 7, 9, 11 or profile opt-in via `AbyssalFluidDecalManager.RegisterSeismicDust`.
+- `HectonUnderwaterVisuals` now owns the runtime biome fog transition buffers, schedules `BiomeTransitionFogBlendJob` from slow tick, and completes the result only through `ILateFrameTickable` / `DispatcherJobSwap`.
 
 ## Terrain/Voxel Seam
 
@@ -59,6 +60,34 @@ private struct BiomeInfluencePackJob : IJobParallelFor
 }
 ```
 
+Burst biome fog blend job:
+
+```csharp
+public void Execute(int index)
+{
+    BiomeTransitionSample sample = Samples[index];
+    BiomeTransitionFogSource from = ResolveSource(sample.FromBiomeId);
+    BiomeTransitionFogSource to = ResolveSource(sample.ToBiomeId);
+    float blend = ResolveAupBlend(index, sample.Blend255 * (1f / 255f));
+    float smoothBlend = blend * blend * (3f - 2f * blend);
+
+    Results[index] = new BiomeTransitionFogResult
+    {
+        Sample = new BiomeTransitionSample
+        {
+            FromBiomeId = sample.FromBiomeId,
+            ToBiomeId = sample.ToBiomeId,
+            Blend255 = (byte)math.round(math.saturate(smoothBlend) * 255f),
+            Flags = sample.Flags
+        },
+        FogColor = math.lerp(from.FogColor, to.FogColor, smoothBlend),
+        Density = math.lerp(from.Density, to.Density, smoothBlend),
+        Turbidity = math.lerp(from.Turbidity, to.Turbidity, smoothBlend),
+        Absorption = math.lerp(from.Absorption, to.Absorption, smoothBlend)
+    };
+}
+```
+
 Smoke tester:
 
 - `Assets/_Project/Scripts/World/BiomeTransitionSmokeTester.cs`
@@ -67,13 +96,13 @@ Smoke tester:
 
 ## Verification
 
-- `dotnet build Hecton8.Core.csproj /m:1`: 0 errors, 3 unrelated warnings after project import state changed.
-- `dotnet build Hecton8.Editor.csproj /m:1`: 0 errors, 3 unrelated warnings from `Hecton8.Core`.
-- Standalone syntax compile of biome smoke harness against Unity assemblies: 0 errors.
-- `git diff --check` on touched biome/scatter/smoke files: clean except CRLF normalization warnings.
+- `dotnet build Hecton8.Core.csproj /m:1`: 0 errors, 0 warnings.
+- `dotnet build Hecton8.Editor.csproj /m:1`: 0 errors, 0 warnings.
+- MCP `execute_code` smoke: `BiomeTransitionSmokeTester.RunHeadlessSmokeTest` returned `passed=True`, `density=0.0400`, `absorption=0.5000`, `packed=0x05802B2A`.
+- MCP `read_console` after smoke execution: 0 error entries and 0 warning entries.
+- MCP editor state after refresh: `ready_for_tools=true`, `is_compiling=false`, `is_domain_reload_pending=false`.
+- `git diff --check` on touched biome fog files: clean except CRLF normalization warnings.
 - `rg` sweep for `Terrain.activeTerrain`, `activeTerrains`, and terrain scene search patterns in `Assets/_Project/Scripts`: no matches.
-- Unity batchmode smoke execution blocked: another Unity instance already has `C:/hades/Hecton8` open.
-- MCP console proof unavailable in this environment; no MCP Unity tools are exposed to the agent.
 
 ## Regression Model
 
@@ -81,4 +110,4 @@ Smoke tester:
 - GC: measured proof absent. Code review shows no LINQ, coroutine, scene search, or managed allocation in the new sampling hot path.
 - Memory: one owner for the biome influence GPU buffer is `WorldProceduralFieldSampler`; duplicate scatter working-memory ownership was removed.
 - GPU: upload is a packed `uint` GraphicsBuffer stream; MX350 risk is bounded by single uint per scatter cell plus existing flora 4096 cap.
-- Correctness risk: Unity runtime smoke and MCP console are still required before any "verified" claim.
+- Correctness risk: full playmode traversal through an authored biome border is still required before any production verification claim.

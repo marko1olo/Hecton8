@@ -8,6 +8,10 @@ This is a static compliance audit.
 It is not play-mode proof and not profiler proof.
 No runtime gameplay code was edited.
 
+## 2026-05-04 Current-State Note
+
+This `2026-04-30` audit is historical static inventory. Do not cite its `Unauthorized Unity loop methods = 10`, `.Complete()` count, C# file count, or violation tables as current. The latest foundation guard source gate is `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`, regenerated at `2026-05-04 23:33:55`, and currently reports unauthorized Unity loop methods `0`, `.Run(` sites `0`, `.Complete(` text hits `5`, `UnsafeUtility.MemCpy outside guard` `0`, and runtime Find API review hits `8`.
+
 ## Mandate Ingestion
 
 `.agents-skills/` was scanned and read as source input.
@@ -36,7 +40,7 @@ No runtime gameplay code was edited.
 | IJob/IJobParallelFor-like structs | 127 |
 | Fully explicit Burst jobs | 7 |
 | Burst explicit-attribute violations | 120 |
-| Unauthorized Unity loop methods | 10 |
+| Unauthorized Unity loop methods | 10 historical in this 2026-04-30 scan; current May 4 guard reports 0 |
 | Direct hot-path string/GC findings | 4 |
 | Core asmdef ACL violations | CRITICAL |
 | SPSC critical violations found | 0 |
@@ -46,7 +50,7 @@ No runtime gameplay code was edited.
 
 1. `Hecton8.Core.asmdef` is not pure core. It directly references `UnityEngine.UI`, `Unity.TextMeshPro`, URP runtime assemblies, GPUInstancer, Den.Tools, MapMagic, Crest, WaveHarmonic Crest, and VolumetricLightBeam. This is a critical Anti-Corruption Layer violation.
 2. Burst compliance is structurally weak: 127 job structs were found, only 7 explicitly declare `[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]`. Five job structs have no `[BurstCompile]` attribute at all.
-3. Unity loop bypass still exists in first-party gameplay/UI/runtime code: 10 unauthorized `LateUpdate()` methods outside `SystemDispatcher` and `GameBootstrapper`.
+3. Unity loop bypass existed in this 2026-04-30 scan: 10 unauthorized `LateUpdate()` methods outside `SystemDispatcher` and `GameBootstrapper`. Current May 4 guard reports unauthorized Unity loop methods `0`.
 
 ## Top 5 Most Dangerous Files
 
@@ -64,7 +68,7 @@ Scoring model: LOC gravity + `.Complete()` pressure + non-compliant job structs 
 
 Rule used: Unity loops outside dispatcher/bootstrap must migrate to the tick system unless explicitly documented as an exception.
 
-Unauthorized loop count: 10.
+Unauthorized loop count in this 2026-04-30 scan: 10. Current May 4 guard count: `0`.
 
 | File:Line | Method | Status |
 |---|---|---|

@@ -1,10 +1,10 @@
 # HECTON-8 Objective Project Conclusion
 
-Date: `2026-05-02`
+Date: `2026-05-04`
 Status: `PENDING VERIFICATION`
 Scope: documentation/source-backed project conclusion, not Play Mode certification
 
-Path note: filename retained as a stable May 1 verdict path; source counts below were refreshed by the May 2 documentation actuality sweep.
+Path note: filename retained as a stable May 1 verdict path; current orientation is superseded by `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` before this verdict is used.
 
 ## Mandates Followed
 
@@ -37,7 +37,7 @@ No runtime code was changed.
 High-authority docs checked:
 
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-- `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md`
+- `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md`
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOC_AUTHORITY_CLASSIFICATION.md`
 - `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
@@ -48,7 +48,7 @@ High-authority docs checked:
 
 Source scan checked:
 
-- `Assets/_Project/Scripts/` contains `1047` first-party `.cs` files in the current static scan.
+- May 4 source snapshot contains `1078` first-party `.cs` files under `Assets/_Project/Scripts` and `1118` under `Assets/_Project`.
 - The largest files are still operational monoliths, not small adapters.
 - Static scan still finds broad singleton/DDOL/runtime-instance patterns.
 - Static scan still finds `.Complete()`, `Allocator.Persistent`, `Allocator.TempJob`, `Camera.main`, direct material creation, and broad physics-mask markers across runtime code. Current `StartCoroutine` text hits are editor scanner comments/regex definitions, not direct runtime call sites by grep.

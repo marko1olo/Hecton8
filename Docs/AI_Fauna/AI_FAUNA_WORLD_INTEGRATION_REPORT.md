@@ -3,11 +3,11 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-## 2026-05-02 Current-State Boundary
+## 2026-05-04 Current-State Boundary
 
 - This report is biome/fauna coverage reference, not runtime spawn, prefab, profiler, or scene wiring proof.
 - Counts below are orientation data. Re-open current source/assets before changing spawn tables, fauna registries, or biome placement.
-- Current project truth starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 
 ## What Exists
 

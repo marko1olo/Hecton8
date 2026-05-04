@@ -152,6 +152,9 @@ namespace Hecton8.Building
         private bool _currentGhostUsesRuntimeProxy;
         private RaycastHit _hit;
         private readonly RaycastHit[] _buildHits = new RaycastHit[1]; // COLD ALLOC: single surface probe for build targeting.
+        private const float StructuralPlacementGridMeters = 0.5f;
+        private const float StructuralRotationStepDegrees = 90f;
+        private readonly Collider[] _terrainSdfOverlapBuffer = new Collider[16];
         private float _ghostYawOffset;
         private const int BuildGhostProjectionInstanceCount = 1;
         private readonly Matrix4x4[] _buildGhostProjectionMatrices = new Matrix4x4[BuildGhostProjectionInstanceCount];
@@ -203,6 +206,8 @@ namespace Hecton8.Building
         private IBuildPlacementRule _activePlacementRule;
         private bool _semanticPlacementValid = true;
         private string _semanticPlacementBlockReason = string.Empty;
+        private bool _terrainSdfPlacementValid = true;
+        private string _terrainSdfPlacementBlockReason = string.Empty;
         private HabitatConstructionManager _habitatConstructionManager;
         private ModuleSocket _snappedGhostSocket;
         private bool _integrityPlacementValid = true;

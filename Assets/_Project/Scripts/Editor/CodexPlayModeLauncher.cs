@@ -36,8 +36,12 @@ namespace Hecton8.Editor
         private const string StartAllocatedMemoryKey = "H8.CodexPlayModeLauncher.StartAllocatedMemory";
         private const string EndAllocatedMemoryKey = "H8.CodexPlayModeLauncher.EndAllocatedMemory";
         private const string PeakAllocatedMemoryKey = "H8.CodexPlayModeLauncher.PeakAllocatedMemory";
+        private const string MaxGraphicsDriverMemoryKey = "H8.CodexPlayModeLauncher.MaxGraphicsDriverMemory";
         private const string EndReservedMemoryKey = "H8.CodexPlayModeLauncher.EndReservedMemory";
         private const string EndMonoUsedMemoryKey = "H8.CodexPlayModeLauncher.EndMonoUsedMemory";
+        private const string AverageFpsKey = "H8.CodexPlayModeLauncher.AverageFps";
+        private const string OnePercentLowFpsKey = "H8.CodexPlayModeLauncher.OnePercentLowFps";
+        private const string FrameSampleCountKey = "H8.CodexPlayModeLauncher.FrameSampleCount";
         private const string StartGc0Key = "H8.CodexPlayModeLauncher.StartGc0";
         private const string EndGc0Key = "H8.CodexPlayModeLauncher.EndGc0";
         private const string StartFrameKey = "H8.CodexPlayModeLauncher.StartFrame";
@@ -51,9 +55,16 @@ namespace Hecton8.Editor
         private const string LoadedScenePathKey = "H8.CodexPlayModeLauncher.LoadedScenePath";
         private const string DirtySceneReloadedKey = "H8.CodexPlayModeLauncher.DirtySceneReloaded";
         private const string MetricsPathKey = "H8.CodexPlayModeLauncher.MetricsPath";
+        private const string MainMenuSceneName = "01_MAIN_MENU";
         private const double RequestedPlaySeconds = 15.0;
         private const double PhaseTimeoutSeconds = 90.0;
+        private const int MaxFrameDeltaSamples = 4096;
         private static readonly Encoding JsonEncoding = new UTF8Encoding(false);
+        // COLD ALLOC: float[4096] - editor-only play mode frame delta samples - owner: CodexPlayModeLauncher
+        private static readonly float[] _frameDeltaSamples = new float[MaxFrameDeltaSamples];
+        private static int _frameDeltaSampleCount;
+        private static int _lastSampledFrame = -1;
+        private static double _frameDeltaTotalSeconds;
 
         static CodexPlayModeLauncher()
         {
@@ -105,7 +116,10 @@ namespace Hecton8.Editor
             }
 
             if (EditorApplication.isPlaying)
+            {
                 UpdatePeakAllocatedMemory();
+                UpdateMaxGraphicsDriverMemory();
+            }
 
             Phase phase = (Phase)SessionState.GetInt(PhaseKey, (int)Phase.Idle);
             switch (phase)
@@ -160,8 +174,12 @@ namespace Hecton8.Editor
             SessionState.SetString(PlayStartTimeKey, EditorApplication.timeSinceStartup.ToString("R", CultureInfo.InvariantCulture));
             SessionState.SetString(StartAllocatedMemoryKey, allocatedMemory.ToString(CultureInfo.InvariantCulture));
             SessionState.SetString(PeakAllocatedMemoryKey, allocatedMemory.ToString(CultureInfo.InvariantCulture));
+            SessionState.SetString(
+                MaxGraphicsDriverMemoryKey,
+                Math.Max(0L, Profiler.GetAllocatedMemoryForGraphicsDriver()).ToString(CultureInfo.InvariantCulture));
             SessionState.SetInt(StartGc0Key, GC.CollectionCount(0));
             SessionState.SetInt(StartFrameKey, Time.frameCount);
+            ResetFrameSamples();
             SetPhase(Phase.Sampling);
         }
 
@@ -173,6 +191,7 @@ namespace Hecton8.Editor
                 return;
             }
 
+            RecordFrameSample();
             double playStartTime = GetSessionDouble(PlayStartTimeKey, EditorApplication.timeSinceStartup);
             if (EditorApplication.timeSinceStartup - playStartTime < RequestedPlaySeconds)
                 return;
@@ -200,7 +219,10 @@ namespace Hecton8.Editor
             SessionState.SetString(EndMonoUsedMemoryKey, Profiler.GetMonoUsedSizeLong().ToString(CultureInfo.InvariantCulture));
             SessionState.SetInt(EndGc0Key, GC.CollectionCount(0));
             SessionState.SetInt(EndFrameKey, Time.frameCount);
+            SessionState.SetString(LoadedScenePathKey, ResolveObservedScenePath());
             UpdatePeakAllocatedMemory();
+            UpdateMaxGraphicsDriverMemory();
+            StoreFrameMetrics();
         }
 
         private static void UpdatePeakAllocatedMemory()
@@ -209,6 +231,67 @@ namespace Hecton8.Editor
             long peak = GetSessionLong(PeakAllocatedMemoryKey, 0L);
             if (current > peak)
                 SessionState.SetString(PeakAllocatedMemoryKey, current.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void UpdateMaxGraphicsDriverMemory()
+        {
+            long current = Profiler.GetAllocatedMemoryForGraphicsDriver();
+            if (current < 0L)
+                current = 0L;
+
+            long peak = GetSessionLong(MaxGraphicsDriverMemoryKey, 0L);
+            if (current > peak)
+                SessionState.SetString(MaxGraphicsDriverMemoryKey, current.ToString(CultureInfo.InvariantCulture));
+        }
+
+        private static void RecordFrameSample()
+        {
+            int frame = Time.frameCount;
+            if (frame == _lastSampledFrame)
+                return;
+
+            _lastSampledFrame = frame;
+            float delta = Time.unscaledDeltaTime;
+            if (delta <= 0f || float.IsNaN(delta) || float.IsInfinity(delta))
+                return;
+
+            _frameDeltaTotalSeconds += delta;
+            if (_frameDeltaSampleCount < _frameDeltaSamples.Length)
+                _frameDeltaSamples[_frameDeltaSampleCount++] = delta;
+        }
+
+        private static void StoreFrameMetrics()
+        {
+            double averageFps = _frameDeltaTotalSeconds > 0d
+                ? _frameDeltaSampleCount / _frameDeltaTotalSeconds
+                : 0d;
+            double onePercentLowFps = CalculateOnePercentLowFps();
+
+            SessionState.SetString(AverageFpsKey, averageFps.ToString("R", CultureInfo.InvariantCulture));
+            SessionState.SetString(OnePercentLowFpsKey, onePercentLowFps.ToString("R", CultureInfo.InvariantCulture));
+            SessionState.SetInt(FrameSampleCountKey, _frameDeltaSampleCount);
+        }
+
+        private static double CalculateOnePercentLowFps()
+        {
+            int count = _frameDeltaSampleCount;
+            if (count <= 0)
+                return 0d;
+
+            Array.Sort(_frameDeltaSamples, 0, count);
+            int worstCount = Math.Max(1, count / 100);
+            double worstDeltaTotal = 0d;
+            for (int i = count - worstCount; i < count; i++)
+                worstDeltaTotal += _frameDeltaSamples[i];
+
+            return worstDeltaTotal > 0d ? worstCount / worstDeltaTotal : 0d;
+        }
+
+        private static void ResetFrameSamples()
+        {
+            _frameDeltaSampleCount = 0;
+            _lastSampledFrame = -1;
+            _frameDeltaTotalSeconds = 0d;
         }
 
         private static void CompleteRun(string status, int exitCode)
@@ -360,6 +443,32 @@ namespace Hecton8.Editor
             return activeScene.IsValid() ? activeScene.path : string.Empty;
         }
 
+        private static string ResolveObservedScenePath()
+        {
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (!scene.IsValid() || !scene.isLoaded)
+                    continue;
+
+                if (scene.path.IndexOf(MainMenuSceneName, StringComparison.OrdinalIgnoreCase) >= 0)
+                    return scene.path;
+            }
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            if (activeScene.IsValid() && activeScene.isLoaded && !string.IsNullOrEmpty(activeScene.path))
+                return activeScene.path;
+
+            for (int i = 0; i < SceneManager.sceneCount; i++)
+            {
+                Scene scene = SceneManager.GetSceneAt(i);
+                if (scene.IsValid() && scene.isLoaded && !string.IsNullOrEmpty(scene.path))
+                    return scene.path;
+            }
+
+            return SessionState.GetString(LoadedScenePathKey, string.Empty);
+        }
+
         private static string ResolveMetricsPath()
         {
             DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
@@ -380,7 +489,7 @@ namespace Hecton8.Editor
             int startFrame = SessionState.GetInt(StartFrameKey, 0);
             int endFrame = SessionState.GetInt(EndFrameKey, startFrame);
 
-            StringBuilder builder = new StringBuilder(1536);
+            StringBuilder builder = new StringBuilder(1792);
             builder.AppendLine("{");
             AppendJsonProperty(builder, "schema", "hecton8.codex.playmode_metrics.v1", comma: true);
             AppendJsonProperty(builder, "utc", DateTime.UtcNow.ToString("O", CultureInfo.InvariantCulture), comma: true);
@@ -402,6 +511,10 @@ namespace Hecton8.Editor
             AppendJsonProperty(builder, "peakTotalAllocatedMemoryBytes", GetSessionLong(PeakAllocatedMemoryKey, 0L), comma: true);
             AppendJsonProperty(builder, "endTotalReservedMemoryBytes", GetSessionLong(EndReservedMemoryKey, 0L), comma: true);
             AppendJsonProperty(builder, "endMonoUsedMemoryBytes", GetSessionLong(EndMonoUsedMemoryKey, 0L), comma: true);
+            AppendJsonProperty(builder, "averageFps", GetSessionDouble(AverageFpsKey, 0d), comma: true);
+            AppendJsonProperty(builder, "onePercentLowFps", GetSessionDouble(OnePercentLowFpsKey, 0d), comma: true);
+            AppendJsonProperty(builder, "frameSampleCount", SessionState.GetInt(FrameSampleCountKey, 0), comma: true);
+            AppendJsonProperty(builder, "maxVramUsageBytes", GetSessionLong(MaxGraphicsDriverMemoryKey, 0L), comma: true);
             AppendJsonProperty(builder, "gcGen0CollectionsDelta", Math.Max(0, endGc0 - startGc0), comma: true);
             AppendJsonProperty(builder, "framesObserved", Math.Max(0, endFrame - startFrame), comma: false);
             builder.AppendLine("}");
@@ -516,8 +629,12 @@ namespace Hecton8.Editor
             SessionState.SetString(StartAllocatedMemoryKey, "0");
             SessionState.SetString(EndAllocatedMemoryKey, "0");
             SessionState.SetString(PeakAllocatedMemoryKey, "0");
+            SessionState.SetString(MaxGraphicsDriverMemoryKey, "0");
             SessionState.SetString(EndReservedMemoryKey, "0");
             SessionState.SetString(EndMonoUsedMemoryKey, "0");
+            SessionState.SetString(AverageFpsKey, "0");
+            SessionState.SetString(OnePercentLowFpsKey, "0");
+            SessionState.SetInt(FrameSampleCountKey, 0);
             SessionState.SetInt(StartGc0Key, 0);
             SessionState.SetInt(EndGc0Key, 0);
             SessionState.SetInt(StartFrameKey, 0);
@@ -531,6 +648,7 @@ namespace Hecton8.Editor
             SessionState.SetString(LoadedScenePathKey, string.Empty);
             SessionState.SetBool(DirtySceneReloadedKey, false);
             SessionState.SetString(MetricsPathKey, ResolveMetricsPath());
+            ResetFrameSamples();
         }
     }
 }

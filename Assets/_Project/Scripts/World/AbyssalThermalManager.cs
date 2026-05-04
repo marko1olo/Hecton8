@@ -633,6 +633,39 @@ namespace Hecton8.World
             return true;
         }
 
+        internal bool TryResolveNearestActiveVentAttractor(
+            in AbsoluteUniversePosition queryAup,
+            float searchRadiusMeters,
+            out Vector3 attractorPosition,
+            out float heat01)
+        {
+            attractorPosition = default;
+            heat01 = 0f;
+            if (_ventStates == null || _activeVentCount <= 0 || searchRadiusMeters <= 0f)
+                return false;
+
+            double searchRadiusSq = (double)searchRadiusMeters * searchRadiusMeters;
+            double bestDistanceSq = double.MaxValue;
+            for (int i = 0; i < _activeVentCount; i++)
+            {
+                ThermalVentState vent = _ventStates[i];
+                float heat = Mathf.Max(0f, vent.HeatIntensity);
+                if (heat <= 0.001f)
+                    continue;
+
+                AbsoluteUniversePosition ventAup = AbsoluteUniversePosition.FromRuntimePosition(vent.PositionWS);
+                double distanceSq = AbsoluteUniversePosition.DistanceSq(in queryAup, in ventAup);
+                if (distanceSq > searchRadiusSq || distanceSq >= bestDistanceSq)
+                    continue;
+
+                bestDistanceSq = distanceSq;
+                attractorPosition = vent.PositionWS;
+                heat01 = Mathf.Clamp01(heat / Mathf.Max(1f, ventHeatIntensity));
+            }
+
+            return bestDistanceSq < double.MaxValue;
+        }
+
         public void RegisterRuntimeVent(
             long runtimeKey,
             Vector3 positionWS,

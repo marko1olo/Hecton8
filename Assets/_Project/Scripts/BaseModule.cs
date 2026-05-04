@@ -305,6 +305,22 @@ namespace Hecton8.Gameplay
         [Tooltip("Current repair ceiling for this module. Repeated failures reduce it until the module is rebuilt.")]
         [SerializeField] private float maxRecoverableIntegrity = 100f;
 
+        [Header("Fluid Incursion")]
+        [Tooltip("Current seawater volume retained by this module interior.")]
+        [SerializeField, Min(0f)] private float waterVolumeM3;
+
+        [Tooltip("Effective breach hole area used by the pressure leak kernel.")]
+        [SerializeField, Min(0.0001f)] private float breachHoleAreaSquareMeters = 0.08f;
+
+        [Tooltip("Pressure-to-flow normalization for Volume += sqrt(dP) * holeArea * dt.")]
+        [SerializeField, Min(0f)] private float breachPressureFlowCoefficient = 0.001f;
+
+        [Tooltip("Hydrostatic pressure delta that immediately floods a newly ruptured room.")]
+        [SerializeField, Min(0f)] private float explosiveFloodPressureDeltaKPa = 650f;
+
+        [Tooltip("Permanent fatigue cycles accumulated after flood-to-dry or depressurization events.")]
+        [SerializeField, Min(0)] private int fatigueDamage;
+
         [Tooltip("Opposing flood-water mass that a sealed airlock can hold before bulkhead stress reaches full-rate accumulation.")]
         [SerializeField, Min(1f)] private float bulkheadFailureWaterMassKilograms = DefaultBulkheadFailureWaterMassKilograms;
 
@@ -399,6 +415,8 @@ namespace Hecton8.Gameplay
         [SerializeField] private float breathableReserve = 120f;
         [Tooltip("How quickly powered scrubbers rebuild breathable reserve while the compartment stays serviceable.")]
         [SerializeField] private float airRecycleRate = 6f;
+        [Tooltip("Seconds of scrubber operation supplied by one Data_CarbonFilter item.")]
+        [SerializeField, Min(1f)] private float carbonFilterConsumptionIntervalSeconds = 30f;
         [Tooltip("Breathable reserve consumed each second while an occupant is using this module as dry shelter.")]
         [SerializeField] private float occupiedAirDrainRate = 9f;
         [Tooltip("Air-quality threshold below which dry shelter becomes a short-lived stale-air pocket.")]
@@ -492,6 +510,10 @@ namespace Hecton8.Gameplay
         private float _pressureCompressionDepthMeters;
         private float _jointShearStress01;
         private float _jointShearGroanCooldownRemainingSeconds;
+        private bool _detachedAsDebris;
+        private bool _carbonFilterAvailable = true;
+        private bool _condensationActive;
+        private float _carbonFilterTimerSeconds;
 
         /// <summary>
         /// Предыдущее состояние isFlooded, используемое для определения
@@ -621,6 +643,8 @@ namespace Hecton8.Gameplay
         public float AirReserveNormalized => _lifeSupportComponent.AirReserveNormalized;
         /// <summary>Normalized room flood fill currently driving local module visuals.</summary>
         public float FloodLevel01 => _cachedFloodLevel01;
+        public float WaterVolumeM3 => Mathf.Max(0f, waterVolumeM3);
+        public int FatigueDamage => Mathf.Max(0, fatigueDamage);
         /// <summary>Normalized cumulative pressure stress on sealed airlock bulkheads.</summary>
         public float BulkheadFloodStress01 => _bulkheadFloodStress01;
         /// <summary>Impact audio material exposed to the global physics impact router.</summary>
@@ -662,6 +686,8 @@ namespace Hecton8.Gameplay
         public bool IsUnmoored => _isUnmoored;
         /// <summary>True after catastrophic pressure implosion has latched for this module.</summary>
         public bool HasImploded => _implosionTriggered;
+        public bool IsDetachedDebris => _detachedAsDebris;
+        public bool CondensationActive => _condensationActive;
         internal float BreathableReserve => _lifeSupportComponent.BreathableReserve;
         internal float BreathableReserveCapacity => _lifeSupportComponent.BreathableReserveCapacity;
         internal float PressureCompressionVolumeScale => _pressureCompressionVolumeScale;
@@ -846,6 +872,12 @@ namespace Hecton8.Gameplay
             _floodedReefFloodSeconds = 0f;
             UnregisterFloodedReefFaunaAnchor();
             _interiorReefInfestationActive = false;
+            waterVolumeM3 = 0f;
+            fatigueDamage = 0;
+            _detachedAsDebris = false;
+            _carbonFilterAvailable = true;
+            _carbonFilterTimerSeconds = 0f;
+            _condensationActive = false;
             SetInteriorReefVisualActive(false);
             ResetPressureCompressionVisualState();
             _integrityComponent.ResetForDespawn();
@@ -874,6 +906,7 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void SlowTick()
         {
+            ApplyFluidIncursion(SLOW_TICK_DT);
             ApplyCascadeFailureEffects();
             ApplyDeepSeaCompressionState(false);
             UpdateLifeSupport(SLOW_TICK_DT);
@@ -970,6 +1003,8 @@ namespace Hecton8.Gameplay
             ReadBuildablePower();
             ValidateInteriorTrigger();
             ConfigureRuntimeComponentsFromSerializedState();
+            if (isFlooded && waterVolumeM3 <= 0.0001f)
+                SetWaterVolumeM3(ResolveFloodCapacityM3());
 
             _wasFlooded = _integrityComponent.IsFlooded;
             CacheOwnedBulkheadComponents();
@@ -1205,6 +1240,7 @@ namespace Hecton8.Gameplay
         public void ForceFlood()
         {
             bool wasFlooded = _integrityComponent.IsFlooded;
+            SetWaterVolumeM3(ResolveFloodCapacityM3());
             _integrityComponent.ForceFlood();
             UpdateDrainDiagnostics();
             SetFloodedVisual(true);
@@ -1232,7 +1268,11 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void ForceDrainComplete()
         {
+            bool wasFlooded = _integrityComponent.IsFlooded || waterVolumeM3 > 0.001f;
+            SetWaterVolumeM3(0f);
             _integrityComponent.ForceDrainComplete(clearOxygenLeakFailure: true);
+            if (wasFlooded)
+                RegisterFloodDryFatigueCycle();
             ResetBulkheadFloodStress();
             UpdateDrainDiagnostics();
             SetFloodedVisual(false);
@@ -1260,12 +1300,45 @@ namespace Hecton8.Gameplay
 
         internal float ResolveFloodWaterVolumeCubicMeters()
         {
+            if (waterVolumeM3 > 0.0001f)
+                return Mathf.Min(waterVolumeM3, ResolveFloodCapacityM3());
+
             float floodFill01 = ResolveRuntimeFloodLevel01();
             if (floodFill01 <= 0f)
                 return 0f;
 
             float displacementVolume = ResolveBuoyancyDisplacementVolumeCubicMeters();
             return Mathf.Max(0f, displacementVolume * floodFill01);
+        }
+
+        internal float DrainWaterVolumeM3(float requestedVolumeM3)
+        {
+            if (requestedVolumeM3 <= 0f || !float.IsFinite(requestedVolumeM3) || waterVolumeM3 <= 0f)
+                return 0f;
+
+            bool wasFlooded = _integrityComponent.IsFlooded;
+            float drained = Mathf.Min(waterVolumeM3, requestedVolumeM3);
+            SetWaterVolumeM3(waterVolumeM3 - drained);
+            if (waterVolumeM3 <= 0.001f)
+            {
+                _integrityComponent.ForceDrainComplete(clearOxygenLeakFailure: true);
+                if (wasFlooded)
+                    RegisterFloodDryFatigueCycle();
+                ResetBulkheadFloodStress();
+                SetFloodedVisual(false);
+                SyncTrackedObjectsFloodState();
+                SyncSpatialRole();
+                NotifyEmergencyLockdownStateChanged();
+                BaseDegradationSystem.SynchronizeIntegrityState(this);
+            }
+            else
+            {
+                _integrityComponent.ForceFlood();
+                UpdateFloodVisualStateImmediate();
+            }
+
+            UpdateDrainDiagnostics();
+            return drained;
         }
 
         internal float ResolveFloodWaterMassKilograms()
@@ -1276,6 +1349,64 @@ namespace Hecton8.Gameplay
 
             float floodMassKilograms = floodVolumeCubicMeters * SeawaterDensityKilogramsPerCubicMeter;
             return float.IsFinite(floodMassKilograms) ? Mathf.Max(0f, floodMassKilograms) : 0f;
+        }
+
+        internal float ResolveFloodCapacityM3()
+        {
+            return Mathf.Max(0.001f, ResolveBuoyancyDisplacementVolumeCubicMeters());
+        }
+
+        internal float ResolveExternalPressureDeltaKPa()
+        {
+            return Mathf.Max(0f, ResolveHydrostaticPressureKPa(ResolveExternalDepthMeters()) - SurfacePressureKPa);
+        }
+
+        internal bool SetCarbonFilterAvailable(bool available)
+        {
+            if (_carbonFilterAvailable == available)
+                return false;
+
+            _carbonFilterAvailable = available;
+            return true;
+        }
+
+        internal void UpdateCarbonFilterLogistics(float deltaTime, int itemHashId)
+        {
+            if (deltaTime <= 0f || !float.IsFinite(deltaTime))
+                return;
+
+            if (_integrityComponent.IsFlooded || _integrityComponent.FailureMode == BaseModuleFailureMode.Fire)
+            {
+                SetCarbonFilterAvailable(false);
+                _carbonFilterTimerSeconds = 0f;
+                return;
+            }
+
+            if (!HasOperationalPower)
+            {
+                SetCarbonFilterAvailable(false);
+                return;
+            }
+
+            _carbonFilterTimerSeconds -= deltaTime;
+            if (_carbonFilterAvailable && _carbonFilterTimerSeconds > 0f)
+                return;
+
+            PowerGrid grid = CachedPowerGrid;
+            bool consumed = itemHashId != 0 && BaseLogisticsNetwork.TryConsumeAccessibleItem(grid, itemHashId, 1);
+            SetCarbonFilterAvailable(consumed);
+            _carbonFilterTimerSeconds = consumed
+                ? Mathf.Max(1f, carbonFilterConsumptionIntervalSeconds)
+                : Mathf.Min(5f, Mathf.Max(1f, carbonFilterConsumptionIntervalSeconds));
+        }
+
+        internal void SetCondensationState(bool active)
+        {
+            if (_condensationActive == active)
+                return;
+
+            _condensationActive = active;
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
 
         internal float ResolveParasiteAddedMassKilograms()
@@ -2083,10 +2214,11 @@ namespace Hecton8.Gameplay
 
         private void UpdateLifeSupport(float dt)
         {
+            bool scrubberOperational = HasOperationalPower && _carbonFilterAvailable;
             ModuleLifeSupportSignals signals = _lifeSupportComponent.Tick(
                 dt,
                 !_integrityComponent.IsFlooded && _integrityComponent.FailureMode != BaseModuleFailureMode.Fire,
-                HasOperationalPower,
+                scrubberOperational,
                 PowerSupplyRatio,
                 _trackedPlayerSurvival);
 
@@ -2100,10 +2232,11 @@ namespace Hecton8.Gameplay
 
         private void TrackAirReserveStateTransitions()
         {
+            bool scrubberOperational = HasOperationalPower && _carbonFilterAvailable;
             HandleLifeSupportSignals(_lifeSupportComponent.Tick(
                 0f,
                 !_integrityComponent.IsFlooded && _integrityComponent.FailureMode != BaseModuleFailureMode.Fire,
-                HasOperationalPower,
+                scrubberOperational,
                 PowerSupplyRatio,
                 _trackedPlayerSurvival));
         }
@@ -2422,8 +2555,88 @@ namespace Hecton8.Gameplay
             pressureCompressionVisualRoot.localScale = _defaultPressureCompressionVisualScale;
         }
 
+        private void ApplyFluidIncursion(float deltaTime)
+        {
+            if (deltaTime <= 0f || !float.IsFinite(deltaTime))
+                return;
+
+            if (!IsBreached && IntegrityState != BaseModuleIntegrityState.Ruptured && !_breachLatched)
+                return;
+
+            float capacityM3 = ResolveFloodCapacityM3();
+            if (waterVolumeM3 >= capacityM3)
+                return;
+
+            float depthMeters = ResolveExternalDepthMeters();
+            float deltaVolumeM3 = CalculateIngressVolumeDeltaM3(
+                depthMeters,
+                ResolveLeakHoleAreaSquareMeters(),
+                deltaTime,
+                breachPressureFlowCoefficient);
+            if (deltaVolumeM3 <= 0f)
+                return;
+
+            bool wasFlooded = _integrityComponent.IsFlooded;
+            SetWaterVolumeM3(Mathf.Min(capacityM3, waterVolumeM3 + deltaVolumeM3));
+            _integrityComponent.ForceFlood();
+            UpdateFloodVisualStateImmediate();
+            if (!wasFlooded)
+            {
+                SyncTrackedObjectsFloodState();
+                SyncSpatialRole();
+                NotifyEmergencyLockdownStateChanged();
+                BaseDegradationSystem.SynchronizeIntegrityState(this);
+            }
+        }
+
+        internal static float CalculateIngressVolumeDeltaM3(
+            float depthMeters,
+            float holeAreaSquareMeters,
+            float deltaTime,
+            float pressureFlowCoefficient)
+        {
+            if (depthMeters <= 0f || holeAreaSquareMeters <= 0f || deltaTime <= 0f || pressureFlowCoefficient <= 0f)
+                return 0f;
+
+            float pressureDeltaPa = SeawaterDensityKilogramsPerCubicMeter *
+                                    GravityAccelerationMetersPerSecondSquared *
+                                    Mathf.Max(0f, depthMeters);
+            float volumeDelta = Mathf.Sqrt(Mathf.Max(0f, pressureDeltaPa)) *
+                                holeAreaSquareMeters *
+                                deltaTime *
+                                pressureFlowCoefficient;
+            return float.IsFinite(volumeDelta) ? Mathf.Max(0f, volumeDelta) : 0f;
+        }
+
+        private float ResolveLeakHoleAreaSquareMeters()
+        {
+            return Mathf.Max(0.0001f, moduleTemplate != null
+                ? Mathf.Max(moduleTemplate.BreachAreaSquareMeters, breachHoleAreaSquareMeters)
+                : breachHoleAreaSquareMeters);
+        }
+
+        private void SetWaterVolumeM3(float nextVolumeM3)
+        {
+            waterVolumeM3 = Mathf.Clamp(
+                float.IsFinite(nextVolumeM3) ? nextVolumeM3 : 0f,
+                0f,
+                ResolveFloodCapacityM3());
+        }
+
+        private void RegisterFloodDryFatigueCycle()
+        {
+            fatigueDamage = Mathf.Max(0, fatigueDamage + 1);
+            float fatigueCapRatio = Mathf.Max(0f, 1f - (fatigueDamage * 0.02f));
+            float fatigueCap = Mathf.Max(0f, _integrityComponent.MaxIntegrity * fatigueCapRatio);
+            _integrityComponent.ClampRepairIntegrityCap(fatigueCap);
+            maxRecoverableIntegrity = _integrityComponent.MaxRecoverableIntegrity;
+        }
+
         private float ResolveRuntimeFloodLevel01()
         {
+            if (waterVolumeM3 > 0.0001f)
+                return Mathf.Clamp01(waterVolumeM3 / ResolveFloodCapacityM3());
+
             if (_integrityComponent.IsFlooded)
             {
                 if (TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) &&
@@ -3066,6 +3279,9 @@ namespace Hecton8.Gameplay
 
         internal void SetAnchoredState(bool anchored)
         {
+            if (_detachedAsDebris && anchored)
+                return;
+
             bool nextUnmoored = !anchored;
             if (_isUnmoored == nextUnmoored)
                 return;
@@ -3080,6 +3296,35 @@ namespace Hecton8.Gameplay
 
             TryUnregisterFixedTick();
             DisableUnmooredPhysics();
+        }
+
+        internal bool TryDetachAsSinkingDebris()
+        {
+            if (_detachedAsDebris)
+                return false;
+
+            _detachedAsDebris = true;
+            _isUnmoored = true;
+            ReleaseAllTrackedObjects();
+            if (EnsureUnmooredRigidbody())
+            {
+                _moduleRigidbody.isKinematic = false;
+                _moduleRigidbody.useGravity = true;
+                _moduleRigidbody.mass = Mathf.Max(
+                    MinimumMassKilograms,
+                    ResolveDryMassKilograms() + ResolveFloodWaterMassKilograms());
+                _moduleRigidbody.linearDamping = Mathf.Max(_moduleRigidbody.linearDamping, 0.1f);
+                _moduleRigidbody.angularDamping = Mathf.Max(_moduleRigidbody.angularDamping, 0.1f);
+                _moduleRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
+                _moduleRigidbody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            }
+
+            TryRegisterFixedTick();
+            ConstructionManager manager = Hecton8.Core.GlobalRegistry.ConstructionRuntime;
+            if (manager != null)
+                manager.NotifyModuleDetachedAsDebris(this);
+            BaseDegradationSystem.SynchronizeIntegrityState(this);
+            return true;
         }
 
         internal void ApplyConstructedWeldSnap(Vector3 targetPosition, Quaternion targetRotation)
@@ -3741,6 +3986,9 @@ namespace Hecton8.Gameplay
             _breachLatched = true;
             _breachCenterOfMassTargetLocal = localBreachPoint;
             _hasBreachCenterOfMassTarget = true;
+            RegisterFloodDryFatigueCycle();
+            if (ResolveExternalPressureDeltaKPa() >= Mathf.Max(0f, explosiveFloodPressureDeltaKPa))
+                ForceFlood();
             TriggerBreachDepressurizationVortex(localBreachPoint);
             if (!TryResolveSubmarineAtmosphereSystem(out SubmarineAtmosphereSystem atmosphereSystem) || atmosphereSystem == null)
             {

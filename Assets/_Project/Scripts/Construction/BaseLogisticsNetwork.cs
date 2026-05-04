@@ -8,6 +8,10 @@ using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Construction
@@ -97,6 +101,80 @@ namespace Hecton8.Construction
             public PowerNode Node;
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct LogisticsPipeRouteBfsJob : IJob
+        {
+            public int NodeCount;
+            public int StartNodeIndex;
+
+            [ReadOnly] public NativeArray<int> EdgeOffsets;
+            [ReadOnly] public NativeArray<int> EdgeDestinations;
+            [ReadOnly] public NativeArray<byte> StorageCapacityByNode;
+
+            public NativeArray<byte> Visited;
+            public NativeArray<int> Queue;
+            public NativeArray<int> ResultNodeIndex;
+
+            public void Execute()
+            {
+                if (!ResultNodeIndex.IsCreated || ResultNodeIndex.Length <= 0)
+                    return;
+
+                ResultNodeIndex[0] = -1;
+
+                int safeNodeCount = math.min(NodeCount, math.min(StorageCapacityByNode.Length, math.min(Visited.Length, Queue.Length)));
+                if (safeNodeCount <= 0 ||
+                    StartNodeIndex < 0 ||
+                    StartNodeIndex >= safeNodeCount ||
+                    !EdgeOffsets.IsCreated ||
+                    EdgeOffsets.Length <= safeNodeCount ||
+                    !EdgeDestinations.IsCreated)
+                {
+                    return;
+                }
+
+                for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
+                    Visited[nodeIndex] = 0;
+
+                int head = 0;
+                int tail = 0;
+                Queue[tail++] = StartNodeIndex;
+                Visited[StartNodeIndex] = 1;
+
+                while (head < tail)
+                {
+                    int nodeIndex = Queue[head++];
+                    if (StorageCapacityByNode[nodeIndex] != 0)
+                    {
+                        ResultNodeIndex[0] = nodeIndex;
+                        return;
+                    }
+
+                    int edgeStart = EdgeOffsets[nodeIndex];
+                    int edgeEnd = EdgeOffsets[nodeIndex + 1];
+                    if (edgeStart < 0 || edgeEnd < edgeStart || edgeEnd > EdgeDestinations.Length)
+                        continue;
+
+                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+                    {
+                        int destinationNodeIndex = EdgeDestinations[edgeIndex];
+                        if (destinationNodeIndex < 0 ||
+                            destinationNodeIndex >= safeNodeCount ||
+                            Visited[destinationNodeIndex] != 0)
+                        {
+                            continue;
+                        }
+
+                        Visited[destinationNodeIndex] = 1;
+                        if (tail >= safeNodeCount)
+                            return;
+
+                        Queue[tail++] = destinationNodeIndex;
+                    }
+                }
+            }
+        }
+
         // COLD ALLOC: List<StorageEndpoint>[16] — logistics storage registry — owner: BaseLogisticsNetwork
         private static readonly List<StorageEndpoint> s_StorageEndpoints = new List<StorageEndpoint>(16);
         // COLD ALLOC: List<FabricatorEndpoint>[8] — fabrication endpoint registry — owner: BaseLogisticsNetwork
@@ -108,6 +186,15 @@ namespace Hecton8.Construction
         private static readonly LogisticsReservation[] s_ReservationPool = CreateReservationPool();
         private static int s_ReservationPoolCount = ReservationPoolCapacity;
         private static int s_NextReservationId = 1;
+        private const int RouteScratchInitialNodeCapacity = 32;
+        private const int RouteScratchInitialEdgeCapacity = 64;
+        private static NativeArray<int> s_RouteEdgeOffsets;
+        private static NativeArray<int> s_RouteEdgeDestinations;
+        private static NativeArray<int> s_RouteEdgeWriteCursor;
+        private static NativeArray<byte> s_RouteStorageCapacityByNode;
+        private static NativeArray<byte> s_RouteVisited;
+        private static NativeArray<int> s_RouteQueue;
+        private static NativeArray<int> s_RouteResultNodeIndex;
 
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -117,6 +204,7 @@ namespace Hecton8.Construction
             s_RecyclerEndpoints.Clear();
             ResetReservationPool();
             s_NextReservationId = 1;
+            DisposeRouteScratch();
         }
 
         public static void RegisterStorage(StorageCrate crate, PowerNode node)
@@ -253,6 +341,273 @@ namespace Hecton8.Construction
             }
 
             return deposited > 0;
+        }
+
+        public static bool TryConsumeAccessibleItem(PowerGrid grid, int itemHashId, int amount)
+        {
+            if (grid == null || itemHashId == 0 || amount <= 0)
+                return false;
+
+            int remaining = amount;
+            for (int i = 0; i < s_StorageEndpoints.Count && remaining > 0; i++)
+            {
+                StorageEndpoint endpoint = s_StorageEndpoints[i];
+                if (endpoint.Crate == null || endpoint.Node == null || endpoint.Node.Grid != grid)
+                    continue;
+
+                while (remaining > 0 && endpoint.Crate.TryConsumeItemByHash(itemHashId))
+                    remaining--;
+            }
+
+            return remaining <= 0;
+        }
+
+        public static bool TryDepositItem(PowerNode sourceNode, ItemData item, int amount, out int deposited)
+        {
+            deposited = 0;
+            if (sourceNode == null)
+                return false;
+
+            PowerGrid grid = sourceNode.Grid;
+            if (grid == null || item == null || amount <= 0)
+                return false;
+
+            int routeWatchdog = math.max(1, amount);
+            while (deposited < amount && routeWatchdog-- > 0)
+            {
+                if (!TryResolveNearestStorageEndpoint(sourceNode, grid, out int endpointIndex))
+                    break;
+
+                StorageCrate crate = s_StorageEndpoints[endpointIndex].Crate;
+                if (crate == null)
+                    break;
+
+                int depositedBeforeCrate = deposited;
+                while (deposited < amount && crate.TryAddAutomatedItem(item))
+                    deposited++;
+
+                if (deposited == depositedBeforeCrate)
+                    break;
+            }
+
+            return deposited > 0;
+        }
+
+        private static bool TryResolveNearestStorageEndpoint(PowerNode sourceNode, PowerGrid grid, out int endpointIndex)
+        {
+            endpointIndex = -1;
+            if (sourceNode == null || grid == null)
+                return false;
+
+            List<PowerNode> topologyNodes = grid.TopologyNodes;
+            int nodeCount = topologyNodes != null ? topologyNodes.Count : 0;
+            if (nodeCount <= 0)
+                return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
+
+            if (!TryResolveTopologyNodeIndex(topologyNodes, sourceNode, out int startNodeIndex))
+                return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
+
+            int edgeCount = CountTopologyEdges(grid, topologyNodes, nodeCount);
+            EnsureRouteScratchCapacity(nodeCount, edgeCount);
+            BuildRouteStorageCapacityFlags(grid, topologyNodes, nodeCount);
+            BuildRouteCsr(grid, topologyNodes, nodeCount, edgeCount);
+
+            s_RouteResultNodeIndex[0] = -1;
+            new LogisticsPipeRouteBfsJob
+            {
+                NodeCount = nodeCount,
+                StartNodeIndex = startNodeIndex,
+                EdgeOffsets = s_RouteEdgeOffsets,
+                EdgeDestinations = s_RouteEdgeDestinations,
+                StorageCapacityByNode = s_RouteStorageCapacityByNode,
+                Visited = s_RouteVisited,
+                Queue = s_RouteQueue,
+                ResultNodeIndex = s_RouteResultNodeIndex
+            }.Run();
+
+            int targetNodeIndex = s_RouteResultNodeIndex[0];
+            if (targetNodeIndex < 0 || targetNodeIndex >= nodeCount)
+                return false;
+
+            PowerNode targetNode = topologyNodes[targetNodeIndex];
+            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            {
+                StorageEndpoint endpoint = s_StorageEndpoints[i];
+                if (endpoint.Crate == null ||
+                    endpoint.Node == null ||
+                    endpoint.Node.Grid != grid ||
+                    !ReferenceEquals(endpoint.Node, targetNode) ||
+                    !endpoint.Crate.HasAutomatedCapacity())
+                {
+                    continue;
+                }
+
+                endpointIndex = i;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryResolveFirstStorageEndpoint(PowerGrid grid, out int endpointIndex)
+        {
+            endpointIndex = -1;
+            if (grid == null)
+                return false;
+
+            for (int i = 0; i < s_StorageEndpoints.Count; i++)
+            {
+                StorageEndpoint endpoint = s_StorageEndpoints[i];
+                if (endpoint.Crate == null ||
+                    endpoint.Node == null ||
+                    endpoint.Node.Grid != grid ||
+                    !endpoint.Crate.HasAutomatedCapacity())
+                {
+                    continue;
+                }
+
+                endpointIndex = i;
+                return true;
+            }
+
+            return false;
+        }
+
+        private static int CountTopologyEdges(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount)
+        {
+            int edgeCount = 0;
+            for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
+            {
+                PowerNode sourceNode = topologyNodes[sourceIndex];
+                if (sourceNode == null)
+                    continue;
+
+                List<PowerNode> neighbors = sourceNode.Neighbors;
+                int neighborCount = neighbors != null ? neighbors.Count : 0;
+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
+                {
+                    PowerNode neighbor = neighbors[neighborIndex];
+                    if (neighbor == null || neighbor.Grid != grid)
+                        continue;
+
+                    if (TryResolveTopologyNodeIndex(topologyNodes, neighbor, out _))
+                        edgeCount++;
+                }
+            }
+
+            return edgeCount;
+        }
+
+        private static void BuildRouteStorageCapacityFlags(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount)
+        {
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                s_RouteStorageCapacityByNode[nodeIndex] = 0;
+
+            for (int endpointIndex = 0; endpointIndex < s_StorageEndpoints.Count; endpointIndex++)
+            {
+                StorageEndpoint endpoint = s_StorageEndpoints[endpointIndex];
+                if (endpoint.Crate == null ||
+                    endpoint.Node == null ||
+                    endpoint.Node.Grid != grid ||
+                    !endpoint.Crate.HasAutomatedCapacity())
+                {
+                    continue;
+                }
+
+                if (TryResolveTopologyNodeIndex(topologyNodes, endpoint.Node, out int nodeIndex) &&
+                    nodeIndex >= 0 &&
+                    nodeIndex < nodeCount)
+                {
+                    s_RouteStorageCapacityByNode[nodeIndex] = 1;
+                }
+            }
+        }
+
+        private static void BuildRouteCsr(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount, int edgeCount)
+        {
+            for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
+                s_RouteEdgeOffsets[nodeIndex] = 0;
+
+            for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
+            {
+                PowerNode sourceNode = topologyNodes[sourceIndex];
+                if (sourceNode == null)
+                    continue;
+
+                List<PowerNode> neighbors = sourceNode.Neighbors;
+                int neighborCount = neighbors != null ? neighbors.Count : 0;
+                int outDegree = 0;
+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
+                {
+                    PowerNode neighbor = neighbors[neighborIndex];
+                    if (neighbor == null || neighbor.Grid != grid)
+                        continue;
+
+                    if (TryResolveTopologyNodeIndex(topologyNodes, neighbor, out _))
+                        outDegree++;
+                }
+
+                s_RouteEdgeOffsets[sourceIndex + 1] = outDegree;
+            }
+
+            for (int nodeIndex = 1; nodeIndex <= nodeCount; nodeIndex++)
+                s_RouteEdgeOffsets[nodeIndex] = s_RouteEdgeOffsets[nodeIndex] + s_RouteEdgeOffsets[nodeIndex - 1];
+
+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+                s_RouteEdgeWriteCursor[nodeIndex] = s_RouteEdgeOffsets[nodeIndex];
+
+            for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
+            {
+                PowerNode sourceNode = topologyNodes[sourceIndex];
+                if (sourceNode == null)
+                    continue;
+
+                List<PowerNode> neighbors = sourceNode.Neighbors;
+                int neighborCount = neighbors != null ? neighbors.Count : 0;
+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
+                {
+                    PowerNode neighbor = neighbors[neighborIndex];
+                    if (neighbor == null || neighbor.Grid != grid)
+                        continue;
+
+                    if (!TryResolveTopologyNodeIndex(topologyNodes, neighbor, out int destinationIndex))
+                        continue;
+
+                    int writeIndex = s_RouteEdgeWriteCursor[sourceIndex];
+                    if (writeIndex < 0 || writeIndex >= edgeCount)
+                        continue;
+
+                    s_RouteEdgeWriteCursor[sourceIndex] = writeIndex + 1;
+                    s_RouteEdgeDestinations[writeIndex] = destinationIndex;
+                }
+            }
+        }
+
+        private static bool TryResolveTopologyNodeIndex(List<PowerNode> topologyNodes, PowerNode node, out int nodeIndex)
+        {
+            nodeIndex = -1;
+            if (topologyNodes == null || node == null)
+                return false;
+
+            int scratchIndex = node.GraphScratchIndex;
+            if (scratchIndex >= 0 &&
+                scratchIndex < topologyNodes.Count &&
+                ReferenceEquals(topologyNodes[scratchIndex], node))
+            {
+                nodeIndex = scratchIndex;
+                return true;
+            }
+
+            for (int i = 0; i < topologyNodes.Count; i++)
+            {
+                if (!ReferenceEquals(topologyNodes[i], node))
+                    continue;
+
+                nodeIndex = i;
+                return true;
+            }
+
+            return false;
         }
 
         public static bool TryResolveNearestSupplyEndpoint(PowerGrid grid, int itemHashId, Vector3 origin, out Vector3 position)
@@ -611,6 +966,57 @@ namespace Hecton8.Construction
             }
 
             return remaining <= 0;
+        }
+
+        private static void EnsureRouteScratchCapacity(int nodeCount, int edgeCount)
+        {
+            EnsureNativeIntArray(ref s_RouteEdgeOffsets, math.max(RouteScratchInitialNodeCapacity + 1, nodeCount + 1));
+            EnsureNativeIntArray(ref s_RouteEdgeDestinations, math.max(RouteScratchInitialEdgeCapacity, edgeCount));
+            EnsureNativeIntArray(ref s_RouteEdgeWriteCursor, math.max(RouteScratchInitialNodeCapacity, nodeCount));
+            EnsureNativeByteArray(ref s_RouteStorageCapacityByNode, math.max(RouteScratchInitialNodeCapacity, nodeCount));
+            EnsureNativeByteArray(ref s_RouteVisited, math.max(RouteScratchInitialNodeCapacity, nodeCount));
+            EnsureNativeIntArray(ref s_RouteQueue, math.max(RouteScratchInitialNodeCapacity, nodeCount));
+            EnsureNativeIntArray(ref s_RouteResultNodeIndex, 1);
+        }
+
+        private static void EnsureNativeIntArray(ref NativeArray<int> array, int requiredLength)
+        {
+            int safeLength = math.max(1, requiredLength);
+            if (array.IsCreated && array.Length >= safeLength)
+                return;
+
+            DisposeNativeArray(ref array);
+            array = new NativeArray<int>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private static void EnsureNativeByteArray(ref NativeArray<byte> array, int requiredLength)
+        {
+            int safeLength = math.max(1, requiredLength);
+            if (array.IsCreated && array.Length >= safeLength)
+                return;
+
+            DisposeNativeArray(ref array);
+            array = new NativeArray<byte>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+        }
+
+        private static void DisposeRouteScratch()
+        {
+            DisposeNativeArray(ref s_RouteEdgeOffsets);
+            DisposeNativeArray(ref s_RouteEdgeDestinations);
+            DisposeNativeArray(ref s_RouteEdgeWriteCursor);
+            DisposeNativeArray(ref s_RouteStorageCapacityByNode);
+            DisposeNativeArray(ref s_RouteVisited);
+            DisposeNativeArray(ref s_RouteQueue);
+            DisposeNativeArray(ref s_RouteResultNodeIndex);
+        }
+
+        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            array.Dispose();
+            array = default;
         }
 
         private static int GetNextReservationId()

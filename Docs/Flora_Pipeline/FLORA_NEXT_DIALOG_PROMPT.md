@@ -28,7 +28,7 @@ Task:
 - keep status as PENDING VERIFICATION until validator/log/profiler evidence exists
 
 Primary implementation priorities:
-1. keep /Docs current, with `2026-05-01_CURRENT_PROJECT_STATE.md` as the conceptual entry point
+1. keep /Docs current, with `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` first and `2026-05-01_CURRENT_PROJECT_STATE.md` as the stable conceptual entry point
 2. align flora texture/material/shader contract with PROCEDURAL_ASSET_PIPELINE.md
 3. keep LOD thresholds at 0.6 / 0.15 / 0.04 / 0
 4. keep flora culling in the 60-120m contract through Unity/GPUI visibility rules

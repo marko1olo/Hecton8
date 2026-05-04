@@ -21,6 +21,7 @@
 // ============================================================================
 
 using Hecton.Localization;
+using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
@@ -103,7 +104,9 @@ namespace Hecton8.Gameplay
         ThermalEruption = 1,   // Термальный выброс
         FaunaMigration  = 2,   // Миграция стаи
         HectonOSGlitch  = 3,   // Сбой Hecton-OS
-        CaveCollapse    = 4    // Обрушение пещеры
+        CaveCollapse    = 4,   // Обрушение пещеры
+        MeteorShower    = 5,   // Meteor shower
+        SolarFlare      = 6    // Solar EMP flare
     }
 
     /// <summary>
@@ -617,6 +620,10 @@ namespace Hecton8.Gameplay
     [DefaultExecutionOrder(-70)]
     public sealed class RandomEventSystem : MonoBehaviour, ISlowTickable
     {
+        public const int EventTypeCount = 7;
+
+        private const float MeteorHashToUnit = 1f / 16777215f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -632,6 +639,8 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 0.02f)] private float faunaMigrationChance  = 0.002f;
         [SerializeField, Range(0f, 0.01f)] private float glitchChance          = 0.0008f;
         [SerializeField, Range(0f, 0.005f)] private float caveCollapseChance   = 0.0003f;
+        [SerializeField, Range(0f, 0.001f)] private float meteorShowerChance   = 0.00012f;
+        [SerializeField, Range(0f, 0.001f)] private float solarFlareChance      = 0.00008f;
 
         [Header("── Event Durations (seconds) ───────────────")]
         [SerializeField] private float biolumStormDuration    = 120f;
@@ -639,11 +648,29 @@ namespace Hecton8.Gameplay
         [SerializeField] private float faunaMigrationDuration  = 180f;
         [SerializeField] private float glitchDuration          = 15f;
         [SerializeField] private float caveCollapseDuration    = 5f;
+        [SerializeField] private float meteorShowerDuration    = 45f;
+        [SerializeField] private float solarFlareDuration      = 30f;
 
         [Header("── Seismic Collapse ───────────────────────")]
         [SerializeField, Min(4f)] private float seismicTargetRadius = 72f;
         [SerializeField, Range(16, 256)] private int seismicOverlapCapacity = 96;
         [SerializeField, Range(16, 128)] private int seismicUniqueBodyCapacity = 48;
+
+        [Header("── Meteor Shower ─────────────────────────")]
+        [SerializeField, Range(0f, 1f)] private float meteorShowerIntensity = 0.82f;
+        [SerializeField, Range(0.5f, 8f)] private float meteorShowerFlashRate = 2.1f;
+        [SerializeField, Range(0.5f, 8f)] private float meteorShowerFadeSeconds = 3f;
+        [SerializeField] private Vector2 meteorShowerSkyDirection = new Vector2(-0.82f, -0.38f);
+        [SerializeField, Range(0.02f, 0.45f)] private float meteorShowerStreakLength = 0.18f;
+        [SerializeField, Range(0.0005f, 0.02f)] private float meteorShowerStreakWidth = 0.0035f;
+        [SerializeField, Range(0f, 1f)] private float meteorBoomFlashThreshold = 0.62f;
+        [SerializeField, Range(0f, 1f)] private float meteorBoomIntensity = 0.74f;
+        [SerializeField, Range(80f, 800f)] private float meteorBoomLowPassCutoffHz = 260f;
+        [SerializeField, Range(4f, 36f)] private float meteorBoomVerticalOffsetMeters = 18f;
+        [SerializeField, Range(0f, 32f)] private float meteorBoomHorizontalOffsetMeters = 14f;
+
+        [Header("Solar EMP Flare")]
+        [SerializeField, Range(0f, 1f)] private float solarFlareIntensity = 1f;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -659,16 +686,22 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
 
         // Таймеры активных событий (0 = неактивно)
-        private readonly float[] _eventTimers = new float[5];
+        // COLD ALLOC: float[EventTypeCount] - active random-event timers - owner: RandomEventSystem
+        private readonly float[] _eventTimers = new float[EventTypeCount];
         // COLD ALLOC: Collider[96] - reusable shockwave overlap buffer for cave-collapse rigidbody routing - owner: RandomEventSystem
         private readonly Collider[] _seismicOverlapBuffer = new Collider[96];
         // COLD ALLOC: Rigidbody[48] - reusable unique rigidbody buffer for cave-collapse impulse routing - owner: RandomEventSystem
         private readonly Rigidbody[] _seismicBodyBuffer = new Rigidbody[48];
         private bool _registered;
+        private float _meteorSeed = 99173f;
+        private int _meteorLastBoomIndex = -1;
+        [SerializeField] private float _debugMeteorFlash;
 
         // Shader IDs
         private static readonly int _ShaderBiolumStorm  = Shader.PropertyToID("_BiolumStormActive");
         private static readonly int _ShaderGlitchActive = Shader.PropertyToID("_HUDGlitchActive");
+        private static readonly int _ShaderMeteorShowerParams = Shader.PropertyToID("_MeteorShowerParams");
+        private static readonly int _ShaderMeteorShowerDirection = Shader.PropertyToID("_MeteorShowerDirection");
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
@@ -703,6 +736,7 @@ namespace Hecton8.Gameplay
 
             Shader.SetGlobalFloat(_ShaderBiolumStorm, 0f);
             Shader.SetGlobalFloat(_ShaderGlitchActive, 0f);
+            PublishMeteorShowerGlobals(0f, 0f, 0f);
         }
 
         private void OnDestroy()
@@ -739,11 +773,15 @@ namespace Hecton8.Gameplay
             }
 
             // Проверяем условия для новых событий
+            if (IsEventActive(RandomEventType.MeteorShower))
+                TickMeteorShowerEvent(dt);
+
             TryTriggerBiolumStorm(depth);
             TryTriggerThermalEruption(depth);
             TryTriggerFaunaMigration();
             TryTriggerGlitch(depth);
             TryTriggerCaveCollapse(depth);
+            TryTriggerMeteorShower();
         }
 
         private void TryRegister()
@@ -775,6 +813,20 @@ namespace Hecton8.Gameplay
 
         public float GetEventTimeRemaining(RandomEventType type)
             => Mathf.Max(0f, _eventTimers[(int)type]);
+
+        public static float EvaluateMeteorFlashForSmoke(float eventAgeSeconds, float seed, float flashRate)
+        {
+            float safeRate = Mathf.Max(0.01f, flashRate);
+            float phase = Mathf.Max(0f, eventAgeSeconds) * safeRate + seed * 0.017f;
+            int flashIndex = Mathf.FloorToInt(phase);
+            float local = phase - flashIndex;
+            float gate = Hash01(unchecked((uint)flashIndex), unchecked((uint)Mathf.RoundToInt(seed)));
+            if (gate < 0.56f)
+                return 0f;
+
+            float envelope = Mathf.Exp(-local * 11.5f);
+            return Mathf.Clamp01(envelope * Mathf.Lerp(0.45f, 1f, gate));
+        }
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE — EVENT TRIGGERS
@@ -857,6 +909,18 @@ namespace Hecton8.Gameplay
                 "CAVE COLLAPSE - ROUTE BLOCKED. POSSIBLE NEW OPENING."));
         }
 
+        private void TryTriggerMeteorShower()
+        {
+            if (IsEventActive(RandomEventType.MeteorShower)) return;
+            if (UnityEngine.Random.value > meteorShowerChance) return;
+
+            BeginMeteorShower();
+            StartEvent(RandomEventType.MeteorShower, meteorShowerDuration, meteorShowerIntensity);
+            NotificationEvents.PushInfo(ResolveLocalized(
+                LocalizationKeys.RANDOM_EVENT_METEOR_SHOWER,
+                "METEOR SHOWER - SKY FLASHES DETECTED. LOW-FREQUENCY ACOUSTIC BOOMS EXPECTED."));
+        }
+
         private void StartEvent(RandomEventType type, float duration, float intensity)
         {
             _eventTimers[(int)type] = duration;
@@ -877,6 +941,10 @@ namespace Hecton8.Gameplay
                     break;
                 case RandomEventType.HectonOSGlitch:
                     Shader.SetGlobalFloat(_ShaderGlitchActive, 0f);
+                    break;
+                case RandomEventType.MeteorShower:
+                    PublishMeteorShowerGlobals(0f, 0f, 0f);
+                    _meteorLastBoomIndex = -1;
                     break;
             }
 
@@ -917,6 +985,102 @@ namespace Hecton8.Gameplay
             return manager != null
                 ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback)
                 : fallback;
+        }
+
+        private void BeginMeteorShower()
+        {
+            _meteorSeed = UnityEngine.Random.Range(1, 16777215);
+            _meteorLastBoomIndex = -1;
+            PublishMeteorShowerGlobals(0f, Mathf.Clamp01(meteorShowerIntensity), 1f);
+        }
+
+        private void TickMeteorShowerEvent(float dt)
+        {
+            float remaining = GetEventTimeRemaining(RandomEventType.MeteorShower);
+            float safeDuration = Mathf.Max(0.01f, meteorShowerDuration);
+            float eventAge = Mathf.Max(0f, safeDuration - remaining);
+            float fadeWindow = Mathf.Max(0.01f, meteorShowerFadeSeconds);
+            float fadeIn = Mathf.Clamp01(eventAge / fadeWindow);
+            float fadeOut = Mathf.Clamp01(remaining / fadeWindow);
+            float envelope = Mathf.Clamp01(meteorShowerIntensity) * Mathf.Min(fadeIn, fadeOut);
+            float flash = EvaluateMeteorFlashForSmoke(eventAge, _meteorSeed, meteorShowerFlashRate);
+            _debugMeteorFlash = flash;
+            PublishMeteorShowerGlobals(eventAge, envelope, flash);
+            TryPublishMeteorBoom(eventAge, flash, envelope);
+        }
+
+        private void PublishMeteorShowerGlobals(float eventAge, float intensity, float flash)
+        {
+            Vector2 skyDirection = ResolveMeteorSkyDirection();
+            Shader.SetGlobalVector(
+                _ShaderMeteorShowerParams,
+                new Vector4(
+                    Mathf.Clamp01(intensity),
+                    _meteorSeed,
+                    Mathf.Clamp01(flash),
+                    Mathf.Max(0f, eventAge)));
+            Shader.SetGlobalVector(
+                _ShaderMeteorShowerDirection,
+                new Vector4(
+                    skyDirection.x,
+                    skyDirection.y,
+                    Mathf.Max(0.02f, meteorShowerStreakLength),
+                    Mathf.Max(0.0005f, meteorShowerStreakWidth)));
+        }
+
+        private Vector2 ResolveMeteorSkyDirection()
+        {
+            Vector2 direction = meteorShowerSkyDirection;
+            float magnitudeSqr = direction.sqrMagnitude;
+            if (magnitudeSqr < 0.0001f)
+                direction = new Vector2(-0.82f, -0.38f);
+            else
+                direction /= Mathf.Sqrt(magnitudeSqr);
+
+            return direction;
+        }
+
+        private void TryPublishMeteorBoom(float eventAge, float flash, float envelope)
+        {
+            if (flash < meteorBoomFlashThreshold || envelope <= 0.001f)
+                return;
+
+            int boomIndex = Mathf.FloorToInt(eventAge * Mathf.Max(0.1f, meteorShowerFlashRate));
+            if (boomIndex == _meteorLastBoomIndex)
+                return;
+
+            _meteorLastBoomIndex = boomIndex;
+            if (!(GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager))
+                return;
+
+            if (!SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) || playerTransform == null)
+                return;
+
+            Vector3 sourcePosition = ResolveMeteorBoomPosition(playerTransform.position, boomIndex);
+            spatialAudioManager.PlayMeteorShowerBoom(
+                sourcePosition,
+                Mathf.Clamp01(flash * envelope * meteorBoomIntensity),
+                meteorBoomLowPassCutoffHz);
+        }
+
+        private Vector3 ResolveMeteorBoomPosition(Vector3 playerPosition, int boomIndex)
+        {
+            float angle = Hash01(unchecked((uint)boomIndex), unchecked((uint)Mathf.RoundToInt(_meteorSeed))) * Mathf.PI * 2f;
+            Vector3 horizontal = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+            return playerPosition
+                 + horizontal * Mathf.Max(0f, meteorBoomHorizontalOffsetMeters)
+                 + Vector3.up * Mathf.Max(4f, meteorBoomVerticalOffsetMeters);
+        }
+
+        private static float Hash01(uint a, uint b)
+        {
+            uint state = a * 747796405u + b * 2891336453u + 0x9E3779B9u;
+            state ^= state >> 16;
+            state *= 2246822519u;
+            state ^= state >> 13;
+            state *= 3266489917u;
+            state ^= state >> 16;
+            return (state & 0x00FFFFFFu) * MeteorHashToUnit;
         }
 
         private bool TryResolveSeismicContext(

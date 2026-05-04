@@ -383,6 +383,7 @@ namespace Hecton8.Visor
 
             float oxygenFog01 = Mathf.Clamp01(Mathf.InverseLerp(oxygenFogThreshold, 0.04f, _survivalSystem.OxygenNormalized));
             float oxygenGraceFog01 = Mathf.Clamp01(_survivalSystem.OxygenGraceVisionBlur01);
+            float nitrogenFog01 = Mathf.Clamp01(_survivalSystem.NitrogenNarcosisVisionBlur01);
             float temperature = _survivalSystem.EnvironmentTemperature;
             float thermalShock01 = 0f;
 
@@ -397,7 +398,7 @@ namespace Hecton8.Visor
             _lastEnvironmentTemperature = temperature;
             _hasEnvironmentTemperatureSample = true;
             _debugTemperatureShock01 = thermalShock01;
-            _debugFog01 = Mathf.Clamp01(Mathf.Max(oxygenFog01, oxygenGraceFog01, thermalShock01, _survivalSystem.RapidAscentRisk01 * 0.4f));
+            _debugFog01 = Mathf.Clamp01(Mathf.Max(oxygenFog01, oxygenGraceFog01, nitrogenFog01, thermalShock01, _survivalSystem.RapidAscentRisk01 * 0.4f));
             return _debugFog01;
         }
 

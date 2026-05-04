@@ -60,7 +60,8 @@ namespace Hecton8.Core
         InventoryLoad01 = 11,
         MovementSpeed = 12,
         ToolHeat01 = 13,
-        Count = 14
+        FrostIntensity01 = 14,
+        Count = 15
     }
 
     /// <summary>
@@ -336,6 +337,14 @@ namespace Hecton8.Core
             WriteValue(UIValueSlotId.InventoryMassKg, Mathf.Max(0f, totalMassKg), unscaledTimeSeconds);
             WriteValue(UIValueSlotId.CarryCapacityKg, Mathf.Max(0.01f, carryCapacityKg), unscaledTimeSeconds);
             WriteValue(UIValueSlotId.InventoryLoad01, Mathf.Clamp01(load01), unscaledTimeSeconds);
+        }
+
+        /// <summary>
+        /// Publishes hypothermia frost intensity for HUD shader presenters.
+        /// </summary>
+        public static void WriteFrostIntensity(float frostIntensity01, float unscaledTimeSeconds)
+        {
+            WriteValue(UIValueSlotId.FrostIntensity01, Mathf.Clamp01(frostIntensity01), unscaledTimeSeconds);
         }
 
         /// <summary>

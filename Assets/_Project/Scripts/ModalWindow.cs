@@ -47,6 +47,7 @@ namespace Hecton.UI.MainMenu
         private Action _cachedOnCancel;
         private UnityAction _confirmClickAction;
         private UnityAction _cancelClickAction;
+        private bool _runtimeBindingsReady;
 
         // ══════════════════════════════════════════════
         // LIFECYCLE
@@ -54,33 +55,10 @@ namespace Hecton.UI.MainMenu
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-#if UNITY_EDITOR
-                Debug.LogWarning("[ModalWindow] Duplicate detected. Destroying extra instance.");
-#endif
-                Destroy(gameObject);
+            if (!TryClaimInstance())
                 return;
-            }
 
-            _instance = this;
-            _confirmClickAction = OnConfirmClicked; // COLD ALLOC: UnityAction[1] - cached modal confirm listener - owner: ModalWindow
-            _cancelClickAction = OnCancelClicked; // COLD ALLOC: UnityAction[1] - cached modal cancel listener - owner: ModalWindow
-            AutoWireSceneReferences();
-
-            if (btnConfirm != null)
-            {
-                btnConfirm.onClick.RemoveAllListeners();
-                btnConfirm.onClick.AddListener(_confirmClickAction);
-            }
-
-            if (btnCancel != null)
-            {
-                btnCancel.onClick.RemoveAllListeners();
-                btnCancel.onClick.AddListener(_cancelClickAction);
-            }
-
-            Hide();
+            EnsureRuntimeBindings(hideAfterBinding: true);
         }
 
         private void AutoWireSceneReferences()
@@ -168,6 +146,10 @@ namespace Hecton.UI.MainMenu
 
         private void OnEnable()
         {
+            if (!TryClaimInstance())
+                return;
+
+            EnsureRuntimeBindings(hideAfterBinding: !_runtimeBindingsReady);
             LocalizationEvents.RegisterLanguageListener(this);
             RefreshButtonLabels();
         }
@@ -241,7 +223,7 @@ namespace Hecton.UI.MainMenu
             Action onConfirm,
             Action onCancel = null)
         {
-            if (_instance == null)
+            if (!EnsureInstanceAvailable())
             {
 #if UNITY_EDITOR
                 Debug.LogError(
@@ -252,6 +234,7 @@ namespace Hecton.UI.MainMenu
                 return;
             }
 
+            _instance.EnsureRuntimeBindings(hideAfterBinding: false);
             _instance.ShowInternal(title, message, onConfirm, onCancel, null, null);
         }
 
@@ -273,7 +256,7 @@ namespace Hecton.UI.MainMenu
             string confirmLabel,
             string cancelLabel)
         {
-            if (_instance == null)
+            if (!EnsureInstanceAvailable())
             {
 #if UNITY_EDITOR
                 Debug.LogError(
@@ -284,6 +267,7 @@ namespace Hecton.UI.MainMenu
                 return;
             }
 
+            _instance.EnsureRuntimeBindings(hideAfterBinding: false);
             _instance.ShowInternal(title, message, onConfirm, onCancel, confirmLabel, cancelLabel);
         }
 
@@ -301,6 +285,75 @@ namespace Hecton.UI.MainMenu
         // ══════════════════════════════════════════════
         // INTERNAL
         // ══════════════════════════════════════════════
+
+        private static bool EnsureInstanceAvailable()
+        {
+            if (_instance != null)
+                return true;
+
+            ModalWindow candidate = FindAnyObjectByType<ModalWindow>(FindObjectsInactive.Include);
+            if (candidate == null)
+                return false;
+
+            if (!candidate.TryClaimInstance())
+                return false;
+
+            candidate.EnsureRuntimeBindings(hideAfterBinding: true);
+            return _instance != null;
+        }
+
+        private bool TryClaimInstance()
+        {
+            if (_instance != null && _instance != this)
+            {
+#if UNITY_EDITOR
+                Debug.LogWarning("[ModalWindow] Duplicate detected. Destroying extra instance.");
+#endif
+                Destroy(gameObject);
+                return false;
+            }
+
+            _instance = this;
+            return true;
+        }
+
+        private void EnsureRuntimeBindings(bool hideAfterBinding)
+        {
+            AutoWireSceneReferences();
+            EnsureModalRootActive();
+
+            if (_confirmClickAction == null)
+                _confirmClickAction = OnConfirmClicked; // COLD ALLOC: UnityAction[1] - cached modal confirm listener - owner: ModalWindow
+            if (_cancelClickAction == null)
+                _cancelClickAction = OnCancelClicked; // COLD ALLOC: UnityAction[1] - cached modal cancel listener - owner: ModalWindow
+
+            if (btnConfirm != null)
+            {
+                btnConfirm.onClick.RemoveAllListeners();
+                btnConfirm.onClick.AddListener(_confirmClickAction);
+            }
+
+            if (btnCancel != null)
+            {
+                btnCancel.onClick.RemoveAllListeners();
+                btnCancel.onClick.AddListener(_cancelClickAction);
+            }
+
+            _runtimeBindingsReady = true;
+
+            if (hideAfterBinding)
+                Hide();
+        }
+
+        private void EnsureModalRootActive()
+        {
+            if (modalGroup == null)
+                return;
+
+            GameObject modalRoot = modalGroup.gameObject;
+            if (!modalRoot.activeSelf)
+                modalRoot.SetActive(true);
+        }
 
         private void ShowInternal(
             string title,

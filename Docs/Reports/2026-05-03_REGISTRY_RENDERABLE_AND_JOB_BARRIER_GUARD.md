@@ -2,6 +2,10 @@
 
 Status: PENDING VERIFICATION
 
+## 2026-05-04 Supersession Note
+
+This report is May 3 source/build evidence. Current guard truth is the May 4 post-repair `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` plus regenerated `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`: exit `0`, `UnsafeUtility.MemCpy outside guard = 0`, unauthorized Unity loop methods `0`, `.Run(` sites `0`, hot-path `.Run(` review sites `0`, `.Complete(` text hits `5`, guarded dispatcher completion sites `1`, runtime Find API review hits `8`, and global registry self-registration inventory `500`. Treat May 3 guard-clean inventory below as historical.
+
 ## Mandates Followed
 
 - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
@@ -87,7 +91,7 @@ Release-reachable one-hop `Debug.Log` review sites are conservative source-class
 - Guard command: `Tools/ReloadAudit/Scan-FoundationGuards.ps1`
 - Guard output: `Docs/Reports/2026-05-03_FOUNDATION_GUARD_SCAN.md`
 - Guard status: `Blind registry flag drift = 0`, `Origin shift listener blind flag drift = 0`, synchronous job `.Run(` sites `0` hard gate clear
-- Guard hard zeroes: raw `UnsafeUtility.MemCpy` outside guard `0`, legacy `PlayerSignalEvents.On*` subscriptions `0`, direct raw-array listener dispatch `0`, `GlobalRegistry.Input` nullable misuse `0`, hot-path direct `InputManager.Instance` review sites `0`, optimization singleton residue `0`, unauthorized Unity loop methods `0`, legacy coroutine sites `0`, forbidden runtime asset API sites `0`, release-reachable direct hot-path `Debug.Log` sites `0`, broad physics layer masks outside Editor `0`, runtime Find API text hits outside Editor folder `0`
+- May 3 guard hard zeroes at report time: raw `UnsafeUtility.MemCpy` outside guard `0`, legacy `PlayerSignalEvents.On*` subscriptions `0`, direct raw-array listener dispatch `0`, `GlobalRegistry.Input` nullable misuse `0`, hot-path direct `InputManager.Instance` review sites `0`, optimization singleton residue `0`, unauthorized Unity loop methods `0`, legacy coroutine sites `0`, forbidden runtime asset API sites `0`, release-reachable direct hot-path `Debug.Log` sites `0`, broad physics layer masks outside Editor `0`, runtime Find API text hits outside Editor folder `0`. Current May 4 guard truth is listed in the supersession note.
 - Build command: `dotnet build Hecton8.Core.csproj -v:minimal -nr:false -m:1 -p:UseSharedCompilation=false`
 - Build log: `.codex-artifacts/dotnet-Hecton8.Core-2026-05-03-foundation-guard-physicsmask.log`
 - Build result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`

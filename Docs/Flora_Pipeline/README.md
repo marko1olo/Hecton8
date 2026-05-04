@@ -5,9 +5,9 @@ Status: `PENDING VERIFICATION`
 
 Purpose: canonical active bundle for flora execution, prompts, and import-state tracking.
 
-## 2026-05-02 Current-State Boundary
+## 2026-05-04 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this bundle as current project truth.
+- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this bundle as current project truth.
 - This bundle is the active flora execution reference, not proof of final imported textures, materials, GPUI/runtime validation, or scene wiring.
 - Active architecture remains `Docs/PROCEDURAL_ASSET_PIPELINE.md` + `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`; do not create a parallel flora runtime.
 

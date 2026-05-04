@@ -996,6 +996,12 @@ namespace Hecton8.UI
             if (_sceneActivationRequested || _mainMenuLoadOperation.progress < 0.9f)
                 return;
 
+            if (!SceneBootstrap.TryValidateSceneRootBudget(mainMenuSceneName, "pause-menu-preactivation"))
+            {
+                FailMainMenuExitTransition("Scene graph corruption guard aborted main-menu activation.");
+                return;
+            }
+
             _sceneActivationRequested = true;
             _mainMenuLoadOperation.allowSceneActivation = true;
         }

@@ -1,0 +1,1137 @@
+﻿diff --git a/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs b/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
+index 966f0aae..8dd8be3d 100644
+--- a/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
++++ b/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
+@@ -84,6 +84,7 @@ namespace Hecton8.Construction
+         private readonly List<TemporaryBypassRecord> _temporaryBypassBuffer;
+         private readonly List<long> _submittedLinkIds;
+         private readonly List<long> _emittedRuptureEdgeVfxKeys;
++        private readonly List<uint> _ruptureCascadeAppliedNodeIds;
+         private readonly Dictionary<uint, int> _moduleIndexByNodeId;
+         private readonly Dictionary<SocketKey, SocketMatchEntry> _socketLookup;
+ 
+@@ -120,6 +121,8 @@ namespace Hecton8.Construction
+             _submittedLinkIds = new List<long>(InitialEdgeCapacity);
+             // COLD ALLOC: List<Int64>[128] - emitted rupture edge VFX keys - owner: HabitatGraphManager
+             _emittedRuptureEdgeVfxKeys = new List<long>(InitialEdgeCapacity);
++            // COLD ALLOC: List<UInt32>[64] - one-shot rupture cascade source guard - owner: HabitatGraphManager
++            _ruptureCascadeAppliedNodeIds = new List<uint>(safeModuleCapacity);
+             // COLD ALLOC: Dictionary<UInt32,Int32>[64] — node-id to module-index lookup for temporary bypass stitching — owner: HabitatGraphManager
+             _moduleIndexByNodeId = new Dictionary<uint, int>(safeModuleCapacity);
+             // COLD ALLOC: Dictionary<SocketKey,SocketMatchEntry>[128] — quantized socket lookup for zero-GC adjacency assembly — owner: HabitatGraphManager
+@@ -175,6 +178,7 @@ namespace Hecton8.Construction
+             PopulateModuleBuffer(modules);
+             AppendParasiteRootNodes();
+             _nodeCount = _moduleBuffer.Count;
++            EnsureRuptureCascadeStateCapacity(_nodeCount);
+             if (_nodeCount <= 0)
+             {
+                 ClearSiegeTargetSnapshot();
+@@ -187,6 +191,7 @@ namespace Hecton8.Construction
+             BuildSocketAdjacency();
+             AppendTemporaryBypassEdges();
+             BuildNodeRecords();
++            PruneRuptureCascadeState();
+             BuildEdgeRecords();
+             EvaluateAnchorReachability();
+             PublishAnchorState();
+@@ -206,8 +211,10 @@ namespace Hecton8.Construction
+ 
+             QueueFloodMassLoads(deltaTime);
+             ApplyIslandFloodCenterOfMassShifts(deltaTime);
+-            EvaluateBulkheadFloodStress(deltaTime);
+-            EvaluatePressureBucklingStress(deltaTime);
++            bool runtimeTopologyChanged = EvaluateBulkheadFloodStress(deltaTime);
++            runtimeTopologyChanged |= EvaluatePressureBucklingStress(deltaTime);
++            if (runtimeTopologyChanged)
++                PublishRuntimeRuptureTopologyState();
+ 
+             HectonMapMagicVegetationBridge bridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
+             if (bridge == null)
+@@ -344,8 +351,9 @@ namespace Hecton8.Construction
+             }
+         }
+ 
+-        private void EvaluateBulkheadFloodStress(float deltaTime)
++        private bool EvaluateBulkheadFloodStress(float deltaTime)
+         {
++            bool topologyChanged = false;
+             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
+             {
+                 BaseModule baseModule = _moduleBuffer[moduleIndex].BaseModule;
+@@ -367,8 +375,11 @@ namespace Hecton8.Construction
+                 {
+                     MarkEdgeRuptured(ref edge);
+                     _edgeBuffer[edgeIndex] = edge;
++                    topologyChanged = true;
+                 }
+             }
++
++            return topologyChanged;
+         }
+ 
+         private static bool ApplyBulkheadFloodStress(BaseModule floodedModule, BaseModule candidateAirlock, float deltaTime)
+@@ -383,9 +394,9 @@ namespace Hecton8.Construction
+             return candidateAirlock.AccumulateBulkheadFloodStress(floodWaterMassKilograms, deltaTime);
+         }
+ 
+-        private void EvaluatePressureBucklingStress(float deltaTime)
++        private bool EvaluatePressureBucklingStress(float deltaTime)
+         {
+-            ApplyQueuedRuptureCascadeFailures();
++            bool topologyChanged = ApplyQueuedRuptureCascadeFailures();
+ 
+             for (int moduleIndex = 0; moduleIndex < _moduleBuffer.Count; moduleIndex++)
+             {
+@@ -433,10 +444,12 @@ namespace Hecton8.Construction
+             }
+ 
+             ApplyRuptureCascadeStressFromRupturedNodes();
++            return topologyChanged;
+         }
+ 
+-        private void ApplyQueuedRuptureCascadeFailures()
++        private bool ApplyQueuedRuptureCascadeFailures()
+         {
++            bool topologyChanged = false;
+             int maxNodeCount = math.min(_nodeCount, _moduleBuffer.Count);
+             for (int nodeIndex = 0; nodeIndex < maxNodeCount; nodeIndex++)
+             {
+@@ -449,7 +462,10 @@ namespace Hecton8.Construction
+ 
+                 MarkNodeRuptured(nodeIndex);
+                 RuptureConnectedEdges(nodeIndex);
++                topologyChanged = true;
+             }
++
++            return topologyChanged;
+         }
+ 
+         private void ApplyRuptureCascadeStressFromRupturedNodes()
+@@ -467,6 +483,13 @@ namespace Hecton8.Construction
+                 if (!sourceRuptured)
+                     continue;
+ 
++                uint sourceNodeId = _moduleBuffer[nodeIndex].NodeId;
++                if (sourceNodeId != 0u && HasRuptureCascadeBeenApplied(sourceNodeId))
++                    continue;
++
++                if (sourceNodeId != 0u)
++                    MarkRuptureCascadeApplied(sourceNodeId);
++
+                 int edgeStart = _edgeOffsets[nodeIndex];
+                 int edgeEnd = _edgeOffsets[nodeIndex + 1];
+                 for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
+@@ -479,6 +502,9 @@ namespace Hecton8.Construction
+                     if ((neighborFlags & LogisticsNodeFlags.Ruptured) != 0)
+                         continue;
+ 
++                    if (!HasUnseveredRuntimeEdge(nodeIndex, neighborNodeIndex))
++                        continue;
++
+                     BaseModule neighborModule = _moduleBuffer[neighborNodeIndex].BaseModule;
+                     if (neighborModule == null ||
+                         !neighborModule.isActiveAndEnabled ||
+@@ -492,6 +518,89 @@ namespace Hecton8.Construction
+             }
+         }
+ 
++        private bool HasUnseveredRuntimeEdge(int sourceIndex, int destinationIndex)
++        {
++            for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
++            {
++                EdgeRecord edge = _edgeBuffer[edgeIndex];
++                if (edge.Severed)
++                    continue;
++
++                if (edge.SourceIndex == sourceIndex && edge.DestinationIndex == destinationIndex)
++                    return true;
++
++                if (!edge.DirectedOnly &&
++                    edge.SourceIndex == destinationIndex &&
++                    edge.DestinationIndex == sourceIndex)
++                {
++                    return true;
++                }
++            }
++
++            return false;
++        }
++
++        private void EnsureRuptureCascadeStateCapacity(int requiredCapacity)
++        {
++            int safeCapacity = NextPowerOfTwo(math.max(1, requiredCapacity));
++            if (_ruptureCascadeAppliedNodeIds.Capacity >= safeCapacity)
++                return;
++
++            _ruptureCascadeAppliedNodeIds.Capacity = safeCapacity;
++        }
++
++        private bool HasRuptureCascadeBeenApplied(uint nodeId)
++        {
++            for (int i = 0; i < _ruptureCascadeAppliedNodeIds.Count; i++)
++            {
++                if (_ruptureCascadeAppliedNodeIds[i] == nodeId)
++                    return true;
++            }
++
++            return false;
++        }
++
++        private void MarkRuptureCascadeApplied(uint nodeId)
++        {
++            if (nodeId == 0u || HasRuptureCascadeBeenApplied(nodeId))
++                return;
++
++            if (_ruptureCascadeAppliedNodeIds.Count < _ruptureCascadeAppliedNodeIds.Capacity)
++                _ruptureCascadeAppliedNodeIds.Add(nodeId);
++        }
++
++        private void PruneRuptureCascadeState()
++        {
++            for (int i = _ruptureCascadeAppliedNodeIds.Count - 1; i >= 0; i--)
++            {
++                uint nodeId = _ruptureCascadeAppliedNodeIds[i];
++                if (nodeId != 0u && IsRuptureCascadeSourceStillRuptured(nodeId))
++                    continue;
++
++                int lastIndex = _ruptureCascadeAppliedNodeIds.Count - 1;
++                _ruptureCascadeAppliedNodeIds[i] = _ruptureCascadeAppliedNodeIds[lastIndex];
++                _ruptureCascadeAppliedNodeIds.RemoveAt(lastIndex);
++            }
++        }
++
++        private bool IsRuptureCascadeSourceStillRuptured(uint nodeId)
++        {
++            int moduleCount = math.min(_nodeCount, _moduleBuffer.Count);
++            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
++            {
++                ModuleRecord module = _moduleBuffer[moduleIndex];
++                if (module.NodeId != nodeId)
++                    continue;
++
++                LogisticsNodeFlags nodeFlags = moduleIndex < _nodes.Length ? _nodes[moduleIndex].Flags : LogisticsNodeFlags.None;
++                BaseModule baseModule = module.BaseModule;
++                return (nodeFlags & LogisticsNodeFlags.Ruptured) != 0 ||
++                       (baseModule != null && baseModule.IntegrityState == BaseModuleIntegrityState.Ruptured);
++            }
++
++            return false;
++        }
++
+         private void RuptureConnectedEdges(int nodeIndex)
+         {
+             for (int edgeIndex = 0; edgeIndex < _edgeBuffer.Count; edgeIndex++)
+@@ -1091,8 +1200,6 @@ namespace Hecton8.Construction
+         {
+             edge.Flags |= PipeRenderFlags.MaskRuptured;
+             edge.Severed = true;
+-            MarkNodeRuptured(edge.SourceIndex);
+-            MarkNodeRuptured(edge.DestinationIndex);
+             RegisterSeveredEdgeRuptureVfx(in edge);
+         }
+ 
+@@ -1417,6 +1524,20 @@ namespace Hecton8.Construction
+             _graph.FinalizeBuild();
+         }
+ 
++        private void PublishRuntimeRuptureTopologyState()
++        {
++            BuildEdgeRecords();
++            EvaluateAnchorReachability();
++            PublishAnchorState();
++            PublishComponentPowerState();
++            PublishEmergencyLockdownState();
++            PublishDegradationState();
++            PublishSiegeTargetSnapshot();
++            PublishGraphKernel();
++            ClearVisualLinks();
++            PublishVisualLinks();
++        }
++
+         private void PublishVisualLinks()
+         {
+             int edgeCount = _edgeBuffer.Count;
+diff --git a/Assets/_Project/Scripts/Gameplay/BatteryCharger.cs b/Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+index 16c6c5f9..e69ba2d4 100644
+--- a/Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
++++ b/Assets/_Project/Scripts/Gameplay/BatteryCharger.cs
+@@ -230,6 +230,7 @@ namespace Hecton8.Gameplay
+             // If tool has a battery, try to remove and insert into charger
+             if (batteryTool.HasBattery)
+             {
++                float toolBatteryCharge = batteryTool.BatteryCharge;
+                 ItemData toolBattery = batteryTool.RemoveBattery();
+                 if (toolBattery != null)
+                 {
+@@ -237,13 +238,13 @@ namespace Hecton8.Gameplay
+                     int emptySlot = FindEmptySlot();
+                     if (emptySlot >= 0)
+                     {
+-                        InsertBattery(emptySlot, toolBattery, batteryTool.BatteryCharge);
++                        InsertBattery(emptySlot, toolBattery, toolBatteryCharge);
+                         return true;
+                     }
+                     else
+                     {
+                         // Charger full, return battery to tool
+-                        batteryTool.InsertBattery(toolBattery, batteryTool.BatteryCharge);
++                        batteryTool.InsertBattery(toolBattery, toolBatteryCharge);
+                         return false;
+                     }
+                 }
+diff --git a/Assets/_Project/Scripts/LocalizationManager.cs b/Assets/_Project/Scripts/LocalizationManager.cs
+index 316b994f..6605f022 100644
+--- a/Assets/_Project/Scripts/LocalizationManager.cs
++++ b/Assets/_Project/Scripts/LocalizationManager.cs
+@@ -1231,62 +1231,22 @@ namespace Hecton.Localization
+             if (threshold <= 0)
+                 return text;
+ 
+-            System.Text.StringBuilder builder = StringBuilderPool.Get();
+-            bool insideRichTag = false;
+-            bool previousCorrupted = false;
+-            int visibleIndex = 0;
+-            int seed = ComputeCorruptionSeed(text);
++            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
++                return text;
+ 
+-            for (int i = 0; i < text.Length; i++)
++            try
+             {
+-                char current = text[i];
+-
+-                if (current == '<')
+-                {
+-                    insideRichTag = true;
+-                    previousCorrupted = false;
+-                    builder.Append(current);
+-                    continue;
+-                }
+-
+-                if (insideRichTag)
+-                {
+-                    builder.Append(current);
+-                    if (current == '>')
+-                        insideRichTag = false;
+-                    continue;
+-                }
+-
+-                if (current == '[' && TryAppendBracketedMarker(text, ref i, builder))
+-                {
+-                    previousCorrupted = false;
+-                    continue;
+-                }
+-
+-                if (!ShouldCorruptCharacter(current))
+-                {
+-                    previousCorrupted = false;
+-                    builder.Append(current);
+-                    continue;
+-                }
+-
+-                int hash = seed ^ (visibleIndex * 486187739);
+-                visibleIndex++;
+-                bool shouldCorrupt = !previousCorrupted && (hash & 1023) < threshold;
+-                if (!shouldCorrupt)
+-                {
+-                    builder.Append(current);
+-                    previousCorrupted = false;
+-                    continue;
+-                }
++                if (!lease.IsValid || text.Length > lease.Buffer.Length)
++                    return text;
+ 
+-                builder.Append(ResolveCorruptionGlyph(hash, alphabet, !IsRightToLeftLanguage(language)));
+-                previousCorrupted = true;
++                return TryCorruptVisibleText(text.AsSpan(), intensity, language, lease.Buffer, out int length) && length > 0
++                    ? new string(lease.Buffer, 0, length)
++                    : text;
++            }
++            finally
++            {
++                CharBufferPool.Release(in lease);
+             }
+-
+-            string corrupted = builder.ToString();
+-            StringBuilderPool.Return(builder);
+-            return corrupted;
+         }
+ 
+         private static bool TryCorruptVisibleText(
+@@ -1375,46 +1335,6 @@ namespace Hecton.Localization
+             return true;
+         }
+ 
+-        private static bool TryAppendBracketedMarker(string text, ref int index, System.Text.StringBuilder builder)
+-        {
+-            int markerStart = index;
+-            int current = markerStart + 1;
+-            bool sawDigit = false;
+-            bool sawDot = false;
+-
+-            while (current < text.Length)
+-            {
+-                char markerChar = text[current];
+-                if (markerChar >= '0' && markerChar <= '9')
+-                {
+-                    sawDigit = true;
+-                    current++;
+-                    continue;
+-                }
+-
+-                if (markerChar == '.' && !sawDot)
+-                {
+-                    sawDot = true;
+-                    current++;
+-                    continue;
+-                }
+-
+-                break;
+-            }
+-
+-            if (!sawDigit || current >= text.Length || text[current] != ']')
+-            {
+-                builder.Append(text[markerStart]);
+-                return false;
+-            }
+-
+-            for (int i = markerStart; i <= current; i++)
+-                builder.Append(text[i]);
+-
+-            index = current;
+-            return true;
+-        }
+-
+         private static bool TryAppendBracketedMarker(ReadOnlySpan<char> text, ref int index, char[] destination, ref int length)
+         {
+             int markerStart = index;
+diff --git a/Assets/_Project/Scripts/PlayerToolManager.cs b/Assets/_Project/Scripts/PlayerToolManager.cs
+index 4e081d60..9a5ee0de 100644
+--- a/Assets/_Project/Scripts/PlayerToolManager.cs
++++ b/Assets/_Project/Scripts/PlayerToolManager.cs
+@@ -128,7 +128,19 @@ namespace Hecton8.Gameplay
+         private Rigidbody _currentInteriorCarrierBody;
+         private bool _suppressInventoryChangedHandling;
+         private PlayerRuntimeContext _runtimeContext;
+-
++        private PlayerTool _batterySiphonTool;
++        private IBatteryTool _batterySiphonBatteryTool;
++        private int _batterySiphonSlotIndex = -1;
++        private int _batterySiphonItemHashId;
++        private float _batterySiphonRemainingSeconds;
++        private float _batterySiphonDurationSeconds;
++
++        private const float BatterySiphonLockoutSeconds = 1.5f;
++        private const float BatteryDeadThreshold01 = 0.0001f;
++        private const string StandardBatteryPersistentId = "Comp_BatteryCell";
++        private const string HighCapacityBatteryPersistentId = "Comp_HighCapacityCell";
++        private static readonly int _standardBatteryHashId = LocHash.Compute(StandardBatteryPersistentId);
++        private static readonly int _highCapacityBatteryHashId = LocHash.Compute(HighCapacityBatteryPersistentId);
+         public event Action<int> ActiveSlotChanged;
+         public event Action ToolAssignmentsChanged;
+ 
+@@ -280,15 +292,27 @@ namespace Hecton8.Gameplay
+         {
+             RefreshInputSubscriptions();
+             bool handheldToolsBlocked = IsHandheldToolUsageBlocked();
++            bool batterySiphonLockout = IsBatterySiphonLockoutActive;
+             // ── 1. Обработка ввода переключения слотов ──
+-            if (!handheldToolsBlocked)
++            if (!handheldToolsBlocked && !batterySiphonLockout)
+                 ProcessSlotInput();
+-            else if (_currentTool != null && _swapState == SwapState.Idle && _pendingSlotIndex < 0)
++            else if (handheldToolsBlocked && _currentTool != null && _swapState == SwapState.Idle && _pendingSlotIndex < 0)
+                 Holster();
+ 
+             // ── 2. Анимация смены инструмента ──
+             ProcessSwapAnimation(deltaTime);
+ 
++            if (IsBatterySiphonLockoutActive)
++            {
++                ProcessBatterySiphonLockout(deltaTime);
++                PublishRuntimeContextState();
++#if UNITY_EDITOR
++                _debugCurrentSlot = _currentSlotIndex;
++                _debugStateName   = GetSwapStateDebugName(_swapState);
++#endif
++                return;
++            }
++
+             if (handheldToolsBlocked)
+             {
+                 PublishRuntimeContextState();
+@@ -303,6 +327,16 @@ namespace Hecton8.Gameplay
+             if (_currentTool != null && _swapState == SwapState.Idle)
+             {
+                 // ── Tick инструмента (idle-анимация, покачивание) ──
++                if (TryBeginBatterySiphonLockoutIfNeeded())
++                {
++                    PublishRuntimeContextState();
++#if UNITY_EDITOR
++                    _debugCurrentSlot = _currentSlotIndex;
++                    _debugStateName   = GetSwapStateDebugName(_swapState);
++#endif
++                    return;
++                }
++
+                 _currentTool.ToolTick(deltaTime);
+ 
+                 IInputService inputService = GlobalRegistry.Input;
+@@ -343,7 +377,7 @@ namespace Hecton8.Gameplay
+             if (slotIndex < -1 || slotIndex >= toolPrefabs.Length)
+                 return;
+ 
+-            if (slotIndex >= 0 && IsHandheldToolUsageBlocked())
++            if (slotIndex >= 0 && (IsHandheldToolUsageBlocked() || IsBatterySiphonLockoutActive))
+                 return;
+ 
+             RequestSwap(slotIndex);
+@@ -376,6 +410,10 @@ namespace Hecton8.Gameplay
+         /// <summary>Идёт ли сейчас анимация смены инструмента.</summary>
+         public bool IsSwapping => _swapState != SwapState.Idle;
+ 
++        public bool IsBatterySiphonLockoutActive => _batterySiphonRemainingSeconds > 0f;
++
++        public float BatterySiphonProgress01 => ResolveBatterySiphonProgress01();
++
+         public int SlotCount => toolPrefabs != null ? toolPrefabs.Length : 0;
+ 
+         public string GetSlotName(int slotIndex)
+@@ -388,6 +426,9 @@ namespace Hecton8.Gameplay
+ 
+         public string GetCurrentToolOperationalSummary()
+         {
++            if (IsBatterySiphonLockoutActive)
++                return "CELL SWAP // LOCKOUT";
++
+             return _currentTool != null
+                 ? _currentTool.GetOperationalSummary()
+                 : "NO TOOL ARMED";
+@@ -399,6 +440,16 @@ namespace Hecton8.Gameplay
+             if (destination.Length == 0)
+                 return false;
+ 
++            if (IsBatterySiphonLockoutActive)
++            {
++                int cursor = 0;
++                cursor = AppendLiteral(destination, cursor, "CELL SWAP // ");
++                cursor = AppendInt(destination, cursor, Mathf.Clamp(Mathf.RoundToInt(ResolveBatterySiphonProgress01() * 100f), 0, 100));
++                cursor = AppendLiteral(destination, cursor, "%");
++                length = cursor;
++                return cursor > 0;
++            }
++
+             if (_currentTool == null)
+             {
+                 length = AppendLiteral(destination, 0, "NO TOOL ARMED");
+@@ -474,6 +525,9 @@ namespace Hecton8.Gameplay
+ 
+         public string GetCurrentToolOperationalDirective()
+         {
++            if (IsBatterySiphonLockoutActive)
++                return "Battery auto-swap in progress. Tool interaction locked.";
++
+             if (IsSwapping)
+                 return "Tool swap in progress. Wait for the active handoff.";
+ 
+@@ -829,10 +883,12 @@ namespace Hecton8.Gameplay
+                 flags |= (uint)PlayerRuntimeSnapshotFlags.HasTransport;
+             if (_currentTool != null)
+                 flags |= (uint)PlayerRuntimeSnapshotFlags.ToolEquipped;
+-            if (IsHandheldToolUsageBlocked())
++            if (IsHandheldToolUsageBlocked() || IsBatterySiphonLockoutActive)
+                 flags |= (uint)PlayerRuntimeSnapshotFlags.HandheldToolBlocked;
+ 
+-            float swapProgress01 = math.saturate(_swapProgress);
++            float swapProgress01 = IsBatterySiphonLockoutActive
++                ? ResolveBatterySiphonProgress01()
++                : math.saturate(_swapProgress);
+             float transportBoost01 = 0f;
+             IPlayerTransportSource transportSource = CurrentToolTransportSource;
+             if (transportSource != null)
+@@ -963,7 +1019,7 @@ namespace Hecton8.Gameplay
+             if (_swapState != SwapState.Idle)
+                 return;
+ 
+-            if (IsHandheldToolUsageBlocked())
++            if (IsHandheldToolUsageBlocked() || IsBatterySiphonLockoutActive)
+                 return;
+ 
+             if (index < 0 || index >= toolPrefabs.Length)
+@@ -987,7 +1043,7 @@ namespace Hecton8.Gameplay
+         /// </summary>
+         private void RequestSwap(int newSlotIndex)
+         {
+-            if (newSlotIndex >= 0 && IsHandheldToolUsageBlocked())
++            if (newSlotIndex >= 0 && (IsHandheldToolUsageBlocked() || IsBatterySiphonLockoutActive))
+                 return;
+ 
+             LogToolDebug(
+@@ -1237,6 +1293,9 @@ namespace Hecton8.Gameplay
+             LogToolDebug(
+                 $"DespawnCurrentTool begin currentTool={(_currentTool != null ? _currentTool.GetType().Name : "null")} " +
+                 $"currentInstance={(_currentInstance != null ? _currentInstance.name : "null")} currentSlot={_currentSlotIndex}");
++            if (ReferenceEquals(_currentTool, _batterySiphonTool))
++                ClearBatterySiphonLockout();
++
+             if (_currentTool != null)
+             {
+                 _currentTool.OnToolBroken -= HandleEquippedToolBroken;
+@@ -1274,6 +1333,156 @@ namespace Hecton8.Gameplay
+         /// Время: O(cols × rows) в worst case, но вызывается только
+         /// при нажатии кнопки (не каждый кадр).
+         /// </summary>
++        // Timed battery siphon; no SOA inventory mutation until the lockout completes.
++        private bool TryBeginBatterySiphonLockoutIfNeeded()
++        {
++            if (_currentTool == null ||
++                _currentSlotIndex < 0 ||
++                _pendingSlotIndex >= 0 ||
++                _swapState != SwapState.Idle ||
++                playerInventory == null)
++            {
++                return false;
++            }
++
++            if (!(_currentTool is IBatteryTool batteryTool) || !IsBatteryToolDead(batteryTool))
++                return false;
++
++            if (!TryResolveInventoryBatteryCandidate(batteryTool, out int batteryHashId, out _))
++                return false;
++
++            _batterySiphonTool = _currentTool;
++            _batterySiphonBatteryTool = batteryTool;
++            _batterySiphonSlotIndex = _currentSlotIndex;
++            _batterySiphonItemHashId = batteryHashId;
++            _batterySiphonDurationSeconds = BatterySiphonLockoutSeconds;
++            _batterySiphonRemainingSeconds = BatterySiphonLockoutSeconds;
++            return true;
++        }
++
++        private void ProcessBatterySiphonLockout(float deltaTime)
++        {
++            if (!IsBatterySiphonContextValid())
++            {
++                ClearBatterySiphonLockout();
++                return;
++            }
++
++            _batterySiphonRemainingSeconds = math.max(0f, _batterySiphonRemainingSeconds - math.max(0f, deltaTime));
++            if (_batterySiphonRemainingSeconds > 0f)
++                return;
++
++            CompleteBatterySiphonLockout();
++        }
++
++        private void CompleteBatterySiphonLockout()
++        {
++            IBatteryTool batteryTool = _batterySiphonBatteryTool;
++            int batteryHashId = _batterySiphonItemHashId;
++            if (batteryTool == null ||
++                batteryHashId == 0 ||
++                playerInventory == null ||
++                !TryResolveInventoryBatteryItem(batteryHashId, out ItemData batteryItem) ||
++                !playerInventory.TryConsumeFirstMatchingItemByHash(batteryHashId, out _, out ushort qualityMilli, out ulong geneticsMask))
++            {
++                ClearBatterySiphonLockout();
++                return;
++            }
++
++            ItemData removedBattery = batteryTool.HasBattery ? batteryTool.RemoveBattery() : null;
++            if (!batteryTool.InsertBattery(batteryItem, 1f))
++            {
++                playerInventory.TryAddItemWithState(batteryHashId, geneticsMask, qualityMilli, 1);
++                if (removedBattery != null)
++                    batteryTool.InsertBattery(removedBattery, 0f);
++            }
++
++            ClearBatterySiphonLockout();
++        }
++
++        private bool IsBatterySiphonContextValid()
++        {
++            return _batterySiphonTool != null &&
++                   _batterySiphonBatteryTool != null &&
++                   ReferenceEquals(_currentTool, _batterySiphonTool) &&
++                   _currentSlotIndex == _batterySiphonSlotIndex &&
++                   _swapState == SwapState.Idle &&
++                   !IsHandheldToolUsageBlocked() &&
++                   IsBatteryToolDead(_batterySiphonBatteryTool);
++        }
++
++        private void ClearBatterySiphonLockout()
++        {
++            _batterySiphonTool = null;
++            _batterySiphonBatteryTool = null;
++            _batterySiphonSlotIndex = -1;
++            _batterySiphonItemHashId = 0;
++            _batterySiphonRemainingSeconds = 0f;
++            _batterySiphonDurationSeconds = 0f;
++        }
++
++        private float ResolveBatterySiphonProgress01()
++        {
++            if (_batterySiphonTool == null)
++                return 0f;
++
++            if (_batterySiphonDurationSeconds <= 0f)
++                return 1f;
++
++            return math.saturate(1f - (_batterySiphonRemainingSeconds / _batterySiphonDurationSeconds));
++        }
++
++        private bool TryResolveInventoryBatteryCandidate(
++            IBatteryTool batteryTool,
++            out int batteryHashId,
++            out ItemData batteryItem)
++        {
++            batteryHashId = 0;
++            batteryItem = null;
++
++            ItemData installedBattery = batteryTool != null ? batteryTool.BatteryItem : null;
++            int installedBatteryHash = installedBattery != null
++                ? LocHash.Compute(installedBattery.PersistentId)
++                : 0;
++
++            if (TryResolveInventoryBatteryItem(installedBatteryHash, out batteryItem))
++            {
++                batteryHashId = installedBatteryHash;
++                return true;
++            }
++
++            if (TryResolveInventoryBatteryItem(_highCapacityBatteryHashId, out batteryItem))
++            {
++                batteryHashId = _highCapacityBatteryHashId;
++                return true;
++            }
++
++            if (TryResolveInventoryBatteryItem(_standardBatteryHashId, out batteryItem))
++            {
++                batteryHashId = _standardBatteryHashId;
++                return true;
++            }
++
++            return false;
++        }
++
++        private bool TryResolveInventoryBatteryItem(int batteryHashId, out ItemData batteryItem)
++        {
++            batteryItem = null;
++            if (batteryHashId == 0 || playerInventory == null || playerInventory.CountAvailableTotal(batteryHashId) <= 0)
++                return false;
++
++            var catalog = playerInventory.ItemCatalog;
++            batteryItem = catalog != null ? catalog.FindByHash(batteryHashId) : null;
++            return batteryItem != null;
++        }
++
++        private static bool IsBatteryToolDead(IBatteryTool batteryTool)
++        {
++            return batteryTool != null &&
++                   (!batteryTool.HasBattery || batteryTool.BatteryCharge <= BatteryDeadThreshold01);
++        }
++
+         private bool HasToolInInventory(GameObject toolPrefab)
+         {
+             if (playerInventory == null)
+diff --git a/Assets/_Project/Scripts/World/DestructibleOrganicManager.cs b/Assets/_Project/Scripts/World/DestructibleOrganicManager.cs
+index a38ed95e..fa9d526f 100644
+--- a/Assets/_Project/Scripts/World/DestructibleOrganicManager.cs
++++ b/Assets/_Project/Scripts/World/DestructibleOrganicManager.cs
+@@ -22,7 +22,7 @@ namespace Hecton8.World
+     /// </summary>
+     [DisallowMultipleComponent]
+     [DefaultExecutionOrder(-120)] // Manager order must stay ahead of gameplay consumers that read/wire destruction state.
+-    public sealed class DestructibleOrganicManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable
++    public sealed class DestructibleOrganicManager : MonoBehaviour, ITickable, ISlowTickable, ILateFrameTickable, IOriginShiftListener
+     {
+         private static DestructibleOrganicManager _activeRuntimeInstance;
+ 
+@@ -78,6 +78,7 @@ namespace Hecton8.World
+         {
+             public uint NodeId;
+             public int SpeciesId;
++            public AbsoluteUniversePosition PositionAup;
+             public Vector3 Position;
+             public float InitialUnits;
+             public float RemainingUnits;
+@@ -341,6 +342,7 @@ namespace Hecton8.World
+         private bool _tickRegistered;
+         private bool _slowTickRegistered;
+         private bool _lateFrameTickRegistered;
++        private bool _originShiftListenerRegistered;
+         private bool _yieldScheduled;
+ 
+         private NativeArray<Matrix4x4> _surfaceMatrices;
+@@ -374,6 +376,18 @@ namespace Hecton8.World
+         public static DestructibleOrganicManager ActiveRuntimeInstance => _activeRuntimeInstance;
+ 
+         internal bool RegisterCorpseResourceNode(Vector3 worldPosition, int speciesId, float capacityUnits)
++        {
++            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
++            return RegisterCorpseResourceNode(in positionAup, worldPosition, speciesId, capacityUnits);
++        }
++
++        internal bool RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, int speciesId, float capacityUnits)
++        {
++            Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
++            return RegisterCorpseResourceNode(in positionAup, runtimePosition, speciesId, capacityUnits);
++        }
++
++        private bool RegisterCorpseResourceNode(in AbsoluteUniversePosition positionAup, Vector3 worldPosition, int speciesId, float capacityUnits)
+         {
+             if (_corpseResourceNodes == null || _corpseResourceNodes.Length == 0 || capacityUnits <= 0f)
+                 return false;
+@@ -397,8 +411,9 @@ namespace Hecton8.World
+             float initialUnits = Mathf.Max(0.25f, capacityUnits);
+             CorpseResourceNodeRecord record = new CorpseResourceNodeRecord
+             {
+-                NodeId = (uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(worldPosition) & uint.MaxValue),
++                NodeId = (uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in positionAup) & uint.MaxValue),
+                 SpeciesId = speciesId,
++                PositionAup = positionAup,
+                 Position = worldPosition,
+                 InitialUnits = initialUnits,
+                 RemainingUnits = initialUnits,
+@@ -415,20 +430,26 @@ namespace Hecton8.World
+         }
+ 
+         internal bool TryResolveNearestCorpseResourceNode(Vector3 worldPosition, float searchRadius, out Vector3 corpsePosition, out uint corpseNodeId)
++        {
++            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
++            return TryResolveNearestCorpseResourceNode(in queryAup, searchRadius, out corpsePosition, out corpseNodeId);
++        }
++
++        internal bool TryResolveNearestCorpseResourceNode(in AbsoluteUniversePosition queryAup, float searchRadius, out Vector3 corpsePosition, out uint corpseNodeId)
+         {
+             corpsePosition = default;
+             corpseNodeId = 0u;
+             if (_corpseResourceNodes == null || _corpseResourceNodeCount <= 0)
+                 return false;
+ 
+-            float bestDistanceSq = searchRadius * searchRadius;
++            double bestDistanceSq = (double)searchRadius * searchRadius;
+             for (int i = 0; i < _corpseResourceNodeCount; i++)
+             {
+                 CorpseResourceNodeRecord record = _corpseResourceNodes[i];
+                 if (record.Active == 0 || record.RemainingUnits <= 0f)
+                     continue;
+ 
+-                float distanceSq = (record.Position - worldPosition).sqrMagnitude;
++                double distanceSq = AbsoluteUniversePosition.DistanceSq(in queryAup, in record.PositionAup);
+                 if (distanceSq > bestDistanceSq)
+                     continue;
+ 
+@@ -471,11 +492,17 @@ namespace Hecton8.World
+         }
+ 
+         internal float ResolveCorpseSpawnInfluence01(Vector3 worldPosition, float searchRadius)
++        {
++            AbsoluteUniversePosition queryAup = AbsoluteUniversePosition.FromRuntimePosition(worldPosition);
++            return ResolveCorpseSpawnInfluence01(in queryAup, searchRadius);
++        }
++
++        internal float ResolveCorpseSpawnInfluence01(in AbsoluteUniversePosition queryAup, float searchRadius)
+         {
+             if (_corpseResourceNodes == null || _corpseResourceNodeCount <= 0 || searchRadius <= 0f)
+                 return 0f;
+ 
+-            float maxDistanceSq = searchRadius * searchRadius;
++            double maxDistanceSq = (double)searchRadius * searchRadius;
+             float bestInfluence01 = 0f;
+             for (int i = 0; i < _corpseResourceNodeCount; i++)
+             {
+@@ -483,11 +510,11 @@ namespace Hecton8.World
+                 if (record.Active == 0 || record.RemainingUnits <= 0f)
+                     continue;
+ 
+-                float distanceSq = (record.Position - worldPosition).sqrMagnitude;
++                double distanceSq = AbsoluteUniversePosition.DistanceSq(in queryAup, in record.PositionAup);
+                 if (distanceSq > maxDistanceSq)
+                     continue;
+ 
+-                float distance01 = 1f - Mathf.Clamp01(Mathf.Sqrt(distanceSq) / searchRadius);
++                float distance01 = 1f - Mathf.Clamp01((float)math.sqrt(distanceSq) / searchRadius);
+                 float mass01 = ResolveCorpseCapacityFraction01(in record);
+                 float influence01 = distance01 * mass01;
+                 if (influence01 > bestInfluence01)
+@@ -572,7 +599,12 @@ namespace Hecton8.World
+ 
+         private void OnEnable()
+         {
+-            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
++            if (!Application.isPlaying)
++                return;
++
++            RegisterOriginShiftListener();
++
++            if (GlobalRegistry.Dispatcher == null)
+                 return;
+ 
+             if (!_tickRegistered)
+@@ -620,6 +652,7 @@ namespace Hecton8.World
+             }
+ 
+             CompleteYieldJobIfNeeded();
++            UnregisterOriginShiftListener();
+         }
+ 
+         private void OnDestroy()
+@@ -628,6 +661,7 @@ namespace Hecton8.World
+                 _activeRuntimeInstance = null;
+ 
+             CompleteYieldJobIfNeeded();
++            UnregisterOriginShiftListener();
+             DisposeNativeArray(ref _surfaceInstanceUids);
+             DisposeNativeArray(ref _underwaterInstanceUids);
+             DisposeNativeArray(ref _surfaceMaterialClasses);
+@@ -665,6 +699,50 @@ namespace Hecton8.World
+             DisposeNativeList(ref _pendingYieldEvents, nameof(_pendingYieldEvents));
+         }
+ 
++        /// <summary>
++        /// Rebuilds live corpse attractor runtime caches from authoritative Absolute Universe Positions after a committed origin shift.
++        /// </summary>
++        /// <param name="shiftData">Committed floating-origin shift data.</param>
++        public void OnOriginShift(in OriginShiftEventData shiftData)
++        {
++            if (_corpseResourceNodes == null || _corpseResourceNodeCount <= 0)
++                return;
++
++            float3 committedOriginOffset = new float3(
++                shiftData.NewTotalOffset.x,
++                shiftData.NewTotalOffset.y,
++                shiftData.NewTotalOffset.z);
++
++            for (int i = 0; i < _corpseResourceNodeCount; i++)
++            {
++                CorpseResourceNodeRecord record = _corpseResourceNodes[i];
++                if (record.Active == 0)
++                    continue;
++
++                float3 runtimePosition = AUPMath.ToRuntimeFloat3(in record.PositionAup, committedOriginOffset);
++                record.Position = new Vector3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
++                _corpseResourceNodes[i] = record;
++            }
++        }
++
++        private void RegisterOriginShiftListener()
++        {
++            if (_originShiftListenerRegistered)
++                return;
++
++            HectonFloatingOrigin.RegisterListener(this);
++            _originShiftListenerRegistered = HectonFloatingOrigin.IsListenerRegistered(this);
++        }
++
++        private void UnregisterOriginShiftListener()
++        {
++            if (!_originShiftListenerRegistered)
++                return;
++
++            HectonFloatingOrigin.UnregisterListener(this);
++            _originShiftListenerRegistered = false;
++        }
++
+         /// <summary>
+         /// Processes pending entropy jobs and drop routing.
+         /// </summary>
+
+diff --git a/Assets/_Project/Scripts/World/HectonBiomeMatrixMapMagicPostProcessNode.cs b/Assets/_Project/Scripts/World/HectonBiomeMatrixMapMagicPostProcessNode.cs
+new file mode 100644
+index 00000000..c0b3bad6
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/HectonBiomeMatrixMapMagicPostProcessNode.cs
+@@ -0,0 +1,181 @@
++using Den.Tools;
++using Den.Tools.GUI;
++using Den.Tools.Matrices;
++using Hecton8.World;
++using MapMagic.Nodes;
++using MapMagic.Products;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
++using UnityEngine;
++
++namespace MapMagic.Nodes.MatrixGenerators
++{
++    [System.Serializable]
++    [GeneratorMenu(
++        menu = "Hecton",
++        name = "Biome Matrix Post Process",
++        disengageable = true)]
++    [UnityEngine.Scripting.Preserve]
++    public sealed class HectonBiomeMatrixMapMagicPostProcessNode : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>
++    {
++        private const string TectonicSpineFamilyId = "biome.family.tectonic_spine";
++
++        [Val("Thermal")] public bool enableThermalWeathering = true;
++        [Val("Thermal Iterations")] public int thermalIterations = 1;
++        [Val("Talus Angle")] public float talusAngleDegrees = 32f;
++        [Val("Thermal Strength")] public float thermalStrength = 0.18f;
++
++        [Val("Tectonic Spine")] public bool enableTectonicSpineDisplacement = true;
++        [Val("Require Family")] public bool requireTectonicSpineFamily = true;
++        [Val("Family Id")] public string biomeFamilyId = TectonicSpineFamilyId;
++        [Val("Ridge Strength")] public float tectonicStrength = 0.12f;
++        [Val("Ridge Frequency")] public float tectonicFrequency = 0.0065f;
++        [Val("Ridge Sharpness")] public float tectonicRidgeSharpness = 3.25f;
++        [Val("Seed")] public int tectonicSeed = 83117;
++
++        public override (string, int) GetCodeFileLine() => GetCodeFileLineBase();
++
++        public override void Generate(TileData data, StopToken stop)
++        {
++            MatrixWorld src = data.ReadInletProduct(this);
++            if (src == null)
++                return;
++
++            if (!enabled || (!enableThermalWeathering && !ShouldApplyTectonicDisplacement()))
++            {
++                data.StoreProduct(this, src);
++                return;
++            }
++
++            if (stop != null && stop.stop)
++                return;
++
++            MatrixWorld dst = new MatrixWorld(src.rect, src.worldPos, src.worldSize);
++            float[] source = src.arr;
++            float[] target = dst.arr;
++            int cellCount = source != null ? source.Length : 0;
++            if (cellCount <= 0 || target == null || target.Length < cellCount)
++            {
++                data.StoreProduct(this, src);
++                return;
++            }
++
++            NativeArray<float> bufferA = default;
++            NativeArray<float> bufferB = default;
++            try
++            {
++                bufferA = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                bufferB = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++
++                for (int i = 0; i < cellCount; i++)
++                    bufferA[i] = math.saturate(source[i]);
++
++                NativeArray<float> current = bufferA;
++                NativeArray<float> next = bufferB;
++                int width = math.max(1, src.rect.size.x);
++                int height = math.max(1, src.rect.size.z);
++                float cellSizeMeters = ResolveCellSizeMeters(src);
++                float heightScaleMeters = math.max(0.001f, data.globals.height);
++                JobHandle handle = default;
++                bool hasScheduledWork = false;
++                bool stopRequested = false;
++
++                if (ShouldApplyTectonicDisplacement() && width > 1 && height > 1)
++                {
++                    var tectonicJob = new WorldProceduralTerrainTectonicDisplacementJob
++                    {
++                        InputHeights01 = current,
++                        OutputHeights01 = next,
++                        Width = width,
++                        Height = height,
++                        WorldOriginXZ = new float2(src.worldPos.x, src.worldPos.z),
++                        CellSizeMeters = cellSizeMeters,
++                        Strength01 = math.saturate(tectonicStrength),
++                        Frequency = math.max(0.0001f, tectonicFrequency),
++                        RidgeSharpness = math.max(0.5f, tectonicRidgeSharpness),
++                        Seed = unchecked((uint)tectonicSeed)
++                    };
++
++                    handle = tectonicJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
++                    hasScheduledWork = true;
++                    Swap(ref current, ref next);
++                }
++
++                if (enableThermalWeathering && width > 2 && height > 2)
++                {
++                    int iterations = math.max(0, thermalIterations);
++                    for (int iteration = 0; iteration < iterations; iteration++)
++                    {
++                        if (stop != null && stop.stop)
++                        {
++                            stopRequested = true;
++                            return;
++                        }
++
++                        var thermalJob = new WorldProceduralTerrainThermalWeatheringJob
++                        {
++                            InputHeights01 = current,
++                            OutputHeights01 = next,
++                            Width = width,
++                            Height = height,
++                            CellSizeMeters = cellSizeMeters,
++                            HeightScaleMeters = heightScaleMeters,
++                            TalusAngleDegrees = talusAngleDegrees,
++                            Strength = thermalStrength
++                        };
++
++                        handle = thermalJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
++                        hasScheduledWork = true;
++                        Swap(ref current, ref next);
++                    }
++                }
++
++                if (hasScheduledWork)
++                    handle.Complete();
++
++                if (stopRequested)
++                    return;
++
++                for (int i = 0; i < cellCount; i++)
++                    target[i] = current[i];
++
++                data.StoreProduct(this, dst);
++            }
++            finally
++            {
++                if (bufferA.IsCreated)
++                    bufferA.Dispose();
++                if (bufferB.IsCreated)
++                    bufferB.Dispose();
++            }
++        }
++
++        private bool ShouldApplyTectonicDisplacement()
++        {
++            if (!enableTectonicSpineDisplacement)
++                return false;
++
++            return !requireTectonicSpineFamily ||
++                   string.Equals(biomeFamilyId, TectonicSpineFamilyId, System.StringComparison.OrdinalIgnoreCase);
++        }
++
++        private static float ResolveCellSizeMeters(MatrixWorld matrix)
++        {
++            int safeWidth = math.max(1, matrix.rect.size.x - 1);
++            return math.max(0.001f, matrix.worldSize.x / safeWidth);
++        }
++
++        private static int ResolveBatchCount(int cellCount)
++        {
++            return math.max(1, math.min(64, cellCount / 16));
++        }
++
++        private static void Swap(ref NativeArray<float> current, ref NativeArray<float> next)
++        {
++            NativeArray<float> swap = current;
++            current = next;
++            next = swap;
++        }
++    }
++}
+
+diff --git a/Assets/_Project/Scripts/World/HectonBiomeMatrixMapMagicPostProcessNode.cs.meta b/Assets/_Project/Scripts/World/HectonBiomeMatrixMapMagicPostProcessNode.cs.meta
+new file mode 100644
+index 00000000..530776ac
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/HectonBiomeMatrixMapMagicPostProcessNode.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: 17583be930668074585cfc05d0f34451
+\ No newline at end of file

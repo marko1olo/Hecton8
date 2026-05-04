@@ -506,7 +506,12 @@ namespace Hecton8.Gameplay
                 return 1f;
 
             float occlusion01 = ResolveEclipseOcclusion01();
-            return Mathf.Lerp(1f, Mathf.Max(1f, biolumMultiplier), occlusion01);
+            float resonanceMultiplier = 1f;
+            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            if (celestialEngine != null && celestialEngine.IsLunarResonanceActive)
+                resonanceMultiplier = Mathf.Max(1f, celestialEngine.LunarResonanceBiolumMultiplier);
+
+            return Mathf.Lerp(1f, Mathf.Max(1f, biolumMultiplier) * resonanceMultiplier, occlusion01);
         }
 
         private float ResolveTargetAcousticPitchShiftCents()

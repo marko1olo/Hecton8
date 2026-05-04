@@ -212,6 +212,7 @@ namespace Hecton8.Core
         private const int MainTerrainBaseMapResolutionBudget = 512;
         private const int DraftTerrainBaseMapResolutionBudget = 128;
         private const int BiomeMatrixLayerCount = 108;
+        private const string TectonicSpineFamilyId = "biome.family.tectonic_spine";
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -273,6 +274,16 @@ namespace Hecton8.Core
         [SerializeField] private bool enableSandboxThermalWeathering = true;
         [SerializeField, Range(0f, 1f)] private float sandboxThermalWeatheringStrength = 0.18f;
         [SerializeField, Range(5f, 60f)] private float sandboxThermalWeatheringTalusAngleDegrees = 32f;
+        [SerializeField] private bool enableSandboxTectonicSpineDisplacement = true;
+        [SerializeField, Range(0f, 0.35f)] private float sandboxTectonicSpineStrength = 0.12f;
+        [SerializeField, Min(0.0001f)] private float sandboxTectonicSpineFrequency = 0.0065f;
+        [SerializeField, Range(0.5f, 8f)] private float sandboxTectonicSpineRidgeSharpness = 3.25f;
+        [SerializeField] private int sandboxTectonicSpineSeed = 83117;
+        [SerializeField] private bool enableSandboxFakeCliffOverhangOffsets = true;
+        [SerializeField, Range(60f, 88f)] private float sandboxFakeOverhangSlopeThresholdDegrees = 75f;
+        [SerializeField, Range(0f, 2f)] private float sandboxFakeOverhangMaxOffsetMeters = 0.75f;
+        [SerializeField, Min(0.0001f)] private float sandboxFakeOverhangNoiseFrequency = 0.085f;
+        [SerializeField] private int sandboxFakeOverhangSeed = 42109;
 
         [Header("── Diagnostics ───────────────────────────────")]
 #pragma warning disable CS0414
@@ -346,6 +357,11 @@ namespace Hecton8.Core
         public bool EnableSandboxThermalWeathering => enableSandboxThermalWeathering;
         public float SandboxThermalWeatheringStrength => sandboxThermalWeatheringStrength;
         public float SandboxThermalWeatheringTalusAngleDegrees => sandboxThermalWeatheringTalusAngleDegrees;
+        public bool EnableSandboxTectonicSpineDisplacement => enableSandboxTectonicSpineDisplacement;
+        public float SandboxTectonicSpineStrength => sandboxTectonicSpineStrength;
+        public float SandboxTectonicSpineFrequency => sandboxTectonicSpineFrequency;
+        public float SandboxTectonicSpineRidgeSharpness => sandboxTectonicSpineRidgeSharpness;
+        public bool EnableSandboxFakeCliffOverhangOffsets => enableSandboxFakeCliffOverhangOffsets;
 
         /// <summary>
         /// Current biome ID under the player.
@@ -1104,6 +1120,158 @@ namespace Hecton8.Core
 
             int batchCount = math.max(1, math.min(64, cellCount / 16));
             return job.Schedule(cellCount, batchCount, dependency);
+        }
+
+        /// <summary>
+        /// Returns true for matrix biomes that belong to the tectonic-spine family.
+        /// </summary>
+        /// <param name="profile">Biome matrix profile resolved from the 108-entry catalog.</param>
+        public static bool IsTectonicSpineMatrixBiome(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null)
+                return false;
+
+            if (IsTectonicSpineFamilyId(profile.familyId))
+                return true;
+
+            HectonBiomeFamilyProfile familyProfile = profile.familyProfile;
+            return familyProfile != null && IsTectonicSpineFamilyId(familyProfile.familyId);
+        }
+
+        /// <summary>
+        /// Schedules tectonic-spine ridge extrusion over a normalized height field.
+        /// </summary>
+        /// <param name="biomeProfile">Matrix profile used to gate the tectonic-spine processor.</param>
+        /// <param name="inputHeights01">Read-only normalized source heights.</param>
+        /// <param name="outputHeights01">Write target for normalized displaced heights.</param>
+        /// <param name="width">Height field width in samples.</param>
+        /// <param name="height">Height field height in samples.</param>
+        /// <param name="worldOriginXZ">Absolute world-space origin of sample (0,0).</param>
+        /// <param name="cellSizeMeters">World-space spacing between height samples.</param>
+        /// <param name="dependency">Input dependency for prior height jobs.</param>
+        /// <returns>Job handle for the displacement pass, or the input dependency when disabled/invalid.</returns>
+        public JobHandle ScheduleSandboxTectonicSpineDisplacementPostProcess(
+            HectonBiomeMatrixProfile biomeProfile,
+            NativeArray<float> inputHeights01,
+            NativeArray<float> outputHeights01,
+            int width,
+            int height,
+            float2 worldOriginXZ,
+            float cellSizeMeters,
+            JobHandle dependency = default)
+        {
+            return ScheduleSandboxTectonicSpineDisplacementPostProcess(
+                IsTectonicSpineMatrixBiome(biomeProfile),
+                inputHeights01,
+                outputHeights01,
+                width,
+                height,
+                worldOriginXZ,
+                cellSizeMeters,
+                dependency);
+        }
+
+        /// <summary>
+        /// Schedules tectonic-spine ridge extrusion when the caller already has a biome-family gate.
+        /// </summary>
+        /// <param name="isTectonicSpineBiome">True when the tile belongs to biome.family.tectonic_spine.</param>
+        /// <param name="inputHeights01">Read-only normalized source heights.</param>
+        /// <param name="outputHeights01">Write target for normalized displaced heights.</param>
+        /// <param name="width">Height field width in samples.</param>
+        /// <param name="height">Height field height in samples.</param>
+        /// <param name="worldOriginXZ">Absolute world-space origin of sample (0,0).</param>
+        /// <param name="cellSizeMeters">World-space spacing between height samples.</param>
+        /// <param name="dependency">Input dependency for prior height jobs.</param>
+        /// <returns>Job handle for the displacement pass, or the input dependency when disabled/invalid.</returns>
+        public JobHandle ScheduleSandboxTectonicSpineDisplacementPostProcess(
+            bool isTectonicSpineBiome,
+            NativeArray<float> inputHeights01,
+            NativeArray<float> outputHeights01,
+            int width,
+            int height,
+            float2 worldOriginXZ,
+            float cellSizeMeters,
+            JobHandle dependency = default)
+        {
+            if (!enableSandboxTectonicSpineDisplacement ||
+                !isTectonicSpineBiome ||
+                !inputHeights01.IsCreated ||
+                !outputHeights01.IsCreated ||
+                width <= 1 ||
+                height <= 1)
+            {
+                return dependency;
+            }
+
+            int cellCount = width * height;
+            if (inputHeights01.Length < cellCount || outputHeights01.Length < cellCount)
+                return dependency;
+
+            var job = new Hecton8.World.WorldProceduralTerrainTectonicDisplacementJob
+            {
+                InputHeights01 = inputHeights01,
+                OutputHeights01 = outputHeights01,
+                Width = width,
+                Height = height,
+                WorldOriginXZ = worldOriginXZ,
+                CellSizeMeters = math.max(0.001f, cellSizeMeters),
+                Strength01 = sandboxTectonicSpineStrength,
+                Frequency = sandboxTectonicSpineFrequency,
+                RidgeSharpness = sandboxTectonicSpineRidgeSharpness,
+                Seed = unchecked((uint)sandboxTectonicSpineSeed)
+            };
+
+            int batchCount = math.max(1, math.min(64, cellCount / 16));
+            return job.Schedule(cellCount, batchCount, dependency);
+        }
+
+        /// <summary>
+        /// Schedules fake horizontal cliff-overhang offsets for voxel handoff consumers.
+        /// Heightmap terrain remains vertical-only; callers apply the returned offsets to voxel/contact vertices.
+        /// </summary>
+        public JobHandle ScheduleSandboxFakeCliffOverhangOffsets(
+            NativeArray<float> heights01,
+            NativeArray<float2> horizontalOffsetsMeters,
+            int width,
+            int height,
+            float cellSizeMeters,
+            float heightScaleMeters,
+            JobHandle dependency = default)
+        {
+            if (!enableSandboxFakeCliffOverhangOffsets ||
+                !heights01.IsCreated ||
+                !horizontalOffsetsMeters.IsCreated ||
+                width <= 2 ||
+                height <= 2)
+            {
+                return dependency;
+            }
+
+            int cellCount = width * height;
+            if (heights01.Length < cellCount || horizontalOffsetsMeters.Length < cellCount)
+                return dependency;
+
+            var job = new Hecton8.World.WorldProceduralTerrainFakeOverhangOffsetJob
+            {
+                Heights01 = heights01,
+                HorizontalOffsetsMeters = horizontalOffsetsMeters,
+                Width = width,
+                Height = height,
+                CellSizeMeters = math.max(0.001f, cellSizeMeters),
+                HeightScaleMeters = math.max(0.001f, heightScaleMeters),
+                SlopeThresholdDegrees = sandboxFakeOverhangSlopeThresholdDegrees,
+                MaxOffsetMeters = sandboxFakeOverhangMaxOffsetMeters,
+                NoiseFrequency = sandboxFakeOverhangNoiseFrequency,
+                Seed = unchecked((uint)sandboxFakeOverhangSeed)
+            };
+
+            int batchCount = math.max(1, math.min(64, cellCount / 16));
+            return job.Schedule(cellCount, batchCount, dependency);
+        }
+
+        private static bool IsTectonicSpineFamilyId(string familyId)
+        {
+            return string.Equals(familyId, TectonicSpineFamilyId, StringComparison.OrdinalIgnoreCase);
         }
 
         /// <summary>

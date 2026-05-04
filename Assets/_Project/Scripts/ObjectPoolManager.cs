@@ -444,9 +444,10 @@ namespace Hecton8.Core
         /// </summary>
         public void ClearAllPools()
         {
-            foreach (KeyValuePair<int, Pool> pair in _pools)
+            Dictionary<int, Pool>.Enumerator enumerator = _pools.GetEnumerator();
+            while (enumerator.MoveNext())
             {
-                Pool pool = pair.Value;
+                Pool pool = enumerator.Current.Value;
                 while (pool.available.Count > 0)
                 {
                     GameObject instance = pool.available.Dequeue();
@@ -459,6 +460,29 @@ namespace Hecton8.Core
             }
 
             _pools.Clear();
+            UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Releases inactive pooled instances under critical memory pressure while preserving pool registrations.
+        /// </summary>
+        public void FlushInactivePoolsForMemoryPressure()
+        {
+            if (_pools == null)
+                return;
+
+            Dictionary<int, Pool>.Enumerator enumerator = _pools.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                Pool pool = enumerator.Current.Value;
+                while (pool.available.Count > 0)
+                {
+                    GameObject instance = pool.available.Dequeue();
+                    if (instance != null)
+                        Destroy(instance);
+                }
+            }
+
             UpdateDiagnostics();
         }
 

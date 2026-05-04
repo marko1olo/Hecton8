@@ -40,6 +40,18 @@ namespace Hecton8.Visor
             [Tooltip("Fallback medium-tier step count used when no emission profile is assigned.")]
             [Range(8, 32)] public int fallbackSteps = 16;
 
+            [Tooltip("Screen-space shadow raymarch steps. Low/MX350 tier is clamped below 16.")]
+            [Range(4, 15)] public int volumetricShadowSteps = 8;
+
+            [Tooltip("Maximum world-space distance for the secondary shadow raymarch toward the light.")]
+            [Range(1f, 24f)] public float volumetricShadowDistance = 8f;
+
+            [Tooltip("World-space bias used when testing screen depth along the light shaft.")]
+            [Range(0.01f, 0.5f)] public float volumetricShadowBias = 0.08f;
+
+            [Tooltip("Shadow density applied to occluders found by the secondary light-shaft raymarch.")]
+            [Range(0f, 4f)] public float volumetricShadowStrength = 1.15f;
+
             [Tooltip("Base participating media density used by the god ray solve.")]
             [Range(0f, 4f)] public float density = 1.05f;
 
@@ -66,10 +78,24 @@ namespace Hecton8.Visor
 
             internal int ResolveRaymarchSteps()
             {
+                int maxStepCount = ResolveMx350SafeStepLimit();
                 if (emissionProfile != null)
-                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(hardwareTier), 8, 32);
+                    return Mathf.Clamp(emissionProfile.GetVolumetricGodRaySteps(hardwareTier), 4, maxStepCount);
 
-                return Mathf.Clamp(fallbackSteps, 8, 32);
+                return Mathf.Clamp(fallbackSteps, 4, maxStepCount);
+            }
+
+            internal int ResolveVolumetricShadowSteps()
+            {
+                return Mathf.Clamp(volumetricShadowSteps, 1, ResolveMx350SafeStepLimit());
+            }
+
+            private int ResolveMx350SafeStepLimit()
+            {
+                return hardwareTier == VFXEmissionProfile.HardwareTier.Low ||
+                       (SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048)
+                    ? 15
+                    : 32;
             }
         }
 
@@ -93,7 +119,9 @@ namespace Hecton8.Visor
                 internal Vector4 scatteringParams;
                 internal Vector4 hudFogPerturbation;
                 internal Vector4 marchParams;
+                internal Vector4 shadowParams;
                 internal float fogScatteringCoeff;
+                internal Matrix4x4 viewProjection;
             }
 
             private sealed class CompositePassData
@@ -217,6 +245,11 @@ namespace Hecton8.Visor
                     _settings.ResolveRaymarchSteps(),
                     Mathf.Clamp01(_settings.jitterStrength),
                     Mathf.Clamp01(_settings.minimumTransmittance));
+                Vector4 shadowParams = new Vector4(
+                    _settings.ResolveVolumetricShadowSteps(),
+                    Mathf.Max(0.1f, _settings.volumetricShadowDistance),
+                    Mathf.Max(0.001f, _settings.volumetricShadowBias),
+                    Mathf.Max(0f, _settings.volumetricShadowStrength));
                 Vector4 compositeParams = new Vector4(Mathf.Max(0.01f, _settings.bilateralDepthScale), 0f, 0f, 0f);
 
                 using (var builder = renderGraph.AddComputePass("Hecton Volumetric Light Raymarch", out RaymarchPassData passData, _profilingSampler))
@@ -235,7 +268,9 @@ namespace Hecton8.Visor
                     passData.scatteringParams = scatteringParams;
                     passData.hudFogPerturbation = hudFogPerturbation;
                     passData.marchParams = marchParams;
+                    passData.shadowParams = shadowParams;
                     passData.fogScatteringCoeff = Mathf.Max(0f, fogScatteringCoeff);
+                    passData.viewProjection = viewProjection;
 
                     builder.UseTexture(depthTexture, AccessFlags.Read);
                     builder.UseTexture(halfTexture, AccessFlags.Write);
@@ -254,7 +289,9 @@ namespace Hecton8.Visor
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.ScatteringParamsId, data.scatteringParams);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.HudFogPerturbationId, data.hudFogPerturbation);
                         context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.MarchParamsId, data.marchParams);
+                        context.cmd.SetComputeVectorParam(data.computeShader, ShaderConstants.ShadowParamsId, data.shadowParams);
                         context.cmd.SetComputeFloatParam(data.computeShader, ShaderConstants.FogScatteringCoeffId, data.fogScatteringCoeff);
+                        context.cmd.SetComputeMatrixParam(data.computeShader, ShaderConstants.ViewProjectionId, data.viewProjection);
                         context.cmd.DispatchCompute(data.computeShader, data.kernelIndex, dispatchX, dispatchY, 1);
                     });
                 }
@@ -359,7 +396,9 @@ namespace Hecton8.Visor
             internal static readonly int HudFogPerturbationId = Shader.PropertyToID("_HectonHudFogPerturbation");
             internal static readonly int FogScatteringCoeffId = Shader.PropertyToID("_FogScatteringCoeff");
             internal static readonly int MarchParamsId = Shader.PropertyToID("_HectonVolumetricMarchParams");
+            internal static readonly int ShadowParamsId = Shader.PropertyToID("_HectonVolumetricShadowParams");
             internal static readonly int CompositeParamsId = Shader.PropertyToID("_HectonVolumetricCompositeParams");
+            internal static readonly int ViewProjectionId = Shader.PropertyToID("_HectonVolumetricViewProjection");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();

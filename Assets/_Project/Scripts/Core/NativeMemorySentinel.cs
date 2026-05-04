@@ -15,7 +15,9 @@ namespace Hecton8.Core
         Scene = 0,
         Session = 1,
         Permanent = 2,
-        TransientArena = 3
+        TransientArena = 3,
+        Temp = 4,
+        TempJob = 5
     }
 
     /// <summary>
@@ -24,14 +26,18 @@ namespace Hecton8.Core
     public static unsafe class NativeMemorySentinel
     {
         private const int MaxTrackedAllocations = 1024;
+        private const int LongLivedTransientFrameThreshold = 10000;
         private const string CriticalMemoryViolationPrefix = "CRITICAL_MEMORY_VIOLATION";
+        private const string MemoryLeakDetectedPrefix = "MEMORY_LEAK_DETECTED";
 
         private struct NativeAllocationRecord
         {
             public int Id;
             public IntPtr Pointer;
             public long Bytes;
+            public int AllocationFrame;
             public NativeAllocationLifetime Lifetime;
+            public bool LeakReported;
             public string Owner;
             public string Label;
             public string StackTrace;
@@ -321,6 +327,7 @@ namespace Hecton8.Core
                 Id = id,
                 Pointer = pointerValue,
                 Bytes = bytes,
+                AllocationFrame = Application.isPlaying ? Time.frameCount : 0,
                 Lifetime = lifetime,
                 Owner = owner,
                 Label = label,
@@ -454,6 +461,38 @@ namespace Hecton8.Core
                     $"{CriticalMemoryViolationPrefix}: UnsafeUtility leak detector reported {unsafeLeakCount} leak(s), sentinel scene records={reported}. context={context}");
             }
 #endif
+        }
+
+        /// <summary>
+        /// Reports Temp/TempJob native allocations that survived far beyond their legal transient window.
+        /// </summary>
+        public static void AuditLongLivedTransientAllocations(int currentFrame)
+        {
+            if (currentFrame <= 0)
+                return;
+
+            for (int i = 0; i < _count; i++)
+            {
+                NativeAllocationRecord record = _records[i];
+                if (record.LeakReported ||
+                    (record.Lifetime != NativeAllocationLifetime.Temp &&
+                     record.Lifetime != NativeAllocationLifetime.TempJob))
+                {
+                    continue;
+                }
+
+                int allocationFrame = record.AllocationFrame;
+                if (allocationFrame <= 0 ||
+                    currentFrame - allocationFrame <= LongLivedTransientFrameThreshold)
+                {
+                    continue;
+                }
+
+                record.LeakReported = true;
+                _records[i] = record;
+                Debug.LogError(
+                    $"{MemoryLeakDetectedPrefix}: {record.Lifetime} allocation survived {currentFrame - allocationFrame} frames. owner={record.Owner} label={record.Label} bytes={record.Bytes} pointer=0x{record.Pointer.ToInt64():X}\nALLOCATOR_STACK:\n{record.StackTrace}");
+            }
         }
 
         private static void RegisterSceneHooks()

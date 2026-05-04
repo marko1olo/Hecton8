@@ -3,10 +3,10 @@
 Status: implementation contract for hibernated fauna sectors.
 Verification: PENDING VERIFICATION
 
-2026-05-02 current-state boundary:
+2026-05-04 current-state boundary:
 
 - This is the headless ecosystem implementation contract, not proof of live headless correctness.
-- Current project-state orientation starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - Headless fauna, AUP route ownership, hibernation catch-up, and save-sector reconciliation remain high-risk until runtime tests prove no presentation dependency and no persistence drift.
 
 Missing prerequisite: `Docs/ARCHITECTURE/AI_PACING_MODEL.md` was requested by the operation prompt but is not present in this repository. This document anchors the current implementation against `EcosystemDirector`, `FaunaDirector`, and `PersistentWorldRegistry`.

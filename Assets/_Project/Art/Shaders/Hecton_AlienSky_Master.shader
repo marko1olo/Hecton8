@@ -249,6 +249,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
             float4 _SunDirection;
             float4 _AegirDirection;
+            float4 _MeteorShowerParams;     // x=intensity, y=seed, z=synced flash, w=event age
+            float4 _MeteorShowerDirection;  // xy=sky UV travel direction, z=streak length, w=streak width
 
             static const half  HALF_ZERO = 0.0h;
             static const half  HALF_ONE  = 1.0h;
@@ -298,6 +300,66 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 float3 p3 = frac(float3(p.xyx) * 0.1031);
                 p3 += dot(p3, p3.yzx + 33.33);
                 return frac((p3.x + p3.y) * p3.z);
+            }
+
+            half3 SampleMeteorGpuParticles(float3 Vf, half zenithMask, half skyVisibility)
+            {
+                float intensity = saturate(_MeteorShowerParams.x);
+                if (intensity <= 0.0001 || zenithMask <= 0.001h || skyVisibility <= 0.001h)
+                    return half3(0.0h, 0.0h, 0.0h);
+
+                float2 meteorUV;
+                meteorUV.x = atan2(Vf.z, Vf.x) * (0.5 / 3.14159265) + 0.5;
+                meteorUV.y = asin(Vf.y) * (1.0 / 3.14159265) + 0.5;
+
+                float2 travelDir = _MeteorShowerDirection.xy;
+                float travelLenSq = dot(travelDir, travelDir);
+                travelDir = travelLenSq < 0.0001
+                    ? float2(-0.907, -0.421)
+                    : travelDir * rsqrt(travelLenSq);
+                float2 sideDir = float2(-travelDir.y, travelDir.x);
+
+                float streakLength = max(_MeteorShowerDirection.z, 0.02);
+                float streakWidth = max(_MeteorShowerDirection.w, 0.0005);
+                float eventAge = max(_MeteorShowerParams.w, 0.0);
+                float seed = _MeteorShowerParams.y;
+                float streamTime = eventAge * 2.25 + seed * 0.013;
+
+                half3 meteor = half3(0.0h, 0.0h, 0.0h);
+                [unroll]
+                for (int i = 0; i < 6; i++)
+                {
+                    float streamId = floor(streamTime) - (float)i;
+                    float localT = frac(streamTime + hash(float2(streamId, seed + (float)i * 13.17)));
+                    float active = step(0.40, hash(float2(streamId + 19.0, seed + 31.0)));
+                    float2 origin = float2(
+                        hash(float2(streamId + 3.0, seed + 7.0)),
+                        lerp(0.56, 0.98, hash(float2(streamId + 11.0, seed + 23.0))));
+                    float2 head = origin + travelDir * ((localT - 0.18) * 0.74);
+
+                    float2 delta = meteorUV - head;
+                    delta.x = frac(delta.x + 0.5) - 0.5;
+
+                    float behind = dot(delta, -travelDir);
+                    float lateral = abs(dot(delta, sideDir));
+                    float width = streakWidth * lerp(0.7, 1.45, hash(float2(streamId + 41.0, seed)));
+                    float trail = smoothstep(streakLength, 0.0, behind) * step(0.0, behind);
+                    float core = smoothstep(width, 0.0, lateral) * trail;
+                    float headCore = smoothstep(width * 2.4, 0.0, length(delta));
+                    float birthFade = smoothstep(0.03, 0.16, localT) * (1.0 - smoothstep(0.82, 1.0, localT));
+                    float energy = active * birthFade * (core + headCore * 1.45);
+
+                    half warmth = (half)hash(float2(streamId + 71.0, seed));
+                    half3 meteorColor = lerp(
+                        half3(0.62h, 0.82h, 1.0h),
+                        half3(1.0h, 0.74h, 0.52h),
+                        warmth);
+                    meteor += meteorColor * (half)energy;
+                }
+
+                half syncedFlash = (half)saturate(_MeteorShowerParams.z);
+                meteor += half3(0.62h, 0.78h, 1.0h) * syncedFlash * 0.42h;
+                return meteor * (half)intensity * skyVisibility * zenithMask;
             }
 
             float2 ComputeSkyUV(float3 V, float2 tiling, float speedMult)
@@ -521,6 +583,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 }
 
                 skyColor += starContrib;
+                half meteorVisibility = saturate(max(nightFactor, (half)_EclipseOcclusion) + saturate(-sunElevation * 2.0h) * 0.35h);
+                skyColor += SampleMeteorGpuParticles(Vf, zenithMask, meteorVisibility);
 
                 // =======================================
                 // LAYER 3: HORIZON HAZE

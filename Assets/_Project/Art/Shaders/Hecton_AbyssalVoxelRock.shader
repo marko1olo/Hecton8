@@ -5,6 +5,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [MainTexture] _Base_Map ("Base Map", 2D) = "white" {}
         [NoScaleOffset] _Normal_Map ("Normal Map", 2D) = "bump" {}
         [NoScaleOffset] _Mask_Map ("Mask Map", 2D) = "white" {}
+        [NoScaleOffset] _FreshRockAlbedoMap ("Fresh Rock Albedo Map", 2D) = "white" {}
+        [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
         _Instance_Color ("Instance Color", Color) = (1, 1, 1, 1)
         _Tiling ("Tiling", Range(0.01, 4)) = 0.2
         _Smoothness ("Smoothness", Range(0, 1)) = 0.15
@@ -25,6 +27,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _CurvatureEdgeWearStrength ("Curvature Edge Wear Strength", Range(0, 1)) = 0.24
         _CurvatureCavityDarkenStrength ("Curvature Cavity Darken Strength", Range(0, 1)) = 0.28
         _CurvatureContrast ("Curvature Contrast", Range(0.5, 4)) = 1.35
+        _FreshCutColorBoost ("Fresh Cut Color Boost", Range(1, 2)) = 1.18
+        _FreshCutNormalBoost ("Fresh Cut Normal Boost", Range(1, 3)) = 1.45
         _LocalCausticStrength ("Local Caustic Strength", Range(0, 1)) = 0.22
         _LocalCausticScale ("Local Caustic Scale", Range(0.1, 4)) = 0.7
         _LocalCausticSpeed ("Local Caustic Speed", Range(0, 4)) = 0.36
@@ -67,6 +71,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _CurvatureEdgeWearStrength;
             float _CurvatureCavityDarkenStrength;
             float _CurvatureContrast;
+            float _FreshCutColorBoost;
+            float _FreshCutNormalBoost;
             float _LocalCausticStrength;
             float _LocalCausticScale;
             float _LocalCausticSpeed;
@@ -97,6 +103,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         SAMPLER(sampler_Normal_Map);
         TEXTURE2D(_Mask_Map);
         SAMPLER(sampler_Mask_Map);
+        TEXTURE2D(_FreshRockAlbedoMap);
+        SAMPLER(sampler_FreshRockAlbedoMap);
+        TEXTURE2D(_FreshRockNormalMap);
+        SAMPLER(sampler_FreshRockNormalMap);
         TEXTURE2D(_HectonVoxelSSAOTex);
         SAMPLER(sampler_HectonVoxelSSAOTex);
         TEXTURE2D(_SargassumCutMaskRT);
@@ -110,6 +120,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float3 normalOS : NORMAL;
             float4 color : COLOR;
             float4 bakedAmbientOcclusion : TEXCOORD1;
+            float4 dirtyBlendUv2 : TEXCOORD2;
             float3 absolutePositionWS : TEXCOORD3;
         };
 
@@ -124,6 +135,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float3 absolutePositionWS : TEXCOORD5;
             half curvature : TEXCOORD6;
             half bakedAmbientOcclusion : TEXCOORD7;
+            half freshCutBlend : TEXCOORD8;
         };
 
         struct ClipVaryings
@@ -240,6 +252,25 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             normalX = half3(normalX.z * normalSign.x, normalX.y, normalX.x);
 
             half3 normalZ = UnpackNormal(SAMPLE_TEXTURE2D(_Normal_Map, sampler_Normal_Map, positionWS.xy * tiling));
+            normalZ = half3(normalZ.x, normalZ.y, normalZ.z * normalSign.z);
+
+            return SafeNormalize3(normalX * weights.x + normalY * weights.y + normalZ * weights.z);
+        }
+
+        half3 SampleFreshTriplanarNormal(float3 positionWS, half3 baseNormalWS, half3 weights)
+        {
+            half3 normalSign = sign(baseNormalWS);
+            float tiling = max(_Tiling, 0.0001);
+
+            half3 normalY = UnpackNormal(SAMPLE_TEXTURE2D(_FreshRockNormalMap, sampler_FreshRockNormalMap, positionWS.xz * tiling));
+            normalY = half3(normalY.x, normalY.z * normalSign.y, normalY.y);
+            if (weights.y >= 0.999h)
+                return SafeNormalize3(normalY);
+
+            half3 normalX = UnpackNormal(SAMPLE_TEXTURE2D(_FreshRockNormalMap, sampler_FreshRockNormalMap, positionWS.zy * tiling));
+            normalX = half3(normalX.z * normalSign.x, normalX.y, normalX.x);
+
+            half3 normalZ = UnpackNormal(SAMPLE_TEXTURE2D(_FreshRockNormalMap, sampler_FreshRockNormalMap, positionWS.xy * tiling));
             normalZ = half3(normalZ.x, normalZ.y, normalZ.z * normalSign.z);
 
             return SafeNormalize3(normalX * weights.x + normalY * weights.y + normalZ * weights.z);
@@ -439,6 +470,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             output.absolutePositionWS = input.absolutePositionWS;
             output.curvature = saturate(input.color.a);
             output.bakedAmbientOcclusion = HectonCoreLitResolveVertexAmbientOcclusion(input.bakedAmbientOcclusion.w);
+            output.freshCutBlend = saturate(input.dirtyBlendUv2.x);
             output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
             return output;
@@ -506,15 +538,19 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half3 triplanarWeights = ComputeTriplanarWeights(baseNormalWS);
                 float3 samplePositionWS = input.absolutePositionWS;
                 half3 triplanarNormalWS = SampleTriplanarNormal(samplePositionWS, baseNormalWS, triplanarWeights);
-                half3 normalWS = SafeNormalize3(baseNormalWS + triplanarNormalWS);
+                half3 freshNormalWS = SampleFreshTriplanarNormal(samplePositionWS, baseNormalWS, triplanarWeights);
 
                 half4 baseSample = SampleTriplanarColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, triplanarWeights);
+                half4 freshSample = SampleTriplanarColor(TEXTURE2D_ARGS(_FreshRockAlbedoMap, sampler_FreshRockAlbedoMap), samplePositionWS, triplanarWeights);
                 half4 maskSample = SampleTriplanarColor(TEXTURE2D_ARGS(_Mask_Map, sampler_Mask_Map), samplePositionWS, triplanarWeights);
                 half cutMask = max(EvaluateGlobalCutMask(input.positionWS), EvaluateDamageVolumeMask(input.positionWS));
+                half freshCutMask = saturate(max(input.freshCutBlend, cutMask));
                 half scarMask = pow(saturate(cutMask), max(_CutScarSharpness, 0.5h));
                 half recentHeatMask;
                 half recentHeatAge01;
                 EvaluateRecentCutHeat(input.positionWS, recentHeatMask, recentHeatAge01);
+                half3 boostedNormalWS = lerp(triplanarNormalWS, freshNormalWS, freshCutMask) * lerp(1.0h, (half)_FreshCutNormalBoost, freshCutMask);
+                half3 normalWS = SafeNormalize3(baseNormalWS + boostedNormalWS);
                 half skirtBlend = 1.0h - skirtCoverage;
                 half curvature = saturate(input.curvature);
                 half curvatureContrast = max(_CurvatureContrast, 0.5h);
@@ -522,6 +558,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half cavityMask = pow(saturate((0.5h - curvature) * 2.0h), curvatureContrast);
 
                 half3 albedo = baseSample.rgb * _Instance_Color.rgb;
+                half3 freshAlbedo = freshSample.rgb * _Instance_Color.rgb * (half)_FreshCutColorBoost;
+                albedo = lerp(albedo, freshAlbedo, freshCutMask * 0.62h);
                 albedo = lerp(albedo, _SkirtSandTint.rgb, skirtBlend * 0.72h);
                 albedo = lerp(albedo, lerp(albedo, _CurvatureWearTint.rgb, 0.4h), convexMask * _CurvatureEdgeWearStrength);
                 albedo *= 1.0h - cavityMask * (_CurvatureCavityDarkenStrength * 0.32h);

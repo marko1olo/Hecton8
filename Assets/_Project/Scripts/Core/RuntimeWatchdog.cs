@@ -1,4 +1,9 @@
+using System;
+using System.Diagnostics;
+using System.Globalization;
+using System.IO;
 using System.Threading;
+using Hecton8.UI;
 using UnityEngine;
 
 namespace Hecton8.Core
@@ -28,6 +33,8 @@ namespace Hecton8.Core
         private const int LaneCapacity = 32;
         private const int SampleIntervalFrames = 60;
         private const double StallThresholdSeconds = 5.0;
+        private const string DeadlockTraceFilePrefix = "runtime_watchdog_deadlock_";
+        private const string DeadlockTraceFileExtension = ".txt";
 
         // COLD ALLOC: int[32] - cross-thread liveness counters - owner: RuntimeWatchdog
         private static readonly int[] _heartbeatCounters = new int[LaneCapacity];
@@ -150,9 +157,126 @@ namespace Hecton8.Core
                 CrashTelemetryBuffer.ReportRuntimeWatchdogStall(
                     unchecked((uint)laneIndex),
                     unchecked((uint)currentCounter));
+                WriteDeadlockTraceDump(laneIndex, currentCounter, now - lastChange);
                 Application.Quit(-1);
                 return;
             }
+        }
+
+        private static void WriteDeadlockTraceDump(int laneIndex, int counter, double stalledSeconds)
+        {
+            try
+            {
+                string directory = ResolveExecutableAdjacentDirectory();
+                Directory.CreateDirectory(directory);
+                string fileName = DeadlockTraceFilePrefix +
+                                  DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture) +
+                                  DeadlockTraceFileExtension;
+                string path = Path.Combine(directory, fileName);
+                string stackTrace = new StackTrace(skipFrames: 0, fNeedFileInfo: true).ToString();
+
+                if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+                {
+                    File.WriteAllText(path, stackTrace);
+                    return;
+                }
+
+                try
+                {
+                    int length = 0;
+                    char[] buffer = lease.Buffer;
+                    AppendLiteral(buffer, ref length, "HECTON8_RUNTIME_WATCHDOG_DEADLOCK");
+                    AppendLine(buffer, ref length);
+                    AppendLiteral(buffer, ref length, "frame=");
+                    AppendInt(buffer, ref length, Time.frameCount);
+                    AppendLiteral(buffer, ref length, " lane=");
+                    AppendInt(buffer, ref length, laneIndex);
+                    AppendLiteral(buffer, ref length, " counter=");
+                    AppendInt(buffer, ref length, counter);
+                    AppendLiteral(buffer, ref length, " stalledSeconds=");
+                    AppendDouble(buffer, ref length, stalledSeconds);
+                    AppendLine(buffer, ref length);
+                    AppendLiteral(buffer, ref length, "mainThreadStack:");
+                    AppendLine(buffer, ref length);
+
+                    File.WriteAllText(path, new string(buffer, 0, length));
+                    File.AppendAllText(path, stackTrace);
+                }
+                finally
+                {
+                    CharBufferPool.Release(lease);
+                }
+            }
+            catch (Exception exception)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                UnityEngine.Debug.LogError("[RuntimeWatchdog] Failed to write deadlock trace dump: " + exception.Message);
+#endif
+            }
+        }
+
+        private static string ResolveExecutableAdjacentDirectory()
+        {
+            DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
+            return dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
+        }
+
+        private static void AppendLiteral(char[] buffer, ref int length, string value)
+        {
+            if (buffer == null || string.IsNullOrEmpty(value))
+                return;
+
+            for (int i = 0; i < value.Length && length < buffer.Length; i++)
+                buffer[length++] = value[i];
+        }
+
+        private static void AppendLine(char[] buffer, ref int length)
+        {
+            if (buffer == null || length >= buffer.Length)
+                return;
+
+            buffer[length++] = '\n';
+        }
+
+        private static void AppendInt(char[] buffer, ref int length, int value)
+        {
+            if (buffer == null || length >= buffer.Length)
+                return;
+
+            if (value == 0)
+            {
+                buffer[length++] = '0';
+                return;
+            }
+
+            if (value < 0)
+            {
+                buffer[length++] = '-';
+                value = -value;
+            }
+
+            int start = length;
+            while (value > 0 && length < buffer.Length)
+            {
+                int digit = value % 10;
+                buffer[length++] = (char)('0' + digit);
+                value /= 10;
+            }
+
+            int end = length - 1;
+            while (start < end)
+            {
+                char temp = buffer[start];
+                buffer[start] = buffer[end];
+                buffer[end] = temp;
+                start++;
+                end--;
+            }
+        }
+
+        private static void AppendDouble(char[] buffer, ref int length, double value)
+        {
+            AppendLiteral(buffer, ref length, value.ToString("0.000", CultureInfo.InvariantCulture));
         }
 
         private void TryRegisterUpdatable()

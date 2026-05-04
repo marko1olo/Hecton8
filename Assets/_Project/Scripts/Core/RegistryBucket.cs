@@ -122,6 +122,27 @@ namespace Hecton8.Core
         /// <returns>True when the item was found and removed.</returns>
         public bool Unregister(T item)
         {
+            if (TryUnregister(item))
+                return true;
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            if (!_unregisterMissLogged)
+            {
+                UnityEngine.Debug.LogWarning(
+                    $"[GlobalRegistry] Unregister called for non-registered {typeof(T).Name}.");
+                _unregisterMissLogged = true;
+            }
+#endif
+            return false;
+        }
+
+        /// <summary>
+        /// Removes an item without emitting a miss warning; used by idempotent lifecycle teardown paths.
+        /// </summary>
+        /// <param name="item">Item instance to remove.</param>
+        /// <returns>True when the item was found and removed.</returns>
+        public bool TryUnregister(T item)
+        {
             for (int i = 0; i < _count; i++)
             {
                 if (!ReferenceEquals(_items[i], item))
@@ -138,14 +159,6 @@ namespace Hecton8.Core
                 return true;
             }
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (!_unregisterMissLogged)
-            {
-                UnityEngine.Debug.LogWarning(
-                    $"[GlobalRegistry] Unregister called for non-registered {typeof(T).Name}.");
-                _unregisterMissLogged = true;
-            }
-#endif
             return false;
         }
 

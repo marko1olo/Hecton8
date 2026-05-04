@@ -33,10 +33,12 @@ namespace Hecton8.Dev
 
         private void Start()
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!runOnStart || _isRunning)
                 return;
 
             _ = RunSmokePassAsync(destroyCancellationToken);
+#endif
         }
 
 #if UNITY_EDITOR
@@ -95,7 +97,7 @@ namespace Hecton8.Dev
                     waitedFrames++;
                     if (waitedFrames > maxWaitFrames)
                     {
-                        Debug.LogError("[BaseStressSmoke] FAIL Jacobi evaluation did not complete inside wait window.");
+                        LogTimeoutFailure();
                         return;
                     }
 
@@ -104,32 +106,22 @@ namespace Hecton8.Dev
 
                 LogisticsNetworkGraph.DistributionSummary summary = graph.GetScheduledDistributionSummary();
                 bool generationWasEnough = summary.TotalGeneration + 0.01f >= summary.TotalConsumption;
-                bool voltageBrownoutOccurred = summary.ServedDemand > 0.01f &&
+                bool nearLoadPowered = graph.IsConsumerPowered(0);
+                bool farLoadPowered = graph.IsConsumerPowered(1);
+                bool voltageBrownoutOccurred = nearLoadPowered &&
+                                                !farLoadPowered &&
+                                                summary.ServedDemand > 0.01f &&
                                                 summary.UnservedDemand > 0.01f &&
                                                 summary.BrownoutTier != LogisticsBrownoutTier.None;
 
                 if (!generationWasEnough || !voltageBrownoutOccurred)
                 {
-                    Debug.LogError(
-                        "[BaseStressSmoke] FAIL Jacobi voltage relaxation did not isolate the high-resistance load. " +
-                        "gen=" + summary.TotalGeneration.ToString("0.###") +
-                        " demand=" + summary.TotalConsumption.ToString("0.###") +
-                        " served=" + summary.ServedDemand.ToString("0.###") +
-                        " unserved=" + summary.UnservedDemand.ToString("0.###") +
-                        " tier=" + summary.BrownoutTier);
+                    LogVoltageRelaxationFailure(summary, nearLoadPowered, farLoadPowered);
                     return;
                 }
 
                 if (verboseLogging)
-                {
-                    Debug.Log(
-                        "[BaseStressSmoke] PASS Jacobi voltage relaxation. " +
-                        "gen=" + summary.TotalGeneration.ToString("0.###") +
-                        " demand=" + summary.TotalConsumption.ToString("0.###") +
-                        " served=" + summary.ServedDemand.ToString("0.###") +
-                        " unserved=" + summary.UnservedDemand.ToString("0.###") +
-                        " tier=" + summary.BrownoutTier);
-                }
+                    LogVoltageRelaxationPass(summary);
             }
             finally
             {
@@ -154,6 +146,44 @@ namespace Hecton8.Dev
             graph.AddConsumer(nearLoadNode, nearDemandWatts, 50, 1, LogisticsConsumerFlags.Essential);
             graph.AddConsumer(farLoadNode, farDemandWatts, 50, 2, LogisticsConsumerFlags.AmbientLighting);
             graph.FinalizeBuild();
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogTimeoutFailure()
+        {
+            Debug.LogError("[BaseStressSmoke] FAIL Jacobi evaluation did not complete inside wait window.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogVoltageRelaxationFailure(
+            LogisticsNetworkGraph.DistributionSummary summary,
+            bool nearLoadPowered,
+            bool farLoadPowered)
+        {
+            Debug.LogError(
+                "[BaseStressSmoke] FAIL Jacobi voltage relaxation did not isolate the high-resistance load. " +
+                "gen=" + summary.TotalGeneration.ToString("0.###") +
+                " demand=" + summary.TotalConsumption.ToString("0.###") +
+                " served=" + summary.ServedDemand.ToString("0.###") +
+                " unserved=" + summary.UnservedDemand.ToString("0.###") +
+                " nearPowered=" + nearLoadPowered +
+                " farPowered=" + farLoadPowered +
+                " tier=" + summary.BrownoutTier);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogVoltageRelaxationPass(LogisticsNetworkGraph.DistributionSummary summary)
+        {
+            Debug.Log(
+                "[BaseStressSmoke] PASS Jacobi voltage relaxation. " +
+                "gen=" + summary.TotalGeneration.ToString("0.###") +
+                " demand=" + summary.TotalConsumption.ToString("0.###") +
+                " served=" + summary.ServedDemand.ToString("0.###") +
+                " unserved=" + summary.UnservedDemand.ToString("0.###") +
+                " tier=" + summary.BrownoutTier);
         }
     }
 }

@@ -58,6 +58,7 @@ using Hecton8.World;
 using NASAPunk.Visor;
 using UnityEngine;
 using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -74,7 +75,7 @@ namespace Hecton8.Environment
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4000)]
-    public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, IRenderable, ISoundscapeEventListener, IBiomeMatrixEventListener, IMapMagicBiomeEventListener
+    public sealed class HectonUnderwaterVisuals : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IRenderable, ISoundscapeEventListener, IBiomeMatrixEventListener, IMapMagicBiomeEventListener
     {
 #if UNITY_EDITOR
         private const string HudFogLuminanceComputeAssetPath = "Assets/_Project/Art/Shaders/HectonHudFogLuminance.compute";
@@ -316,6 +317,8 @@ namespace Hecton8.Environment
         [UnityEngine.Range(0.05f, 2.0f)]
         [SerializeField] private float biomeTransitionSpeed = 0.2f;
         [SerializeField] private float slowTickInterval = 0.5f;
+        [Tooltip("AUP transition band used by biome fog blending when Matrix events do not provide authored biome edge points.")]
+        [SerializeField, UnityEngine.Range(4f, 160f)] private float biomeFogTransitionLengthMeters = 48f;
 
         [Header("ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â SUBMERGE IMPULSE ÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚ÂÃƒÂ¢Ã¢â‚¬Â¢Ã‚Â")]
         [SerializeField, UnityEngine.Range(0f, 0.6f)] private float submergeDarkenStrength = 0.2f;
@@ -678,6 +681,9 @@ namespace Hecton8.Environment
         private const float UnderwaterScatterLuminanceFloor = 0.06f;
         private const float SharedOceanUnderwaterScatterLuminanceFloor = 0.48f;
         private const float CrestSkyDirectionality = 0.78f;
+        private const int BiomeFogSourceCapacity = 256;
+        private const byte BiomeFogOverrideFromId = 254;
+        private const byte BiomeFogOverrideToId = 255;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  RUNTIME STATE
@@ -693,6 +699,23 @@ namespace Hecton8.Environment
         private Rigidbody _playerRigidbody;
         private PlayerTransportCoordinator _playerTransportCoordinator;
         private HectonBiomeProfile _matrixRuntimeVisualProfile;
+        private HectonBiomeMatrixProfile _activeMatrixFogProfile;
+        private HectonBiomeProfile _biomeFogFromProfile;
+        private HectonBiomeProfile _biomeFogToProfile;
+        private byte _biomeFogFromId;
+        private byte _biomeFogToId;
+        private float _biomeFogFallbackBlend01 = 1f;
+        private AbsoluteUniversePositionBlit128 _biomeFogTransitionFromAup;
+        private AbsoluteUniversePositionBlit128 _biomeFogTransitionToAup;
+        private bool _biomeFogTransitionActive;
+        private bool _biomeFogBlendScheduled;
+        private JobHandle _biomeFogBlendHandle;
+        private NativeArray<BiomeTransitionSample> _biomeFogSamples;
+        private NativeArray<BiomeTransitionFogSource> _biomeFogSources;
+        private NativeArray<AbsoluteUniversePositionBlit128> _biomeFogFromAup;
+        private NativeArray<AbsoluteUniversePositionBlit128> _biomeFogToAup;
+        private NativeArray<AbsoluteUniversePositionBlit128> _biomeFogPlayerAup;
+        private NativeArray<BiomeTransitionFogResult> _biomeFogResults;
         private WorldProceduralFaunaMood _currentFaunaMood;
         private string _currentFaunaAmbienceSummary;
         private float _ecologySuspendedMotesMultiplier = 1f;
@@ -718,6 +741,7 @@ namespace Hecton8.Environment
         private Vector3 _currentDepthFogDensity;
         private Color   _currentFogColor;
         private float   _currentTurbidity;
+        private float   _currentBiomeFogDensityScale = 1f;
         private Color   _currentAmbientColor;
 
         private Color   _targetScatterBase;
@@ -725,6 +749,8 @@ namespace Hecton8.Environment
         private Vector3 _targetDepthFogDensity;
         private Color   _targetFogColor;
         private float   _targetTurbidity;
+        private float   _targetBiomeFogDensityScale = 1f;
+        private float   _targetBiomeAbsorption = 0.9f;
         private Color   _targetAmbientColor;
 
         private float _transitionProgress;
@@ -746,6 +772,7 @@ namespace Hecton8.Environment
         private bool _registeredRenderable;
         private bool _registeredTick;
         private bool _registeredSlowTick;
+        private bool _registeredLateFrameTick;
         private bool _renderSettingsGuardAcquired;
         private bool _wasUnderwater;
         private DepthZoneProfile _lastDepthZoneProfile;
@@ -1165,6 +1192,11 @@ namespace Hecton8.Environment
                     GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
                     _registeredSlowTick = false;
                 }
+                if (_registeredLateFrameTick)
+                {
+                    GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
+                    _registeredLateFrameTick = false;
+                }
             }
 #if UNITY_EDITOR
             else
@@ -1195,6 +1227,7 @@ namespace Hecton8.Environment
             RestoreSkyMaterialDefaults();
             ReleaseRuntimeSkyboxMaterial();
             ReleaseHudFogLuminanceResources();
+            ReleaseBiomeFogBlendBuffers();
             Shader.SetGlobalVector(_SargassumCanopyShadowParamsId, Vector4.zero);
             Shader.SetGlobalVector(_SargassumCanopyLightingParamsId, new Vector4(0f, 0f, 1f, 0f));
             ResetNoirResolveGlobals();
@@ -1237,6 +1270,7 @@ namespace Hecton8.Environment
             }
 
             ReleaseHudFogLuminanceResources();
+            ReleaseBiomeFogBlendBuffers();
         }
 
 #if UNITY_EDITOR
@@ -1616,6 +1650,13 @@ namespace Hecton8.Environment
             ApplyNoirResolveGlobals();
         }
 
+        public void LateFrameTick()
+        {
+            EnsureGameplayCameraStackEnabled();
+            EnsureCrestUnderwaterPassOwnership();
+            TryCompleteBiomeFogBlendJob();
+        }
+
         /// <summary>
         /// Applies the current per-camera underwater fog state through the registry-owned render dispatcher.
         /// </summary>
@@ -1650,6 +1691,7 @@ namespace Hecton8.Environment
 
             float lerpT = math.saturate(biomeTransitionSpeed * slowTickInterval);
             InterpolateBiomeParameters(lerpT);
+            ScheduleBiomeFogBlendJob(lerpT);
 
             ApplyCrestMaterial();
         }
@@ -2106,6 +2148,7 @@ namespace Hecton8.Environment
 
             float baseDensity = Mathf.Lerp(maxFogDensity, minFogDensity, lightFactor);
             float targetDensity = baseDensity * _currentTurbidity;
+            targetDensity *= _currentBiomeFogDensityScale;
             targetDensity *= _soundscapeFogDensityScale;
             targetDensity *= 1f + (submergeFogBoost * submergeImpulse);
             targetDensity *= 1f + (canopyOcclusion01 * sargassumCanopyFogBoost);
@@ -2842,6 +2885,10 @@ namespace Hecton8.Environment
                 _currentFogColor, _targetFogColor, lerpT);
             _currentTurbidity = Mathf.Lerp(
                 _currentTurbidity, _targetTurbidity, lerpT);
+            _currentBiomeFogDensityScale = Mathf.Lerp(
+                _currentBiomeFogDensityScale, _targetBiomeFogDensityScale, lerpT);
+            biomeAbsorption = Mathf.Lerp(
+                biomeAbsorption, _targetBiomeAbsorption, lerpT);
             _currentAmbientColor = Color.Lerp(
                 _currentAmbientColor, _targetAmbientColor, lerpT);
 
@@ -2853,6 +2900,239 @@ namespace Hecton8.Environment
             _debugTransitionProgress = _transitionProgress;
             _debugTurbidity          = _currentTurbidity;
 #endif
+        }
+
+        private void CaptureBiomeFogTransition(
+            HectonBiomeMatrixProfile previousProfile,
+            HectonBiomeMatrixProfile nextProfile)
+        {
+            HectonBiomeProfile fromProfile = ResolveMatrixRuntimeVisualProfile(previousProfile);
+            if (fromProfile == null)
+                fromProfile = _matrixRuntimeVisualProfile != null
+                    ? _matrixRuntimeVisualProfile
+                    : ResolvePaletteProfile(_targetBiomeIndex);
+
+            HectonBiomeProfile toProfile = ResolveMatrixRuntimeVisualProfile(nextProfile);
+            if (toProfile == null)
+                toProfile = ResolvePaletteProfile(_targetBiomeIndex);
+
+            _biomeFogFromProfile = fromProfile;
+            _biomeFogToProfile = toProfile;
+            _biomeFogFromId = ResolveMatrixBiomeByte(previousProfile, _targetBiomeIndex);
+            _biomeFogToId = ResolveMatrixBiomeByte(nextProfile, _targetBiomeIndex);
+            if (!ReferenceEquals(fromProfile, toProfile) && _biomeFogFromId == _biomeFogToId)
+            {
+                _biomeFogFromId = BiomeFogOverrideFromId;
+                _biomeFogToId = BiomeFogOverrideToId;
+            }
+
+            _biomeFogFallbackBlend01 = ReferenceEquals(fromProfile, toProfile) ? 1f : 0f;
+            _biomeFogTransitionActive = fromProfile != null && toProfile != null && !ReferenceEquals(fromProfile, toProfile);
+
+            CaptureBiomeFogTransitionAnchors();
+        }
+
+        private void CaptureBiomeFogTransitionAnchors()
+        {
+            Transform cameraTransform = playerCamera;
+            Vector3 center = cameraTransform != null ? cameraTransform.position : Vector3.zero;
+            Vector3 forward = cameraTransform != null ? cameraTransform.forward : Vector3.forward;
+            forward.y = 0f;
+            if (forward.sqrMagnitude <= 0.0001f)
+                forward = Vector3.forward;
+            else
+                forward.Normalize();
+
+            float halfLength = Mathf.Max(4f, biomeFogTransitionLengthMeters) * 0.5f;
+            _biomeFogTransitionFromAup = BuildAupFromRuntimePosition(center - forward * halfLength);
+            _biomeFogTransitionToAup = BuildAupFromRuntimePosition(center + forward * halfLength);
+        }
+
+        private void ScheduleBiomeFogBlendJob(float lerpT)
+        {
+            if (!Application.isPlaying ||
+                !_biomeFogTransitionActive ||
+                _biomeFogBlendScheduled ||
+                _biomeFogFromProfile == null ||
+                _biomeFogToProfile == null ||
+                !EnsureBiomeFogBlendBuffers())
+            {
+                return;
+            }
+
+            Transform cameraTransform = playerCamera;
+            Vector3 playerPosition = cameraTransform != null ? cameraTransform.position : Vector3.zero;
+            _biomeFogFallbackBlend01 = math.saturate(_biomeFogFallbackBlend01 + math.max(0.001f, lerpT));
+            _biomeFogSamples[0] = new BiomeTransitionSample
+            {
+                FromBiomeId = _biomeFogFromId,
+                ToBiomeId = _biomeFogToId,
+                Blend255 = (byte)Mathf.Clamp(Mathf.RoundToInt(_biomeFogFallbackBlend01 * 255f), 0, 255),
+                Flags = 0
+            };
+            _biomeFogSources[_biomeFogFromId] = BuildBiomeFogSource(_biomeFogFromProfile);
+            _biomeFogSources[_biomeFogToId] = BuildBiomeFogSource(_biomeFogToProfile);
+            _biomeFogFromAup[0] = _biomeFogTransitionFromAup;
+            _biomeFogToAup[0] = _biomeFogTransitionToAup;
+            _biomeFogPlayerAup[0] = BuildAupFromRuntimePosition(playerPosition);
+
+            BiomeTransitionFogBlendJob job = new BiomeTransitionFogBlendJob
+            {
+                Samples = _biomeFogSamples,
+                FogSourcesByBiomeId = _biomeFogSources,
+                FromAup = _biomeFogFromAup,
+                ToAup = _biomeFogToAup,
+                PlayerAup = _biomeFogPlayerAup,
+                Results = _biomeFogResults,
+                TransitionLengthMeters = Mathf.Max(4f, biomeFogTransitionLengthMeters)
+            };
+
+            _biomeFogBlendHandle = job.Schedule(1, 1);
+            _biomeFogBlendScheduled = true;
+        }
+
+        private void TryCompleteBiomeFogBlendJob()
+        {
+            if (!_biomeFogBlendScheduled)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _biomeFogBlendHandle, forceComplete: false))
+                return;
+
+            _biomeFogBlendScheduled = false;
+            CommitBiomeFogBlendResult(_biomeFogResults[0]);
+        }
+
+        private void CommitBiomeFogBlendResult(in BiomeTransitionFogResult result)
+        {
+            _currentFogColor = ToColor(result.FogColor);
+            _currentTurbidity = Mathf.Clamp(result.Turbidity, 0.5f, 2f);
+            _currentBiomeFogDensityScale = Mathf.Clamp(result.Density, 0.5f, 2f);
+            biomeAbsorption = Mathf.Clamp01(result.Absorption);
+            _transitionProgress = math.max(_transitionProgress, result.Sample.Blend255 * (1f / 255f));
+
+            if (result.Sample.Blend255 >= 254)
+            {
+                _biomeFogTransitionActive = false;
+                _biomeFogFallbackBlend01 = 1f;
+            }
+        }
+
+        private bool EnsureBiomeFogBlendBuffers()
+        {
+            if (AreBiomeFogBlendBuffersCreated())
+                return true;
+
+            if (HasPartialBiomeFogBlendBuffers())
+                ReleaseBiomeFogBlendBuffers();
+
+            _biomeFogSamples = new NativeArray<BiomeTransitionSample>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeTransitionSample>[1] - biome fog transition sample lane - owner: HectonUnderwaterVisuals
+            _biomeFogSources = new NativeArray<BiomeTransitionFogSource>(BiomeFogSourceCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeTransitionFogSource>[256] - biome fog source LUT - owner: HectonUnderwaterVisuals
+            _biomeFogFromAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[1] - biome fog source AUP anchor - owner: HectonUnderwaterVisuals
+            _biomeFogToAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[1] - biome fog target AUP anchor - owner: HectonUnderwaterVisuals
+            _biomeFogPlayerAup = new NativeArray<AbsoluteUniversePositionBlit128>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<AbsoluteUniversePositionBlit128>[1] - player AUP sample for biome fog transition - owner: HectonUnderwaterVisuals
+            _biomeFogResults = new NativeArray<BiomeTransitionFogResult>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeTransitionFogResult>[1] - biome fog transition result lane - owner: HectonUnderwaterVisuals
+
+            NativeMemorySentinel.RegisterNativeArray(_biomeFogSamples, nameof(HectonUnderwaterVisuals), nameof(_biomeFogSamples), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_biomeFogSources, nameof(HectonUnderwaterVisuals), nameof(_biomeFogSources), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_biomeFogFromAup, nameof(HectonUnderwaterVisuals), nameof(_biomeFogFromAup), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_biomeFogToAup, nameof(HectonUnderwaterVisuals), nameof(_biomeFogToAup), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_biomeFogPlayerAup, nameof(HectonUnderwaterVisuals), nameof(_biomeFogPlayerAup), NativeAllocationLifetime.Scene);
+            NativeMemorySentinel.RegisterNativeArray(_biomeFogResults, nameof(HectonUnderwaterVisuals), nameof(_biomeFogResults), NativeAllocationLifetime.Scene);
+            return true;
+        }
+
+        private bool AreBiomeFogBlendBuffersCreated()
+        {
+            return _biomeFogSamples.IsCreated &&
+                   _biomeFogSources.IsCreated &&
+                   _biomeFogFromAup.IsCreated &&
+                   _biomeFogToAup.IsCreated &&
+                   _biomeFogPlayerAup.IsCreated &&
+                   _biomeFogResults.IsCreated;
+        }
+
+        private bool HasPartialBiomeFogBlendBuffers()
+        {
+            return _biomeFogSamples.IsCreated ||
+                   _biomeFogSources.IsCreated ||
+                   _biomeFogFromAup.IsCreated ||
+                   _biomeFogToAup.IsCreated ||
+                   _biomeFogPlayerAup.IsCreated ||
+                   _biomeFogResults.IsCreated;
+        }
+
+        private void ReleaseBiomeFogBlendBuffers()
+        {
+            JobHandle disposeHandle = _biomeFogBlendScheduled ? _biomeFogBlendHandle : default;
+            DisposeBiomeFogArray(ref _biomeFogSamples, ref disposeHandle);
+            DisposeBiomeFogArray(ref _biomeFogSources, ref disposeHandle);
+            DisposeBiomeFogArray(ref _biomeFogFromAup, ref disposeHandle);
+            DisposeBiomeFogArray(ref _biomeFogToAup, ref disposeHandle);
+            DisposeBiomeFogArray(ref _biomeFogPlayerAup, ref disposeHandle);
+            DisposeBiomeFogArray(ref _biomeFogResults, ref disposeHandle);
+            _biomeFogBlendHandle = disposeHandle;
+            _biomeFogBlendScheduled = false;
+        }
+
+        private static void DisposeBiomeFogArray<T>(ref NativeArray<T> array, ref JobHandle disposeHandle)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            disposeHandle = array.Dispose(disposeHandle);
+            array = default;
+        }
+
+        private BiomeTransitionFogSource BuildBiomeFogSource(HectonBiomeProfile profile)
+        {
+            return new BiomeTransitionFogSource
+            {
+                FogColor = ToFloat4(ResolveProfileFogColor(profile)),
+                Density = ResolveProfileFogDensityScale(profile),
+                Turbidity = ResolveProfileTurbidity(profile),
+                Absorption = ResolveProfileAbsorption(profile)
+            };
+        }
+
+        private HectonBiomeProfile ResolveMatrixRuntimeVisualProfile(HectonBiomeMatrixProfile profile)
+        {
+            return profile != null ? profile.runtimeVisualProfile : null;
+        }
+
+        private HectonBiomeProfile ResolvePaletteProfile(int biomeIndex)
+        {
+            if (biomePalette == null)
+                return null;
+
+            HectonBiomeProfile profile = biomePalette.GetProfile(biomeIndex);
+            if (profile != null)
+                return profile;
+
+            return biomePalette.Count > 0 ? biomePalette.GetProfile(0) : null;
+        }
+
+        private static byte ResolveMatrixBiomeByte(HectonBiomeMatrixProfile profile, int fallbackBiomeIndex)
+        {
+            int biomeId = profile != null ? profile.matrixIndex : fallbackBiomeIndex;
+            return (byte)Mathf.Clamp(biomeId, 0, 255);
+        }
+
+        private static AbsoluteUniversePositionBlit128 BuildAupFromRuntimePosition(Vector3 runtimePosition)
+        {
+            return AbsoluteUniversePosition.FromRuntimePosition(runtimePosition).ToAlignedBlit();
+        }
+
+        private static float4 ToFloat4(Color color)
+        {
+            return new float4(color.r, color.g, color.b, color.a);
+        }
+
+        private static Color ToColor(float4 color)
+        {
+            return new Color(color.x, color.y, color.z, color.w);
         }
 
         private void ApplyCrestMaterial()
@@ -3165,6 +3445,19 @@ namespace Hecton8.Environment
 
         private void HandleMatrixBiomeChanged(HectonBiomeMatrixProfile profile)
         {
+            HectonBiomeMatrixProfile previousFogProfile = _activeMatrixFogProfile;
+            if (previousFogProfile == null)
+            {
+                _activeMatrixFogProfile = profile;
+                _biomeFogTransitionActive = false;
+                _biomeFogFallbackBlend01 = 1f;
+            }
+            else if (!ReferenceEquals(previousFogProfile, profile))
+            {
+                CaptureBiomeFogTransition(previousFogProfile, profile);
+                _activeMatrixFogProfile = profile;
+            }
+
             HectonBiomeProfile nextOverride = profile != null ? profile.runtimeVisualProfile : null;
             ApplyEcologyContext(profile);
             if (_matrixRuntimeVisualProfile == nextOverride)
@@ -5601,6 +5894,8 @@ namespace Hecton8.Environment
                 _currentDepthFogDensity = ResolveFallbackDepthFogDensity(oceanUnderwaterMaterial);
                 _currentFogColor        = ResolveFallbackFogColor();
                 _currentTurbidity       = 1.0f;
+                _currentBiomeFogDensityScale = 1f;
+                biomeAbsorption         = 0.9f;
                 _currentAmbientColor    = underwaterAmbientColor;
 
                 _targetScatterBase     = _currentScatterBase;
@@ -5608,6 +5903,8 @@ namespace Hecton8.Environment
                 _targetDepthFogDensity = _currentDepthFogDensity;
                 _targetFogColor        = _currentFogColor;
                 _targetTurbidity       = 1.0f;
+                _targetBiomeFogDensityScale = 1f;
+                _targetBiomeAbsorption = biomeAbsorption;
                 _targetAmbientColor    = _currentAmbientColor;
             }
 
@@ -5622,6 +5919,8 @@ namespace Hecton8.Environment
             _currentDepthFogDensity = ResolveProfileDepthFogDensity(p);
             _currentFogColor        = ResolveProfileFogColor(p);
             _currentTurbidity       = ResolveProfileTurbidity(p);
+            _currentBiomeFogDensityScale = ResolveProfileFogDensityScale(p);
+            biomeAbsorption         = ResolveProfileAbsorption(p);
             _currentAmbientColor    = underwaterAmbientColor;
         }
 
@@ -5632,6 +5931,8 @@ namespace Hecton8.Environment
             _targetDepthFogDensity = ResolveProfileDepthFogDensity(p);
             _targetFogColor        = ResolveProfileFogColor(p);
             _targetTurbidity       = ResolveProfileTurbidity(p);
+            _targetBiomeFogDensityScale = ResolveProfileFogDensityScale(p);
+            _targetBiomeAbsorption = ResolveProfileAbsorption(p);
             _targetAmbientColor    = underwaterAmbientColor;
             _transitionProgress    = 0f;
         }
@@ -5683,6 +5984,22 @@ namespace Hecton8.Environment
                 : 1f;
         }
 
+        private float ResolveProfileFogDensityScale(HectonBiomeProfile profile)
+        {
+            Vector3 fallback = ResolveFallbackDepthFogDensity(oceanUnderwaterMaterial);
+            Vector3 source = profile != null ? ResolveProfileDepthFogDensity(profile) : fallback;
+            float fallbackAverage = Mathf.Max(0.0001f, (fallback.x + fallback.y + fallback.z) * (1f / 3f));
+            float sourceAverage = Mathf.Max(0.0001f, (source.x + source.y + source.z) * (1f / 3f));
+            return Mathf.Clamp(sourceAverage / fallbackAverage, 0.5f, 2f);
+        }
+
+        private static float ResolveProfileAbsorption(HectonBiomeProfile profile)
+        {
+            return profile != null
+                ? Mathf.Clamp01(profile.absorption)
+                : 0.9f;
+        }
+
         private void TryRegisterTickManagers()
         {
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -5697,6 +6014,11 @@ namespace Hecton8.Environment
             {
                 GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
                 _registeredSlowTick = GlobalRegistry.SlowTickables.Contains(this);
+            }
+            if (!_registeredLateFrameTick)
+            {
+                GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
+                _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
         }
 

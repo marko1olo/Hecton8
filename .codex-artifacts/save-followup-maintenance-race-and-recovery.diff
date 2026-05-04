@@ -1,0 +1,549 @@
+﻿diff --git a/Assets/_Project/Scripts/SaveBinaryStorage.cs b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+index fdd602b6..cad56b06 100644
+--- a/Assets/_Project/Scripts/SaveBinaryStorage.cs
++++ b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+@@ -297,7 +297,7 @@ namespace Hecton8.SaveSystem
+         internal const int IndexedSectorDirectoryCapacity = IndexedSectorDirectorySlotCount;
+         internal const long IndexedSectorDefragSlackThresholdBytes = 50L * 1024L * 1024L;
+         private const int PersistentWorldSectorEdgeLengthMeters = 1000;
+-        private const int DefaultIndexedPersistentWorldChunkSizeMeters = 64;
++        internal const int DefaultIndexedPersistentWorldChunkSizeMeters = 64;
+         private const ushort PersistentWorldDeletedItemHashIndex = ushort.MaxValue;
+         private const uint ModPayloadMagic = 0x50444F4Du; // "MODP"
+         private const ushort ModPayloadVersion = 1;
+@@ -1308,6 +1308,7 @@ namespace Hecton8.SaveSystem
+             if (!AsyncWriteManager.TryOpenReadOnlyMapping(absolutePath, out mapping, out error))
+                 return false;
+ 
++            bool success = false;
+             try
+             {
+                 if (mapping.Length < SaveFileHeaderPrefixSize)
+@@ -1357,12 +1358,13 @@ namespace Hecton8.SaveSystem
+                     return false;
+                 }
+ 
++                success = true;
+                 return true;
+             }
+-            catch
++            finally
+             {
+-                AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
+-                throw;
++                if (!success)
++                    AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
+             }
+         }
+ 
+@@ -1383,7 +1385,8 @@ namespace Hecton8.SaveSystem
+             }
+ 
+             int directoryOffset = CurrentHeaderSize;
+-            if (mapping.Length < directoryOffset + IndexedSectorDirectoryHeaderSize)
++            if (mapping.Length < directoryOffset ||
++                (long)directoryOffset > mapping.Length - IndexedSectorDirectoryHeaderSize)
+             {
+                 error = "Indexed sector directory header is truncated.";
+                 return false;
+@@ -1402,14 +1405,15 @@ namespace Hecton8.SaveSystem
+             }
+ 
+             int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+-            if ((long)directoryOffset + directoryBytes > mapping.Length)
++            if ((long)directoryOffset > mapping.Length - directoryBytes)
+             {
+                 error = "Indexed sector directory exceeds the file bounds.";
+                 return false;
+             }
+ 
++            long directoryEndOffset = directoryOffset + (long)directoryBytes;
+             long metadataOffset = header.PlayerOffset;
+-            if (metadataOffset < directoryOffset + directoryBytes || metadataOffset >= mapping.Length)
++            if (metadataOffset < directoryEndOffset || metadataOffset >= mapping.Length)
+             {
+                 error = "Indexed metadata block offset is out of bounds.";
+                 return false;
+@@ -1952,6 +1956,12 @@ namespace Hecton8.SaveSystem
+                 return false;
+ 
+             int saveDataLength = checked((int)prefix.SaveDataByteLength);
++            if (!IsByteRangeWithin(cursor, saveDataLength, metadataRawLength))
++            {
++                error = "Indexed metadata save-data range is invalid.";
++                return false;
++            }
++
+             if (!SaveBinaryPayloadCodec.TryRead(AddByteOffset(rawPtr, cursor), saveDataLength, out data, out int bytesRead, out error))
+                 return false;
+             if (bytesRead != saveDataLength)
+@@ -1963,7 +1973,7 @@ namespace Hecton8.SaveSystem
+             int payloadCursor = cursor + saveDataLength;
+             if (header.DeltaCount > 0)
+             {
+-                if (payloadCursor + PackedQuestStateSectionHeaderSize > metadataRawLength)
++                if (!IsByteRangeWithin(payloadCursor, PackedQuestStateSectionHeaderSize, metadataRawLength))
+                 {
+                     error = "Indexed packed quest section header is truncated.";
+                     return false;
+@@ -1989,6 +1999,12 @@ namespace Hecton8.SaveSystem
+                     fixed (uint* destinationPtr = packedQuestStateWords)
+                     {
+                         int packedQuestBytes = checked((int)packedQuestHeader.FlagCount) * UnsafeUtility.SizeOf<uint>();
++                        if (!IsByteRangeWithin(payloadCursor, packedQuestBytes, metadataRawLength))
++                        {
++                            error = "Indexed packed quest section exceeds the metadata payload bounds.";
++                            return false;
++                        }
++
+                         if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, packedQuestStateWords.Length * UnsafeUtility.SizeOf<uint>(), AddByteOffset(rawPtr, payloadCursor), packedQuestBytes))
+                         {
+                             error = "Indexed packed quest-state copy exceeded destination bounds.";
+@@ -2011,7 +2027,7 @@ namespace Hecton8.SaveSystem
+                 packedQuestStateWords = Array.Empty<uint>();
+             }
+ 
+-            if (payloadCursor + EcosystemSectionHeaderSize > metadataRawLength)
++            if (!IsByteRangeWithin(payloadCursor, EcosystemSectionHeaderSize, metadataRawLength))
+             {
+                 error = "Indexed ecosystem section header is truncated.";
+                 return false;
+@@ -2020,7 +2036,7 @@ namespace Hecton8.SaveSystem
+             EcosystemSectionHeader ecosystemHeader = UnsafeUtility.ReadArrayElement<EcosystemSectionHeader>(AddByteOffset(rawPtr, payloadCursor), 0);
+             int ecosystemRecordCount = checked((int)ecosystemHeader.RecordCount);
+             int ecosystemSectionLength = ComputeEcosystemSectionLength(ecosystemRecordCount);
+-            if (payloadCursor + ecosystemSectionLength > metadataRawLength)
++            if (!IsByteRangeWithin(payloadCursor, ecosystemSectionLength, metadataRawLength))
+             {
+                 error = "Indexed ecosystem section exceeds the metadata payload bounds.";
+                 return false;
+@@ -2868,6 +2884,15 @@ namespace Hecton8.SaveSystem
+             return PackSectorHash(sectorCoord);
+         }
+ 
++        internal static long ComputePersistentWorldPagedSectorHash(in AbsoluteUniversePosition position)
++        {
++            double3 absolute = position.ToAbsoluteDouble3();
++            int2 sectorCoord = new int2(
++                (int)math.floor(absolute.x / PersistentWorldSectorEdgeLengthMeters),
++                (int)math.floor(absolute.z / PersistentWorldSectorEdgeLengthMeters));
++            return PackSectorHash(sectorCoord);
++        }
++
+         internal static long ComputeModPayloadSectorHash(uint modHash, long pagedSectorHash)
+         {
+             unchecked
+@@ -3068,6 +3093,114 @@ namespace Hecton8.SaveSystem
+             }
+         }
+ 
++        internal static bool TryPrewarmIndexedPersistentWorldSector(
++            string absolutePath,
++            long desiredSectorHash,
++            out bool sectorExists,
++            out bool usedBackup,
++            out string error)
++        {
++            sectorExists = false;
++            usedBackup = false;
++            error = string.Empty;
++
++            if (string.IsNullOrEmpty(absolutePath))
++            {
++                error = "Indexed sector prewarm path is empty.";
++                return false;
++            }
++
++            if (TryPrewarmIndexedPersistentWorldSectorCore(absolutePath, desiredSectorHash, out sectorExists, out string primaryError))
++                return true;
++
++            bool primarySectorExists = sectorExists;
++            string backupPath = ResolveIndexedSaveBackupPath(absolutePath);
++            string backupError = "backup not attempted";
++            bool backupSectorExists = false;
++            if (!string.IsNullOrEmpty(backupPath) && File.Exists(backupPath) &&
++                TryPrewarmIndexedPersistentWorldSectorCore(backupPath, desiredSectorHash, out backupSectorExists, out backupError) &&
++                (backupSectorExists || !primarySectorExists))
++            {
++                sectorExists = backupSectorExists;
++                usedBackup = true;
++                error = string.Empty;
++                return true;
++            }
++
++            error = $"Indexed sector 0x{desiredSectorHash:X16} prewarm failed. Primary: {primaryError} Backup: {backupError}";
++            return false;
++        }
++
++        private static bool TryPrewarmIndexedPersistentWorldSectorCore(
++            string absolutePath,
++            long desiredSectorHash,
++            out bool sectorExists,
++            out string error)
++        {
++            sectorExists = false;
++            error = string.Empty;
++            if (!TryReadValidatedHeader(absolutePath, out AsyncWriteManager.ReadOnlyMapping mapping, out SaveFileHeader header, out _, out error))
++                return false;
++
++            try
++            {
++                if (!TryReadIndexedDirectory(in header, ref mapping, out _, out SectorEntry[] sectorEntries, out error))
++                    return false;
++
++                if (!TryFindIndexedSectorEntryIndex(sectorEntries, desiredSectorHash, out int sectorEntryIndex))
++                    return true;
++
++                SectorEntry entry = sectorEntries[sectorEntryIndex];
++                sectorExists = true;
++                return TryPrewarmIndexedPersistentWorldSectorEntry(ref mapping, in entry, out error);
++            }
++            finally
++            {
++                AsyncWriteManager.CloseReadOnlyMapping(ref mapping);
++            }
++        }
++
++        private static bool TryPrewarmIndexedPersistentWorldSectorEntry(
++            ref AsyncWriteManager.ReadOnlyMapping mapping,
++            in SectorEntry entry,
++            out string error)
++        {
++            error = string.Empty;
++            if (entry.DecompressedSize <= 0 || entry.DecompressedSize > RawPayloadCapacityBytes)
++            {
++                error = $"Indexed sector 0x{entry.SectorHash:X16} prewarm decompressed size is invalid.";
++                return false;
++            }
++
++            using NativeArray<byte> rawBlockBytes = new NativeArray<byte>(entry.DecompressedSize, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++            if (!TryReadIndexedCompressedBlock(
++                    ref mapping,
++                    entry.ByteOffset,
++                    entry.CompressedSize,
++                    entry.DecompressedSize,
++                    rawBlockBytes,
++                    out int decompressedLength,
++                    out error))
++            {
++                return false;
++            }
++
++            if (decompressedLength != entry.DecompressedSize)
++            {
++                error = $"Indexed sector 0x{entry.SectorHash:X16} prewarm length mismatch.";
++                return false;
++            }
++
++            byte* rawBlockPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(rawBlockBytes);
++            if (ComputeIndexedSectorChecksum(rawBlockPtr, decompressedLength) != entry.Checksum)
++            {
++                error = $"Indexed sector checksum mismatch for prewarm sector 0x{entry.SectorHash:X16}.";
++                return false;
++            }
++
++            return true;
++        }
++
+         internal static bool TryReadIndexedModPayloads(
+             string absolutePath,
+             List<ModPayloadSectorInfo> results,
+@@ -3368,7 +3501,8 @@ namespace Hecton8.SaveSystem
+                 return false;
+ 
+             int directoryOffset = CurrentHeaderSize;
+-            if (mapping.Length < directoryOffset + IndexedSectorDirectoryHeaderSize)
++            if (mapping.Length < directoryOffset ||
++                (long)directoryOffset > mapping.Length - IndexedSectorDirectoryHeaderSize)
+             {
+                 error = "Indexed sector directory header is truncated.";
+                 return false;
+@@ -3385,14 +3519,15 @@ namespace Hecton8.SaveSystem
+             directoryHeader.ChunkSizeMeters = math.max(1, directoryHeader.ChunkSizeMeters);
+ 
+             int directoryBytes = IndexedSectorDirectoryHeaderSize + (IndexedSectorDirectorySlotCount * UnsafeUtility.SizeOf<SectorEntry>());
+-            if ((long)directoryOffset + directoryBytes > mapping.Length)
++            if ((long)directoryOffset > mapping.Length - directoryBytes)
+             {
+                 error = "Indexed sector directory exceeds the file bounds.";
+                 return false;
+             }
+ 
++            long directoryEndOffset = directoryOffset + (long)directoryBytes;
+             long metadataOffset = header.PlayerOffset;
+-            if (metadataOffset < directoryOffset + directoryBytes || metadataOffset >= mapping.Length)
++            if (metadataOffset < directoryEndOffset || metadataOffset >= mapping.Length)
+             {
+                 error = "Indexed metadata block offset is out of bounds.";
+                 return false;
+@@ -3852,7 +3987,7 @@ namespace Hecton8.SaveSystem
+                 return false;
+ 
+             int saveDataLength = checked((int)prefix.SaveDataByteLength);
+-            if (saveDataLength < 0 || cursor + saveDataLength > rawPayloadLength)
++            if (!IsByteRangeWithin(cursor, saveDataLength, rawPayloadLength))
+             {
+                 error = "Save payload byte range is invalid.";
+                 return false;
+@@ -4003,6 +4138,15 @@ namespace Hecton8.SaveSystem
+             return (byte*)source + byteOffset;
+         }
+ 
++        private static bool IsByteRangeWithin(int byteOffset, int byteLength, int totalByteLength)
++        {
++            return byteOffset >= 0 &&
++                   byteLength >= 0 &&
++                   totalByteLength >= 0 &&
++                   byteOffset <= totalByteLength &&
++                   byteLength <= totalByteLength - byteOffset;
++        }
++
+         private static long ComputePersistentWorldSectorHash(in PersistentWorldDeltaRecord record, int chunkSizeMeters)
+         {
+             AbsoluteUniversePosition position = record.UnpackPosition(chunkSizeMeters);
+@@ -5578,7 +5722,7 @@ namespace Hecton8.SaveSystem
+             value = string.Empty;
+             error = string.Empty;
+ 
+-            if (byteLength < 0 || cursor < 0 || cursor + byteLength > sourceLength)
++            if (!IsByteRangeWithin(cursor, byteLength, sourceLength))
+             {
+                 error = "UTF-16 metadata block exceeds the payload bounds.";
+                 return false;
+diff --git a/Assets/_Project/Scripts/SaveManager.cs b/Assets/_Project/Scripts/SaveManager.cs
+index 5362a442..699e76e4 100644
+--- a/Assets/_Project/Scripts/SaveManager.cs
++++ b/Assets/_Project/Scripts/SaveManager.cs
+@@ -14,6 +14,7 @@ using System.Diagnostics;
+ using System.IO;
+ using Hecton8.Caves;
+ using Hecton8.Core;
++using Hecton8.Gameplay;
+ using Hecton8.Modding;
+ using Hecton8.Quest;
+ using Hecton8.World;
+@@ -36,6 +37,9 @@ namespace Hecton8.SaveSystem
+         private static readonly long LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
+         private const float IntegrityScanIntervalSeconds = 10f;
+         private const float IndexedDefragCheckIntervalSeconds = 5f;
++        private const float PredictiveIndexedPagingLookaheadSeconds = 30f;
++        private const float PredictiveIndexedPagingCheckIntervalSeconds = 0.5f;
++        private const float PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond = 0.5f;
+         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
+         private const int MaxRegisteredSaveables = 256;
+         private const string NativeMemoryOwner = nameof(SaveManager);
+@@ -135,10 +139,14 @@ namespace Hecton8.SaveSystem
+         private bool _serviceRegistered;
+         private bool _emergencyBackupScheduled;
+         private bool _indexedDefragInFlight;
++        private bool _predictiveIndexedPagingInFlight;
+         private string _integritySlotName;
+         private string _pendingIntegritySlotName;
+         private string _activeIndexedSavePath;
+         private float _nextIndexedDefragCheckTime;
++        private float _nextPredictiveIndexedPagingCheckTime;
++        private int _activeIndexedSaveChunkSizeMeters = SaveBinaryStorage.DefaultIndexedPersistentWorldChunkSizeMeters;
++        private long _lastPredictiveIndexedPagedSectorHash = long.MinValue;
+ 
+         private sealed class MemoryCorruptionException : Exception
+         {
+@@ -365,6 +373,7 @@ namespace Hecton8.SaveSystem
+             if (!_isBusy &&
+                 !_integrityScanScheduled &&
+                 !_indexedDefragInFlight &&
++                !_predictiveIndexedPagingInFlight &&
+                 !string.IsNullOrEmpty(_activeIndexedSavePath) &&
+                 Time.unscaledTime >= _nextIndexedDefragCheckTime)
+             {
+@@ -374,6 +383,8 @@ namespace Hecton8.SaveSystem
+                 return;
+             }
+ 
++            TrySchedulePredictiveIndexedSectorPrewarm();
++
+             if (_isBusy ||
+                 _integrityScanScheduled ||
+                 !_integrityPayloadMirror.IsCreated ||
+@@ -552,6 +563,133 @@ namespace Hecton8.SaveSystem
+             }
+         }
+ 
++        private void TrySchedulePredictiveIndexedSectorPrewarm()
++        {
++            if (_isBusy ||
++                _indexedDefragInFlight ||
++                _predictiveIndexedPagingInFlight ||
++                string.IsNullOrEmpty(_activeIndexedSavePath) ||
++                Time.unscaledTime < _nextPredictiveIndexedPagingCheckTime)
++            {
++                return;
++            }
++
++            _nextPredictiveIndexedPagingCheckTime = Time.unscaledTime + PredictiveIndexedPagingCheckIntervalSeconds;
++            if (!TryResolvePredictiveIndexedPagingPlayer(out HectonPlayerMovement playerMovement, out Transform playerTransform))
++                return;
++
++            Vector3 currentRuntimePosition = playerTransform.position;
++            Vector3 playerVelocity = playerMovement.CurrentWorldVelocity;
++            if (!IsFinite(currentRuntimePosition) || !IsFinite(playerVelocity))
++                return;
++
++            float planarSpeedSq = (playerVelocity.x * playerVelocity.x) + (playerVelocity.z * playerVelocity.z);
++            float minPlanarSpeedSq = PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond * PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond;
++            if (planarSpeedSq < minPlanarSpeedSq)
++                return;
++
++            Vector3 projectedRuntimePosition = currentRuntimePosition + (playerVelocity * PredictiveIndexedPagingLookaheadSeconds);
++            if (!IsFinite(projectedRuntimePosition))
++                return;
++
++            AbsoluteUniversePosition currentAup = AbsoluteUniversePosition.FromRuntimePosition(currentRuntimePosition);
++            AbsoluteUniversePosition projectedAup = AbsoluteUniversePosition.FromRuntimePosition(projectedRuntimePosition);
++            int chunkSizeMeters = math.max(1, _activeIndexedSaveChunkSizeMeters);
++            int3 currentChunkId = AbsoluteUniversePosition.ResolveChunkId(in currentAup, chunkSizeMeters);
++            int3 projectedChunkId = AbsoluteUniversePosition.ResolveChunkId(in projectedAup, chunkSizeMeters);
++            bool projectedChunkChanged = !math.all(currentChunkId == projectedChunkId);
++
++            long currentSectorHash = SaveBinaryStorage.ComputePersistentWorldPagedSectorHash(in currentAup);
++            long projectedSectorHash = SaveBinaryStorage.ComputePersistentWorldPagedSectorHash(in projectedAup);
++            if ((!projectedChunkChanged && projectedSectorHash == currentSectorHash) ||
++                projectedSectorHash == _lastPredictiveIndexedPagedSectorHash)
++            {
++                return;
++            }
++
++            _lastPredictiveIndexedPagedSectorHash = projectedSectorHash;
++            _predictiveIndexedPagingInFlight = true;
++            _ = RunPredictiveIndexedSectorPrewarmAsync(_activeIndexedSavePath, projectedSectorHash);
++        }
++
++        private static bool TryResolvePredictiveIndexedPagingPlayer(out HectonPlayerMovement playerMovement, out Transform playerTransform)
++        {
++            playerMovement = null;
++            playerTransform = null;
++
++            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
++            if (playerContext == null)
++                return false;
++
++            playerMovement = playerContext.PlayerMovement;
++            playerTransform = playerContext.PlayerTransform;
++            return playerMovement != null && playerTransform != null;
++        }
++
++        private static bool IsFinite(Vector3 value)
++        {
++            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
++        }
++
++        private async Awaitable RunPredictiveIndexedSectorPrewarmAsync(string absolutePath, long sectorHash)
++        {
++            bool sectorExists = false;
++            bool usedBackup = false;
++            string error = string.Empty;
++            try
++            {
++                await Awaitable.BackgroundThreadAsync();
++                bool prewarmSucceeded = SaveBinaryStorage.TryPrewarmIndexedPersistentWorldSector(
++                    absolutePath,
++                    sectorHash,
++                    out sectorExists,
++                    out usedBackup,
++                    out error);
++                await Awaitable.MainThreadAsync();
++
++                if (!prewarmSucceeded)
++                {
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                    Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm failed for 0x{sectorHash:X16}: {error}");
++#endif
++                }
++                else if (usedBackup)
++                {
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                    Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm used .bak for 0x{sectorHash:X16}; primary will promote through CRITICAL_RECOVERY on load.");
++#endif
++                }
++                else if (verboseLogging && sectorExists)
++                {
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                    Debug.Log($"[SaveManager] Predictive indexed sector prewarmed 0x{sectorHash:X16}.");
++#endif
++                }
++            }
++            catch (OperationCanceledException)
++            {
++            }
++            catch (Exception ex)
++            {
++                await Awaitable.MainThreadAsync();
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm threw for 0x{sectorHash:X16}: {ex.Message}");
++#endif
++            }
++            finally
++            {
++                await Awaitable.MainThreadAsync();
++                _predictiveIndexedPagingInFlight = false;
++                _nextPredictiveIndexedPagingCheckTime = Time.unscaledTime + PredictiveIndexedPagingCheckIntervalSeconds;
++            }
++        }
++
++        private async Awaitable WaitForIndexedSaveMaintenanceIdleAsync()
++        {
++            while (_indexedDefragInFlight || _predictiveIndexedPagingInFlight)
++                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
++        }
++
+         private async Awaitable RunIndexedSaveDefragAsync(string absolutePath)
+         {
+             long reclaimedBytes = 0L;
+@@ -581,6 +719,13 @@ namespace Hecton8.SaveSystem
+             }
+             catch (OperationCanceledException)
+             {
++            }
++            catch (Exception ex)
++            {
++                await Awaitable.MainThreadAsync();
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                Debug.LogError($"[SaveManager] Indexed save defrag threw for '{absolutePath}': {ex.Message}");
++#endif
+             }
+             finally
+             {
+@@ -593,6 +738,9 @@ namespace Hecton8.SaveSystem
+         private void UpdateActiveIndexedSavePath(string absolutePath)
+         {
+             _activeIndexedSavePath = string.Empty;
++            _activeIndexedSaveChunkSizeMeters = SaveBinaryStorage.DefaultIndexedPersistentWorldChunkSizeMeters;
++            _lastPredictiveIndexedPagedSectorHash = long.MinValue;
++            _nextPredictiveIndexedPagingCheckTime = 0f;
+             if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
+                 return;
+ 
+@@ -600,7 +748,7 @@ namespace Hecton8.SaveSystem
+             if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(
+                     absolutePath,
+                     _indexedSectorDirectoryScratch,
+-                    out _,
++                    out _activeIndexedSaveChunkSizeMeters,
+                     out string directoryError))
+             {
+                 ReportIndexedDirectoryReadFailure(absolutePath, directoryError);
+@@ -819,6 +967,7 @@ namespace Hecton8.SaveSystem
+ 
+             try
+             {
++                await WaitForIndexedSaveMaintenanceIdleAsync();
+                 SortRegistryIfDirty(SavePriorityComparer);
+                 for (int i = 0; i < _saveableCount; i++)
+                 {
+@@ -990,6 +1139,7 @@ namespace Hecton8.SaveSystem
+ 
+             try
+             {
++                await WaitForIndexedSaveMaintenanceIdleAsync();
+                 await Awaitable.BackgroundThreadAsync();
+                 SaveData data = null;
+                 QuestSaveHeader loadedQuestHeader = default;

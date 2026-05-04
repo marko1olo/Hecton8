@@ -3,10 +3,10 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-2026-05-02 current-state boundary:
+2026-05-04 current-state boundary:
 
 - This is the binary save container specification, not save/load runtime proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - `SaveBinaryStorage.cs` is the source-backed storage owner; slot traversal, corruption fallback, paging, and long-session persistence still require fresh Unity/runtime validation.
 
 ## Scope

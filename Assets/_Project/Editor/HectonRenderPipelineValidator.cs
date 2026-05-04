@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Reflection;
 using Crest;
+using Hecton8.Atmosphere;
 using Hecton8.Celestial;
 using Hecton8.Core;
 using Hecton8.Visor;
@@ -44,6 +45,12 @@ namespace Hecton8.Editor
             "Assets/_Project/Data/URP_Low (PC_RPAsset).asset",
             "Assets/_Project/Data/URP_High (PC_RPAsset).asset",
             "Assets/_Project/Data/Mobile_RPAsset.asset"
+        };
+        private static readonly string[] s_UrpEditorShaderGraphPaths =
+        {
+            "Packages/com.unity.render-pipelines.universal/Shaders/AutodeskInteractive/AutodeskInteractive.shadergraph",
+            "Packages/com.unity.render-pipelines.universal/Shaders/AutodeskInteractive/AutodeskInteractiveTransparent.shadergraph",
+            "Packages/com.unity.render-pipelines.universal/Shaders/AutodeskInteractive/AutodeskInteractiveMasked.shadergraph"
         };
         private static readonly MethodInfo s_ValidateRendererFeaturesMethod =
             typeof(ScriptableRendererData).GetMethod("ValidateRendererFeatures", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -124,6 +131,7 @@ namespace Hecton8.Editor
             }
 
             SessionState.SetBool(InitialRepairCompletedSessionKey, true);
+            EnsureUrpEditorShaderGraphsImported();
             RepairKnownRenderPipelineAssets();
             Validate(logSummary: false, applyRepairs: true);
         }
@@ -164,6 +172,9 @@ namespace Hecton8.Editor
 
             if (applyRepairs && IsPlayModeUnsafeForRepairs())
                 applyRepairs = false;
+
+            if (!IsPlayModeUnsafeForRepairs())
+                EnsureUrpEditorShaderGraphsImported();
 
             UniversalRenderPipelineAsset urpAsset = ResolveActiveUrpAsset();
             if (urpAsset == null)
@@ -247,6 +258,20 @@ namespace Hecton8.Editor
             return Application.isPlaying ||
                    EditorApplication.isPlaying ||
                    EditorApplication.isPlayingOrWillChangePlaymode;
+        }
+
+        private static void EnsureUrpEditorShaderGraphsImported()
+        {
+            for (int i = 0; i < s_UrpEditorShaderGraphPaths.Length; i++)
+            {
+                string path = s_UrpEditorShaderGraphPaths[i];
+                if (AssetDatabase.LoadAssetAtPath<Shader>(path) != null)
+                    continue;
+
+                AssetDatabase.ImportAsset(
+                    path,
+                    ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+            }
         }
 
         private static bool EnsureRequiredRendererFeatures(UniversalRenderPipelineAsset urpAsset)
@@ -623,13 +648,13 @@ namespace Hecton8.Editor
                 }
             }
 
-            Material currentSkybox = RenderSettings.skybox;
+            Material currentSkybox = AtmosphereDirector.Skybox;
             if (!ReferenceEquals(currentSkybox, meshSkyMaterial))
             {
                 issueCount++;
                 if (applyRepairs && meshSkyMaterial != null)
                 {
-                    RenderSettings.skybox = meshSkyMaterial;
+                    AtmosphereDirector.SetSkybox(meshSkyMaterial);
                     EditorSceneManager.MarkAllScenesDirty();
                 }
                 else

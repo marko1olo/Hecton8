@@ -1,6 +1,8 @@
 # 2026-05-04 Celestial Environment Orbital Sync Report
 
-STATUS: ASTRONOMICALLY ALIGNED
+STATUS: PENDING VERIFICATION
+
+Reason: compile and Unity MCP console gates were reported for that pass, but PlayMode behavior, profiler GC capture, and in-scene predator/tide/biolum observation were not executed. Later May 4 documentation sweep evidence supersedes this report as global project truth; this file remains task evidence only.
 
 ## Mandates Applied
 

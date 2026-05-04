@@ -276,6 +276,7 @@ namespace Hecton8.Atmosphere
         {
             public Color  fogColor;
             public float  fogDensity;
+            public float  fogAttenuationDistance;
             public float  skyExposure;
             public Color  ambientColor;
             public float  sunIntensity;
@@ -286,6 +287,7 @@ namespace Hecton8.Atmosphere
             {
                 fogColor      = new Color(0.75f, 0.78f, 0.85f, 1f),
                 fogDensity    = 0.008f,
+                fogAttenuationDistance = 100f,
                 skyExposure  = 1f,
                 ambientColor = new Color(0.45f, 0.45f, 0.55f, 1f),
                 sunIntensity = 1f,
@@ -300,6 +302,7 @@ namespace Hecton8.Atmosphere
                 {
                     fogColor      = p.fogColor,
                     fogDensity    = p.fogDensity,
+                    fogAttenuationDistance = math.max(0.001f, p.fogAttenuationDistanceMeters),
                     skyExposure  = p.skyExposure,
                     ambientColor = p.ambientColor,
                     sunIntensity = p.sunIntensity,
@@ -318,6 +321,7 @@ namespace Hecton8.Atmosphere
                 {
                     fogColor      = Color.Lerp(from.fogColor, to.fogColor, t),
                     fogDensity    = math.lerp(from.fogDensity, to.fogDensity, t),
+                    fogAttenuationDistance = math.lerp(from.fogAttenuationDistance, to.fogAttenuationDistance, t),
                     skyExposure  = math.lerp(from.skyExposure,  to.skyExposure,  t),
                     ambientColor = Color.Lerp(from.ambientColor, to.ambientColor, t),
                     sunIntensity = math.lerp(from.sunIntensity, to.sunIntensity, t),
@@ -501,6 +505,7 @@ namespace Hecton8.Atmosphere
         public double ElapsedCycleTimeSeconds  => _elapsedCycleTimeSeconds;
         public Color CurrentFogColor           => _currentValues.fogColor;
         public float CurrentFogDensity         => _currentValues.fogDensity;
+        public float CurrentFogAttenuationDistance => _currentValues.fogAttenuationDistance;
         public float CurrentSkyExposure        => _currentValues.skyExposure;
         public Color CurrentAmbientColor       => _currentValues.ambientColor;
         public bool  IsEclipseActive           => _eclipseActive;
@@ -1278,12 +1283,16 @@ namespace Hecton8.Atmosphere
             {
                 _currentValues.fogColor = primary.fogColor;
                 _currentValues.fogDensity = primary.fogDensity;
+                _currentValues.fogAttenuationDistance = math.max(0.001f, primary.fogAttenuationDistanceMeters);
                 return;
             }
 
             float blend = _currentBiomeInfluence.Blend255 * (1f / 255f);
             _currentValues.fogColor = Color.Lerp(primary.fogColor, secondary.fogColor, blend);
             _currentValues.fogDensity = math.lerp(primary.fogDensity, secondary.fogDensity, blend);
+            _currentValues.fogAttenuationDistance = math.max(
+                0.001f,
+                math.lerp(primary.fogAttenuationDistanceMeters, secondary.fogAttenuationDistanceMeters, blend));
         }
 
         private void RefreshProceduralBiomeInfluenceSnapshotIfNeeded()

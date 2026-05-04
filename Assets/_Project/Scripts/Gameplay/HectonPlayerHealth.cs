@@ -27,6 +27,7 @@ namespace Hecton8.Gameplay
         private const float RadiationFatigueScalePerSecond = 0.005f;
         private const float GillsOxygenCapacityMultiplier = 1.25f;
         private const float BioluminescentPredatorVisibilityScale = 2f;
+        private const float NutritionalToxicityRegenFloor = 0.35f;
         // COLD ALLOC: MutationThreshold[2] — fallback mutation thresholds when no authored profile is assigned — owner: HectonPlayerHealth
         private static readonly HazardMutationProfile.MutationThreshold[] s_fallbackMutationThresholds =
         {
@@ -100,6 +101,9 @@ namespace Hecton8.Gameplay
             ? BioluminescentPredatorVisibilityScale
             : 1f;
 
+        /// <summary>Runtime natural HP regeneration multiplier after food toxicity suppression.</summary>
+        public float NaturalHealthRegenerationMultiplier => ResolveNaturalHealthRegenerationMultiplier(_nutritionalToxicitySeverity01);
+
         /// <summary>True when mutation state removes the practical need for a flashlight.</summary>
         public bool FlashlightBypassActive => HasMutation(HazardMutationProfile.BioluminescentSkinBit);
 
@@ -140,6 +144,22 @@ namespace Hecton8.Gameplay
             SetRuntimeMaxHealthScaleInternal(1f);
         }
 
+        internal void ApplyNutritionalToxicity(float severity01, float durationSeconds)
+        {
+            float clampedSeverity = Mathf.Clamp01(severity01);
+            float clampedDuration = Mathf.Max(0f, durationSeconds);
+            if (clampedSeverity <= 0f || clampedDuration <= 0f)
+                return;
+
+            _nutritionalToxicitySeverity01 = Mathf.Max(_nutritionalToxicitySeverity01, clampedSeverity);
+            _nutritionalToxicityTimer = Mathf.Max(_nutritionalToxicityTimer, clampedDuration);
+        }
+
+        internal static float ResolveNaturalHealthRegenerationMultiplier(float toxicitySeverity01)
+        {
+            return Mathf.Lerp(1f, NutritionalToxicityRegenFloor, Mathf.Clamp01(toxicitySeverity01));
+        }
+
         internal bool HasMutation(uint mutationBit)
         {
             return (_mutationFlags & mutationBit) != 0u;
@@ -171,6 +191,8 @@ namespace Hecton8.Gameplay
         private float _baseMaxHealth = 100f;
         private float _runtimeMaxHealthScale = 1f;
         private float _radiationExposureSeconds;
+        private float _nutritionalToxicityTimer;
+        private float _nutritionalToxicitySeverity01;
         private uint _mutationFlags;
         private HectonSurvivalSystem _survivalSystem;
 
@@ -224,6 +246,8 @@ namespace Hecton8.Gameplay
                 if (_invulnerabilityTimer < 0f)
                     _invulnerabilityTimer = 0f;
             }
+
+            UpdateNutritionalToxicity(deltaTime);
         }
 
         /// <summary>Applies damage to the player.</summary>
@@ -314,6 +338,18 @@ namespace Hecton8.Gameplay
             PlaySurvivalGraceHeartbeatPulse();
             NotificationEvents.PushCritical("CARDIAC OVERRIDE");
             return true;
+        }
+
+        private void UpdateNutritionalToxicity(float deltaTime)
+        {
+            if (_nutritionalToxicityTimer <= 0f)
+                return;
+
+            _nutritionalToxicityTimer = Mathf.Max(0f, _nutritionalToxicityTimer - Mathf.Max(0f, deltaTime));
+            if (_nutritionalToxicityTimer > 0f)
+                return;
+
+            _nutritionalToxicitySeverity01 = 0f;
         }
 
         private void PlaySurvivalGraceHeartbeatPulse()

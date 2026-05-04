@@ -4,6 +4,8 @@ Date: `2026-05-02`
 Status: `PENDING VERIFICATION`
 Scope: active documentation authority, root documentation anchors, and current local verification evidence
 
+Supersession note: this report is historical. The current broad documentation-sweep authority is `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
+
 ## Mandates Followed
 
 - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
@@ -191,7 +193,7 @@ Current handling:
 
 ## Documentation Changes Made
 
-- `Docs/README.md` now points to this May 2 sweep as the latest documentation evidence.
+- At the May 2 boundary, `Docs/README.md` pointed to this sweep as the latest documentation evidence. Current authority has since moved to `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
 - `Docs/Reports/README.md` now lists this sweep as a high-authority report.
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` now carries a May 2 addendum while retaining the stable file path.
 - `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` now records the May 2 compile/documentation delta.
@@ -204,7 +206,7 @@ Current handling:
 
 - `Docs/README.md` is the entry point.
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` remains the current conceptual state anchor by stable path, updated through this pass.
-- This file is the latest documentation sweep and build-evidence addendum.
+- This file was the latest documentation sweep and build-evidence addendum on `2026-05-02`; it is superseded by `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`.
 - Older dated reports are evidence only after checking their latest delta sections.
 - Archive/deprecated files are not active truth.
 

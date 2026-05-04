@@ -1,13 +1,13 @@
-﻿# Scatter Refactor Execution Plan
+# Scatter Refactor Execution Plan
 
 Status: `ACTIVE`
 Verification: `PENDING VERIFICATION`
 Owner: `Codex`
 Scope: `WorldProceduralScatterDirector` follow-up against `Docs/Scatter_Runtime/SCATTER_REFACTORING_MANIFESTO_V2.md`
 
-## 2026-05-02 Current-State Boundary
+## 2026-05-04 Current-State Boundary
 
-- Read `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as current runtime truth.
+- Read `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`, `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md` before using this plan as current runtime truth.
 - This is an execution plan for the scatter owner cleanup, not proof that scatter is profiler-clean, runtime-correct, or fully refactored.
 - Native memory teardown notes in older scatter docs must be rechecked against current `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`; do not blindly preserve local `.Complete()` barriers.
 - Source files and fresh Unity/profiler evidence win over this plan.
@@ -44,7 +44,7 @@ Still missing or incomplete:
 
 ## Execution Order
 
-### Phase 1 â€” Low-Risk Structural Fixes
+### Phase 1 — Low-Risk Structural Fixes
 
 Status: `IN PROGRESS`
 
@@ -58,7 +58,7 @@ Status: `IN PROGRESS`
 - [x] remove nested snapshot type from pipeline partial
 - [x] wire pipeline to use snapshot data only, not implicit future transform reads
 
-### Phase 2 â€” Diagnostics Extraction
+### Phase 2 — Diagnostics Extraction
 
 Status: `PENDING`
 
@@ -67,7 +67,7 @@ Status: `PENDING`
 - [ ] keep serialized debug inspector state in director until safe migration path exists
 - [ ] do not break inspector references
 
-### Phase 3 â€” Spawning/Reconcile Extraction
+### Phase 3 — Spawning/Reconcile Extraction
 
 Status: `PENDING`
 
@@ -76,7 +76,7 @@ Status: `PENDING`
 - [ ] avoid fake service wrapper with no ownership gain
 - [ ] preserve GPUI path and generated geology path
 
-### Phase 4 â€” Heuristics Extraction
+### Phase 4 — Heuristics Extraction
 
 Status: `PENDING`
 
@@ -86,7 +86,7 @@ Status: `PENDING`
 - [ ] keep zero-GC static methods only
 - [ ] leave stateful/runtime owner logic in director
 
-### Phase 5 â€” Dead Branch Cleanup
+### Phase 5 — Dead Branch Cleanup
 
 Status: `PENDING`
 
@@ -97,7 +97,7 @@ Status: `PENDING`
   - delete
 - [ ] do not keep two competing scatter architectures alive
 
-### Phase 6 â€” Verification
+### Phase 6 — Verification
 
 Status: `PENDING`
 
@@ -110,7 +110,7 @@ Status: `PENDING`
   - GC alloc
   - active placement count
 
-### Phase 7 â€” API / Ownership Gaps
+### Phase 7 — API / Ownership Gaps
 
 Status: `PENDING`
 

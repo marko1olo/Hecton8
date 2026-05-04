@@ -15,6 +15,7 @@ Moved bundle classes:
 - Sargassum reference dump.
 - Visual/UX copied-reference dump.
 - Raw Codex/Unity log bundle.
+- Repository-root logs moved to `Root_Logs_2026-05-04/README.md`.
 - Miscellaneous external audit/problem summaries.
 
 The exact directory names are preserved on disk. They are not duplicated here because several names are Cyrillic and previous index copies already suffered encoding drift.

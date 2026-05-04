@@ -83,7 +83,8 @@ MonoBehaviour:
   - {fileID: -5141615736367322437}
   - {fileID: -4638680478887311186}
   - {fileID: 7019925337659302359}
-  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1aad5815c36b99ec35bb6a44aeba4fa5b8ae086265ae18a0bfd761f2c4e6c86b61
+  - {fileID: -1708262950445174769}
+  m_RendererFeatureMap: ad6b866f10d7b46cabf8db7c8ef6cf00a15e49751debe464b188e97609222e1aad5815c36b99ec35bb6a44aeba4fa5b8ae086265ae18a0bfd761f2c4e6c86b610f30c1b7e5074be8
   m_UseNativeRenderPass: 1
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: 41439944d30ece34e96484bdb6645b55, type: 2}
@@ -205,6 +206,28 @@ MonoBehaviour:
   m_Active: 1
   settings:
     injectionPoint: 1000
+--- !u!114 &-1708262950445174769
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 83bdec98ea424ebf8838203d765d3278, type: 3}
+  m_Name: HectonRetinaDistortionFeature
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Visor.HectonRetinaDistortionFeature
+  m_Active: 1
+  settings:
+    shader: {fileID: 4800000, guid: 8f4ada24e17a4e82bdd691ad587c4d66, type: 3}
+    injectionPoint: 550
+    healthThreshold01: 0.15
+    baseHeartbeatBpm: 54
+    criticalHeartbeatBpm: 124
+    maxChromaticOffset: 0.0038
+    maxDistortionOffset: 0.014
+    maxVignetteStrength: 0.28
 --- !u!114 &7270194210237144737
 MonoBehaviour:
   m_ObjectHideFlags: 0

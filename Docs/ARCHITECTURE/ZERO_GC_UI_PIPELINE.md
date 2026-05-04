@@ -3,10 +3,10 @@
 Status: REFERENCE
 Verification: PENDING VERIFICATION
 
-2026-05-02 current-state boundary:
+2026-05-04 current-state boundary:
 
 - This is the UI zero-GC contract and source-oriented pattern reference, not profiler proof.
-- Current project-state orientation starts at `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
+- Current project-state orientation starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` and `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
 - Any claim of `0 B/frame` for HUD/PDA/menu paths still requires fresh GCMonitor or profiler capture.
 - Presentation/UI must not own gameplay state transitions without a logic-owned fallback.
 

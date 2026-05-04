@@ -98,6 +98,7 @@ namespace Hecton.UI.MainMenu
         private UnityAction _quitClickAction;
         private UnityAction _backFromSaveLoadClickAction;
         private UnityAction _backFromSettingsClickAction;
+        private bool _runtimeBindingsReady;
 
 
         private void Awake()
@@ -111,12 +112,7 @@ namespace Hecton.UI.MainMenu
             }
 
             BootstrapStatus.MarkMainMenuReached();
-            CacheButtonActions();
-            AutoWireSceneReferences();
-            ConfigureAdaptiveLabels();
-            ValidateReferences();
-            BindButtons();
-            InitializePanelStates();
+            EnsureRuntimeMenuBindings(resetPanelState: true);
             BlockCancelInputBriefly();
         }
 
@@ -138,6 +134,7 @@ namespace Hecton.UI.MainMenu
 
         private void OnEnable()
         {
+            EnsureRuntimeMenuBindings(resetPanelState: _currentPanel == null);
             TryRegisterToTickManager();
             _lastUnscaledTickTime = Time.unscaledTime;
             BlockCancelInputBriefly();
@@ -149,6 +146,7 @@ namespace Hecton.UI.MainMenu
             SaveEvents.Register(this);
             
             RefreshLocalizedTexts();
+            RefreshSelectionIfNeeded();
         }
 
         private void OnDisable()
@@ -272,19 +270,46 @@ namespace Hecton.UI.MainMenu
                 btnSettings.interactable = _settingsAvailable;
         }
 
+        private void EnsureRuntimeMenuBindings(bool resetPanelState)
+        {
+            CacheButtonActions();
+            AutoWireSceneReferences();
+            ConfigureAdaptiveLabels();
+            ValidateReferences();
+            EnsurePanelHierarchyActive(mainMenuGroup);
+            EnsurePanelHierarchyActive(saveLoadGroup);
+            EnsurePanelHierarchyActive(settingsGroup);
+            EnsurePanelHierarchyActive(loadingGroup);
+            BindButtons();
+
+            if (resetPanelState || !_runtimeBindingsReady)
+                InitializePanelStates();
+
+            _runtimeBindingsReady = true;
+        }
+
         private void CacheButtonActions()
         {
-            _newGameClickAction = OnNewGameClicked; // COLD ALLOC: UnityAction[1] - cached main menu new-game listener - owner: MainMenuController
-            _loadGameClickAction = OnLoadGameClicked; // COLD ALLOC: UnityAction[1] - cached main menu load-game listener - owner: MainMenuController
-            _settingsClickAction = OnSettingsClicked; // COLD ALLOC: UnityAction[1] - cached main menu settings listener - owner: MainMenuController
-            _quitClickAction = OnQuitClicked; // COLD ALLOC: UnityAction[1] - cached main menu quit listener - owner: MainMenuController
-            _backFromSaveLoadClickAction = OnBackFromSaveLoadClicked; // COLD ALLOC: UnityAction[1] - cached save-load back listener - owner: MainMenuController
-            _backFromSettingsClickAction = OnBackFromSettingsClicked; // COLD ALLOC: UnityAction[1] - cached settings back listener - owner: MainMenuController
+            if (_newGameClickAction == null)
+                _newGameClickAction = OnNewGameClicked; // COLD ALLOC: UnityAction[1] - cached main menu new-game listener - owner: MainMenuController
+            if (_loadGameClickAction == null)
+                _loadGameClickAction = OnLoadGameClicked; // COLD ALLOC: UnityAction[1] - cached main menu load-game listener - owner: MainMenuController
+            if (_settingsClickAction == null)
+                _settingsClickAction = OnSettingsClicked; // COLD ALLOC: UnityAction[1] - cached main menu settings listener - owner: MainMenuController
+            if (_quitClickAction == null)
+                _quitClickAction = OnQuitClicked; // COLD ALLOC: UnityAction[1] - cached main menu quit listener - owner: MainMenuController
+            if (_backFromSaveLoadClickAction == null)
+                _backFromSaveLoadClickAction = OnBackFromSaveLoadClicked; // COLD ALLOC: UnityAction[1] - cached save-load back listener - owner: MainMenuController
+            if (_backFromSettingsClickAction == null)
+                _backFromSettingsClickAction = OnBackFromSettingsClicked; // COLD ALLOC: UnityAction[1] - cached settings back listener - owner: MainMenuController
         }
 
         private static void BindButton(Button button, UnityAction callback)
         {
             if (button == null)
+                return;
+
+            if (callback == null)
                 return;
 
             button.onClick.RemoveAllListeners();
@@ -956,7 +981,29 @@ namespace Hecton.UI.MainMenu
 
             InputManager inputManager = GlobalRegistry.NativeInputManager;
             if (inputManager != null)
-                inputManager.TryConfigureUiInputModule(inputSystemModule);
+            {
+                if (inputManager.TryConfigureUiInputModule(inputSystemModule))
+                    return;
+            }
+
+            if (!HasUsableUiModuleActions(inputSystemModule))
+                inputSystemModule.AssignDefaultActions();
+        }
+
+        private static bool HasUsableUiModuleActions(InputSystemUIInputModule inputSystemModule)
+        {
+            return inputSystemModule != null &&
+                   inputSystemModule.actionsAsset != null &&
+                   inputSystemModule.point != null &&
+                   inputSystemModule.point.action != null &&
+                   inputSystemModule.leftClick != null &&
+                   inputSystemModule.leftClick.action != null &&
+                   inputSystemModule.move != null &&
+                   inputSystemModule.move.action != null &&
+                   inputSystemModule.submit != null &&
+                   inputSystemModule.submit.action != null &&
+                   inputSystemModule.cancel != null &&
+                   inputSystemModule.cancel.action != null;
         }
 
         private void RequestSelectionRefresh()
@@ -1116,6 +1163,13 @@ namespace Hecton.UI.MainMenu
 
             if (_sceneActivationRequested || _sceneLoadOperation.progress < 0.9f)
                 return;
+
+            if (!SceneBootstrap.TryValidateSceneRootBudget(targetSceneName, "main-menu-preactivation"))
+            {
+                _isSceneLoadInFlight = false;
+                _sceneLoadOperation = null;
+                return;
+            }
 
             UpdateLoadingProgressVisual(100);
             _sceneActivationRequested = true;
@@ -1410,11 +1464,22 @@ namespace Hecton.UI.MainMenu
             if (group == null)
                 return;
 
+            EnsurePanelHierarchyActive(group);
             group.alpha = visible ? 1f : 0f;
             group.interactable = visible;
             group.blocksRaycasts = visible;
             if (visible)
                 _currentPanel = group;
+        }
+
+        private static void EnsurePanelHierarchyActive(CanvasGroup group)
+        {
+            if (group == null)
+                return;
+
+            GameObject panelRoot = group.gameObject;
+            if (!panelRoot.activeSelf)
+                panelRoot.SetActive(true);
         }
     }
 }
