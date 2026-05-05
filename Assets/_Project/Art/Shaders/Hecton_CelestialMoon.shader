@@ -196,7 +196,8 @@ Shader "HECTON/Celestial/Hecton_CelestialMoon"
                 float4 atmosphereSample = SampleHectonCelestialAtmosphere(
                     viewRay,
                     _SkyColorHorizon.rgb,
-                    _SkyColorZenith.rgb);
+                    _SkyColorZenith.rgb,
+                    toSun);
                 float horizonDissolve = 1.0 - atmosphereSample.a;
                 float nightAtmosphereFade = lerp(1.0, 0.12, _NightBlend);
                 float transmittanceWeight = saturate(

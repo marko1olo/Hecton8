@@ -352,17 +352,14 @@ namespace Hecton8.AI
             }
 
             float3 toCreature = (float3)(_cachedSelfPosition - _cachedPlayerPosition);
-            float distanceSq = math.lengthsq(toCreature);
-            if (distanceSq <= 0.0001f)
-                return;
-
             float range = math.max(1f, aggroDistance);
-            if (distanceSq > range * range)
+            double aupDistanceSq = AbsoluteUniversePosition.DistanceSq(in _cachedSelfAup, in _cachedPlayerAup);
+            if (aupDistanceSq <= 0.0001d || aupDistanceSq > (double)range * range)
                 return;
 
-            float distance = math.sqrt(distanceSq);
+            float distance = math.sqrt((float)math.min(aupDistanceSq, float.MaxValue));
             float3 lightDirection = math.normalizesafe((float3)_cachedPlayerForward, new float3(0f, 0f, 1f));
-            float flashlightDot = math.dot(lightDirection, toCreature / distance);
+            float flashlightDot = math.dot(lightDirection, math.normalizesafe(toCreature, lightDirection));
             if (flashlightDot < PlayerFlashlightConeDotThreshold)
                 return;
 

@@ -106,7 +106,6 @@ namespace Hecton8.Gameplay
         private static readonly Vector4[] s_moduleAmbienceData = new Vector4[ModuleWaterLevelShaderCapacity];
         // COLD ALLOC: Vector4[256] — global module water/flicker upload scratch — owner: BaseModule
         private static readonly Vector4[] s_moduleFloodAndFlickerData = new Vector4[ModuleWaterLevelShaderCapacity];
-        // COLD ALLOC: float[256] — legacy global module water-level upload scratch — owner: BaseModule
         private static int s_lastModuleWaterLevelUploadFrame = -1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

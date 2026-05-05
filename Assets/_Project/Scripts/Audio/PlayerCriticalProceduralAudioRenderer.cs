@@ -934,13 +934,6 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
-            PlayerCriticalProceduralAudioRenderer registeredInstance = GlobalRegistry.PlayerCriticalAudio;
-            if (registeredInstance != null && registeredInstance != this)
-            {
-                Destroy(this);
-                return;
-            }
-
             RebuildEnclosureProbeLayerMask();
             ResetReverbModelState();
             RefreshAudioConfiguration();
@@ -1095,6 +1088,21 @@ namespace Hecton8.Audio
             }
 
             ResolveListenerReverbFilter();
+        }
+
+        private float ResolveBoundPlayerDistanceMeters(Vector3 runtimeWorldPosition)
+        {
+            if (_boundPlayerTransform == null)
+                return float.PositiveInfinity;
+
+            return ResolveRuntimeDistanceMeters(_boundPlayerTransform.position, runtimeWorldPosition);
+        }
+
+        private static float ResolveRuntimeDistanceMeters(Vector3 runtimeA, Vector3 runtimeB)
+        {
+            Vector3 absoluteA = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeA);
+            Vector3 absoluteB = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimeB);
+            return math.length(absoluteA - absoluteB);
         }
 
         /// <summary>
@@ -2172,7 +2180,7 @@ namespace Hecton8.Audio
                 (impactSignal.PrimaryBodyId == _playerBodyEntityId ||
                  impactSignal.SecondaryBodyId == _playerBodyEntityId);
             float maxDistance = PhysicsImpactStressRadiusMeters;
-            float distance = Vector3.Distance(_boundPlayerTransform.position, impactSignal.Point);
+            float distance = ResolveBoundPlayerDistanceMeters(impactSignal.Point);
             if (!isPlayerOwnedImpact && distance > maxDistance)
                 return;
 
@@ -2258,7 +2266,7 @@ namespace Hecton8.Audio
             if (_boundPlayerTransform == null)
                 return;
 
-            float distance = Vector3.Distance(_boundPlayerTransform.position, info.WorldPosition);
+            float distance = ResolveBoundPlayerDistanceMeters(info.WorldPosition);
             if (distance > PredatorKillAudioRadiusMeters)
                 return;
 
@@ -2291,7 +2299,7 @@ namespace Hecton8.Audio
             if (_boundPlayerTransform == null)
                 return;
 
-            float distance = Vector3.Distance(_boundPlayerTransform.position, info.WorldPosition);
+            float distance = ResolveBoundPlayerDistanceMeters(info.WorldPosition);
             if (distance > MeteorBoomAudioRadiusMeters)
                 return;
 
@@ -2322,7 +2330,7 @@ namespace Hecton8.Audio
             if (_boundPlayerTransform == null)
                 return;
 
-            float distance = Vector3.Distance(_boundPlayerTransform.position, info.WorldPosition);
+            float distance = ResolveBoundPlayerDistanceMeters(info.WorldPosition);
             if (distance > MechanicalWhirrAudioRadiusMeters)
                 return;
 
@@ -2348,7 +2356,7 @@ namespace Hecton8.Audio
             if (_boundPlayerTransform == null)
                 return;
 
-            float distance = Vector3.Distance(_boundPlayerTransform.position, info.WorldPosition);
+            float distance = ResolveBoundPlayerDistanceMeters(info.WorldPosition);
             if (distance > PredatorKillAudioRadiusMeters * 2.5f)
                 return;
 
@@ -2368,7 +2376,7 @@ namespace Hecton8.Audio
                 return;
 
             float maxDistance = PhysicsImpactStressRadiusMeters;
-            float distance = Vector3.Distance(_boundPlayerTransform.position, stressInfo.WorldPosition);
+            float distance = ResolveBoundPlayerDistanceMeters(stressInfo.WorldPosition);
             if (distance > maxDistance)
                 return;
 
@@ -3354,7 +3362,7 @@ namespace Hecton8.Audio
             for (int i = 0; i < safeCount; i++)
             {
                 Vector3 candidate = points[i];
-                float candidateDistance = math.distance(playerPosition, candidate);
+                float candidateDistance = ResolveRuntimeDistanceMeters(playerPosition, candidate);
                 if (candidateDistance >= nearestReflector.DistanceMeters)
                     continue;
 

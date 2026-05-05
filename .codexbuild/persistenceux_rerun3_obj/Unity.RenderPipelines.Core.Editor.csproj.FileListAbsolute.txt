@@ -1,0 +1,8 @@
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_bin\Unity.RenderPipelines.Core.Editor.dll
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_bin\Unity.RenderPipelines.Core.Editor.pdb
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Unity.RenderPipelines.Core.Editor.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Unity.RenderPipelines.Core.Editor.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Unity.RenderPipelines.Core.Editor.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Unity.RenderPipelines.Core.Editor.sourcelink.json
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Unity.RenderPipelines.Core.Editor.dll
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Unity.RenderPipelines.Core.Editor.pdb

@@ -59,6 +59,13 @@ namespace Hecton.UI.MainMenu
         [SerializeField] private TMP_Text loadingPercentText;
         [SerializeField] private LoadingTipsDisplay loadingTips;
 
+        [Header("=== CINEMATIC TRANSITION ===")]
+        [SerializeField, Tooltip("Scene-authored main-menu camera panned during the menu-to-world transition.")]
+        private Camera mainMenuCamera;
+
+        [SerializeField, Tooltip("Scene-authored R8 blue-noise texture used by the menu-to-world dither dissolve.")]
+        private Texture2D transitionBlueNoiseTexture;
+
         [Header("=== CONFIG ===")]
         [SerializeField] private float fadeDuration = 0.2f;
         [SerializeField] private string targetSceneName = "02_HECTON_WORLD";
@@ -783,9 +790,10 @@ namespace Hecton.UI.MainMenu
             _sceneLoadOperation = null;
 
             ISceneService sceneService = Hecton8.Core.GlobalRegistry.Scene;
+            SceneRuntimeService runtimeSceneService = sceneService as SceneRuntimeService;
             if (sceneService == null)
             {
-                SceneRuntimeService runtimeSceneService = SceneRuntimeService.EnsureRuntimeInstance();
+                runtimeSceneService = SceneRuntimeService.EnsureRuntimeInstance();
                 if (runtimeSceneService != null)
                 {
                     runtimeSceneService.InitializeService();
@@ -819,6 +827,9 @@ namespace Hecton.UI.MainMenu
 
                 return;
             }
+
+            if (runtimeSceneService != null)
+                runtimeSceneService.ConfigureMainMenuCinematic(mainMenuCamera, transitionBlueNoiseTexture);
 
             sceneService.LoadScene(targetSceneName);
         }

@@ -30,6 +30,7 @@ namespace Hecton8.World
         private const float FullSimulationDistanceMeters = 50f;
         private const float SleepSimulationDistanceMeters = 200f;
         private const float MinimumPopulationBudgetScale = 0.35f;
+        private const string NativeMemoryOwner = nameof(SargassumMicroFaunaBoids);
 #if UNITY_EDITOR
         private const int MaxEditorValidateDepth = 4;
         private static int _editorValidateDepth;
@@ -1862,14 +1863,14 @@ namespace Hecton8.World
             EnsureBuffer(ref _spatialGridCountBuffer, SpatialGridMaxCellCount, SpatialGridCountStride);
             EnsureBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
             EnsureBuffer(ref _simulationFrameBuffer, 1, SimulationFrameConstantsStride);
-            EnsureNativeArrayCapacity(ref _staticObstacleCache, Mathf.Max(formationObstacleCapacity * 8, formationObstacleCapacity));
-            EnsureNativeArrayCapacity(ref _leviathanNodeFrontNative, leviathanNodeCapacity);
-            EnsureNativeArrayCapacity(ref _leviathanNodeBackNative, leviathanNodeCapacity);
-            EnsureNativeArrayCapacity(ref _leviathanNodeCountNative, 1);
-            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1);
-            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1);
-            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1);
-            EnsureNativeArrayCapacity(ref _simulationFrameNative, 1);
+            EnsureNativeArrayCapacity(ref _staticObstacleCache, Mathf.Max(formationObstacleCapacity * 8, formationObstacleCapacity), nameof(_staticObstacleCache));
+            EnsureNativeArrayCapacity(ref _leviathanNodeFrontNative, leviathanNodeCapacity, nameof(_leviathanNodeFrontNative));
+            EnsureNativeArrayCapacity(ref _leviathanNodeBackNative, leviathanNodeCapacity, nameof(_leviathanNodeBackNative));
+            EnsureNativeArrayCapacity(ref _leviathanNodeCountNative, 1, nameof(_leviathanNodeCountNative));
+            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1, nameof(_foveatedSimulationInputNative));
+            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1, nameof(_foveatedSimulationFrontNative));
+            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1, nameof(_foveatedSimulationBackNative));
+            EnsureNativeArrayCapacity(ref _simulationFrameNative, 1, nameof(_simulationFrameNative));
 
             if (!ValidateGpuStructLayouts())
                 return;
@@ -2043,7 +2044,7 @@ namespace Hecton8.World
 
             int cellCount = (int)cellCountLong;
             EnsureBuffer(ref _threatVoxelBuffer, cellCount, ThreatVoxelStride);
-            EnsureNativeArrayCapacity(ref _threatVoxelUploadNative, cellCount);
+            EnsureNativeArrayCapacity(ref _threatVoxelUploadNative, cellCount, nameof(_threatVoxelUploadNative));
 
             // Expand the byte-compressed voxel payload into uint lanes to match the structured buffer contract.
             for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
@@ -2087,7 +2088,7 @@ namespace Hecton8.World
 
             int cellCount = (int)cellCountLong;
             EnsureBuffer(ref _threatGridBuffer, cellCount, ThreatGridStride);
-            EnsureNativeArrayCapacity(ref _threatGridUploadNative, cellCount);
+            EnsureNativeArrayCapacity(ref _threatGridUploadNative, cellCount, nameof(_threatGridUploadNative));
 
             for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
                 _threatGridUploadNative[cellIndex] = threatGrid[cellIndex];
@@ -2474,7 +2475,7 @@ namespace Hecton8.World
             if (_leviathanNodeBuildScheduled)
                 return;
 
-            EnsureNativeArrayCapacity(ref _leviathanPathScratchNative, safePathCount);
+            EnsureNativeArrayCapacity(ref _leviathanPathScratchNative, safePathCount, nameof(_leviathanPathScratchNative));
             for (int i = 0; i < safePathCount; i++)
                 _leviathanPathScratchNative[i] = path[i];
 
@@ -4224,9 +4225,9 @@ namespace Hecton8.World
 
         private void PrimeFoveatedSimulationDecision(float frameDeltaTime, float cameraDistanceSq)
         {
-            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1);
-            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1);
-            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1);
+            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1, nameof(_foveatedSimulationInputNative));
+            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1, nameof(_foveatedSimulationFrontNative));
+            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1, nameof(_foveatedSimulationBackNative));
             PopulateFoveatedSimulationInput(frameDeltaTime, cameraDistanceSq, previousAccumulator: 0f);
             var primeJob = new EvaluateSimulationLodJob
             {
@@ -4392,7 +4393,7 @@ namespace Hecton8.World
             _debugLeviathanNodeCount = 0;
         }
 
-        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredLength) where T : struct
+        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredLength, string label) where T : struct
         {
             if (requiredLength <= 0)
                 return;
@@ -4401,9 +4402,13 @@ namespace Hecton8.World
                 return;
 
             if (array.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(array);
                 array.Dispose();
+            }
 
-            array = new NativeArray<T>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            array = new NativeArray<T>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<T>[requiredLength] - persistent sargassum job/GPU staging buffer - owner: SargassumMicroFaunaBoids
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
@@ -4411,6 +4416,7 @@ namespace Hecton8.World
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
         }
@@ -4420,6 +4426,7 @@ namespace Hecton8.World
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose(dependency);
             array = default;
         }

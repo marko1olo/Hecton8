@@ -122,8 +122,57 @@ dotnet run --project Docs/SPACE_ENGINE_RESEARCH/HectonSandboxAbyssalShelfStandal
 Result:
 
 ```json
-{"status":"MACRO SHELF VERIFIED","tester":"HectonSandboxAbyssalShelfStandaloneSmoke","samples":12,"invalid":0,"cliffSamples":0,"plateauSamples":8,"minHeightMeters":-5000,"maxHeightMeters":2000,"maxSlopeDegrees":39.043,"averageSlopeDegrees":12.141,"averageActiveSlopeDegrees":30.718,"slope30Samples":2,"aupDeltaMeters":0,"aupBoundaryDeltaMeters":0.31,"originChunkInvalid":0,"farChunkInvalid":0,"highChunkAupDeltaMeters":0,"elapsedMs":11.856}
+{"status":"MACRO SHELF VERIFIED","tester":"HectonSandboxAbyssalShelfStandaloneSmoke","samples":12,"invalid":0,"cliffSamples":0,"plateauSamples":8,"minHeightMeters":-5000,"maxHeightMeters":2000,"maxSlopeDegrees":39.043,"averageSlopeDegrees":12.141,"averageActiveSlopeDegrees":30.718,"slope30Samples":2,"aupDeltaMeters":0,"aupBoundaryDeltaMeters":0.31,"originChunkInvalid":0,"farChunkInvalid":0,"highChunkAupDeltaMeters":0,"elapsedMs":31.983}
 ```
+
+## Omega V2 Crucible Audit
+
+Violation found and excised:
+
+- `HectonSandboxAbyssalShelfSmokeTester.RunSmokeTest` marked `sampleHandleScheduled = true` only after scheduling the final summary job.
+- Failure mode: if reduction or summary scheduling threw after the first sample job was scheduled, `finally` could unregister and dispose `positions`, `samples`, `reductions`, or `summary` while a live job still referenced one or more arrays.
+- Fix: `sampleHandleScheduled = true` now executes immediately after `sampleJob.Schedule(...)`, before dependent jobs are scheduled.
+
+Native memory interrogation:
+
+- `HectonSandboxAbyssalShelfMapMagicNode`: allocates `rawHeights` and `quantizedHeights`; both registered via `RegisterTempJobArray`; `generationHandleScheduled` is set immediately after the base job schedule; `finally` drains the handle with `DispatcherJobSwap.TryComplete` before unregister/dispose.
+- `HectonSandboxAbyssalShelfSmokeTester`: allocates `positions`, `samples`, `reductions`, and `summary`; all registered through `NativeMemorySentinel`; `finally` drains `sampleHandle` before unregister/dispose. This is the path fixed by the Crucible pass.
+- `ErosionTestHarness.Run`: allocates `before`, `heightA`, `heightB`, `sediment`, `wear`, and `metrics`; all registered in `RegisterTempJobBuffers`; `handleScheduled` is set immediately after the first scheduled job; `finally` drains before `DisposeTracked`.
+- `ErosionTestHarness.WriteMacroShelfPreviewArtifacts`: allocates `raw` and `quantized`; both registered; `handleScheduled` is set immediately after the base shelf job schedule; `finally` drains before `DisposeTracked`.
+- `HectonSandboxAbyssalShelfJobs`: uses `NativeArray` fields inside Burst jobs only; ownership remains with caller allocation sites above.
+- `Docs/SPACE_ENGINE_RESEARCH/HectonSandboxAbyssalShelfStandaloneSmoke/Program.cs`: no Unity `NativeArray`, `NativeList`, or `NativeQueue` ownership. Managed arrays are standalone console harness memory, not Unity runtime native memory.
+
+GC purge scan on touched code files:
+
+- `foreach`: 0 matches.
+- LINQ calls `.Select`, `.Where`, `.Any`, `.First`, `.FirstOrDefault`, `.ToList`, `.ToArray`: 0 matches.
+- `string.Format`: 0 matches.
+- string interpolation `$"`: 0 matches.
+- `Update`, `Tick`, `SlowTick`: 0 matches in touched code files.
+
+AUP compliance scan on touched code files:
+
+- `transform.position`: 0 matches.
+- `Vector3.Distance`: 0 matches.
+- `math.distance`: 0 matches.
+- generic `Distance(` call token: 0 matches.
+
+Dependency-cycle scan on touched code files:
+
+- `GlobalRegistry.Get`: 0 matches.
+- `GlobalRegistry.` access: 0 matches.
+- `Awake`: 0 matches.
+- `OnEnable`: 0 matches.
+
+Post-fix standalone verification:
+
+- `dotnet build Docs/SPACE_ENGINE_RESEARCH/HectonSandboxAbyssalShelfStandaloneSmoke/HectonSandboxAbyssalShelfStandaloneSmoke.csproj -v:minimal`: exit `0`, `0 Warning(s)`, `0 Error(s)`.
+- `dotnet run --project Docs/SPACE_ENGINE_RESEARCH/HectonSandboxAbyssalShelfStandaloneSmoke/HectonSandboxAbyssalShelfStandaloneSmoke.csproj --configuration Release -- --output Docs/SPACE_ENGINE_RESEARCH/HectonSandboxAbyssalShelfStandaloneSmoke.json`: exit `0`, status `MACRO SHELF VERIFIED`.
+
+Unity MCP status:
+
+- Fresh Unity MCP validation after the Crucible patch failed because the Unity session was unavailable: `no_unity_session`.
+- Prior Unity MCP validation before this one-line smoke tester fence patch reported 0 errors and 0 warnings on the same four Unity script files.
 
 Unity MCP script validation:
 

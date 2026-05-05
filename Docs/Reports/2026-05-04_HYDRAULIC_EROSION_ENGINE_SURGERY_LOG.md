@@ -272,3 +272,25 @@ Requested status label: `OMEGA V2 VERIFIED` is scoped to the self-audit pass onl
 - Scenario data: `tiny_margin_clamp` 16x16, 128 droplets, `milliseconds=202.7419`, `maxSediment=0.75611`, `maxWear=0.775886`.
 - Scenario data: `draft_tile` 64x64, 4096 droplets, `milliseconds=336.4043`, `maxSediment=0.698055`, `maxWear=0.893405`.
 - Scenario data: `thermal_stress` 96x96, 2048 droplets, `milliseconds=174.3129`, `maxSediment=0.382892`, `maxWear=0.513876`.
+
+## 2026-05-05 Omega-Autonomy V2 Repeat Crucible
+
+Status: `PENDING VERIFICATION`
+
+### Garbage Found
+
+- No new NativeCollection leak defect was found after the prior Crucible fixes.
+- No new hot-path LINQ, dictionary `foreach`, `string.Format`, AUP/Transform-distance, or GlobalRegistry init-cycle defect was found in touched scope.
+
+### Forced Optimization
+
+- Added Burst `NormalizeMaskInPlaceJob` to normalize sediment and erosion-depth masks on a worker thread before MapMagic matrix publication.
+- Removed dead `CopyNormalizedMask` managed normalization loop from `HectonHydraulicErosionMapMagicNode`.
+- Scheduled `NormalizeMaskInPlaceJob` for sediment and erosion-depth masks before the cold publish barrier. Managed copy to MapMagic matrices now performs only saturated copy; max scan and normalization are Burst worker work.
+
+### Verification Delta
+
+- Blocked: Unity MCP validation retried after this repeat pass and returned `no_unity_session`.
+- Passed: external `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false` writing `CodexArtifacts/tactile-forge-build.log` exited successfully with `0 Warning(s)` and `0 Error(s)`.
+- Passed: `dotnet build .\Hecton8.Editor.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` exited successfully with `0 Warning(s)` and `0 Error(s)`.
+- Passed: scoped static scan after this repeat pass found no LINQ, no dictionary `foreach`, no `string.Format`, no `transform.position`, no `Vector3.Distance`, no `math.distance`, no `GlobalRegistry`, no `Awake`, no `OnEnable`, and no runtime update/tick methods in touched code. `.ToString()` remains editor JSON-only.

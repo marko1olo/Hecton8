@@ -619,7 +619,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
 
         half3 EvaluateFlashlightScattering(float3 samplePositionWS, float3 rayDirectionWS)
         {
-            if (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5)
+            if (_HectonFlashlightActive <= 0.5)
                 return half3(0.0, 0.0, 0.0);
 
             float3 lightPositionWS = _HectonFlashlightPositionWS.xyz;
@@ -644,10 +644,12 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             float phaseCos = saturate(dot(sampleDirectionWS, -rayDirectionWS));
             float phase = PhaseHG(phaseCos, _HectonShaftScatteringAnisotropy);
             float volumetricEnergy = (coneAttenuation * rangeAttenuation * phase * _HectonFlashlightConeData.y) + (halo * 0.08);
-            float shadow = EvaluateFlashlightVoxelShadowRay(
-                samplePositionWS - sampleDirectionWS * _HectonFlashlightShadowBias,
-                -sampleDirectionWS,
-                max(sampleDistance - _HectonFlashlightShadowBias, 0.0));
+            float shadow = _HectonFlashlightVoxelActive > 0.5
+                ? EvaluateFlashlightVoxelShadowRay(
+                    samplePositionWS - sampleDirectionWS * _HectonFlashlightShadowBias,
+                    -sampleDirectionWS,
+                    max(sampleDistance - _HectonFlashlightShadowBias, 0.0))
+                : 1.0;
             half3 lightColor = _HectonFlashlightColor.rgb;
             float lightIntensity = _HectonFlashlightColor.w;
             return lightColor * (lightIntensity * volumetricEnergy * shadow);
@@ -702,7 +704,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
         half3 IntegrateHeadlightShafts(float2 screenUV)
         {
             if (_HectonScooterHeadlightCount <= 0 &&
-                (_HectonFlashlightActive <= 0.5 || _HectonFlashlightVoxelActive <= 0.5))
+                _HectonFlashlightActive <= 0.5)
             {
                 return half3(0.0, 0.0, 0.0);
             }

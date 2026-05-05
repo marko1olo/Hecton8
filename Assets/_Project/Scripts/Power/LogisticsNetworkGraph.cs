@@ -1165,6 +1165,8 @@ namespace Hecton8.Power
         private const float EssentialVoltageMinimumRatio = 0.45f;
         private const float StandardVoltageMinimumRatio = 0.65f;
         private const float AmbientVoltageMinimumRatio = 0.85f;
+        private const string NativeMemoryOwner = nameof(LogisticsNetworkGraph);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
 
         private LogisticsNetworkType _networkType;
         private int _nodeCount;
@@ -1227,40 +1229,54 @@ namespace Hecton8.Power
 
             // COLD ALLOC: LogisticsNode[nodeCapacity] — runtime node buffer — owner: LogisticsNetworkGraph
             _nodeBuffer = new NativeArray<LogisticsNode>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(_nodeBuffer, nameof(_nodeBuffer));
             // COLD ALLOC: int[nodeCapacity + 1] — CSR edge offsets — owner: LogisticsNetworkGraph
             _edgeOffsets = new NativeArray<int>(safeNodeCapacity + 1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(_edgeOffsets, nameof(_edgeOffsets));
             // COLD ALLOC: int[edgeCapacity] — CSR edge destinations — owner: LogisticsNetworkGraph
             _edgeDestinations = new NativeArray<int>(safeEdgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(_edgeDestinations, nameof(_edgeDestinations));
             // COLD ALLOC: float[edgeCapacity] — CSR edge resistance weights — owner: LogisticsNetworkGraph
             _edgeResistance = new NativeArray<float>(safeEdgeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(_edgeResistance, nameof(_edgeResistance));
             // COLD ALLOC: int[nodeCapacity] — CSR write cursor scratch — owner: LogisticsNetworkGraph
             _edgeWriteCursor = new NativeArray<int>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(_edgeWriteCursor, nameof(_edgeWriteCursor));
             // COLD ALLOC: TopologyEdgeRecord[edgeCapacity] — topology mutation source — owner: LogisticsNetworkGraph
             _topologyEdgeList = new NativeList<TopologyEdgeRecord>(safeEdgeCapacity, Allocator.Persistent);
+            RegisterNativeList(_topologyEdgeList, nameof(_topologyEdgeList));
             // COLD ALLOC: ProducerRecord[nodeCapacity] — producer seed list — owner: LogisticsNetworkGraph
             _producers = new NativeList<ProducerRecord>(safeNodeCapacity, Allocator.Persistent);
+            RegisterNativeList(_producers, nameof(_producers));
             // COLD ALLOC: ConsumerRecord[consumerCapacity] — consumer demand list — owner: LogisticsNetworkGraph
             _consumers = new NativeList<ConsumerRecord>(safeConsumerCapacity, Allocator.Persistent);
+            RegisterNativeList(_consumers, nameof(_consumers));
             // COLD ALLOC: NativeParallelHashMap<int,float>[nodeCapacity] — producer aggregation map — owner: LogisticsNetworkGraph
             _producerMap = new NativeParallelHashMap<int, float>(safeNodeCapacity, Allocator.Persistent);
+            RegisterNativeParallelHashMap(_producerMap, nameof(_producerMap));
             // COLD ALLOC: NativeParallelHashMap<int,float>[nodeCapacity] — consumer aggregation map — owner: LogisticsNetworkGraph
             _consumerMap = new NativeParallelHashMap<int, float>(safeNodeCapacity, Allocator.Persistent);
+            RegisterNativeParallelHashMap(_consumerMap, nameof(_consumerMap));
             // COLD ALLOC: NativeArray<ushort>[nodeCapacity] — published node-state bitmasks — owner: LogisticsNetworkGraph
             _publishedNodeStates = new NativeArray<ushort>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(_publishedNodeStates, nameof(_publishedNodeStates));
             // COLD ALLOC: NativeArray<ushort>[nodeCapacity] — back-buffer node-state bitmasks for async publish — owner: LogisticsNetworkGraph
             _publishedNodeStatesBack = new NativeArray<ushort>(safeNodeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(_publishedNodeStatesBack, nameof(_publishedNodeStatesBack));
             // COLD ALLOC: NativeParallelHashMap<uint,ushort>[nodeCapacity] — published node-state lookup by stable node id — owner: LogisticsNetworkGraph
             _publishedNodeStateMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, Allocator.Persistent);
+            RegisterNativeParallelHashMap(_publishedNodeStateMap, nameof(_publishedNodeStateMap));
             // COLD ALLOC: NativeParallelHashMap<uint,ushort>[nodeCapacity] — back-buffer node-state lookup for async publish — owner: LogisticsNetworkGraph
             _publishedNodeStateBackMap = new NativeParallelHashMap<uint, ushort>(safeNodeCapacity, Allocator.Persistent);
+            RegisterNativeParallelHashMap(_publishedNodeStateBackMap, nameof(_publishedNodeStateBackMap));
             // COLD ALLOC: NativeQueue<int>[nodeCapacity] — iterative BFS frontier — owner: LogisticsNetworkGraph
             _bfsQueue = new NativeQueue<int>(Allocator.Persistent);
             NativeMemorySentinel.RegisterNativeQueue(
                 _bfsQueue,
                 safeNodeCapacity,
-                nameof(LogisticsNetworkGraph),
+                NativeMemoryOwner,
                 _bfsQueueSentinelLabel,
-                NativeAllocationLifetime.Session);
+                NativeMemoryLifetime);
             _committedDistributionSummary = new DistributionSummary
             {
                 SupplyRatio = 1f,
@@ -1282,11 +1298,11 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _edgeDestinations, disposeDependency);
             DisposeNativeArray(ref _edgeResistance, disposeDependency);
             DisposeNativeArray(ref _edgeWriteCursor, disposeDependency);
-            DisposeNativeList(ref _topologyEdgeList, disposeDependency);
-            DisposeNativeList(ref _producers, disposeDependency);
-            DisposeNativeList(ref _consumers, disposeDependency);
-            DisposeNativeParallelHashMap(ref _producerMap, disposeDependency);
-            DisposeNativeParallelHashMap(ref _consumerMap, disposeDependency);
+            DisposeNativeList(ref _topologyEdgeList, disposeDependency, nameof(_topologyEdgeList));
+            DisposeNativeList(ref _producers, disposeDependency, nameof(_producers));
+            DisposeNativeList(ref _consumers, disposeDependency, nameof(_consumers));
+            DisposeNativeParallelHashMap(ref _producerMap, disposeDependency, nameof(_producerMap));
+            DisposeNativeParallelHashMap(ref _consumerMap, disposeDependency, nameof(_consumerMap));
             DisposeNativeArray(ref _parents, disposeDependency);
             DisposeNativeArray(ref _ranks, disposeDependency);
             DisposeNativeArray(ref _componentIds, disposeDependency);
@@ -1312,12 +1328,12 @@ namespace Hecton8.Power
             DisposeNativeArray(ref _scheduledDistributionSummary, disposeDependency);
             DisposeNativeArray(ref _publishedNodeStates, disposeDependency);
             DisposeNativeArray(ref _publishedNodeStatesBack, disposeDependency);
-            DisposeNativeParallelHashMap(ref _publishedNodeStateMap, disposeDependency);
-            DisposeNativeParallelHashMap(ref _publishedNodeStateBackMap, disposeDependency);
+            DisposeNativeParallelHashMap(ref _publishedNodeStateMap, disposeDependency, nameof(_publishedNodeStateMap));
+            DisposeNativeParallelHashMap(ref _publishedNodeStateBackMap, disposeDependency, nameof(_publishedNodeStateBackMap));
 
             if (_bfsQueue.IsCreated)
             {
-                NativeMemorySentinel.UnregisterNativeQueue(nameof(LogisticsNetworkGraph), _bfsQueueSentinelLabel);
+                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, _bfsQueueSentinelLabel);
                 _bfsQueue.Dispose(disposeDependency);
                 _bfsQueue = default;
             }
@@ -1345,30 +1361,97 @@ namespace Hecton8.Power
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose(dependency);
             array = default;
         }
 
-        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle dependency)
+        private static void DisposeNativeList<T>(ref NativeList<T> list, JobHandle dependency, string label)
             where T : unmanaged
         {
             if (!list.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
             list.Dispose(dependency);
             list = default;
         }
 
         private static void DisposeNativeParallelHashMap<TKey, TValue>(
             ref NativeParallelHashMap<TKey, TValue> map,
-            JobHandle dependency)
+            JobHandle dependency,
+            string label)
             where TKey : unmanaged, IEquatable<TKey>
             where TValue : unmanaged
         {
             if (!map.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, label);
             map.Dispose(dependency);
+            map = default;
+        }
+
+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label)
+            where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void RegisterNativeList<T>(NativeList<T> list, string label)
+            where T : unmanaged
+        {
+            NativeMemorySentinel.RegisterNativeList(list, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void RegisterNativeParallelHashMap<TKey, TValue>(NativeParallelHashMap<TKey, TValue> map, string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            NativeMemorySentinel.RegisterNativeParallelHashMap(map, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void EnsureNativeListCapacity<T>(ref NativeList<T> list, int requiredLength, string label)
+            where T : unmanaged
+        {
+            int safeLength = math.max(1, requiredLength);
+            if (!list.IsCreated)
+            {
+                list = new NativeList<T>(safeLength, Allocator.Persistent);
+                RegisterNativeList(list, label);
+                return;
+            }
+
+            if (list.Capacity >= safeLength)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, label);
+            list.Capacity = safeLength;
+            RegisterNativeList(list, label);
+        }
+
+        private static void DisposeNativeArrayImmediate<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
+        }
+
+        private static void DisposeNativeParallelHashMapImmediate<TKey, TValue>(
+            ref NativeParallelHashMap<TKey, TValue> map,
+            string label)
+            where TKey : unmanaged, IEquatable<TKey>
+            where TValue : unmanaged
+        {
+            if (!map.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, label);
+            map.Dispose();
             map = default;
         }
 
@@ -1435,7 +1518,7 @@ namespace Hecton8.Power
                 return;
 
             if (_topologyEdgeList.Length >= _topologyEdgeList.Capacity)
-                _topologyEdgeList.Capacity = math.max(1, _topologyEdgeList.Capacity * 2);
+                EnsureNativeListCapacity(ref _topologyEdgeList, math.max(1, _topologyEdgeList.Capacity * 2), nameof(_topologyEdgeList));
 
             _topologyEdgeList.Add(new TopologyEdgeRecord
             {
@@ -2783,187 +2866,187 @@ namespace Hecton8.Power
         private void EnsureNodeCapacity(int requiredLength)
         {
             int safeLength = math.max(1, requiredLength);
-            EnsureNodeArrayCapacity(ref _nodeBuffer, safeLength);
-            EnsureIntArrayCapacity(ref _edgeOffsets, safeLength + 1);
-            EnsureIntArrayCapacity(ref _edgeWriteCursor, safeLength);
+            EnsureNodeArrayCapacity(ref _nodeBuffer, safeLength, nameof(_nodeBuffer));
+            EnsureIntArrayCapacity(ref _edgeOffsets, safeLength + 1, nameof(_edgeOffsets));
+            EnsureIntArrayCapacity(ref _edgeWriteCursor, safeLength, nameof(_edgeWriteCursor));
         }
 
         private void EnsureEdgeCapacity(int requiredLength)
         {
             int safeLength = math.max(1, requiredLength);
-            EnsureIntArrayCapacity(ref _edgeDestinations, safeLength);
-            EnsureFloatArrayCapacity(ref _edgeResistance, safeLength);
+            EnsureIntArrayCapacity(ref _edgeDestinations, safeLength, nameof(_edgeDestinations));
+            EnsureFloatArrayCapacity(ref _edgeResistance, safeLength, nameof(_edgeResistance));
         }
 
         private void EnsureTopologyCapacity(int requiredLength)
         {
             int safeLength = math.max(1, requiredLength);
             if (_topologyEdgeList.Capacity < safeLength)
-                _topologyEdgeList.Capacity = safeLength;
+                EnsureNativeListCapacity(ref _topologyEdgeList, safeLength, nameof(_topologyEdgeList));
         }
 
         private void EnsureProducerCapacity(int requiredLength)
         {
             int safeLength = math.max(1, requiredLength);
             if (_producers.Capacity < safeLength)
-                _producers.Capacity = safeLength;
+                EnsureNativeListCapacity(ref _producers, safeLength, nameof(_producers));
 
-            EnsureFloatMapCapacity(ref _producerMap, safeLength);
-            EnsureFloatMapCapacity(ref _consumerMap, safeLength);
+            EnsureFloatMapCapacity(ref _producerMap, safeLength, nameof(_producerMap));
+            EnsureFloatMapCapacity(ref _consumerMap, safeLength, nameof(_consumerMap));
         }
 
         private void EnsureConsumerCapacity(int requiredLength)
         {
             int safeLength = math.max(1, requiredLength);
             if (_consumers.Capacity < safeLength)
-                _consumers.Capacity = safeLength;
+                EnsureNativeListCapacity(ref _consumers, safeLength, nameof(_consumers));
         }
 
         private void EnsureWorkingCapacity(int nodeCount, int consumerCount)
         {
-            EnsureIntArrayCapacity(ref _parents, nodeCount);
-            EnsureIntArrayCapacity(ref _ranks, nodeCount);
-            EnsureIntArrayCapacity(ref _componentIds, nodeCount);
-            EnsureIntArrayCapacity(ref _componentSizes, nodeCount);
-            EnsureIntArrayCapacity(ref _rootToComponent, nodeCount);
-            EnsureIntArrayCapacity(ref _traversalQueue, nodeCount);
-            EnsureByteArrayCapacity(ref _visited, nodeCount);
-            EnsureByteArrayCapacity(ref _consumerStates, consumerCount);
-            EnsureFloatArrayCapacity(ref _nodeNetInjection, nodeCount);
-            EnsureFloatArrayCapacity(ref _nodePotentialFront, nodeCount);
-            EnsureFloatArrayCapacity(ref _nodePotentialBack, nodeCount);
-            EnsureFloatArrayCapacity(ref _nodeServedDemand, nodeCount);
-            EnsureFloatArrayCapacity(ref _nodeVoltageSupplyRatio, nodeCount);
-            EnsureFloatArrayCapacity(ref _componentGeneration, nodeCount);
-            EnsureFloatArrayCapacity(ref _componentDemand, nodeCount);
-            EnsureFloatArrayCapacity(ref _componentServedDemand, nodeCount);
-            EnsureFloatArrayCapacity(ref _componentRemainingSupply, nodeCount);
-            EnsureFloatArrayCapacity(ref _componentSupplyRatio, nodeCount);
-            EnsureFloatArrayCapacity(ref _componentResidualInjection, nodeCount);
-            EnsureIntArrayCapacity(ref _componentAnchorNode, nodeCount);
-            EnsureByteArrayCapacity(ref _componentBrownoutTier, nodeCount);
+            EnsureIntArrayCapacity(ref _parents, nodeCount, nameof(_parents));
+            EnsureIntArrayCapacity(ref _ranks, nodeCount, nameof(_ranks));
+            EnsureIntArrayCapacity(ref _componentIds, nodeCount, nameof(_componentIds));
+            EnsureIntArrayCapacity(ref _componentSizes, nodeCount, nameof(_componentSizes));
+            EnsureIntArrayCapacity(ref _rootToComponent, nodeCount, nameof(_rootToComponent));
+            EnsureIntArrayCapacity(ref _traversalQueue, nodeCount, nameof(_traversalQueue));
+            EnsureByteArrayCapacity(ref _visited, nodeCount, nameof(_visited));
+            EnsureByteArrayCapacity(ref _consumerStates, consumerCount, nameof(_consumerStates));
+            EnsureFloatArrayCapacity(ref _nodeNetInjection, nodeCount, nameof(_nodeNetInjection));
+            EnsureFloatArrayCapacity(ref _nodePotentialFront, nodeCount, nameof(_nodePotentialFront));
+            EnsureFloatArrayCapacity(ref _nodePotentialBack, nodeCount, nameof(_nodePotentialBack));
+            EnsureFloatArrayCapacity(ref _nodeServedDemand, nodeCount, nameof(_nodeServedDemand));
+            EnsureFloatArrayCapacity(ref _nodeVoltageSupplyRatio, nodeCount, nameof(_nodeVoltageSupplyRatio));
+            EnsureFloatArrayCapacity(ref _componentGeneration, nodeCount, nameof(_componentGeneration));
+            EnsureFloatArrayCapacity(ref _componentDemand, nodeCount, nameof(_componentDemand));
+            EnsureFloatArrayCapacity(ref _componentServedDemand, nodeCount, nameof(_componentServedDemand));
+            EnsureFloatArrayCapacity(ref _componentRemainingSupply, nodeCount, nameof(_componentRemainingSupply));
+            EnsureFloatArrayCapacity(ref _componentSupplyRatio, nodeCount, nameof(_componentSupplyRatio));
+            EnsureFloatArrayCapacity(ref _componentResidualInjection, nodeCount, nameof(_componentResidualInjection));
+            EnsureIntArrayCapacity(ref _componentAnchorNode, nodeCount, nameof(_componentAnchorNode));
+            EnsureByteArrayCapacity(ref _componentBrownoutTier, nodeCount, nameof(_componentBrownoutTier));
             EnsurePublishedStateCapacity(nodeCount);
         }
 
         private void EnsureSummaryBuffers()
         {
-            EnsureTopologySummaryCapacity(ref _scheduledTopologySummary);
-            EnsureDistributionSummaryCapacity(ref _scheduledDistributionSummary);
+            EnsureTopologySummaryCapacity(ref _scheduledTopologySummary, nameof(_scheduledTopologySummary));
+            EnsureDistributionSummaryCapacity(ref _scheduledDistributionSummary, nameof(_scheduledDistributionSummary));
         }
 
-        private static void EnsureNodeArrayCapacity(ref NativeArray<LogisticsNode> array, int requiredLength)
+        private static void EnsureNodeArrayCapacity(ref NativeArray<LogisticsNode> array, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (array.IsCreated && array.Length >= safeLength)
                 return;
 
-            if (array.IsCreated)
-                array.Dispose();
+            DisposeNativeArrayImmediate(ref array);
 
             array = new NativeArray<LogisticsNode>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
 
-        private static void EnsureIntArrayCapacity(ref NativeArray<int> array, int requiredLength)
+        private static void EnsureIntArrayCapacity(ref NativeArray<int> array, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (array.IsCreated && array.Length >= safeLength)
                 return;
 
-            if (array.IsCreated)
-                array.Dispose();
+            DisposeNativeArrayImmediate(ref array);
 
             array = new NativeArray<int>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
 
-        private static void EnsureFloatArrayCapacity(ref NativeArray<float> array, int requiredLength)
+        private static void EnsureFloatArrayCapacity(ref NativeArray<float> array, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (array.IsCreated && array.Length >= safeLength)
                 return;
 
-            if (array.IsCreated)
-                array.Dispose();
+            DisposeNativeArrayImmediate(ref array);
 
             array = new NativeArray<float>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
 
-        private static void EnsureByteArrayCapacity(ref NativeArray<byte> array, int requiredLength)
+        private static void EnsureByteArrayCapacity(ref NativeArray<byte> array, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (array.IsCreated && array.Length >= safeLength)
                 return;
 
-            if (array.IsCreated)
-                array.Dispose();
+            DisposeNativeArrayImmediate(ref array);
 
             array = new NativeArray<byte>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
 
         private void EnsurePublishedStateCapacity(int requiredLength)
         {
             int safeLength = math.max(1, requiredLength);
-            EnsureUShortArrayCapacity(ref _publishedNodeStates, safeLength);
-            EnsureUShortArrayCapacity(ref _publishedNodeStatesBack, safeLength);
-            EnsureUShortMapCapacity(ref _publishedNodeStateMap, safeLength);
-            EnsureUShortMapCapacity(ref _publishedNodeStateBackMap, safeLength);
+            EnsureUShortArrayCapacity(ref _publishedNodeStates, safeLength, nameof(_publishedNodeStates));
+            EnsureUShortArrayCapacity(ref _publishedNodeStatesBack, safeLength, nameof(_publishedNodeStatesBack));
+            EnsureUShortMapCapacity(ref _publishedNodeStateMap, safeLength, nameof(_publishedNodeStateMap));
+            EnsureUShortMapCapacity(ref _publishedNodeStateBackMap, safeLength, nameof(_publishedNodeStateBackMap));
         }
 
-        private static void EnsureUShortArrayCapacity(ref NativeArray<ushort> array, int requiredLength)
+        private static void EnsureUShortArrayCapacity(ref NativeArray<ushort> array, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (array.IsCreated && array.Length >= safeLength)
                 return;
 
-            if (array.IsCreated)
-                array.Dispose();
+            DisposeNativeArrayImmediate(ref array);
 
             array = new NativeArray<ushort>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
 
-        private static void EnsureFloatMapCapacity(ref NativeParallelHashMap<int, float> map, int requiredLength)
+        private static void EnsureFloatMapCapacity(ref NativeParallelHashMap<int, float> map, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (map.IsCreated && map.Capacity >= safeLength)
                 return;
 
-            if (map.IsCreated)
-                map.Dispose();
+            DisposeNativeParallelHashMapImmediate(ref map, label);
 
             map = new NativeParallelHashMap<int, float>(safeLength, Allocator.Persistent);
+            RegisterNativeParallelHashMap(map, label);
         }
 
-        private static void EnsureUShortMapCapacity(ref NativeParallelHashMap<uint, ushort> map, int requiredLength)
+        private static void EnsureUShortMapCapacity(ref NativeParallelHashMap<uint, ushort> map, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (map.IsCreated && map.Capacity >= safeLength)
                 return;
 
-            if (map.IsCreated)
-                map.Dispose();
+            DisposeNativeParallelHashMapImmediate(ref map, label);
 
             map = new NativeParallelHashMap<uint, ushort>(safeLength, Allocator.Persistent);
+            RegisterNativeParallelHashMap(map, label);
         }
 
-        private static void EnsureTopologySummaryCapacity(ref NativeArray<TopologySummary> array)
+        private static void EnsureTopologySummaryCapacity(ref NativeArray<TopologySummary> array, string label)
         {
             if (array.IsCreated && array.Length >= 1)
                 return;
 
-            if (array.IsCreated)
-                array.Dispose();
+            DisposeNativeArrayImmediate(ref array);
 
             array = new NativeArray<TopologySummary>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
 
-        private static void EnsureDistributionSummaryCapacity(ref NativeArray<DistributionSummary> array)
+        private static void EnsureDistributionSummaryCapacity(ref NativeArray<DistributionSummary> array, string label)
         {
             if (array.IsCreated && array.Length >= 1)
                 return;
 
-            if (array.IsCreated)
-                array.Dispose();
+            DisposeNativeArrayImmediate(ref array);
 
             array = new NativeArray<DistributionSummary>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
     }
 }

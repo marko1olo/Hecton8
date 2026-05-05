@@ -81,8 +81,6 @@ namespace Hecton8.World
             Vector3.forward
         };
 
-        private static AbyssalFluidDecalManager _instance;
-
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
         [Tooltip("Authored fluid decal material. Runtime material creation is forbidden for this draw path.")]
@@ -175,21 +173,8 @@ namespace Hecton8.World
         private bool _registeredTick;
         private bool _loggedMissingDecalMaterial;
 
-        /// <summary>
-        /// Active singleton instance used by abyssal rupture and cable-cut aftermath systems.
-        /// </summary>
-        public static AbyssalFluidDecalManager Instance => _instance;
-
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Debug.LogError("[AbyssalFluidDecalManager] Duplicate instance detected. Destroying newer component.", this);
-                Destroy(this);
-                return;
-            }
-
-            _instance = this;
             SanitizeSettings();
             EnsureStorage();
             EnsureRenderingResources(false);
@@ -229,8 +214,6 @@ namespace Hecton8.World
                 _quadMesh = null;
             }
 
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <summary>

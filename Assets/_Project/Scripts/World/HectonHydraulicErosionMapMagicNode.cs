@@ -8,6 +8,7 @@ using MapMagic.Products;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
+using Unity.Profiling;
 
 namespace MapMagic.Nodes.MatrixGenerators
 {
@@ -35,6 +36,12 @@ namespace MapMagic.Nodes.MatrixGenerators
         private const uint CellBudgetWarningHash = 0x48594543u;
         private const uint BarrierStallWarningHash = 0x48594542u;
         private const uint HydraulicErosionNodeContextHash = 0x4859454Eu;
+        private static readonly ProfilerMarker ErosionScheduleProfilerMarker = new ProfilerMarker("H8/World/HydraulicErosion.ScheduleFourPhase");
+        private static readonly ProfilerMarker SedimentaryFlatProfilerMarker = new ProfilerMarker("H8/World/HydraulicErosion.SedimentaryFlatSchedule");
+        private static readonly ProfilerMarker ThermalSlumpProfilerMarker = new ProfilerMarker("H8/World/HydraulicErosion.ThermalSlumpSchedule");
+        private static readonly ProfilerMarker CanyonWallProfilerMarker = new ProfilerMarker("H8/World/HydraulicErosion.CanyonWallSchedule");
+        private static readonly ProfilerMarker MaskNormalizeProfilerMarker = new ProfilerMarker("H8/World/HydraulicErosion.MaskNormalizeSchedule");
+        private static readonly ProfilerMarker PublishBarrierProfilerMarker = new ProfilerMarker("H8/World/HydraulicErosion.PublishBarrier");
 
         /// <summary>Input heightmap matrix.</summary>
         [Den.Tools.GUI.ValAttribute("Heightmap", "Inlet")]
@@ -283,62 +290,71 @@ namespace MapMagic.Nodes.MatrixGenerators
                     MinWater = 0.01f
                 };
 
-                handle = HydraulicErosionScheduler.ScheduleFourPhase(ref erosionJob, 1, default);
-                handleScheduled = true;
+                using (ErosionScheduleProfilerMarker.Auto())
+                {
+                    handle = HydraulicErosionScheduler.ScheduleFourPhase(ref erosionJob, 1, default);
+                    handleScheduled = true;
+                }
                 NativeArray<float> current = heightA;
                 NativeArray<float> next = heightB;
 
                 if (width > 2 && height > 2)
                 {
-                    int flatIterations = math.max(0, sedimentaryFlatSmoothingIterations);
-                    for (int i = 0; i < flatIterations; i++)
+                    using (SedimentaryFlatProfilerMarker.Auto())
                     {
-                        if (stop != null && stop.stop)
-                            break;
-
-                        var flatJob = new SedimentaryFlatSmoothingJob
+                        int flatIterations = math.max(0, sedimentaryFlatSmoothingIterations);
+                        for (int i = 0; i < flatIterations; i++)
                         {
-                            InputHeights01 = current,
-                            OutputHeights01 = next,
-                            SedimentMask = sediment,
-                            Width = width,
-                            Height = height,
-                            CellSizeMeters = cellSizeMeters,
-                            HeightScaleMeters = heightScaleMeters,
-                            MaxSlopeDegrees = sedimentaryFlatSlopeDegrees,
-                            SedimentThreshold = sedimentaryFlatSedimentThreshold,
-                            Strength = sedimentaryFlatSmoothingStrength
-                        };
+                            if (stop != null && stop.stop)
+                                break;
 
-                        handle = flatJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
-                        Swap(ref current, ref next);
+                            var flatJob = new SedimentaryFlatSmoothingJob
+                            {
+                                InputHeights01 = current,
+                                OutputHeights01 = next,
+                                SedimentMask = sediment,
+                                Width = width,
+                                Height = height,
+                                CellSizeMeters = cellSizeMeters,
+                                HeightScaleMeters = heightScaleMeters,
+                                MaxSlopeDegrees = sedimentaryFlatSlopeDegrees,
+                                SedimentThreshold = sedimentaryFlatSedimentThreshold,
+                                Strength = sedimentaryFlatSmoothingStrength
+                            };
+
+                            handle = flatJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
+                            Swap(ref current, ref next);
+                        }
                     }
                 }
 
                 if (enableThermalSlumping && width > 2 && height > 2)
                 {
-                    int iterations = math.max(0, thermalIterations);
-                    for (int i = 0; i < iterations; i++)
+                    using (ThermalSlumpProfilerMarker.Auto())
                     {
-                        if (stop != null && stop.stop)
-                            break;
-
-                        var slumpJob = new ThermalSlumpingJob
+                        int iterations = math.max(0, thermalIterations);
+                        for (int i = 0; i < iterations; i++)
                         {
-                            InputHeights01 = current,
-                            OutputHeights01 = next,
-                            WearMask = wear,
-                            Width = width,
-                            Height = height,
-                            CellSizeMeters = cellSizeMeters,
-                            HeightScaleMeters = heightScaleMeters,
-                            TalusAngleDegrees = talusAngleDegrees,
-                            Strength = thermalStrength,
-                            WriteWearMask = false
-                        };
+                            if (stop != null && stop.stop)
+                                break;
 
-                        handle = slumpJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
-                        Swap(ref current, ref next);
+                            var slumpJob = new ThermalSlumpingJob
+                            {
+                                InputHeights01 = current,
+                                OutputHeights01 = next,
+                                WearMask = wear,
+                                Width = width,
+                                Height = height,
+                                CellSizeMeters = cellSizeMeters,
+                                HeightScaleMeters = heightScaleMeters,
+                                TalusAngleDegrees = talusAngleDegrees,
+                                Strength = thermalStrength,
+                                WriteWearMask = false
+                            };
+
+                            handle = slumpJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
+                            Swap(ref current, ref next);
+                        }
                     }
                 }
 
@@ -348,34 +364,55 @@ namespace MapMagic.Nodes.MatrixGenerators
                     canyonWallStrength > 0f &&
                     canyonWallMaxLift01 > 0f)
                 {
-                    var canyonJob = new CanyonWallSteepeningJob
+                    using (CanyonWallProfilerMarker.Auto())
                     {
-                        InputHeights01 = current,
-                        OutputHeights01 = next,
-                        ErosionDepthMask = wear,
-                        Width = width,
-                        Height = height,
-                        DepthThreshold = canyonWallDepthThreshold,
-                        Strength = canyonWallStrength,
-                        MaxLift01 = canyonWallMaxLift01
-                    };
+                        var canyonJob = new CanyonWallSteepeningJob
+                        {
+                            InputHeights01 = current,
+                            OutputHeights01 = next,
+                            ErosionDepthMask = wear,
+                            Width = width,
+                            Height = height,
+                            DepthThreshold = canyonWallDepthThreshold,
+                            Strength = canyonWallStrength,
+                            MaxLift01 = canyonWallMaxLift01
+                        };
 
-                    handle = canyonJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
-                    Swap(ref current, ref next);
+                        handle = canyonJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
+                        Swap(ref current, ref next);
+                    }
+                }
+
+                using (MaskNormalizeProfilerMarker.Auto())
+                {
+                    handle = new NormalizeMaskInPlaceJob
+                    {
+                        Mask = sediment,
+                        Count = cellCount
+                    }.Schedule(handle);
+
+                    handle = new NormalizeMaskInPlaceJob
+                    {
+                        Mask = wear,
+                        Count = cellCount
+                    }.Schedule(handle);
                 }
 
                 // COLD SYNC JOB: MapMagic Generate must publish concrete matrix products before returning to the graph.
                 long barrierStartTicks = Stopwatch.GetTimestamp();
-                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
-                handleScheduled = false;
+                using (PublishBarrierProfilerMarker.Auto())
+                {
+                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                    handleScheduled = false;
+                }
                 PublishBarrierWarning(ElapsedMilliseconds(barrierStartTicks, Stopwatch.GetTimestamp()));
 
                 if (stop != null && stop.stop)
                     return;
 
                 CopyNativeToMatrix(current, eroded.arr);
-                CopyNormalizedMask(sediment, sedimentMask.arr);
-                CopyNormalizedMask(wear, wearMask.arr);
+                CopyNativeToMatrix(sediment, sedimentMask.arr);
+                CopyNativeToMatrix(wear, wearMask.arr);
 
                 data.SetProgress(this, Complexity);
                 data.StoreProduct(erodedHeightOut, eroded);
@@ -486,16 +523,5 @@ namespace MapMagic.Nodes.MatrixGenerators
                 destination[i] = math.saturate(source[i]);
         }
 
-        private static void CopyNormalizedMask(NativeArray<float> source, float[] destination)
-        {
-            int count = math.min(source.Length, destination != null ? destination.Length : 0);
-            float maxValue = 0f;
-            for (int i = 0; i < count; i++)
-                maxValue = math.max(maxValue, source[i]);
-
-            float invMax = maxValue > 0.000001f ? 1f / maxValue : 0f;
-            for (int i = 0; i < count; i++)
-                destination[i] = math.saturate(source[i] * invMax);
-        }
     }
 }

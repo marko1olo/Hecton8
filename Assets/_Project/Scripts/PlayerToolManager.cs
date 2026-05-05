@@ -129,6 +129,7 @@ namespace Hecton8.Gameplay
         private Rigidbody _currentInteriorCarrierBody;
         private bool _suppressInventoryChangedHandling;
         private PlayerRuntimeContext _runtimeContext;
+        private PlayerTool _externallyDockedTool;
         private PlayerTool _batterySiphonTool;
         private IBatteryTool _batterySiphonBatteryTool;
         private int _batterySiphonSlotIndex = -1;
@@ -292,6 +293,21 @@ namespace Hecton8.Gameplay
         public void Tick(float deltaTime)
         {
             RefreshInputSubscriptions();
+            if (_externallyDockedTool != null)
+            {
+                if (!ReferenceEquals(_externallyDockedTool, _currentTool))
+                    _externallyDockedTool = null;
+                else
+                {
+                    PublishRuntimeContextState();
+#if UNITY_EDITOR
+                    _debugCurrentSlot = _currentSlotIndex;
+                    _debugStateName   = GetSwapStateDebugName(_swapState);
+#endif
+                    return;
+                }
+            }
+
             bool handheldToolsBlocked = IsHandheldToolUsageBlocked();
             bool batterySiphonLockout = IsBatterySiphonLockoutActive;
             // ── 1. Обработка ввода переключения слотов ──
@@ -375,6 +391,9 @@ namespace Hecton8.Gameplay
         /// <param name="slotIndex">Индекс слота (0-based). -1 = убрать инструмент.</param>
         public void SwitchToSlot(int slotIndex)
         {
+            if (_externallyDockedTool != null)
+                return;
+
             if (slotIndex < -1 || slotIndex >= toolPrefabs.Length)
                 return;
 
@@ -390,14 +409,45 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Holster()
         {
+            if (_externallyDockedTool != null)
+                return;
+
             RequestSwap(-1);
         }
 
         /// <summary>Текущий активный инструмент (может быть null).</summary>
         public PlayerTool CurrentTool => _currentTool;
 
+        public bool TryBeginExternalToolDock(PlayerTool tool)
+        {
+            if (tool == null ||
+                _currentTool == null ||
+                !ReferenceEquals(tool, _currentTool) ||
+                _swapState != SwapState.Idle ||
+                _externallyDockedTool != null)
+            {
+                return false;
+            }
+
+            _externallyDockedTool = tool;
+            PublishRuntimeContextState();
+            return true;
+        }
+
+        public void EndExternalToolDock(PlayerTool tool)
+        {
+            if (tool == null || !ReferenceEquals(tool, _externallyDockedTool))
+                return;
+
+            _externallyDockedTool = null;
+            PublishRuntimeContextState();
+        }
+
         public bool TryForceDropCurrentToolFromHands(Vector3 inheritedVelocityChange)
         {
+            if (_externallyDockedTool != null)
+                return false;
+
             if (_currentTool == null)
                 return false;
 
@@ -1360,6 +1410,8 @@ namespace Hecton8.Gameplay
             LogToolDebug(
                 $"DespawnCurrentTool begin currentTool={(_currentTool != null ? _currentTool.GetType().Name : "null")} " +
                 $"currentInstance={(_currentInstance != null ? _currentInstance.name : "null")} currentSlot={_currentSlotIndex}");
+            _externallyDockedTool = null;
+
             if (ReferenceEquals(_currentTool, _batterySiphonTool))
                 ClearBatterySiphonLockout();
 

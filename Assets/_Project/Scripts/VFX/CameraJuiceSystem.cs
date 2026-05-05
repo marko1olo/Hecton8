@@ -153,7 +153,7 @@ namespace Hecton8.VFX
         private float _hudFocusDistance = 0.06f;
 
         [SerializeField, Tooltip("Hard near-field focus distance applied while the center-eye ray is locked onto the PDA plane.")]
-        private float _pdaFocusDistance = 0.1f;
+        private float _pdaFocusDistance = 0.4f;
 
         [SerializeField, Tooltip("Far-field focus distance restored when the player is no longer center-looking at the PDA plane.")]
         private float _worldFocusDistance = 20f;
@@ -162,7 +162,7 @@ namespace Hecton8.VFX
         private float _pdaFocusThreshold = 0.2f;
 
         [SerializeField, Range(0.1f, 1f), Tooltip("Smoothing duration for center-eye focus-distance convergence between near-field UI focus and far-field ocean focus.")]
-        private float _focusTransitionDuration = 0.5f;
+        private float _focusTransitionDuration = 0.2f;
 
         [SerializeField, Range(0f, 0.8f), Tooltip("Additional chromatic-aberration intensity injected by active submarine structural fatigue.")]
         private float _structuralFatigueChromaticAberrationMax = 0.26f;
@@ -1052,7 +1052,7 @@ namespace Hecton8.VFX
                 _focusDistance > 0f ? _focusDistance : targetFocusDistance,
                 targetFocusDistance,
                 ref _focusDistanceVelocity,
-                Mathf.Max(0.1f, _focusTransitionDuration),
+                Mathf.Max(0.02f, _focusTransitionDuration),
                 Mathf.Infinity,
                 dt);
 
@@ -1200,7 +1200,10 @@ namespace Hecton8.VFX
 
         private float ResolveTargetFocusDistance()
         {
-            if (PlayerPDA.IsOpen || HectonFabricatorUI.IsMenuOpen)
+            if (PlayerPDA.IsOpen)
+                return Mathf.Max(0.01f, _pdaFocusDistance);
+
+            if (HectonFabricatorUI.IsMenuOpen)
             {
                 float focusCandidate = _focusRaycastScheduled
                     ? _resolvedFocusDistance

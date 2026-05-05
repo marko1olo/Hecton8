@@ -101,13 +101,14 @@ Shader "Hecton8/VFX/MarineSnow"
                 float3 cameraUp = _MarineSnowCameraUp_Density.xyz;
                 float maxDistance = max(_MarineSnowRenderParams.z, 0.25);
                 float distanceFade = saturate(1.0 - distance(particle.Pos, _MarineSnowCameraPosition_Time.xyz) / maxDistance);
-                float size = particle.Size * lerp(0.65, 1.0, distanceFade);
+                float isBubble = ((particle.Flags & 1u) != 0u) ? 1.0 : 0.0;
+                float size = particle.Size * lerp(0.65, 1.0, distanceFade) * lerp(1.0, 1.65, isBubble);
                 float3 billboardOffset = (cameraRight * corner.x + cameraUp * corner.y) * size;
                 float3 worldPosition = particle.Pos + billboardOffset;
 
                 output.positionCS = TransformWorldToHClip(worldPosition);
                 output.uv = corner * 0.5 + 0.5;
-                output.color = _MarineSnowTint;
+                output.color = lerp(_MarineSnowTint, float4(0.72, 0.88, 0.94, _MarineSnowTint.a * 0.72), isBubble);
                 output.color.a *= active * densityScale * particle.Life * distanceFade;
                 return output;
             }

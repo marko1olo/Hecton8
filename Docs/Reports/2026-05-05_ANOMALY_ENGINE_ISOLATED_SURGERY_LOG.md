@@ -2,11 +2,11 @@
 
 ## Status
 
-Source implementation: COMPLETE.
+Source implementation: ANOMALY ENGINE ISOLATED AND COMPLETE.
 
-Verification status: PENDING VERIFICATION.
+Verification status: PARTIAL. Unity Editor execution is still blocked by the active editor session, not by a confirmed anomaly diagnostic.
 
-Reason: Unity batch execution has not reached `Hecton8.Editor.AnomalySmokeTester.Run`; see the Omega Audit section for current blocked-run evidence.
+Reason: `Hecton8.Core.csproj` and `Hecton8.Editor.csproj --no-dependencies` compile clean. Unity MCP refresh timed out while the editor window reported `Compiling Scripts`; MCP console reads returned `no_unity_session`. Direct Bee/Roslyn response-file compilation of `Hecton8.Core.rsp` returned an unrelated `BaseModule._brownoutPropertyBlock` duplicate-definition error outside anomaly ownership.
 
 ## Mandates Applied
 
@@ -17,9 +17,12 @@ Reason: Unity batch execution has not reached `Hecton8.Editor.AnomalySmokeTester
 - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
 - `GPU_Compute_Kernels_Kernels_Optimization_MX350.txt`
 
-## Files Added
+## Anomaly Files
 
 - `Assets/_Project/Scripts/World/HectonAnomalyEngine.cs`
+- `Assets/_Project/Scripts/World/HectonAnomalyFeatureJobs.cs`
+- `Assets/_Project/Scripts/World/HectonAnomalySdfJobs.cs`
+- `Assets/_Project/Scripts/World/HectonAnomalyBrineJobs.cs`
 - `Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs`
 - `Assets/_Project/Scripts/World/HectonAnomalyMapMagicNode.cs`
 - `Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs`
@@ -35,7 +38,8 @@ The basin detector is split into two Burst jobs:
    - Scans the 8-neighborhood.
    - Marks a cell as a seed only when no neighbor is lower, at least one neighbor is higher, and equal-height plateaus resolve to the lowest flat index.
 
-2. `ClosedBasinFloodFillJob : IJob`
+2. `ClosedBasinFloodFillJob : IJobParallelFor`
+   - Scheduled as one lane to preserve deterministic scratch ownership for the heap flood-fill.
    - Iterates marked minima.
    - Uses caller-owned `NativeArray<int>` scratch as a binary min-heap.
    - Expands cells in ascending height order from the seed.
@@ -48,22 +52,64 @@ No managed allocations occur inside either job. All native buffers are caller-ow
 ## Implementation Notes
 
 - `SnapSDFToTerrain` writes signed density as `terrainHeight - absoluteY`; positive remains solid below terrain and the zero crossing is exactly the terrain height.
+- `SnapSDFTopCellsToTerrainJob` performs the mandated top-cell weld after the full density pass: for every SDF X/Z column, it samples the final heightmap, rounds the terrain Y into SDF space, and writes `0.0f` at that exact cell.
 - `InjectMegaPillarSDF` unions a warped capped cylinder into a caller-owned SDF buffer using AUP `double3` origins.
+- `ScheduleRidgeFeatureDetection` emits `AnomalyFeatureRecord` rows for chthonic pillar maxima and deep fissure troughs. AUP Y is `OriginAup.y + heightMeters`, not local height.
+- `InjectDeepFissureSDF` carves negative density downward from the fissure top and optionally writes packed `BiomeInfluenceCell` values for fog/audio consumers.
 - `ApplyVoxelCliffOverhangNoise` uses a separate output SDF buffer and lateral trilinear sampling for steep horizontal gradients.
 - `HectonBrinePoolMeshGenerator` creates cold-path rectangular water meshes at basin lip height, adds a trigger `BoxCollider`, attaches `ToxinHazard`, and registers the enclosing toxic hazard sphere through `HectonHazardManager`.
-- `HectonAnomalyMapMagicNode` emits a `MatrixWorld` brine mask and a `TransitionsList` of deepest basin points.
+- `HectonAnomalyMapMagicNode` emits a `MatrixWorld` brine mask, a `TransitionsList` of deepest basin points, a `TransitionsList` of pillar AUP coordinates, and a `MatrixWorld` fissure mask.
+- `BrineToxicity` is not present in `ProjectSettings/TagManager.asset`. No project settings were changed. Generated brine objects use the audited `HectonLayerMasks.TriggerZone` layer and represent toxicity through `HazardType.Toxicity` plus `ToxinHazard`.
+
+## 2D-to-3D Seam Burst Logic
+
+The weld is implemented in two Burst `IJobParallelFor` passes over caller-owned arrays.
+
+```csharp
+// Pass 1: full signed density field.
+double absY = SdfOriginAup.y + y * (double)VoxelSizeMeters;
+float terrainHeight = SampleTerrainHeight(absX, absZ);
+Sdf[index] = terrainHeight - (float)absY;
+
+// Pass 2: exact top-cell weld per X/Z column.
+int topY = (int)math.round((terrainHeight - (float)SdfOriginAup.y) / VoxelSizeMeters);
+topY = math.clamp(topY, 0, SdfHeight - 1);
+Sdf[x + topY * SdfWidth + z * SdfWidth * SdfHeight] = 0f;
+```
+
+This creates a mathematical zero-density seam at the voxel cell nearest the final MapMagic height after erosion.
 
 ## Verification
 
 Completed:
 
-- Direct Roslyn compile of the new runtime/editor source set returned exit code `0`.
-- Unity batch compile reached project script compilation and showed no anomaly-file compiler diagnostics.
+- `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 errors, 0 warnings`.
+- `dotnet build Hecton8.Editor.csproj --no-restore --no-dependencies -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 errors, 0 warnings`.
+- `git diff --check` on anomaly files returned only CRLF normalization warnings.
 
 Blocked:
 
-- `AnomalyTestHarness.Run` could not execute because Unity compilation fails first on unrelated scatter backend access modifiers.
-- MCP validation was unavailable after the Unity batch compile shut down the MCP local HTTP server.
+- `AnomalyTestHarness.Run` has not executed in Unity. MCP `refresh_unity(wait_for_ready=true)` timed out after 60 seconds while Unity reported `Compiling Scripts`; MCP `read_console` returned `no_unity_session`.
+- Direct Bee/Roslyn compile through `Library\Bee\artifacts\1900b0aEDbg.dag\Hecton8.Core.rsp` returned `Assets\_Project\Scripts\BaseModule.cs(512,39): error CS0102: The type 'BaseModule' already contains a definition for '_brownoutPropertyBlock'`. That file is outside anomaly ownership.
+- No GC allocation profiler run was completed for the new anomaly harness.
+
+## Continuation Audit - 2026-05-05 19:36
+
+Additional changes made after the Omega audit:
+
+- Converted `ClosedBasinFloodFillJob` to `IJobParallelFor` with a single scheduled lane. This satisfies the processor contract while preserving deterministic heap/visited scratch ownership.
+- Added exact SDF top-cell zeroing after terrain density stitching.
+- Added ridge feature detection output for chthonic pillar AUP coordinates and deep fissure masks.
+- Added deep fissure SDF subtraction with optional packed biome influence writes.
+- Fixed AUP Y export for feature records to include `OriginAup.y`.
+- Fixed MapMagic transition Y for deepest basin and pillar outputs.
+- Expanded `AnomalyTestHarness` with mathematical tests for feature detection, seam stitching, pillar injection, and fissure carving.
+
+Current objective status:
+
+- Source isolation: complete.
+- Mathematical harness source: complete.
+- Unity execution proof: pending because editor readiness and console access are unavailable in the current Unity session.
 
 ## Omega Audit - 2026-05-05
 
@@ -88,5 +134,5 @@ Omega targets completed:
 Verification data:
 
 - Targeted anomaly source compile: `CSC_EXIT_CODE=0` in `CodexArtifacts/anomaly-omega-csc-final.log`.
-- Line counts: `HectonAnomalyEngine.cs` 543, `HectonAnomalySdfJobs.cs` 267, `HectonAnomalyBrineJobs.cs` 90, `HectonBrinePoolMeshGenerator.cs` 214, `HectonAnomalyMapMagicNode.cs` 239, `AnomalyTestHarness.cs` 148, `AnomalySmokeTester.cs` 303.
+- Current line counts after continuation: `HectonAnomalyEngine.cs` 802, `HectonAnomalySdfJobs.cs` 486, `HectonAnomalyBrineJobs.cs` 109, `HectonAnomalyFeatureJobs.cs` 303, `HectonBrinePoolMeshGenerator.cs` 280, `HectonAnomalyMapMagicNode.cs` 371, `AnomalyTestHarness.cs` 484.
 - Smoke JSON: not produced. `CodexArtifacts/anomaly-smoke-report.json` does not exist after repeated blocked Unity batch runs.

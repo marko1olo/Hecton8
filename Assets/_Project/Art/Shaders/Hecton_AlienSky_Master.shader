@@ -255,6 +255,9 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
 
             float4 _SunDirection;
             float4 _AegirDirection;
+            float4x4 _HectonSkyRotation;
+            int _HectonSkyOccluderCount;
+            float4 _HectonSkyOccluders[8];
             float4 _MeteorShowerParams;     // x=intensity, y=seed, z=synced flash, w=event age
             float4 _MeteorShowerDirection;  // xy=sky UV travel direction, z=streak length, w=streak width
 
@@ -287,6 +290,25 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 return (lenSq < DIR_THRESHOLD * DIR_THRESHOLD)
                     ? fallback
                     : v * rsqrt(lenSq);
+            }
+
+            half ComputeSkyOccluderVisibility(float3 viewDir)
+            {
+                half visibility = 1.0h;
+                [unroll]
+                for (int i = 0; i < 8; i++)
+                {
+                    if (i >= _HectonSkyOccluderCount)
+                        break;
+
+                    float4 occluder = _HectonSkyOccluders[i];
+                    float3 occluderDir = SafeNormalizeDir(occluder.xyz, FALLBACK_AEGIR_DIR);
+                    float radius = max(occluder.w, 0.00001);
+                    half blocked = (half)step(cos(radius), dot(viewDir, occluderDir));
+                    visibility *= 1.0h - blocked;
+                }
+
+                return visibility;
             }
 
             void ResolvePhaseSkyColors(
@@ -550,12 +572,14 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 // LAYER 0: STAR FIELD
                 // =======================================
                 half3 starContrib = half3(0.0h, 0.0h, 0.0h);
+                half skyOccluderVisibility = ComputeSkyOccluderVisibility(Vf);
 
                 if (eclipseNight > 0.01h && zenithMask > 0.01h)
                 {
+                    float3 starLookupDir = normalize(mul((float3x3)_HectonSkyRotation, Vf));
                     float2 starUV;
-                    starUV.x = atan2(Vf.z, Vf.x) * (0.5 / 3.14159265) + 0.5;
-                    starUV.y = asin(Vf.y) * (1.0 / 3.14159265) + 0.5;
+                    starUV.x = atan2(starLookupDir.z, starLookupDir.x) * (0.5 / 3.14159265) + 0.5;
+                    starUV.y = asin(starLookupDir.y) * (1.0 / 3.14159265) + 0.5;
                     starUV *= _StarTiling.xy;
 
                     float2 starGrid = starUV * 128.0;
@@ -590,22 +614,26 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     half3 bakedStarColor = (half3)SAMPLE_TEXTURECUBE(
                         _BakedStarCubemap,
                         sampler_BakedStarCubemap,
-                        Vf).rgb;
+                        starLookupDir).rgb;
                     half bakedReady = step(0.5h, _BakedStarCubemapReady);
-                    half3 starSourceColor = lerp(proceduralStarColor * starCore, bakedStarColor, bakedReady);
+                    half bakedLuma = dot(bakedStarColor, half3(0.2126h, 0.7152h, 0.0722h));
+                    half bakedBrightMask = smoothstep(0.08h, 0.42h, bakedLuma);
+                    half3 proceduralStar = proceduralStarColor * starCore * flicker;
+                    half3 bakedStar = bakedStarColor * lerp(1.0h, flicker, bakedBrightMask);
+                    half3 starSourceColor = lerp(proceduralStar, bakedStar, bakedReady);
 
                     starContrib = starSourceColor
                                 * _StarColor.rgb
                                 * _StarIntensity
-                                * flicker
                                 * starVisibility
-                                * zenithMask;
+                                * zenithMask
+                                * skyOccluderVisibility;
                     starContrib *= lerp(1.0h, celestialTransmittance, _CelestialStarFade);
                 }
 
                 skyColor += starContrib;
                 half meteorVisibility = saturate(max(nightFactor, (half)_EclipseOcclusion) + saturate(-sunElevation * 2.0h) * 0.35h);
-                skyColor += SampleMeteorGpuParticles(Vf, zenithMask, meteorVisibility);
+                skyColor += SampleMeteorGpuParticles(Vf, zenithMask, meteorVisibility) * skyOccluderVisibility;
 
                 // =======================================
                 // LAYER 3: HORIZON HAZE

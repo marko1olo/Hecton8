@@ -1,0 +1,9 @@
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_bin\Crest.dll
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_bin\Crest.pdb
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Crest.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Crest.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Crest.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Crest.sourcelink.json
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Crest.csproj.Up2Date
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Crest.dll
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun3_obj\Crest.pdb

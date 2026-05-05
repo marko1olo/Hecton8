@@ -366,6 +366,7 @@ Shader "GPUInstancer/Hecton8/Flora/KelpMaster"
                 half3 rimLighting = _RimColor.rgb * (rim * _RimStrength);
                 half specular = pow(saturate(dot(normalize(lightDir + viewDirWS), normalWS)), lerp(12.0h, 48.0h, 1.0h - roughness)) * (1.0h - roughness) * 0.18h * glossMask;
                 half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.72h) * biolumMask * pulse * biolumField);
+                biolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
                 biolum += volumeBiolum * (0.45h + thicknessMask * 0.55h);
                 half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 

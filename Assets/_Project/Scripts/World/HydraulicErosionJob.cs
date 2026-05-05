@@ -918,4 +918,30 @@ namespace Hecton8.World
             OutputHeights01[index] = math.saturate(center + lift);
         }
     }
+
+    /// <summary>
+    /// Normalizes a mask in-place on a worker thread before managed matrix publication.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct NormalizeMaskInPlaceJob : IJob
+    {
+        /// <summary>Mutable mask buffer.</summary>
+        public NativeArray<float> Mask;
+
+        /// <summary>Number of cells to scan and normalize.</summary>
+        public int Count;
+
+        /// <inheritdoc />
+        public void Execute()
+        {
+            int count = math.clamp(Count, 0, Mask.IsCreated ? Mask.Length : 0);
+            float maxValue = 0f;
+            for (int i = 0; i < count; i++)
+                maxValue = math.max(maxValue, math.max(0f, Mask[i]));
+
+            float invMax = maxValue > 0.000001f ? 1f / maxValue : 0f;
+            for (int i = 0; i < count; i++)
+                Mask[i] = math.saturate(Mask[i] * invMax);
+        }
+    }
 }

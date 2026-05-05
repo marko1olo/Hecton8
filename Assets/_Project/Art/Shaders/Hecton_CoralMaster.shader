@@ -311,6 +311,7 @@ Shader "Hecton8/Flora/CoralMaster"
                 half3 slimeSpecular = slimeNdotH * wetness * 0.45h * mainLight.color;
 
                 half3 biolum = zoneBiolumColor * (_BiolumStrength * (1.0h + zoneBiolumStrength * 0.76h) * biolumMask * pulse);
+                biolum *= HectonCoreLitResolveFlashlightPhotophobia(samplePositionWS);
                 biolum += volumeBiolum * (0.5h + thickness * 0.5h);
                 half fresnel = pow(1.0h - saturate(dot(normalWS, viewDirWS)), _FresnelPower) * _FresnelStrength;
 

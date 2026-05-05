@@ -39,6 +39,11 @@ namespace Hecton8.World
         public int DebugBiomeInfluenceGridCells => _debugBiomeInfluenceGridCells;
 
         /// <summary>
+        /// Flora GPUI placements rejected by the coarse CPU frustum pass during the last reconcile.
+        /// </summary>
+        public int DebugFloraGpuiFrustumRejected => _debugFloraGpuiFrustumRejected;
+
+        /// <summary>
         /// Current capacity of the packed biome influence GPU buffer.
         /// </summary>
         public int DebugBiomeInfluenceGpuBufferCapacity => _debugBiomeInfluenceGpuBufferCapacity;
@@ -77,6 +82,10 @@ namespace Hecton8.World
         // Bump when the reconcile-signature field contract changes.
         private const int ScatterPlacementSyncSignatureVersion = 2;
         private const int MaxFloraInstancesPerStreamCellPerBiome = 4096;
+        private const float FloraScatterMaxTiltAngleDegrees = 30f;
+        private const float FloraMicroClusterPatchThreshold = 0.36f;
+        private const float FloraMacroClusterPatchThreshold = 0.42f;
+        private const float FloraFallbackClusterNoiseScale = 0.009f;
         private static bool _candidateMapCapacityExceededWarningLogged;
         private static bool _candidateMapNearCapacityWarningLogged;
 #if UNITY_EDITOR
@@ -262,6 +271,10 @@ namespace Hecton8.World
         [SerializeField] private int spawnCellStride = 3;
         [SerializeField] private int spawnPlacementsPerWindow = 1;
         [SerializeField] private float surfaceYOffset = 0.2f;
+        [SerializeField, Range(0.1f, 2f)] private float floraDeterministicScaleMin = 0.8f;
+        [SerializeField, Range(0.1f, 2f)] private float floraDeterministicScaleMax = 1.3f;
+        [SerializeField] private bool enableFloraGpuiCpuFrustumCulling = true;
+        [SerializeField, Min(0f)] private float floraGpuiFrustumPaddingMeters = 24f;
         [SerializeField] private float missingPlacementGraceSeconds = 8f;
         [SerializeField] private bool waitForSceneBootstrap = true;
         [SerializeField, Tooltip("Caps bootstrap prime scatter radius so pre-activation warmup does not block on the full runtime sampling window.")]
@@ -494,6 +507,12 @@ namespace Hecton8.World
         private ScatterInstancingService _instancingService;
         private bool _originShiftListenerRegistered;
         private bool _registeredRuntimeDirector;
+        private bool _floraGpuiFrustumPlanesValid;
+        private int _debugFloraGpuiFrustumRejected;
+        private WorldChunkCoordinate _floraGpuiLastFrustumChunk;
+        private bool _floraGpuiLastFrustumChunkVisible;
+        private bool _floraGpuiHasLastFrustumChunk;
+        private readonly Plane[] _floraGpuiFrustumPlanes = new Plane[6]; // COLD ALLOC: Plane[6] — reusable GPUI flora frustum planes — owner: WorldProceduralScatterDirector
         private ref CandidateMap _groundRescueCandidates => ref _memory.GroundRescueCandidates;
         private ref CandidateMap _clusterRescueCandidates => ref _memory.ClusterRescueCandidates;
         private ref CandidateMap _clusterFertileCandidates => ref _memory.ClusterFertileCandidates;
@@ -3130,16 +3149,22 @@ namespace Hecton8.World
                 placement.Family,
                 placement.StableHash,
                 preferFinalVariant: false);
-            float scale = ResolveScaleMultiplier(variant, placement.StableHash);
             Vector3 resolvedPosition = placement.Position;
-            Quaternion rotation = Quaternion.Euler(0f, Mathf.Abs(placement.StableHash % 360), 0f);
+            bool floraFamily = ScatterMath.ResolveFloraBudgetClassId(placement.Family) != 0;
+            float scale = ResolveScaleMultiplier(variant, placement.StableHash, resolvedPosition, floraFamily);
+            float yawDegrees = floraFamily
+                ? ScatterMath.ResolveDeterministicFloraYawDegrees(
+                    placement.StableHash,
+                    new Unity.Mathematics.float3(resolvedPosition.x, resolvedPosition.y, resolvedPosition.z))
+                : Mathf.Abs(placement.StableHash % 360);
+            Quaternion rotation = Quaternion.Euler(0f, yawDegrees, 0f);
             if (placement.Rule != null &&
                 EnsureEnvironmentalVegetationBridgeResolved() &&
                 environmentalVegetationBridge.TrySnapScatterPlacement(
                     placement.RuntimePosition,
                     surfaceYOffset,
-                    placement.Rule.maxTiltAngleDegrees,
-                    placement.StableHash,
+                    floraFamily ? Mathf.Min(placement.Rule.maxTiltAngleDegrees, FloraScatterMaxTiltAngleDegrees) : placement.Rule.maxTiltAngleDegrees,
+                    yawDegrees,
                     out Vector3 snappedRuntimePosition,
                     out Quaternion snappedRotation))
             {
@@ -7449,16 +7474,38 @@ namespace Hecton8.World
             return origin + offset;
         }
 
-        private static float ResolveScaleMultiplier(WorldPrefabFamilyProfile.VariantEntry variant, int stableHash)
+        private float ResolveScaleMultiplier(
+            WorldPrefabFamilyProfile.VariantEntry variant,
+            int stableHash,
+            Vector3 absolutePosition,
+            bool floraFamily)
         {
             Vector2 range = variant != null ? variant.uniformScaleRange : new Vector2(0.9f, 1.1f);
             float min = Mathf.Max(0.1f, Mathf.Min(range.x, range.y));
             float max = Mathf.Max(min, Mathf.Max(range.x, range.y));
+            float variantScale;
             if (Mathf.Approximately(min, max))
-                return min;
+            {
+                variantScale = min;
+            }
+            else
+            {
+                variantScale = ScatterMath.ResolveDeterministicFloraScaleMultiplier(
+                    min,
+                    max,
+                    stableHash,
+                    new Unity.Mathematics.float3(absolutePosition.x, absolutePosition.y, absolutePosition.z));
+            }
 
-            float t = Mathf.Abs((stableHash % 1000) / 999f);
-            return Mathf.Lerp(min, max, t);
+            if (!floraFamily)
+                return variantScale;
+
+            float floraScale = ScatterMath.ResolveDeterministicFloraScaleMultiplier(
+                floraDeterministicScaleMin,
+                floraDeterministicScaleMax,
+                stableHash ^ 0x4A6F7261,
+                new Unity.Mathematics.float3(absolutePosition.x, absolutePosition.y, absolutePosition.z));
+            return variantScale * floraScale;
         }
 
         private static bool FamilySupportsFinalVariant(WorldPrefabFamilyProfile family)
@@ -10892,6 +10939,9 @@ namespace Hecton8.World
         private void ResetFloraGpuiAggregation()
         {
             EnsureWorkingMemory();
+            _debugFloraGpuiFrustumRejected = 0;
+            _floraGpuiHasLastFrustumChunk = false;
+            RefreshFloraGpuiFrustumPlanes();
             _instancingService.ResetAggregation(
                 _floraGpuiKnownPrototypes,
                 _floraGpuiCounts,
@@ -10904,6 +10954,21 @@ namespace Hecton8.World
             out GPUInstancerPrefabPrototype prototype)
         {
             EnsureWorkingMemory();
+            if (!_instancingService.CanUseFloraGpuiPath(
+                    floraGpuiManager,
+                    placement,
+                    runtimeVariant,
+                    out prototype))
+            {
+                return false;
+            }
+
+            if (ShouldCullFloraGpuiPlacement(placement))
+            {
+                _debugFloraGpuiFrustumRejected++;
+                return true;
+            }
+
             return _instancingService.TryRegisterPlacement(
                 floraGpuiManager,
                 placement,
@@ -10914,6 +10979,64 @@ namespace Hecton8.World
                 _floraGpuiBufferCapacities,
                 ref _activeGpuiFloraPlacements,
                 out prototype);
+        }
+
+        private void RefreshFloraGpuiFrustumPlanes()
+        {
+            _floraGpuiFrustumPlanesValid = false;
+            if (!enableFloraGpuiCpuFrustumCulling || !Application.isPlaying)
+                return;
+
+            Camera cullingCamera = ResolveFloraGpuiCullingCamera();
+            if (cullingCamera == null)
+                return;
+
+            GeometryUtility.CalculateFrustumPlanes(cullingCamera, _floraGpuiFrustumPlanes);
+            _floraGpuiFrustumPlanesValid = true;
+        }
+
+        private static Camera ResolveFloraGpuiCullingCamera()
+        {
+            IPlayerRuntimeContext player = GlobalRegistry.Player;
+            if (player != null && player.PlayerCamera != null)
+                return player.PlayerCamera;
+
+            return GlobalRenderContext.CurrentCamera;
+        }
+
+        private bool ShouldCullFloraGpuiPlacement(ScatterPlacement placement)
+        {
+            if (!enableFloraGpuiCpuFrustumCulling || placement == null)
+                return false;
+
+            if (!_floraGpuiFrustumPlanesValid)
+                RefreshFloraGpuiFrustumPlanes();
+
+            if (!_floraGpuiFrustumPlanesValid)
+                return false;
+
+            WorldChunkCoordinate chunkCoord = placement.ChunkCoord;
+            if (_floraGpuiHasLastFrustumChunk &&
+                _floraGpuiLastFrustumChunk.x == chunkCoord.x &&
+                _floraGpuiLastFrustumChunk.z == chunkCoord.z)
+            {
+                return !_floraGpuiLastFrustumChunkVisible;
+            }
+
+            float chunkSize = Mathf.Max(1f, _runtimeStreamingState.ChunkSize);
+            float padding = Mathf.Max(0f, floraGpuiFrustumPaddingMeters);
+            Vector3 absoluteChunkCenter = WorldChunkCoordinate.ToWorldCenter(chunkCoord, chunkSize, placement.Position.y);
+            Vector3 runtimeChunkCenter = ToRuntimeScatterPosition(absoluteChunkCenter);
+            float horizontalSize = chunkSize + padding + padding;
+            float verticalSize = Mathf.Max(96f, chunkSize * 0.75f) + padding + padding;
+            Bounds chunkBounds = new Bounds(
+                runtimeChunkCenter,
+                new Vector3(horizontalSize, verticalSize, horizontalSize));
+
+            _floraGpuiLastFrustumChunk = chunkCoord;
+            _floraGpuiLastFrustumChunkVisible = GeometryUtility.TestPlanesAABB(_floraGpuiFrustumPlanes, chunkBounds);
+            _floraGpuiHasLastFrustumChunk = true;
+            return !_floraGpuiLastFrustumChunkVisible;
         }
 
         private void FlushFloraGpuiBuffers()

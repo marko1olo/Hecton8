@@ -57,6 +57,7 @@ namespace Hecton8.Environment
             internal static readonly int FrameConstantsId = Shader.PropertyToID("_HectonMarineSnowFrame");
             internal static readonly int DriftParamsId = Shader.PropertyToID("_MarineSnowDriftParams");
             internal static readonly int FlowParamsId = Shader.PropertyToID("_MarineSnowFlowParams");
+            internal static readonly int BubbleParamsId = Shader.PropertyToID("_MarineSnowBubbleParams");
             internal static readonly int FlowSynchronyParamsId = Shader.PropertyToID("_HectonFlowSynchronyParams");
             internal static readonly int RenderParamsId = Shader.PropertyToID("_MarineSnowRenderParams");
             internal static readonly int TintId = Shader.PropertyToID("_MarineSnowTint");
@@ -175,6 +176,8 @@ namespace Hecton8.Environment
         private float _lastDepth;
         private float _lastLightFactor = 1f;
         private float _lastSubmergeImpulse;
+        private float _bubbleTrailMovement01;
+        private float _bubbleTrailExhale01;
         private Vector3 _flowFieldCenterWS;
         private Vector3 _lastUploadedFlowFieldCenterWS;
         private RenderTexture _sonarGlowTexture;
@@ -202,6 +205,7 @@ namespace Hecton8.Environment
         {
             HectonFloatingOrigin.UnregisterListener(this);
             SetUnderwaterState(false, 0f, 0f, 1f, 0f);
+            SetBubbleTrailState(0f, 0f);
             if (_registeredTick)
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
@@ -241,6 +245,12 @@ namespace Hecton8.Environment
             _lastDepth = math.max(0f, depth);
             _lastLightFactor = math.saturate(lightFactor);
             _lastSubmergeImpulse = math.saturate(submergeImpulse);
+        }
+
+        public void SetBubbleTrailState(float movement01, float exhale01)
+        {
+            _bubbleTrailMovement01 = math.saturate(movement01);
+            _bubbleTrailExhale01 = math.saturate(exhale01);
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -535,6 +545,7 @@ namespace Hecton8.Environment
                     densityBiasFlowGain,
                     0.15f,
                     0f));
+            marineSnowCompute.SetVector(ShaderIds.BubbleParamsId, Vector4.zero);
 
             marineSnowMaterial.SetBuffer(ShaderIds.FrameConstantsId, _frameConstantsBuffer);
             marineSnowMaterial.SetVector(
@@ -606,6 +617,13 @@ namespace Hecton8.Environment
                     emissionSettings.turbulenceScale * surgeTurbulenceScale,
                     emissionSettings.wobbleScale * surgeTurbulenceScale,
                     (float)fluidType));
+            marineSnowCompute.SetVector(
+                ShaderIds.BubbleParamsId,
+                new Vector4(
+                    _underwaterActive ? _bubbleTrailMovement01 : 0f,
+                    _underwaterActive ? _bubbleTrailExhale01 : 0f,
+                    _lastDepth,
+                    activeFlag));
             marineSnowCompute.SetVector(ShaderIds.FlowSynchronyParamsId, ResolveFlowSynchronyParams());
             if (_targetCameraComponent != null)
             {
@@ -816,6 +834,7 @@ namespace Hecton8.Environment
             _debugAdaptiveVramPressureState = pressureState;
             _debugAdaptiveBudgetScale = budgetScale;
             budgetScale *= math.lerp(1f, biolumeSurgeParticleMultiplier, ResolveBiolumeSurgeBlend());
+            budgetScale *= math.min(1.12f, 1f + _bubbleTrailMovement01 * 0.08f + _bubbleTrailExhale01 * 0.06f);
 
             int resolvedCount = math.clamp((int)math.round(capacity * budgetScale), 64, capacity);
             _debugActiveParticleCount = resolvedCount;

@@ -665,9 +665,7 @@ namespace Hecton8.Environment
             if (now - _lastSeismicDustTime < Mathf.Max(1f, seismicDustCooldownSeconds))
                 return;
 
-            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals != null
-                ? GlobalRegistry.AbyssalFluidDecals
-                : AbyssalFluidDecalManager.Instance;
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
             if (fluidDecals == null)
                 return;
 

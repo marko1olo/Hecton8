@@ -39,6 +39,7 @@ namespace Hecton8.Construction
         private Vector3 _originalLocalPosition;
         private Quaternion _originalLocalRotation;
         private Vector3 _originalLocalScale;
+        private PlayerToolManager _owningToolManager;
         private bool _registered;
         private bool _hasPower = true;
         private bool _isCharging;
@@ -154,7 +155,7 @@ namespace Hecton8.Construction
             if (toolManager == null || toolManager.CurrentTool == null)
                 return;
 
-            TryDockTool(toolManager.CurrentTool);
+            TryDockTool(toolManager.CurrentTool, toolManager);
         }
 
         public string GetInteractText()
@@ -167,10 +168,19 @@ namespace Hecton8.Construction
 
         public bool TryDockTool(PlayerTool tool)
         {
-            if (tool == null || _slottedTool != null)
+            return TryDockTool(tool, ResolveToolManager(null));
+        }
+
+        private bool TryDockTool(PlayerTool tool, PlayerToolManager toolManager)
+        {
+            if (tool == null || toolManager == null || _slottedTool != null)
+                return false;
+
+            if (!toolManager.TryBeginExternalToolDock(tool))
                 return false;
 
             _slottedTool = tool;
+            _owningToolManager = toolManager;
             _slottedToolTransform = tool.transform;
             _originalParent = _slottedToolTransform.parent;
             _originalLocalPosition = _slottedToolTransform.localPosition;
@@ -192,6 +202,7 @@ namespace Hecton8.Construction
 
         private void TryRestoreToolPose()
         {
+            PlayerTool restoredTool = _slottedTool;
             if (_slottedToolTransform != null)
             {
                 _slottedToolTransform.SetParent(_originalParent, false);
@@ -204,6 +215,10 @@ namespace Hecton8.Construction
             _slottedToolTransform = null;
             _originalParent = null;
             _isCharging = false;
+            if (_owningToolManager != null)
+                _owningToolManager.EndExternalToolDock(restoredTool);
+
+            _owningToolManager = null;
 
             if (_powerNode != null && _powerNode.Grid != null)
                 _powerNode.Grid.MarkDirty();

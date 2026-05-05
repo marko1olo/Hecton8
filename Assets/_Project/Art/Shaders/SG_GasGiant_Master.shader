@@ -610,7 +610,8 @@ Shader "HECTON/Celestial/SG_GasGiant_Master"
                 half4 atmosphereSample = SampleHectonCelestialAtmosphere(
                     skyRay,
                     _SkyColorHorizon.rgb,
-                    _SkyColorZenith.rgb);
+                    _SkyColorZenith.rgb,
+                    sunDir);
 
                 // ═══ FINAL COMPOSITE ═══
                 half3 finalColor = daylight

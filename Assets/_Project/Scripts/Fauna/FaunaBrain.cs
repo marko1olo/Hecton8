@@ -2273,11 +2273,11 @@ namespace Hecton8.AI
 
             Vector3 listenerPosition = playerRoot.position;
             float radius = PredatorKillAudioRadiusMeters * 2.5f;
-            float distanceSqr = (listenerPosition - sourcePosition).sqrMagnitude;
-            if (distanceSqr > radius * radius)
+            double distanceSqr = ResolveRuntimeAupDistanceSq(listenerPosition, sourcePosition);
+            if (distanceSqr > (double)radius * radius)
                 return;
 
-            float distance = Mathf.Sqrt(distanceSqr);
+            float distance = Mathf.Sqrt((float)Math.Min(distanceSqr, float.MaxValue));
             float proximity = 1f - Mathf.Clamp01(distance / radius);
             float intensity = Mathf.Clamp01(0.45f + proximity * 0.55f);
             float transmission01 = 1f;
@@ -2692,6 +2692,13 @@ namespace Hecton8.AI
             _utilityBrain.RecordAuditoryStimulus(signal.Position, _cognitionTimeSeconds);
         }
 
+        private static double ResolveRuntimeAupDistanceSq(Vector3 a, Vector3 b)
+        {
+            AbsoluteUniversePosition aupA = AbsoluteUniversePosition.FromRuntimePosition(a);
+            AbsoluteUniversePosition aupB = AbsoluteUniversePosition.FromRuntimePosition(b);
+            return AbsoluteUniversePosition.DistanceSq(in aupA, in aupB);
+        }
+
         private void RaisePredationAudioPing(Vector3 killPosition, Transform preyRoot)
         {
             if (!_utilityBrain.IsActivePredator)
@@ -2703,11 +2710,11 @@ namespace Hecton8.AI
                 return;
 
             Vector3 listenerPosition = playerRoot.position;
-            float distanceSqr = (listenerPosition - killPosition).sqrMagnitude;
+            double distanceSqr = ResolveRuntimeAupDistanceSq(listenerPosition, killPosition);
             if (distanceSqr > PredatorKillAudioRadiusMetersSqr)
                 return;
 
-            float distance01 = Mathf.Clamp01(Mathf.Sqrt(distanceSqr) / PredatorKillAudioRadiusMeters);
+            float distance01 = Mathf.Clamp01(Mathf.Sqrt((float)Math.Min(distanceSqr, float.MaxValue)) / PredatorKillAudioRadiusMeters);
             float intensity = 1f - distance01;
             if (intensity <= 0.001f)
                 return;
@@ -3208,7 +3215,7 @@ namespace Hecton8.AI
 
             IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
             Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
-            if (playerTransform == null || (playerTransform.position - transform.position).sqrMagnitude > 22500f)
+            if (playerTransform == null || ResolveRuntimeAupDistanceSq(playerTransform.position, transform.position) > 22500d)
                 return;
 
             IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;

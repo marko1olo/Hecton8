@@ -115,6 +115,10 @@ namespace Hecton8.Environment
         private const float UnderwaterBiomeFogInfluenceDepth = 90f;
         private const float HudFogLuminanceReadbackIntervalSeconds = 0.1f;
         private const float HudFogVolumetricScatterBoost = 0.14f;
+        private const float SuitCriticalHealthThreshold01 = 0.2f;
+        private const float GpuBubbleTrailMinSpeed = 1.4f;
+        private const float GpuBubbleTrailFullSpeed = 5.2f;
+        private const float GpuBubbleExhaleImpulseDecayRate = 2.8f;
         private const float WeatherFlowResponseSeconds = 2.4f;
         private const float CalmFlowVelocityMultiplier = 1f;
         private const float StormFlowVelocityMultiplier = 3f;
@@ -161,6 +165,7 @@ namespace Hecton8.Environment
         private int _hudFogLuminanceKernel = -1;
         private bool _hudFogLuminanceReady;
         private bool _hudFogReadbackPending;
+        private float _gpuBubbleExhaleImpulse01;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
         //  INSPECTOR Ã¢â‚¬â€ REFERENCES
@@ -645,6 +650,8 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_HectonHudFogLuminanceParams");
         private static readonly int _HectonFlowSynchronyParamsId =
             Shader.PropertyToID("_HectonFlowSynchronyParams");
+        private static readonly int _HectonSuitHealthGlitchId =
+            Shader.PropertyToID("_HectonSuitHealthGlitch");
         private static readonly Action<AsyncGPUReadbackRequest> s_HudFogLuminanceReadbackCompleted =
             HandleHudFogLuminanceReadbackCompleted;
         private static readonly int _ID_SunSize =
@@ -4651,12 +4658,27 @@ namespace Hecton8.Environment
                     bottomSiltEmissionBoost +
                     suspendedMotesSubmergeBoost);
                 float densityScale = math.saturate(targetEmission / densityCeiling);
+                float playerSpeed = ResolvePlayerSpeedMetersPerSecond();
+                float bubbleTrail01 = shouldPlay
+                    ? math.saturate((playerSpeed - GpuBubbleTrailMinSpeed) / math.max(0.01f, GpuBubbleTrailFullSpeed - GpuBubbleTrailMinSpeed))
+                    : 0f;
+                float bubbleDeltaTime = Application.isPlaying ? math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime) : 0.0166667f;
+                if (_gpuBubbleExhaleImpulse01 > 0f)
+                {
+                    _gpuBubbleExhaleImpulse01 = math.max(
+                        0f,
+                        _gpuBubbleExhaleImpulse01 - GpuBubbleExhaleImpulseDecayRate * bubbleDeltaTime);
+                }
+
                 underwaterMarineSnow.SetUnderwaterState(
                     shouldPlay,
                     densityScale,
                     depth,
                     lightFactor,
                     submergeImpulse);
+                underwaterMarineSnow.SetBubbleTrailState(
+                    bubbleTrail01 * _adaptiveBubbleScale,
+                    _cachedVisualIsUnderwater ? _gpuBubbleExhaleImpulse01 * _adaptiveBubbleScale : 0f);
 
                 if (underwaterMarineSnow.IsOperational)
                 {
@@ -4821,6 +4843,7 @@ namespace Hecton8.Environment
                 _weatherStormFlowBlend);
             if (Application.isPlaying)
                 UpdateHudFogLuminanceDownsample();
+            UpdateSuitHealthGlitchGlobal();
 
             float hudFogTargetLuminance01 = math.max(_hudFogTargetLuminance01, _hudFogDownsampledLuminance01);
             float hudDeltaTime = Application.isPlaying ? math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime) : 0.0166667f;
@@ -4904,6 +4927,29 @@ namespace Hecton8.Environment
                     _weatherStormFlowBlend));
         }
 
+        private static void UpdateSuitHealthGlitchGlobal()
+        {
+            float health01 = 1f;
+            if (Application.isPlaying &&
+                UIStateStore.IsInitialized &&
+                UIStateStore.TryReadValue(UIValueSlotId.Health01, out UIValueSlot healthSlot))
+            {
+                health01 = math.saturate(healthSlot.Value);
+            }
+
+            float critical01 = health01 < SuitCriticalHealthThreshold01
+                ? math.saturate((SuitCriticalHealthThreshold01 - health01) / SuitCriticalHealthThreshold01)
+                : 0f;
+            float easedCritical01 = critical01 * critical01 * (3f - 2f * critical01);
+            Shader.SetGlobalVector(
+                _HectonSuitHealthGlitchId,
+                new Vector4(
+                    easedCritical01,
+                    health01,
+                    easedCritical01 * 0.042f,
+                    easedCritical01 * 0.013f));
+        }
+
         private void ResetNoirResolveGlobals()
         {
             Shader.SetGlobalVector(_HectonNoirResolveSettingsId, new Vector4(2.35f, 0.75f, 0f, 0f));
@@ -4916,6 +4962,7 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_HectonNoirCaveAttenuationId, new Vector4(0.9f, 0f, 0f, 0f));
             Shader.SetGlobalVector(_HectonFlowSynchronyParamsId, new Vector4(1f, 0.26f, 0f, 0f));
             Shader.SetGlobalVector(_HectonHudFogPerturbationId, Vector4.zero);
+            Shader.SetGlobalVector(_HectonSuitHealthGlitchId, Vector4.zero);
             Shader.SetGlobalFloat(_FogScatteringCoeffId, 0f);
         }
 
@@ -5006,17 +5053,29 @@ namespace Hecton8.Environment
             if (Time.unscaledTime < _nextExhaleBubbleAllowedTime)
                 return;
 
-            if (underwaterExhaleBubbles == null)
-                ResolveUnderwaterExhaleBubbles();
-
-            if (underwaterExhaleBubbles == null)
-                return;
+            if (underwaterMarineSnow == null)
+                ResolveUnderwaterMarineSnow();
 
             int burstCount = ResolveExhaleBubbleBurstCount();
             if (burstCount <= 0)
                 return;
 
             _nextExhaleBubbleAllowedTime = Time.unscaledTime + exhaleBubbleMinInterval;
+
+            if (underwaterMarineSnow != null && underwaterMarineSnow.IsOperational)
+            {
+                _gpuBubbleExhaleImpulse01 = 1f;
+#if UNITY_EDITOR
+                _debugExhaleBubbleBurstCount = burstCount;
+#endif
+                return;
+            }
+
+            if (underwaterExhaleBubbles == null)
+                ResolveUnderwaterExhaleBubbles();
+
+            if (underwaterExhaleBubbles == null)
+                return;
 
             underwaterExhaleBubbles.Play(true);
             underwaterExhaleBubbles.Emit(burstCount);
@@ -5044,6 +5103,20 @@ namespace Hecton8.Environment
                 _adaptiveBubbleScale *
                 transportExposureScale);
             return math.max(0, burstCount);
+        }
+
+        private float ResolvePlayerSpeedMetersPerSecond()
+        {
+            if (_playerMovement != null)
+            {
+                Vector3 velocity = _playerMovement.CurrentWorldVelocity;
+                return math.length(new float3(velocity.x, velocity.y, velocity.z));
+            }
+
+            if (_playerRigidbody != null)
+                return _playerRigidbody.linearVelocity.magnitude;
+
+            return 0f;
         }
 
         private float ResolveBottomSiltEmissionBoost(bool isUnderwater)

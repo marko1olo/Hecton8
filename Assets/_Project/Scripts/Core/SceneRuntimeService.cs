@@ -27,6 +27,7 @@ namespace Hecton8.Core
         private const int TransitionOverlaySortingOrder = 32766;
         private static readonly int _TransitionDitherProgressId = Shader.PropertyToID("_DitherProgress");
         private static readonly int _TransitionDitherColorId = Shader.PropertyToID("_Color");
+        private static readonly int _TransitionBlueNoiseTextureId = Shader.PropertyToID("_BlueNoiseTex");
         private static readonly Color _TransitionAbyssColor = new Color(0.002f, 0.004f, 0.009f, 1f);
 
         private static SceneRuntimeService _instance;
@@ -42,6 +43,8 @@ namespace Hecton8.Core
         private bool _cinematicTransitionActive;
         private float _cinematicTransitionElapsed;
         private Camera _cinematicCamera;
+        private Camera _configuredCinematicCamera;
+        private Texture _configuredBlueNoiseTexture;
         private Vector3 _cinematicCameraStartPosition;
         private Quaternion _cinematicCameraStartRotation;
         private GameObject _transitionOverlayRoot;
@@ -57,6 +60,12 @@ namespace Hecton8.Core
         /// True when bootstrap has completed and guarded transitions are allowed.
         /// </summary>
         public bool CanLoadScene => GameBootstrapper.IsBootstrapComplete;
+
+        internal void ConfigureMainMenuCinematic(Camera menuCamera, Texture blueNoiseTexture)
+        {
+            _configuredCinematicCamera = menuCamera;
+            _configuredBlueNoiseTexture = blueNoiseTexture;
+        }
 
         /// <summary>
         /// Ensures a live runtime instance exists.
@@ -292,7 +301,7 @@ namespace Hecton8.Core
         {
             _cinematicTransitionActive = true;
             _cinematicTransitionElapsed = 0f;
-            _cinematicCamera = ResolveActiveCamera();
+            _cinematicCamera = _configuredCinematicCamera;
             if (_cinematicCamera != null)
             {
                 Transform cameraTransform = _cinematicCamera.transform;
@@ -389,6 +398,8 @@ namespace Hecton8.Core
             _cinematicTransitionActive = false;
             _cinematicTransitionElapsed = 0f;
             _cinematicCamera = null;
+            _configuredCinematicCamera = null;
+            _configuredBlueNoiseTexture = null;
 
             if (_transitionOverlayRoot != null)
                 Destroy(_transitionOverlayRoot);
@@ -398,23 +409,6 @@ namespace Hecton8.Core
             if (_transitionDitherMaterial != null)
                 Destroy(_transitionDitherMaterial);
             _transitionDitherMaterial = null;
-        }
-
-        private static Camera ResolveActiveCamera()
-        {
-            Camera camera = Camera.main;
-            if (camera != null)
-                return camera;
-
-            Camera[] allCameras = Camera.allCameras; // COLD ALLOC: Camera[] - fallback main-menu camera resolve during transition start - owner: SceneRuntimeService
-            for (int i = 0; i < allCameras.Length; i++)
-            {
-                Camera candidate = allCameras[i];
-                if (candidate != null && candidate.isActiveAndEnabled)
-                    return candidate;
-            }
-
-            return null;
         }
 
         private void EnsureTransitionOverlay()
@@ -451,6 +445,8 @@ namespace Hecton8.Core
                 _transitionDitherMaterial = new Material(ditherShader); // COLD ALLOC: Material[1] - blue-noise scene dissolve material - owner: SceneRuntimeService
                 _transitionDitherMaterial.SetColor(_TransitionDitherColorId, _TransitionAbyssColor);
                 _transitionDitherMaterial.SetFloat(_TransitionDitherProgressId, 1f);
+                if (_configuredBlueNoiseTexture != null)
+                    _transitionDitherMaterial.SetTexture(_TransitionBlueNoiseTextureId, _configuredBlueNoiseTexture);
                 image.material = _transitionDitherMaterial;
             }
 

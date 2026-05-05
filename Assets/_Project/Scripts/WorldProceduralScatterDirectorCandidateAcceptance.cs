@@ -55,6 +55,9 @@ namespace Hecton8.World
             public byte IsPredatorSpawnFamily;
             public byte ExternalBlock;
             public byte FloraBudgetClass;
+            public byte RequiresClusterPatch;
+            public float ClusterNoiseScale;
+            public float ClusterNoiseThreshold;
         }
 
         private readonly struct ScatterRescueCandidateFilter
@@ -348,6 +351,7 @@ namespace Hecton8.World
             public NativeArray<int> StructureAccentCounts;
             public float MaxRegisteredPlacementSpacing;
             public float CellSize;
+            public float ChunkSize;
             public int GroundTargetMax;
             public int ClusterTargetMax;
             public int StructureTargetMax;
@@ -413,6 +417,14 @@ namespace Hecton8.World
                     ScatterCellCandidateAcceptanceInput candidate = Candidates[candidateIndex];
                     if (candidate.ExternalBlock != 0)
                         continue;
+
+                    if (!PassesFloraClusterPatch(in candidate, ChunkSize))
+                    {
+                        if (ScatterCandidateEvaluator.RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
+                        continue;
+                    }
 
                     if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
                         ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))
@@ -911,6 +923,7 @@ namespace Hecton8.World
             public NativeArray<int> StructureAccentCounts;
             public float MaxRegisteredPlacementSpacing;
             public float CellSize;
+            public float ChunkSize;
             public int LayerTargetMax;
             public int AcceptLimit;
             public int CurrentLayerCount;
@@ -949,6 +962,14 @@ namespace Hecton8.World
 
                     if (acceptedCount >= AcceptLimit)
                         break;
+
+                    if (!PassesFloraClusterPatch(in candidate, ChunkSize))
+                    {
+                        if (ScatterCandidateEvaluator.RegisterPoissonRejection(ref poissonRejectionAttempts, maxPoissonRejectionAttempts))
+                            break;
+
+                        continue;
+                    }
 
                     if (candidate.FloraBudgetClass != (byte)FloraBudgetClass.None &&
                         ExceedsFloraChunkHardCap(in candidate, FloraChunkHardCap))

@@ -14,6 +14,7 @@ float4 _HectonAtmosphereParams;     // x=Rayleigh height, y=Mie height, z=densit
 
 static const float HECTON_PI = 3.14159265359;
 static const float HECTON_INV_PI = 0.31830988618;
+static const float3 HECTON_NOIR_FLOOR = float3(0.0015, 0.0023, 0.0031);
 
 uint HectonHash(uint state)
 {
@@ -29,6 +30,79 @@ uint HectonHash(uint state)
 float HectonHash01(uint state)
 {
     return (HectonHash(state) & 0x00FFFFFFu) / 16777215.0;
+}
+
+float HectonValueNoise(float3 p)
+{
+    int3 cell = (int3)floor(p);
+    float3 f = frac(p);
+    f = f * f * (3.0 - 2.0 * f);
+
+    uint baseHash =
+        (uint)(cell.x * 73856093) ^
+        (uint)(cell.y * 19349663) ^
+        (uint)(cell.z * 83492791) ^
+        (uint)max(_HectonStarBakeParams.z, 1.0);
+
+    float n000 = HectonHash01(baseHash);
+    float n100 = HectonHash01(baseHash ^ 73856093u);
+    float n010 = HectonHash01(baseHash ^ 19349663u);
+    float n110 = HectonHash01(baseHash ^ 88192194u);
+    float n001 = HectonHash01(baseHash ^ 83492791u);
+    float n101 = HectonHash01(baseHash ^ 16797298u);
+    float n011 = HectonHash01(baseHash ^ 102400468u);
+    float n111 = HectonHash01(baseHash ^ 28855157u);
+
+    float nx00 = lerp(n000, n100, f.x);
+    float nx10 = lerp(n010, n110, f.x);
+    float nx01 = lerp(n001, n101, f.x);
+    float nx11 = lerp(n011, n111, f.x);
+    float nxy0 = lerp(nx00, nx10, f.y);
+    float nxy1 = lerp(nx01, nx11, f.y);
+    return lerp(nxy0, nxy1, f.z);
+}
+
+float HectonDustFbm(float3 direction)
+{
+    float3 p = direction * 5.0 + float3(13.7, 4.1, 9.3);
+    float amplitude = 0.55;
+    float sum = 0.0;
+    float norm = 0.0;
+
+    [unroll]
+    for (int octave = 0; octave < 6; octave++)
+    {
+        sum += HectonValueNoise(p) * amplitude;
+        norm += amplitude;
+        p = p * 2.03 + float3(17.0, 31.0, 47.0);
+        amplitude *= 0.52;
+    }
+
+    return sum / max(norm, 0.0001);
+}
+
+float3 HectonCubeFaceToDirection(uint face, float2 uv)
+{
+    float2 p = uv * 2.0 - 1.0;
+    if (face == 0u) return normalize(float3(1.0, p.y, -p.x));
+    if (face == 1u) return normalize(float3(-1.0, p.y, p.x));
+    if (face == 2u) return normalize(float3(p.x, 1.0, -p.y));
+    if (face == 3u) return normalize(float3(p.x, -1.0, p.y));
+    if (face == 4u) return normalize(float3(p.x, p.y, 1.0));
+    return normalize(float3(-p.x, p.y, -1.0));
+}
+
+float3 HectonSampleDustLane(float3 direction)
+{
+    float bandHalfWidth = max(_HectonStarDistribution.x, 0.001);
+    float bandDistance = abs(asin(clamp(direction.y, -1.0, 1.0)));
+    float lane = exp(-bandDistance * bandDistance / max(bandHalfWidth * bandHalfWidth, 0.00001));
+    float turbulence = HectonDustFbm(direction);
+    float laneBreakup = smoothstep(0.24, 0.88, turbulence);
+    float density = lane * laneBreakup * lerp(0.36, 1.0, saturate(_HectonStarDistribution.y));
+    float3 dustLow = float3(0.055, 0.025, 0.12);
+    float3 dustHigh = float3(0.12, 0.68, 0.92);
+    return lerp(dustLow, dustHigh, saturate(pow(turbulence, 1.7))) * density * 0.38;
 }
 
 float3 HectonSpectralColor(float classRoll)
@@ -102,7 +176,9 @@ void HectonWriteStar(uint face, int2 pixel, int resolution, float3 color, float 
     if (pixel.x < 0 || pixel.y < 0 || pixel.x >= resolution || pixel.y >= resolution)
         return;
 
-    _BakedStarCubemap[uint3((uint)pixel.x, (uint)pixel.y, face)] = float4(color * brightness, 1.0);
+    uint3 writeCoord = uint3((uint)pixel.x, (uint)pixel.y, face);
+    float3 previous = _BakedStarCubemap[writeCoord].rgb;
+    _BakedStarCubemap[writeCoord] = float4(max(previous, color * brightness), 1.0);
 }
 
 [numthreads(8, 8, 1)]
@@ -112,7 +188,10 @@ void ClearStarCubemap(uint3 dispatchThreadId : SV_DispatchThreadID)
     if (dispatchThreadId.x >= resolution || dispatchThreadId.y >= resolution || dispatchThreadId.z >= 6u)
         return;
 
-    _BakedStarCubemap[dispatchThreadId] = float4(0.0, 0.0, 0.0, 1.0);
+    float2 uv = ((float2)dispatchThreadId.xy + 0.5) / (float)resolution;
+    float3 direction = HectonCubeFaceToDirection(dispatchThreadId.z, uv);
+    float3 dust = HectonSampleDustLane(direction);
+    _BakedStarCubemap[dispatchThreadId] = float4(HECTON_NOIR_FLOOR + dust, 1.0);
 }
 
 [numthreads(128, 1, 1)]

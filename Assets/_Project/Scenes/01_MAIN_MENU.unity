@@ -409,6 +409,8 @@ MonoBehaviour:
   loadingProgressBar: {fileID: 1778217726}
   loadingPercentText: {fileID: 741862751}
   loadingTips: {fileID: 1175454081}
+  mainMenuCamera: {fileID: 40934289}
+  transitionBlueNoiseTexture: {fileID: 2800000, guid: bbe5274d7ccb1f84d83b1c543056221c, type: 3}
   fadeDuration: 0.2
   targetSceneName: 02_HECTON_WORLD
 --- !u!114 &13958766

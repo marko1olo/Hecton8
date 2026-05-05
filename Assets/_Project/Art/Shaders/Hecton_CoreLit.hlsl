@@ -325,6 +325,31 @@ float HectonCoreLitResolveFlashlightShadowFloor()
     return max(_HectonFlashlightShadowFloor, 0.02);
 }
 
+half HectonCoreLitResolveFlashlightPhotophobia(float3 positionWS)
+{
+    if (_HectonFlashlightActive <= 0.5)
+        return 1.0h;
+
+    float3 lightPositionWS = _HectonFlashlightPositionWS.xyz;
+    float lightRange = max(_HectonFlashlightPositionWS.w, 0.1);
+    float3 toSampleWS = positionWS - lightPositionWS;
+    float sampleDistance = length(toSampleWS);
+    if (sampleDistance <= 0.0001 || sampleDistance >= lightRange)
+        return 1.0h;
+
+    float3 sampleDirectionWS = toSampleWS * rcp(sampleDistance);
+    float3 lightDirectionWS = HectonCoreLitSafeNormalize(_HectonFlashlightDirectionWS.xyz);
+    float innerCos = _HectonFlashlightDirectionWS.w;
+    float outerCos = _HectonFlashlightConeData.x;
+    float coneRange = max(innerCos - outerCos, 0.0001);
+    float coneMask = saturate((dot(lightDirectionWS, sampleDirectionWS) - outerCos) / coneRange);
+    float rangeMask = saturate(1.0 - sampleDistance * max(_HectonFlashlightConeData.z, 0.0001));
+    rangeMask *= rangeMask;
+    float lightEnergy = saturate(_HectonFlashlightColor.w * 0.12);
+    float photophobia = coneMask * rangeMask * lightEnergy;
+    return (half)lerp(1.0, 0.0, saturate(photophobia));
+}
+
 bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon);
 float HectonCoreLitEvaluateCaveAmbientFactor(float3 positionWS, float3 normalWS);
 

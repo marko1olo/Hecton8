@@ -47,6 +47,7 @@ StructuredBuffer<MarineSnowFrameData> _HectonMarineSnowFrame;
 float4 _MarineSnowDriftParams;
 float4 _MarineSnowFlowParams;
 float4 _MarineSnowEmissionParams;
+float4 _MarineSnowBubbleParams;
 float4 _HectonFlowSynchronyParams;
 float4 _HectonFloatingOriginOffset;
 float4 _HectonShallowWaterFieldWorldRect;
@@ -331,19 +332,28 @@ float4 EvaluateShallowWaterFieldData(float3 positionWS)
     return _HectonShallowWaterFieldRT.SampleLevel(sampler_HectonShallowWaterFieldRT, uv, 0.0);
 }
 
-uint ResolveEmissionFlags()
+uint ResolveEmissionFlags(uint particleIndex)
 {
     uint fluidType = (uint)round(_MarineSnowEmissionParams.w);
     if (fluidType == 1u)
         return 1u << 0;
     if (fluidType == 2u)
         return 1u << 2;
+
+    float bubbleDrive = saturate(_MarineSnowBubbleParams.x + _MarineSnowBubbleParams.y);
+    if (bubbleDrive > EPSILON)
+    {
+        float bubbleLane = Hash11(particleIndex * 9.17 + _MarineSnowMetaParams.z * 0.137);
+        if (bubbleLane < saturate(bubbleDrive * 0.18))
+            return 1u << 0;
+    }
+
     return 1u << 3;
 }
 
-float ResolveBootstrapVerticalVelocity(float baseSpeed)
+float ResolveBootstrapVerticalVelocity(float baseSpeed, uint particleIndex)
 {
-    uint flags = ResolveEmissionFlags();
+    uint flags = ResolveEmissionFlags(particleIndex);
     return HasFlag(flags, 1u << 0) ? max(0.02, baseSpeed) : -baseSpeed;
 }
 
@@ -364,10 +374,33 @@ Particle BuildRespawnParticle(uint particleIndex)
     particle.PrevPos = particle.Pos;
     particle.Life = 1.0;
     particle.Size = lerp(0.0035, 0.0090, Hash11(particleIndex * 0.913 + frameSeed * 0.123));
-    particle.Vel = float3(0.0, ResolveBootstrapVerticalVelocity(ResolveBaseDescent(particleIndex)), 0.0);
-    particle.Flags = ResolveEmissionFlags();
+    particle.Vel = float3(0.0, ResolveBootstrapVerticalVelocity(ResolveBaseDescent(particleIndex), particleIndex), 0.0);
+    particle.Flags = ResolveEmissionFlags(particleIndex);
     particle.UV = float2(Hash11(particleIndex * 0.33), Hash11(particleIndex * 0.77));
     particle.Pad = float2(Hash11(particleIndex * 1.11), Hash11(particleIndex * 1.37));
+    return particle;
+}
+
+Particle BuildBubbleTrailParticle(uint particleIndex, float bubbleDrive, float exhaleDrive)
+{
+    Particle particle = BuildRespawnParticle(particleIndex);
+    float3 cameraPosition = _MarineSnowCameraPosition_Time.xyz;
+    float3 cameraRight = SafeNormalize(_MarineSnowCameraRight_DeltaTime.xyz);
+    float3 cameraUp = SafeNormalize(_MarineSnowCameraUp_Density.xyz);
+    float3 cameraForward = SafeNormalize(cross(cameraRight, cameraUp));
+
+    float side = (Hash11(particleIndex * 1.23 + _MarineSnowMetaParams.z) - 0.5) * lerp(0.36, 0.58, exhaleDrive);
+    float forward = lerp(0.10, 0.72, Hash11(particleIndex * 2.23 + _MarineSnowMetaParams.z * 0.41));
+    float lower = lerp(0.18, 0.86, Hash11(particleIndex * 3.23 + _MarineSnowMetaParams.z * 0.67));
+    particle.Pos = cameraPosition + cameraRight * side + cameraForward * forward - cameraUp * lower;
+    particle.PrevPos = particle.Pos;
+    particle.Flags = 1u << 0;
+    particle.Life = 1.0;
+    particle.Size = lerp(0.004, 0.018, Hash11(particleIndex * 4.23 + _MarineSnowMetaParams.z * 0.29)) * lerp(1.0, 1.7, exhaleDrive);
+    particle.Vel =
+        cameraUp * lerp(0.08, 0.28, bubbleDrive) +
+        cameraRight * ((Hash11(particleIndex * 5.23) - 0.5) * 0.035) +
+        cameraForward * lerp(0.02, 0.08, exhaleDrive);
     return particle;
 }
 
@@ -425,6 +458,21 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float3 cameraPosition = _MarineSnowCameraPosition_Time.xyz;
     bool isBubble = HasFlag(particle.Flags, 1u << 0);
     bool isDebris = HasFlag(particle.Flags, 1u << 2);
+    float bubbleTrailDrive = saturate(_MarineSnowBubbleParams.x);
+    float bubbleExhaleDrive = saturate(_MarineSnowBubbleParams.y);
+    float bubbleDrive = saturate(bubbleTrailDrive + bubbleExhaleDrive);
+    if (!isBubble && bubbleDrive > EPSILON)
+    {
+        float spawnGate = step(
+            1.0 - saturate(bubbleDrive) * lerp(0.006, 0.065, bubbleExhaleDrive),
+            Hash11(index * 37.17 + _MarineSnowMetaParams.z * 0.73));
+        if (spawnGate > 0.5)
+        {
+            particle = BuildBubbleTrailParticle(index, bubbleDrive, bubbleExhaleDrive);
+            isBubble = true;
+            isDebris = false;
+        }
+    }
     float buoyancyModifier = _MarineSnowEmissionParams.x;
     float turbulenceModifier = max(_MarineSnowEmissionParams.y, 0.0);
     float wobbleScale = max(_MarineSnowEmissionParams.z, 0.0);

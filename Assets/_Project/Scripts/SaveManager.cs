@@ -2612,28 +2612,34 @@ namespace Hecton8.SaveSystem
                 {
                     if (persistentWorldItems != null && persistentWorldItems.Length > 0)
                     {
+                        // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[persistentWorldItems.Length] - static save assembly staging buffer - owner: SaveManager
                         persistentWorldItemBuffer = new NativeArray<PersistentWorldDeltaRecord>(
                             persistentWorldItems.Length,
                             Allocator.Temp,
                             NativeArrayOptions.UninitializedMemory);
+                        RegisterTransientNativeArray(persistentWorldItemBuffer, "persistentWorldItemBuffer");
                         persistentWorldItemBuffer.CopyFrom(persistentWorldItems);
                     }
 
                     if (ecosystemSectorStates != null && ecosystemSectorStates.Length > 0)
                     {
+                        // COLD ALLOC: NativeArray<EcosystemSectorSaveRecord>[ecosystemSectorStates.Length] - static save assembly staging buffer - owner: SaveManager
                         ecosystemSectorBuffer = new NativeArray<EcosystemSectorSaveRecord>(
                             ecosystemSectorStates.Length,
                             Allocator.Temp,
                             NativeArrayOptions.UninitializedMemory);
+                        RegisterTransientNativeArray(ecosystemSectorBuffer, "ecosystemSectorBuffer");
                         ecosystemSectorBuffer.CopyFrom(ecosystemSectorStates);
                     }
 
                     if (packedQuestStateWords != null && packedQuestStateWords.Length > 0)
                     {
+                        // COLD ALLOC: NativeArray<UInt32>[packedQuestStateWords.Length] - static save assembly staging buffer - owner: SaveManager
                         packedQuestStateBuffer = new NativeArray<uint>(
                             packedQuestStateWords.Length,
                             Allocator.Temp,
                             NativeArrayOptions.UninitializedMemory);
+                        RegisterTransientNativeArray(packedQuestStateBuffer, "packedQuestStateBuffer");
                         packedQuestStateBuffer.CopyFrom(packedQuestStateWords);
                     }
 
@@ -2656,13 +2662,13 @@ namespace Hecton8.SaveSystem
                 finally
                 {
                     if (persistentWorldItemBuffer.IsCreated)
-                        persistentWorldItemBuffer.Dispose();
+                        DisposeNativeArray(ref persistentWorldItemBuffer);
 
                     if (ecosystemSectorBuffer.IsCreated)
-                        ecosystemSectorBuffer.Dispose();
+                        DisposeNativeArray(ref ecosystemSectorBuffer);
 
                     if (packedQuestStateBuffer.IsCreated)
-                        packedQuestStateBuffer.Dispose();
+                        DisposeNativeArray(ref packedQuestStateBuffer);
 
                     ReleaseBuffer(rawBuffer, ownsRawBuffer);
                     ReleaseBuffer(compressedBuffer, ownsCompressedBuffer);
