@@ -12,6 +12,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
@@ -42,18 +43,21 @@ namespace Hecton8.SaveSystem
         private const float PredictiveIndexedPagingCheckIntervalSeconds = 0.5f;
         private const float PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond = 0.5f;
         private const float CompressionFastModeFrameTimeThresholdSeconds = 0.014f;
+        private const float SafeAupSnapSphereRadiusMeters = 0.45f;
+        private const float SafeAupSnapCastStartHeightMeters = 12f;
+        private const float SafeAupSnapCastDistanceMeters = 96f;
+        private const float SafeAupSnapGroundPaddingMeters = 0.28f;
+        private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
+        private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: SECTOR CORRUPTION DETECTED. TERRAIN RE-INITIALIZED.";
         private const int MaxRegisteredSaveables = 256;
         private const string NativeMemoryOwner = nameof(SaveManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-
-        internal static SaveManager ActiveRuntimeInstance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            ActiveRuntimeInstance = null;
-        }
+        private const NativeAllocationLifetime NativeTransientMemoryLifetime = NativeAllocationLifetime.TransientArena;
+        private static readonly uint _predictiveIndexedSectorPrewarmFailedWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.PredictiveIndexedSectorPrewarmFailed"));
+        private static readonly uint _predictiveIndexedSectorPrewarmBackupWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.PredictiveIndexedSectorPrewarmBackup"));
+        private static readonly uint _predictiveIndexedSectorPrewarmExceptionWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.PredictiveIndexedSectorPrewarmException"));
+        private static readonly uint _predictiveIndexedSectorPrewarmContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.PredictiveIndexedSectorPrewarm"));
 
         // ══════════════════════════════════════════════════════════
         //  SAVE STATE
@@ -142,6 +146,7 @@ namespace Hecton8.SaveSystem
         private bool _emergencyBackupScheduled;
         private bool _indexedDefragInFlight;
         private bool _predictiveIndexedPagingInFlight;
+        private LoadingScreenController _cachedLoadingScreenController;
         private string _integritySlotName;
         private string _pendingIntegritySlotName;
         private string _activeIndexedSavePath;
@@ -259,9 +264,6 @@ namespace Hecton8.SaveSystem
 
         private void Awake()
         {
-            if (ActiveRuntimeInstance == null)
-                ActiveRuntimeInstance = this;
-
             _sessionStartTime = Time.realtimeSinceStartupAsDouble;
             InitializeNativeBuffers();
             SaveBinaryStorage.WarmRuntime();
@@ -295,9 +297,6 @@ namespace Hecton8.SaveSystem
 
         private void OnDestroy()
         {
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
-
             if (_serviceRegistered && ReferenceEquals(GlobalRegistry.Save, this))
                 GlobalRegistry.UnregisterSaveService(this);
 
@@ -367,6 +366,12 @@ namespace Hecton8.SaveSystem
                 _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             }
 
+            if (!_integrityScanResult.IsCreated)
+            {
+                // COLD ALLOC: NativeArray<ulong>[1] - background save integrity hash output - owner: SaveManager
+                _integrityScanResult = new NativeArray<ulong>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            }
+
             RegisterNativeMemorySentinel();
         }
 
@@ -396,13 +401,6 @@ namespace Hecton8.SaveSystem
                 Time.unscaledTime < _nextIntegrityScanTime)
             {
                 return;
-            }
-
-            if (!_integrityScanResult.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<ulong>[1] - background save integrity hash output - owner: SaveManager
-                _integrityScanResult = new NativeArray<ulong>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(_integrityScanResult, NativeMemoryOwner, nameof(_integrityScanResult), NativeMemoryLifetime);
             }
 
             IntegrityScanJob job = new IntegrityScanJob
@@ -584,7 +582,8 @@ namespace Hecton8.SaveSystem
 
             Vector3 currentRuntimePosition = playerTransform.position;
             Vector3 playerVelocity = playerMovement.CurrentWorldVelocity;
-            if (!IsFinite(currentRuntimePosition) || !IsFinite(playerVelocity))
+            if (!SavePredictivePagingMath.IsFinite(currentRuntimePosition) ||
+                !SavePredictivePagingMath.IsFinite(playerVelocity))
                 return;
 
             float planarSpeedSq = (playerVelocity.x * playerVelocity.x) + (playerVelocity.z * playerVelocity.z);
@@ -593,66 +592,26 @@ namespace Hecton8.SaveSystem
                 return;
 
             int chunkSizeMeters = math.max(1, _activeIndexedSaveChunkSizeMeters);
-            if (!TryComputePredictiveIndexedPagingSectorHash(
+            if (!SavePredictivePagingMath.TryComputeIndexedSectorProjection(
                     currentRuntimePosition,
                     playerVelocity,
                     PredictiveIndexedPagingLookaheadSeconds,
                     chunkSizeMeters,
-                    out long currentSectorHash,
-                    out long projectedSectorHash,
-                    out int3 currentChunkId,
-                    out int3 projectedChunkId))
+                    out PredictiveIndexedPagingProjection projection))
             {
                 return;
             }
 
-            bool projectedChunkChanged = !math.all(currentChunkId == projectedChunkId);
-            if ((!projectedChunkChanged && projectedSectorHash == currentSectorHash) ||
-                projectedSectorHash == _lastPredictiveIndexedPagedSectorHash)
+            bool projectedChunkChanged = !math.all(projection.CurrentChunkId == projection.ProjectedChunkId);
+            if ((!projectedChunkChanged && projection.ProjectedSectorHash == projection.CurrentSectorHash) ||
+                projection.ProjectedSectorHash == _lastPredictiveIndexedPagedSectorHash)
             {
                 return;
             }
 
-            _lastPredictiveIndexedPagedSectorHash = projectedSectorHash;
+            _lastPredictiveIndexedPagedSectorHash = projection.ProjectedSectorHash;
             _predictiveIndexedPagingInFlight = true;
-            _ = RunPredictiveIndexedSectorPrewarmAsync(_activeIndexedSavePath, projectedSectorHash);
-        }
-
-        internal static bool TryComputePredictiveIndexedPagingSectorHash(
-            Vector3 currentRuntimePosition,
-            Vector3 worldVelocity,
-            float lookaheadSeconds,
-            int chunkSizeMeters,
-            out long currentSectorHash,
-            out long projectedSectorHash,
-            out int3 currentChunkId,
-            out int3 projectedChunkId)
-        {
-            currentSectorHash = 0L;
-            projectedSectorHash = 0L;
-            currentChunkId = default;
-            projectedChunkId = default;
-
-            if (!IsFinite(currentRuntimePosition) ||
-                !IsFinite(worldVelocity) ||
-                !math.isfinite(lookaheadSeconds) ||
-                lookaheadSeconds <= 0f)
-            {
-                return false;
-            }
-
-            Vector3 projectedRuntimePosition = currentRuntimePosition + (worldVelocity * lookaheadSeconds);
-            if (!IsFinite(projectedRuntimePosition))
-                return false;
-
-            AbsoluteUniversePosition currentAup = AbsoluteUniversePosition.FromRuntimePosition(currentRuntimePosition);
-            AbsoluteUniversePosition projectedAup = AbsoluteUniversePosition.FromRuntimePosition(projectedRuntimePosition);
-            int safeChunkSizeMeters = math.max(1, chunkSizeMeters);
-            currentChunkId = AbsoluteUniversePosition.ResolveChunkId(in currentAup, safeChunkSizeMeters);
-            projectedChunkId = AbsoluteUniversePosition.ResolveChunkId(in projectedAup, safeChunkSizeMeters);
-            currentSectorHash = SaveBinaryStorage.ComputePersistentWorldPagedSectorHash(in currentAup);
-            projectedSectorHash = SaveBinaryStorage.ComputePersistentWorldPagedSectorHash(in projectedAup);
-            return true;
+            _ = RunPredictiveIndexedSectorPrewarmAsync(_activeIndexedSavePath, projection.ProjectedSectorHash);
         }
 
         private static bool TryResolvePredictiveIndexedPagingPlayer(out HectonPlayerMovement playerMovement, out Transform playerTransform)
@@ -667,11 +626,6 @@ namespace Hecton8.SaveSystem
             playerMovement = playerContext.PlayerMovement;
             playerTransform = playerContext.PlayerTransform;
             return playerMovement != null && playerTransform != null;
-        }
-
-        private static bool IsFinite(Vector3 value)
-        {
-            return math.isfinite(value.x) && math.isfinite(value.y) && math.isfinite(value.z);
         }
 
         private async Awaitable RunPredictiveIndexedSectorPrewarmAsync(string absolutePath, long sectorHash)
@@ -692,12 +646,14 @@ namespace Hecton8.SaveSystem
 
                 if (!prewarmSucceeded)
                 {
+                    PublishPredictiveIndexedSectorPrewarmWarning(_predictiveIndexedSectorPrewarmFailedWarningHash, sectorHash, 1f);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm failed for 0x{sectorHash:X16}: {error}");
 #endif
                 }
                 else if (usedBackup)
                 {
+                    PublishPredictiveIndexedSectorPrewarmWarning(_predictiveIndexedSectorPrewarmBackupWarningHash, sectorHash, 1f);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                     Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm used .bak for 0x{sectorHash:X16}; primary will promote through CRITICAL_RECOVERY on load.");
 #endif
@@ -715,6 +671,7 @@ namespace Hecton8.SaveSystem
             catch (Exception ex)
             {
                 await Awaitable.MainThreadAsync();
+                PublishPredictiveIndexedSectorPrewarmWarning(_predictiveIndexedSectorPrewarmExceptionWarningHash, sectorHash, 1f);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm threw for 0x{sectorHash:X16}: {ex.Message}");
 #endif
@@ -724,6 +681,16 @@ namespace Hecton8.SaveSystem
                 await Awaitable.MainThreadAsync();
                 _predictiveIndexedPagingInFlight = false;
                 _nextPredictiveIndexedPagingCheckTime = Time.unscaledTime + PredictiveIndexedPagingCheckIntervalSeconds;
+            }
+        }
+
+        private static void PublishPredictiveIndexedSectorPrewarmWarning(uint warningHash, long sectorHash, float scalarValue)
+        {
+            unchecked
+            {
+                ulong packedSectorHash = (ulong)sectorHash;
+                uint contextHash = _predictiveIndexedSectorPrewarmContextHash ^ (uint)packedSectorHash ^ (uint)(packedSectorHash >> 32);
+                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, scalarValue);
             }
         }
 
@@ -817,6 +784,20 @@ namespace Hecton8.SaveSystem
         {
             NativeMemorySentinel.RegisterNativeArray(_savePayloadBuffer, NativeMemoryOwner, nameof(_savePayloadBuffer), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_integrityScanResult, NativeMemoryOwner, nameof(_integrityScanResult), NativeMemoryLifetime);
+        }
+
+        private static void RegisterVoxelDeltaSnapshot(NativeArray<byte> snapshot, string label)
+        {
+            RegisterTransientNativeArray(snapshot, label);
+        }
+
+        private static void RegisterTransientNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeTransientMemoryLifetime);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency = default, bool deferDisposal = false) where T : struct
@@ -994,6 +975,7 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
+            SaveThumbnailSystem.CaptureThumbnail(slotName);
             _isBusy = true;
             SaveEvents.RaiseSaveStarted(slotName);
 
@@ -1021,9 +1003,10 @@ namespace Hecton8.SaveSystem
                     if (saveable is VoxelDeltaProcessor voxelDeltaProcessor)
                     {
                         if (voxelDeltaSnapshot.IsCreated)
-                            voxelDeltaSnapshot.Dispose();
+                            DisposeNativeArray(ref voxelDeltaSnapshot);
 
                         voxelDeltaSnapshot = voxelDeltaProcessor.CaptureNativeSnapshot(Allocator.Persistent);
+                        RegisterVoxelDeltaSnapshot(voxelDeltaSnapshot, "voxelDeltaSnapshot");
                         continue;
                     }
 
@@ -1055,6 +1038,7 @@ namespace Hecton8.SaveSystem
                         Allocator.Persistent,
                         out packedQuestSaveHeader,
                         saveTimestampTicks);
+                    RegisterTransientNativeArray(packedQuestStateSnapshot, "packedQuestStateSnapshot");
                 }
 
                 SaveMetadata metadata = new SaveMetadata
@@ -1098,7 +1082,6 @@ namespace Hecton8.SaveSystem
                 await Awaitable.MainThreadAsync();
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
                 UpdateActiveIndexedSavePath(GetPersistentAbsolutePath(GetPrimarySaveFilePath(slotName)));
-                SaveThumbnailSystem.CaptureThumbnail(slotName);
                 int backupRetention = GetBackupRetentionCount(slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
                     ? SaveSlotIntegrityState.HealthyWithBackup
@@ -1119,10 +1102,10 @@ namespace Hecton8.SaveSystem
             finally
             {
                 if (packedQuestStateSnapshot.IsCreated)
-                    packedQuestStateSnapshot.Dispose();
+                    DisposeNativeArray(ref packedQuestStateSnapshot);
 
                 if (voxelDeltaSnapshot.IsCreated)
-                    voxelDeltaSnapshot.Dispose();
+                    DisposeNativeArray(ref voxelDeltaSnapshot);
 
                 _isBusy = false;
             }
@@ -1144,11 +1127,11 @@ namespace Hecton8.SaveSystem
             if (data == null)
                 return;
 
-            global::HectonWorldGenerator generator = global::HectonWorldGenerator.ActiveRuntimeInstance;
-            if (generator == null)
+            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
+            if (seedProvider == null || !seedProvider.IsInitialized)
                 return;
 
-            data.ecosystemState.worldSeed = generator.RuntimeWorldSeed;
+            data.ecosystemState.worldSeed = seedProvider.RuntimeWorldSeed;
         }
 
         private static void ValidateRuntimeWorldSeed(SaveData data)
@@ -1160,11 +1143,11 @@ namespace Hecton8.SaveSystem
             if (savedSeed == 0)
                 return;
 
-            global::HectonWorldGenerator generator = global::HectonWorldGenerator.ActiveRuntimeInstance;
-            if (generator == null)
+            IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
+            if (seedProvider == null || !seedProvider.IsInitialized)
                 return;
 
-            int runtimeSeed = generator.RuntimeWorldSeed;
+            int runtimeSeed = seedProvider.RuntimeWorldSeed;
             if (runtimeSeed == 0 || runtimeSeed == savedSeed)
                 return;
 
@@ -1172,6 +1155,169 @@ namespace Hecton8.SaveSystem
             Debug.LogWarning($"[SaveManager] Geological Anomaly: saved world seed {savedSeed} != runtime world seed {runtimeSeed}.");
 #endif
             NotificationEvents.PushWarning("GEOLOGICAL ANOMALY");
+        }
+
+        private void ReportLoadPipelineStage(LoadingPipelineStage stage, float progress01)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            LoadingScreenController loadingScreen = ResolveLoadingScreenController();
+            if (loadingScreen == null)
+                return;
+
+            if (stage != LoadingPipelineStage.Completed)
+                loadingScreen.Show();
+
+            loadingScreen.UpdateProgress(progress01);
+            loadingScreen.UpdatePipelineStage(stage);
+
+            if (stage == LoadingPipelineStage.Completed)
+                loadingScreen.Hide();
+        }
+
+        private void HideLoadingPipelineScreen()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            LoadingScreenController loadingScreen = ResolveLoadingScreenController();
+            if (loadingScreen != null)
+                loadingScreen.Hide();
+        }
+
+        private LoadingScreenController ResolveLoadingScreenController()
+        {
+            if (_cachedLoadingScreenController != null)
+                return _cachedLoadingScreenController;
+
+            _cachedLoadingScreenController = FindAnyObjectByType<LoadingScreenController>(FindObjectsInactive.Include);
+            return _cachedLoadingScreenController;
+        }
+
+        private static void ReportCriticalSectorCorruptionDialog()
+        {
+            NotificationEvents.PushCritical(CriticalSectorCorruptionMessage);
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            Debug.LogWarning($"[SaveManager] {CriticalSectorCorruptionMessage}");
+#endif
+        }
+
+        private static bool TryApplySafeAupSnapOnLoad(SaveData data)
+        {
+            if (data == null)
+                return false;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerTransform = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerTransform == null && !SceneBootstrap.TryGetCurrentPlayerTransform(out playerTransform))
+                return false;
+
+            Vector3 savedRuntimePosition = data.playerStats.GetPosition();
+            if (!IsFinite(savedRuntimePosition))
+                return false;
+
+            AbsoluteUniversePosition savedAup = AbsoluteUniversePosition.FromRuntimePosition(savedRuntimePosition);
+            float3 resolvedRuntime3 = savedAup.ToRuntimeFloat3();
+            if (!math.all(math.isfinite(resolvedRuntime3)))
+                return false;
+
+            Vector3 resolvedRuntimePosition = new Vector3(
+                resolvedRuntime3.x,
+                resolvedRuntime3.y,
+                resolvedRuntime3.z);
+            Vector3 castOrigin = resolvedRuntimePosition + (Vector3.up * SafeAupSnapCastStartHeightMeters);
+            if (!UnityEngine.Physics.SphereCast(
+                    castOrigin,
+                    SafeAupSnapSphereRadiusMeters,
+                    Vector3.down,
+                    out RaycastHit hit,
+                    SafeAupSnapCastDistanceMeters,
+                    UnityEngine.Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Ignore))
+            {
+                return false;
+            }
+
+            float safeY = hit.point.y + SafeAupSnapGroundPaddingMeters;
+            if (safeY <= resolvedRuntimePosition.y + SafeAupSnapMinimumLiftMeters)
+                return false;
+
+            Vector3 snappedPosition = new Vector3(resolvedRuntimePosition.x, safeY, resolvedRuntimePosition.z);
+            Quaternion savedRotation = data.playerStats.GetRotation();
+            if (!IsFinite(savedRotation))
+                savedRotation = playerTransform.rotation;
+
+            Vector3 savedVelocity = data.playerStats.GetVelocity();
+            if (!IsFinite(savedVelocity))
+                savedVelocity = Vector3.zero;
+
+            if (savedVelocity.y < 0f)
+                savedVelocity.y = 0f;
+
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : playerTransform.GetComponent<Rigidbody>();
+            HectonFloatingOrigin.BeginSafeTeleportProtocol();
+            try
+            {
+                TeleportLoadedPlayer(playerTransform, playerBody, snappedPosition, savedRotation, savedVelocity);
+            }
+            finally
+            {
+                HectonFloatingOrigin.EndSafeTeleportProtocol();
+            }
+
+            return true;
+        }
+
+        private static void TeleportLoadedPlayer(
+            Transform playerTransform,
+            Rigidbody playerBody,
+            Vector3 position,
+            Quaternion rotation,
+            Vector3 velocity)
+        {
+            if (playerBody == null)
+            {
+                playerTransform.SetPositionAndRotation(position, rotation);
+                return;
+            }
+
+            bool wasKinematic = playerBody.isKinematic;
+            bool wasDetectingCollisions = playerBody.detectCollisions;
+            bool wasSleeping = playerBody.IsSleeping();
+
+            playerBody.isKinematic = true;
+            playerBody.detectCollisions = false;
+            playerBody.ResetCenterOfMass();
+            playerBody.transform.SetPositionAndRotation(position, rotation);
+            playerBody.PublishTransform();
+            playerBody.isKinematic = wasKinematic;
+            playerBody.detectCollisions = wasDetectingCollisions;
+
+            if (!wasKinematic)
+            {
+                playerBody.linearVelocity = HectonPlayerMotor.SafeVelocity(velocity);
+                playerBody.angularVelocity = Vector3.zero;
+                if (wasSleeping)
+                    playerBody.Sleep();
+                else
+                    playerBody.WakeUp();
+            }
+            else if (wasSleeping)
+            {
+                playerBody.Sleep();
+            }
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return math.all(math.isfinite(new float3(value.x, value.y, value.z)));
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            return math.all(math.isfinite(new float4(value.x, value.y, value.z, value.w))) &&
+                   math.lengthsq(new float4(value.x, value.y, value.z, value.w)) > 0.0001f;
         }
 
         public async Awaitable LoadGameAsync(string slotName)
@@ -1213,12 +1359,14 @@ namespace Hecton8.SaveSystem
 
             _isBusy = true;
             SaveEvents.RaiseLoadStarted(slotName);
+            ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors, 0.08f);
             var totalTimer = Stopwatch.StartNew();
             NativeArray<byte> loadedVoxelDeltaSnapshot = default;
 
             try
             {
                 await WaitForIndexedSaveMaintenanceIdleAsync();
+                SaveBinaryStorage.ConsumeIndexedSectorQuarantineFlag();
                 await Awaitable.BackgroundThreadAsync();
                 SaveData data = null;
                 QuestSaveHeader loadedQuestHeader = default;
@@ -1258,7 +1406,7 @@ namespace Hecton8.SaveSystem
                         if (!candidates[i].IsBackup && candidateIndexedBackupRecoveryUsed)
                         {
                             if (candidateVoxelDeltaSnapshot.IsCreated)
-                                candidateVoxelDeltaSnapshot.Dispose();
+                                DisposeNativeArray(ref candidateVoxelDeltaSnapshot);
 
                             if (!TryLoadAndPromoteCriticalBackup(
                                     slotName,
@@ -1348,6 +1496,7 @@ namespace Hecton8.SaveSystem
 
                 await Awaitable.MainThreadAsync();
                 StageIntegrityPayload(_savePayloadBuffer, loadedPayloadLength, loadedPayloadHash64, slotName);
+                ReportLoadPipelineStage(LoadingPipelineStage.HydratingEntities, 0.42f);
 
                 if (SaveDataMigration.MigrateInPlace(data, out int originalVersion, out string summary))
                 {
@@ -1398,6 +1547,7 @@ namespace Hecton8.SaveSystem
 
                 if (persistentWorldRegistryForLoad != null)
                 {
+                    ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors, 0.68f);
                     string loadedAbsolutePath = GetPersistentAbsolutePath(loadedCandidate.SavePath);
                     _indexedSectorDirectoryScratch.Clear();
                     if (SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(
@@ -1420,7 +1570,13 @@ namespace Hecton8.SaveSystem
                     }
                 }
 
+                ReportLoadPipelineStage(LoadingPipelineStage.BuildingNavGrid, 0.84f);
                 (GlobalRegistry.EcosystemDirector as EcosystemDirector)?.RestoreFromLoadedRecords(loadedEcosystemSectors);
+                ReportLoadPipelineStage(LoadingPipelineStage.SafeAupSnap, 0.92f);
+                bool appliedSafeAupSnap = TryApplySafeAupSnapOnLoad(data);
+                bool quarantinedSectorRecoveredAsResetChunk = SaveBinaryStorage.ConsumeIndexedSectorQuarantineFlag();
+                if (quarantinedSectorRecoveredAsResetChunk)
+                    ReportCriticalSectorCorruptionDialog();
 
                 string activeSceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name;
                 Vector3 playerPosition = data.playerStats.GetPosition();
@@ -1459,7 +1615,8 @@ namespace Hecton8.SaveSystem
                 LastOperationSucceeded = true;
                 string loadCompletionSuffix = criticalBackupPromotedForLoad
                     ? " and promoted .bak to primary."
-                    : (repairedPrimaryArtifacts ? " and self-repaired primary artifacts." : ".");
+                    : (repairedPrimaryArtifacts ? " and self-repaired primary artifacts." : (appliedSafeAupSnap ? " and snapped player to safe terrain." : "."));
+                ReportLoadPipelineStage(LoadingPipelineStage.Completed, 1f);
                 Debug.Log($"[SaveManager] Loaded '{slotName}' from {sourceLabel} in {totalTimer.ElapsedMilliseconds}ms{loadCompletionSuffix}");
                 SaveEvents.RaiseLoadCompleted(slotName);
             }
@@ -1469,11 +1626,12 @@ namespace Hecton8.SaveSystem
                 LastOperationError = ex.Message;
                 Debug.LogError($"[SaveManager] Load failed: {ex.Message}");
                 SaveEvents.RaiseLoadFailed(slotName, ex.Message);
+                HideLoadingPipelineScreen();
             }
             finally
             {
                 if (loadedVoxelDeltaSnapshot.IsCreated)
-                    loadedVoxelDeltaSnapshot.Dispose();
+                    DisposeNativeArray(ref loadedVoxelDeltaSnapshot);
 
                 _isBusy = false;
             }
@@ -1941,7 +2099,7 @@ namespace Hecton8.SaveSystem
             if (repairedData == null)
             {
                 if (voxelDeltaSnapshot.IsCreated)
-                    voxelDeltaSnapshot.Dispose();
+                    DisposeNativeArray(ref voxelDeltaSnapshot);
 
                 result.Message = string.IsNullOrEmpty(errorMessage)
                     ? "No valid save candidate could be repaired."
@@ -1984,7 +2142,7 @@ namespace Hecton8.SaveSystem
             RecordRepairResult(result, repairedData != null ? repairedData.version : 0);
 
             if (voxelDeltaSnapshot.IsCreated)
-                voxelDeltaSnapshot.Dispose();
+                DisposeNativeArray(ref voxelDeltaSnapshot);
 
             return true;
         }
@@ -2055,7 +2213,7 @@ namespace Hecton8.SaveSystem
                     }
 
                     if (candidateVoxelDeltaSnapshot.IsCreated)
-                        candidateVoxelDeltaSnapshot.Dispose();
+                        DisposeNativeArray(ref candidateVoxelDeltaSnapshot);
                 }
                 else
                 {
@@ -2204,7 +2362,7 @@ namespace Hecton8.SaveSystem
             if (indexedBackupRecoveryUsed)
             {
                 if (voxelDeltaSnapshot.IsCreated)
-                    voxelDeltaSnapshot.Dispose();
+                    DisposeNativeArray(ref voxelDeltaSnapshot);
 
                 errorMessage = $"CRITICAL_RECOVERY rejected cascading backup-sector recovery in '{backupSavePath}'. Primary failure: {primaryError}";
                 return false;
@@ -2213,7 +2371,7 @@ namespace Hecton8.SaveSystem
             if (!TryPromoteBackupToPrimaryAfterCriticalRecovery(slotName, backupSavePath, out string promotionError))
             {
                 if (voxelDeltaSnapshot.IsCreated)
-                    voxelDeltaSnapshot.Dispose();
+                    DisposeNativeArray(ref voxelDeltaSnapshot);
 
                 errorMessage = $"CRITICAL_RECOVERY promotion failed for '{backupSavePath}': {promotionError}. Primary failure: {primaryError}";
                 return false;
@@ -2383,11 +2541,12 @@ namespace Hecton8.SaveSystem
                     out errorMessage))
                 {
                     if (voxelDeltaSnapshot.IsCreated)
-                        voxelDeltaSnapshot.Dispose();
+                        DisposeNativeArray(ref voxelDeltaSnapshot);
 
                     return false;
                 }
 
+                RegisterVoxelDeltaSnapshot(voxelDeltaSnapshot, "loadedVoxelDeltaSnapshot");
                 return true;
             }
             finally

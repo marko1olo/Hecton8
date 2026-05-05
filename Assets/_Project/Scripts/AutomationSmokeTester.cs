@@ -36,12 +36,12 @@ namespace Hecton8.Debugging
             routedNode = -1;
             depositedUnits = 0;
 
-            NativeArray<int> edgeOffsets = new NativeArray<int>(4, Allocator.Temp, NativeArrayOptions.ClearMemory);
-            NativeArray<int> edgeDestinations = new NativeArray<int>(2, Allocator.Temp, NativeArrayOptions.ClearMemory);
-            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
-            NativeArray<byte> visited = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
-            NativeArray<int> queue = new NativeArray<int>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
-            NativeArray<int> result = new NativeArray<int>(1, Allocator.Temp, NativeArrayOptions.ClearMemory);
+            NativeArray<int> edgeOffsets = new NativeArray<int>(4, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[4] - smoke CSR offsets - owner: AutomationSmokeTester
+            NativeArray<int> edgeDestinations = new NativeArray<int>(2, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[2] - smoke CSR destinations - owner: AutomationSmokeTester
+            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[3] - smoke storage flags - owner: AutomationSmokeTester
+            NativeArray<byte> visited = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[3] - smoke BFS visited set - owner: AutomationSmokeTester
+            NativeArray<int> queue = new NativeArray<int>(3, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[3] - smoke BFS queue - owner: AutomationSmokeTester
+            NativeArray<int> result = new NativeArray<int>(1, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - smoke BFS result cell - owner: AutomationSmokeTester
             RegisterTempArray(edgeOffsets, nameof(edgeOffsets));
             RegisterTempArray(edgeDestinations, nameof(edgeDestinations));
             RegisterTempArray(storageCapacityByNode, nameof(storageCapacityByNode));

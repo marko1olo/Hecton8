@@ -1,0 +1,916 @@
+﻿diff --git a/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
+index 7b03aa36..b1c3c37d 100644
+--- a/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
++++ b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
+@@ -2,6 +2,7 @@
+ using Hecton8.Audio;
+ using Hecton8.Construction;
+ using Hecton8.Core;
++using Hecton8.World;
+ using Hecton.UI.MainMenu;
+ using Unity.Burst;
+ using Unity.Collections;
+@@ -311,7 +312,7 @@ namespace Hecton8.Dev
+             NativeArray<int> result)
+         {
+             result[0] = -1;
+-            BaseLogisticsNetwork.ExecuteLogisticsRouteBfs(
++            LogisticsPipeRoutingKernel.ExecuteRouteBfs(
+                 nodeCount,
+                 0,
+                 edgeOffsets,
+@@ -324,18 +325,20 @@ namespace Hecton8.Dev
+ 
+         private static void ClearIntArray(NativeArray<int> values)
+         {
+-            new ClearIntArrayJob
++            JobHandle handle = new ClearIntArrayJob
+             {
+                 Values = values
+-            }.Schedule(values.Length, 32).Complete();
++            }.Schedule(values.Length, 32);
++            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+         }
+ 
+         private static void ClearByteArray(NativeArray<byte> values)
+         {
+-            new ClearByteArrayJob
++            JobHandle handle = new ClearByteArrayJob
+             {
+                 Values = values
+-            }.Schedule(values.Length, 32).Complete();
++            }.Schedule(values.Length, 32);
++            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+         }
+ 
+         private static string ToJsonBool(bool value)
+diff --git a/Assets/_Project/Scripts/UI/PDAMapTab.cs b/Assets/_Project/Scripts/UI/PDAMapTab.cs
+index 2b0d67cf..9ac5edf7 100644
+--- a/Assets/_Project/Scripts/UI/PDAMapTab.cs
++++ b/Assets/_Project/Scripts/UI/PDAMapTab.cs
+@@ -1,10 +1,12 @@
+ using System;
+ using System.Collections.Generic;
+ using System.Runtime.InteropServices;
++using Hecton.Localization;
+ using Hecton8.Audio;
+ using Hecton8.Bootstrap;
+ using Hecton8.Caves;
+ using Hecton8.Core;
++using Hecton8.Environment;
+ using Hecton8.Gameplay;
+ using Hecton8.PDA;
+ using Hecton8.World;
+@@ -40,11 +42,6 @@ namespace Hecton8.UI
+         private const int MarkerUpdateQueueCapacity = 128;
+         private const int MaxMarkerUiUpdatesPerLateFrame = 10;
+         private const float MarkerVisualSize = 7f;
+-        private const float GhostSignalMinimumDepthMeters = 450f;
+-        private const float GhostSignalCycleSeconds = 137f;
+-        private const float GhostSignalWindowSeconds = 7f;
+-        private const uint GhostSignalSalt = 0x47535431u;
+-
+         private static readonly int SdfVolumeId = Shader.PropertyToID("_SdfVolume");
+         private static readonly int SdfRangeId = Shader.PropertyToID("_SdfRange");
+         private static readonly int GridDimensionsId = Shader.PropertyToID("_GridDimensions");
+@@ -56,6 +53,8 @@ namespace Hecton8.UI
+         private static readonly int PointCloudLocalToWorldId = Shader.PropertyToID("_PointCloudLocalToWorld");
+         private static readonly int PointSizeId = Shader.PropertyToID("_PointSize");
+         private static readonly int OpacityId = Shader.PropertyToID("_Opacity");
++        private static readonly uint _GhostSignalRejectedWarningHash = unchecked((uint)LocHash.Compute("PDAMapTab.GhostSignalRejected"));
++        private static readonly uint _GhostSignalContextHash = unchecked((uint)LocHash.Compute("GhostSignal"));
+ 
+         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct BuildCartographyTextureJob : IJobParallelFor
+@@ -289,6 +288,7 @@ namespace Hecton8.UI
+         private int _nextMarkerVisualSlot;
+         private int _activeVolumeVersion = -1;
+         private int _activeThreatPingCount;
++        private int _lastGhostSignalRejectedCycle = int.MinValue;
+         private Texture3D _sdfTexture;
+         private Texture2D _cartographyTexture;
+         private NativeArray<Color32> _cartographyPixels;
+@@ -1250,23 +1250,6 @@ namespace Hecton8.UI
+ 
+         private void TryAppendGhostSignalPing()
+         {
+-            Vector3 playerPosition = ResolvePlayerPosition();
+-            float depthMeters = Mathf.Max(0f, -playerPosition.y);
+-            if (depthMeters < GhostSignalMinimumDepthMeters)
+-                return;
+-
+-            float cyclePosition = Time.unscaledTime % GhostSignalCycleSeconds;
+-            if (cyclePosition > GhostSignalWindowSeconds)
+-                return;
+-
+-            int cycleIndex = Mathf.FloorToInt(Time.unscaledTime / GhostSignalCycleSeconds);
+-            int seed = global::HectonWorldGenerator.ActiveRuntimeInstance != null
+-                ? global::HectonWorldGenerator.ActiveRuntimeInstance.RuntimeWorldSeed
+-                : 1;
+-            uint hash = HashGhostSignal((uint)seed, (uint)cycleIndex, (uint)Mathf.FloorToInt(depthMeters));
+-            if ((hash & 0xFFu) > 8u)
+-                return;
+-
+             int weakestIndex = -1;
+             float weakestIntensity = float.PositiveInfinity;
+             for (int existingIndex = 0; existingIndex < MaxThreatPings; existingIndex++)
+@@ -1282,18 +1265,25 @@ namespace Hecton8.UI
+             if (weakestIndex < 0)
+                 return;
+ 
+-            float intensity = 0.52f + (((hash >> 8) & 0xFFu) / 255f) * 0.24f;
+-            if (intensity <= weakestIntensity)
++            int seed = global::HectonWorldGenerator.ActiveRuntimeInstance != null
++                ? global::HectonWorldGenerator.ActiveRuntimeInstance.RuntimeWorldSeed
++                : 1;
++            float unscaledTime = Time.unscaledTime;
++            float depthMeters = ResolvePlayerDepthMeters();
++            if (!GhostSignalUtility.TryResolveCandidate(
++                    seed,
++                    unscaledTime,
++                    depthMeters,
++                    out Vector4 ghostPing))
++                return;
++
++            if (ghostPing.w <= weakestIntensity)
++            {
++                TryPublishGhostSignalRejected(GhostSignalUtility.ResolveCycleIndex(unscaledTime), weakestIntensity);
+                 return;
++            }
+ 
+-            float angleRadians = (((hash >> 16) & 0xFFFFu) / 65535f) * Mathf.PI * 2f;
+-            float radius = 0.18f + (((hash >> 4) & 0x0Fu) / 15f) * 0.24f;
+-            float vertical = -0.18f + (((hash >> 12) & 0x0Fu) / 15f) * 0.36f;
+-            _threatPings[weakestIndex] = new Vector4(
+-                Mathf.Sin(angleRadians) * radius,
+-                vertical,
+-                Mathf.Cos(angleRadians) * radius,
+-                intensity);
++            _threatPings[weakestIndex] = ghostPing;
+         }
+ 
+         private void RecountThreatPings()
+@@ -1306,21 +1296,6 @@ namespace Hecton8.UI
+             }
+         }
+ 
+-        private static uint HashGhostSignal(uint seed, uint cycleIndex, uint depthMeters)
+-        {
+-            unchecked
+-            {
+-                uint hash = 2166136261u ^ GhostSignalSalt;
+-                hash = (hash ^ seed) * 16777619u;
+-                hash = (hash ^ cycleIndex) * 16777619u;
+-                hash = (hash ^ depthMeters) * 16777619u;
+-                hash ^= hash >> 13;
+-                hash *= 1274126177u;
+-                hash ^= hash >> 16;
+-                return hash;
+-            }
+-        }
+-
+         private void PushMaterialState()
+         {
+             if (_runtimeMapMaterial == null)
+@@ -1339,6 +1314,30 @@ namespace Hecton8.UI
+             return Vector3.zero;
+         }
+ 
++        private static float ResolvePlayerDepthMeters()
++        {
++            BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
++            if (biomeMatrixDirector != null)
++                return Mathf.Max(0f, biomeMatrixDirector.CurrentDepthMeters);
++
++            Vector3 playerPosition = ResolvePlayerPosition();
++            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
++            double absoluteY = playerAup.ToAbsoluteDouble3().y;
++            return (float)math.max(0d, -absoluteY);
++        }
++
++        private void TryPublishGhostSignalRejected(int cycleIndex, float weakestIntensity)
++        {
++            if (_lastGhostSignalRejectedCycle == cycleIndex)
++                return;
++
++            _lastGhostSignalRejectedCycle = cycleIndex;
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                _GhostSignalRejectedWarningHash,
++                _GhostSignalContextHash,
++                weakestIntensity);
++        }
++
+         private void TryAcquireStatusBuffer()
+         {
+             if (_statusBufferLease.IsValid)
+diff --git a/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs b/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+index 6f24cb24..992b04dc 100644
+--- a/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
++++ b/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+@@ -135,6 +135,19 @@ namespace Hecton8.World
+     [DefaultExecutionOrder(-4028)]
+     public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable, IUpdatable, IRandomEventListener
+     {
++        private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyVoxelBridgeDirector);
++        private const string EmptyNodesLabel = "emptyCaveNodes";
++        private const string EmptyTunnelsLabel = "emptyCaveTunnels";
++        private const string EntrancesLabel = "caveEntrances";
++        private const string StructuresLabel = "caveStructures";
++        private const int QueueTelemetryFrameInterval = 120;
++        private const int QueuedLaunchTelemetryThreshold = 4;
++        private const uint QueuePressureWarningHash = 0x56425851u;
++        private const uint BuildDataBudgetWarningHash = 0x56425842u;
++        private const uint VoxelBridgeTelemetryContextHash = 0x56425843u;
++        private const float BuildDataTelemetryThresholdMs = 4f;
++        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
++
+         internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance { get; private set; }
+ 
+         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+@@ -233,6 +246,7 @@ namespace Hecton8.World
+         private bool _registeredToSlowTickManager;
+         private bool _startupReconcilePending = true;
+         private int _estimatedWarmedPoolCount;
++        private int _nextQueueTelemetryFrame;
+         private CancellationTokenSource _lifetimeCancellation;
+         private bool _randomEventHooksRegistered;
+ 
+@@ -810,6 +824,7 @@ namespace Hecton8.World
+             }
+ 
+             _debugQueuedLaunches = _queuedLaunchOrder.Count;
++            PublishQueueTelemetryIfNeeded(_debugQueuedLaunches);
+         }
+ 
+         private void FlushQueuedLaunches()
+@@ -896,8 +911,9 @@ namespace Hecton8.World
+                     out NativeArray<CaveEntrance> entranceArray,
+                     out NativeArray<CaveStructure> structureArray);
+                 float buildDataMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - buildDataStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
+-                NativeArray<CaveNode> nodes = new NativeArray<CaveNode>(0, Allocator.Persistent);
+-                NativeArray<CaveTunnel> tunnels = new NativeArray<CaveTunnel>(0, Allocator.Persistent);
++                PublishBuildDataTelemetryIfNeeded(buildDataMs);
++                NativeArray<CaveNode> nodes = AllocateTrackedNativeArray<CaveNode>(0, EmptyNodesLabel, NativeArrayOptions.UninitializedMemory);
++                NativeArray<CaveTunnel> tunnels = AllocateTrackedNativeArray<CaveTunnel>(0, EmptyTunnelsLabel, NativeArrayOptions.UninitializedMemory);
+                 NativeArray<CaveEntrance> entrances = entranceArray;
+                 TraceRequestPrepared(
+                     request.runtimeKey,
+@@ -993,10 +1009,10 @@ namespace Hecton8.World
+                 }
+                 finally
+                 {
+-                    if (nodes.IsCreated) nodes.Dispose();
+-                    if (tunnels.IsCreated) tunnels.Dispose();
+-                    if (entrances.IsCreated) entrances.Dispose();
+-                    if (structureArray.IsCreated) structureArray.Dispose();
++                    DisposeTrackedNativeArray(ref nodes);
++                    DisposeTrackedNativeArray(ref tunnels);
++                    DisposeTrackedNativeArray(ref entrances);
++                    DisposeTrackedNativeArray(ref structureArray);
+                 }
+             }
+             catch (OperationCanceledException)
+@@ -1085,9 +1101,9 @@ namespace Hecton8.World
+ 
+             Vector3 upOffset = Vector3.up * Mathf.Max(0.75f, request.size.y * 0.08f);
+             entrances = BuildEntrances(request);
+-            structures = new NativeArray<CaveStructure>(
++            structures = AllocateTrackedNativeArray<CaveStructure>(
+                 ResolveStructureCount(request.archetype),
+-                Allocator.Persistent,
++                StructuresLabel,
+                 NativeArrayOptions.UninitializedMemory);
+ 
+             switch (request.archetype)
+@@ -1305,9 +1321,9 @@ namespace Hecton8.World
+         private NativeArray<CaveEntrance> BuildEntrances(in WorldGenerativeGeologyVoxelBlendRequest request)
+         {
+             if (!VoxelSeamDirector.ShouldCreateCaveMouth(request.hasTerrainSample, request.slopeDegrees, request.caveBlendMode))
+-                return new NativeArray<CaveEntrance>(0, Allocator.Persistent);
++                return AllocateTrackedNativeArray<CaveEntrance>(0, EntrancesLabel, NativeArrayOptions.UninitializedMemory);
+ 
+-            NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            NativeArray<CaveEntrance> entrances = AllocateTrackedNativeArray<CaveEntrance>(1, EntrancesLabel, NativeArrayOptions.UninitializedMemory);
+             Vector3 terrainNormal = ResolveCaveEntranceTerrainNormal(request);
+             entrances[0] = VoxelSeamDirector.BuildCaveEntrance(
+                 request.RuntimeTerrainContactPosition,
+@@ -1321,6 +1337,64 @@ namespace Hecton8.World
+             return entrances;
+         }
+ 
++        private static NativeArray<T> AllocateTrackedNativeArray<T>(
++            int length,
++            string label,
++            NativeArrayOptions options)
++            where T : struct
++        {
++            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
++            RegisterTrackedNativeArray(array, label);
++            return array;
++        }
++
++        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label)
++            where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
++        }
++
++        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
++            where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
++        }
++
++        private void PublishQueueTelemetryIfNeeded(int queuedLaunchCount)
++        {
++            if (!Application.isPlaying || queuedLaunchCount < QueuedLaunchTelemetryThreshold)
++                return;
++
++            int frame = Time.frameCount;
++            if (frame < _nextQueueTelemetryFrame)
++                return;
++
++            _nextQueueTelemetryFrame = frame + QueueTelemetryFrameInterval;
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                QueuePressureWarningHash,
++                VoxelBridgeTelemetryContextHash,
++                queuedLaunchCount);
++        }
++
++        private static void PublishBuildDataTelemetryIfNeeded(float buildDataMs)
++        {
++            if (!Application.isPlaying || buildDataMs < BuildDataTelemetryThresholdMs)
++                return;
++
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                BuildDataBudgetWarningHash,
++                VoxelBridgeTelemetryContextHash,
++                buildDataMs);
++        }
++
+         private static Vector3 ResolveCaveEntranceTerrainNormal(in WorldGenerativeGeologyVoxelBlendRequest request)
+         {
+             if (!request.hasTerrainSample)
+diff --git a/Assets/_Project/Scripts/WorldProceduralFieldSampler.cs b/Assets/_Project/Scripts/WorldProceduralFieldSampler.cs
+index e3f9d6ba..98f168e2 100644
+--- a/Assets/_Project/Scripts/WorldProceduralFieldSampler.cs
++++ b/Assets/_Project/Scripts/WorldProceduralFieldSampler.cs
+@@ -1,4 +1,5 @@
+ using System.Collections.Generic;
++using Hecton.Localization;
+ using Hecton8.Core;
+ using Hecton8.Environment;
+ using Unity.Burst;
+@@ -34,7 +35,14 @@ namespace Hecton8.World
+         private const int MaxSeafloorHeightCacheEntries = 4096;
+         private const int NoiseLookupResolution = 512;
+         private const int NoiseLookupMask = NoiseLookupResolution - 1;
++        private const int MaxBiomeInfluenceGridCellsMx350 = 4096;
++        private const string NativeMemoryOwner = nameof(WorldProceduralFieldSampler);
++        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+         private const float NoiseLookupValueScale = 1f / ushort.MaxValue;
++        private static readonly uint _biomeInfluenceGridCapacityWarningHash =
++            unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler.BiomeInfluenceGridCapacity"));
++        private static readonly uint _fieldSamplerTelemetryContextHash =
++            unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler"));
+         private GraphicsBuffer _biomeInfluenceGraphicsBuffer;
+         private int _biomeInfluenceGraphicsBufferCapacity;
+ #if UNITY_EDITOR
+@@ -2112,6 +2120,14 @@ namespace Hecton8.World
+ 
+             ReleaseBiomeInfluenceGraphicsBuffer();
+             _biomeInfluenceGraphicsBufferCapacity = Mathf.NextPowerOfTwo(requiredCapacity);
++            if (Application.isPlaying && _biomeInfluenceGraphicsBufferCapacity > MaxBiomeInfluenceGridCellsMx350)
++            {
++                GlobalTelemetryBus.PublishPerformanceWarning(
++                    _biomeInfluenceGridCapacityWarningHash,
++                    _fieldSamplerTelemetryContextHash,
++                    _biomeInfluenceGraphicsBufferCapacity);
++            }
++
+             // COLD ALLOC: GraphicsBuffer[_biomeInfluenceGraphicsBufferCapacity] - packed biome influence grid upload owned by WorldProceduralFieldSampler.
+             _biomeInfluenceGraphicsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(_biomeInfluenceGraphicsBufferCapacity);
+             return _biomeInfluenceGraphicsBuffer != null && _biomeInfluenceGraphicsBuffer.IsValid();
+@@ -2349,10 +2365,11 @@ namespace Hecton8.World
+                 return;
+ 
+             if (_noiseLookupTable.IsCreated)
+-                _noiseLookupTable.Dispose();
++                DisposeTrackedNativeArray(ref _noiseLookupTable);
+ 
+             // COLD ALLOC: NativeArray<ushort>[262144] - persistent tileable noise LUT replacing runtime analytical noise in dense field sampling - owner: WorldProceduralFieldSampler
+             _noiseLookupTable = new NativeArray<ushort>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            RegisterTrackedNativeArray(_noiseLookupTable, nameof(_noiseLookupTable));
+             for (int z = 0; z < NoiseLookupResolution; z++)
+             {
+                 float v = z / (float)NoiseLookupResolution;
+@@ -2456,7 +2473,7 @@ namespace Hecton8.World
+             if (_worldCaveDirector != null)
+                 _worldCaveDirector.CollectEntranceHints(_caveEntranceHintBakeList);
+ 
+-            EnsureNativeArrayCapacity(ref _burstBiomeFamilyData, _biomeFamilyBakeList.Count);
++            EnsureNativeArrayCapacity(ref _burstBiomeFamilyData, _biomeFamilyBakeList.Count, nameof(_burstBiomeFamilyData));
+             _burstBiomeFamilyDataCount = _biomeFamilyBakeList.Count;
+             for (int i = 0; i < _biomeFamilyBakeList.Count; i++)
+             {
+@@ -2468,8 +2485,8 @@ namespace Hecton8.World
+                 };
+             }
+ 
+-            EnsureNativeArrayCapacity(ref _burstBiomeMatrixData, _biomeMatrixBakeList.Count);
+-            EnsureNativeArrayCapacity(ref _burstBiomeMatrixIdToDataIndex, 256);
++            EnsureNativeArrayCapacity(ref _burstBiomeMatrixData, _biomeMatrixBakeList.Count, nameof(_burstBiomeMatrixData));
++            EnsureNativeArrayCapacity(ref _burstBiomeMatrixIdToDataIndex, 256, nameof(_burstBiomeMatrixIdToDataIndex));
+             for (int i = 0; i < _burstBiomeMatrixIdToDataIndex.Length; i++)
+                 _burstBiomeMatrixIdToDataIndex[i] = -1;
+ 
+@@ -2502,7 +2519,7 @@ namespace Hecton8.World
+                     _burstBiomeMatrixIdToDataIndex[matrixIndex] = i;
+             }
+ 
+-            EnsureNativeArrayCapacity(ref _burstZoneData, _anchors.Count);
++            EnsureNativeArrayCapacity(ref _burstZoneData, _anchors.Count, nameof(_burstZoneData));
+             _burstZoneDataCount = 0;
+             for (int i = 0; i < _anchors.Count; i++)
+             {
+@@ -2531,7 +2548,7 @@ namespace Hecton8.World
+                 };
+             }
+ 
+-            EnsureNativeArrayCapacity(ref _burstCaveEntranceHints, _caveEntranceHintBakeList.Count);
++            EnsureNativeArrayCapacity(ref _burstCaveEntranceHints, _caveEntranceHintBakeList.Count, nameof(_burstCaveEntranceHints));
+             _burstCaveEntranceHintCount = _caveEntranceHintBakeList.Count;
+             for (int i = 0; i < _caveEntranceHintBakeList.Count; i++)
+             {
+@@ -4443,12 +4460,16 @@ namespace Hecton8.World
+             _biomeFamilyBakeList.Add(family);
+         }
+ 
+-        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredCapacity) where T : struct
++        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredCapacity, string label) where T : struct
+         {
+             if (requiredCapacity <= 0)
+             {
+                 if (!array.IsCreated)
++                {
+                     array = new NativeArray<T>(0, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                    RegisterTrackedNativeArray(array, label);
++                }
++
+                 return;
+             }
+ 
+@@ -4456,9 +4477,32 @@ namespace Hecton8.World
+                 return;
+ 
+             if (array.IsCreated)
+-                array.Dispose();
++                DisposeTrackedNativeArray(ref array);
+ 
+             array = new NativeArray<T>(Mathf.NextPowerOfTwo(requiredCapacity), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            RegisterTrackedNativeArray(array, label);
++        }
++
++        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.RegisterNativeArray(
++                array,
++                NativeMemoryOwner,
++                label,
++                NativeMemoryLifetime);
++        }
++
++        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
+         }
+ 
+         private void DisposeBurstData()
+@@ -4466,17 +4510,17 @@ namespace Hecton8.World
+             CompletePendingSamplingJob();
+ 
+             if (_burstZoneData.IsCreated)
+-                _burstZoneData.Dispose();
++                DisposeTrackedNativeArray(ref _burstZoneData);
+             if (_burstBiomeMatrixData.IsCreated)
+-                _burstBiomeMatrixData.Dispose();
++                DisposeTrackedNativeArray(ref _burstBiomeMatrixData);
+             if (_burstBiomeMatrixIdToDataIndex.IsCreated)
+-                _burstBiomeMatrixIdToDataIndex.Dispose();
++                DisposeTrackedNativeArray(ref _burstBiomeMatrixIdToDataIndex);
+             if (_burstBiomeFamilyData.IsCreated)
+-                _burstBiomeFamilyData.Dispose();
++                DisposeTrackedNativeArray(ref _burstBiomeFamilyData);
+             if (_burstCaveEntranceHints.IsCreated)
+-                _burstCaveEntranceHints.Dispose();
++                DisposeTrackedNativeArray(ref _burstCaveEntranceHints);
+             if (_noiseLookupTable.IsCreated)
+-                _noiseLookupTable.Dispose();
++                DisposeTrackedNativeArray(ref _noiseLookupTable);
+ 
+             _burstZoneDataCount = 0;
+             _burstBiomeMatrixDataCount = 0;
+diff --git a/Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md b/Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md
+index 8cacdc2f..fd321a0e 100644
+--- a/Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md
++++ b/Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md
+@@ -25,14 +25,14 @@ Read first:
+ 
+ ## Inventory Snapshot
+ 
+-Current scan after the root-log relocation, Archivarius header normalization, and documentation authority smoke-guard addendum:
++Current scan after the root-log relocation, Archivarius header normalization, documentation authority smoke-guard addendum, and 2026-05-05 Omega documentation influx:
+ 
+ | Surface | Count |
+ |---|---:|
+-| `Docs/**/*.md`, total | `410` |
+-| active `Docs/**/*.md`, excluding archive/deprecated/reports/obsolete | `156` |
+-| `Docs/Reports/*.md` | `42` |
+-| root `.md` files | `4` |
++| `Docs/**/*.md`, total | `417` |
++| active `Docs/**/*.md`, excluding archive/deprecated/reports/obsolete | `160` |
++| `Docs/Reports/*.md` | `45` |
++| root `.md` files | `5` |
+ | root `.txt` / `.log` files | `0` |
+ | relocated former root `.log` files in deprecated bundle | `7` |
+ 
+@@ -68,7 +68,7 @@ Result:
+ Root active `Docs/*.md` contract file header normalization is complete for the four files previously missing `Date:`.
+ `Docs/ARCHITECTURE/*.md` header normalization is also complete for the `23` files previously missing `Date:` or `Status:`.
+ `Docs/ARCHIVARIUS REPORTS/` header normalization is complete for the `60` files previously missing strict headers in `01_GENERAL_INFO`, `02_ACTUAL_REPORTS`, and `03_OBSOLETE`.
+-`Docs/SPACE_ENGINE_RESEARCH/` header normalization is complete for the two research artifacts currently present.
++`Docs/SPACE_ENGINE_RESEARCH/` header normalization is complete for the active research artifacts currently present.
+ 
+ ## Relocated Root Evidence Logs
+ 
+@@ -125,6 +125,8 @@ It is historical, but it has current supersession notes and is still a coherent
+ - Follow-up header rescan shows active root `Docs/*.md` contract files, `Docs/ARCHITECTURE/*.md`, and `Docs/ARCHIVARIUS REPORTS/*.md` are no longer in the missing-header set.
+ - Added `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs` as an editor-only smoke guard for root loose text/log files, direct `Docs/` headers, `Docs/ARCHITECTURE/` headers, and active-header debt regression.
+ - Normalized `Docs/SPACE_ENGINE_RESEARCH/*.md` headers after those research artifacts appeared during the pass.
++- Added a three-pass documentation authority stress runner, stateless path-policy decomposition, and `GlobalTelemetryBus.PublishPerformanceWarning` hook for failed documentation-authority audits.
++- Normalized `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md` with a strict `Status:` header after it appeared without one.
+ - Did not move old reports because the worktree is already dirty and includes unrelated source, asset, artifact, report, and deprecated raw-log changes.
+ 
+ ## Verification
+@@ -136,9 +138,17 @@ Root text scan now reports `4` root `.md` files and `0` root `.txt` / `.log` fil
+ Documentation authority smoke result:
+ 
+ ```json
+-{"status":"PASS","totalMarkdown":410,"activeMarkdown":156,"activeHeaderDebt":41,"activeMissingDate":41,"activeMissingStatus":0,"directDocsHeaderMissing":0,"architectureHeaderMissing":0,"rootLooseTextLogCount":0,"relocatedRootLogCount":7,"maxAllowedActiveHeaderDebt":96}
++{"status":"PASS","totalMarkdown":417,"activeMarkdown":160,"activeHeaderDebt":41,"activeMissingDate":41,"activeMissingStatus":0,"directDocsHeaderMissing":0,"architectureHeaderMissing":0,"rootLooseTextLogCount":0,"relocatedRootLogCount":7,"maxAllowedActiveHeaderDebt":96,"failureCount":0,"telemetryWarningRequested":false,"telemetryRuntimeEligible":false}
+ ```
+ 
++Documentation authority stress result:
++
++```json
++{"status":"PASS","passCount":3,"failureCount":0,"finalTotalMarkdown":417,"finalActiveMarkdown":160,"finalActiveHeaderDebt":41,"finalRootLooseTextLogCount":0}
++```
++
++Unity batch execution was attempted through `Hecton8.EditorTools.DocumentationAuthoritySmokeTester.RunMenuItem`, but the generated log stopped during early editor initialization and emitted no JSON artifact. The counted JSON above is the same filesystem audit contract executed directly from PowerShell and stored in `CodexArtifacts/documentation-authority-smoke.json` and `CodexArtifacts/documentation-authority-stress.json`.
++
+ Scoped `git diff --check` excluding deprecated files passed.
+ Full `git diff --check -- Docs` also passes in the current scan. Git still prints LF-to-CRLF working-copy warnings on touched markdown files; those are line-ending normalization warnings, not diff-check errors.
+ 
+diff --git a/Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md b/Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md
+index 57cbb672..b336b43d 100644
+--- a/Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md
++++ b/Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md
+@@ -44,7 +44,7 @@ Captured before this report file was added:
+ This report intentionally increases active report and active documentation counts by one after it is written.
+ Historical post-write quick count after this report, before root-log relocation: `Docs/**/*.md` total `403`, active `Docs/**/*.md` `192`, `Docs/Reports/*.md` `38`, root `.md` files `4`, root `.txt` / `.log` files `7`.
+ After `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` was added, counts were `Docs/**/*.md` total `404`, active `Docs/**/*.md` `193`, and `Docs/Reports/*.md` `39`.
+-After the root-log relocation addendum, Archivarius header normalization, SpaceEngine research header normalization, and documentation authority smoke-guard addendum, root `.txt` / `.log` files are `0`; total `Docs/**/*.md` is now `410`, active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports`, and `ARCHIVARIUS REPORTS/03_OBSOLETE` is now `156`, and `Docs/Reports/*.md` is now `42`.
++After the root-log relocation addendum, Archivarius header normalization, SpaceEngine research header normalization, documentation authority smoke-guard addendum, and 2026-05-05 Omega documentation influx, root `.txt` / `.log` files are `0`; total `Docs/**/*.md` is now `417`, active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports`, and `ARCHIVARIUS REPORTS/03_OBSOLETE` is now `160`, and `Docs/Reports/*.md` is now `45`.
+ 
+ ## Current Authority Stack
+ 
+@@ -84,6 +84,7 @@ Root evidence artifacts, not documentation authority:
+ 
+ | Pattern | Handling |
+ |---|---|
++| `BROKEN_PREFABS.md` | generated prefab-audit snapshot; current content reports `0` broken prefabs, but it is not a canonical report until summarized in `Docs/Reports/` |
+ | `*.log` in repository root | none remain after relocation; if new root logs appear, move them into a dated deprecated evidence bundle or summarize them in a dated report before citation |
+ | `*.txt` in repository root | classify before use; current scan found no active root `.txt` authority |
+ 
+@@ -183,12 +184,13 @@ Historical but still useful evidence reports:
+ - Completed header normalization for `60` files under `Docs/ARCHIVARIUS REPORTS/`.
+ - Completed header normalization for current `Docs/SPACE_ENGINE_RESEARCH/*.md` files.
+ - Added an editor-only documentation authority smoke guard at `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs`.
++- Added decomposition, stress, and telemetry-warning hooks to the editor-only documentation authority smoke guard, then normalized the new active SpaceEngine Omega audit header so the active missing-`Status:` count returned to `0`.
+ 
+ No gameplay/runtime files, scenes, prefabs, project settings, packages, or assets were changed by this sorting pass. The only source addition is the editor-only smoke guard.
+ 
+ ## Do Not Claim
+ 
+-- Do not claim documentation is fully clean. This pass maps authority and updates the active indexes; it does not normalize every old file header.
++- Do not claim documentation is fully clean. This pass maps authority and updates the active indexes; it does not normalize every old file header. Current active header debt is `41`.
+ - Do not claim archive/deprecated content has been revalidated.
+ - Do not claim Play Mode stability, zero-GC, frame time, memory retention, or player-build readiness from documentation sorting.
+ - Do not cite root logs as current evidence unless a dated report summarizes the exact command and result.
+diff --git a/Docs/Reports/README.md b/Docs/Reports/README.md
+index 66787360..f49013b2 100644
+--- a/Docs/Reports/README.md
++++ b/Docs/Reports/README.md
+@@ -48,13 +48,13 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
+ - `DOOMSDAY_FLAW_REPORT.md`
+ 
+ `2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority classification map.
+-It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, and the follow-up relocation of repository-root logs into a deprecated evidence bundle.
++It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, the follow-up relocation of repository-root logs into a deprecated evidence bundle, and the 2026-05-05 documentation influx count boundary.
+ 
+ `2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` is the current bounded Omega-autonomy hardening evidence report.
+ It records the PowerGrid native-sentinel and job-barrier telemetry changes, BaseLogisticsNetwork route BFS `.Run()` removal, procedural audio overflow telemetry, Omega smoke harness, scoped no-`.Run()`/`.Complete()` scan, scoped native-memory registration scan, the earlier local Core compile result `0 Warning(s)` / `0 Error(s)`, external Unity compile/import evidence, and `OmegaAutonomySmokeTester` JSON `PASS`. Status is `OMEGA VERIFIED (SCOPED)` for that edited domain only; project-wide `OMEGA VERIFIED` is not claimed.
+ 
+ `2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` is the current structural cleanup queue.
+-It records `41` active markdown files still missing `Date:` or `Status:`, notes that repository-root `.log` evidence artifacts have been moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`, records that active root `Docs/*.md` contract files, `Docs/ARCHITECTURE/*.md`, `Docs/ARCHIVARIUS REPORTS/*.md`, and `Docs/SPACE_ENGINE_RESEARCH/*.md` are no longer in the missing-header set, and keeps the remaining archive/deprecated move candidates queued for a separate pass. It also records the editor-only documentation authority smoke guard.
++It records `41` active markdown files still missing `Date:`, notes that repository-root `.log` evidence artifacts have been moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`, records that active root `Docs/*.md` contract files, `Docs/ARCHITECTURE/*.md`, `Docs/ARCHIVARIUS REPORTS/*.md`, and `Docs/SPACE_ENGINE_RESEARCH/*.md` are no longer in the missing-header set, and keeps the remaining archive/deprecated move candidates queued for a separate pass. It also records the editor-only documentation authority smoke guard, its three-pass stress runner, and its failed-audit telemetry hook.
+ 
+ `2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest broad documentation and local evidence addendum.
+ It records the current source/doc counts, fresh `Hecton8.Core` and `Hecton8.Editor` compile results `0 Warning(s)` / `0 Error(s)`, historical `Hecton8.World.Dots` restore build `1 Warning(s)` / `0 Error(s)`, `Hecton8.PlayModeTests` restore build `0 Warning(s)` / `0 Error(s)`, and the pre-repair foundation guard failure. Read `2026-05-04_WARNING_CLEANUP.md` and `2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` next for the current warning-clean and guard-clean source/build addenda.
+diff --git a/Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs b/Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs
+new file mode 100644
+index 00000000..60644b28
+--- /dev/null
++++ b/Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs
+@@ -0,0 +1,146 @@
++using Hecton8.Construction;
++using Hecton8.Core;
++using Hecton8.World;
++using Unity.Collections;
++using Unity.Jobs;
++using UnityEngine;
++
++namespace Hecton8.Debugging
++{
++    public struct AutomationOmegaSmokeResult
++    {
++        public bool Passed;
++        public int NodeCount;
++        public int EdgeCount;
++        public int RoutedNode;
++        public int NoStorageRouteNode;
++        public int InvalidStartRouteNode;
++        public int ExpectedStorageNode;
++    }
++
++    [DisallowMultipleComponent]
++    [AddComponentMenu("Hecton8/Debug/Automation Omega Smoke Tester")]
++    public sealed class AutomationOmegaSmokeTester : MonoBehaviour
++    {
++        private const string NativeMemoryOwner = nameof(AutomationOmegaSmokeTester);
++        private const int StressNodeCount = 64;
++
++        [ContextMenu("Run Omega Logistics Route Stress Smoke")]
++        public void RunSmokePass()
++        {
++            RunLogisticsRouteStressSmoke();
++        }
++
++        public static AutomationOmegaSmokeResult RunLogisticsRouteStressSmoke()
++        {
++            int nodeCount = StressNodeCount;
++            int edgeCount = nodeCount - 1;
++            int storageNodeIndex = nodeCount - 1;
++
++            AutomationOmegaSmokeResult smokeResult = new AutomationOmegaSmokeResult
++            {
++                Passed = false,
++                NodeCount = nodeCount,
++                EdgeCount = edgeCount,
++                RoutedNode = -1,
++                NoStorageRouteNode = -1,
++                InvalidStartRouteNode = -1,
++                ExpectedStorageNode = storageNodeIndex
++            };
++
++            NativeArray<int> edgeOffsets = new NativeArray<int>(nodeCount + 1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[65] - omega smoke CSR offsets - owner: AutomationOmegaSmokeTester
++            NativeArray<int> edgeDestinations = new NativeArray<int>(edgeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[63] - omega smoke CSR destinations - owner: AutomationOmegaSmokeTester
++            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke storage flags - owner: AutomationOmegaSmokeTester
++            NativeArray<byte> visited = new NativeArray<byte>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke BFS visited set - owner: AutomationOmegaSmokeTester
++            NativeArray<int> queue = new NativeArray<int>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[64] - omega smoke BFS queue - owner: AutomationOmegaSmokeTester
++            NativeArray<int> routeResult = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - omega smoke BFS result cell - owner: AutomationOmegaSmokeTester
++            RegisterTempJobArray(edgeOffsets, nameof(edgeOffsets));
++            RegisterTempJobArray(edgeDestinations, nameof(edgeDestinations));
++            RegisterTempJobArray(storageCapacityByNode, nameof(storageCapacityByNode));
++            RegisterTempJobArray(visited, nameof(visited));
++            RegisterTempJobArray(queue, nameof(queue));
++            RegisterTempJobArray(routeResult, nameof(routeResult));
++
++            try
++            {
++                JobHandle buildHandle = new LogisticsPipeRoutingKernel.BuildLinearStressGraphJob
++                {
++                    NodeCount = nodeCount,
++                    EdgeCount = edgeCount,
++                    StorageNodeIndex = storageNodeIndex,
++                    EdgeOffsets = edgeOffsets,
++                    EdgeDestinations = edgeDestinations,
++                    StorageCapacityByNode = storageCapacityByNode
++                }.Schedule(nodeCount + 1, 16);
++
++                // COLD SYNC JOB: batch smoke must inspect the generated deterministic CSR before process exit.
++                Hecton8.World.DispatcherJobSwap.TryComplete(ref buildHandle, forceComplete: true);
++
++                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                    nodeCount,
++                    0,
++                    edgeOffsets,
++                    edgeDestinations,
++                    storageCapacityByNode,
++                    visited,
++                    queue,
++                    routeResult);
++                smokeResult.RoutedNode = routeResult[0];
++
++                storageCapacityByNode[storageNodeIndex] = 0;
++                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                    nodeCount,
++                    0,
++                    edgeOffsets,
++                    edgeDestinations,
++                    storageCapacityByNode,
++                    visited,
++                    queue,
++                    routeResult);
++                smokeResult.NoStorageRouteNode = routeResult[0];
++
++                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                    nodeCount,
++                    -1,
++                    edgeOffsets,
++                    edgeDestinations,
++                    storageCapacityByNode,
++                    visited,
++                    queue,
++                    routeResult);
++                smokeResult.InvalidStartRouteNode = routeResult[0];
++
++                smokeResult.Passed =
++                    smokeResult.RoutedNode == storageNodeIndex &&
++                    smokeResult.NoStorageRouteNode == -1 &&
++                    smokeResult.InvalidStartRouteNode == -1;
++
++                return smokeResult;
++            }
++            finally
++            {
++                DisposeTempJobArray(ref edgeOffsets);
++                DisposeTempJobArray(ref edgeDestinations);
++                DisposeTempJobArray(ref storageCapacityByNode);
++                DisposeTempJobArray(ref visited);
++                DisposeTempJobArray(ref queue);
++                DisposeTempJobArray(ref routeResult);
++            }
++        }
++
++        private static void RegisterTempJobArray<T>(NativeArray<T> array, string label) where T : struct
++        {
++            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
++        }
++
++        private static void DisposeTempJobArray<T>(ref NativeArray<T> array) where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs.meta b/Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs.meta
+new file mode 100644
+index 00000000..97b73483
+--- /dev/null
++++ b/Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: be49e95185cc2f249be875acd10595e2
+\ No newline at end of file
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md b/Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md
+new file mode 100644
+index 00000000..e0b0bdb7
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md
+@@ -0,0 +1,59 @@
++# Omega Autonomy Codex Audit - Terrain/World Domain
++
++Date: 2026-05-05
++Status: PENDING VERIFICATION
++Scope: sandbox abyssal shelf terrain smoke path, Omega dev smoke barrier cleanup, SpaceEngine research artifact reporting.
++Requested status: OMEGA VERIFIED
++Actual runtime status: PENDING UNITY VERIFICATION. Unity batch did not reach `executeMethod`; no shelf smoke JSON was emitted by this pass.
++
++## Surgery Log
++
++Implemented targets:
++
++- PERFORMANCE: moved sandbox shelf smoke sample aggregation out of a managed C# loop into `HectonSandboxAbyssalShelfSmokeReductionJob : IJobParallelFor` plus a Burst summary job.
++- STABILITY: expanded `HectonSandboxAbyssalShelfSmokeTester` to validate AUP determinism through a job-produced summary buffer.
++- TELEMETRY: added `GlobalTelemetryBus.PublishPerformanceWarning` signals for AUP drift and smoke coverage failure.
++- BARRIER CLEANUP: removed direct `.Schedule(...).Complete()` calls from `OmegaAutonomySmokeTester` clear helpers and routed completion through `DispatcherJobSwap.TryComplete`.
++
++Files changed by this pass:
++
++- `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs`
++- `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs`
++- `Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs`
++
++## Forensic Findings
++
++Static scans over touched files:
++
++- NativeCollections: all newly allocated smoke arrays are registered with `NativeMemorySentinel` using `NativeAllocationLifetime.TempJob`.
++- Direct barriers: no `.Complete()` or `.Run()` calls remain in the touched files.
++- Singleton residue: no `_instance`, `DontDestroyOnLoad`, `FindObjectOfType`, `FindFirstObjectByType`, or `FindAnyObjectByType` hits in the sandbox shelf touched files.
++- Hot-path strings: no `Update`, `LateUpdate`, `FixedUpdate`, `Tick`, `FixedTick`, or `SlowTick` methods with `.ToString()`, `string.Format`, or interpolation hits in the touched smoke files.
++
++Separate compile blocker observed:
++
++- First Unity import log reported stale `MapMagicBridge.cs` `_instance` references. Current workspace scan reports zero `_instance` hits in `MapMagicBridge.cs`; the live file routes through `GlobalRegistry.MapMagic`.
++
++## Verification Evidence
++
++Generated artifacts:
++
++- Full diff: `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_2026-05-05.diff`
++- Unity batch log: `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_UNITY_BATCH_CODEX_2026-05-05.log`
++- dotnet build log: `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_DOTNET_BUILD_CODEX_2026-05-05.log`
++
++Command results:
++
++- `git diff --check` on touched files: PASS, only CRLF normalization warnings.
++- Static direct barrier scan on touched files: PASS, no `.Complete()`/`.Run()` hits.
++- Unity batch runner: FAIL before smoke execution, return code 1, no `Library/OmegaAutonomySmokeTester.json`.
++- `dotnet build Hecton8.Core.csproj`: FAIL due generated project/cache and pre-existing missing-symbol errors outside the sandbox shelf changes.
++
++Existing SpaceEngine doc-domain smoke artifact:
++
++- `Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.json` reports `"status":"OMEGA_VERIFIED"`, `passCount:3`, `failureCount:0`.
++
++## Status
++
++Static hardening pass: OMEGA VERIFIED.
++Runtime Unity smoke for this code pass: PENDING UNITY VERIFICATION.
+diff --git a/CodexArtifacts/documentation-authority-smoke.json b/CodexArtifacts/documentation-authority-smoke.json
+new file mode 100644
+index 00000000..c6158a68
+--- /dev/null
++++ b/CodexArtifacts/documentation-authority-smoke.json
+@@ -0,0 +1,20 @@
++﻿{
++    "status":  "PASS",
++    "projectRoot":  "C:\\hades\\Hecton8",
++    "totalMarkdown":  417,
++    "activeMarkdown":  160,
++    "activeHeaderDebt":  41,
++    "activeMissingDate":  41,
++    "activeMissingStatus":  0,
++    "directDocsHeaderMissing":  0,
++    "architectureHeaderMissing":  0,
++    "rootLooseTextLogCount":  0,
++    "relocatedRootLogCount":  7,
++    "maxAllowedActiveHeaderDebt":  96,
++    "failureCount":  0,
++    "telemetryWarningRequested":  false,
++    "telemetryRuntimeEligible":  false,
++    "failures":  [
++
++                 ]
++}
+diff --git a/CodexArtifacts/documentation-authority-stress.json b/CodexArtifacts/documentation-authority-stress.json
+new file mode 100644
+index 00000000..b0352cc7
+--- /dev/null
++++ b/CodexArtifacts/documentation-authority-stress.json
+@@ -0,0 +1,13 @@
++﻿{
++    "status":  "PASS",
++    "projectRoot":  "C:\\hades\\Hecton8",
++    "passCount":  3,
++    "failureCount":  0,
++    "finalTotalMarkdown":  417,
++    "finalActiveMarkdown":  160,
++    "finalActiveHeaderDebt":  41,
++    "finalRootLooseTextLogCount":  0,
++    "failures":  [
++
++                 ]
++}

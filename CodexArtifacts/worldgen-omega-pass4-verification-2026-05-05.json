@@ -1,0 +1,29 @@
+﻿{
+    "coreErrors":  0,
+    "coreWarnings":  52,
+    "editorErrors":  0,
+    "editorWarnings":  0,
+    "unityExit":  0,
+    "smoke":  {
+                  "tester":  "WorldGenRegistrySmokeTester",
+                  "status":  "PASS",
+                  "fieldSamplerRegistered":  1,
+                  "fieldSamplerReleased":  1,
+                  "resourceDistributionRegistered":  1,
+                  "resourceDistributionReleased":  1,
+                  "geologyTerrainSeamRegistered":  1,
+                  "geologyTerrainSeamReleased":  1,
+                  "geologyVoxelBridgeRegistered":  1,
+                  "geologyVoxelBridgeReleased":  1,
+                  "worldGenRegistered":  1,
+                  "worldGenReleased":  1,
+                  "pendingBefore":  0,
+                  "pendingAfter":  0,
+                  "nativeBefore":  0,
+                  "nativeAfter":  2,
+                  "nativeDelta":  2,
+                  "expectedNativeDeltaMax":  2
+              },
+    "directBarrierHits":  0,
+    "hotStringHits":  0
+}

@@ -155,6 +155,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             half curvature : TEXCOORD6;
             half bakedAmbientOcclusion : TEXCOORD7;
             half freshCutBlend : TEXCOORD8;
+            half4 terrainSplatColor : TEXCOORD9;
         };
 
         struct ClipVaryings
@@ -513,11 +514,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             output.positionWS = positionInputs.positionWS;
             output.normalWS = SafeNormalize3(normalInputs.normalWS);
             output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(positionInputs.positionWS));
-            output.skirtAlpha = saturate(input.color.b);
+            output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
             output.absolutePositionWS = input.absolutePositionWS;
-            output.curvature = saturate(input.color.a);
+            output.curvature = saturate(input.dirtyBlendUv2.z);
             output.bakedAmbientOcclusion = HectonCoreLitResolveVertexAmbientOcclusion(input.bakedAmbientOcclusion.w);
             output.freshCutBlend = saturate(input.dirtyBlendUv2.x);
+            output.terrainSplatColor = saturate((half4)input.color);
             output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
             return output;
@@ -527,7 +529,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         {
             ClipVaryings output;
             VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
-            output.skirtAlpha = saturate(input.color.b);
+            output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
             output.positionCS = ApplySkirtDepthBias(positionInputs.positionCS, output.skirtAlpha);
             output.positionWS = positionInputs.positionWS;
             return output;
@@ -540,7 +542,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
             output.positionWS = positionInputs.positionWS;
             output.normalWS = SafeNormalize3(normalInputs.normalWS);
-            output.skirtAlpha = saturate(input.color.b);
+            output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
             output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionInputs.positionWS, output.normalWS, _LightDirection));
             output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
 
@@ -610,6 +612,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half3 albedo = baseSample.rgb * _Instance_Color.rgb;
                 half3 freshAlbedo = freshSample.rgb * _Instance_Color.rgb * (half)_FreshCutColorBoost;
                 albedo = lerp(albedo, freshAlbedo, freshCutMask * 0.62h);
+                albedo = lerp(albedo, input.terrainSplatColor.rgb, saturate(input.terrainSplatColor.a) * 0.78h);
                 albedo = lerp(albedo, _SkirtSandTint.rgb, skirtBlend * 0.72h);
                 albedo = lerp(albedo, lerp(albedo, _CurvatureWearTint.rgb, 0.4h), convexMask * _CurvatureEdgeWearStrength);
                 albedo *= 1.0h - cavityMask * (_CurvatureCavityDarkenStrength * 0.32h);

@@ -21,6 +21,7 @@
 // ============================================================================
 
 using Hecton.Localization;
+using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
@@ -622,8 +623,6 @@ namespace Hecton8.Gameplay
     {
         public const int EventTypeCount = 7;
 
-        private const float MeteorHashToUnit = 1f / 16777215f;
-
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
         // ══════════════════════════════════════════════════════════
@@ -668,18 +667,12 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(80f, 800f)] private float meteorBoomLowPassCutoffHz = 260f;
         [SerializeField, Range(4f, 36f)] private float meteorBoomVerticalOffsetMeters = 18f;
         [SerializeField, Range(0f, 32f)] private float meteorBoomHorizontalOffsetMeters = 14f;
+        [SerializeField, Range(4f, 96f)] private float meteorWaterImpactRadiusMeters = 42f;
+        [SerializeField, Range(0.5f, 12f)] private float meteorWaterImpactDurationSeconds = 5.5f;
+        [SerializeField, Range(0f, 1f)] private float meteorWaterImpactEnvelopeThreshold = 0.18f;
 
         [Header("Solar EMP Flare")]
         [SerializeField, Range(0f, 1f)] private float solarFlareIntensity = 1f;
-
-        // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
-
-        public static RandomEventSystem Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -693,6 +686,7 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: Rigidbody[48] - reusable unique rigidbody buffer for cave-collapse impulse routing - owner: RandomEventSystem
         private readonly Rigidbody[] _seismicBodyBuffer = new Rigidbody[48];
         private bool _registered;
+        private bool _registeredRuntime;
         private float _meteorSeed = 99173f;
         private int _meteorLastBoomIndex = -1;
         [SerializeField] private float _debugMeteorFlash;
@@ -702,19 +696,16 @@ namespace Hecton8.Gameplay
         private static readonly int _ShaderGlitchActive = Shader.PropertyToID("_HUDGlitchActive");
         private static readonly int _ShaderMeteorShowerParams = Shader.PropertyToID("_MeteorShowerParams");
         private static readonly int _ShaderMeteorShowerDirection = Shader.PropertyToID("_MeteorShowerDirection");
+        private static readonly int _ShaderMeteorWaterImpactPosition = Shader.PropertyToID("_MeteorWaterImpactPosition");
+        private static readonly int _ShaderMeteorWaterImpactParams = Shader.PropertyToID("_MeteorWaterImpactParams");
 
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
-        private void Awake()
-        {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
-        }
-
         private void OnEnable()
         {
+            TryRegisterRuntime();
             TryRegister();
 
             ResolveSurvivalSystem();
@@ -723,6 +714,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterRuntime();
 
             // Сбрасываем все активные события
             for (int i = 0; i < _eventTimers.Length; i++)
@@ -737,14 +729,13 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalFloat(_ShaderBiolumStorm, 0f);
             Shader.SetGlobalFloat(_ShaderGlitchActive, 0f);
             PublishMeteorShowerGlobals(0f, 0f, 0f);
+            PublishMeteorWaterImpactGlobals(Vector3.zero, 0f, 0f, 0f);
         }
 
         private void OnDestroy()
         {
             TryUnregister();
-
-            if (Instance == this)
-                Instance = null;
+            TryUnregisterRuntime();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -796,6 +787,17 @@ namespace Hecton8.Gameplay
             _registered = GlobalRegistry.SlowTickables.Contains(this);
         }
 
+        private void TryRegisterRuntime()
+        {
+            if (_registeredRuntime)
+                return;
+            if (!Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterRandomEventRuntime(this);
+            _registeredRuntime = GlobalRegistry.RandomEvents == this;
+        }
+
         private void TryUnregister()
         {
             if (!_registered)
@@ -803,6 +805,15 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
+        }
+
+        private void TryUnregisterRuntime()
+        {
+            if (!_registeredRuntime)
+                return;
+
+            GlobalRegistry.UnregisterRandomEventRuntime(this);
+            _registeredRuntime = false;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -817,16 +828,7 @@ namespace Hecton8.Gameplay
 
         public static float EvaluateMeteorFlashForSmoke(float eventAgeSeconds, float seed, float flashRate)
         {
-            float safeRate = Mathf.Max(0.01f, flashRate);
-            float phase = Mathf.Max(0f, eventAgeSeconds) * safeRate + seed * 0.017f;
-            int flashIndex = Mathf.FloorToInt(phase);
-            float local = phase - flashIndex;
-            float gate = Hash01(unchecked((uint)flashIndex), unchecked((uint)Mathf.RoundToInt(seed)));
-            if (gate < 0.56f)
-                return 0f;
-
-            float envelope = Mathf.Exp(-local * 11.5f);
-            return Mathf.Clamp01(envelope * Mathf.Lerp(0.45f, 1f, gate));
+            return RandomEventMeteorMath.EvaluateMeteorFlash(eventAgeSeconds, seed, flashRate);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1071,26 +1073,52 @@ namespace Hecton8.Gameplay
                 sourcePosition,
                 Mathf.Clamp01(flash * envelope * meteorBoomIntensity),
                 meteorBoomLowPassCutoffHz);
+            TryPublishMeteorWaterImpact(sourcePosition, flash, envelope);
         }
 
         private Vector3 ResolveMeteorBoomPosition(Vector3 playerPosition, int boomIndex)
         {
-            float angle = Hash01(unchecked((uint)boomIndex), unchecked((uint)Mathf.RoundToInt(_meteorSeed))) * Mathf.PI * 2f;
+            float angle = RandomEventMeteorMath.Hash01(unchecked((uint)boomIndex), unchecked((uint)Mathf.RoundToInt(_meteorSeed))) * Mathf.PI * 2f;
             Vector3 horizontal = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
             return playerPosition
                  + horizontal * Mathf.Max(0f, meteorBoomHorizontalOffsetMeters)
                  + Vector3.up * Mathf.Max(4f, meteorBoomVerticalOffsetMeters);
         }
 
-        private static float Hash01(uint a, uint b)
+        private void TryPublishMeteorWaterImpact(Vector3 meteorSourcePosition, float flash, float envelope)
         {
-            uint state = a * 747796405u + b * 2891336453u + 0x9E3779B9u;
-            state ^= state >> 16;
-            state *= 2246822519u;
-            state ^= state >> 13;
-            state *= 3266489917u;
-            state ^= state >> 16;
-            return (state & 0x00FFFFFFu) * MeteorHashToUnit;
+            float impactEnvelope = Mathf.Clamp01(flash * envelope);
+            if (impactEnvelope < meteorWaterImpactEnvelopeThreshold)
+                return;
+
+            float seaLevelY = ResolveCurrentSeaLevelY();
+            if (meteorSourcePosition.y < seaLevelY)
+                return;
+
+            Vector3 impactPosition = new Vector3(meteorSourcePosition.x, seaLevelY, meteorSourcePosition.z);
+            float radius = Mathf.Max(4f, meteorWaterImpactRadiusMeters);
+            float duration = Mathf.Max(0.5f, meteorWaterImpactDurationSeconds);
+            PublishMeteorWaterImpactGlobals(impactPosition, radius, duration, impactEnvelope);
+
+            SargassumGlobalDragManager sargassumDrag = GlobalRegistry.SargassumDrag;
+            if (sargassumDrag != null)
+                sargassumDrag.RegisterMassiveDisplacement(impactPosition, radius, duration);
+        }
+
+        private static float ResolveCurrentSeaLevelY()
+        {
+            HectonAtmosphereManager atmosphere = GlobalRegistry.Atmosphere;
+            return atmosphere != null ? atmosphere.SeaLevelY : 0f;
+        }
+
+        private static void PublishMeteorWaterImpactGlobals(Vector3 impactPosition, float radius, float duration, float intensity)
+        {
+            Shader.SetGlobalVector(
+                _ShaderMeteorWaterImpactPosition,
+                new Vector4(impactPosition.x, impactPosition.y, impactPosition.z, Mathf.Clamp01(intensity)));
+            Shader.SetGlobalVector(
+                _ShaderMeteorWaterImpactParams,
+                new Vector4(Mathf.Max(0f, radius), Mathf.Max(0f, duration), Time.time, Mathf.Clamp01(intensity)));
         }
 
         private bool TryResolveSeismicContext(

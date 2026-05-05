@@ -578,7 +578,10 @@ namespace Hecton8.Gameplay
             PulseStartTime = now;
 
             if (pingClip != null && Hecton8.Core.GlobalRegistry.Audio != null)
-                Hecton8.Core.GlobalRegistry.Audio.PlayStatic2D(pingClip, pingVolume);
+            {
+                IAudioService audioService = Hecton8.Core.GlobalRegistry.Audio;
+                audioService.PlayAtPoint(pingClip, _cachedTransform.position, pingVolume, 1f, audioService.InterfaceGroup);
+            }
 
             ScanEvents.RaiseScanTriggered(origin, effectiveScanRadius);
 

@@ -103,13 +103,16 @@ namespace Hecton8.AtlasSignal
         private bool _serviceRegistered;
         private bool _ghostManifestationAnnounced;
         private bool _identityDiscoverySynchronized;
+        private bool _fullDecodeDiscoverySynchronized;
         private bool _stage2LogQueued;
         private bool _stage3LogQueued;
         private bool _stage4LogQueued;
 
         private const int FormalDetectionRevealStage = 2;
         private const int IdentityRevealStage = 3;
+        private const int FullDecodeRevealStage = 4;
         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
+        private const string SignalFullyDecodedDiscoveryId = "atlas6_signal_fully_decoded";
         private static readonly uint _AudioLogRuntimeMissingWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.AudioLogRuntimeMissing"));
         private static readonly uint _EncryptedLogFallbackWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.EncryptedLogFallback"));
         private static readonly uint _DuplicateRuntimeWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.DuplicateRuntime"));
@@ -259,6 +262,13 @@ namespace Hecton8.AtlasSignal
         public void DecodeSignal(string messageId)
         {
             AtlasSignalEvents.RaiseDecoded(messageId);
+            if (messageId == SignalFullyDecodedDiscoveryId)
+            {
+                if (_maxRevealStageUnlocked < FullDecodeRevealStage)
+                    _maxRevealStageUnlocked = FullDecodeRevealStage;
+
+                TryEnsureFullDecodeDiscoveryPublished();
+            }
 
             LogSignalDecoded(messageId);
         }
@@ -428,6 +438,7 @@ namespace Hecton8.AtlasSignal
                     break;
 
                 case 4:
+                    TryEnsureFullDecodeDiscoveryPublished();
                     TryQueueEncryptedLog(4);
                     NotificationEvents.PushWarning(ResolveLocalized(
                         LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_4,
@@ -451,6 +462,22 @@ namespace Hecton8.AtlasSignal
                 NarrativeEvents.RaiseDiscoveryMade(SignalIdentityDiscoveryId);
 
             _identityDiscoverySynchronized = true;
+        }
+
+        private void TryEnsureFullDecodeDiscoveryPublished()
+        {
+            if (_fullDecodeDiscoverySynchronized || _maxRevealStageUnlocked < FullDecodeRevealStage)
+                return;
+
+            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
+            if (narrativeDirector != null && narrativeDirector.HasDiscovery(SignalFullyDecodedDiscoveryId))
+            {
+                _fullDecodeDiscoverySynchronized = true;
+                return;
+            }
+
+            NarrativeEvents.RaiseDiscoveryMade(SignalFullyDecodedDiscoveryId);
+            _fullDecodeDiscoverySynchronized = true;
         }
 
         private void TryQueueEncryptedLog(int revealStage)
@@ -550,7 +577,8 @@ namespace Hecton8.AtlasSignal
             _pulseTimer = data.atlasSignalPulseTimer;
             _maxRevealStageUnlocked = math.clamp(data.atlasSignalRevealStage, 0, 4);
             _ghostManifestationAnnounced = _maxRevealStageUnlocked > 0 && !_signalEverDetected;
-            _identityDiscoverySynchronized = _maxRevealStageUnlocked < IdentityRevealStage;
+            _identityDiscoverySynchronized = _maxRevealStageUnlocked >= IdentityRevealStage;
+            _fullDecodeDiscoverySynchronized = _maxRevealStageUnlocked >= FullDecodeRevealStage;
             if (_signalEverDetected && _maxRevealStageUnlocked < FormalDetectionRevealStage)
                 _maxRevealStageUnlocked = FormalDetectionRevealStage;
 

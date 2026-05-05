@@ -110,18 +110,6 @@ namespace Hecton8.Construction
         private static readonly LogisticsReservation[] s_ReservationPool = CreateReservationPool();
         private static int s_ReservationPoolCount = ReservationPoolCapacity;
         private static int s_NextReservationId = 1;
-        private const int RouteScratchInitialNodeCapacity = 4096;
-        private const int RouteScratchInitialEdgeCapacity = 8192;
-        private const string NativeMemoryOwner = nameof(BaseLogisticsNetwork);
-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private static NativeArray<int> s_RouteEdgeOffsets;
-        private static NativeArray<int> s_RouteEdgeDestinations;
-        private static NativeArray<int> s_RouteEdgeWriteCursor;
-        private static NativeArray<byte> s_RouteStorageCapacityByNode;
-        private static NativeArray<byte> s_RouteVisited;
-        private static NativeArray<int> s_RouteQueue;
-        private static NativeArray<int> s_RouteResultNodeIndex;
-
         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -130,7 +118,7 @@ namespace Hecton8.Construction
             s_RecyclerEndpoints.Clear();
             ResetReservationPool();
             s_NextReservationId = 1;
-            DisposeRouteScratch();
+            LogisticsRouteScratchMemory.Dispose();
         }
 
         public static void RegisterStorage(StorageCrate crate, PowerNode node)
@@ -334,22 +322,22 @@ namespace Hecton8.Construction
                 return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
 
             int edgeCount = CountTopologyEdges(grid, topologyNodes, nodeCount);
-            EnsureRouteScratchCapacity(nodeCount, edgeCount);
+            LogisticsRouteScratchMemory.EnsureCapacity(nodeCount, edgeCount);
             BuildRouteStorageCapacityFlags(grid, topologyNodes, nodeCount);
             BuildRouteCsr(grid, topologyNodes, nodeCount, edgeCount);
 
-            s_RouteResultNodeIndex[0] = -1;
+            LogisticsRouteScratchMemory.ResultNodeIndex[0] = -1;
             LogisticsPipeRoutingKernel.ExecuteRouteBfs(
                 nodeCount,
                 startNodeIndex,
-                s_RouteEdgeOffsets,
-                s_RouteEdgeDestinations,
-                s_RouteStorageCapacityByNode,
-                s_RouteVisited,
-                s_RouteQueue,
-                s_RouteResultNodeIndex);
+                LogisticsRouteScratchMemory.EdgeOffsets,
+                LogisticsRouteScratchMemory.EdgeDestinations,
+                LogisticsRouteScratchMemory.StorageCapacityByNode,
+                LogisticsRouteScratchMemory.Visited,
+                LogisticsRouteScratchMemory.Queue,
+                LogisticsRouteScratchMemory.ResultNodeIndex);
 
-            int targetNodeIndex = s_RouteResultNodeIndex[0];
+            int targetNodeIndex = LogisticsRouteScratchMemory.ResultNodeIndex[0];
             if (targetNodeIndex < 0 || targetNodeIndex >= nodeCount)
                 return false;
 
@@ -425,7 +413,7 @@ namespace Hecton8.Construction
         private static void BuildRouteStorageCapacityFlags(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount)
         {
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                s_RouteStorageCapacityByNode[nodeIndex] = 0;
+                LogisticsRouteScratchMemory.StorageCapacityByNode[nodeIndex] = 0;
 
             for (int endpointIndex = 0; endpointIndex < s_StorageEndpoints.Count; endpointIndex++)
             {
@@ -442,7 +430,7 @@ namespace Hecton8.Construction
                     nodeIndex >= 0 &&
                     nodeIndex < nodeCount)
                 {
-                    s_RouteStorageCapacityByNode[nodeIndex] = 1;
+                    LogisticsRouteScratchMemory.StorageCapacityByNode[nodeIndex] = 1;
                 }
             }
         }
@@ -450,7 +438,7 @@ namespace Hecton8.Construction
         private static void BuildRouteCsr(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount, int edgeCount)
         {
             for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
-                s_RouteEdgeOffsets[nodeIndex] = 0;
+                LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex] = 0;
 
             for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
             {
@@ -471,14 +459,18 @@ namespace Hecton8.Construction
                         outDegree++;
                 }
 
-                s_RouteEdgeOffsets[sourceIndex + 1] = outDegree;
+                LogisticsRouteScratchMemory.EdgeOffsets[sourceIndex + 1] = outDegree;
             }
 
             for (int nodeIndex = 1; nodeIndex <= nodeCount; nodeIndex++)
-                s_RouteEdgeOffsets[nodeIndex] = s_RouteEdgeOffsets[nodeIndex] + s_RouteEdgeOffsets[nodeIndex - 1];
+            {
+                LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex] =
+                    LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex] +
+                    LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex - 1];
+            }
 
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-                s_RouteEdgeWriteCursor[nodeIndex] = s_RouteEdgeOffsets[nodeIndex];
+                LogisticsRouteScratchMemory.EdgeWriteCursor[nodeIndex] = LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex];
 
             for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
             {
@@ -497,12 +489,12 @@ namespace Hecton8.Construction
                     if (!TryResolveTopologyNodeIndex(topologyNodes, neighbor, out int destinationIndex))
                         continue;
 
-                    int writeIndex = s_RouteEdgeWriteCursor[sourceIndex];
+                    int writeIndex = LogisticsRouteScratchMemory.EdgeWriteCursor[sourceIndex];
                     if (writeIndex < 0 || writeIndex >= edgeCount)
                         continue;
 
-                    s_RouteEdgeWriteCursor[sourceIndex] = writeIndex + 1;
-                    s_RouteEdgeDestinations[writeIndex] = destinationIndex;
+                    LogisticsRouteScratchMemory.EdgeWriteCursor[sourceIndex] = writeIndex + 1;
+                    LogisticsRouteScratchMemory.EdgeDestinations[writeIndex] = destinationIndex;
                 }
             }
         }
@@ -892,63 +884,25 @@ namespace Hecton8.Construction
             return remaining <= 0;
         }
 
-        private static void EnsureRouteScratchCapacity(int nodeCount, int edgeCount)
+        public static void ExecuteLogisticsRouteBfs(
+            int nodeCount,
+            int startNodeIndex,
+            NativeArray<int> edgeOffsets,
+            NativeArray<int> edgeDestinations,
+            NativeArray<byte> storageCapacityByNode,
+            NativeArray<byte> visited,
+            NativeArray<int> queue,
+            NativeArray<int> resultNodeIndex)
         {
-            EnsureNativeIntArray(ref s_RouteEdgeOffsets, math.max(RouteScratchInitialNodeCapacity + 1, nodeCount + 1), nameof(s_RouteEdgeOffsets));
-            EnsureNativeIntArray(ref s_RouteEdgeDestinations, math.max(RouteScratchInitialEdgeCapacity, edgeCount), nameof(s_RouteEdgeDestinations));
-            EnsureNativeIntArray(ref s_RouteEdgeWriteCursor, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteEdgeWriteCursor));
-            EnsureNativeByteArray(ref s_RouteStorageCapacityByNode, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteStorageCapacityByNode));
-            EnsureNativeByteArray(ref s_RouteVisited, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteVisited));
-            EnsureNativeIntArray(ref s_RouteQueue, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteQueue));
-            EnsureNativeIntArray(ref s_RouteResultNodeIndex, 1, nameof(s_RouteResultNodeIndex));
-        }
-
-        private static void EnsureNativeIntArray(ref NativeArray<int> array, int requiredLength, string label)
-        {
-            int safeLength = math.max(1, requiredLength);
-            if (array.IsCreated && array.Length >= safeLength)
-                return;
-
-            DisposeNativeArray(ref array);
-            array = new NativeArray<int>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterNativeArray(array, label);
-        }
-
-        private static void EnsureNativeByteArray(ref NativeArray<byte> array, int requiredLength, string label)
-        {
-            int safeLength = math.max(1, requiredLength);
-            if (array.IsCreated && array.Length >= safeLength)
-                return;
-
-            DisposeNativeArray(ref array);
-            array = new NativeArray<byte>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            RegisterNativeArray(array, label);
-        }
-
-        private static void DisposeRouteScratch()
-        {
-            DisposeNativeArray(ref s_RouteEdgeOffsets);
-            DisposeNativeArray(ref s_RouteEdgeDestinations);
-            DisposeNativeArray(ref s_RouteEdgeWriteCursor);
-            DisposeNativeArray(ref s_RouteStorageCapacityByNode);
-            DisposeNativeArray(ref s_RouteVisited);
-            DisposeNativeArray(ref s_RouteQueue);
-            DisposeNativeArray(ref s_RouteResultNodeIndex);
-        }
-
-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-        {
-            if (!array.IsCreated)
-                return;
-
-            NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
-            array = default;
-        }
-
-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-        {
-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+            LogisticsPipeRoutingKernel.ExecuteRouteBfs(
+                nodeCount,
+                startNodeIndex,
+                edgeOffsets,
+                edgeDestinations,
+                storageCapacityByNode,
+                visited,
+                queue,
+                resultNodeIndex);
         }
 
         private static int GetNextReservationId()

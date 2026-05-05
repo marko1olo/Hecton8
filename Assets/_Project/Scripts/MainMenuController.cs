@@ -770,27 +770,37 @@ namespace Hecton.UI.MainMenu
             SetPanelImmediate(mainMenuGroup, false);
             SetPanelImmediate(saveLoadGroup, false);
             SetPanelImmediate(settingsGroup, false);
-            SetPanelImmediate(loadingGroup, true);
-            _currentPanel = loadingGroup;
+            SetPanelImmediate(loadingGroup, false);
+            _currentPanel = null;
             RequestSelectionRefresh();
 
-            // Start loading tips
             if (loadingTips != null)
-                loadingTips.StartTipCycle();
+                loadingTips.StopTipCycle();
 
             _loadingPercentTemplate = ResolveLoadingPercentTemplate();
             _sceneActivationRequested = false;
             UpdateLoadingProgressVisual(0);
+            _sceneLoadOperation = null;
 
-            _sceneLoadOperation = SceneManager.LoadSceneAsync(targetSceneName);
-            if (_sceneLoadOperation == null)
+            ISceneService sceneService = Hecton8.Core.GlobalRegistry.Scene;
+            if (sceneService == null)
+            {
+                SceneRuntimeService runtimeSceneService = SceneRuntimeService.EnsureRuntimeInstance();
+                if (runtimeSceneService != null)
+                {
+                    runtimeSceneService.InitializeService();
+                    sceneService = runtimeSceneService;
+                }
+            }
+
+            if (sceneService == null || !sceneService.CanLoadScene)
             {
                 _isSceneLoadInFlight = false;
 
 #if UNITY_EDITOR
                 Debug.LogError(
                     $"[MainMenuController] Failed to load scene \"{targetSceneName}\". " +
-                    "Ensure it is added to Build Settings!");
+                    "SceneRuntimeService is unavailable or bootstrap is incomplete.");
 #endif
 
                 LocalizationManager loc = Hecton8.Core.GlobalRegistry.Localization;
@@ -810,7 +820,7 @@ namespace Hecton.UI.MainMenu
                 return;
             }
 
-            _sceneLoadOperation.allowSceneActivation = false;
+            sceneService.LoadScene(targetSceneName);
         }
 
         /// <summary>

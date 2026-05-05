@@ -1,4 +1,5 @@
 using Hecton8.AtlasSignal;
+using Hecton8.Audio;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
@@ -97,6 +98,7 @@ namespace Hecton8.Progression
 
             _hullFailureIssued = true;
             NarrativeEvents.RaiseDiscoveryMade(HullFailureDiscoveryId);
+            ProceduralAudioEvents.RaiseStructuralStressTriggered(transform.position, 1f, 0.72f);
 
             AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
             if (audioLogs != null)

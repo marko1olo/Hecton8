@@ -279,7 +279,18 @@ namespace Hecton8.Core
 
         private static void AppendDouble(char[] buffer, ref int length, double value)
         {
-            AppendLiteral(buffer, ref length, value.ToString("0.000", CultureInfo.InvariantCulture));
+            if (buffer == null || length >= buffer.Length)
+                return;
+
+            int available = buffer.Length - length;
+            if (value.TryFormat(
+                    buffer.AsSpan(length, available),
+                    out int charsWritten,
+                    "0.000",
+                    CultureInfo.InvariantCulture))
+            {
+                length += charsWritten;
+            }
         }
 
         private void TryRegisterUpdatable()

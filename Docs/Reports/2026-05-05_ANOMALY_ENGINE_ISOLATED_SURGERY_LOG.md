@@ -6,7 +6,7 @@ Source implementation: COMPLETE.
 
 Verification status: PENDING VERIFICATION.
 
-Reason: Unity project compilation is currently blocked by pre-existing scatter backend accessibility errors outside the anomaly files. `Temp/anomaly-csc-tempout.log` reports `CS0122` on `ScatterBackendExecutionMode`, `ScatterSimulationBackendKind`, `IScatterSimulationBackend`, `ScatterSimulationConfig`, `ScatterSimulationResult`, and `ScatterSimulationCandidate`.
+Reason: Unity batch execution has not reached `Hecton8.Editor.AnomalySmokeTester.Run`; see the Omega Audit section for current blocked-run evidence.
 
 ## Mandates Applied
 
@@ -64,3 +64,29 @@ Blocked:
 
 - `AnomalyTestHarness.Run` could not execute because Unity compilation fails first on unrelated scatter backend access modifiers.
 - MCP validation was unavailable after the Unity batch compile shut down the MCP local HTTP server.
+
+## Omega Audit - 2026-05-05
+
+Status: PENDING VERIFICATION.
+
+Reason: Unity batch execution of `Hecton8.Editor.AnomalySmokeTester.Run` returned exit code `1` before project compilation or method entry. The logs `CodexArtifacts/anomaly-smoke-unity-final.log`, `CodexArtifacts/anomaly-smoke-unity-omega-rerun.log`, `CodexArtifacts/anomaly-smoke-unity-omega-final2.log`, and `CodexArtifacts/anomaly-smoke-unity-omega-final3.log` stop after `Successfully changed project path to: C:\hades\Hecton8` and `Application will terminate with return code 1`. Concurrent unrelated Unity batch owners were observed for hydraulic erosion, survival kinematics, fauna, save persistence, visual omega, omega autonomy, documentation authority, narrative, construction automation, and tech-art smoke tests, so the anomaly smoke JSON was not produced.
+
+Audit data:
+
+- Native memory: all anomaly-owned `NativeArray` allocations in `HectonBrinePoolMeshGenerator`, `HectonAnomalyMapMagicNode`, `AnomalyTestHarness`, and `AnomalySmokeTester` have `NativeMemorySentinel.RegisterNativeArray` and unregister/dispose paths. SDF and basin jobs allocate no owned native memory.
+- Barriers: `JobHandle.Complete()` exists only in cold callers: MapMagic generation, brine mesh generation, editor test harness, and editor smoke tester. No anomaly `Update`, `FixedUpdate`, `Tick`, `FixedTick`, or `LateUpdate` hot path was found.
+- Static leak check: anomaly domain contains no `_instance` field and no `DontDestroyOnLoad`. `MapMagicBridge` on disk resolves runtime authority through `GlobalRegistry.MapMagic`.
+- String purge: no anomaly hot loop strings found. One `StringBuilder.ToString()` remains in `AnomalySmokeTester.WriteReport`, editor cold path only.
+
+Omega targets completed:
+
+- Decomposition: SDF stitching, pillar injection, and overhang displacement jobs were extracted to `HectonAnomalySdfJobs.cs`. `HectonAnomalyEngine.cs` is now 543 lines.
+- Performance: brine pool bounds resolution moved from managed per-cell scanning into Burst `ResolveBrinePoolBoundsJob : IJobParallelFor` in `HectonAnomalyBrineJobs.cs`.
+- Stability: added `AnomalySmokeTester.cs` with perfect bowl, flat plane, and dual-bowl cases. It writes `CodexArtifacts/anomaly-smoke-report.json` when Unity reaches method entry.
+- Telemetry: MapMagic anomaly generation emits `GlobalTelemetryBus.PublishPerformanceWarning` signals for large cell counts, max flood caps, and zero-basin output.
+
+Verification data:
+
+- Targeted anomaly source compile: `CSC_EXIT_CODE=0` in `CodexArtifacts/anomaly-omega-csc-final.log`.
+- Line counts: `HectonAnomalyEngine.cs` 543, `HectonAnomalySdfJobs.cs` 267, `HectonAnomalyBrineJobs.cs` 90, `HectonBrinePoolMeshGenerator.cs` 214, `HectonAnomalyMapMagicNode.cs` 239, `AnomalyTestHarness.cs` 148, `AnomalySmokeTester.cs` 303.
+- Smoke JSON: not produced. `CodexArtifacts/anomaly-smoke-report.json` does not exist after repeated blocked Unity batch runs.

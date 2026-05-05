@@ -1,0 +1,11 @@
+﻿{
+    "tester":  "CelestialCataclysmSourceOmegaSmoke",
+    "status":  "PASS",
+    "sourceChecks":  13,
+    "failed":  [
+
+               ],
+    "unityMcpResources":  0,
+    "unityBatchMode":  "SKIPPED_ACTIVE_EDITOR",
+    "unityEditorPid":  29156
+}

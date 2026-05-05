@@ -1672,6 +1672,25 @@ namespace Hecton8.Power
             return _consumerStates[consumerIndex] != 0;
         }
 
+        public bool TryGetConsumerVoltageSupplyRatio(int consumerIndex, out float voltageSupplyRatio)
+        {
+            voltageSupplyRatio = 1f;
+            if (!_nodeVoltageSupplyRatio.IsCreated ||
+                !_consumers.IsCreated ||
+                consumerIndex < 0 ||
+                consumerIndex >= _consumers.Length)
+            {
+                return false;
+            }
+
+            int nodeIndex = _consumers[consumerIndex].NodeIndex;
+            if (nodeIndex < 0 || nodeIndex >= _nodeVoltageSupplyRatio.Length)
+                return false;
+
+            voltageSupplyRatio = math.saturate(_nodeVoltageSupplyRatio[nodeIndex]);
+            return math.isfinite(voltageSupplyRatio);
+        }
+
         public void ScheduleNodeStatePublish()
         {
             ScheduleNodeStatePublish(default);

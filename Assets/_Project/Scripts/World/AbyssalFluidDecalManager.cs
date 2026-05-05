@@ -33,6 +33,18 @@ namespace Hecton8.World
             public Color Color;
         }
 
+        private struct PressureSprayState
+        {
+            public bool Active;
+            public Vector3 PositionWS;
+            public Vector3 DirectionWS;
+            public float Width;
+            public float Length;
+            public float RemainingLifetime;
+            public float TotalLifetime;
+            public Color Color;
+        }
+
         private static readonly int _TintColorId = Shader.PropertyToID("_TintColor");
         private static readonly int _RadiusId = Shader.PropertyToID("_Radius");
         private static readonly int _SoftnessId = Shader.PropertyToID("_Softness");
@@ -80,6 +92,10 @@ namespace Hecton8.World
         [SerializeField, Range(1, 32)]
         [Tooltip("Hard cap for simultaneous abyssal fluid decals.")]
         private int maxDecalCount = 12;
+
+        [SerializeField, Range(1, 64)]
+        [Tooltip("Hard cap for directional high-pressure room leak sprays.")]
+        private int maxPressureSprayCount = 24;
 
         [SerializeField, Range(0.1f, 10f)]
         [Tooltip("How quickly the decal radius grows toward the authored target radius.")]
@@ -145,7 +161,12 @@ namespace Hecton8.World
         [Tooltip("Low-alpha disturbed-silt tint used for KCC and submarine wake trails.")]
         private Color wakeSiltColor = new Color(0.28f, 0.31f, 0.29f, 0.34f);
 
+        [SerializeField]
+        [Tooltip("White-blue foam tint used for module high-pressure leak spray ribbons.")]
+        private Color pressureSprayColor = new Color(0.72f, 0.88f, 1f, 0.62f);
+
         private FluidDecalState[] _decalStates;
+        private PressureSprayState[] _pressureSprayStates;
         private Mesh _quadMesh;
         private Material _runtimeMaterial;
         private MaterialPropertyBlock _drawPropertyBlock;
@@ -228,6 +249,15 @@ namespace Hecton8.World
         {
             EnsureRenderingResources(true);
             RegisterDecal(positionWS, ruptureFluidColor, Mathf.Lerp(1.4f, 3.2f, Mathf.Clamp01(radiusScale)), Mathf.Lerp(3.6f, 7.5f, Mathf.Clamp01(radiusScale)), 14f);
+        }
+
+        /// <summary>
+        /// Registers a short-lived directional foam ribbon for high-pressure habitat leak sprays.
+        /// </summary>
+        public void RegisterPressureSpray(Vector3 positionWS, Vector3 inwardDirectionWS, float intensity01)
+        {
+            EnsureRenderingResources(true);
+            RegisterSpray(positionWS, inwardDirectionWS, Mathf.Clamp01(intensity01));
         }
 
         /// <summary>
@@ -320,6 +350,8 @@ namespace Hecton8.World
                 _decalStates[i] = decal;
                 DrawDecal(decal);
             }
+
+            TickPressureSprays(deltaTime, driftDelta);
         }
 
         private void RegisterDecal(Vector3 positionWS, Color color, float startRadius, float targetRadius, float lifetime)
@@ -360,6 +392,126 @@ namespace Hecton8.World
                 TotalLifetime = Mathf.Max(0.25f, lifetime),
                 Color = color
             };
+        }
+
+        private void RegisterSpray(Vector3 positionWS, Vector3 directionWS, float intensity01)
+        {
+            if (_pressureSprayStates == null || _pressureSprayStates.Length == 0)
+                return;
+
+            float3 position = new float3(positionWS.x, positionWS.y, positionWS.z);
+            float3 direction = new float3(directionWS.x, directionWS.y, directionWS.z);
+            if (!math.all(math.isfinite(position)) || !math.all(math.isfinite(direction)) || math.lengthsq(direction) <= 0.0001f)
+                return;
+
+            int targetIndex = -1;
+            float weakestLifetime = float.MaxValue;
+            for (int i = 0; i < _pressureSprayStates.Length; i++)
+            {
+                if (!_pressureSprayStates[i].Active)
+                {
+                    targetIndex = i;
+                    break;
+                }
+
+                if (_pressureSprayStates[i].RemainingLifetime < weakestLifetime)
+                {
+                    weakestLifetime = _pressureSprayStates[i].RemainingLifetime;
+                    targetIndex = i;
+                }
+            }
+
+            if (targetIndex < 0)
+                targetIndex = 0;
+
+            Vector3 normalizedDirection = directionWS.normalized;
+            float clampedIntensity = Mathf.Clamp01(intensity01);
+            Color color = pressureSprayColor;
+            color.a *= Mathf.Lerp(0.45f, 1f, clampedIntensity);
+            _pressureSprayStates[targetIndex] = new PressureSprayState
+            {
+                Active = true,
+                PositionWS = positionWS,
+                DirectionWS = normalizedDirection,
+                Width = Mathf.Lerp(0.12f, 0.42f, clampedIntensity),
+                Length = Mathf.Lerp(1.4f, 5.8f, clampedIntensity),
+                RemainingLifetime = Mathf.Lerp(0.45f, 1.4f, clampedIntensity),
+                TotalLifetime = Mathf.Lerp(0.45f, 1.4f, clampedIntensity),
+                Color = color
+            };
+        }
+
+        private void TickPressureSprays(float deltaTime, Vector3 driftDelta)
+        {
+            if (_pressureSprayStates == null)
+                return;
+
+            for (int i = 0; i < _pressureSprayStates.Length; i++)
+            {
+                if (!_pressureSprayStates[i].Active)
+                    continue;
+
+                PressureSprayState spray = _pressureSprayStates[i];
+                spray.RemainingLifetime -= deltaTime;
+                if (spray.RemainingLifetime <= 0f)
+                {
+                    spray.Active = false;
+                    _pressureSprayStates[i] = spray;
+                    continue;
+                }
+
+                spray.PositionWS += driftDelta + spray.DirectionWS * (deltaTime * 0.45f);
+                _pressureSprayStates[i] = spray;
+                DrawPressureSpray(spray);
+            }
+        }
+
+        private void DrawPressureSpray(in PressureSprayState spray)
+        {
+            if (_drawPropertyBlock == null)
+                _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
+            if (_drawPropertyBlock == null)
+                return;
+
+            float alphaT = spray.TotalLifetime > 0.0001f ? Mathf.Clamp01(spray.RemainingLifetime / spray.TotalLifetime) : 0f;
+            Color drawColor = spray.Color;
+            drawColor.a *= alphaT;
+            if (drawColor.a <= 0.0001f)
+                return;
+
+            Vector3 planarDirection = new Vector3(spray.DirectionWS.x, 0f, spray.DirectionWS.z);
+            if (planarDirection.sqrMagnitude <= 0.0001f)
+                planarDirection = Vector3.forward;
+            planarDirection.Normalize();
+            float yawDegrees = Mathf.Atan2(planarDirection.x, planarDirection.z) * Mathf.Rad2Deg;
+            Quaternion rotation = Quaternion.Euler(90f, yawDegrees, 0f);
+            Vector3 center = spray.PositionWS + spray.DirectionWS * (spray.Length * 0.5f);
+            Matrix4x4 matrix = Matrix4x4.TRS(
+                center,
+                rotation,
+                new Vector3(spray.Width, spray.Length, 1f));
+
+            _drawPropertyBlock.Clear();
+            _drawPropertyBlock.SetColor(_TintColorId, drawColor);
+            _drawPropertyBlock.SetFloat(_RadiusId, Mathf.Max(spray.Width, spray.Length));
+            _drawPropertyBlock.SetFloat(_SoftnessId, edgeSoftness * 0.5f);
+            _drawPropertyBlock.SetFloat(_WakeDistortionId, wakeDistortion);
+            _drawPropertyBlock.SetFloat(_WakeTearStrengthId, wakeTearStrength);
+            _drawPropertyBlock.SetFloat(_WakeThresholdId, wakeThreshold);
+
+            Graphics.DrawMesh(
+                _quadMesh,
+                matrix,
+                _runtimeMaterial,
+                gameObject.layer,
+                null,
+                0,
+                _drawPropertyBlock,
+                ShadowCastingMode.Off,
+                false,
+                null,
+                LightProbeUsage.Off,
+                null);
         }
 
         private void DrawDecal(in FluidDecalState decal)
@@ -410,6 +562,12 @@ namespace Hecton8.World
             {
                 // COLD ALLOC: FluidDecalState[32] - capped abyssal aftermath decal registry - owner: AbyssalFluidDecalManager
                 _decalStates = new FluidDecalState[maxDecalCount];
+            }
+
+            if (_pressureSprayStates == null || _pressureSprayStates.Length != maxPressureSprayCount)
+            {
+                // COLD ALLOC: PressureSprayState[24] - capped high-pressure breach spray registry - owner: AbyssalFluidDecalManager
+                _pressureSprayStates = new PressureSprayState[maxPressureSprayCount];
             }
         }
 
@@ -523,11 +681,25 @@ namespace Hecton8.World
                 decal.PositionWS += runtimeOffset;
                 _decalStates[i] = decal;
             }
+
+            if (_pressureSprayStates == null)
+                return;
+
+            for (int i = 0; i < _pressureSprayStates.Length; i++)
+            {
+                if (!_pressureSprayStates[i].Active)
+                    continue;
+
+                PressureSprayState spray = _pressureSprayStates[i];
+                spray.PositionWS += runtimeOffset;
+                _pressureSprayStates[i] = spray;
+            }
         }
 
         private void SanitizeSettings()
         {
             maxDecalCount = Mathf.Clamp(maxDecalCount, 1, 32);
+            maxPressureSprayCount = Mathf.Clamp(maxPressureSprayCount, 1, 64);
             spreadSpeed = Mathf.Clamp(spreadSpeed, 0.1f, 10f);
             driftOffsetInfluence = Mathf.Clamp(driftOffsetInfluence, 0f, 2f);
             ambientCurrentInfluence = Mathf.Clamp(ambientCurrentInfluence, 0f, 2f);

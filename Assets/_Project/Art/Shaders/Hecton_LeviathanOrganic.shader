@@ -15,6 +15,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         _Smoothness("Smoothness Scale", Range(0, 1)) = 0.45
         _OcclusionStrength("Occlusion Strength", Range(0, 1)) = 1.0
         _EmissionStrength("Emission Strength", Range(0, 8)) = 1.0
+        _FaunaBiolumDim("Fauna Biolum Dim", Range(0, 1)) = 1.0
+        _DeathDitherFade("Death Dither Fade", Range(0, 1)) = 0.0
         _SssDistortion("SSS Distortion", Range(0, 2)) = 0.48
         _SssPower("SSS Power", Range(0.1, 16)) = 3.8
         _SssScale("SSS Scale", Range(0, 4)) = 1.15
@@ -67,6 +69,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float _Smoothness;
             float _OcclusionStrength;
             float _EmissionStrength;
+            float _FaunaBiolumDim;
+            float _DeathDitherFade;
             float _SssDistortion;
             float _SssPower;
             float _SssScale;
@@ -155,6 +159,16 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             return half2(woundMask, burnMask);
         }
 
+        half ResolveFaunaDither(float4 positionCS)
+        {
+            uint2 pixel = (uint2)positionCS.xy;
+            uint hash = pixel.x * 1103515245u + pixel.y * 12345u + 0x9E3779B9u;
+            hash ^= hash >> 16;
+            hash *= 2246822519u;
+            hash ^= hash >> 13;
+            return (half)((hash & 255u) * (1.0 / 255.0));
+        }
+
         Varyings Vert(Attributes input)
         {
             Varyings output;
@@ -173,6 +187,10 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
         half4 Frag(Varyings input) : SV_Target
         {
+            half deathDitherFade = saturate((half)_DeathDitherFade);
+            if (deathDitherFade > 0.001h)
+                clip((1.0h - deathDitherFade) - ResolveFaunaDither(input.positionCS));
+
             half4 surface = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
             half4 packedMask = SAMPLE_TEXTURE2D(_MaskMap, sampler_MaskMap, input.uv);
             half3 tangentNormal = UnpackNormalScale(SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv), _NormalScale);
@@ -218,9 +236,10 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
                 _SssScale);
 
             half3 caustics = HectonCoreLitEvaluateProjectedCausticsScattering(input.positionWS, normalWS) * surface.rgb;
+            half faunaBiolumDim = saturate((half)_FaunaBiolumDim);
             half3 biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask;
             half3 woundEmission = woundColor * (woundMask * _WoundEmissionBoost);
-            half3 emission = (_EmissionColor.rgb * (_EmissionStrength * emissionMask)) + biolum + woundEmission;
+            half3 emission = ((_EmissionColor.rgb * (_EmissionStrength * emissionMask)) + biolum) * faunaBiolumDim + woundEmission;
             half3 finalColor = HectonCoreLitApplyNoirFog(color + caustics + emission + sss, input.fogFactor, input.positionWS);
             return half4(finalColor, 1.0h);
         }
@@ -277,6 +296,10 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
 
             half4 ShadowFrag(ShadowVaryings input) : SV_Target
             {
+                half deathDitherFade = saturate((half)_DeathDitherFade);
+                if (deathDitherFade > 0.001h)
+                    clip((1.0h - deathDitherFade) - ResolveFaunaDither(input.positionCS));
+
                 return 0.0h;
             }
             ENDHLSL

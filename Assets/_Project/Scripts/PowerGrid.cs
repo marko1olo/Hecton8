@@ -36,10 +36,7 @@ namespace Hecton8.Power
         private const float OverloadThermalDamagePerSecond = 18f;
         private const float OverloadMeltdownTemperatureCelsius = 150f;
         private const float CableThermalConductivityWattsPerCelsius = 140f;
-        private const float MinimumCableThermalDeltaCelsius = 0.5f;
         private const int CableThermalRelaxationMaxIterations = 8;
-        private const float CableThermalConvergenceDeltaCelsius = 0.05f;
-        private const double CableThermalFrameBudgetMilliseconds = 1.0;
         private const float OceanThermalSinkTemperatureCelsius = 2f;
         private const float ThermalHeatInjectionScale = 0.001f;
         private const float ThermalDissipationApplyBlend = 0.25f;
@@ -806,8 +803,16 @@ namespace Hecton8.Power
                 if (consumer == null)
                     continue;
 
+                bool consumerVoltageResolved = _logisticsGraph.TryGetConsumerVoltageSupplyRatio(
+                    consumerIndex,
+                    out float consumerVoltageSupplyRatio);
+                if (!consumerVoltageResolved)
+                    consumerVoltageSupplyRatio = _supplyRatio;
+
                 if (consumer is BaseModule baseModule)
-                    baseModule.SetAmbientLightsBrownout(ambientLightsBrownedOut);
+                    baseModule.SetAmbientPowerVisualState(
+                        ambientLightsBrownedOut || consumerVoltageSupplyRatio < 0.80f,
+                        consumerVoltageSupplyRatio);
 
                 bool shouldHavePower = _logisticsGraph.IsConsumerPowered(consumerIndex);
                 if (_batteryEmergencyReserveActive && !ShouldRemainPoweredDuringBatteryReserve(consumer))
@@ -1122,8 +1127,11 @@ namespace Hecton8.Power
             return sink;
         }
 
-        private void ApplyThermalDissipationResult(int nodeCount)
+        private void ApplyThermalDissipationResult(int nodeCount, NativeArray<float> resultTemperatures)
         {
+            if (!resultTemperatures.IsCreated)
+                return;
+
             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
             {
                 OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
@@ -1131,7 +1139,7 @@ namespace Hecton8.Power
                     continue;
 
                 float currentTemperature = binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex);
-                float targetTemperature = _thermalTemperatureFront[nodeIndex];
+                float targetTemperature = resultTemperatures[nodeIndex];
                 float deltaCelsius = math.clamp(
                     (targetTemperature - currentTemperature) * ThermalDissipationApplyBlend,
                     -MaximumAppliedThermalDeltaCelsius,
@@ -1185,8 +1193,22 @@ namespace Hecton8.Power
             }
         }
 
+        private void CompleteThermalDissipationForTeardown()
+        {
+            if (!_thermalDissipationPending)
+                return;
+
+            DispatcherJobSwap.TryComplete(ref _thermalDissipationHandle, forceComplete: true);
+            _thermalDissipationPending = false;
+            _thermalDissipationResultInBackBuffer = false;
+            _thermalDissipationNodeCount = 0;
+            _thermalDissipationScheduledIterations = 0;
+            _thermalDissipationDeferredFrames = 0;
+        }
+
         private void DisposeThermalDissipationBuffers()
         {
+            CompleteThermalDissipationForTeardown();
             DisposeTrackedNativeArray(ref _thermalTemperatureFront);
             DisposeTrackedNativeArray(ref _thermalTemperatureBack);
             DisposeTrackedNativeArray(ref _thermalHeatInjection);

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Threading;
 using Hecton8.Dev;
 using UnityEngine;
 
@@ -15,6 +17,8 @@ namespace Hecton8.Core
         private const uint PoolExhaustedReasonMissingPool = 1u;
         private const uint PoolExhaustedReasonExpandRejected = 2u;
         private const uint PoolExhaustedReasonEmptyPool = 3u;
+        private const int DefaultWarmupInstantiationsPerFrame = 50;
+        private const int DefaultWarmupMinimumFrames = 60;
 
         [Header("── Warmup Presets ────────────────────────────")]
         [Tooltip("Automatic warmup entries executed during Start.")]
@@ -30,6 +34,8 @@ namespace Hecton8.Core
 
         private Dictionary<int, Pool> _pools;
         private bool _serviceRegistered;
+        private bool _warmupPresetsStarted;
+        private bool _warmupPresetsCompleted;
 
         internal static ObjectPoolManager ActiveRuntimeInstance { get; private set; }
 
@@ -37,6 +43,11 @@ namespace Hecton8.Core
         /// Runtime pool service resolved through <see cref="GlobalRegistry"/>.
         /// </summary>
         public static ObjectPoolManager Instance => GlobalRegistry.ObjectPool;
+
+        /// <summary>
+        /// True after scene-authored warmup presets have finished their frame-budgeted allocation pass.
+        /// </summary>
+        public bool AreWarmupPresetsCompleted => _warmupPresetsCompleted;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -73,19 +84,18 @@ namespace Hecton8.Core
 
             // COLD ALLOC: Dictionary<int, Pool>[32] — prefab id to pool lookup — owner: ObjectPoolManager
             _pools = new Dictionary<int, Pool>(32);
+            _warmupPresetsCompleted = CountWarmupPresetInstances() <= 0;
         }
 
         private void Start()
         {
-            if (warmupPresets == null)
+            if (_warmupPresetsCompleted || _warmupPresetsStarted)
                 return;
 
-            for (int i = 0; i < warmupPresets.Length; i++)
-            {
-                WarmupEntry entry = warmupPresets[i];
-                if (entry.prefab != null && entry.count > 0)
-                    Warmup(entry.prefab, entry.count);
-            }
+            _ = WarmupPresetsAsync(
+                DefaultWarmupInstantiationsPerFrame,
+                DefaultWarmupMinimumFrames,
+                destroyCancellationToken);
         }
 
         private void OnDestroy()
@@ -125,25 +135,109 @@ namespace Hecton8.Core
         {
             if (prefab == null)
             {
-                Debug.LogError("[ObjectPoolManager] Warmup: prefab is null!");
+                LogWarmupNullPrefab();
                 return;
             }
 
             if (count <= 0 || !TryGetPrefabRegistry(out PrefabRegistry registry))
                 return;
 
-            int prefabId = registry.GetOrRegisterPrefab(prefab);
-            if (!_pools.TryGetValue(prefabId, out Pool pool))
-                pool = CreatePool(prefab, prefabId);
+            Pool pool = PreparePool(prefab, registry);
 
             for (int i = 0; i < count; i++)
             {
-                GameObject instance = InstantiatePooled(prefab, prefabId, pool);
+                GameObject instance = InstantiatePooled(prefab, pool.prefabId, pool);
                 instance.SetActive(false);
                 pool.available.Enqueue(instance);
             }
 
             UpdateDiagnostics();
+        }
+
+        /// <summary>
+        /// Allocates scene-authored pool presets over a fixed instantiation budget and minimum frame floor.
+        /// </summary>
+        /// <param name="instantiationsPerYield">Maximum pooled instances created before yielding a frame.</param>
+        /// <param name="minimumFrames">Minimum number of frames to spread the warmup state machine across.</param>
+        /// <param name="cancellationToken">Bootstrap cancellation token.</param>
+        /// <returns>True when every configured preset is complete.</returns>
+        public async Awaitable<bool> WarmupPresetsAsync(
+            int instantiationsPerYield,
+            int minimumFrames,
+            CancellationToken cancellationToken)
+        {
+            if (_warmupPresetsCompleted)
+                return true;
+
+            if (_warmupPresetsStarted)
+            {
+                while (!_warmupPresetsCompleted)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                }
+
+                return true;
+            }
+
+            _warmupPresetsStarted = true;
+            int instantiationBudget = Mathf.Max(1, instantiationsPerYield);
+            int minimumFrameBudget = Mathf.Max(1, minimumFrames);
+            int frameInstantiations = 0;
+            int yieldedFrames = 0;
+
+            try
+            {
+                if (warmupPresets == null || warmupPresets.Length == 0 || !TryGetPrefabRegistry(out PrefabRegistry registry))
+                {
+                    _warmupPresetsCompleted = true;
+                    return true;
+                }
+
+                for (int entryIndex = 0; entryIndex < warmupPresets.Length; entryIndex++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    WarmupEntry entry = warmupPresets[entryIndex];
+                    if (entry.prefab == null || entry.count <= 0)
+                        continue;
+
+                    Pool pool = PreparePool(entry.prefab, registry);
+                    for (int instanceIndex = 0; instanceIndex < entry.count; instanceIndex++)
+                    {
+                        cancellationToken.ThrowIfCancellationRequested();
+
+                        GameObject instance = InstantiatePooled(entry.prefab, pool.prefabId, pool);
+                        instance.SetActive(false);
+                        pool.available.Enqueue(instance);
+                        frameInstantiations++;
+
+                        if (frameInstantiations < instantiationBudget)
+                            continue;
+
+                        UpdateDiagnostics();
+                        frameInstantiations = 0;
+                        yieldedFrames++;
+                        await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                    }
+                }
+
+                UpdateDiagnostics();
+                while (yieldedFrames < minimumFrameBudget)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    yieldedFrames++;
+                    await Awaitable.NextFrameAsync(cancellationToken: cancellationToken);
+                }
+
+                _warmupPresetsCompleted = true;
+                return true;
+            }
+            catch (OperationCanceledException)
+            {
+                _warmupPresetsStarted = false;
+                throw;
+            }
         }
 
         /// <summary>
@@ -177,7 +271,7 @@ namespace Hecton8.Core
         {
             if (prefab == null)
             {
-                Debug.LogError("[ObjectPoolManager] Spawn: prefab is null!");
+                LogSpawnNullPrefab();
                 return null;
             }
 
@@ -524,6 +618,31 @@ namespace Hecton8.Core
             return pool;
         }
 
+        private Pool PreparePool(GameObject prefab, PrefabRegistry registry)
+        {
+            int prefabId = registry.GetOrRegisterPrefab(prefab);
+            if (!_pools.TryGetValue(prefabId, out Pool pool))
+                pool = CreatePool(prefab, prefabId);
+
+            return pool;
+        }
+
+        private int CountWarmupPresetInstances()
+        {
+            if (warmupPresets == null)
+                return 0;
+
+            int count = 0;
+            for (int i = 0; i < warmupPresets.Length; i++)
+            {
+                WarmupEntry entry = warmupPresets[i];
+                if (entry.prefab != null && entry.count > 0)
+                    count += entry.count;
+            }
+
+            return count;
+        }
+
         private GameObject InstantiatePooled(GameObject prefab, int prefabId, Pool pool)
         {
             GameObject instance = Instantiate(prefab, pool.container);
@@ -570,12 +689,28 @@ namespace Hecton8.Core
             if (Application.isPlaying)
                 GlobalTelemetryBus.PublishPoolExhausted(prefabId, reasonCode);
 
+            LogPoolExhausted(prefab, reason);
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogWarmupNullPrefab()
+        {
+            Debug.LogError("[ObjectPoolManager] Warmup: prefab is null!");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogSpawnNullPrefab()
+        {
+            Debug.LogError("[ObjectPoolManager] Spawn: prefab is null!");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogPoolExhausted(GameObject prefab, string reason)
+        {
             string prefabName = prefab != null ? prefab.name : "NullPrefab";
             string report = $"[ObjectPoolManager] '{prefabName}': {reason} Consider increasing Warmup count.";
             RuntimeDiagnosticsTrace.WriteEvent("pool", report);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning(report);
-#endif
         }
 
         /// <summary>

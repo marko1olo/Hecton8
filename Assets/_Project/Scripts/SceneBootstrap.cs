@@ -1059,7 +1059,8 @@ namespace Hecton8.Bootstrap
                 }
             }
 
-            global::HectonWorldGenerator legacyWorldGenerator = global::HectonWorldGenerator.ActiveRuntimeInstance;
+            global::HectonWorldGenerator legacyWorldGenerator =
+                GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
             if (legacyWorldGenerator != null)
             {
                 if (IsTemporaryRuntimeShellObject(legacyWorldGenerator.gameObject))

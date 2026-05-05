@@ -58,8 +58,8 @@ namespace Hecton8.Construction
         private const float StructuralGroanStressThreshold01 = 0.8f;
         private const float StructuralGroanPitchRange = 0.32f;
         private const float MinimumHydrodynamicFlowSpeedMetersPerSecond = 0.1f;
-        private const float CondensationInteriorTemperatureCelsius = 40f;
-        private const float CondensationExternalTemperatureCelsius = 4f;
+        private const float CondensationInteriorTemperatureCelsius = 30f;
+        private const float CondensationExternalTemperatureCelsius = 5f;
         private const float SupportCaptureRadiusMeters = 3f;
         private const float SupportCaptureRadiusSq = SupportCaptureRadiusMeters * SupportCaptureRadiusMeters;
         private const int InitialSocketCapacity = 32;

@@ -35,6 +35,10 @@ float4 _HectonProjectedCausticsColor;
 float4 _FinalGiantAbyssLight;
 float4 _SunDirection;
 float4 _AegirDirection;
+float4 _HectonEclipseWaterShadowParams;    // xy=center xz, z=radius, w=darkening
+float4 _HectonEclipseWaterShadowDirection; // xy=travel direction, z=softness, w=penumbra
+float4 _HectonRingCausticsParams;          // x=strength, y=stripe scale, z=phase, w=softness
+float4 _HectonRingCausticsDirection;       // xy=band direction, z=sun alignment, w=reserved
 float4 _HectonCausticsSimulationParamsA;
 float4 _HectonCausticsSimulationParamsB;
 float4 _HectonCausticsSimulationParamsC;
@@ -339,6 +343,45 @@ half3 HectonCoreLitEvaluateGiantAbyssLight(float3 normalWS)
     return (half3)(_FinalGiantAbyssLight.rgb * facing);
 }
 
+float HectonCoreLitEvaluateEclipseWaterShadow(float3 positionWS)
+{
+    float strength = saturate(_HectonEclipseWaterShadowParams.w);
+    if (strength <= 0.0001)
+        return 1.0;
+
+    float radius = max(_HectonEclipseWaterShadowParams.z, 1.0);
+    float softness = saturate(_HectonEclipseWaterShadowDirection.z);
+    float innerRadius = radius * saturate(1.0 - softness);
+    float distanceToShadow = distance(positionWS.xz, _HectonEclipseWaterShadowParams.xy);
+    float shadowMask = 1.0 - smoothstep(innerRadius, radius, distanceToShadow);
+    return saturate(1.0 - shadowMask * strength);
+}
+
+float HectonCoreLitEvaluateRingCausticShadow(float3 positionWS)
+{
+    float strength = saturate(_HectonRingCausticsParams.x * _HectonRingCausticsDirection.z);
+    if (strength <= 0.0001)
+        return 1.0;
+
+    float2 direction = _HectonRingCausticsDirection.xy;
+    float lenSq = dot(direction, direction);
+    direction = lenSq > 0.0001 ? direction * rsqrt(lenSq) : float2(1.0, 0.0);
+
+    float stripeScale = max(_HectonRingCausticsParams.y, 0.0001);
+    float phase = _HectonRingCausticsParams.z;
+    float softness = max(_HectonRingCausticsParams.w, 0.001);
+    float stripePhase = dot(positionWS.xz, direction) * stripeScale + phase;
+    float stripeWave = abs(sin(stripePhase * 6.2831853));
+    float darkBand = 1.0 - smoothstep(softness, softness + 0.18, stripeWave);
+    return saturate(1.0 - darkBand * strength);
+}
+
+float HectonCoreLitEvaluateCelestialWaterShadow(float3 positionWS)
+{
+    return HectonCoreLitEvaluateEclipseWaterShadow(positionWS) *
+           HectonCoreLitEvaluateRingCausticShadow(positionWS);
+}
+
 float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 normalWS)
 {
     if (_HectonProjectedCausticsParams.x <= 0.0001)
@@ -362,13 +405,15 @@ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 norma
     float directionalWeight = HectonCoreLitEvaluateDirectionalCausticsWeight(normalWS);
     float caustics = SAMPLE_TEXTURE2D_LOD(_HectonProjectedCausticsTex, sampler_HectonProjectedCausticsTex, uv, 0).r;
     float shadowTerm = HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
-    return caustics * depthFade * upFacing * directionalWeight * shadowTerm * _HectonProjectedCausticsParams.x;
+    float celestialShadow = HectonCoreLitEvaluateCelestialWaterShadow(positionWS);
+    return caustics * depthFade * upFacing * directionalWeight * shadowTerm * celestialShadow * _HectonProjectedCausticsParams.x;
 }
 
 half3 HectonCoreLitEvaluateProjectedCausticsScattering(float3 positionWS, float3 normalWS)
 {
     float mask = HectonCoreLitEvaluateProjectedCausticsMask(positionWS, normalWS);
-    return (half3)(_HectonProjectedCausticsColor.rgb * mask) + (HectonCoreLitEvaluateGiantAbyssLight(normalWS) * (half)(mask * 0.35));
+    float celestialShadow = HectonCoreLitEvaluateCelestialWaterShadow(positionWS);
+    return (half3)(_HectonProjectedCausticsColor.rgb * mask) + (HectonCoreLitEvaluateGiantAbyssLight(normalWS) * (half)(mask * 0.35 * celestialShadow));
 }
 
 half HectonCoreLitEvaluateNoirFog(half fogRaw)

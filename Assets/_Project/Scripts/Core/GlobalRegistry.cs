@@ -56,6 +56,8 @@ namespace Hecton8.Core
         // COLD ALLOC: NoOpInputService[1] - null-object fallback for premature GlobalRegistry.Input reads - owner: GlobalRegistry
         private static readonly IInputService _noOpInputService = new NoOpInputService();
         private static readonly uint _inputDependencyWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.Input"));
+        private static readonly uint _serviceReboundOverflowWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.ServiceReboundOverflow"));
+        private static readonly uint _globalRegistryTelemetryContextHash = unchecked((uint)LocHash.Compute("GlobalRegistry"));
         private const int MaxPendingServiceRebounds = 64;
         private const uint PlayerResolutionMask =
             (1u << (int)GlobalRegistryResolutionScope.PlayerContext) |
@@ -128,12 +130,19 @@ namespace Hecton8.Core
         private static IFluidSim _fluidSimulation;
         private static ILogisticsService _logistics;
         private static IWorldGenService _worldGen;
+        private static IWorldSeedProvider _worldSeedProvider;
+        private static WorldProceduralFieldSampler _proceduralFieldSamplerRuntime;
+        private static ResourceDistributionDirector _resourceDistributionRuntime;
+        private static WorldGenerativeGeologyTerrainSeamApplier _geologyTerrainSeamRuntime;
+        private static WorldGenerativeGeologyVoxelBridgeDirector _geologyVoxelBridgeRuntime;
         private static IEncounterDirectorService _encounterDirector;
         private static IQuestSystem _questSystem;
         private static PersistentWorldRegistry _persistentWorldRegistry;
         private static WorldStateManager _worldStateRuntime;
         private static IPDALogbookService _pdaLogbook;
         private static IProfileService _profile;
+        private static EclipseGameplaySystem _eclipseGameplayRuntime;
+        private static RandomEventSystem _randomEventRuntime;
         private static HectonFluidEngine _fluidRuntime;
         private static AbyssalThermalManager _thermodynamicsRuntime;
         private static HectonNarrativeDirector _narrativeDirectorRuntime;
@@ -152,6 +161,7 @@ namespace Hecton8.Core
         private static FirstHourDirector _firstHourRuntime;
         private static EmergencyServiceRelayDirector _emergencyRelayRuntime;
         private static HectonAtmosphereManager _atmosphereRuntime;
+        private static MapMagicBridge _mapMagicRuntime;
         private static BeaconNetworkSystem _beaconNetworkRuntime;
         private static ScanLogSystem _scanLogRuntime;
         private static ToolDurabilitySystem _toolDurabilityRuntime;
@@ -197,6 +207,8 @@ namespace Hecton8.Core
         private static UIRTManager _uiRTRuntime;
         private static SettingsManager _settingsRuntime;
         private static RuntimeWatchdog _runtimeWatchdogRuntime;
+        private static CrashTelemetryBuffer _crashTelemetryRuntime;
+        private static PlayerCriticalProceduralAudioRenderer _playerCriticalAudioRuntime;
         private static GameTickManager _tickManager;
         private static SystemDispatcher _dispatcher;
         private static RenderDispatcher _renderDispatcher;
@@ -268,6 +280,16 @@ namespace Hecton8.Core
         /// Registered audio service slot.
         /// </summary>
         public static IAudioService Audio => _audio;
+
+        /// <summary>
+        /// Authoritative crash telemetry runtime owner.
+        /// </summary>
+        public static CrashTelemetryBuffer CrashTelemetry => _crashTelemetryRuntime;
+
+        /// <summary>
+        /// Authoritative player critical procedural audio runtime owner.
+        /// </summary>
+        public static PlayerCriticalProceduralAudioRenderer PlayerCriticalAudio => _playerCriticalAudioRuntime;
 
         /// <summary>
         /// Registered scene service slot.
@@ -447,6 +469,36 @@ namespace Hecton8.Core
         public static IWorldGenService WorldGen => _worldGen;
 
         /// <summary>
+        /// Registered deterministic world-seed provider slot.
+        /// </summary>
+        public static IWorldSeedProvider WorldSeedProvider => _worldSeedProvider;
+
+        /// <summary>
+        /// Registered concrete procedural scatter runtime owner.
+        /// </summary>
+        public static WorldProceduralScatterDirector ProceduralScatter => _worldGen as WorldProceduralScatterDirector;
+
+        /// <summary>
+        /// Registered concrete procedural field sampler runtime owner.
+        /// </summary>
+        public static WorldProceduralFieldSampler ProceduralFieldSampler => _proceduralFieldSamplerRuntime;
+
+        /// <summary>
+        /// Registered concrete resource-distribution runtime owner.
+        /// </summary>
+        public static ResourceDistributionDirector ResourceDistribution => _resourceDistributionRuntime;
+
+        /// <summary>
+        /// Registered terrain/voxel seam applier runtime owner.
+        /// </summary>
+        public static WorldGenerativeGeologyTerrainSeamApplier GeologyTerrainSeam => _geologyTerrainSeamRuntime;
+
+        /// <summary>
+        /// Registered geology voxel bridge runtime owner.
+        /// </summary>
+        public static WorldGenerativeGeologyVoxelBridgeDirector GeologyVoxelBridge => _geologyVoxelBridgeRuntime;
+
+        /// <summary>
         /// Registered encounter-direction service slot.
         /// </summary>
         public static IEncounterDirectorService EncounterDirector => _encounterDirector;
@@ -475,6 +527,16 @@ namespace Hecton8.Core
         /// Registered global meta profile service slot.
         /// </summary>
         public static IProfileService Profile => _profile;
+
+        /// <summary>
+        /// Registered eclipse-gameplay runtime owner.
+        /// </summary>
+        public static EclipseGameplaySystem EclipseGameplay => _eclipseGameplayRuntime;
+
+        /// <summary>
+        /// Registered random-event runtime owner.
+        /// </summary>
+        public static RandomEventSystem RandomEvents => _randomEventRuntime;
 
         /// <summary>
         /// Registered fluid simulation runtime owner.
@@ -565,6 +627,11 @@ namespace Hecton8.Core
         /// Registered atmosphere runtime owner.
         /// </summary>
         public static HectonAtmosphereManager Atmosphere => _atmosphereRuntime;
+
+        /// <summary>
+        /// Registered MapMagic bridge runtime owner.
+        /// </summary>
+        public static MapMagicBridge MapMagic => _mapMagicRuntime;
 
         /// <summary>
         /// Registered beacon-network runtime owner.
@@ -897,6 +964,11 @@ namespace Hecton8.Core
             _fluidSimulation = null;
             _logistics = null;
             _worldGen = null;
+            _worldSeedProvider = null;
+            _proceduralFieldSamplerRuntime = null;
+            _resourceDistributionRuntime = null;
+            _geologyTerrainSeamRuntime = null;
+            _geologyVoxelBridgeRuntime = null;
             _encounterDirector = null;
             _questSystem = null;
             _persistentWorldRegistry = null;
@@ -921,6 +993,7 @@ namespace Hecton8.Core
             _firstHourRuntime = null;
             _emergencyRelayRuntime = null;
             _atmosphereRuntime = null;
+            _mapMagicRuntime = null;
             _beaconNetworkRuntime = null;
             _scanLogRuntime = null;
             _toolDurabilityRuntime = null;
@@ -966,6 +1039,8 @@ namespace Hecton8.Core
             _uiRTRuntime = null;
             _settingsRuntime = null;
             _runtimeWatchdogRuntime = null;
+            _crashTelemetryRuntime = null;
+            _playerCriticalAudioRuntime = null;
             _tickManager = null;
             _dispatcher = null;
             _renderDispatcher = null;
@@ -1302,6 +1377,47 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the deterministic world-seed provider.
+        /// </summary>
+        /// <param name="instance">World-seed provider instance.</param>
+        public static void RegisterWorldSeedProvider(IWorldSeedProvider instance)
+        {
+            RegisterServiceAllowSameInstance(ref _worldSeedProvider, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative procedural field sampler runtime owner.
+        /// </summary>
+        public static void RegisterProceduralFieldSampler(WorldProceduralFieldSampler instance)
+        {
+            RegisterServiceAllowSameInstance(ref _proceduralFieldSamplerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative resource-distribution runtime owner.
+        /// </summary>
+        public static void RegisterResourceDistribution(ResourceDistributionDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _resourceDistributionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative terrain/voxel seam applier runtime owner.
+        /// </summary>
+        public static void RegisterGeologyTerrainSeamRuntime(WorldGenerativeGeologyTerrainSeamApplier instance)
+        {
+            RegisterServiceAllowSameInstance(ref _geologyTerrainSeamRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative geology voxel bridge runtime owner.
+        /// </summary>
+        public static void RegisterGeologyVoxelBridgeRuntime(WorldGenerativeGeologyVoxelBridgeDirector instance)
+        {
+            RegisterServiceAllowSameInstance(ref _geologyVoxelBridgeRuntime, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative encounter-direction service.
         /// </summary>
         /// <param name="instance">Encounter-direction service instance.</param>
@@ -1349,6 +1465,22 @@ namespace Hecton8.Core
         public static void RegisterProfileService(IProfileService instance)
         {
             RegisterServiceAllowSameInstance(ref _profile, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative eclipse-gameplay runtime owner.
+        /// </summary>
+        public static void RegisterEclipseGameplayRuntime(EclipseGameplaySystem instance)
+        {
+            RegisterService(ref _eclipseGameplayRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative random-event runtime owner.
+        /// </summary>
+        public static void RegisterRandomEventRuntime(RandomEventSystem instance)
+        {
+            RegisterService(ref _randomEventRuntime, instance);
         }
 
         /// <summary>
@@ -1454,6 +1586,22 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative crash telemetry runtime owner.
+        /// </summary>
+        public static void RegisterCrashTelemetryRuntime(CrashTelemetryBuffer instance)
+        {
+            RegisterServiceAllowSameInstance(ref _crashTelemetryRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative player critical procedural audio owner.
+        /// </summary>
+        public static void RegisterPlayerCriticalAudioRuntime(PlayerCriticalProceduralAudioRenderer instance)
+        {
+            RegisterServiceAllowSameInstance(ref _playerCriticalAudioRuntime, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative acoustic-zone runtime owner.
         /// </summary>
         public static void RegisterAcousticZoneRuntime(AcousticZoneController instance)
@@ -1499,6 +1647,14 @@ namespace Hecton8.Core
         public static void RegisterAtmosphereRuntime(HectonAtmosphereManager instance)
         {
             RegisterServiceAllowSameInstance(ref _atmosphereRuntime, instance);
+        }
+
+        /// <summary>
+        /// Registers the authoritative MapMagic bridge runtime owner.
+        /// </summary>
+        public static void RegisterMapMagicRuntime(MapMagicBridge instance)
+        {
+            RegisterServiceAllowSameInstance(ref _mapMagicRuntime, instance);
         }
 
         /// <summary>
@@ -2103,6 +2259,47 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current deterministic world-seed provider if the owner matches.
+        /// </summary>
+        /// <param name="instance">Service owner requesting unregistration.</param>
+        public static void UnregisterWorldSeedProvider(IWorldSeedProvider instance)
+        {
+            UnregisterService(ref _worldSeedProvider, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current procedural field sampler runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterProceduralFieldSampler(WorldProceduralFieldSampler instance)
+        {
+            UnregisterService(ref _proceduralFieldSamplerRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current resource-distribution runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterResourceDistribution(ResourceDistributionDirector instance)
+        {
+            UnregisterService(ref _resourceDistributionRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current terrain/voxel seam applier runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterGeologyTerrainSeamRuntime(WorldGenerativeGeologyTerrainSeamApplier instance)
+        {
+            UnregisterService(ref _geologyTerrainSeamRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current geology voxel bridge runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterGeologyVoxelBridgeRuntime(WorldGenerativeGeologyVoxelBridgeDirector instance)
+        {
+            UnregisterService(ref _geologyVoxelBridgeRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current encounter-direction service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -2150,6 +2347,22 @@ namespace Hecton8.Core
         public static void UnregisterProfileService(IProfileService instance)
         {
             UnregisterService(ref _profile, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current eclipse-gameplay runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterEclipseGameplayRuntime(EclipseGameplaySystem instance)
+        {
+            UnregisterService(ref _eclipseGameplayRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current random-event runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterRandomEventRuntime(RandomEventSystem instance)
+        {
+            UnregisterService(ref _randomEventRuntime, instance);
         }
 
         /// <summary>
@@ -2255,6 +2468,22 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Unregisters the current crash telemetry runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterCrashTelemetryRuntime(CrashTelemetryBuffer instance)
+        {
+            UnregisterService(ref _crashTelemetryRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current player critical procedural audio owner if the owner matches.
+        /// </summary>
+        public static void UnregisterPlayerCriticalAudioRuntime(PlayerCriticalProceduralAudioRenderer instance)
+        {
+            UnregisterService(ref _playerCriticalAudioRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current acoustic-zone runtime owner if the owner matches.
         /// </summary>
         public static void UnregisterAcousticZoneRuntime(AcousticZoneController instance)
@@ -2300,6 +2529,14 @@ namespace Hecton8.Core
         public static void UnregisterAtmosphereRuntime(HectonAtmosphereManager instance)
         {
             UnregisterService(ref _atmosphereRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current MapMagic bridge runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterMapMagicRuntime(MapMagicBridge instance)
+        {
+            UnregisterService(ref _mapMagicRuntime, instance);
         }
 
         /// <summary>
@@ -3221,6 +3458,7 @@ namespace Hecton8.Core
             EnsureServiceReboundQueue();
             if (_pendingServiceReboundCount + _nextFrameServiceReboundCount >= MaxPendingServiceRebounds)
             {
+                PublishServiceReboundOverflowWarning();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (!_serviceReboundOverflowLogged)
                 {
@@ -3234,6 +3472,7 @@ namespace Hecton8.Core
             int referenceSlot = ReserveServiceReboundReferenceSlot(previousService, currentService);
             if (referenceSlot < 0)
             {
+                PublishServiceReboundOverflowWarning();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 if (!_serviceReboundOverflowLogged)
                 {
@@ -3264,6 +3503,14 @@ namespace Hecton8.Core
                 _pendingServiceRebounds.Enqueue(payload);
                 _pendingServiceReboundCount++;
             }
+        }
+
+        private static void PublishServiceReboundOverflowWarning()
+        {
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _serviceReboundOverflowWarningHash,
+                _globalRegistryTelemetryContextHash,
+                _pendingServiceReboundCount + _nextFrameServiceReboundCount);
         }
 
         private static void EnsureServiceReboundQueue()
@@ -3401,12 +3648,19 @@ namespace Hecton8.Core
             if (serviceType == typeof(IFluidSim)) return GlobalRegistryServiceSlot.FluidSimulation;
             if (serviceType == typeof(ILogisticsService)) return GlobalRegistryServiceSlot.Logistics;
             if (serviceType == typeof(IWorldGenService)) return GlobalRegistryServiceSlot.WorldGen;
+            if (serviceType == typeof(IWorldSeedProvider)) return GlobalRegistryServiceSlot.WorldSeedProvider;
+            if (serviceType == typeof(WorldProceduralFieldSampler)) return GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime;
+            if (serviceType == typeof(ResourceDistributionDirector)) return GlobalRegistryServiceSlot.ResourceDistributionRuntime;
+            if (serviceType == typeof(WorldGenerativeGeologyTerrainSeamApplier)) return GlobalRegistryServiceSlot.GeologyTerrainSeamRuntime;
+            if (serviceType == typeof(WorldGenerativeGeologyVoxelBridgeDirector)) return GlobalRegistryServiceSlot.GeologyVoxelBridgeRuntime;
             if (serviceType == typeof(IEncounterDirectorService)) return GlobalRegistryServiceSlot.EncounterDirector;
             if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
             if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
             if (serviceType == typeof(WorldStateManager)) return GlobalRegistryServiceSlot.WorldStateRuntime;
             if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
             if (serviceType == typeof(IProfileService)) return GlobalRegistryServiceSlot.Profile;
+            if (serviceType == typeof(EclipseGameplaySystem)) return GlobalRegistryServiceSlot.EclipseGameplayRuntime;
+            if (serviceType == typeof(RandomEventSystem)) return GlobalRegistryServiceSlot.RandomEventRuntime;
             if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;
             if (serviceType == typeof(AbyssalThermalManager)) return GlobalRegistryServiceSlot.ThermodynamicsRuntime;
             if (serviceType == typeof(HectonNarrativeDirector)) return GlobalRegistryServiceSlot.NarrativeDirectorRuntime;
@@ -3419,12 +3673,15 @@ namespace Hecton8.Core
             if (serviceType == typeof(HectonBiolumManager)) return GlobalRegistryServiceSlot.BiolumManagerRuntime;
             if (serviceType == typeof(LocalizationManager)) return GlobalRegistryServiceSlot.LocalizationRuntime;
             if (serviceType == typeof(AudioLogSystem)) return GlobalRegistryServiceSlot.AudioLogRuntime;
+            if (serviceType == typeof(CrashTelemetryBuffer)) return GlobalRegistryServiceSlot.CrashTelemetryRuntime;
+            if (serviceType == typeof(PlayerCriticalProceduralAudioRenderer)) return GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime;
             if (serviceType == typeof(AcousticZoneController)) return GlobalRegistryServiceSlot.AcousticZoneRuntime;
             if (serviceType == typeof(HectonSurfaceWeatherDirector)) return GlobalRegistryServiceSlot.SurfaceWeatherRuntime;
             if (serviceType == typeof(AtlasSignalSystem)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
             if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
             if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
             if (serviceType == typeof(HectonAtmosphereManager)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
+            if (serviceType == typeof(MapMagicBridge)) return GlobalRegistryServiceSlot.MapMagicRuntime;
             if (serviceType == typeof(BeaconNetworkSystem)) return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
             if (serviceType == typeof(ScanLogSystem)) return GlobalRegistryServiceSlot.ScanLogRuntime;
             if (serviceType == typeof(ToolDurabilitySystem)) return GlobalRegistryServiceSlot.ToolDurabilityRuntime;

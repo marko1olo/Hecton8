@@ -33,24 +33,25 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 2000f;
         [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -5000f;
-        [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 16500f;
+        [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 17500f;
+        [Den.Tools.GUI.ValAttribute("Exponential Falloff")] public float macroExponentialFalloff = 3.1f;
 
-        [Den.Tools.GUI.ValAttribute("Plate Cell m")] public float plateCellSizeMeters = 2200f;
-        [Den.Tools.GUI.ValAttribute("Ridge Height m")] public float ridgeHeightMeters = 1750f;
-        [Den.Tools.GUI.ValAttribute("Ridge Multiplier")] public float ridgeMultiplier = 0.22f;
-        [Den.Tools.GUI.ValAttribute("Ridge Width m")] public float ridgeWidthMeters = 190f;
-        [Den.Tools.GUI.ValAttribute("Junction Width m")] public float junctionWidthMeters = 360f;
-        [Den.Tools.GUI.ValAttribute("Plate Uniformity")] public float plateUniformity = 0.86f;
-        [Den.Tools.GUI.ValAttribute("Warp m")] public float domainWarpMeters = 480f;
-        [Den.Tools.GUI.ValAttribute("Warp Frequency")] public float domainWarpFrequency = 0.00018f;
+        [Den.Tools.GUI.ValAttribute("Plate Cell m")] public float plateCellSizeMeters = 4200f;
+        [Den.Tools.GUI.ValAttribute("Ridge Height m")] public float ridgeHeightMeters = 700f;
+        [Den.Tools.GUI.ValAttribute("Ridge Multiplier")] public float ridgeMultiplier = 0.08f;
+        [Den.Tools.GUI.ValAttribute("Ridge Width m")] public float ridgeWidthMeters = 1450f;
+        [Den.Tools.GUI.ValAttribute("Junction Width m")] public float junctionWidthMeters = 2800f;
+        [Den.Tools.GUI.ValAttribute("Plate Uniformity")] public float plateUniformity = 0.78f;
+        [Den.Tools.GUI.ValAttribute("Warp m")] public float domainWarpMeters = 1450f;
+        [Den.Tools.GUI.ValAttribute("Warp Frequency")] public float domainWarpFrequency = 0.00011f;
         [Den.Tools.GUI.ValAttribute("Seed")] public int seed = 880031;
 
         [Den.Tools.GUI.ValAttribute("Quantize Slopes")] public bool enableSlopeQuantization = true;
-        [Den.Tools.GUI.ValAttribute("Plateau Source deg")] public float plateauSourceAngleDegrees = 15f;
-        [Den.Tools.GUI.ValAttribute("Plateau Target deg")] public float plateauTargetAngleDegrees = 2f;
-        [Den.Tools.GUI.ValAttribute("Cliff Source deg")] public float cliffSourceAngleDegrees = 45f;
-        [Den.Tools.GUI.ValAttribute("Cliff Target deg")] public float cliffTargetAngleDegrees = 80f;
-        [Den.Tools.GUI.ValAttribute("Quantize Strength")] public float slopeQuantizationStrength = 0.72f;
+        [Den.Tools.GUI.ValAttribute("Flat Dead deg")] public float plateauSourceAngleDegrees = 4f;
+        [Den.Tools.GUI.ValAttribute("Target Slope deg")] public float plateauTargetAngleDegrees = 30f;
+        [Den.Tools.GUI.ValAttribute("Steep Source deg")] public float cliffSourceAngleDegrees = 40f;
+        [Den.Tools.GUI.ValAttribute("Steep Full deg")] public float cliffTargetAngleDegrees = 58f;
+        [Den.Tools.GUI.ValAttribute("Quantize Strength")] public float slopeQuantizationStrength = 1f;
 
         public override (string, int) GetCodeFileLine() => GetCodeFileLineBase();
 
@@ -111,6 +112,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                     PlateUniformity = math.saturate(plateUniformity),
                     DomainWarpMeters = math.max(0f, domainWarpMeters),
                     DomainWarpFrequency = math.max(0.000001f, domainWarpFrequency),
+                    MacroExponentialFalloff = math.max(0.1f, macroExponentialFalloff),
                     Seed = unchecked((uint)seed)
                 };
 
@@ -119,7 +121,10 @@ namespace MapMagic.Nodes.MatrixGenerators
                     OutputHeights01 = rawHeights,
                     Parameters = parameters,
                     Width = width,
-                    WorldOriginXZ = new double2(dst.worldPos.x, dst.worldPos.z),
+                    WorldOriginAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
+                        dst.worldPos.x,
+                        dst.worldPos.z,
+                        parameters.AupCellSizeMeters),
                     CellSizeMeters = sampleCellSizeMeters
                 };
 

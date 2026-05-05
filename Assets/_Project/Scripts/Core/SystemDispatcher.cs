@@ -20,6 +20,7 @@ using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.Systems.AI;
 using Hecton8.Visor;
+using Hecton8.VFX;
 using Hecton8.World;
 
 namespace Hecton8.Core
@@ -64,6 +65,7 @@ namespace Hecton8.Core
         private const int PdaCongestionWarningFrameThreshold = 5;
         private const int LateFrameCircuitBreakerLaneCapacity = 32;
         private const double LateFrameEventFlushBudgetMilliseconds = 2.0;
+        private const float PauseDepthOfFieldBlendSeconds = 0.15f;
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
         private const string AupNanInquisitorWarningMessage = "[SystemDispatcher] AUP NaN-Inquisitor detected invalid camera-relative results.";
@@ -236,7 +238,9 @@ namespace Hecton8.Core
         private static float _nextDispatcherPhaseWarningLogTime;
         private static float _nextFoveatedFrameWarningLogTime;
         private static float _nextJobHandleWarningLogTime;
+        private static float _pauseDepthOfFieldWeight;
         private static bool _temporalCompressionActive;
+        private static bool _pauseDepthOfFieldTargetActive;
         private static int _temporalCompressionFrameCount;
         private static int _pdaOverBudgetConsecutiveFrames;
         private static NativeQueue<RaycastCommand> _pendingDispatcherRaycastCommands;
@@ -313,6 +317,8 @@ namespace Hecton8.Core
             _nextDispatcherPhaseWarningLogTime = 0f;
             _nextFoveatedFrameWarningLogTime = 0f;
             _nextJobHandleWarningLogTime = 0f;
+            _pauseDepthOfFieldWeight = 0f;
+            _pauseDepthOfFieldTargetActive = false;
             _temporalCompressionActive = false;
             _temporalCompressionFrameCount = 0;
             _pdaOverBudgetConsecutiveFrames = 0;
@@ -330,6 +336,14 @@ namespace Hecton8.Core
         internal static void SetVoxelTeardownBackpressure(bool active, int pendingChunkCount)
         {
             _foveatedSimulationManager.SetVoxelTeardownBackpressure(active, pendingChunkCount);
+        }
+
+        /// <summary>
+        /// Requests pause-menu depth-of-field isolation on the dispatcher cadence.
+        /// </summary>
+        public static void RequestPauseDepthOfField(bool active)
+        {
+            _pauseDepthOfFieldTargetActive = active;
         }
 
         internal static bool QueueDispatcherRaycast(IDispatcherRaycastReceiver receiver, int requestId, in RaycastCommand command)
@@ -611,6 +625,7 @@ namespace Hecton8.Core
                 float deltaTime = Time.deltaTime;
                 CurrentFrameDeltaTime = deltaTime;
                 CurrentFrameUnscaledDeltaTime = Time.unscaledDeltaTime;
+                TickPauseDepthOfField(CurrentFrameUnscaledDeltaTime);
                 long beginDispatcherTimestamp = BeginDispatcherPhaseTiming();
                 _foveatedSimulationManager.BeginDispatcherFrame(deltaTime);
                 EndDispatcherPhaseTiming(beginDispatcherTimestamp, "FoveatedSimulationManager.BeginDispatcherFrame");
@@ -651,6 +666,19 @@ namespace Hecton8.Core
                 RunSlowTick(deltaTime, blockGameplayLanes);
                 ScheduleDispatcherRaycasts();
             }
+        }
+
+        private static void TickPauseDepthOfField(float unscaledDeltaTime)
+        {
+            float targetWeight = _pauseDepthOfFieldTargetActive ? 1f : 0f;
+            float step = PauseDepthOfFieldBlendSeconds > 0f
+                ? Mathf.Max(0f, unscaledDeltaTime) / PauseDepthOfFieldBlendSeconds
+                : 1f;
+            _pauseDepthOfFieldWeight = Mathf.MoveTowards(_pauseDepthOfFieldWeight, targetWeight, step);
+
+            CameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
+            if (cameraJuice != null)
+                cameraJuice.ApplyPauseDepthOfFieldWeight(_pauseDepthOfFieldWeight);
         }
 
         private void LateUpdate()

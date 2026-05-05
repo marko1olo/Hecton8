@@ -68,7 +68,8 @@ namespace Hecton8.Core
 
         private static readonly WaitCallback _backgroundExportCallback = ExecuteBackgroundExport;
         private static readonly WaitCallback _backgroundLiveTelemetryCallback = ExecuteBackgroundLiveTelemetryWrite;
-        private static CrashTelemetryBuffer _instance;
+        private static readonly uint _audioOverflowDropWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CrashTelemetry.AudioOverflowDrop"));
+        private static readonly uint _audioOverflowBufferContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CrashTelemetry.NativeAudioFrameRingBuffer"));
         private static int _runtimeFaultFlags;
         private static int _pendingAudioOverflowDropCount;
         private static int _pendingAudioOverflowBufferedFrames;
@@ -218,6 +219,7 @@ namespace Hecton8.Core
         private float _lastFixedDeltaTime;
         private long _writeCursor;
         private uint _stickyErrorFlags;
+        private bool _runtimeRegistered;
         private bool _registeredTick;
         private bool _registeredFixedTick;
         private int _lastExportFrame = int.MinValue;
@@ -299,8 +301,9 @@ namespace Hecton8.Core
         /// <returns>Live telemetry owner.</returns>
         public static CrashTelemetryBuffer EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            CrashTelemetryBuffer registeredInstance = GlobalRegistry.CrashTelemetry;
+            if (registeredInstance != null)
+                return registeredInstance;
 
             GameObject telemetryObject = new GameObject("[CrashTelemetryBuffer]");
             return telemetryObject.AddComponent<CrashTelemetryBuffer>();
@@ -330,7 +333,7 @@ namespace Hecton8.Core
             int flags = unchecked((int)ErrorBits.CriticalRecovery);
             OrRuntimeFaultFlags(flags);
 
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null)
                 return;
 
@@ -345,7 +348,7 @@ namespace Hecton8.Core
             uint flags = (uint)ErrorBits.CriticalMemoryPressure;
             OrRuntimeFaultFlags(unchecked((int)flags));
 
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
@@ -381,7 +384,7 @@ namespace Hecton8.Core
         public static void ReportBusCongestionWarning(uint queueHash, int pendingCount, int entityCount)
         {
             OrRuntimeFaultFlags((int)ErrorBits.BusCongestionWarning);
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
@@ -403,7 +406,7 @@ namespace Hecton8.Core
         /// <param name="shiftSequence">Committed floating-origin sequence.</param>
         public static void ReportOriginShift(Vector3 shiftOffset, uint shiftSequence)
         {
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
@@ -419,7 +422,7 @@ namespace Hecton8.Core
         public static void ReportKineticAnomaly(Vector3 runtimePosition, Vector3 deltaVelocity, float accelerationMetersPerSecondSq)
         {
             OrRuntimeFaultFlags((int)ErrorBits.KineticAnomaly);
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
@@ -432,7 +435,7 @@ namespace Hecton8.Core
         public static void ReportLateFrameLoadShedding(uint queueHash, int remainingDispatchBudget)
         {
             OrRuntimeFaultFlags((int)ErrorBits.LateFrameLoadShedding);
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
@@ -469,7 +472,7 @@ namespace Hecton8.Core
             uint recentStepHash9)
         {
             OrRuntimeFaultFlags((int)ErrorBits.BootstrapSafeHalt);
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
@@ -509,7 +512,7 @@ namespace Hecton8.Core
         public static void ReportRuntimeWatchdogStall(uint lane, uint counter)
         {
             OrRuntimeFaultFlags((int)ErrorBits.RuntimeWatchdogStall);
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
@@ -526,7 +529,7 @@ namespace Hecton8.Core
         public static void ReportAupJitterCorrection(Vector3 runtimePosition, float correctionMeters)
         {
             OrRuntimeFaultFlags((int)ErrorBits.AupJitterCorrection);
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated)
                 return;
 
@@ -540,7 +543,7 @@ namespace Hecton8.Core
         /// <param name="elapsedMilliseconds">Measured phase duration in milliseconds.</param>
         public static void RecordBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds)
         {
-            CrashTelemetryBuffer instance = _instance;
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
             if (instance == null || !instance._ringBuffer.IsCreated || step == BootstrapStepToken.None)
                 return;
 
@@ -590,18 +593,15 @@ namespace Hecton8.Core
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            CrashTelemetryBuffer registeredInstance = GlobalRegistry.CrashTelemetry;
+            if (registeredInstance != null && registeredInstance != this)
             {
                 Destroy(gameObject);
                 return;
             }
 
-            _instance = this;
             InitializeBuffers();
             ResolveProfilerRecorders();
-
-            if (Application.isPlaying)
-                DontDestroyOnLoad(gameObject);
         }
 
         private void Start()
@@ -611,6 +611,9 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            if (!TryRegisterRuntimeService())
+                return;
+
             Subscribe();
             TryRegister();
         }
@@ -619,6 +622,7 @@ namespace Hecton8.Core
         {
             Unsubscribe();
             TryUnregister();
+            TryUnregisterRuntimeService();
         }
 
         private void OnDestroy()
@@ -626,9 +630,7 @@ namespace Hecton8.Core
             Unsubscribe();
             TryUnregister();
             DisposeBuffers();
-
-            if (_instance == this)
-                _instance = null;
+            TryUnregisterRuntimeService();
         }
 
         private void OnApplicationQuit()
@@ -674,6 +676,10 @@ namespace Hecton8.Core
                         audioOverflowDropCount,
                         Volatile.Read(ref _pendingAudioOverflowBufferedFrames),
                         Volatile.Read(ref _pendingAudioOverflowWritableFrames));
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _audioOverflowDropWarningHash,
+                        _audioOverflowBufferContextHash,
+                        audioOverflowDropCount);
                 }
 
                 uint frameIndex = unchecked((uint)Time.frameCount);
@@ -1217,6 +1223,23 @@ namespace Hecton8.Core
             }
         }
 
+        private bool TryRegisterRuntimeService()
+        {
+            if (_runtimeRegistered || !Application.isPlaying)
+                return true;
+
+            CrashTelemetryBuffer registeredInstance = GlobalRegistry.CrashTelemetry;
+            if (registeredInstance != null && registeredInstance != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
+
+            GlobalRegistry.RegisterCrashTelemetryRuntime(this);
+            _runtimeRegistered = ReferenceEquals(GlobalRegistry.CrashTelemetry, this);
+            return _runtimeRegistered;
+        }
+
         private void TryUnregister()
         {
             if (_registeredTick)
@@ -1230,6 +1253,15 @@ namespace Hecton8.Core
                 GlobalRegistry.UnregisterFixedTickable(this, PriorityLayer.Core);
                 _registeredFixedTick = false;
             }
+        }
+
+        private void TryUnregisterRuntimeService()
+        {
+            if (!_runtimeRegistered)
+                return;
+
+            GlobalRegistry.UnregisterCrashTelemetryRuntime(this);
+            _runtimeRegistered = false;
         }
 
         private void ResolvePlayerTransform(float dt)

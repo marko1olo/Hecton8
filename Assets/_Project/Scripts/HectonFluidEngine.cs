@@ -136,12 +136,9 @@ namespace Hecton8.Physics
         //  SINGLETON
         // ══════════════════════════════════════════════════════════
 
-        private static HectonFluidEngine _instance;
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
             for (int i = 0; i < CavitationShockwaveHitCapacity; i++)
             {
                 s_CavitationShockwaveColliders[i] = null;
@@ -155,10 +152,10 @@ namespace Hecton8.Physics
             get
             {
 #if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
+                if (!Application.isPlaying)
                     return null;
 #endif
-                return _instance;
+                return GlobalRegistry.Fluid;
             }
         }
 
@@ -393,7 +390,7 @@ namespace Hecton8.Physics
             float acceleration,
             int sourceBodyInstanceId)
         {
-            HectonFluidEngine instance = _instance;
+            HectonFluidEngine instance = GlobalRegistry.Fluid;
             return instance != null &&
                    instance.EnqueueCavitationBurst(position, direction, intensity01, radius, acceleration, sourceBodyInstanceId);
         }
@@ -499,16 +496,12 @@ namespace Hecton8.Physics
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            HectonFluidEngine registeredFluid = GlobalRegistry.Fluid;
+            if (Application.isPlaying && registeredFluid != null && !ReferenceEquals(registeredFluid, this))
             {
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
-
-            if (Application.isPlaying)
-                GameBootstrapper.PersistRuntimeService(this);
 
             // Initial observer resolution. If player/camera appears later,
             // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
@@ -544,6 +537,13 @@ namespace Hecton8.Physics
         {
             if (Application.isPlaying && !_fluidRuntimeRegistered)
             {
+                HectonFluidEngine registeredFluid = GlobalRegistry.Fluid;
+                if (registeredFluid != null && !ReferenceEquals(registeredFluid, this))
+                {
+                    Destroy(gameObject);
+                    return;
+                }
+
                 GlobalRegistry.RegisterFluidRuntime(this);
                 _fluidRuntimeRegistered = ReferenceEquals(GlobalRegistry.Fluid, this);
             }
@@ -610,9 +610,6 @@ namespace Hecton8.Physics
                 _postFixedRegistered = false;
             }
             DisposeNativeArrays();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         // ══════════════════════════════════════════════════════════

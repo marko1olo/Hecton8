@@ -1,0 +1,1324 @@
+﻿diff --git a/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs b/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs
+index 022c7f5d..f819141b 100644
+--- a/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs
++++ b/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs
+@@ -110,18 +110,6 @@ namespace Hecton8.Construction
+         private static readonly LogisticsReservation[] s_ReservationPool = CreateReservationPool();
+         private static int s_ReservationPoolCount = ReservationPoolCapacity;
+         private static int s_NextReservationId = 1;
+-        private const int RouteScratchInitialNodeCapacity = 4096;
+-        private const int RouteScratchInitialEdgeCapacity = 8192;
+-        private const string NativeMemoryOwner = nameof(BaseLogisticsNetwork);
+-        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+-        private static NativeArray<int> s_RouteEdgeOffsets;
+-        private static NativeArray<int> s_RouteEdgeDestinations;
+-        private static NativeArray<int> s_RouteEdgeWriteCursor;
+-        private static NativeArray<byte> s_RouteStorageCapacityByNode;
+-        private static NativeArray<byte> s_RouteVisited;
+-        private static NativeArray<int> s_RouteQueue;
+-        private static NativeArray<int> s_RouteResultNodeIndex;
+-
+         [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
+         private static void ResetStaticState()
+         {
+@@ -130,7 +118,7 @@ namespace Hecton8.Construction
+             s_RecyclerEndpoints.Clear();
+             ResetReservationPool();
+             s_NextReservationId = 1;
+-            DisposeRouteScratch();
++            LogisticsRouteScratchMemory.Dispose();
+         }
+ 
+         public static void RegisterStorage(StorageCrate crate, PowerNode node)
+@@ -334,22 +322,22 @@ namespace Hecton8.Construction
+                 return TryResolveFirstStorageEndpoint(grid, out endpointIndex);
+ 
+             int edgeCount = CountTopologyEdges(grid, topologyNodes, nodeCount);
+-            EnsureRouteScratchCapacity(nodeCount, edgeCount);
++            LogisticsRouteScratchMemory.EnsureCapacity(nodeCount, edgeCount);
+             BuildRouteStorageCapacityFlags(grid, topologyNodes, nodeCount);
+             BuildRouteCsr(grid, topologyNodes, nodeCount, edgeCount);
+ 
+-            s_RouteResultNodeIndex[0] = -1;
++            LogisticsRouteScratchMemory.ResultNodeIndex[0] = -1;
+             LogisticsPipeRoutingKernel.ExecuteRouteBfs(
+                 nodeCount,
+                 startNodeIndex,
+-                s_RouteEdgeOffsets,
+-                s_RouteEdgeDestinations,
+-                s_RouteStorageCapacityByNode,
+-                s_RouteVisited,
+-                s_RouteQueue,
+-                s_RouteResultNodeIndex);
+-
+-            int targetNodeIndex = s_RouteResultNodeIndex[0];
++                LogisticsRouteScratchMemory.EdgeOffsets,
++                LogisticsRouteScratchMemory.EdgeDestinations,
++                LogisticsRouteScratchMemory.StorageCapacityByNode,
++                LogisticsRouteScratchMemory.Visited,
++                LogisticsRouteScratchMemory.Queue,
++                LogisticsRouteScratchMemory.ResultNodeIndex);
++
++            int targetNodeIndex = LogisticsRouteScratchMemory.ResultNodeIndex[0];
+             if (targetNodeIndex < 0 || targetNodeIndex >= nodeCount)
+                 return false;
+ 
+@@ -425,7 +413,7 @@ namespace Hecton8.Construction
+         private static void BuildRouteStorageCapacityFlags(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount)
+         {
+             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+-                s_RouteStorageCapacityByNode[nodeIndex] = 0;
++                LogisticsRouteScratchMemory.StorageCapacityByNode[nodeIndex] = 0;
+ 
+             for (int endpointIndex = 0; endpointIndex < s_StorageEndpoints.Count; endpointIndex++)
+             {
+@@ -442,7 +430,7 @@ namespace Hecton8.Construction
+                     nodeIndex >= 0 &&
+                     nodeIndex < nodeCount)
+                 {
+-                    s_RouteStorageCapacityByNode[nodeIndex] = 1;
++                    LogisticsRouteScratchMemory.StorageCapacityByNode[nodeIndex] = 1;
+                 }
+             }
+         }
+@@ -450,7 +438,7 @@ namespace Hecton8.Construction
+         private static void BuildRouteCsr(PowerGrid grid, List<PowerNode> topologyNodes, int nodeCount, int edgeCount)
+         {
+             for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
+-                s_RouteEdgeOffsets[nodeIndex] = 0;
++                LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex] = 0;
+ 
+             for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
+             {
+@@ -471,14 +459,18 @@ namespace Hecton8.Construction
+                         outDegree++;
+                 }
+ 
+-                s_RouteEdgeOffsets[sourceIndex + 1] = outDegree;
++                LogisticsRouteScratchMemory.EdgeOffsets[sourceIndex + 1] = outDegree;
+             }
+ 
+             for (int nodeIndex = 1; nodeIndex <= nodeCount; nodeIndex++)
+-                s_RouteEdgeOffsets[nodeIndex] = s_RouteEdgeOffsets[nodeIndex] + s_RouteEdgeOffsets[nodeIndex - 1];
++            {
++                LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex] =
++                    LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex] +
++                    LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex - 1];
++            }
+ 
+             for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
+-                s_RouteEdgeWriteCursor[nodeIndex] = s_RouteEdgeOffsets[nodeIndex];
++                LogisticsRouteScratchMemory.EdgeWriteCursor[nodeIndex] = LogisticsRouteScratchMemory.EdgeOffsets[nodeIndex];
+ 
+             for (int sourceIndex = 0; sourceIndex < nodeCount; sourceIndex++)
+             {
+@@ -497,12 +489,12 @@ namespace Hecton8.Construction
+                     if (!TryResolveTopologyNodeIndex(topologyNodes, neighbor, out int destinationIndex))
+                         continue;
+ 
+-                    int writeIndex = s_RouteEdgeWriteCursor[sourceIndex];
++                    int writeIndex = LogisticsRouteScratchMemory.EdgeWriteCursor[sourceIndex];
+                     if (writeIndex < 0 || writeIndex >= edgeCount)
+                         continue;
+ 
+-                    s_RouteEdgeWriteCursor[sourceIndex] = writeIndex + 1;
+-                    s_RouteEdgeDestinations[writeIndex] = destinationIndex;
++                    LogisticsRouteScratchMemory.EdgeWriteCursor[sourceIndex] = writeIndex + 1;
++                    LogisticsRouteScratchMemory.EdgeDestinations[writeIndex] = destinationIndex;
+                 }
+             }
+         }
+@@ -892,63 +884,25 @@ namespace Hecton8.Construction
+             return remaining <= 0;
+         }
+ 
+-        private static void EnsureRouteScratchCapacity(int nodeCount, int edgeCount)
+-        {
+-            EnsureNativeIntArray(ref s_RouteEdgeOffsets, math.max(RouteScratchInitialNodeCapacity + 1, nodeCount + 1), nameof(s_RouteEdgeOffsets));
+-            EnsureNativeIntArray(ref s_RouteEdgeDestinations, math.max(RouteScratchInitialEdgeCapacity, edgeCount), nameof(s_RouteEdgeDestinations));
+-            EnsureNativeIntArray(ref s_RouteEdgeWriteCursor, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteEdgeWriteCursor));
+-            EnsureNativeByteArray(ref s_RouteStorageCapacityByNode, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteStorageCapacityByNode));
+-            EnsureNativeByteArray(ref s_RouteVisited, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteVisited));
+-            EnsureNativeIntArray(ref s_RouteQueue, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteQueue));
+-            EnsureNativeIntArray(ref s_RouteResultNodeIndex, 1, nameof(s_RouteResultNodeIndex));
+-        }
+-
+-        private static void EnsureNativeIntArray(ref NativeArray<int> array, int requiredLength, string label)
+-        {
+-            int safeLength = math.max(1, requiredLength);
+-            if (array.IsCreated && array.Length >= safeLength)
+-                return;
+-
+-            DisposeNativeArray(ref array);
+-            array = new NativeArray<int>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+-            RegisterNativeArray(array, label);
+-        }
+-
+-        private static void EnsureNativeByteArray(ref NativeArray<byte> array, int requiredLength, string label)
++        public static void ExecuteLogisticsRouteBfs(
++            int nodeCount,
++            int startNodeIndex,
++            NativeArray<int> edgeOffsets,
++            NativeArray<int> edgeDestinations,
++            NativeArray<byte> storageCapacityByNode,
++            NativeArray<byte> visited,
++            NativeArray<int> queue,
++            NativeArray<int> resultNodeIndex)
+         {
+-            int safeLength = math.max(1, requiredLength);
+-            if (array.IsCreated && array.Length >= safeLength)
+-                return;
+-
+-            DisposeNativeArray(ref array);
+-            array = new NativeArray<byte>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+-            RegisterNativeArray(array, label);
+-        }
+-
+-        private static void DisposeRouteScratch()
+-        {
+-            DisposeNativeArray(ref s_RouteEdgeOffsets);
+-            DisposeNativeArray(ref s_RouteEdgeDestinations);
+-            DisposeNativeArray(ref s_RouteEdgeWriteCursor);
+-            DisposeNativeArray(ref s_RouteStorageCapacityByNode);
+-            DisposeNativeArray(ref s_RouteVisited);
+-            DisposeNativeArray(ref s_RouteQueue);
+-            DisposeNativeArray(ref s_RouteResultNodeIndex);
+-        }
+-
+-        private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
+-        {
+-            if (!array.IsCreated)
+-                return;
+-
+-            NativeMemorySentinel.UnregisterNativeArray(array);
+-            array.Dispose();
+-            array = default;
+-        }
+-
+-        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+-        {
+-            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
++            LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                nodeCount,
++                startNodeIndex,
++                edgeOffsets,
++                edgeDestinations,
++                storageCapacityByNode,
++                visited,
++                queue,
++                resultNodeIndex);
+         }
+ 
+         private static int GetNextReservationId()
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistry.cs b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+index ac7984f5..9b76ec75 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistry.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+@@ -56,6 +56,8 @@ namespace Hecton8.Core
+         // COLD ALLOC: NoOpInputService[1] - null-object fallback for premature GlobalRegistry.Input reads - owner: GlobalRegistry
+         private static readonly IInputService _noOpInputService = new NoOpInputService();
+         private static readonly uint _inputDependencyWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.Input"));
++        private static readonly uint _serviceReboundOverflowWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.ServiceReboundOverflow"));
++        private static readonly uint _globalRegistryTelemetryContextHash = unchecked((uint)LocHash.Compute("GlobalRegistry"));
+         private const int MaxPendingServiceRebounds = 64;
+         private const uint PlayerResolutionMask =
+             (1u << (int)GlobalRegistryResolutionScope.PlayerContext) |
+@@ -128,12 +130,19 @@ namespace Hecton8.Core
+         private static IFluidSim _fluidSimulation;
+         private static ILogisticsService _logistics;
+         private static IWorldGenService _worldGen;
++        private static IWorldSeedProvider _worldSeedProvider;
++        private static WorldProceduralFieldSampler _proceduralFieldSamplerRuntime;
++        private static ResourceDistributionDirector _resourceDistributionRuntime;
++        private static WorldGenerativeGeologyTerrainSeamApplier _geologyTerrainSeamRuntime;
++        private static WorldGenerativeGeologyVoxelBridgeDirector _geologyVoxelBridgeRuntime;
+         private static IEncounterDirectorService _encounterDirector;
+         private static IQuestSystem _questSystem;
+         private static PersistentWorldRegistry _persistentWorldRegistry;
+         private static WorldStateManager _worldStateRuntime;
+         private static IPDALogbookService _pdaLogbook;
+         private static IProfileService _profile;
++        private static EclipseGameplaySystem _eclipseGameplayRuntime;
++        private static RandomEventSystem _randomEventRuntime;
+         private static HectonFluidEngine _fluidRuntime;
+         private static AbyssalThermalManager _thermodynamicsRuntime;
+         private static HectonNarrativeDirector _narrativeDirectorRuntime;
+@@ -152,6 +161,7 @@ namespace Hecton8.Core
+         private static FirstHourDirector _firstHourRuntime;
+         private static EmergencyServiceRelayDirector _emergencyRelayRuntime;
+         private static HectonAtmosphereManager _atmosphereRuntime;
++        private static MapMagicBridge _mapMagicRuntime;
+         private static BeaconNetworkSystem _beaconNetworkRuntime;
+         private static ScanLogSystem _scanLogRuntime;
+         private static ToolDurabilitySystem _toolDurabilityRuntime;
+@@ -197,6 +207,8 @@ namespace Hecton8.Core
+         private static UIRTManager _uiRTRuntime;
+         private static SettingsManager _settingsRuntime;
+         private static RuntimeWatchdog _runtimeWatchdogRuntime;
++        private static CrashTelemetryBuffer _crashTelemetryRuntime;
++        private static PlayerCriticalProceduralAudioRenderer _playerCriticalAudioRuntime;
+         private static GameTickManager _tickManager;
+         private static SystemDispatcher _dispatcher;
+         private static RenderDispatcher _renderDispatcher;
+@@ -269,6 +281,16 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IAudioService Audio => _audio;
+ 
++        /// <summary>
++        /// Authoritative crash telemetry runtime owner.
++        /// </summary>
++        public static CrashTelemetryBuffer CrashTelemetry => _crashTelemetryRuntime;
++
++        /// <summary>
++        /// Authoritative player critical procedural audio runtime owner.
++        /// </summary>
++        public static PlayerCriticalProceduralAudioRenderer PlayerCriticalAudio => _playerCriticalAudioRuntime;
++
+         /// <summary>
+         /// Registered scene service slot.
+         /// </summary>
+@@ -446,6 +468,36 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IWorldGenService WorldGen => _worldGen;
+ 
++        /// <summary>
++        /// Registered deterministic world-seed provider slot.
++        /// </summary>
++        public static IWorldSeedProvider WorldSeedProvider => _worldSeedProvider;
++
++        /// <summary>
++        /// Registered concrete procedural scatter runtime owner.
++        /// </summary>
++        public static WorldProceduralScatterDirector ProceduralScatter => _worldGen as WorldProceduralScatterDirector;
++
++        /// <summary>
++        /// Registered concrete procedural field sampler runtime owner.
++        /// </summary>
++        public static WorldProceduralFieldSampler ProceduralFieldSampler => _proceduralFieldSamplerRuntime;
++
++        /// <summary>
++        /// Registered concrete resource-distribution runtime owner.
++        /// </summary>
++        public static ResourceDistributionDirector ResourceDistribution => _resourceDistributionRuntime;
++
++        /// <summary>
++        /// Registered terrain/voxel seam applier runtime owner.
++        /// </summary>
++        public static WorldGenerativeGeologyTerrainSeamApplier GeologyTerrainSeam => _geologyTerrainSeamRuntime;
++
++        /// <summary>
++        /// Registered geology voxel bridge runtime owner.
++        /// </summary>
++        public static WorldGenerativeGeologyVoxelBridgeDirector GeologyVoxelBridge => _geologyVoxelBridgeRuntime;
++
+         /// <summary>
+         /// Registered encounter-direction service slot.
+         /// </summary>
+@@ -476,6 +528,16 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IProfileService Profile => _profile;
+ 
++        /// <summary>
++        /// Registered eclipse-gameplay runtime owner.
++        /// </summary>
++        public static EclipseGameplaySystem EclipseGameplay => _eclipseGameplayRuntime;
++
++        /// <summary>
++        /// Registered random-event runtime owner.
++        /// </summary>
++        public static RandomEventSystem RandomEvents => _randomEventRuntime;
++
+         /// <summary>
+         /// Registered fluid simulation runtime owner.
+         /// </summary>
+@@ -566,6 +628,11 @@ namespace Hecton8.Core
+         /// </summary>
+         public static HectonAtmosphereManager Atmosphere => _atmosphereRuntime;
+ 
++        /// <summary>
++        /// Registered MapMagic bridge runtime owner.
++        /// </summary>
++        public static MapMagicBridge MapMagic => _mapMagicRuntime;
++
+         /// <summary>
+         /// Registered beacon-network runtime owner.
+         /// </summary>
+@@ -897,6 +964,11 @@ namespace Hecton8.Core
+             _fluidSimulation = null;
+             _logistics = null;
+             _worldGen = null;
++            _worldSeedProvider = null;
++            _proceduralFieldSamplerRuntime = null;
++            _resourceDistributionRuntime = null;
++            _geologyTerrainSeamRuntime = null;
++            _geologyVoxelBridgeRuntime = null;
+             _encounterDirector = null;
+             _questSystem = null;
+             _persistentWorldRegistry = null;
+@@ -921,6 +993,7 @@ namespace Hecton8.Core
+             _firstHourRuntime = null;
+             _emergencyRelayRuntime = null;
+             _atmosphereRuntime = null;
++            _mapMagicRuntime = null;
+             _beaconNetworkRuntime = null;
+             _scanLogRuntime = null;
+             _toolDurabilityRuntime = null;
+@@ -966,6 +1039,8 @@ namespace Hecton8.Core
+             _uiRTRuntime = null;
+             _settingsRuntime = null;
+             _runtimeWatchdogRuntime = null;
++            _crashTelemetryRuntime = null;
++            _playerCriticalAudioRuntime = null;
+             _tickManager = null;
+             _dispatcher = null;
+             _renderDispatcher = null;
+@@ -1301,6 +1376,47 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _worldGen, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the deterministic world-seed provider.
++        /// </summary>
++        /// <param name="instance">World-seed provider instance.</param>
++        public static void RegisterWorldSeedProvider(IWorldSeedProvider instance)
++        {
++            RegisterServiceAllowSameInstance(ref _worldSeedProvider, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative procedural field sampler runtime owner.
++        /// </summary>
++        public static void RegisterProceduralFieldSampler(WorldProceduralFieldSampler instance)
++        {
++            RegisterServiceAllowSameInstance(ref _proceduralFieldSamplerRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative resource-distribution runtime owner.
++        /// </summary>
++        public static void RegisterResourceDistribution(ResourceDistributionDirector instance)
++        {
++            RegisterServiceAllowSameInstance(ref _resourceDistributionRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative terrain/voxel seam applier runtime owner.
++        /// </summary>
++        public static void RegisterGeologyTerrainSeamRuntime(WorldGenerativeGeologyTerrainSeamApplier instance)
++        {
++            RegisterServiceAllowSameInstance(ref _geologyTerrainSeamRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative geology voxel bridge runtime owner.
++        /// </summary>
++        public static void RegisterGeologyVoxelBridgeRuntime(WorldGenerativeGeologyVoxelBridgeDirector instance)
++        {
++            RegisterServiceAllowSameInstance(ref _geologyVoxelBridgeRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative encounter-direction service.
+         /// </summary>
+@@ -1351,6 +1467,22 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _profile, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative eclipse-gameplay runtime owner.
++        /// </summary>
++        public static void RegisterEclipseGameplayRuntime(EclipseGameplaySystem instance)
++        {
++            RegisterService(ref _eclipseGameplayRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative random-event runtime owner.
++        /// </summary>
++        public static void RegisterRandomEventRuntime(RandomEventSystem instance)
++        {
++            RegisterService(ref _randomEventRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative fluid simulation runtime owner.
+         /// </summary>
+@@ -1453,6 +1585,22 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _audioLogRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative crash telemetry runtime owner.
++        /// </summary>
++        public static void RegisterCrashTelemetryRuntime(CrashTelemetryBuffer instance)
++        {
++            RegisterServiceAllowSameInstance(ref _crashTelemetryRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative player critical procedural audio owner.
++        /// </summary>
++        public static void RegisterPlayerCriticalAudioRuntime(PlayerCriticalProceduralAudioRenderer instance)
++        {
++            RegisterServiceAllowSameInstance(ref _playerCriticalAudioRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative acoustic-zone runtime owner.
+         /// </summary>
+@@ -1501,6 +1649,14 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _atmosphereRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative MapMagic bridge runtime owner.
++        /// </summary>
++        public static void RegisterMapMagicRuntime(MapMagicBridge instance)
++        {
++            RegisterServiceAllowSameInstance(ref _mapMagicRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative beacon-network runtime owner.
+         /// </summary>
+@@ -2102,6 +2258,47 @@ namespace Hecton8.Core
+             UnregisterService(ref _worldGen, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current deterministic world-seed provider if the owner matches.
++        /// </summary>
++        /// <param name="instance">Service owner requesting unregistration.</param>
++        public static void UnregisterWorldSeedProvider(IWorldSeedProvider instance)
++        {
++            UnregisterService(ref _worldSeedProvider, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current procedural field sampler runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterProceduralFieldSampler(WorldProceduralFieldSampler instance)
++        {
++            UnregisterService(ref _proceduralFieldSamplerRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current resource-distribution runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterResourceDistribution(ResourceDistributionDirector instance)
++        {
++            UnregisterService(ref _resourceDistributionRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current terrain/voxel seam applier runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterGeologyTerrainSeamRuntime(WorldGenerativeGeologyTerrainSeamApplier instance)
++        {
++            UnregisterService(ref _geologyTerrainSeamRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current geology voxel bridge runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterGeologyVoxelBridgeRuntime(WorldGenerativeGeologyVoxelBridgeDirector instance)
++        {
++            UnregisterService(ref _geologyVoxelBridgeRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current encounter-direction service if the owner matches.
+         /// </summary>
+@@ -2152,6 +2349,22 @@ namespace Hecton8.Core
+             UnregisterService(ref _profile, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current eclipse-gameplay runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterEclipseGameplayRuntime(EclipseGameplaySystem instance)
++        {
++            UnregisterService(ref _eclipseGameplayRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current random-event runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterRandomEventRuntime(RandomEventSystem instance)
++        {
++            UnregisterService(ref _randomEventRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current fluid simulation runtime owner if the owner matches.
+         /// </summary>
+@@ -2254,6 +2467,22 @@ namespace Hecton8.Core
+             UnregisterService(ref _audioLogRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current crash telemetry runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterCrashTelemetryRuntime(CrashTelemetryBuffer instance)
++        {
++            UnregisterService(ref _crashTelemetryRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current player critical procedural audio owner if the owner matches.
++        /// </summary>
++        public static void UnregisterPlayerCriticalAudioRuntime(PlayerCriticalProceduralAudioRenderer instance)
++        {
++            UnregisterService(ref _playerCriticalAudioRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current acoustic-zone runtime owner if the owner matches.
+         /// </summary>
+@@ -2302,6 +2531,14 @@ namespace Hecton8.Core
+             UnregisterService(ref _atmosphereRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current MapMagic bridge runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterMapMagicRuntime(MapMagicBridge instance)
++        {
++            UnregisterService(ref _mapMagicRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current beacon-network runtime owner if the owner matches.
+         /// </summary>
+@@ -3221,6 +3458,7 @@ namespace Hecton8.Core
+             EnsureServiceReboundQueue();
+             if (_pendingServiceReboundCount + _nextFrameServiceReboundCount >= MaxPendingServiceRebounds)
+             {
++                PublishServiceReboundOverflowWarning();
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                 if (!_serviceReboundOverflowLogged)
+                 {
+@@ -3234,6 +3472,7 @@ namespace Hecton8.Core
+             int referenceSlot = ReserveServiceReboundReferenceSlot(previousService, currentService);
+             if (referenceSlot < 0)
+             {
++                PublishServiceReboundOverflowWarning();
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                 if (!_serviceReboundOverflowLogged)
+                 {
+@@ -3266,6 +3505,14 @@ namespace Hecton8.Core
+             }
+         }
+ 
++        private static void PublishServiceReboundOverflowWarning()
++        {
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                _serviceReboundOverflowWarningHash,
++                _globalRegistryTelemetryContextHash,
++                _pendingServiceReboundCount + _nextFrameServiceReboundCount);
++        }
++
+         private static void EnsureServiceReboundQueue()
+         {
+             if (!_pendingServiceRebounds.IsCreated)
+@@ -3401,12 +3648,19 @@ namespace Hecton8.Core
+             if (serviceType == typeof(IFluidSim)) return GlobalRegistryServiceSlot.FluidSimulation;
+             if (serviceType == typeof(ILogisticsService)) return GlobalRegistryServiceSlot.Logistics;
+             if (serviceType == typeof(IWorldGenService)) return GlobalRegistryServiceSlot.WorldGen;
++            if (serviceType == typeof(IWorldSeedProvider)) return GlobalRegistryServiceSlot.WorldSeedProvider;
++            if (serviceType == typeof(WorldProceduralFieldSampler)) return GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime;
++            if (serviceType == typeof(ResourceDistributionDirector)) return GlobalRegistryServiceSlot.ResourceDistributionRuntime;
++            if (serviceType == typeof(WorldGenerativeGeologyTerrainSeamApplier)) return GlobalRegistryServiceSlot.GeologyTerrainSeamRuntime;
++            if (serviceType == typeof(WorldGenerativeGeologyVoxelBridgeDirector)) return GlobalRegistryServiceSlot.GeologyVoxelBridgeRuntime;
+             if (serviceType == typeof(IEncounterDirectorService)) return GlobalRegistryServiceSlot.EncounterDirector;
+             if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
+             if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
+             if (serviceType == typeof(WorldStateManager)) return GlobalRegistryServiceSlot.WorldStateRuntime;
+             if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
+             if (serviceType == typeof(IProfileService)) return GlobalRegistryServiceSlot.Profile;
++            if (serviceType == typeof(EclipseGameplaySystem)) return GlobalRegistryServiceSlot.EclipseGameplayRuntime;
++            if (serviceType == typeof(RandomEventSystem)) return GlobalRegistryServiceSlot.RandomEventRuntime;
+             if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;
+             if (serviceType == typeof(AbyssalThermalManager)) return GlobalRegistryServiceSlot.ThermodynamicsRuntime;
+             if (serviceType == typeof(HectonNarrativeDirector)) return GlobalRegistryServiceSlot.NarrativeDirectorRuntime;
+@@ -3419,12 +3673,15 @@ namespace Hecton8.Core
+             if (serviceType == typeof(HectonBiolumManager)) return GlobalRegistryServiceSlot.BiolumManagerRuntime;
+             if (serviceType == typeof(LocalizationManager)) return GlobalRegistryServiceSlot.LocalizationRuntime;
+             if (serviceType == typeof(AudioLogSystem)) return GlobalRegistryServiceSlot.AudioLogRuntime;
++            if (serviceType == typeof(CrashTelemetryBuffer)) return GlobalRegistryServiceSlot.CrashTelemetryRuntime;
++            if (serviceType == typeof(PlayerCriticalProceduralAudioRenderer)) return GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime;
+             if (serviceType == typeof(AcousticZoneController)) return GlobalRegistryServiceSlot.AcousticZoneRuntime;
+             if (serviceType == typeof(HectonSurfaceWeatherDirector)) return GlobalRegistryServiceSlot.SurfaceWeatherRuntime;
+             if (serviceType == typeof(AtlasSignalSystem)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
+             if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
+             if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
+             if (serviceType == typeof(HectonAtmosphereManager)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
++            if (serviceType == typeof(MapMagicBridge)) return GlobalRegistryServiceSlot.MapMagicRuntime;
+             if (serviceType == typeof(BeaconNetworkSystem)) return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
+             if (serviceType == typeof(ScanLogSystem)) return GlobalRegistryServiceSlot.ScanLogRuntime;
+             if (serviceType == typeof(ToolDurabilitySystem)) return GlobalRegistryServiceSlot.ToolDurabilityRuntime;
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+index 092fc372..87362c53 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+@@ -1080,6 +1080,22 @@ namespace Hecton8.Core
+         void ClearScatterPreview();
+     }
+ 
++    /// <summary>
++    /// Deterministic world-seed provider exposed through <see cref="GlobalRegistry"/> for save/header validation.
++    /// </summary>
++    public interface IWorldSeedProvider
++    {
++        /// <summary>
++        /// True once the seed owner is registered and ready to answer save/load validation queries.
++        /// </summary>
++        bool IsInitialized { get; }
++
++        /// <summary>
++        /// Runtime world seed used by procedural geology and save-header consistency checks.
++        /// </summary>
++        int RuntimeWorldSeed { get; }
++    }
++
+     /// <summary>
+     /// Authoritative encounter-direction service exposed through <see cref="GlobalRegistry"/>.
+     /// </summary>
+@@ -1407,6 +1423,16 @@ namespace Hecton8.Core
+         UIRTRuntime = 97,
+         SettingsRuntime = 98,
+         RuntimeWatchdogRuntime = 99,
++        CrashTelemetryRuntime = 100,
++        PlayerCriticalAudioRuntime = 101,
++        MapMagicRuntime = 102,
++        ProceduralFieldSamplerRuntime = 103,
++        ResourceDistributionRuntime = 104,
++        RandomEventRuntime = 105,
++        EclipseGameplayRuntime = 106,
++        WorldSeedProvider = 107,
++        GeologyTerrainSeamRuntime = 108,
++        GeologyVoxelBridgeRuntime = 109,
+         Unknown = 255
+     }
+ 
+diff --git a/Assets/_Project/Scripts/HectonAtmosphereManager.cs b/Assets/_Project/Scripts/HectonAtmosphereManager.cs
+index ecf271b9..3df8965c 100644
+--- a/Assets/_Project/Scripts/HectonAtmosphereManager.cs
++++ b/Assets/_Project/Scripts/HectonAtmosphereManager.cs
+@@ -335,17 +335,9 @@ namespace Hecton8.Atmosphere
+ 
+         #region ══════════ Singleton ══════════
+ 
+-        private static HectonAtmosphereManager _instance;
+-
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState()
+-        {
+-            _instance = null;
+-        }
+-
+         public static HectonAtmosphereManager Instance
+         {
+-            get { return _instance; }
++            get { return GlobalRegistry.Atmosphere; }
+         }
+ 
+         #endregion
+@@ -563,16 +555,12 @@ namespace Hecton8.Atmosphere
+         {
+             if (Application.isPlaying)
+             {
+-                if (_instance != null && _instance != this)
++                HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
++                if (registeredAtmosphere != null && !ReferenceEquals(registeredAtmosphere, this))
+                 {
+                     Destroy(this);
+                     return;
+                 }
+-                _instance = this;
+-            }
+-            else
+-            {
+-                _instance = this;
+             }
+ 
+             _registeredToTickManager = false;
+@@ -642,6 +630,7 @@ namespace Hecton8.Atmosphere
+ 
+         private void OnDisable()
+         {
++            bool wasRegisteredRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+             _autoUnderwaterState = false;
+ 
+             if (Application.isPlaying)
+@@ -659,12 +648,13 @@ namespace Hecton8.Atmosphere
+             }
+ #endif
+ 
+-            if (_instance == this)
++            if (!Application.isPlaying || wasRegisteredRuntime)
+                 ResetCycleShaderGlobals();
+         }
+ 
+         private void OnDestroy()
+         {
++            bool wasRegisteredRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+             if (Application.isPlaying)
+             {
+                 MapMagicBiomeEvents.Unregister(this);
+@@ -673,10 +663,8 @@ namespace Hecton8.Atmosphere
+                 TryUnregisterService();
+             }
+ 
+-            if (_instance != this) return;
+-            _instance = null;
+-
+-            ResetCycleShaderGlobals();
++            if (!Application.isPlaying || wasRegisteredRuntime)
++                ResetCycleShaderGlobals();
+ 
+         }
+ 
+@@ -706,6 +694,13 @@ namespace Hecton8.Atmosphere
+             if (_registeredAtmosphereRuntime || !Application.isPlaying)
+                 return;
+ 
++            HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
++            if (registeredAtmosphere != null && !ReferenceEquals(registeredAtmosphere, this))
++            {
++                Destroy(this);
++                return;
++            }
++
+             GlobalRegistry.RegisterAtmosphereRuntime(this);
+             _registeredAtmosphereRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+         }
+diff --git a/Assets/_Project/Scripts/MapMagicBridge.cs b/Assets/_Project/Scripts/MapMagicBridge.cs
+index 29702ae6..1ba2f204 100644
+--- a/Assets/_Project/Scripts/MapMagicBridge.cs
++++ b/Assets/_Project/Scripts/MapMagicBridge.cs
+@@ -215,26 +215,18 @@ namespace Hecton8.Core
+         private const string TectonicSpineFamilyId = "biome.family.tectonic_spine";
+ 
+         // ══════════════════════════════════════════════════════════
+-        //  SINGLETON
++        //  RUNTIME AUTHORITY
+         // ══════════════════════════════════════════════════════════
+ 
+-        private static MapMagicBridge _instance;
+-
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState()
+-        {
+-            _instance = null;
+-        }
+-
+         public static MapMagicBridge Instance
+         {
+             get
+             {
+ #if UNITY_EDITOR
+-                if (_instance == null && !Application.isPlaying)
++                if (!Application.isPlaying)
+                     return null;
+ #endif
+-                return _instance;
++                return GlobalRegistry.MapMagic;
+             }
+         }
+ 
+@@ -308,6 +300,7 @@ namespace Hecton8.Core
+         /// Registration tracking flag for GameTickManager.
+         /// </summary>
+         private bool _registeredToTickManager;
++        private bool _registeredMapMagicRuntime;
+ 
+         /// <summary>
+         /// v3.1: Flag indicating biome detection has been attempted at least once.
+@@ -377,14 +370,6 @@ namespace Hecton8.Core
+         private void Awake()
+         {
+             // ── Singleton ──
+-            if (_instance != null && _instance != this)
+-            {
+-                Destroy(gameObject);
+-                return;
+-            }
+-
+-            _instance = this;
+-
+             TryResolveCoLocatedMapMagicObject();
+             ReportMissingMapMagicBindingIfNeeded();
+ 
+@@ -413,11 +398,13 @@ namespace Hecton8.Core
+ 
+         private void OnEnable()
+         {
++            TryRegisterMapMagicRuntime();
+             TryRegisterToTickManager();
+         }
+ 
+         private void Start()
+         {
++            TryRegisterMapMagicRuntime();
+             TryRegisterToTickManager();
+ 
+             // ── Initial biome detection ──
+@@ -428,14 +415,40 @@ namespace Hecton8.Core
+         private void OnDisable()
+         {
+             TryUnregisterFromTickManager();
++            TryUnregisterMapMagicRuntime();
+         }
+ 
+         private void OnDestroy()
+         {
+-            if (_instance == this)
++            TryUnregisterFromTickManager();
++            TryUnregisterMapMagicRuntime();
++        }
++
++        private void TryRegisterMapMagicRuntime()
++        {
++            if (_registeredMapMagicRuntime || !Application.isPlaying)
++                return;
++
++            MapMagicBridge current = GlobalRegistry.MapMagic;
++            if (current != null && !ReferenceEquals(current, this))
+             {
+-                _instance = null;
++                Destroy(gameObject);
++                return;
+             }
++
++            GlobalRegistry.RegisterMapMagicRuntime(this);
++            _registeredMapMagicRuntime = ReferenceEquals(GlobalRegistry.MapMagic, this);
++        }
++
++        private void TryUnregisterMapMagicRuntime()
++        {
++            if (!_registeredMapMagicRuntime)
++                return;
++
++            if (ReferenceEquals(GlobalRegistry.MapMagic, this))
++                GlobalRegistry.UnregisterMapMagicRuntime(this);
++
++            _registeredMapMagicRuntime = false;
+         }
+ 
+         private void TryRegisterToTickManager()
+diff --git a/Assets/_Project/Scripts/Visor/HectonFlashlightVoxelShadowProvider.cs b/Assets/_Project/Scripts/Visor/HectonFlashlightVoxelShadowProvider.cs
+index 53b48c3a..6a49a0cf 100644
+--- a/Assets/_Project/Scripts/Visor/HectonFlashlightVoxelShadowProvider.cs
++++ b/Assets/_Project/Scripts/Visor/HectonFlashlightVoxelShadowProvider.cs
+@@ -76,6 +76,7 @@ namespace Hecton8.Visor
+         [Tooltip("Adds deterministic low-cost flashlight shadow shimmer while voxel occlusion is stale or rebuilding.")]
+         [SerializeField] private bool enableNoirSignalInstability = true;
+ 
++        [Tooltip("Maximum deterministic dimming/shadow-floor shimmer applied while the flashlight SDF is rebuilding.")]
+         [SerializeField, Range(0f, 0.35f)] private float noirSignalInstabilityStrength = DefaultSignalInstabilityStrength;
+ 
+         [Header("── Diagnostics ─────────────────")]
+@@ -115,6 +116,10 @@ namespace Hecton8.Visor
+         private Vector3 _publishedHalfExtents;
+         private float _publishedSdfRange;
+         private float _nextLightResolveTime;
++        private float _nextTelemetryOverlapSaturationTime;
++        private float _nextTelemetryLongScanTime;
++        private float _nextTelemetryDegenerateSdfTime;
++        private int _scanTickCount;
+ 
+         private void Awake()
+         {
+@@ -210,6 +215,11 @@ namespace Hecton8.Visor
+                     _restartQueued = false;
+                 }
+             }
++            else if (_scanInProgress)
++            {
++                _scanTickCount++;
++                PublishLongScanTelemetryIfNeeded();
++            }
+ 
+             PublishLightGlobals(_hasValidPublishedVolume);
+             _debugHasValidVolume = _hasValidPublishedVolume;
+@@ -257,8 +267,18 @@ namespace Hecton8.Visor
+             int voxelCount = clampedResolution * clampedResolution * clampedResolution;
+             // COLD ALLOC: NativeArray<byte>[voxelCount] — flashlight-local voxel occupancy volume staging — owner: HectonFlashlightVoxelShadowProvider
+             _occupancyVolume = new NativeArray<byte>(voxelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            NativeMemorySentinel.RegisterNativeArray(
++                _occupancyVolume,
++                nameof(HectonFlashlightVoxelShadowProvider),
++                nameof(_occupancyVolume),
++                NativeAllocationLifetime.Scene);
+             // COLD ALLOC: NativeArray<byte>[voxelCount] — flashlight-local signed-distance texture payload — owner: HectonFlashlightVoxelShadowProvider
+             _sdfVolume = new NativeArray<byte>(voxelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
++            NativeMemorySentinel.RegisterNativeArray(
++                _sdfVolume,
++                nameof(HectonFlashlightVoxelShadowProvider),
++                nameof(_sdfVolume),
++                NativeAllocationLifetime.Scene);
+             // COLD ALLOC: Collider[8] — reusable overlap-box hit cache for flashlight voxelization — owner: HectonFlashlightVoxelShadowProvider
+             _overlapHits = new Collider[MaxOverlapHits];
+             // COLD ALLOC: Vector3[voxelCount] — current sweep voxel-center cache for SDF encoding — owner: HectonFlashlightVoxelShadowProvider
+@@ -288,10 +308,16 @@ namespace Hecton8.Visor
+         private void ReleaseResources()
+         {
+             if (_occupancyVolume.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_occupancyVolume);
+                 _occupancyVolume.Dispose();
++            }
+ 
+             if (_sdfVolume.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_sdfVolume);
+                 _sdfVolume.Dispose();
++            }
+ 
+             if (_voxelDensityTexture != null)
+                 Destroy(_voxelDensityTexture);
+@@ -306,6 +332,8 @@ namespace Hecton8.Visor
+             _hasValidPublishedVolume = false;
+             _scanInProgress = false;
+             _restartQueued = false;
++            _scanTickCount = 0;
++            _debugSignalInstability01 = 0f;
+         }
+ 
+         private bool TryResolveFlashlightLight(bool force = false)
+@@ -427,6 +455,7 @@ namespace Hecton8.Visor
+             _scanLocalToWorld = Matrix4x4.TRS(centerWs, rotationWs, Vector3.one);
+             _scanSliceCursor = 0;
+             _scanInProgress = true;
++            _scanTickCount = 0;
+         }
+ 
+         private void ScanSlice(int zIndex)
+@@ -462,6 +491,13 @@ namespace Hecton8.Visor
+                 _scanRotationWs,
+                 occluderLayers,
+                 triggerInteraction);
++            if (hitCount >= _overlapHits.Length)
++            {
++                PublishPerformanceWarningRateLimited(
++                    TelemetryWarningOverlapSaturatedHash,
++                    ref _nextTelemetryOverlapSaturationTime,
++                    hitCount);
++            }
+ 
+             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+             {
+@@ -519,6 +555,10 @@ namespace Hecton8.Visor
+ 
+             if (occupiedCount <= 0)
+             {
++                PublishPerformanceWarningRateLimited(
++                    TelemetryWarningDegenerateSdfHash,
++                    ref _nextTelemetryDegenerateSdfTime,
++                    0f);
+                 for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
+                     _sdfVolume[voxelIndex] = byte.MaxValue;
+                 return;
+@@ -526,6 +566,10 @@ namespace Hecton8.Visor
+ 
+             if (emptyCount <= 0)
+             {
++                PublishPerformanceWarningRateLimited(
++                    TelemetryWarningDegenerateSdfHash,
++                    ref _nextTelemetryDegenerateSdfTime,
++                    voxelCount);
+                 for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
+                     _sdfVolume[voxelIndex] = byte.MinValue;
+                 return;
+@@ -574,6 +618,10 @@ namespace Hecton8.Visor
+             Vector3 lightDirectionWs = _flashlightLight.transform.forward;
+             Color lightColor = _flashlightLight.color;
+             float lightRange = Mathf.Max(0.1f, _flashlightLight.range);
++            float signalInstability01 = ResolveNoirSignalInstability(hasVoxelVolume);
++            float shadowFloor = Mathf.Clamp01(DefaultShadowFloor + signalInstability01 * 0.16f);
++            float lightIntensity = Mathf.Max(0f, _flashlightLight.intensity * (1f - signalInstability01 * 0.22f));
++            _debugSignalInstability01 = signalInstability01;
+ 
+             Shader.SetGlobalFloat(_FlashlightActiveId, 1f);
+             Shader.SetGlobalFloat(_FlashlightVoxelActiveId, hasVoxelVolume ? 1f : 0f);
+@@ -581,7 +629,7 @@ namespace Hecton8.Visor
+             Shader.SetGlobalFloat(_FlashlightShadowSoftnessId, DefaultShadowSoftness);
+             Shader.SetGlobalFloat(_FlashlightShadowMinStepId, DefaultShadowMinStep);
+             Shader.SetGlobalFloat(_FlashlightShadowBiasId, DefaultShadowBias);
+-            Shader.SetGlobalFloat(_FlashlightShadowFloorId, DefaultShadowFloor);
++            Shader.SetGlobalFloat(_FlashlightShadowFloorId, shadowFloor);
+             Shader.SetGlobalVector(
+                 _FlashlightPositionWsId,
+                 new Vector4(lightPositionWs.x, lightPositionWs.y, lightPositionWs.z, lightRange));
+@@ -590,14 +638,14 @@ namespace Hecton8.Visor
+                 new Vector4(lightDirectionWs.x, lightDirectionWs.y, lightDirectionWs.z, innerCos));
+             Shader.SetGlobalVector(
+                 _FlashlightColorId,
+-                new Vector4(lightColor.r, lightColor.g, lightColor.b, Mathf.Max(0f, _flashlightLight.intensity)));
++                new Vector4(lightColor.r, lightColor.g, lightColor.b, lightIntensity));
+             Shader.SetGlobalVector(
+                 _FlashlightConeDataId,
+                 new Vector4(
+                     outerCos,
+                     1f,
+                     lightRange > 0.0001f ? 1f / lightRange : 0f,
+-                    DefaultShadowFloor));
++                    shadowFloor));
+ 
+             if (hasVoxelVolume)
+             {
+@@ -613,6 +661,51 @@ namespace Hecton8.Visor
+             }
+         }
+ 
++        private float ResolveNoirSignalInstability(bool hasVoxelVolume)
++        {
++            if (!enableNoirSignalInstability)
++                return 0f;
++
++            float staleSignal = hasVoxelVolume ? 0f : 1f;
++            float rebuildSignal = _scanInProgress ? 0.55f : 0f;
++            float restartSignal = _restartQueued ? 0.85f : 0f;
++            float scanProgress = _resolutionRuntime > 0
++                ? Mathf.Clamp01(_scanSliceCursor / (float)_resolutionRuntime)
++                : 0f;
++            float carrier = Mathf.Sin((Time.frameCount * 0.6180339f) + scanProgress * 5.1f) * 0.5f + 0.5f;
++            float instability = Mathf.Max(staleSignal, Mathf.Max(rebuildSignal, restartSignal)) * carrier;
++            return Mathf.Clamp01(instability * noirSignalInstabilityStrength);
++        }
++
++        private void PublishLongScanTelemetryIfNeeded()
++        {
++            int safeSlicesPerTick = Mathf.Max(1, slicesPerTick);
++            int expectedTicks = (_resolutionRuntime + safeSlicesPerTick - 1) / safeSlicesPerTick;
++            if (_scanTickCount <= expectedTicks + TelemetryScanTickOverrunSlack)
++                return;
++
++            PublishPerformanceWarningRateLimited(
++                TelemetryWarningLongScanHash,
++                ref _nextTelemetryLongScanTime,
++                _scanTickCount);
++        }
++
++        private static void PublishPerformanceWarningRateLimited(
++            uint warningHash,
++            ref float nextWarningTime,
++            float scalarValue)
++        {
++            float now = Time.unscaledTime;
++            if (now < nextWarningTime)
++                return;
++
++            nextWarningTime = now + TelemetryWarningIntervalSeconds;
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                warningHash,
++                TelemetryContextFlashlightVoxelShadowHash,
++                scalarValue);
++        }
++
+         private static void PublishInactiveGlobals()
+         {
+             Shader.SetGlobalFloat(_FlashlightActiveId, 0f);
+diff --git a/Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs b/Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs
+index 26ff81dd..a5faec47 100644
+--- a/Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs
++++ b/Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs
+@@ -188,7 +188,9 @@ namespace Hecton8.World
+                     return;
+                 }
+ 
+-                volume.name = $"VoxelCave_{request.Key}";
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                volume.name = "VoxelCave";
++#endif
+                 _activeVolumes[request.Key] = volume;
+                 RegisterChunkFade(request.Key, volume);
+                 if (vegetationBridge != null)
+@@ -430,8 +432,13 @@ namespace Hecton8.World
+             if (!_chunkFadeStates.TryGetValue(key, out ChunkFadeState state))
+                 return;
+ 
+-            if (clearRenderer && state != null && state.Renderer != null)
++            if (clearRenderer &&
++                state != null &&
++                state.Renderer != null &&
++                ReferenceEquals(state.Renderer.sharedMaterial, state.RuntimeMaterial))
++            {
+                 state.Renderer.sharedMaterial = state.OriginalMaterial;
++            }
+ 
+             if (state != null && state.RuntimeMaterial != null)
+                 Destroy(state.RuntimeMaterial);
+diff --git a/Assets/_Project/Scripts/VisualOmegaSmokeTester.cs b/Assets/_Project/Scripts/VisualOmegaSmokeTester.cs
+new file mode 100644
+index 00000000..177f3f65
+--- /dev/null
++++ b/Assets/_Project/Scripts/VisualOmegaSmokeTester.cs
+@@ -0,0 +1,157 @@
++// ============================================================================
++// HECTON-8 - VisualOmegaSmokeTester.cs
++// Cold-path source audit for visual-domain OMEGA hardening.
++// ============================================================================
++
++using System.IO;
++using System.Text;
++using UnityEngine;
++
++namespace Hecton8.Dev
++{
++    /// <summary>
++    /// Batch/edit-mode smoke tester for visual hardening invariants.
++    /// </summary>
++    [DisallowMultipleComponent]
++    [AddComponentMenu("Hecton8/Dev/Visual Omega Smoke Tester")]
++    public sealed class VisualOmegaSmokeTester : MonoBehaviour
++    {
++        private const string TesterName = "VisualOmegaSmokeTester";
++        private const int ExpectedCheckCount = 14;
++
++        [Header("Execution")]
++        [Tooltip("Runs the cold source audit once when the component starts.")]
++        [SerializeField] private bool runOnStart = false;
++        [Tooltip("Logs the JSON smoke result even when the pass succeeds.")]
++        [SerializeField] private bool verboseLogging = true;
++
++#pragma warning disable CS0414
++        [Header("Debug")]
++        [Tooltip("Last source-audit result.")]
++        [SerializeField] private bool _debugLastPass;
++        [Tooltip("Number of checks executed by the last source audit.")]
++        [SerializeField] private int _debugCheckCount;
++        [Tooltip("Number of failed checks in the last source audit.")]
++        [SerializeField] private int _debugFailureCount;
++        [Tooltip("Last JSON smoke result emitted by the audit.")]
++        [SerializeField] private string _debugLastJson = string.Empty;
++#pragma warning restore CS0414
++
++        // COLD ALLOC: StringBuilder[1024] - source-audit issue buffer - owner: VisualOmegaSmokeTester
++        private readonly StringBuilder _issueBuilder = new StringBuilder(1024);
++        // COLD ALLOC: StringBuilder[512] - source-audit JSON report - owner: VisualOmegaSmokeTester
++        private readonly StringBuilder _jsonBuilder = new StringBuilder(512);
++
++        private void Start()
++        {
++            if (runOnStart)
++                RunSmokePass();
++        }
++
++        /// <summary>
++        /// Unity batch entry point.
++        /// </summary>
++        public static void RunBatchModeSmokeTest()
++        {
++            VisualOmegaSmokeTester tester = new GameObject(TesterName).AddComponent<VisualOmegaSmokeTester>();
++            bool pass = tester.RunSmokePass();
++            if (Application.isBatchMode)
++                Application.Quit(pass ? 0 : 1);
++        }
++
++        /// <summary>
++        /// Runs the cold source audit and logs a JSON result.
++        /// </summary>
++        [ContextMenu("Run Visual Omega Smoke Pass")]
++        public bool RunSmokePass()
++        {
++            _issueBuilder.Clear();
++            _debugCheckCount = 0;
++            _debugFailureCount = 0;
++
++            string projectRoot = ResolveProjectRoot();
++            string flashlightSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Visor/HectonFlashlightVoxelShadowProvider.cs");
++            string atmosphereSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/HectonAtmosphereManager.cs");
++            string mapMagicSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/MapMagicBridge.cs");
++            string registrySource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Core/GlobalRegistry.cs");
++            string registryContractsSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs");
++            string voxelStreamingSource = ReadProjectFile(projectRoot, "Assets/_Project/Scripts/World/HectonVoxelStreamingBridge.cs");
++            string volumetricComputeSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute");
++            string retinaShaderSource = ReadProjectFile(projectRoot, "Assets/_Project/Art/Shaders/Hecton_RetinaDistortion.shader");
++
++            CheckContains(flashlightSource, "NativeMemorySentinel.RegisterNativeArray(", "flashlight-nativearray-registered");
++            CheckContains(flashlightSource, "nameof(_occupancyVolume)", "flashlight-occupancy-sentinel-owner");
++            CheckContains(flashlightSource, "nameof(_sdfVolume)", "flashlight-sdf-sentinel-owner");
++            CheckContains(flashlightSource, "PublishPerformanceWarningRateLimited", "flashlight-telemetry-warning-hook");
++            CheckContains(flashlightSource, "ResolveNoirSignalInstability", "flashlight-noir-instability-polish");
++            CheckNotContains(atmosphereSource, "_instance", "atmosphere-static-instance-removed");
++            CheckNotContains(mapMagicSource, "_instance", "mapmagic-static-instance-removed");
++            CheckContains(mapMagicSource, "return GlobalRegistry.MapMagic;", "mapmagic-instance-globalregistry-facade");
++            CheckContains(registrySource, "RegisterMapMagicRuntime", "globalregistry-mapmagic-register");
++            CheckContains(registrySource, "_mapMagicRuntime = null;", "globalregistry-mapmagic-reset");
++            CheckContains(registryContractsSource, "MapMagicRuntime = 102", "globalregistry-mapmagic-slot");
++            CheckNotContains(voxelStreamingSource, "$\"VoxelCave_", "voxel-streaming-hotpath-string-purged");
++            CheckContains(volumetricComputeSource, "clamp((int)round(_HectonVolumetricShadowParams.x), 1, 15)", "volumetric-shadow-step-cap-mx350");
++            CheckContains(retinaShaderSource, "_QUALITY_MX350", "retina-mx350-mode-toggle");
++
++            _debugLastPass = _debugFailureCount == 0;
++            _debugLastJson = BuildJsonReport();
++            if (verboseLogging || !_debugLastPass || Application.isBatchMode)
++                Debug.Log(_debugLastJson, this);
++
++            return _debugLastPass;
++        }
++
++        private void CheckContains(string source, string requiredToken, string checkName)
++        {
++            _debugCheckCount++;
++            if (!string.IsNullOrEmpty(source) && source.Contains(requiredToken))
++                return;
++
++            AddIssue(checkName);
++        }
++
++        private void CheckNotContains(string source, string forbiddenToken, string checkName)
++        {
++            _debugCheckCount++;
++            if (!string.IsNullOrEmpty(source) && !source.Contains(forbiddenToken))
++                return;
++
++            AddIssue(checkName);
++        }
++
++        private void AddIssue(string checkName)
++        {
++            _debugFailureCount++;
++            if (_issueBuilder.Length > 0)
++                _issueBuilder.Append(';');
++            _issueBuilder.Append(checkName);
++        }
++
++        private string BuildJsonReport()
++        {
++            _jsonBuilder.Clear();
++            _jsonBuilder.Append('{')
++                .Append("\"tester\":\"").Append(TesterName).Append("\",")
++                .Append("\"pass\":").Append(_debugFailureCount == 0 ? "true" : "false").Append(',')
++                .Append("\"checks\":").Append(_debugCheckCount).Append(',')
++                .Append("\"expectedChecks\":").Append(ExpectedCheckCount).Append(',')
++                .Append("\"failures\":").Append(_debugFailureCount).Append(',')
++                .Append("\"issues\":\"").Append(_issueBuilder.ToString()).Append("\"")
++                .Append('}');
++            return _jsonBuilder.ToString();
++        }
++
++        private static string ResolveProjectRoot()
++        {
++            DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
++            return dataDirectory != null ? dataDirectory.FullName : Application.dataPath;
++        }
++
++        private static string ReadProjectFile(string projectRoot, string relativePath)
++        {
++            string fullPath = Path.Combine(projectRoot, relativePath);
++            return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/VisualOmegaSmokeTester.cs.meta b/Assets/_Project/Scripts/VisualOmegaSmokeTester.cs.meta
+new file mode 100644
+index 00000000..4e9d32a9
+--- /dev/null
++++ b/Assets/_Project/Scripts/VisualOmegaSmokeTester.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: 6eec3aec5b957604f89bc51e9522ee8b
+\ No newline at end of file

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton8.Core;
+using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Physics;
 using Hecton8.SaveSystem;
@@ -59,11 +60,15 @@ namespace Hecton8.Caves
         private const float ThermalMeltStepIntervalSeconds = 0.25f;
         private const float ThermalMeltMinimumHeat = 0.01f;
         private const float SphereVolumeFactor = 4f / 3f * math.PI;
+        private const int LaserDebrisMinFragments = 3;
+        private const int LaserDebrisMaxFragments = 5;
+        private const float LaserDebrisLifetimeSeconds = 4f;
         private const byte DefaultMaterialId = 0;
         private const byte ThermalMeltMaterialId = 2;
         private const byte DeltaModeAdditive = 1 << 0;
         private const byte DeltaModeReplace = 1 << 1;
         private const byte DeltaModeThermalMelt = 1 << 2;
+        private const byte CarveSourceLaser = 1 << 0;
         private const byte DeltaShapeSphere = 0;
         private const byte DeltaShapeBox = 1;
         private const byte DeltaShapeCapsule = 2;
@@ -82,6 +87,8 @@ namespace Hecton8.Caves
         [SerializeField, Range(0, 16)] private int carveDebrisMaxCount = 8;
         [Tooltip("Impulse magnitude applied to each debris entity when the carve aftermath hydrates nearby.")]
         [SerializeField, Min(0f)] private float carveDebrisImpulse = 2.5f;
+        [Tooltip("Optional pooled transient debris profile for laser voxel cuts. Profile should author 3-5 small chunks.")]
+        [SerializeField] private OrganicDebrisProfile laserCarveDebrisProfile;
 
         private HectonVoxelEngine _engine;
         private bool _saveRegistered;
@@ -451,6 +458,7 @@ namespace Hecton8.Caves
                 existing.AbsoluteHitPoint = Vector3.Lerp(existing.AbsoluteHitPoint, absoluteHitPoint, 0.5f);
                 existing.AccumulatedDamage += damage;
                 existing.MaterialId = materialId;
+                existing.SourceFlags |= CarveSourceLaser;
                 _pendingCarves[i] = existing;
                 return;
             }
@@ -471,7 +479,8 @@ namespace Hecton8.Caves
                 Volume = volume,
                 AbsoluteHitPoint = absoluteHitPoint,
                 AccumulatedDamage = damage,
-                MaterialId = materialId
+                MaterialId = materialId,
+                SourceFlags = CarveSourceLaser
             };
         }
 
@@ -498,7 +507,13 @@ namespace Hecton8.Caves
         /// <param name="absoluteHitPoint">Absolute-universe impact point.</param>
         /// <param name="radius">Requested crater radius in meters.</param>
         /// <param name="materialId">Material palette index for the modified cells.</param>
-        public void ApplyImmediateAbsoluteCrater(HectonVoxelVolume volume, Vector3 absoluteHitPoint, float radius, byte materialId = DefaultMaterialId)
+        public void ApplyImmediateAbsoluteCrater(
+            HectonVoxelVolume volume,
+            Vector3 absoluteHitPoint,
+            float radius,
+            byte materialId = DefaultMaterialId,
+            byte sourceFlags = 0,
+            Vector3 absoluteImpulseDirection = default)
         {
             if (volume == null || radius <= 0f || !volume.HasRuntimeData)
                 return;
@@ -523,8 +538,28 @@ namespace Hecton8.Caves
                 AbsoluteHitPoint = absoluteHitPoint,
                 ExplicitRadiusMeters = radius,
                 MaterialId = materialId,
-                DeltaFlags = 0
+                DeltaFlags = 0,
+                SourceFlags = sourceFlags,
+                AbsoluteImpulseDirection = absoluteImpulseDirection
             };
+        }
+
+        /// <summary>
+        /// Applies an explicit laser-origin crater carve in absolute-universe space.
+        /// </summary>
+        /// <param name="volume">Target runtime volume.</param>
+        /// <param name="absoluteHitPoint">Absolute-universe impact point.</param>
+        /// <param name="radius">Requested crater radius in meters.</param>
+        /// <param name="absoluteImpulseDirection">Laser travel direction in absolute-universe space.</param>
+        /// <param name="materialId">Material palette index for the modified cells.</param>
+        public void ApplyImmediateAbsoluteLaserCrater(
+            HectonVoxelVolume volume,
+            Vector3 absoluteHitPoint,
+            float radius,
+            Vector3 absoluteImpulseDirection,
+            byte materialId = DefaultMaterialId)
+        {
+            ApplyImmediateAbsoluteCrater(volume, absoluteHitPoint, radius, materialId, CarveSourceLaser, absoluteImpulseDirection);
         }
 
         /// <summary>
@@ -1533,7 +1568,19 @@ namespace Hecton8.Caves
                     VoxelDynamicNavGridRuntime.QueueLocalizedSdfPatch(volume, touchedMinCell, touchedMaxCell, voxelSize);
 
                 EnqueueVolumeRebuild(volume);
-                if ((_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
+                bool emittedTransientLaserDebris = false;
+                if ((_scheduledCarveRequest.SourceFlags & CarveSourceLaser) != 0 &&
+                    (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
+                    (_scheduledCarveRequest.DeltaFlags & DeltaModeThermalMelt) == 0 &&
+                    _scheduledCarveRequest.Shape != DeltaShapeBox)
+                {
+                    emittedTransientLaserDebris = EmitLaserCarveDebris(
+                        in _scheduledCarveRequest,
+                        ResolveCarveRadius(in _scheduledCarveRequest, volume));
+                }
+
+                if (!emittedTransientLaserDebris &&
+                    (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
                     (_scheduledCarveRequest.DeltaFlags & DeltaModeThermalMelt) == 0 &&
                     _scheduledCarveRequest.Shape != DeltaShapeBox)
                 {
@@ -2184,6 +2231,49 @@ namespace Hecton8.Caves
             _scheduledCarveWriteCount = 0;
         }
 
+        private bool EmitLaserCarveDebris(in PendingCarveRequest request, float radius)
+        {
+            if (laserCarveDebrisProfile == null || !laserCarveDebrisProfile.IsValid || radius <= 0f)
+                return false;
+
+            IDebrisService debris = GlobalRegistry.Debris;
+            if (debris == null || !debris.IsInitialized)
+                return false;
+
+            Vector3 runtimeHitPoint = HectonFloatingOrigin.ToRuntimePosition(request.AbsoluteHitPoint);
+            Vector3 impulseDirection = request.AbsoluteImpulseDirection;
+            if (impulseDirection.sqrMagnitude <= 0.0001f)
+                impulseDirection = Vector3.up;
+            else
+                impulseDirection.Normalize();
+
+            Vector3 outwardNormal = -impulseDirection;
+            Vector3 runtimeOrigin = runtimeHitPoint + outwardNormal * math.max(radius * 0.2f, MinRuntimeVoxelSize);
+            uint seed = (uint)math.hash(new int4(
+                (int)math.round(request.AbsoluteHitPoint.x * 8f),
+                (int)math.round(request.AbsoluteHitPoint.y * 8f),
+                (int)math.round(request.AbsoluteHitPoint.z * 8f),
+                math.max(1, (int)math.round(radius * 64f))));
+            Quaternion rotation = Quaternion.Euler(
+                (seed & 0xFFu) * (360f / 255f),
+                ((seed >> 8) & 0xFFu) * (360f / 255f),
+                ((seed >> 16) & 0xFFu) * (360f / 255f));
+            float power01 = math.saturate(radius / math.max(MaxCarveRadiusMeters, MinCarveRadiusMeters));
+            int requestedFragments = LaserDebrisMinFragments + (int)(seed % (uint)((LaserDebrisMaxFragments - LaserDebrisMinFragments) + 1));
+            requestedFragments = math.min(requestedFragments, laserCarveDebrisProfile.ChunkCount);
+            return requestedFragments >= LaserDebrisMinFragments &&
+                   debris.SpawnBurst(
+                       laserCarveDebrisProfile,
+                       runtimeOrigin,
+                       rotation,
+                       runtimeHitPoint,
+                       outwardNormal,
+                       power01,
+                       seed != 0u ? seed : 1u,
+                       requestedFragments,
+                       LaserDebrisLifetimeSeconds);
+        }
+
         private void DisposeScheduledCompactionBuffers()
         {
             JobHandle dependency = _scheduledCompactionRunning ? _scheduledCompactionHandle : default;
@@ -2381,7 +2471,9 @@ namespace Hecton8.Caves
             public float ExplicitBlendStrength;
             public byte MaterialId;
             public byte DeltaFlags;
+            public byte SourceFlags;
             public byte Shape;
+            public Vector3 AbsoluteImpulseDirection;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

@@ -135,13 +135,14 @@ namespace Hecton8.World
     [DefaultExecutionOrder(-4028)]
     public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable, IUpdatable, IRandomEventListener
     {
-        internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance { get; private set; }
+        private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyVoxelBridgeDirector);
+        private const string EmptyNodesLabel = "emptyCaveNodes";
+        private const string EmptyTunnelsLabel = "emptyCaveTunnels";
+        private const string EntrancesLabel = "caveEntrances";
+        private const string StructuresLabel = "caveStructures";
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            ActiveRuntimeInstance = null;
-        }
+        internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance => GlobalRegistry.GeologyVoxelBridge;
 
         private sealed class PendingRequestState : System.IDisposable
         {
@@ -233,6 +234,8 @@ namespace Hecton8.World
         private bool _registeredToSlowTickManager;
         private bool _startupReconcilePending = true;
         private int _estimatedWarmedPoolCount;
+        private int _nextQueueTelemetryFrame;
+        private int _nextFaultTelemetryFrame;
         private CancellationTokenSource _lifetimeCancellation;
         private bool _randomEventHooksRegistered;
 
@@ -241,7 +244,7 @@ namespace Hecton8.World
             if (!CanUseRuntimeDispatcher())
                 return;
 
-            ActiveRuntimeInstance = this;
+            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
             ResolveReferences();
             QueueStartupReconcile();
         }
@@ -252,7 +255,7 @@ namespace Hecton8.World
             if (!CanUseRuntimeDispatcher())
                 return;
 
-            ActiveRuntimeInstance = this;
+            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
             EnsureLifetimeCancellation();
             RegisterRandomEventHooks();
             QueueStartupReconcile();
@@ -275,7 +278,7 @@ namespace Hecton8.World
             if (!CanUseRuntimeDispatcher())
                 return;
 
-            ActiveRuntimeInstance = this;
+            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
             EnsureLifetimeCancellation();
             RegisterRandomEventHooks();
             QueueStartupReconcile();
@@ -311,14 +314,14 @@ namespace Hecton8.World
             CancelAllPendingRequests();
             ClearAllVolumes();
 
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
+            if (ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, this))
+                GlobalRegistry.UnregisterGeologyVoxelBridgeRuntime(this);
         }
 
         private void OnDestroy()
         {
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
+            if (ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, this))
+                GlobalRegistry.UnregisterGeologyVoxelBridgeRuntime(this);
         }
 
         public void Tick(float deltaTime)
@@ -810,6 +813,9 @@ namespace Hecton8.World
             }
 
             _debugQueuedLaunches = _queuedLaunchOrder.Count;
+            WorldGenerativeGeologyTelemetry.PublishVoxelQueuePressureIfNeeded(
+                _debugQueuedLaunches,
+                ref _nextQueueTelemetryFrame);
         }
 
         private void FlushQueuedLaunches()
@@ -881,7 +887,13 @@ namespace Hecton8.World
             try
             {
                 if (voxelEngine == null)
+                {
+                    WorldGenerativeGeologyTelemetry.PublishVoxelFaultIfNeeded(
+                        WorldGenerativeGeologyTelemetry.VoxelEngineMissingWarningHash,
+                        1f,
+                        ref _nextFaultTelemetryFrame);
                     return;
+                }
 
                 long buildDataStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 BuildVoxelRequestData(
@@ -896,8 +908,9 @@ namespace Hecton8.World
                     out NativeArray<CaveEntrance> entranceArray,
                     out NativeArray<CaveStructure> structureArray);
                 float buildDataMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - buildDataStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
-                NativeArray<CaveNode> nodes = new NativeArray<CaveNode>(0, Allocator.Persistent);
-                NativeArray<CaveTunnel> tunnels = new NativeArray<CaveTunnel>(0, Allocator.Persistent);
+                WorldGenerativeGeologyTelemetry.PublishVoxelBuildDataBudgetIfNeeded(buildDataMs);
+                NativeArray<CaveNode> nodes = AllocateTrackedNativeArray<CaveNode>(0, EmptyNodesLabel, NativeArrayOptions.UninitializedMemory);
+                NativeArray<CaveTunnel> tunnels = AllocateTrackedNativeArray<CaveTunnel>(0, EmptyTunnelsLabel, NativeArrayOptions.UninitializedMemory);
                 NativeArray<CaveEntrance> entrances = entranceArray;
                 TraceRequestPrepared(
                     request.runtimeKey,
@@ -940,7 +953,13 @@ namespace Hecton8.World
                             ct: token);
 
                     if (volume == null)
+                    {
+                        WorldGenerativeGeologyTelemetry.PublishVoxelFaultIfNeeded(
+                            WorldGenerativeGeologyTelemetry.VoxelVolumeNullWarningHash,
+                            gridDimension,
+                            ref _nextFaultTelemetryFrame);
                         return;
+                    }
 
                     if (!isActiveAndEnabled ||
                         !_desiredSignatures.TryGetValue(request.runtimeKey, out int desiredSignature) ||
@@ -993,10 +1012,10 @@ namespace Hecton8.World
                 }
                 finally
                 {
-                    if (nodes.IsCreated) nodes.Dispose();
-                    if (tunnels.IsCreated) tunnels.Dispose();
-                    if (entrances.IsCreated) entrances.Dispose();
-                    if (structureArray.IsCreated) structureArray.Dispose();
+                    DisposeTrackedNativeArray(ref nodes);
+                    DisposeTrackedNativeArray(ref tunnels);
+                    DisposeTrackedNativeArray(ref entrances);
+                    DisposeTrackedNativeArray(ref structureArray);
                 }
             }
             catch (OperationCanceledException)
@@ -1085,9 +1104,9 @@ namespace Hecton8.World
 
             Vector3 upOffset = Vector3.up * Mathf.Max(0.75f, request.size.y * 0.08f);
             entrances = BuildEntrances(request);
-            structures = new NativeArray<CaveStructure>(
+            structures = AllocateTrackedNativeArray<CaveStructure>(
                 ResolveStructureCount(request.archetype),
-                Allocator.Persistent,
+                StructuresLabel,
                 NativeArrayOptions.UninitializedMemory);
 
             switch (request.archetype)
@@ -1305,9 +1324,9 @@ namespace Hecton8.World
         private NativeArray<CaveEntrance> BuildEntrances(in WorldGenerativeGeologyVoxelBlendRequest request)
         {
             if (!VoxelSeamDirector.ShouldCreateCaveMouth(request.hasTerrainSample, request.slopeDegrees, request.caveBlendMode))
-                return new NativeArray<CaveEntrance>(0, Allocator.Persistent);
+                return AllocateTrackedNativeArray<CaveEntrance>(0, EntrancesLabel, NativeArrayOptions.UninitializedMemory);
 
-            NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            NativeArray<CaveEntrance> entrances = AllocateTrackedNativeArray<CaveEntrance>(1, EntrancesLabel, NativeArrayOptions.UninitializedMemory);
             Vector3 terrainNormal = ResolveCaveEntranceTerrainNormal(request);
             entrances[0] = VoxelSeamDirector.BuildCaveEntrance(
                 request.RuntimeTerrainContactPosition,
@@ -1319,6 +1338,37 @@ namespace Hecton8.World
                 terrainNormal,
                 request.absoluteTerrainContactPosition);
             return entrances;
+        }
+
+        private static NativeArray<T> AllocateTrackedNativeArray<T>(
+            int length,
+            string label,
+            NativeArrayOptions options)
+            where T : struct
+        {
+            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
+            RegisterTrackedNativeArray(array, label);
+            return array;
+        }
+
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
+            where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private static Vector3 ResolveCaveEntranceTerrainNormal(in WorldGenerativeGeologyVoxelBlendRequest request)

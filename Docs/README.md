@@ -1,9 +1,9 @@
 # Docs Index
 
-Date: `2026-05-04`
+Date: `2026-05-05`
 Status: `PENDING VERIFICATION`
 
-Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, `2026-05-02` documentation actuality sweep, `2026-05-03` foundation-hardening continuation, `2026-05-04` documentation/current-evidence recheck, and `2026-05-04` documentation sorting authority map.
+Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, `2026-05-02` documentation actuality sweep, `2026-05-03` foundation-hardening continuation, `2026-05-04` documentation/current-evidence recheck, `2026-05-04` documentation sorting authority map, and `2026-05-05` Omega-autonomy bounded verification.
 
 ## Read First
 
@@ -17,6 +17,7 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 - `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` - current header normalization and archive/move queue.
 - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` - latest documentation sweep and current May 4 build/guard/MCP evidence boundary.
 - `Reports/2026-05-04_WARNING_CLEANUP.md` - latest first-party warning cleanup; Core build and post-refresh Unity console readback are clean for this slice.
+- `Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` - latest bounded Omega-autonomy evidence; latest serial Core build is `0 Warning(s)` / `0 Error(s)`, while the last warning-bearing Omega log is dependency/vendor-only with `0` first-party `Assets/_Project/Scripts` warning matches.
 - `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` - latest foundation guard repair addendum; source guard exits `0`.
 - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md` - latest celestial/meteor protocol source-build evidence; runtime visual/audio/profiler proof absent.
 - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md` - celestial orbital protocol source-build evidence; PlayMode smoke and profiler proof absent.
@@ -37,6 +38,7 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 - `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
 - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Reports/2026-05-04_WARNING_CLEANUP.md`
+- `Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
 - `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
 - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
 - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md`
@@ -69,6 +71,7 @@ Current-state rule:
 - use `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` as the current header normalization and archive/move queue
 - use `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` as the latest broad documentation-sweep and current May 4 build/guard/MCP evidence addendum
 - use `Reports/2026-05-04_WARNING_CLEANUP.md` as the latest first-party warning-cleanup addendum for Core compile and current post-refresh Unity console warning readback
+- use `Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` as the current bounded Omega-autonomy hardening report and current dependency-warning classification for the Omega build slice
 - use `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` as the latest foundation guard source/build addendum
 - use the May 4 celestial reports as source-build evidence only; do not claim runtime celestial/meteor behavior without PlayMode/profiler proof
 - use `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` as the conceptual entry point for system ownership and active risks; the filename is retained as a stable anchor and now includes May 4 evidence
@@ -81,6 +84,10 @@ Current-state rule:
 
 Current verification boundary:
 
+- latest May 5 Omega bounded Core build evidence is `CodexArtifacts/dotnet-h8core-omega-autonomy-doc-continuation-build.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, and `0` first-party `Assets/_Project` matches
+- last May 5 Omega warning-bearing baseline is `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log`: `Build succeeded`, `48 Warning(s)`, `0 Error(s)`; warning owners are dependency/vendor surfaces only: Unity URP PackageCache, GPUInstancer, Den.Tools/MapMagic, Crest, WaveHarmonic.Crest, Unity ShaderGraph/Core Editor PackageCache
+- first-party warning check against `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log` also returned `0` `Assets/_Project/Scripts` matches; older artifact logs may contain first-party warnings and must not be treated as current build output without rerunning the matching build
+- latest May 5 Omega smoke evidence is `CodexArtifacts/unity-omega-smoke-2026-05-05-doc-continuation.log` plus `Library/OmegaAutonomySmokeTester.json`, status `PASS`; Unity process exit code was `0`, but the log still contains licensing handshake/access-token errors, UnityConnect `Curl error 42`, MCP shutdown notice, and UTP memory-leak summary at editor shutdown, so this is scoped smoke proof, not project-wide PlayMode/profiler/player-build proof
 - latest May 4 warning-cleanup local Core build `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 Warning(s)` and `0 Error(s)`; final post-cleanup Unity console readback after clear/script refresh returned `0` error/warning entries
 - earlier fresh May 4 post-repair local Core build `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` returned `0 Warning(s)` and `0 Error(s)`
 - latest May 4 local Editor, `Hecton8.World.Dots.csproj`, and `Hecton8.PlayModeTests.csproj` builds all returned `0 Warning(s)` and `0 Error(s)`

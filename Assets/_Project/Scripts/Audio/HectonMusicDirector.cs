@@ -52,18 +52,10 @@ namespace Hecton8.Audio
             "basalt", "brine", "chemo", "chemosynthetic", "seam", "spire", "pillow", "flux", "ash"
         };
 
-        private static HectonMusicDirector _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void EnsureRuntimeInstance()
         {
-            if (!Application.isPlaying || _instance != null)
+            if (!Application.isPlaying || GlobalRegistry.MusicDirector != null)
                 return;
 
             TryInstantiateConfiguredRuntimeDirector(SceneManager.GetActiveScene(), false);
@@ -71,7 +63,7 @@ namespace Hecton8.Audio
 
         internal static void EnsureRuntimeInstanceForScene(Scene scene)
         {
-            if (!Application.isPlaying || _instance != null)
+            if (!Application.isPlaying || GlobalRegistry.MusicDirector != null)
                 return;
 
             TryInstantiateConfiguredRuntimeDirector(scene, true);
@@ -336,14 +328,14 @@ namespace Hecton8.Audio
         /// <summary>
         /// Global access to the music director.
         /// </summary>
-        public static HectonMusicDirector Instance => _instance;
+        public static HectonMusicDirector Instance => GlobalRegistry.MusicDirector;
 
         /// <summary>
         /// Silent singleton probe for optional callers.
         /// </summary>
         public static bool TryGetInstance(out HectonMusicDirector instance)
         {
-            instance = _instance;
+            instance = GlobalRegistry.MusicDirector;
             return instance != null;
         }
 
@@ -365,14 +357,6 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
-
             // COLD ALLOC: AudioSource[2] — persistent dual music voices — owner: HectonMusicDirector
             _musicSources = new AudioSource[MusicVoiceCount];
             // COLD ALLOC: HectonMusicBiomeProfile[2] — active voice profile ownership — owner: HectonMusicDirector
@@ -412,7 +396,9 @@ namespace Hecton8.Audio
 
         private void OnEnable()
         {
-            TryRegisterToGlobalRegistry();
+            if (!TryRegisterToGlobalRegistry())
+                return;
+
             TryRegisterTickHandlers();
             AcousticZoneEvents.Register(this);
             BiomeMatrixEvents.Register(this);
@@ -424,7 +410,9 @@ namespace Hecton8.Audio
 
         private void Start()
         {
-            TryRegisterToGlobalRegistry();
+            if (!TryRegisterToGlobalRegistry())
+                return;
+
             TryRegisterTickHandlers();
             ResolveDependencies();
             ReevaluateContext(true);
@@ -451,9 +439,6 @@ namespace Hecton8.Audio
             BiomeMatrixEvents.Unregister(this);
             TryUnregisterTickHandlers();
             TryUnregisterFromGlobalRegistry();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <summary>
@@ -730,13 +715,21 @@ namespace Hecton8.Audio
             }
         }
 
-        private void TryRegisterToGlobalRegistry()
+        private bool TryRegisterToGlobalRegistry()
         {
-            if (_serviceRegistered || !Application.isPlaying || _instance != this)
-                return;
+            if (_serviceRegistered || !Application.isPlaying)
+                return true;
+
+            HectonMusicDirector activeDirector = GlobalRegistry.MusicDirector;
+            if (activeDirector != null && activeDirector != this)
+            {
+                Destroy(gameObject);
+                return false;
+            }
 
             GlobalRegistry.RegisterMusicDirectorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.MusicDirector, this);
+            return _serviceRegistered;
         }
 
         private void TryUnregisterFromGlobalRegistry()
@@ -786,7 +779,7 @@ namespace Hecton8.Audio
                 pool.Warmup(runtimeDirectorPrefab, 1);
 
             pool.Spawn(runtimeDirectorPrefab, Vector3.zero, Quaternion.identity);
-            return _instance != null;
+            return GlobalRegistry.MusicDirector != null;
         }
 
         private static ObjectPoolManager ResolveRuntimeObjectPool()

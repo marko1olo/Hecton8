@@ -24,6 +24,7 @@ using Hecton8.Input;
 using Hecton8.Interaction;
 using Hecton8.Physics;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.Events;
 
 namespace Hecton8.Gameplay
@@ -109,6 +110,29 @@ namespace Hecton8.Gameplay
         [Tooltip("Sound played when airlock cycle completes.")]
         [SerializeField] private AudioClip cycleEndSound;
 
+        [Header("Cinematic Bulkhead")]
+        [Tooltip("Door mesh moved by emergency lockdown. Animator is intentionally bypassed.")]
+        [SerializeField] private Transform emergencyBulkheadDoorMesh;
+
+        [Tooltip("Local-space offset applied from the authored open position when the emergency bulkhead seals.")]
+        [SerializeField] private Vector3 emergencyBulkheadClosedLocalOffset = new Vector3(0f, -2.25f, 0f);
+
+        [Tooltip("Seconds required for the emergency bulkhead to close or reopen.")]
+        [SerializeField, Min(0.01f)] private float emergencyBulkheadSlideDurationSeconds = 0.5f;
+
+        [Tooltip("Heavy metallic impact played when the lockdown slide reaches the sealed position.")]
+        [SerializeField] private AudioClip emergencyBulkheadClangSound;
+
+        [Header("Airlock Audio Snapshots")]
+        [Tooltip("Audio mixer snapshot used while the player is inside dry base volume.")]
+        [SerializeField] private AudioMixerSnapshot dryInteriorSnapshot;
+
+        [Tooltip("Audio mixer snapshot used while the player is outside in flooded ocean volume.")]
+        [SerializeField] private AudioMixerSnapshot wetExteriorSnapshot;
+
+        [Tooltip("Snapshot transition duration for wet/dry airlock transitions.")]
+        [SerializeField, Min(0.01f)] private float environmentSnapshotTransitionSeconds = 1.5f;
+
         [Header("── Events ─────────────────────────────────────")]
         [Tooltip("Fired when player environment changes. True = Dry (inside base), False = Wet (outside).")]
         [SerializeField] private UnityEvent<bool> OnEnvironmentChanged;
@@ -141,6 +165,12 @@ namespace Hecton8.Gameplay
         private Rigidbody _cachedInteractorBody;
         private BuoyancyObject _cachedInteractorBuoyancy;
         private bool _cachedInteractorComponentCacheValid;
+        private Vector3 _bulkheadOpenLocalPosition;
+        private Vector3 _bulkheadClosedLocalPosition;
+        private float _bulkheadSlide01;
+        private float _bulkheadSlideTarget01;
+        private bool _bulkheadPoseCaptured;
+        private bool _bulkheadClangPlayed;
 
         // Cached references
         private Transform _cachedTransform;
@@ -203,6 +233,7 @@ namespace Hecton8.Gameplay
                 statusLightRenderer = cachedRenderer;
 
             CacheOwningModule();
+            CaptureBulkheadPose();
         }
 
         private void OnEnable()
@@ -214,6 +245,8 @@ namespace Hecton8.Gameplay
             _state = AirlockState.Ready;
             _weldOverrideProgressSeconds = 0f;
             UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
+            SetBulkheadSlideTarget(_emergencyLockedDown ? 1f : 0f);
+            ApplyBulkheadSlideImmediate(_bulkheadSlideTarget01);
         }
 
         private void Start()
@@ -266,6 +299,8 @@ namespace Hecton8.Gameplay
         /// </summary>
         public void Tick(float deltaTime)
         {
+            AdvanceBulkheadSlide(deltaTime);
+
             if (_state != AirlockState.Cycling)
                 return;
 
@@ -489,6 +524,7 @@ namespace Hecton8.Gameplay
 
             // Toggle environment state
             _isPlayerInside = !_isPlayerInside;
+            TransitionAirlockAudioSnapshot(_isPlayerInside);
 
             BaseAirlockEvents.RaiseEnvironmentChanged(this, player);
 
@@ -567,6 +603,77 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  VISUALS
         // ══════════════════════════════════════════════════════════
+
+        private void TransitionAirlockAudioSnapshot(bool insideDryVolume)
+        {
+            AudioMixerSnapshot targetSnapshot = insideDryVolume ? dryInteriorSnapshot : wetExteriorSnapshot;
+            if (targetSnapshot == null)
+                return;
+
+            targetSnapshot.TransitionTo(Mathf.Max(0.01f, environmentSnapshotTransitionSeconds));
+        }
+
+        private void CaptureBulkheadPose()
+        {
+            if (emergencyBulkheadDoorMesh == null || _bulkheadPoseCaptured)
+                return;
+
+            _bulkheadOpenLocalPosition = emergencyBulkheadDoorMesh.localPosition;
+            _bulkheadClosedLocalPosition = _bulkheadOpenLocalPosition + emergencyBulkheadClosedLocalOffset;
+            _bulkheadSlide01 = _emergencyLockedDown ? 1f : 0f;
+            _bulkheadSlideTarget01 = _bulkheadSlide01;
+            _bulkheadPoseCaptured = true;
+        }
+
+        private void SetBulkheadSlideTarget(float target01)
+        {
+            CaptureBulkheadPose();
+            _bulkheadSlideTarget01 = Mathf.Clamp01(target01);
+            if (_bulkheadSlideTarget01 >= 1f && _bulkheadSlide01 < 0.999f)
+                _bulkheadClangPlayed = false;
+        }
+
+        private void ApplyBulkheadSlideImmediate(float target01)
+        {
+            CaptureBulkheadPose();
+            if (emergencyBulkheadDoorMesh == null)
+                return;
+
+            _bulkheadSlide01 = Mathf.Clamp01(target01);
+            float eased = Mathf.SmoothStep(0f, 1f, _bulkheadSlide01);
+            emergencyBulkheadDoorMesh.localPosition = Vector3.LerpUnclamped(
+                _bulkheadOpenLocalPosition,
+                _bulkheadClosedLocalPosition,
+                eased);
+            _bulkheadClangPlayed = _bulkheadSlide01 >= 0.999f;
+        }
+
+        private void AdvanceBulkheadSlide(float deltaTime)
+        {
+            CaptureBulkheadPose();
+            if (emergencyBulkheadDoorMesh == null)
+                return;
+
+            float previousSlide = _bulkheadSlide01;
+            float duration = Mathf.Max(0.01f, emergencyBulkheadSlideDurationSeconds);
+            float step = Mathf.Max(0f, deltaTime) / duration;
+            _bulkheadSlide01 = Mathf.MoveTowards(_bulkheadSlide01, _bulkheadSlideTarget01, step);
+            if (Mathf.Approximately(previousSlide, _bulkheadSlide01))
+                return;
+
+            float eased = Mathf.SmoothStep(0f, 1f, _bulkheadSlide01);
+            emergencyBulkheadDoorMesh.localPosition = Vector3.LerpUnclamped(
+                _bulkheadOpenLocalPosition,
+                _bulkheadClosedLocalPosition,
+                eased);
+
+            if (_bulkheadSlideTarget01 < 1f || _bulkheadSlide01 < 0.999f || _bulkheadClangPlayed)
+                return;
+
+            _bulkheadClangPlayed = true;
+            if (emergencyBulkheadClangSound != null && GlobalRegistry.Audio != null)
+                GlobalRegistry.Audio.PlayAtPoint(emergencyBulkheadClangSound, _cachedTransform.position, 1f, 0.92f);
+        }
 
         /// <summary>
         /// Updates the status light color using MaterialPropertyBlock.
@@ -812,6 +919,7 @@ namespace Hecton8.Gameplay
             if (!lockedDown)
                 _lockdownOverrideBlockedByFloodedNeighbor = false;
             _weldOverrideProgressSeconds = 0f;
+            SetBulkheadSlideTarget(lockedDown ? 1f : 0f);
             if (_state == AirlockState.Ready)
                 UpdateStatusLight(_emergencyLockedDown ? lockedDownColor : readyColor);
 

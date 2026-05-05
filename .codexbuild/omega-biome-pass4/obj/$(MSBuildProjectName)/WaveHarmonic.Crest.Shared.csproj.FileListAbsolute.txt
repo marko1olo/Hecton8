@@ -1,0 +1,9 @@
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\WaveHarmonic.Crest.Shared.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\WaveHarmonic.Crest.Shared.pdb
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\WaveHarmonic.Crest.Shared.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\WaveHarmonic.Crest.Shared.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\WaveHarmonic.Crest.Shared.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\WaveHarmonic.Crest.Shared.sourcelink.json
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\WaveHarm.A55ADC50.Up2Date
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\WaveHarmonic.Crest.Shared.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\WaveHarmonic.Crest.Shared.pdb

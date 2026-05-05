@@ -993,6 +993,36 @@ float3 ResolveHeadlightPhotophobiaForce(float3 positionWS, float headlightPanic0
     return awayFromCenterline * force;
 }
 
+float3 ResolvePlayerCurtainPartingForce(float3 positionCR, float3 velocityCR, float3 playerPositionCR, float playerThreatGate, float panicFromPlayer)
+{
+    if (_ParasiteMode > 0.5 || playerThreatGate <= 0.001)
+        return float3(0.0, 0.0, 0.0);
+
+    float3 toPlayer = SafeNormalize(playerPositionCR - positionCR);
+    if (dot(toPlayer, toPlayer) <= EPSILON)
+        return float3(0.0, 0.0, 0.0);
+
+    float3 boidForward = SafeNormalize(velocityCR);
+    if (dot(boidForward, boidForward) <= EPSILON)
+        boidForward = toPlayer;
+
+    float facingGate = smoothstep(0.12, 0.86, dot(boidForward, toPlayer));
+    if (facingGate <= 0.001)
+        return float3(0.0, 0.0, 0.0);
+
+    float3 lateral = SafeNormalize(cross(float3(0.0, 1.0, 0.0), toPlayer));
+    if (dot(lateral, lateral) <= EPSILON)
+        lateral = SafeNormalize(_PlayerRightWS);
+    if (dot(lateral, lateral) <= EPSILON)
+        lateral = float3(1.0, 0.0, 0.0);
+
+    float sideSign = dot(positionCR - playerPositionCR, lateral) >= 0.0 ? 1.0 : -1.0;
+    float headlightGate = saturate(_HeadlightPanic * playerThreatGate);
+    float panicGate = max(saturate(panicFromPlayer), headlightGate);
+    float strength = facingGate * playerThreatGate * max(0.18, panicGate) * max(_PanicWeight, 1.0) * 2.65;
+    return lateral * sideSign * strength;
+}
+
 uint LoadSpatialGridCount(int flatIndex)
 {
     uint maxCount = (uint)max(_SpatialGridMeta.w, 1);
@@ -1565,6 +1595,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     }
 
     acceleration += ResolveHeadlightPhotophobiaForce(positionWS, _HeadlightPanic);
+    acceleration += ResolvePlayerCurtainPartingForce(position, velocity, playerPositionCR, playerThreatGate, panicFromPlayer);
 
     if (panicFromAcoustic > 0.0 && dot(acousticPanicDirectionWS, acousticPanicDirectionWS) > EPSILON)
     {

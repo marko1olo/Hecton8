@@ -1,0 +1,9 @@
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\ShapesRuntime.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\ShapesRuntime.pdb
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\ShapesRuntime.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\ShapesRuntime.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\ShapesRuntime.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\ShapesRuntime.sourcelink.json
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\ShapesRu.36DD35E8.Up2Date
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\ShapesRuntime.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\ShapesRuntime.pdb

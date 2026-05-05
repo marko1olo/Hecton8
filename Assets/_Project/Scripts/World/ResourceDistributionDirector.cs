@@ -27,6 +27,8 @@ namespace Hecton8.World
         private const int InitialMetamorphismCapacity = 128;
         private const int GhostProxySnapBatchCapacity = 32;
         private const int GhostProxySnapMinCommandsPerJob = 4;
+        private const string NativeMemoryOwner = nameof(ResourceDistributionDirector);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const float GameSecondsPerDay = 86400f;
         private const float DefaultSlopeSampleDistanceMeters = 4f;
         private const float DefaultVoxelSolidThreshold = 0.08f;
@@ -66,7 +68,7 @@ namespace Hecton8.World
         private const int MeteorImpactSeedSalt = unchecked((int)0x4D45544F);
         private const int MeteorRadiationHazardIdSalt = unchecked((int)0x524144);
 
-        internal static ResourceDistributionDirector ActiveRuntimeInstance { get; private set; }
+        internal static ResourceDistributionDirector ActiveRuntimeInstance => GlobalRegistry.ResourceDistribution;
 
         private struct BrinePoolState
         {
@@ -425,7 +427,7 @@ namespace Hecton8.World
             if (!Application.isPlaying)
                 return;
 
-            ActiveRuntimeInstance = this;
+            GlobalRegistry.RegisterResourceDistribution(this);
             EnsureGhostProxySnapBuffers();
 
             if (!_slowTickRegistered && GlobalRegistry.Dispatcher != null)
@@ -474,7 +476,8 @@ namespace Hecton8.World
             _pendingSpawns?.Clear();
             _pendingGhostProxySnaps?.Clear();
             _runtimePoolReady = false;
-            ActiveRuntimeInstance = ReferenceEquals(ActiveRuntimeInstance, this) ? null : ActiveRuntimeInstance;
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                GlobalRegistry.UnregisterResourceDistribution(this);
             UpdateDiagnostics(default);
         }
 
@@ -484,6 +487,8 @@ namespace Hecton8.World
             CancelGhostProxySnapJobForTeardown();
             DisposeMetamorphismBuffers();
             DisposeGhostProxySnapBuffers();
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                GlobalRegistry.UnregisterResourceDistribution(this);
         }
 
         /// <summary>
@@ -1393,15 +1398,23 @@ namespace Hecton8.World
             DisposeMetamorphismBuffers();
             _metamorphismInputs = new NativeArray<PressureMetamorphismInput>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PressureMetamorphismInput>[capacity] — pressure metamorphism Burst input lane — owner: ResourceDistributionDirector
             _metamorphismResults = new NativeArray<PressureMetamorphismResult>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PressureMetamorphismResult>[capacity] — pressure metamorphism Burst result lane — owner: ResourceDistributionDirector
+            RegisterTrackedNativeArray(_metamorphismInputs, nameof(_metamorphismInputs));
+            RegisterTrackedNativeArray(_metamorphismResults, nameof(_metamorphismResults));
         }
 
         private void DisposeMetamorphismBuffers()
         {
             if (_metamorphismInputs.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_metamorphismInputs);
                 _metamorphismInputs.Dispose();
+            }
 
             if (_metamorphismResults.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_metamorphismResults);
                 _metamorphismResults.Dispose();
+            }
 
             _metamorphismInputs = default;
             _metamorphismResults = default;
@@ -1413,6 +1426,7 @@ namespace Hecton8.World
             JobHandle disposeHandle = dependency;
             if (_metamorphismInputs.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_metamorphismInputs);
                 disposeHandle = _metamorphismInputs.Dispose(disposeHandle);
                 _metamorphismInputs = default;
                 scheduledDisposal = true;
@@ -1420,6 +1434,7 @@ namespace Hecton8.World
 
             if (_metamorphismResults.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_metamorphismResults);
                 disposeHandle = _metamorphismResults.Dispose(disposeHandle);
                 _metamorphismResults = default;
                 scheduledDisposal = true;
@@ -1443,6 +1458,7 @@ namespace Hecton8.World
                     GhostProxySnapBatchCapacity,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[32] — meshless proxy down-snap batch — owner: ResourceDistributionDirector
+                RegisterTrackedNativeArray(_ghostProxySnapCommands, nameof(_ghostProxySnapCommands));
             }
 
             if (!_ghostProxySnapHits.IsCreated)
@@ -1451,6 +1467,7 @@ namespace Hecton8.World
                     GhostProxySnapBatchCapacity,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[32] — meshless proxy down-snap results — owner: ResourceDistributionDirector
+                RegisterTrackedNativeArray(_ghostProxySnapHits, nameof(_ghostProxySnapHits));
             }
         }
 
@@ -1470,10 +1487,16 @@ namespace Hecton8.World
         private void DisposeGhostProxySnapBuffers()
         {
             if (_ghostProxySnapCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_ghostProxySnapCommands);
                 _ghostProxySnapCommands.Dispose();
+            }
 
             if (_ghostProxySnapHits.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_ghostProxySnapHits);
                 _ghostProxySnapHits.Dispose();
+            }
 
             _ghostProxySnapCommands = default;
             _ghostProxySnapHits = default;
@@ -1485,6 +1508,7 @@ namespace Hecton8.World
             JobHandle disposeHandle = dependency;
             if (_ghostProxySnapCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_ghostProxySnapCommands);
                 disposeHandle = _ghostProxySnapCommands.Dispose(disposeHandle);
                 _ghostProxySnapCommands = default;
                 scheduledDisposal = true;
@@ -1492,6 +1516,7 @@ namespace Hecton8.World
 
             if (_ghostProxySnapHits.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_ghostProxySnapHits);
                 disposeHandle = _ghostProxySnapHits.Dispose(disposeHandle);
                 _ghostProxySnapHits = default;
                 scheduledDisposal = true;
@@ -1510,6 +1535,18 @@ namespace Hecton8.World
             return TryResolvePressureDiamondTemplate(out ResourceNodeTemplate diamondTemplate)
                 ? diamondTemplate
                 : fallback;
+        }
+
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                NativeMemoryOwner,
+                label,
+                NativeMemoryLifetime);
         }
 
         private bool TryResolvePressureCarbonTemplate(out ResourceNodeTemplate template)

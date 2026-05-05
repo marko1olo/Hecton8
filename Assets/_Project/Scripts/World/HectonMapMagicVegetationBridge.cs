@@ -2927,12 +2927,13 @@ namespace Hecton8.World
             Vector3 position,
             float surfaceOffset,
             float maxTiltAngleDegrees,
-            int stableHash,
+            float yawDegrees,
             out Vector3 snappedPosition,
             out Quaternion snappedRotation)
         {
             snappedPosition = position;
-            snappedRotation = Quaternion.Euler(0f, Mathf.Abs(stableHash % 360), 0f);
+            float safeYawDegrees = Mathf.Repeat(yawDegrees, 360f);
+            snappedRotation = Quaternion.Euler(0f, safeYawDegrees, 0f);
 
             Vector3 surfacePoint;
             Vector3 surfaceNormal;
@@ -2946,7 +2947,7 @@ namespace Hecton8.World
 
             Vector3 clampedUp = ClampScatterUpVector(surfaceNormal, maxTiltAngleDegrees);
             Quaternion alignRotation = Quaternion.FromToRotation(Vector3.up, clampedUp);
-            Quaternion yawRotation = Quaternion.AngleAxis(Mathf.Abs(stableHash % 360), clampedUp);
+            Quaternion yawRotation = Quaternion.AngleAxis(safeYawDegrees, clampedUp);
             snappedPosition = surfacePoint + (clampedUp * Mathf.Max(0f, surfaceOffset));
             snappedRotation = yawRotation * alignRotation;
             return true;

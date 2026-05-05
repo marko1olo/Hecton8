@@ -1,0 +1,794 @@
+﻿diff --git a/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
+index 7b03aa36..b1c3c37d 100644
+--- a/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
++++ b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
+@@ -2,6 +2,7 @@
+ using Hecton8.Audio;
+ using Hecton8.Construction;
+ using Hecton8.Core;
++using Hecton8.World;
+ using Hecton.UI.MainMenu;
+ using Unity.Burst;
+ using Unity.Collections;
+@@ -311,7 +312,7 @@ namespace Hecton8.Dev
+             NativeArray<int> result)
+         {
+             result[0] = -1;
+-            BaseLogisticsNetwork.ExecuteLogisticsRouteBfs(
++            LogisticsPipeRoutingKernel.ExecuteRouteBfs(
+                 nodeCount,
+                 0,
+                 edgeOffsets,
+@@ -324,18 +325,20 @@ namespace Hecton8.Dev
+ 
+         private static void ClearIntArray(NativeArray<int> values)
+         {
+-            new ClearIntArrayJob
++            JobHandle handle = new ClearIntArrayJob
+             {
+                 Values = values
+-            }.Schedule(values.Length, 32).Complete();
++            }.Schedule(values.Length, 32);
++            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+         }
+ 
+         private static void ClearByteArray(NativeArray<byte> values)
+         {
+-            new ClearByteArrayJob
++            JobHandle handle = new ClearByteArrayJob
+             {
+                 Values = values
+-            }.Schedule(values.Length, 32).Complete();
++            }.Schedule(values.Length, 32);
++            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+         }
+ 
+         private static string ToJsonBool(bool value)
+diff --git a/Assets/_Project/Scripts/HectonAtmosphereManager.cs b/Assets/_Project/Scripts/HectonAtmosphereManager.cs
+index ecf271b9..3df8965c 100644
+--- a/Assets/_Project/Scripts/HectonAtmosphereManager.cs
++++ b/Assets/_Project/Scripts/HectonAtmosphereManager.cs
+@@ -335,17 +335,9 @@ namespace Hecton8.Atmosphere
+ 
+         #region ══════════ Singleton ══════════
+ 
+-        private static HectonAtmosphereManager _instance;
+-
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState()
+-        {
+-            _instance = null;
+-        }
+-
+         public static HectonAtmosphereManager Instance
+         {
+-            get { return _instance; }
++            get { return GlobalRegistry.Atmosphere; }
+         }
+ 
+         #endregion
+@@ -563,16 +555,12 @@ namespace Hecton8.Atmosphere
+         {
+             if (Application.isPlaying)
+             {
+-                if (_instance != null && _instance != this)
++                HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
++                if (registeredAtmosphere != null && !ReferenceEquals(registeredAtmosphere, this))
+                 {
+                     Destroy(this);
+                     return;
+                 }
+-                _instance = this;
+-            }
+-            else
+-            {
+-                _instance = this;
+             }
+ 
+             _registeredToTickManager = false;
+@@ -642,6 +630,7 @@ namespace Hecton8.Atmosphere
+ 
+         private void OnDisable()
+         {
++            bool wasRegisteredRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+             _autoUnderwaterState = false;
+ 
+             if (Application.isPlaying)
+@@ -659,12 +648,13 @@ namespace Hecton8.Atmosphere
+             }
+ #endif
+ 
+-            if (_instance == this)
++            if (!Application.isPlaying || wasRegisteredRuntime)
+                 ResetCycleShaderGlobals();
+         }
+ 
+         private void OnDestroy()
+         {
++            bool wasRegisteredRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+             if (Application.isPlaying)
+             {
+                 MapMagicBiomeEvents.Unregister(this);
+@@ -673,10 +663,8 @@ namespace Hecton8.Atmosphere
+                 TryUnregisterService();
+             }
+ 
+-            if (_instance != this) return;
+-            _instance = null;
+-
+-            ResetCycleShaderGlobals();
++            if (!Application.isPlaying || wasRegisteredRuntime)
++                ResetCycleShaderGlobals();
+ 
+         }
+ 
+@@ -706,6 +694,13 @@ namespace Hecton8.Atmosphere
+             if (_registeredAtmosphereRuntime || !Application.isPlaying)
+                 return;
+ 
++            HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
++            if (registeredAtmosphere != null && !ReferenceEquals(registeredAtmosphere, this))
++            {
++                Destroy(this);
++                return;
++            }
++
+             GlobalRegistry.RegisterAtmosphereRuntime(this);
+             _registeredAtmosphereRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+         }
+diff --git a/Assets/_Project/Scripts/HectonFluidEngine.cs b/Assets/_Project/Scripts/HectonFluidEngine.cs
+index efb38b0f..66a1a622 100644
+--- a/Assets/_Project/Scripts/HectonFluidEngine.cs
++++ b/Assets/_Project/Scripts/HectonFluidEngine.cs
+@@ -136,12 +136,9 @@ namespace Hecton8.Physics
+         //  SINGLETON
+         // ══════════════════════════════════════════════════════════
+ 
+-        private static HectonFluidEngine _instance;
+-
+         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+         private static void ResetStaticState()
+         {
+-            _instance = null;
+             for (int i = 0; i < CavitationShockwaveHitCapacity; i++)
+             {
+                 s_CavitationShockwaveColliders[i] = null;
+@@ -155,10 +152,10 @@ namespace Hecton8.Physics
+             get
+             {
+ #if UNITY_EDITOR
+-                if (_instance == null && !Application.isPlaying)
++                if (!Application.isPlaying)
+                     return null;
+ #endif
+-                return _instance;
++                return GlobalRegistry.Fluid;
+             }
+         }
+ 
+@@ -393,7 +390,7 @@ namespace Hecton8.Physics
+             float acceleration,
+             int sourceBodyInstanceId)
+         {
+-            HectonFluidEngine instance = _instance;
++            HectonFluidEngine instance = GlobalRegistry.Fluid;
+             return instance != null &&
+                    instance.EnqueueCavitationBurst(position, direction, intensity01, radius, acceleration, sourceBodyInstanceId);
+         }
+@@ -499,17 +496,13 @@ namespace Hecton8.Physics
+ 
+         private void Awake()
+         {
+-            if (_instance != null && _instance != this)
++            HectonFluidEngine registeredFluid = GlobalRegistry.Fluid;
++            if (Application.isPlaying && registeredFluid != null && !ReferenceEquals(registeredFluid, this))
+             {
+                 Destroy(gameObject);
+                 return;
+             }
+ 
+-            _instance = this;
+-
+-            if (Application.isPlaying)
+-                GameBootstrapper.PersistRuntimeService(this);
+-
+             // Initial observer resolution. If player/camera appears later,
+             // FixedTick retries on a cooldown instead of staying in full-cost mode forever.
+             TryResolveObserver(force: true);
+@@ -544,6 +537,13 @@ namespace Hecton8.Physics
+         {
+             if (Application.isPlaying && !_fluidRuntimeRegistered)
+             {
++                HectonFluidEngine registeredFluid = GlobalRegistry.Fluid;
++                if (registeredFluid != null && !ReferenceEquals(registeredFluid, this))
++                {
++                    Destroy(gameObject);
++                    return;
++                }
++
+                 GlobalRegistry.RegisterFluidRuntime(this);
+                 _fluidRuntimeRegistered = ReferenceEquals(GlobalRegistry.Fluid, this);
+             }
+@@ -610,9 +610,6 @@ namespace Hecton8.Physics
+                 _postFixedRegistered = false;
+             }
+             DisposeNativeArrays();
+-
+-            if (_instance == this)
+-                _instance = null;
+         }
+ 
+         // ══════════════════════════════════════════════════════════
+diff --git a/Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs b/Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs
+index bbbee337..843f9a48 100644
+--- a/Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs
++++ b/Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs
+@@ -1,3 +1,4 @@
++using Hecton8.Core;
+ using Unity.Collections;
+ using Unity.Jobs;
+ using Unity.Mathematics;
+@@ -15,6 +16,20 @@ namespace Hecton8.World
+     [AddComponentMenu("Hecton/World/Volumetric Biome Smoke Tester")]
+     public sealed class VolumetricBiomeSmokeTester : MonoBehaviour
+     {
++        private const string NativeMemoryOwner = nameof(VolumetricBiomeSmokeTester);
++        private const string MatricesLabel = "volumetricBiomeMatrices";
++        private const string InputsLabel = "volumetricBiomeInputs";
++        private const string ResultsLabel = "volumetricBiomeResults";
++        private const string ExpectedBiomeIdsLabel = "volumetricBiomeExpectedIds";
++        private const string ExpectedFlagMasksLabel = "volumetricBiomeExpectedFlags";
++        private const string AuditResultsLabel = "volumetricBiomeAuditResults";
++        private const int StressSampleCount = 256;
++        private const int ShallowBiomeId = 11;
++        private const int TwilightBiomeId = 12;
++        private const int HadalBiomeId = 13;
++        private const byte VolumetricDepthFlag =
++            (byte)WorldProceduralFieldSampler.BiomeInfluenceFlags.VolumetricDepth;
++
+         [SerializeField] private bool runOnStart;
+         [SerializeField] private bool logResult = true;
+         [SerializeField] private bool _debugPassed;
+@@ -22,12 +37,50 @@ namespace Hecton8.World
+         [SerializeField] private int _debugTwilightBiomeId;
+         [SerializeField] private int _debugHadalBiomeId;
+         [SerializeField] private int _debugTwilightFlags;
++        [SerializeField] private int _debugStressSampleCount;
++        [SerializeField] private int _debugStressFailureCount;
++        [SerializeField] private uint _debugPackedChecksum;
+ 
+         /// <summary>
+         /// True when the most recent smoke run passed.
+         /// </summary>
+         public bool LastRunPassed => _debugPassed;
+ 
++        /// <summary>
++        /// Immutable headless volumetric biome smoke report.
++        /// </summary>
++        public readonly struct VolumetricBiomeSmokeReport
++        {
++            public VolumetricBiomeSmokeReport(
++                bool passed,
++                int shallowBiomeId,
++                int twilightBiomeId,
++                int hadalBiomeId,
++                int twilightFlags,
++                int stressSampleCount,
++                int stressFailureCount,
++                uint packedChecksum)
++            {
++                Passed = passed;
++                ShallowBiomeId = shallowBiomeId;
++                TwilightBiomeId = twilightBiomeId;
++                HadalBiomeId = hadalBiomeId;
++                TwilightFlags = twilightFlags;
++                StressSampleCount = stressSampleCount;
++                StressFailureCount = stressFailureCount;
++                PackedChecksum = packedChecksum;
++            }
++
++            public bool Passed { get; }
++            public int ShallowBiomeId { get; }
++            public int TwilightBiomeId { get; }
++            public int HadalBiomeId { get; }
++            public int TwilightFlags { get; }
++            public int StressSampleCount { get; }
++            public int StressFailureCount { get; }
++            public uint PackedChecksum { get; }
++        }
++
+         private void Start()
+         {
+             if (runOnStart)
+@@ -40,18 +93,21 @@ namespace Hecton8.World
+         [ContextMenu("Run Volumetric Biome Smoke Test")]
+         public bool RunSmokeTest()
+         {
+-            _debugPassed = RunHeadlessSmokeTest(
+-                out _debugShallowBiomeId,
+-                out _debugTwilightBiomeId,
+-                out _debugHadalBiomeId,
+-                out _debugTwilightFlags);
++            _debugPassed = RunHeadlessSmokeTest(out VolumetricBiomeSmokeReport report);
++            _debugShallowBiomeId = report.ShallowBiomeId;
++            _debugTwilightBiomeId = report.TwilightBiomeId;
++            _debugHadalBiomeId = report.HadalBiomeId;
++            _debugTwilightFlags = report.TwilightFlags;
++            _debugStressSampleCount = report.StressSampleCount;
++            _debugStressFailureCount = report.StressFailureCount;
++            _debugPackedChecksum = report.PackedChecksum;
+ 
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+             if (logResult)
+             {
+                 Debug.Log(
+                     _debugPassed
+-                        ? "[VolumetricBiomeSmokeTester] PASS"
++                        ? "[VolumetricBiomeSmokeTester] PASS stress=256"
+                         : "[VolumetricBiomeSmokeTester] FAIL",
+                     this);
+             }
+@@ -68,31 +124,47 @@ namespace Hecton8.World
+             out int hadalBiomeId,
+             out int twilightFlags)
+         {
+-            shallowBiomeId = 0;
+-            twilightBiomeId = 0;
+-            hadalBiomeId = 0;
+-            twilightFlags = 0;
++            bool passed = RunHeadlessSmokeTest(out VolumetricBiomeSmokeReport report);
++            shallowBiomeId = report.ShallowBiomeId;
++            twilightBiomeId = report.TwilightBiomeId;
++            hadalBiomeId = report.HadalBiomeId;
++            twilightFlags = report.TwilightFlags;
++            return passed;
++        }
+ 
++        /// <summary>
++        /// Runs the stress variant and returns a complete deterministic report.
++        /// </summary>
++        public static bool RunHeadlessSmokeTest(out VolumetricBiomeSmokeReport report)
++        {
+             NativeArray<WorldProceduralFieldSampler.BiomeMatrixData> matrices = default;
+             NativeArray<VolumetricBiomeClassificationInput> inputs = default;
+             NativeArray<VolumetricBiomeClassificationResult> results = default;
++            NativeArray<int> expectedBiomeIds = default;
++            NativeArray<byte> expectedFlagMasks = default;
++            NativeArray<VolumetricBiomeStressAuditResult> auditResults = default;
+ 
+             try
+             {
+                 // COLD ALLOC: NativeArray<BiomeMatrixData>[3] - volumetric biome smoke fixture - owner: VolumetricBiomeSmokeTester
+-                matrices = new NativeArray<WorldProceduralFieldSampler.BiomeMatrixData>(3, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+-                // COLD ALLOC: NativeArray<VolumetricBiomeClassificationInput>[3] - smoke job input - owner: VolumetricBiomeSmokeTester
+-                inputs = new NativeArray<VolumetricBiomeClassificationInput>(3, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+-                // COLD ALLOC: NativeArray<VolumetricBiomeClassificationResult>[3] - smoke job output - owner: VolumetricBiomeSmokeTester
+-                results = new NativeArray<VolumetricBiomeClassificationResult>(3, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++                matrices = AllocateSmokeArray<WorldProceduralFieldSampler.BiomeMatrixData>(3, MatricesLabel);
++                // COLD ALLOC: NativeArray<VolumetricBiomeClassificationInput>[256] - stress job input - owner: VolumetricBiomeSmokeTester
++                inputs = AllocateSmokeArray<VolumetricBiomeClassificationInput>(StressSampleCount, InputsLabel);
++                // COLD ALLOC: NativeArray<VolumetricBiomeClassificationResult>[256] - stress job output - owner: VolumetricBiomeSmokeTester
++                results = AllocateSmokeArray<VolumetricBiomeClassificationResult>(StressSampleCount, ResultsLabel);
++                // COLD ALLOC: NativeArray<int>[256] - expected biome ids for stress audit - owner: VolumetricBiomeSmokeTester
++                expectedBiomeIds = AllocateSmokeArray<int>(StressSampleCount, ExpectedBiomeIdsLabel);
++                // COLD ALLOC: NativeArray<byte>[256] - expected flag masks for stress audit - owner: VolumetricBiomeSmokeTester
++                expectedFlagMasks = AllocateSmokeArray<byte>(StressSampleCount, ExpectedFlagMasksLabel);
++                // COLD ALLOC: NativeArray<VolumetricBiomeStressAuditResult>[256] - stress audit output - owner: VolumetricBiomeSmokeTester
++                auditResults = AllocateSmokeArray<VolumetricBiomeStressAuditResult>(StressSampleCount, AuditResultsLabel);
+ 
+-                matrices[0] = BuildMatrix(11, 7, 0f, 500f);
+-                matrices[1] = BuildMatrix(12, 7, 500f, 2000f);
+-                matrices[2] = BuildMatrix(13, 7, 2000f, 5000f);
++                matrices[0] = BuildMatrix(ShallowBiomeId, 7, 0f, 500f);
++                matrices[1] = BuildMatrix(TwilightBiomeId, 7, 500f, 2000f);
++                matrices[2] = BuildMatrix(HadalBiomeId, 7, 2000f, 5000f);
+ 
+-                inputs[0] = BuildInput(100f, 0, 7);
+-                inputs[1] = BuildInput(1000f, 0, 7);
+-                inputs[2] = BuildInput(3500f, 0, 7);
++                for (int i = 0; i < StressSampleCount; i++)
++                    FillStressInput(i, inputs, expectedBiomeIds, expectedFlagMasks);
+ 
+                 VolumetricBiomeClassificationJob job = new VolumetricBiomeClassificationJob
+                 {
+@@ -102,37 +174,72 @@ namespace Hecton8.World
+                     BiomeMatrixCount = matrices.Length
+                 };
+ 
+-                job.Schedule(inputs.Length, 1).Complete();
++                VolumetricBiomeStressAuditJob auditJob = new VolumetricBiomeStressAuditJob
++                {
++                    Results = results,
++                    ExpectedBiomeIds = expectedBiomeIds,
++                    ExpectedFlagMasks = expectedFlagMasks,
++                    AuditResults = auditResults
++                };
++
++                JobHandle classificationHandle = job.Schedule(inputs.Length, 16);
++                JobHandle auditHandle = auditJob.Schedule(inputs.Length, 16, classificationHandle);
++                // COLD SYNC JOB: headless smoke tester synchronizes once after the scheduled Burst stress chain; no runtime Tick/Update path calls this method.
++                DispatcherJobSwap.TryComplete(ref auditHandle, forceComplete: true);
++
++                int shallowBiomeId = results[0].InfluenceCell.PrimaryBiomeId;
++                int twilightBiomeId = results[1].InfluenceCell.PrimaryBiomeId;
++                int hadalBiomeId = results[2].InfluenceCell.PrimaryBiomeId;
++                int twilightFlags = results[1].InfluenceCell.Flags;
++                int stressFailureCount = 0;
++                uint packedChecksum = 2166136261u;
++
++                for (int i = 0; i < StressSampleCount; i++)
++                {
++                    VolumetricBiomeStressAuditResult audit = auditResults[i];
++                    if (audit.FailureMask != 0)
++                        stressFailureCount++;
+ 
+-                shallowBiomeId = results[0].InfluenceCell.PrimaryBiomeId;
+-                twilightBiomeId = results[1].InfluenceCell.PrimaryBiomeId;
+-                hadalBiomeId = results[2].InfluenceCell.PrimaryBiomeId;
+-                twilightFlags = results[1].InfluenceCell.Flags;
++                    packedChecksum = (packedChecksum ^ audit.PackedCell) * 16777619u;
++                }
+ 
+-                return shallowBiomeId == 11 &&
+-                       twilightBiomeId == 12 &&
+-                       hadalBiomeId == 13 &&
+-                       (twilightFlags & (byte)WorldProceduralFieldSampler.BiomeInfluenceFlags.VolumetricDepth) != 0;
++                bool passed = shallowBiomeId == ShallowBiomeId &&
++                              twilightBiomeId == TwilightBiomeId &&
++                              hadalBiomeId == HadalBiomeId &&
++                              (twilightFlags & VolumetricDepthFlag) != 0 &&
++                              stressFailureCount == 0;
++
++                report = new VolumetricBiomeSmokeReport(
++                    passed,
++                    shallowBiomeId,
++                    twilightBiomeId,
++                    hadalBiomeId,
++                    twilightFlags,
++                    StressSampleCount,
++                    stressFailureCount,
++                    packedChecksum);
++                return passed;
+             }
+             finally
+             {
+-                if (matrices.IsCreated) matrices.Dispose();
+-                if (inputs.IsCreated) inputs.Dispose();
+-                if (results.IsCreated) results.Dispose();
++                DisposeSmokeArray(ref matrices);
++                DisposeSmokeArray(ref inputs);
++                DisposeSmokeArray(ref results);
++                DisposeSmokeArray(ref expectedBiomeIds);
++                DisposeSmokeArray(ref expectedFlagMasks);
++                DisposeSmokeArray(ref auditResults);
+             }
+         }
+ 
+         public static void RunBatchmode()
+         {
+-            bool passed = RunHeadlessSmokeTest(
+-                out int shallowBiomeId,
+-                out int twilightBiomeId,
+-                out int hadalBiomeId,
+-                out int twilightFlags);
++            bool passed = RunHeadlessSmokeTest(out VolumetricBiomeSmokeReport report);
+ 
+             Debug.Log(
+                 $"[VolumetricBiomeSmokeTester] {(passed ? "PASS" : "FAIL")} " +
+-                $"shallow={shallowBiomeId} twilight={twilightBiomeId} hadal={hadalBiomeId} flags={twilightFlags}");
++                $"shallow={report.ShallowBiomeId} twilight={report.TwilightBiomeId} hadal={report.HadalBiomeId} " +
++                $"flags={report.TwilightFlags} stressSamples={report.StressSampleCount} stressFailures={report.StressFailureCount} " +
++                $"packedChecksum={report.PackedChecksum}");
+ 
+ #if UNITY_EDITOR
+             if (Application.isBatchMode)
+@@ -140,6 +247,60 @@ namespace Hecton8.World
+ #endif
+         }
+ 
++        private static void FillStressInput(
++            int index,
++            NativeArray<VolumetricBiomeClassificationInput> inputs,
++            NativeArray<int> expectedBiomeIds,
++            NativeArray<byte> expectedFlagMasks)
++        {
++            int lane = index % 3;
++            float depthMeters;
++            int expectedBiomeId;
++            byte expectedFlags;
++
++            if (lane == 0)
++            {
++                depthMeters = 32f + (index % 127);
++                expectedBiomeId = ShallowBiomeId;
++                expectedFlags = 0;
++            }
++            else if (lane == 1)
++            {
++                depthMeters = 650f + (index % 900);
++                expectedBiomeId = TwilightBiomeId;
++                expectedFlags = VolumetricDepthFlag;
++            }
++            else
++            {
++                depthMeters = 2200f + (index % 1800);
++                expectedBiomeId = HadalBiomeId;
++                expectedFlags = VolumetricDepthFlag;
++            }
++
++            inputs[index] = BuildInput(depthMeters, 0, 7);
++            expectedBiomeIds[index] = expectedBiomeId;
++            expectedFlagMasks[index] = expectedFlags;
++        }
++
++        private static NativeArray<T> AllocateSmokeArray<T>(int length, string label)
++            where T : struct
++        {
++            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
++            return array;
++        }
++
++        private static void DisposeSmokeArray<T>(ref NativeArray<T> array)
++            where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
++        }
++
+         private static WorldProceduralFieldSampler.BiomeMatrixData BuildMatrix(
+             int matrixIndex,
+             int familyDataIndex,
+diff --git a/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs b/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+index 6f24cb24..992b04dc 100644
+--- a/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
++++ b/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+@@ -135,6 +135,19 @@ namespace Hecton8.World
+     [DefaultExecutionOrder(-4028)]
+     public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable, IUpdatable, IRandomEventListener
+     {
++        private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyVoxelBridgeDirector);
++        private const string EmptyNodesLabel = "emptyCaveNodes";
++        private const string EmptyTunnelsLabel = "emptyCaveTunnels";
++        private const string EntrancesLabel = "caveEntrances";
++        private const string StructuresLabel = "caveStructures";
++        private const int QueueTelemetryFrameInterval = 120;
++        private const int QueuedLaunchTelemetryThreshold = 4;
++        private const uint QueuePressureWarningHash = 0x56425851u;
++        private const uint BuildDataBudgetWarningHash = 0x56425842u;
++        private const uint VoxelBridgeTelemetryContextHash = 0x56425843u;
++        private const float BuildDataTelemetryThresholdMs = 4f;
++        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
++
+         internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance { get; private set; }
+ 
+         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+@@ -233,6 +246,7 @@ namespace Hecton8.World
+         private bool _registeredToSlowTickManager;
+         private bool _startupReconcilePending = true;
+         private int _estimatedWarmedPoolCount;
++        private int _nextQueueTelemetryFrame;
+         private CancellationTokenSource _lifetimeCancellation;
+         private bool _randomEventHooksRegistered;
+ 
+@@ -810,6 +824,7 @@ namespace Hecton8.World
+             }
+ 
+             _debugQueuedLaunches = _queuedLaunchOrder.Count;
++            PublishQueueTelemetryIfNeeded(_debugQueuedLaunches);
+         }
+ 
+         private void FlushQueuedLaunches()
+@@ -896,8 +911,9 @@ namespace Hecton8.World
+                     out NativeArray<CaveEntrance> entranceArray,
+                     out NativeArray<CaveStructure> structureArray);
+                 float buildDataMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - buildDataStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
+-                NativeArray<CaveNode> nodes = new NativeArray<CaveNode>(0, Allocator.Persistent);
+-                NativeArray<CaveTunnel> tunnels = new NativeArray<CaveTunnel>(0, Allocator.Persistent);
++                PublishBuildDataTelemetryIfNeeded(buildDataMs);
++                NativeArray<CaveNode> nodes = AllocateTrackedNativeArray<CaveNode>(0, EmptyNodesLabel, NativeArrayOptions.UninitializedMemory);
++                NativeArray<CaveTunnel> tunnels = AllocateTrackedNativeArray<CaveTunnel>(0, EmptyTunnelsLabel, NativeArrayOptions.UninitializedMemory);
+                 NativeArray<CaveEntrance> entrances = entranceArray;
+                 TraceRequestPrepared(
+                     request.runtimeKey,
+@@ -993,10 +1009,10 @@ namespace Hecton8.World
+                 }
+                 finally
+                 {
+-                    if (nodes.IsCreated) nodes.Dispose();
+-                    if (tunnels.IsCreated) tunnels.Dispose();
+-                    if (entrances.IsCreated) entrances.Dispose();
+-                    if (structureArray.IsCreated) structureArray.Dispose();
++                    DisposeTrackedNativeArray(ref nodes);
++                    DisposeTrackedNativeArray(ref tunnels);
++                    DisposeTrackedNativeArray(ref entrances);
++                    DisposeTrackedNativeArray(ref structureArray);
+                 }
+             }
+             catch (OperationCanceledException)
+@@ -1085,9 +1101,9 @@ namespace Hecton8.World
+ 
+             Vector3 upOffset = Vector3.up * Mathf.Max(0.75f, request.size.y * 0.08f);
+             entrances = BuildEntrances(request);
+-            structures = new NativeArray<CaveStructure>(
++            structures = AllocateTrackedNativeArray<CaveStructure>(
+                 ResolveStructureCount(request.archetype),
+-                Allocator.Persistent,
++                StructuresLabel,
+                 NativeArrayOptions.UninitializedMemory);
+ 
+             switch (request.archetype)
+@@ -1305,9 +1321,9 @@ namespace Hecton8.World
+         private NativeArray<CaveEntrance> BuildEntrances(in WorldGenerativeGeologyVoxelBlendRequest request)
+         {
+             if (!VoxelSeamDirector.ShouldCreateCaveMouth(request.hasTerrainSample, request.slopeDegrees, request.caveBlendMode))
+-                return new NativeArray<CaveEntrance>(0, Allocator.Persistent);
++                return AllocateTrackedNativeArray<CaveEntrance>(0, EntrancesLabel, NativeArrayOptions.UninitializedMemory);
+ 
+-            NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            NativeArray<CaveEntrance> entrances = AllocateTrackedNativeArray<CaveEntrance>(1, EntrancesLabel, NativeArrayOptions.UninitializedMemory);
+             Vector3 terrainNormal = ResolveCaveEntranceTerrainNormal(request);
+             entrances[0] = VoxelSeamDirector.BuildCaveEntrance(
+                 request.RuntimeTerrainContactPosition,
+@@ -1321,6 +1337,64 @@ namespace Hecton8.World
+             return entrances;
+         }
+ 
++        private static NativeArray<T> AllocateTrackedNativeArray<T>(
++            int length,
++            string label,
++            NativeArrayOptions options)
++            where T : struct
++        {
++            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
++            RegisterTrackedNativeArray(array, label);
++            return array;
++        }
++
++        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label)
++            where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
++        }
++
++        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
++            where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
++        }
++
++        private void PublishQueueTelemetryIfNeeded(int queuedLaunchCount)
++        {
++            if (!Application.isPlaying || queuedLaunchCount < QueuedLaunchTelemetryThreshold)
++                return;
++
++            int frame = Time.frameCount;
++            if (frame < _nextQueueTelemetryFrame)
++                return;
++
++            _nextQueueTelemetryFrame = frame + QueueTelemetryFrameInterval;
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                QueuePressureWarningHash,
++                VoxelBridgeTelemetryContextHash,
++                queuedLaunchCount);
++        }
++
++        private static void PublishBuildDataTelemetryIfNeeded(float buildDataMs)
++        {
++            if (!Application.isPlaying || buildDataMs < BuildDataTelemetryThresholdMs)
++                return;
++
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                BuildDataBudgetWarningHash,
++                VoxelBridgeTelemetryContextHash,
++                buildDataMs);
++        }
++
+         private static Vector3 ResolveCaveEntranceTerrainNormal(in WorldGenerativeGeologyVoxelBlendRequest request)
+         {
+             if (!request.hasTerrainSample)
+diff --git a/Assets/_Project/Scripts/Editor/VolumetricBiomeSmokeTestRunner.cs b/Assets/_Project/Scripts/Editor/VolumetricBiomeSmokeTestRunner.cs
+new file mode 100644
+index 00000000..b81f8e33
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/VolumetricBiomeSmokeTestRunner.cs
+@@ -0,0 +1,70 @@
++#if UNITY_EDITOR
++using System;
++using System.IO;
++using Hecton8.World;
++using UnityEditor;
++using UnityEngine;
++
++namespace Hecton8.Editor
++{
++    internal static class VolumetricBiomeSmokeTestRunner
++    {
++        private const string OutputRelativePath = "Library/VolumetricBiomeSmokeTester.json";
++
++        public static void Run()
++        {
++            bool passed = false;
++            string json;
++
++            try
++            {
++                passed = VolumetricBiomeSmokeTester.RunHeadlessSmokeTest(
++                    out VolumetricBiomeSmokeTester.VolumetricBiomeSmokeReport report);
++                json = "{"
++                       + "\"tester\":\"VolumetricBiomeSmokeTester\","
++                       + "\"status\":\"" + (passed ? "PASS" : "FAIL") + "\","
++                       + "\"shallowBiomeId\":" + report.ShallowBiomeId + ","
++                       + "\"twilightBiomeId\":" + report.TwilightBiomeId + ","
++                       + "\"hadalBiomeId\":" + report.HadalBiomeId + ","
++                       + "\"twilightFlags\":" + report.TwilightFlags + ","
++                       + "\"stressSampleCount\":" + report.StressSampleCount + ","
++                       + "\"stressFailureCount\":" + report.StressFailureCount + ","
++                       + "\"packedChecksum\":" + report.PackedChecksum
++                       + "}";
++            }
++            catch (Exception ex)
++            {
++                json = "{\"tester\":\"VolumetricBiomeSmokeTester\",\"status\":\"EXCEPTION\",\"exception\":\""
++                       + EscapeJson(ex.GetType().FullName)
++                       + "\",\"message\":\""
++                       + EscapeJson(ex.Message)
++                       + "\"}";
++            }
++
++            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
++            string outputPath = Path.Combine(projectRoot, OutputRelativePath);
++            string outputDirectory = Path.GetDirectoryName(outputPath);
++            if (!string.IsNullOrEmpty(outputDirectory))
++                Directory.CreateDirectory(outputDirectory);
++
++            File.WriteAllText(outputPath, json);
++            Debug.Log("[VolumetricBiomeSmokeTestRunner] " + json);
++
++            if (Application.isBatchMode)
++                EditorApplication.Exit(passed ? 0 : 1);
++        }
++
++        private static string EscapeJson(string value)
++        {
++            if (string.IsNullOrEmpty(value))
++                return string.Empty;
++
++            return value
++                .Replace("\\", "\\\\")
++                .Replace("\"", "\\\"")
++                .Replace("\r", "\\r")
++                .Replace("\n", "\\n");
++        }
++    }
++}
++#endif
+diff --git a/Assets/_Project/Scripts/Editor/VolumetricBiomeSmokeTestRunner.cs.meta b/Assets/_Project/Scripts/Editor/VolumetricBiomeSmokeTestRunner.cs.meta
+new file mode 100644
+index 00000000..42f16515
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/VolumetricBiomeSmokeTestRunner.cs.meta
+@@ -0,0 +1,11 @@
++fileFormatVersion: 2
++guid: 2be33d7f7a684f7488f3a7d48b10e4ac
++MonoImporter:
++  externalObjects: {}
++  serializedVersion: 2
++  defaultReferences: []
++  executionOrder: 0
++  icon: {instanceID: 0}
++  userData:
++  assetBundleName:
++  assetBundleVariant:

@@ -76,6 +76,7 @@ namespace Hecton8.Visor
         [Tooltip("Adds deterministic low-cost flashlight shadow shimmer while voxel occlusion is stale or rebuilding.")]
         [SerializeField] private bool enableNoirSignalInstability = true;
 
+        [Tooltip("Maximum deterministic dimming/shadow-floor shimmer applied while the flashlight SDF is rebuilding.")]
         [SerializeField, Range(0f, 0.35f)] private float noirSignalInstabilityStrength = DefaultSignalInstabilityStrength;
 
         [Header("── Diagnostics ─────────────────")]
@@ -115,6 +116,10 @@ namespace Hecton8.Visor
         private Vector3 _publishedHalfExtents;
         private float _publishedSdfRange;
         private float _nextLightResolveTime;
+        private float _nextTelemetryOverlapSaturationTime;
+        private float _nextTelemetryLongScanTime;
+        private float _nextTelemetryDegenerateSdfTime;
+        private int _scanTickCount;
 
         private void Awake()
         {
@@ -210,6 +215,11 @@ namespace Hecton8.Visor
                     _restartQueued = false;
                 }
             }
+            else if (_scanInProgress)
+            {
+                _scanTickCount++;
+                PublishLongScanTelemetryIfNeeded();
+            }
 
             PublishLightGlobals(_hasValidPublishedVolume);
             _debugHasValidVolume = _hasValidPublishedVolume;
@@ -257,8 +267,18 @@ namespace Hecton8.Visor
             int voxelCount = clampedResolution * clampedResolution * clampedResolution;
             // COLD ALLOC: NativeArray<byte>[voxelCount] — flashlight-local voxel occupancy volume staging — owner: HectonFlashlightVoxelShadowProvider
             _occupancyVolume = new NativeArray<byte>(voxelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _occupancyVolume,
+                nameof(HectonFlashlightVoxelShadowProvider),
+                nameof(_occupancyVolume),
+                NativeAllocationLifetime.Scene);
             // COLD ALLOC: NativeArray<byte>[voxelCount] — flashlight-local signed-distance texture payload — owner: HectonFlashlightVoxelShadowProvider
             _sdfVolume = new NativeArray<byte>(voxelCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                _sdfVolume,
+                nameof(HectonFlashlightVoxelShadowProvider),
+                nameof(_sdfVolume),
+                NativeAllocationLifetime.Scene);
             // COLD ALLOC: Collider[8] — reusable overlap-box hit cache for flashlight voxelization — owner: HectonFlashlightVoxelShadowProvider
             _overlapHits = new Collider[MaxOverlapHits];
             // COLD ALLOC: Vector3[voxelCount] — current sweep voxel-center cache for SDF encoding — owner: HectonFlashlightVoxelShadowProvider
@@ -288,10 +308,16 @@ namespace Hecton8.Visor
         private void ReleaseResources()
         {
             if (_occupancyVolume.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_occupancyVolume);
                 _occupancyVolume.Dispose();
+            }
 
             if (_sdfVolume.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_sdfVolume);
                 _sdfVolume.Dispose();
+            }
 
             if (_voxelDensityTexture != null)
                 Destroy(_voxelDensityTexture);
@@ -306,6 +332,8 @@ namespace Hecton8.Visor
             _hasValidPublishedVolume = false;
             _scanInProgress = false;
             _restartQueued = false;
+            _scanTickCount = 0;
+            _debugSignalInstability01 = 0f;
         }
 
         private bool TryResolveFlashlightLight(bool force = false)
@@ -427,6 +455,7 @@ namespace Hecton8.Visor
             _scanLocalToWorld = Matrix4x4.TRS(centerWs, rotationWs, Vector3.one);
             _scanSliceCursor = 0;
             _scanInProgress = true;
+            _scanTickCount = 0;
         }
 
         private void ScanSlice(int zIndex)
@@ -462,6 +491,13 @@ namespace Hecton8.Visor
                 _scanRotationWs,
                 occluderLayers,
                 triggerInteraction);
+            if (hitCount >= _overlapHits.Length)
+            {
+                PublishPerformanceWarningRateLimited(
+                    TelemetryWarningOverlapSaturatedHash,
+                    ref _nextTelemetryOverlapSaturationTime,
+                    hitCount);
+            }
 
             for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
@@ -519,6 +555,10 @@ namespace Hecton8.Visor
 
             if (occupiedCount <= 0)
             {
+                PublishPerformanceWarningRateLimited(
+                    TelemetryWarningDegenerateSdfHash,
+                    ref _nextTelemetryDegenerateSdfTime,
+                    0f);
                 for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
                     _sdfVolume[voxelIndex] = byte.MaxValue;
                 return;
@@ -526,6 +566,10 @@ namespace Hecton8.Visor
 
             if (emptyCount <= 0)
             {
+                PublishPerformanceWarningRateLimited(
+                    TelemetryWarningDegenerateSdfHash,
+                    ref _nextTelemetryDegenerateSdfTime,
+                    voxelCount);
                 for (int voxelIndex = 0; voxelIndex < voxelCount; voxelIndex++)
                     _sdfVolume[voxelIndex] = byte.MinValue;
                 return;
@@ -574,6 +618,10 @@ namespace Hecton8.Visor
             Vector3 lightDirectionWs = _flashlightLight.transform.forward;
             Color lightColor = _flashlightLight.color;
             float lightRange = Mathf.Max(0.1f, _flashlightLight.range);
+            float signalInstability01 = ResolveNoirSignalInstability(hasVoxelVolume);
+            float shadowFloor = Mathf.Clamp01(DefaultShadowFloor + signalInstability01 * 0.16f);
+            float lightIntensity = Mathf.Max(0f, _flashlightLight.intensity * (1f - signalInstability01 * 0.22f));
+            _debugSignalInstability01 = signalInstability01;
 
             Shader.SetGlobalFloat(_FlashlightActiveId, 1f);
             Shader.SetGlobalFloat(_FlashlightVoxelActiveId, hasVoxelVolume ? 1f : 0f);
@@ -581,7 +629,7 @@ namespace Hecton8.Visor
             Shader.SetGlobalFloat(_FlashlightShadowSoftnessId, DefaultShadowSoftness);
             Shader.SetGlobalFloat(_FlashlightShadowMinStepId, DefaultShadowMinStep);
             Shader.SetGlobalFloat(_FlashlightShadowBiasId, DefaultShadowBias);
-            Shader.SetGlobalFloat(_FlashlightShadowFloorId, DefaultShadowFloor);
+            Shader.SetGlobalFloat(_FlashlightShadowFloorId, shadowFloor);
             Shader.SetGlobalVector(
                 _FlashlightPositionWsId,
                 new Vector4(lightPositionWs.x, lightPositionWs.y, lightPositionWs.z, lightRange));
@@ -590,14 +638,14 @@ namespace Hecton8.Visor
                 new Vector4(lightDirectionWs.x, lightDirectionWs.y, lightDirectionWs.z, innerCos));
             Shader.SetGlobalVector(
                 _FlashlightColorId,
-                new Vector4(lightColor.r, lightColor.g, lightColor.b, Mathf.Max(0f, _flashlightLight.intensity)));
+                new Vector4(lightColor.r, lightColor.g, lightColor.b, lightIntensity));
             Shader.SetGlobalVector(
                 _FlashlightConeDataId,
                 new Vector4(
                     outerCos,
                     1f,
                     lightRange > 0.0001f ? 1f / lightRange : 0f,
-                    DefaultShadowFloor));
+                    shadowFloor));
 
             if (hasVoxelVolume)
             {
@@ -611,6 +659,51 @@ namespace Hecton8.Visor
                         _publishedSdfRange));
                 Shader.SetGlobalTexture(_VoxelDensityTexId, _voxelDensityTexture);
             }
+        }
+
+        private float ResolveNoirSignalInstability(bool hasVoxelVolume)
+        {
+            if (!enableNoirSignalInstability)
+                return 0f;
+
+            float staleSignal = hasVoxelVolume ? 0f : 1f;
+            float rebuildSignal = _scanInProgress ? 0.55f : 0f;
+            float restartSignal = _restartQueued ? 0.85f : 0f;
+            float scanProgress = _resolutionRuntime > 0
+                ? Mathf.Clamp01(_scanSliceCursor / (float)_resolutionRuntime)
+                : 0f;
+            float carrier = Mathf.Sin((Time.frameCount * 0.6180339f) + scanProgress * 5.1f) * 0.5f + 0.5f;
+            float instability = Mathf.Max(staleSignal, Mathf.Max(rebuildSignal, restartSignal)) * carrier;
+            return Mathf.Clamp01(instability * noirSignalInstabilityStrength);
+        }
+
+        private void PublishLongScanTelemetryIfNeeded()
+        {
+            int safeSlicesPerTick = Mathf.Max(1, slicesPerTick);
+            int expectedTicks = (_resolutionRuntime + safeSlicesPerTick - 1) / safeSlicesPerTick;
+            if (_scanTickCount <= expectedTicks + TelemetryScanTickOverrunSlack)
+                return;
+
+            PublishPerformanceWarningRateLimited(
+                TelemetryWarningLongScanHash,
+                ref _nextTelemetryLongScanTime,
+                _scanTickCount);
+        }
+
+        private static void PublishPerformanceWarningRateLimited(
+            uint warningHash,
+            ref float nextWarningTime,
+            float scalarValue)
+        {
+            float now = Time.unscaledTime;
+            if (now < nextWarningTime)
+                return;
+
+            nextWarningTime = now + TelemetryWarningIntervalSeconds;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                warningHash,
+                TelemetryContextFlashlightVoxelShadowHash,
+                scalarValue);
         }
 
         private static void PublishInactiveGlobals()

@@ -3,6 +3,7 @@ Shader "HECTON/UI/FabricatorHologram"
     Properties
     {
         _BaseColor ("Base Color", Color) = (0.08, 0.88, 1.0, 0.42)
+        _CraftProgress ("Craft Progress", Range(0, 1)) = 0
         _ScanProgress ("Scan Progress", Range(0, 1)) = 0
         _GlitchAmount ("Glitch Amount", Range(0, 1)) = 0
         _ScanlineDensity ("Scanline Density", Range(1, 64)) = 18
@@ -53,6 +54,7 @@ Shader "HECTON/UI/FabricatorHologram"
 
             CBUFFER_START(UnityPerMaterial)
                 half4 _BaseColor;
+                float _CraftProgress;
                 float _ScanProgress;
                 float _GlitchAmount;
                 float _ScanlineDensity;
@@ -87,7 +89,8 @@ Shader "HECTON/UI/FabricatorHologram"
             half4 Frag(Varyings input) : SV_Target
             {
                 float revealBand = saturate((input.positionOS.y * 0.5) + 0.5);
-                float reveal = saturate((_ScanProgress * 1.2) - revealBand + 0.18);
+                float craftProgress = saturate(max(_CraftProgress, _ScanProgress));
+                float reveal = saturate((craftProgress * 1.2) - revealBand + 0.18);
                 clip(reveal - 0.02);
 
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);

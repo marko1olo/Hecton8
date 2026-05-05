@@ -215,26 +215,18 @@ namespace Hecton8.Core
         private const string TectonicSpineFamilyId = "biome.family.tectonic_spine";
 
         // ══════════════════════════════════════════════════════════
-        //  SINGLETON
+        //  RUNTIME AUTHORITY
         // ══════════════════════════════════════════════════════════
-
-        private static MapMagicBridge _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
 
         public static MapMagicBridge Instance
         {
             get
             {
 #if UNITY_EDITOR
-                if (_instance == null && !Application.isPlaying)
+                if (!Application.isPlaying)
                     return null;
 #endif
-                return _instance;
+                return GlobalRegistry.MapMagic;
             }
         }
 
@@ -308,6 +300,7 @@ namespace Hecton8.Core
         /// Registration tracking flag for GameTickManager.
         /// </summary>
         private bool _registeredToTickManager;
+        private bool _registeredMapMagicRuntime;
 
         /// <summary>
         /// v3.1: Flag indicating biome detection has been attempted at least once.
@@ -377,14 +370,6 @@ namespace Hecton8.Core
         private void Awake()
         {
             // ── Singleton ──
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
-
             TryResolveCoLocatedMapMagicObject();
             ReportMissingMapMagicBindingIfNeeded();
 
@@ -413,11 +398,13 @@ namespace Hecton8.Core
 
         private void OnEnable()
         {
+            TryRegisterMapMagicRuntime();
             TryRegisterToTickManager();
         }
 
         private void Start()
         {
+            TryRegisterMapMagicRuntime();
             TryRegisterToTickManager();
 
             // ── Initial biome detection ──
@@ -428,14 +415,40 @@ namespace Hecton8.Core
         private void OnDisable()
         {
             TryUnregisterFromTickManager();
+            TryUnregisterMapMagicRuntime();
         }
 
         private void OnDestroy()
         {
-            if (_instance == this)
+            TryUnregisterFromTickManager();
+            TryUnregisterMapMagicRuntime();
+        }
+
+        private void TryRegisterMapMagicRuntime()
+        {
+            if (_registeredMapMagicRuntime || !Application.isPlaying)
+                return;
+
+            MapMagicBridge current = GlobalRegistry.MapMagic;
+            if (current != null && !ReferenceEquals(current, this))
             {
-                _instance = null;
+                Destroy(gameObject);
+                return;
             }
+
+            GlobalRegistry.RegisterMapMagicRuntime(this);
+            _registeredMapMagicRuntime = ReferenceEquals(GlobalRegistry.MapMagic, this);
+        }
+
+        private void TryUnregisterMapMagicRuntime()
+        {
+            if (!_registeredMapMagicRuntime)
+                return;
+
+            if (ReferenceEquals(GlobalRegistry.MapMagic, this))
+                GlobalRegistry.UnregisterMapMagicRuntime(this);
+
+            _registeredMapMagicRuntime = false;
         }
 
         private void TryRegisterToTickManager()

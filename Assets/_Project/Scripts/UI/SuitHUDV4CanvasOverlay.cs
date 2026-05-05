@@ -28,7 +28,7 @@ namespace Hecton8.UI
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Suit HUD V4 Canvas Overlay")]
     [RequireComponent(typeof(Canvas))]
-    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, ISceneBootstrapEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener
+    public sealed class SuitHUDV4CanvasOverlay : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, IOriginShiftListener, IUIService, ISceneBootstrapEventListener, IPlayerSignalEventListener, ILocalizationLanguageChangedListener, ILocalizationCorruptionVisualStateListener, ISaveEventListener
     {
         private static readonly List<SuitHUDV4CanvasOverlay> s_activeOverlays = new List<SuitHUDV4CanvasOverlay>(4);
         private static readonly List<VisorHUDController> s_controllerResolveBuffer = new List<VisorHUDController>(2);
@@ -92,6 +92,9 @@ namespace Hecton8.UI
         private const byte CriticalMaskPower = 1 << 1;
         private const byte CriticalMaskHealth = 1 << 2;
         private const float ToolDepletedWarningDurationSeconds = 2.25f;
+        private const float SavingProgressFadeSpeed = 6.5f;
+        private const float SavingProgressSpinDegreesPerSecond = 260f;
+        private const float SavingProgressVisibleEpsilon = 0.001f;
         private const float CorruptedModeThreshold = 0.75f;
         private const float JitterAmplitudePixels = 7f;
         private const float JitterFrequencyRadians = 23f;
@@ -448,11 +451,14 @@ namespace Hecton8.UI
         private RectTransform _telemetryRoot;
         private RectTransform _gaugeClusterRoot;
         private RectTransform _quickbarRoot;
+        private RectTransform _savingProgressRoot;
+        private RectTransform _savingProgressIconRoot;
         private CanvasGroup _headerCanvasGroup;
         private CanvasGroup _telemetryChromeCanvasGroup;
         private CanvasGroup _telemetrySupplementCanvasGroup;
         private CanvasGroup _statusCanvasGroup;
         private CanvasGroup _quickbarCanvasGroup;
+        private CanvasGroup _savingProgressCanvasGroup;
         private Image _biosBackdrop;
         private Image _acousticRadarOverlay;
         private Image _topVeil;
@@ -472,6 +478,10 @@ namespace Hecton8.UI
         private Image _telemetryRule;
         private Image _telemetryBraceUpper;
         private Image _telemetryBraceLower;
+        private Image _savingProgressDiskBody;
+        private Image _savingProgressDiskNotch;
+        private Image _savingProgressDiskLabel;
+        private Image _savingProgressDataNeedle;
 
         private TextMeshProUGUI _suitLabel;
         private TextMeshProUGUI _headingLabel;
@@ -601,6 +611,9 @@ namespace Hecton8.UI
         private float _traumaTransportPower01 = 1f;
         private float _traumaHullIntegrity01 = 1f;
         private float _toolDepletedWarningTimer;
+        private float _savingProgressAlpha;
+        private float _savingProgressTargetAlpha;
+        private float _savingProgressSpinDegrees;
         private float _threatChevronPulseTime;
         private float _jitterTime;
         private int _toolDepletedVersion;
@@ -788,6 +801,8 @@ namespace Hecton8.UI
             LocalizationEvents.RegisterCorruptionVisualStateListener(this);
             SceneBootstrap.Register(this);
             PlayerSignalEvents.Register(this);
+            if (Application.isPlaying)
+                SaveEvents.Register(this);
             RegisterActiveOverlay();
             _layoutBuilt = false;
             InvalidateVisualCaches();
@@ -827,6 +842,7 @@ namespace Hecton8.UI
             LocalizationEvents.UnregisterCorruptionVisualStateListener(this);
             SceneBootstrap.Unregister(this);
             PlayerSignalEvents.Unregister(this);
+            SaveEvents.Unregister(this);
             HectonFloatingOrigin.UnregisterListener(this);
             UnregisterUiService();
             UnregisterActiveOverlay();
@@ -837,6 +853,9 @@ namespace Hecton8.UI
             _stressPulsePhase = 0f;
             _appliedStressPulseStrength = -1f;
             _toolDepletedWarningTimer = 0f;
+            _savingProgressTargetAlpha = 0f;
+            _savingProgressAlpha = 0f;
+            _savingProgressSpinDegrees = 0f;
             _traumaGlitchIntensity = 0f;
             _traumaRecoilScalar = 0f;
             _traumaTransportPower01 = 1f;
@@ -856,6 +875,7 @@ namespace Hecton8.UI
 
         private void OnDestroy()
         {
+            SaveEvents.Unregister(this);
             UnregisterUiService();
             UnregisterHudProxyLight();
             DisposeAcousticRadarRuntimeResources();
@@ -1080,6 +1100,7 @@ namespace Hecton8.UI
             if (!_layoutBuilt || _root == null || targetCanvas == null)
                 return;
 
+            UpdateSavingProgressHud(deltaTime);
             int cadenceFrame = Time.frameCount;
             bool refreshMediumCadence = cadenceFrame % MediumCadenceFrameModulo == 0;
             bool refreshSlowCadence = cadenceFrame % SlowCadenceFrameModulo == 0;
@@ -1163,6 +1184,19 @@ namespace Hecton8.UI
         {
             if ((SceneBootstrapEventType)payload.EventType == SceneBootstrapEventType.GameReady)
                 HandleSceneBootstrapReady();
+        }
+
+        public void OnSaveEvent(in SaveEventPayload payload)
+        {
+            SaveEventType eventType = (SaveEventType)payload.Type;
+            if (eventType == SaveEventType.SaveStarted)
+            {
+                _savingProgressTargetAlpha = 1f;
+                return;
+            }
+
+            if (eventType == SaveEventType.SaveCompleted || eventType == SaveEventType.SaveFailed)
+                _savingProgressTargetAlpha = 0f;
         }
 
         private void HandleSceneBootstrapReady()
@@ -2578,6 +2612,8 @@ namespace Hecton8.UI
             _quickbarCanvasGroup = EnsureCanvasGroup(_quickbarRoot);
             BuildQuickbarHierarchy(_quickbarRoot);
 
+            BuildSavingProgressHierarchy(_root);
+
             EnsureIsolatedDynamicCanvas(_reticleRoot, DynamicCanvasCadenceBucket.HighCadence);
             EnsureIsolatedDynamicCanvas(_depthLabel.rectTransform, DynamicCanvasCadenceBucket.LowCadence);
             EnsureIsolatedDynamicCanvas(_telemetrySupplementRoot, DynamicCanvasCadenceBucket.LowCadence);
@@ -2586,6 +2622,7 @@ namespace Hecton8.UI
             EnsureIsolatedDynamicCanvas(_healthGauge.Root, DynamicCanvasCadenceBucket.HighCadence);
             EnsureIsolatedDynamicCanvas(_powerGauge.Root, DynamicCanvasCadenceBucket.HighCadence);
             EnsureIsolatedDynamicCanvas(_quickbarRoot, DynamicCanvasCadenceBucket.LowCadence);
+            EnsureIsolatedDynamicCanvas(_savingProgressRoot, DynamicCanvasCadenceBucket.HighCadence);
 
             _ornamentCanvasGroup = EnsureCanvasGroup(_ornamentRoot);
             _headerCanvasGroup = EnsureCanvasGroup(_headerRoot);
@@ -2593,6 +2630,8 @@ namespace Hecton8.UI
             _telemetrySupplementCanvasGroup = EnsureCanvasGroup(_telemetrySupplementRoot);
             _statusCanvasGroup = EnsureCanvasGroup(_statusLabel.rectTransform);
             _quickbarCanvasGroup = EnsureCanvasGroup(_quickbarRoot);
+            _savingProgressCanvasGroup = EnsureCanvasGroup(_savingProgressRoot);
+            ApplySavingProgressCanvasState(0f);
 
             _layoutBuilt = true;
         }
@@ -2664,6 +2703,16 @@ namespace Hecton8.UI
             canvasGroup.alpha = visible ? 1f : 0f;
             canvasGroup.interactable = visible;
             canvasGroup.blocksRaycasts = visible;
+        }
+
+        private void ApplySavingProgressCanvasState(float alpha)
+        {
+            if (_savingProgressCanvasGroup == null)
+                return;
+
+            _savingProgressCanvasGroup.alpha = Mathf.Clamp01(alpha);
+            _savingProgressCanvasGroup.interactable = false;
+            _savingProgressCanvasGroup.blocksRaycasts = false;
         }
 
         private void SetRootVisible(bool visible)
@@ -2756,6 +2805,32 @@ namespace Hecton8.UI
             _biosBackdrop.color = biosRecoveryMode
                 ? new Color(0f, 0f, 0f, 0.84f)
                 : new Color(0f, 0f, 0f, 0f);
+        }
+
+        private void UpdateSavingProgressHud(float deltaTime)
+        {
+            if (_savingProgressCanvasGroup == null || _savingProgressIconRoot == null)
+                return;
+
+            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+            float nextAlpha = Mathf.MoveTowards(
+                _savingProgressAlpha,
+                _savingProgressTargetAlpha,
+                safeDeltaTime * SavingProgressFadeSpeed);
+
+            if (!Mathf.Approximately(nextAlpha, _savingProgressAlpha))
+            {
+                _savingProgressAlpha = nextAlpha;
+                ApplySavingProgressCanvasState(nextAlpha);
+            }
+
+            if (nextAlpha <= SavingProgressVisibleEpsilon)
+                return;
+
+            _savingProgressSpinDegrees = Mathf.Repeat(
+                _savingProgressSpinDegrees + (SavingProgressSpinDegreesPerSecond * safeDeltaTime),
+                360f);
+            _savingProgressIconRoot.localEulerAngles = new Vector3(0f, 0f, -_savingProgressSpinDegrees);
         }
 
         private static bool IsBlinkVisible(float elapsedTime, float frequency)
@@ -3856,6 +3931,47 @@ namespace Hecton8.UI
 
                 _quickbarSlots[slotIndex] = refs;
             }
+        }
+
+        private void BuildSavingProgressHierarchy(RectTransform parent)
+        {
+            if (parent == null)
+                return;
+
+            _savingProgressRoot = CreateRect("SavingProgressRoot", parent);
+            Anchor(
+                _savingProgressRoot,
+                new Vector2(1f, 1f),
+                new Vector2(1f, 1f),
+                new Vector2(-48f, -48f),
+                new Vector2(42f, 42f));
+
+            _savingProgressIconRoot = CreateRect("SavingProgressIcon", _savingProgressRoot);
+            Anchor(
+                _savingProgressIconRoot,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                Vector2.zero,
+                new Vector2(34f, 34f));
+
+            _savingProgressDiskBody = CreateImage("DiskBody", _savingProgressIconRoot, new Color(0.08f, 0.95f, 1f, 0.52f));
+            Anchor(_savingProgressDiskBody.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(24f, 26f));
+            _savingProgressDiskBody.raycastTarget = false;
+
+            _savingProgressDiskNotch = CreateImage("DiskNotch", _savingProgressIconRoot, new Color(0f, 0.04f, 0.05f, 0.82f));
+            Anchor(_savingProgressDiskNotch.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(3f, 6f), new Vector2(10f, 6f));
+            _savingProgressDiskNotch.raycastTarget = false;
+
+            _savingProgressDiskLabel = CreateImage("DiskLabel", _savingProgressIconRoot, new Color(1f, 1f, 1f, 0.68f));
+            Anchor(_savingProgressDiskLabel.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, -5f), new Vector2(14f, 6f));
+            _savingProgressDiskLabel.raycastTarget = false;
+
+            _savingProgressDataNeedle = CreateImage("DataNeedle", _savingProgressIconRoot, new Color(0.98f, 0.22f, 0.1f, 0.9f));
+            Anchor(_savingProgressDataNeedle.rectTransform, new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f), new Vector2(0f, 15f), new Vector2(3f, 8f));
+            _savingProgressDataNeedle.raycastTarget = false;
+
+            _savingProgressCanvasGroup = EnsureCanvasGroup(_savingProgressRoot);
+            ApplySavingProgressCanvasState(0f);
         }
 
         private static char[] ResolveQuickbarKeyBuffer(int slotIndex)
@@ -5066,6 +5182,7 @@ namespace Hecton8.UI
             _reticleV.color = Alpha(primary, 0.5f);
             _reticleBracketLeft.color = Alpha(primary, 0.42f);
             _reticleBracketRight.color = Alpha(primary, 0.42f);
+            ApplySavingProgressStyle(primary, dim, warning);
 
             _appliedOverallScale = overallScale;
             _appliedChromeAlpha = chromeAlpha;
@@ -5100,7 +5217,20 @@ namespace Hecton8.UI
             _reticleV.color = Alpha(pulsedPrimary, 0.5f + stressPulse * 0.08f);
             _reticleBracketLeft.color = Alpha(pulsedPrimary, 0.42f + stressPulse * 0.08f);
             _reticleBracketRight.color = Alpha(pulsedPrimary, 0.42f + stressPulse * 0.08f);
+            ApplySavingProgressStyle(pulsedPrimary, primary, warning);
             _appliedStressPulseStrength = stressPulse;
+        }
+
+        private void ApplySavingProgressStyle(Color primary, Color dim, Color warning)
+        {
+            if (_savingProgressDiskBody != null)
+                _savingProgressDiskBody.color = Alpha(primary, 0.58f);
+            if (_savingProgressDiskNotch != null)
+                _savingProgressDiskNotch.color = Alpha(Color.black, 0.78f);
+            if (_savingProgressDiskLabel != null)
+                _savingProgressDiskLabel.color = Alpha(dim, 0.72f);
+            if (_savingProgressDataNeedle != null)
+                _savingProgressDataNeedle.color = Alpha(warning, 0.92f);
         }
 
         private void UpdateReticleSpread(float dt)

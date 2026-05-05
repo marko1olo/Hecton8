@@ -161,6 +161,30 @@ namespace Hecton8.World
             return math.saturate((octaveA * 0.58f) + (octaveB * 0.28f) + (octaveC * 0.14f));
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        public static float ResolveDeterministicFloraYawDegrees(int stableHash, float3 absolutePosition)
+        {
+            uint hash = MixAupScatterHash(stableHash, absolutePosition, 0xA53A9D1Bu);
+            return (hash & 0x00FFFFFFu) * (360f / 16777216f);
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        public static float ResolveDeterministicFloraScaleMultiplier(
+            float minScale,
+            float maxScale,
+            int stableHash,
+            float3 absolutePosition)
+        {
+            float min = math.max(0.1f, math.min(minScale, maxScale));
+            float max = math.max(min, math.max(minScale, maxScale));
+            if (math.abs(max - min) <= 0.0001f)
+                return min;
+
+            uint hash = MixAupScatterHash(stableHash, absolutePosition, 0x6C8E9CF5u);
+            float t = (hash & 0x00FFFFFFu) * (1f / 16777215f);
+            return math.lerp(min, max, t);
+        }
+
         internal static byte ResolveFloraBudgetClassId(WorldPrefabFamilyProfile family)
         {
             if (family == null)
@@ -201,6 +225,24 @@ namespace Hecton8.World
             value *= 0x846CA68Bu;
             value ^= value >> 16;
             return (value & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private static uint MixAupScatterHash(int stableHash, float3 absolutePosition, uint salt)
+        {
+            int ix = (int)math.floor(absolutePosition.x * 4f);
+            int iy = (int)math.floor(absolutePosition.y * 4f);
+            int iz = (int)math.floor(absolutePosition.z * 4f);
+            uint hash = ((uint)stableHash ^ salt) + 0x9E3779B9u;
+            hash ^= ((uint)ix + 0x85EBCA6Bu) * 0xC2B2AE35u;
+            hash ^= ((uint)iy + 0x27D4EB2Fu) * 0x165667B1u;
+            hash ^= ((uint)iz + 0xD3A2646Cu) * 0x9E3779B1u;
+            hash ^= hash >> 16;
+            hash *= 0x7FEB352Du;
+            hash ^= hash >> 15;
+            hash *= 0x846CA68Bu;
+            hash ^= hash >> 16;
+            return hash;
         }
 
         private static bool IsPocket(WorldPrefabFamilyProfile.ProceduralDomain domain)

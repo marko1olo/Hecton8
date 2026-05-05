@@ -48,8 +48,8 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Sediment Mask", "Outlet")]
         public readonly Outlet<MatrixWorld> sedimentMaskOut = new Outlet<MatrixWorld>();
 
-        /// <summary>Strictly normalized hydraulic wear output.</summary>
-        [Den.Tools.GUI.ValAttribute("Wear Mask", "Outlet")]
+        /// <summary>Strictly normalized hydraulic erosion-depth output.</summary>
+        [Den.Tools.GUI.ValAttribute("Erosion Depth Mask", "Outlet")]
         public readonly Outlet<MatrixWorld> wearMaskOut = new Outlet<MatrixWorld>();
 
         /// <summary>Total droplet count. Draft generation uses a reduced count.</summary>
@@ -70,7 +70,11 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         /// <summary>Number of weighted spawn candidates per droplet.</summary>
         [Den.Tools.GUI.ValAttribute("Spawn Candidates")]
-        public int spawnCandidateCount = 8;
+        public int spawnCandidateCount = 12;
+
+        /// <summary>Independent erosion partition edge size in pixels.</summary>
+        [Den.Tools.GUI.ValAttribute("Sub Grid")]
+        public int subGridSize = 32;
 
         /// <summary>Spawn bias for slight depressions.</summary>
         [Den.Tools.GUI.ValAttribute("Depression Spawn")]
@@ -78,11 +82,15 @@ namespace MapMagic.Nodes.MatrixGenerators
 
         /// <summary>Spawn bias for existing channels.</summary>
         [Den.Tools.GUI.ValAttribute("Channel Spawn")]
-        public float channelSpawnBias = 4f;
+        public float channelSpawnBias = 24f;
+
+        /// <summary>Directional pull into existing carved channels.</summary>
+        [Den.Tools.GUI.ValAttribute("Channel Flow")]
+        public float channelFlowBias = 2.75f;
 
         /// <summary>Direction inertia.</summary>
         [Den.Tools.GUI.ValAttribute("Inertia")]
-        public float inertia = 0.05f;
+        public float inertia = 0.86f;
 
         /// <summary>Sediment capacity multiplier.</summary>
         [Den.Tools.GUI.ValAttribute("Capacity")]
@@ -112,6 +120,34 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Flat Fill")]
         public float depressionFillStrength = 0.85f;
 
+        /// <summary>Slope cutoff for full-payload sediment dumping.</summary>
+        [Den.Tools.GUI.ValAttribute("Flat Slope")]
+        public float sedimentaryFlatSlopeDegrees = 2f;
+
+        /// <summary>Smoothing iterations for sedimentary plains.</summary>
+        [Den.Tools.GUI.ValAttribute("Flat Smooth Iter")]
+        public int sedimentaryFlatSmoothingIterations = 2;
+
+        /// <summary>Smoothing strength for sedimentary plains.</summary>
+        [Den.Tools.GUI.ValAttribute("Flat Smooth")]
+        public float sedimentaryFlatSmoothingStrength = 0.95f;
+
+        /// <summary>Raw sediment threshold for flat smoothing classification.</summary>
+        [Den.Tools.GUI.ValAttribute("Flat Sediment Min")]
+        public float sedimentaryFlatSedimentThreshold = 0.00001f;
+
+        /// <summary>Raw erosion-depth threshold for canyon bank sharpening.</summary>
+        [Den.Tools.GUI.ValAttribute("Canyon Depth")]
+        public float canyonWallDepthThreshold = 0.0002f;
+
+        /// <summary>Wall lift strength around deep channels.</summary>
+        [Den.Tools.GUI.ValAttribute("Canyon Wall")]
+        public float canyonWallStrength = 4f;
+
+        /// <summary>Maximum normalized wall lift per pass.</summary>
+        [Den.Tools.GUI.ValAttribute("Canyon Max Lift")]
+        public float canyonWallMaxLift01 = 0.02f;
+
         /// <summary>Enables thermal slumping after hydraulic erosion.</summary>
         [Den.Tools.GUI.ValAttribute("Thermal Slump")]
         public bool enableThermalSlumping = true;
@@ -129,7 +165,11 @@ namespace MapMagic.Nodes.MatrixGenerators
         public float thermalStrength = 0.32f;
 
         /// <inheritdoc />
-        public float Complexity => math.max(1, dropletCount / 50000f) + math.max(0, thermalIterations);
+        public float Complexity =>
+            math.max(1, dropletCount / 50000f) +
+            math.max(0, thermalIterations) +
+            math.max(0, sedimentaryFlatSmoothingIterations) +
+            (canyonWallStrength > 0f && canyonWallMaxLift01 > 0f ? 1f : 0f);
 
         /// <inheritdoc />
         public float Progress(TileData data) => data.GetProgress(this);
@@ -186,6 +226,8 @@ namespace MapMagic.Nodes.MatrixGenerators
             NativeArray<float> heightB = default;
             NativeArray<float> sediment = default;
             NativeArray<float> wear = default;
+            JobHandle handle = default;
+            bool handleScheduled = false;
 
             try
             {
@@ -203,22 +245,25 @@ namespace MapMagic.Nodes.MatrixGenerators
                 int coreHeight = math.max(1, height - safeMargin * 2);
                 int resolvedDroplets = data.isDraft ? math.max(1, dropletCount / 4) : math.max(1, dropletCount);
                 PublishColdPathBudgetWarnings(cellCount, resolvedDroplets, data.isDraft);
+                float cellSizeMeters = ResolveCellSizeMeters(src);
+                float heightScaleMeters = math.max(0.001f, src.worldSize.y > 0f ? src.worldSize.y : data.globals.height);
 
                 var erosionJob = new HydraulicErosionJob
                 {
                     Heightmap = heightA,
                     SedimentMask = sediment,
-                    WearMask = wear,
+                    ErosionDepthMask = wear,
                     Width = width,
                     Height = height,
                     CoreOffsetX = safeMargin,
                     CoreOffsetZ = safeMargin,
                     CoreWidth = coreWidth,
                     CoreHeight = coreHeight,
+                    SubGridSize = subGridSize,
                     DropletCount = resolvedDroplets,
                     MaxLifetime = math.max(1, maxLifetime),
                     Seed = unchecked((uint)seed),
-                    Inertia = inertia,
+                    Inertia = math.max(0.72f, inertia),
                     CapacityFactor = capacityFactor,
                     MinCapacity = minCapacity,
                     ErosionRate = erosionRate,
@@ -229,21 +274,50 @@ namespace MapMagic.Nodes.MatrixGenerators
                     InitialSpeed = 1f,
                     DepressionFillStrength = depressionFillStrength,
                     DepressionSpawnBias = depressionSpawnBias,
-                    ChannelSpawnBias = channelSpawnBias,
-                    SpawnCandidateCount = math.max(1, spawnCandidateCount),
+                    ChannelSpawnBias = math.max(12f, channelSpawnBias),
+                    ChannelFlowBias = math.max(1.5f, channelFlowBias),
+                    CellSizeMeters = cellSizeMeters,
+                    HeightScaleMeters = heightScaleMeters,
+                    SedimentaryFlatSlopeDegrees = sedimentaryFlatSlopeDegrees,
+                    SpawnCandidateCount = math.max(12, spawnCandidateCount),
                     MinWater = 0.01f
                 };
 
-                JobHandle handle = erosionJob.Schedule();
+                handle = HydraulicErosionScheduler.ScheduleFourPhase(ref erosionJob, 1, default);
+                handleScheduled = true;
                 NativeArray<float> current = heightA;
                 NativeArray<float> next = heightB;
+
+                if (width > 2 && height > 2)
+                {
+                    int flatIterations = math.max(0, sedimentaryFlatSmoothingIterations);
+                    for (int i = 0; i < flatIterations; i++)
+                    {
+                        if (stop != null && stop.stop)
+                            break;
+
+                        var flatJob = new SedimentaryFlatSmoothingJob
+                        {
+                            InputHeights01 = current,
+                            OutputHeights01 = next,
+                            SedimentMask = sediment,
+                            Width = width,
+                            Height = height,
+                            CellSizeMeters = cellSizeMeters,
+                            HeightScaleMeters = heightScaleMeters,
+                            MaxSlopeDegrees = sedimentaryFlatSlopeDegrees,
+                            SedimentThreshold = sedimentaryFlatSedimentThreshold,
+                            Strength = sedimentaryFlatSmoothingStrength
+                        };
+
+                        handle = flatJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
+                        Swap(ref current, ref next);
+                    }
+                }
 
                 if (enableThermalSlumping && width > 2 && height > 2)
                 {
                     int iterations = math.max(0, thermalIterations);
-                    float cellSizeMeters = ResolveCellSizeMeters(src);
-                    float heightScaleMeters = math.max(0.001f, src.worldSize.y > 0f ? src.worldSize.y : data.globals.height);
-
                     for (int i = 0; i < iterations; i++)
                     {
                         if (stop != null && stop.stop)
@@ -260,7 +334,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                             HeightScaleMeters = heightScaleMeters,
                             TalusAngleDegrees = talusAngleDegrees,
                             Strength = thermalStrength,
-                            WriteWearMask = true
+                            WriteWearMask = false
                         };
 
                         handle = slumpJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
@@ -268,9 +342,32 @@ namespace MapMagic.Nodes.MatrixGenerators
                     }
                 }
 
+                if ((stop == null || !stop.stop) &&
+                    width > 2 &&
+                    height > 2 &&
+                    canyonWallStrength > 0f &&
+                    canyonWallMaxLift01 > 0f)
+                {
+                    var canyonJob = new CanyonWallSteepeningJob
+                    {
+                        InputHeights01 = current,
+                        OutputHeights01 = next,
+                        ErosionDepthMask = wear,
+                        Width = width,
+                        Height = height,
+                        DepthThreshold = canyonWallDepthThreshold,
+                        Strength = canyonWallStrength,
+                        MaxLift01 = canyonWallMaxLift01
+                    };
+
+                    handle = canyonJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
+                    Swap(ref current, ref next);
+                }
+
                 // COLD SYNC JOB: MapMagic Generate must publish concrete matrix products before returning to the graph.
                 long barrierStartTicks = Stopwatch.GetTimestamp();
-                handle.Complete();
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                handleScheduled = false;
                 PublishBarrierWarning(ElapsedMilliseconds(barrierStartTicks, Stopwatch.GetTimestamp()));
 
                 if (stop != null && stop.stop)
@@ -287,6 +384,9 @@ namespace MapMagic.Nodes.MatrixGenerators
             }
             finally
             {
+                if (handleScheduled)
+                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+
                 DisposeTracked(ref heightA);
                 DisposeTracked(ref heightB);
                 DisposeTracked(ref sediment);

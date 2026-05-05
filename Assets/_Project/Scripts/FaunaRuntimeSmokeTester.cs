@@ -1,4 +1,9 @@
+using Hecton8.AI;
+using Hecton8.Core;
 using Hecton8.World;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -11,6 +16,10 @@ namespace Hecton8.Dev
         private const float RuntimeToleranceMeters = 0.01f;
         private const double PredatorPreyDistanceToleranceMeters = 0.0001d;
         private const double DistanceToleranceSqr = 0.05;
+        private const int AupStressPairCount = 128;
+        private const int ParasiteSmokeCount = 4;
+        private const string NativeMemoryOwner = nameof(FaunaRuntimeSmokeTester);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.TempJob;
 
         [SerializeField] private bool runOnStart;
         [SerializeField] private bool _lastAupShiftMathPassed;
@@ -21,6 +30,23 @@ namespace Hecton8.Dev
         [SerializeField] private double _lastCorpseDistanceErrorSqr;
         [SerializeField] private bool _lastPredatorPreyAupShiftMathPassed;
         [SerializeField] private double _lastPredatorPreyDistanceErrorMeters;
+
+        public struct OmegaSmokeResult
+        {
+            public bool Passed;
+            public bool AupDriftPassed;
+            public bool AupStressPassed;
+            public bool ParasiteAttachPassed;
+            public bool EggPersistencePassed;
+            public bool NativeSentinelBalanced;
+            public double AupDriftDistanceErrorMeters;
+            public double AupStressMaxDistanceErrorMeters;
+            public float ParasiteHostHealth;
+            public float ParasiteHunger01;
+            public double ParasiteMaxDistanceErrorMeters;
+            public float EggHatchTimeSeconds;
+            public int NativeSentinelDelta;
+        }
 
         private void Start()
         {
@@ -112,6 +138,198 @@ namespace Hecton8.Dev
             return dx * dx + dy * dy + dz * dz;
         }
 
+        public static bool RunOmegaHeadlessSmoke(out OmegaSmokeResult result)
+        {
+            result = default;
+            int sentinelBefore = NativeMemorySentinel.ActiveAllocationCount;
+            bool aupPassed = RunHeadlessAupDriftAssertion(out double distanceErrorMeters);
+            bool stressPassed = RunAupDriftStressJob(out double stressMaxDistanceErrorMeters);
+            bool parasitePassed = RunParasiteAttachSmoke(
+                out float parasiteHostHealth,
+                out float parasiteHunger01,
+                out double parasiteMaxDistanceErrorMeters);
+            bool eggPassed = RunEggPersistenceSmoke(out float eggHatchTimeSeconds);
+            int sentinelDelta = NativeMemorySentinel.ActiveAllocationCount - sentinelBefore;
+
+            result.AupDriftPassed = aupPassed;
+            result.AupStressPassed = stressPassed;
+            result.ParasiteAttachPassed = parasitePassed;
+            result.EggPersistencePassed = eggPassed;
+            result.NativeSentinelBalanced = sentinelDelta == 0;
+            result.AupDriftDistanceErrorMeters = distanceErrorMeters;
+            result.AupStressMaxDistanceErrorMeters = stressMaxDistanceErrorMeters;
+            result.ParasiteHostHealth = parasiteHostHealth;
+            result.ParasiteHunger01 = parasiteHunger01;
+            result.ParasiteMaxDistanceErrorMeters = parasiteMaxDistanceErrorMeters;
+            result.EggHatchTimeSeconds = eggHatchTimeSeconds;
+            result.NativeSentinelDelta = sentinelDelta;
+            result.Passed = aupPassed &&
+                            stressPassed &&
+                            parasitePassed &&
+                            eggPassed &&
+                            sentinelDelta == 0;
+            return result.Passed;
+        }
+
+        private static bool RunAupDriftStressJob(out double maxDistanceErrorMeters)
+        {
+            maxDistanceErrorMeters = double.PositiveInfinity;
+            NativeArray<AbsoluteUniversePositionBlit128> predatorAups = default;
+            NativeArray<AbsoluteUniversePositionBlit128> preyAups = default;
+            NativeArray<double> distanceErrors = default;
+
+            try
+            {
+                predatorAups = new NativeArray<AbsoluteUniversePositionBlit128>(AupStressPairCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                preyAups = new NativeArray<AbsoluteUniversePositionBlit128>(AupStressPairCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                distanceErrors = new NativeArray<double>(AupStressPairCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(predatorAups, NativeMemoryOwner, nameof(predatorAups), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(preyAups, NativeMemoryOwner, nameof(preyAups), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(distanceErrors, NativeMemoryOwner, nameof(distanceErrors), NativeMemoryLifetime);
+
+                for (int i = 0; i < AupStressPairCount; i++)
+                {
+                    double3 predatorPosition = new double3(
+                        50000.0 + (i * 8.125),
+                        -120.0 - ((i & 7) * 0.25),
+                        -50000.0 + (i * 4.5));
+                    double3 preyPosition = predatorPosition + new double3(12.5, 3.25, 6.5);
+                    AbsoluteUniversePosition predatorAup = AbsoluteUniversePosition.FromAbsolutePosition(predatorPosition);
+                    AbsoluteUniversePosition preyAup = AbsoluteUniversePosition.FromAbsolutePosition(preyPosition);
+                    predatorAups[i] = predatorAup.ToAlignedBlit();
+                    preyAups[i] = preyAup.ToAlignedBlit();
+                }
+
+                JobHandle handle = new AupDriftStressJob
+                {
+                    PredatorAups = predatorAups,
+                    PreyAups = preyAups,
+                    DistanceErrors = distanceErrors,
+                    OriginBefore = float3.zero,
+                    OriginAfter = new float3(50000f, 0f, -50000f)
+                }.Schedule(AupStressPairCount, 32);
+
+                if (!DispatcherJobSwap.TryComplete(ref handle, forceComplete: true))
+                    return false;
+
+                double maxError = 0.0;
+                for (int i = 0; i < AupStressPairCount; i++)
+                    maxError = math.max(maxError, distanceErrors[i]);
+
+                maxDistanceErrorMeters = maxError;
+                return maxError <= PredatorPreyDistanceToleranceMeters;
+            }
+            finally
+            {
+                if (predatorAups.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(predatorAups);
+                    predatorAups.Dispose();
+                }
+
+                if (preyAups.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(preyAups);
+                    preyAups.Dispose();
+                }
+
+                if (distanceErrors.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(distanceErrors);
+                    distanceErrors.Dispose();
+                }
+            }
+        }
+
+        private static bool RunParasiteAttachSmoke(
+            out float lastHostHealth,
+            out float lastParasiteHunger01,
+            out double maxDistanceErrorMeters)
+        {
+            lastHostHealth = 0f;
+            lastParasiteHunger01 = 0f;
+            maxDistanceErrorMeters = double.PositiveInfinity;
+            NativeArray<FaunaParasiteAttachInput> inputs = default;
+            NativeArray<FaunaParasiteAttachResult> results = default;
+
+            try
+            {
+                inputs = new NativeArray<FaunaParasiteAttachInput>(ParasiteSmokeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                results = new NativeArray<FaunaParasiteAttachResult>(ParasiteSmokeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(inputs, NativeMemoryOwner, nameof(inputs), NativeMemoryLifetime);
+                NativeMemorySentinel.RegisterNativeArray(results, NativeMemoryOwner, nameof(results), NativeMemoryLifetime);
+
+                for (int i = 0; i < ParasiteSmokeCount; i++)
+                {
+                    AbsoluteUniversePosition hostAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(
+                        12345.25 + (i * 3.5),
+                        -210.5,
+                        -54321.75 - (i * 2.25)));
+                    inputs[i] = new FaunaParasiteAttachInput
+                    {
+                        HostAup = hostAup.ToAlignedBlit(),
+                        HostLocalAttachOffset = new float3(1.25f + i, -0.5f, 2.75f),
+                        HostHealth = 0.8f,
+                        ParasiteHunger01 = 0.25f,
+                        DrainPerSecond = 0.1f,
+                        DeltaTimeSeconds = 2f,
+                        Attached = 1
+                    };
+                }
+
+                FaunaSimulationEngine simulationEngine = new FaunaSimulationEngine();
+                JobHandle handle = simulationEngine.ScheduleParasiteAttach(inputs, results, ParasiteSmokeCount);
+                if (!DispatcherJobSwap.TryComplete(ref handle, forceComplete: true))
+                    return false;
+
+                double maxError = 0.0;
+                bool passed = true;
+                for (int i = 0; i < ParasiteSmokeCount; i++)
+                {
+                    FaunaParasiteAttachInput input = inputs[i];
+                    FaunaParasiteAttachResult result = results[i];
+                    double3 expected = ToAbsolute(in input.HostAup) + (double3)input.HostLocalAttachOffset;
+                    double3 actual = ToAbsolute(in result.ParasiteAup);
+                    double distanceError = math.sqrt(math.lengthsq(expected - actual));
+                    maxError = math.max(maxError, distanceError);
+                    passed &= math.abs(result.HostHealth - 0.6f) <= 0.0001f;
+                    passed &= math.abs(result.ParasiteHunger01 - 0.05f) <= 0.0001f;
+                    passed &= distanceError <= PredatorPreyDistanceToleranceMeters;
+                    lastHostHealth = result.HostHealth;
+                    lastParasiteHunger01 = result.ParasiteHunger01;
+                }
+
+                maxDistanceErrorMeters = maxError;
+                return passed;
+            }
+            finally
+            {
+                if (inputs.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(inputs);
+                    inputs.Dispose();
+                }
+
+                if (results.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(results);
+                    results.Dispose();
+                }
+            }
+        }
+
+        private static bool RunEggPersistenceSmoke(out float hatchTimeSeconds)
+        {
+            AbsoluteUniversePosition eggAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(4096.25, -88.5, -8192.75));
+            EntityDataRecord eggState = PersistentWorldRegistry.CreateFaunaEggState(0xE6600001u, 77, in eggAup, 12.5f, 90f);
+            hatchTimeSeconds = PersistentWorldRegistry.GetFaunaEggHatchTimeSeconds(in eggState);
+            AbsoluteUniversePosition unpackedAup = AbsoluteUniversePosition.FromAlignedBlit(in eggState.Position);
+            return PersistentWorldRegistry.IsFaunaEggState(in eggState) &&
+                   PersistentWorldRegistry.GetFaunaEggSpeciesId(in eggState) == 77 &&
+                   math.abs(hatchTimeSeconds - 102.5f) <= 0.0001f &&
+                   AUPMath.AUPDistanceSq(in eggAup, in unpackedAup) <= 0.000001d;
+        }
+
         public static bool RunHeadlessAupDriftAssertion(out double distanceErrorMeters)
         {
             AbsoluteUniversePosition predatorAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(50000.0, -120.0, -50000.0));
@@ -149,6 +367,75 @@ namespace Hecton8.Dev
             distanceErrorMeters = math.max(math.abs(aupDistance0 - runtimeDistance0), math.abs(aupDistance0 - runtimeDistance1));
             distanceErrorMeters = math.max(distanceErrorMeters, math.abs(runtimeDistance0 - runtimeDistance1));
             return distanceErrorMeters <= PredatorPreyDistanceToleranceMeters;
+        }
+
+        private static double3 ToAbsolute(in AbsoluteUniversePositionBlit128 position)
+        {
+            const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            return new double3(
+                (position.GridX * cellSize) + position.Local.x,
+                (position.GridY * cellSize) + position.Local.y,
+                (position.GridZ * cellSize) + position.Local.z);
+        }
+
+        private static float3 ToRuntime(in AbsoluteUniversePositionBlit128 position, float3 origin)
+        {
+            double3 absolute = ToAbsolute(in position);
+            return new float3(
+                (float)(absolute.x - origin.x),
+                (float)(absolute.y - origin.y),
+                (float)(absolute.z - origin.z));
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct AupDriftStressJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit128> PredatorAups;
+            [ReadOnly] public NativeArray<AbsoluteUniversePositionBlit128> PreyAups;
+            public NativeArray<double> DistanceErrors;
+            public float3 OriginBefore;
+            public float3 OriginAfter;
+
+            public void Execute(int index)
+            {
+                AbsoluteUniversePositionBlit128 predator = PredatorAups[index];
+                AbsoluteUniversePositionBlit128 prey = PreyAups[index];
+                double aupDistance = math.sqrt(math.lengthsq(ToAbsolute(in predator) - ToAbsolute(in prey)));
+                double runtimeDistanceBefore = math.sqrt(RuntimeDistanceSq(
+                    ToRuntime(in predator, OriginBefore),
+                    ToRuntime(in prey, OriginBefore)));
+                double runtimeDistanceAfter = math.sqrt(RuntimeDistanceSq(
+                    ToRuntime(in predator, OriginAfter),
+                    ToRuntime(in prey, OriginAfter)));
+                double error = math.max(math.abs(aupDistance - runtimeDistanceBefore), math.abs(aupDistance - runtimeDistanceAfter));
+                DistanceErrors[index] = math.max(error, math.abs(runtimeDistanceBefore - runtimeDistanceAfter));
+            }
+
+            private static double3 ToAbsolute(in AbsoluteUniversePositionBlit128 position)
+            {
+                const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+                return new double3(
+                    (position.GridX * cellSize) + position.Local.x,
+                    (position.GridY * cellSize) + position.Local.y,
+                    (position.GridZ * cellSize) + position.Local.z);
+            }
+
+            private static float3 ToRuntime(in AbsoluteUniversePositionBlit128 position, float3 origin)
+            {
+                double3 absolute = ToAbsolute(in position);
+                return new float3(
+                    (float)(absolute.x - origin.x),
+                    (float)(absolute.y - origin.y),
+                    (float)(absolute.z - origin.z));
+            }
+
+            private static double RuntimeDistanceSq(float3 a, float3 b)
+            {
+                double dx = (double)a.x - b.x;
+                double dy = (double)a.y - b.y;
+                double dz = (double)a.z - b.z;
+                return dx * dx + dy * dy + dz * dz;
+            }
         }
     }
 }

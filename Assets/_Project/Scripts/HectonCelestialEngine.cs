@@ -589,6 +589,30 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [SerializeField] private float stormEmissionIntensity = 1.0f;
         [SerializeField] private float starMapSeed = 99173f;
 
+        [Header("GPU Firmament Bake")]
+        [SerializeField] private ComputeShader firmamentBakeCompute;
+        [SerializeField] private bool enableGpuFirmamentBake = true;
+        [SerializeField, Range(256, 2048)] private int firmamentCubemapResolution = 1024;
+        [SerializeField, Range(0.1f, 6f)] private float firmamentStarIntensity = 1.35f;
+        [SerializeField, Range(0.02f, 0.32f)] private float firmamentMilkyWayHalfWidthRadians = 0.11f;
+        [SerializeField, Range(0f, 1f)] private float firmamentMilkyWayProbability = 0.76f;
+        [SerializeField, Range(0.1f, 4f)] private float firmamentMilkyWayCoreBias = 1.8f;
+        [SerializeField, Range(0f, 1f)] private float firmamentStarHaloGain = 0.35f;
+        [SerializeField, Range(64, 512)] private int atmosphereScatteringLutWidth = 256;
+        [SerializeField, Range(16, 128)] private int atmosphereScatteringLutHeight = 64;
+        [SerializeField, Range(0f, 4f)] private float atmosphereScatteringDensity = 1f;
+        [SerializeField, Range(0f, 12f)] private float atmosphereScatteringExposure = 4.4f;
+
+        [Header("Ocean Celestial Projection")]
+        [SerializeField, Min(256f)] private float eclipseWaterShadowRadiusMeters = 4200f;
+        [SerializeField, Range(0f, 1f)] private float eclipseWaterShadowDarkening = 0.58f;
+        [SerializeField, Range(0.02f, 0.85f)] private float eclipseWaterShadowSoftness = 0.34f;
+        [SerializeField, Range(0f, 80f)] private float eclipseWaterShadowScrollMetersPerSecond = 11f;
+        [SerializeField, Range(0f, 1f)] private float aegirRingCausticStrength = 0.22f;
+        [SerializeField, Range(0.0005f, 0.08f)] private float aegirRingCausticStripeScale = 0.018f;
+        [SerializeField, Range(0.005f, 0.45f)] private float aegirRingCausticSoftness = 0.08f;
+        [SerializeField, Range(0f, 0.25f)] private float aegirRingCausticScrollSpeed = 0.014f;
+
         [Header("═══ TRANSITION CURVES ═══")]
         [SerializeField] private float twilightStartAngle = 5f;
         [SerializeField] private float twilightEndAngle = -5f;
@@ -648,6 +672,16 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private Color _resolvedSkyHorizon;
         private Color _resolvedSkyNadir;
         private Texture2D _celestialAtmosphereLutTexture;
+        private RenderTexture _bakedStarCubemap;
+        private RenderTexture _atmosphereScatteringLutTexture;
+        private bool _firmamentBakeComplete;
+        private int _firmamentBakedSeed;
+        private int _firmamentBakedResolution;
+        private int _atmosphereScatteringBakedWidth;
+        private int _atmosphereScatteringBakedHeight;
+        private int _firmamentClearKernel = -1;
+        private int _firmamentStarKernel = -1;
+        private int _firmamentAtmosphereKernel = -1;
         private float _currentAtmosphereExposure = 1f;
         private float _lastAtmosphereBakeSunElevation = float.PositiveInfinity;
         private float _lastAtmosphereBakeDayWeight = -1f;
@@ -719,8 +753,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private const int CelestialBodyCacheCapacity = 8;
         private const float AtmosphereWeightBlendThreshold = 0.01f;
         private const int CelestialAtmosphereLutResolution = 512;
+        private const int FirmamentStartupStarCount = 100000;
         private const int BestVisualDefaultsVersion = 5;
         private const float NightAtmosphereInscatterFloor = 0.001f;
+#if UNITY_EDITOR
+        private const string FirmamentBakeComputeAssetPath = "Assets/_Project/Art/Shaders/HectonFirmamentBake.compute";
+#endif
         private bool _editorPreviewDirty;
         private readonly List<ObserverRelativeCelestialBody> _observerBodyCache = new List<ObserverRelativeCelestialBody>(CelestialBodyCacheCapacity); // COLD ALLOC: List<ObserverRelativeCelestialBody>[8] - cold observer-body cache for moon renderer discovery - owner: HectonCelestialEngine
         private readonly List<Renderer> _moonRenderers = new List<Renderer>(CelestialBodyCacheCapacity); // COLD ALLOC: List<Renderer>[8] - cached moon renderers for shared atmosphere overrides - owner: HectonCelestialEngine
@@ -739,6 +777,20 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private static readonly int _ID_Blend              = Shader.PropertyToID("_Blend");
         private static readonly int _ID_StarIntensity      = Shader.PropertyToID("_StarIntensity");
         private static readonly int _ID_StarSeed           = Shader.PropertyToID("_StarSeed");
+        private static readonly int _ID_BakedStarCubemap   = Shader.PropertyToID("_BakedStarCubemap");
+        private static readonly int _ID_BakedStarCubemapReady = Shader.PropertyToID("_BakedStarCubemapReady");
+        private static readonly int _ID_HectonStarBakeParams = Shader.PropertyToID("_HectonStarBakeParams");
+        private static readonly int _ID_HectonStarDistribution = Shader.PropertyToID("_HectonStarDistribution");
+        private static readonly int _ID_HectonAtmosphereScatteringLut = Shader.PropertyToID("_HectonAtmosphereScatteringLUT");
+        private static readonly int _ID_HectonAtmosphereScatteringLutReady = Shader.PropertyToID("_HectonAtmosphereScatteringLUTReady");
+        private static readonly int _ID_HectonAtmosphereLutSize = Shader.PropertyToID("_HectonAtmosphereLutSize");
+        private static readonly int _ID_HectonRayleighBeta = Shader.PropertyToID("_HectonRayleighBeta");
+        private static readonly int _ID_HectonMieBeta = Shader.PropertyToID("_HectonMieBeta");
+        private static readonly int _ID_HectonAtmosphereParams = Shader.PropertyToID("_HectonAtmosphereParams");
+        private static readonly int _ID_HectonEclipseWaterShadowParams = Shader.PropertyToID("_HectonEclipseWaterShadowParams");
+        private static readonly int _ID_HectonEclipseWaterShadowDirection = Shader.PropertyToID("_HectonEclipseWaterShadowDirection");
+        private static readonly int _ID_HectonRingCausticsParams = Shader.PropertyToID("_HectonRingCausticsParams");
+        private static readonly int _ID_HectonRingCausticsDirection = Shader.PropertyToID("_HectonRingCausticsDirection");
         private static readonly int _ID_FresnelSunDir      = Shader.PropertyToID("_FresnelSunDir");
         private static readonly int _ID_SunBacklitFactor   = Shader.PropertyToID("_SunBacklitFactor");
         private static readonly int _ID_GlobalRotation     = Shader.PropertyToID("_GlobalRotation");
@@ -884,6 +936,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         {
             ForceMandatedSkyMaterialReference();
             EnsureCelestialAtmosphereLutReady();
+            ResolveFirmamentBakeCompute();
         }
 
         private void OnEnable()
@@ -900,6 +953,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             ForceMandatedSkyMaterialReference();
             ValidateReferences();
             EnsureCelestialAtmosphereLutReady();
+            ResolveFirmamentBakeCompute();
             InitializeMaterialPropertyBlocks();
             InitializePlanetShineLight();
             CacheCelestialTextureDefaults();
@@ -937,6 +991,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             SyncCrestPrimaryLight();
 
             ApplySkyboxMaterialOwnership(forceAssignment: true);
+            _resolvedStarMapSeed = ResolveStarMapSeed();
+            TryBakeFirmamentOnce();
 
             if (Application.isPlaying)
             {
@@ -984,6 +1040,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 BiomeMatrixEvents.Unregister(this);
 
             ReleaseCelestialAtmosphereLut();
+            ReleaseFirmamentBakeResources();
             RestoreCelestialTextureDefaults();
             RestoreSunDefaults();
             CleanupPlanetShineLight();
@@ -1015,6 +1072,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             }
 
             ReleaseCelestialAtmosphereLut();
+            ReleaseFirmamentBakeResources();
             TryUnregisterFromTickManager();
         }
 
@@ -1159,6 +1217,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             UpdateSkyboxBlend(sunElevation);
             UpdateStarIntensity(sunElevation);
             _resolvedStarMapSeed = ResolveStarMapSeed();
+            TryBakeFirmamentOnce();
             ResolveSkyColors(out _resolvedSkyZenith, out _resolvedSkyHorizon, out _resolvedSkyNadir);
             UpdateDynamicCelestialAtmosphere(sunElevation, false);
             UpdateGlobalShaderData();
@@ -1738,6 +1797,255 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             _lastAtmosphereBakeSkyZenith = default;
             _lastAtmosphereBakeSkyHorizon = default;
             _lastAtmosphereBakeSkyNadir = default;
+        }
+
+        private void TryBakeFirmamentOnce()
+        {
+            if (_firmamentBakeComplete)
+            {
+                PublishFirmamentBakeGlobals();
+                return;
+            }
+
+            if (!Application.isPlaying || !enableGpuFirmamentBake)
+            {
+                PublishFirmamentBakeGlobals();
+                return;
+            }
+
+            ResolveFirmamentBakeCompute();
+            if (firmamentBakeCompute == null || !TryResolveFirmamentKernels())
+            {
+                PublishFirmamentBakeGlobals();
+                return;
+            }
+
+            int starResolution = Mathf.Clamp(firmamentCubemapResolution, 256, 2048);
+            int atmosphereWidth = Mathf.Clamp(atmosphereScatteringLutWidth, 64, 512);
+            int atmosphereHeight = Mathf.Clamp(atmosphereScatteringLutHeight, 16, 128);
+            EnsureFirmamentStarCubemap(starResolution);
+            EnsureAtmosphereScatteringLut(atmosphereWidth, atmosphereHeight);
+
+            if (_bakedStarCubemap == null || _atmosphereScatteringLutTexture == null)
+            {
+                PublishFirmamentBakeGlobals();
+                return;
+            }
+
+            int seed = Mathf.Max(1, Mathf.RoundToInt(_resolvedStarMapSeed));
+            firmamentBakeCompute.SetVector(
+                _ID_HectonStarBakeParams,
+                new Vector4(
+                    FirmamentStartupStarCount,
+                    starResolution,
+                    seed,
+                    Mathf.Max(0f, firmamentStarIntensity)));
+            firmamentBakeCompute.SetVector(
+                _ID_HectonStarDistribution,
+                new Vector4(
+                    Mathf.Max(0.001f, firmamentMilkyWayHalfWidthRadians),
+                    Mathf.Clamp01(firmamentMilkyWayProbability),
+                    Mathf.Max(0.001f, firmamentMilkyWayCoreBias),
+                    Mathf.Clamp01(firmamentStarHaloGain)));
+            firmamentBakeCompute.SetTexture(_firmamentClearKernel, _ID_BakedStarCubemap, _bakedStarCubemap);
+            firmamentBakeCompute.SetTexture(_firmamentStarKernel, _ID_BakedStarCubemap, _bakedStarCubemap);
+            firmamentBakeCompute.Dispatch(
+                _firmamentClearKernel,
+                Mathf.CeilToInt(starResolution / 8f),
+                Mathf.CeilToInt(starResolution / 8f),
+                6);
+            firmamentBakeCompute.Dispatch(
+                _firmamentStarKernel,
+                Mathf.CeilToInt(FirmamentStartupStarCount / 128f),
+                1,
+                1);
+
+            firmamentBakeCompute.SetTexture(_firmamentAtmosphereKernel, _ID_HectonAtmosphereScatteringLut, _atmosphereScatteringLutTexture);
+            firmamentBakeCompute.SetVector(_ID_HectonAtmosphereLutSize, new Vector4(atmosphereWidth, atmosphereHeight, 0f, 0f));
+            firmamentBakeCompute.SetVector(_ID_HectonRayleighBeta, new Vector4(0.0058f, 0.0135f, 0.0331f, 0f));
+            firmamentBakeCompute.SetVector(_ID_HectonMieBeta, new Vector4(0.004f, 0.004f, 0.004f, 0.8f));
+            firmamentBakeCompute.SetVector(
+                _ID_HectonAtmosphereParams,
+                new Vector4(
+                    8f,
+                    2f,
+                    Mathf.Max(0f, atmosphereScatteringDensity),
+                    Mathf.Max(0f, atmosphereScatteringExposure)));
+            firmamentBakeCompute.Dispatch(
+                _firmamentAtmosphereKernel,
+                Mathf.CeilToInt(atmosphereWidth / 8f),
+                Mathf.CeilToInt(atmosphereHeight / 8f),
+                1);
+
+            _firmamentBakedSeed = seed;
+            _firmamentBakedResolution = starResolution;
+            _atmosphereScatteringBakedWidth = atmosphereWidth;
+            _atmosphereScatteringBakedHeight = atmosphereHeight;
+            _firmamentBakeComplete = true;
+            PublishFirmamentBakeGlobals();
+        }
+
+        private void ResolveFirmamentBakeCompute()
+        {
+#if UNITY_EDITOR
+            if (firmamentBakeCompute == null)
+                firmamentBakeCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(FirmamentBakeComputeAssetPath);
+#endif
+        }
+
+        private bool TryResolveFirmamentKernels()
+        {
+            if (firmamentBakeCompute == null)
+                return false;
+
+            if (_firmamentClearKernel < 0)
+            {
+                if (!firmamentBakeCompute.HasKernel("ClearStarCubemap"))
+                    return false;
+
+                _firmamentClearKernel = firmamentBakeCompute.FindKernel("ClearStarCubemap");
+            }
+
+            if (_firmamentStarKernel < 0)
+            {
+                if (!firmamentBakeCompute.HasKernel("BakeSpectralStars"))
+                    return false;
+
+                _firmamentStarKernel = firmamentBakeCompute.FindKernel("BakeSpectralStars");
+            }
+
+            if (_firmamentAtmosphereKernel < 0)
+            {
+                if (!firmamentBakeCompute.HasKernel("BakeAtmosphereLut"))
+                    return false;
+
+                _firmamentAtmosphereKernel = firmamentBakeCompute.FindKernel("BakeAtmosphereLut");
+            }
+
+            return true;
+        }
+
+        private void EnsureFirmamentStarCubemap(int resolution)
+        {
+            if (_bakedStarCubemap != null &&
+                _bakedStarCubemap.width == resolution &&
+                _bakedStarCubemap.IsCreated())
+            {
+                return;
+            }
+
+            ReleaseFirmamentStarCubemap();
+            _bakedStarCubemap = new RenderTexture(
+                resolution,
+                resolution,
+                0,
+                RenderTextureFormat.ARGBHalf,
+                RenderTextureReadWrite.Linear)
+            {
+                name = "__HectonBakedSpectralStarCubemap",
+                dimension = TextureDimension.Cube,
+                volumeDepth = 6,
+                enableRandomWrite = true,
+                useMipMap = false,
+                autoGenerateMips = false,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                anisoLevel = 0
+            }; // COLD ALLOC: RenderTexture[cubemap] - startup spectral star bake target - owner: HectonCelestialEngine
+            _bakedStarCubemap.Create();
+        }
+
+        private void EnsureAtmosphereScatteringLut(int width, int height)
+        {
+            if (_atmosphereScatteringLutTexture != null &&
+                _atmosphereScatteringLutTexture.width == width &&
+                _atmosphereScatteringLutTexture.height == height &&
+                _atmosphereScatteringLutTexture.IsCreated())
+            {
+                return;
+            }
+
+            ReleaseAtmosphereScatteringLut();
+            _atmosphereScatteringLutTexture = new RenderTexture(
+                width,
+                height,
+                0,
+                RenderTextureFormat.ARGBHalf,
+                RenderTextureReadWrite.Linear)
+            {
+                name = "__HectonAtmosphereScatteringLUT",
+                dimension = TextureDimension.Tex2D,
+                enableRandomWrite = true,
+                useMipMap = false,
+                autoGenerateMips = false,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                anisoLevel = 0
+            }; // COLD ALLOC: RenderTexture[2D LUT] - startup Rayleigh/Mie scattering lookup - owner: HectonCelestialEngine
+            _atmosphereScatteringLutTexture.Create();
+        }
+
+        private void PublishFirmamentBakeGlobals()
+        {
+            bool hasBakedStars = _firmamentBakeComplete && _bakedStarCubemap != null;
+            bool hasAtmosphereLut = _firmamentBakeComplete && _atmosphereScatteringLutTexture != null;
+
+            Shader.SetGlobalTexture(_ID_BakedStarCubemap, hasBakedStars ? _bakedStarCubemap : null);
+            Shader.SetGlobalFloat(_ID_BakedStarCubemapReady, hasBakedStars ? 1f : 0f);
+            Shader.SetGlobalTexture(_ID_HectonAtmosphereScatteringLut, hasAtmosphereLut ? _atmosphereScatteringLutTexture : Texture2D.blackTexture);
+            Shader.SetGlobalFloat(_ID_HectonAtmosphereScatteringLutReady, hasAtmosphereLut ? 1f : 0f);
+        }
+
+        private void ReleaseFirmamentBakeResources()
+        {
+            Shader.SetGlobalTexture(_ID_BakedStarCubemap, null);
+            Shader.SetGlobalFloat(_ID_BakedStarCubemapReady, 0f);
+            Shader.SetGlobalTexture(_ID_HectonAtmosphereScatteringLut, Texture2D.blackTexture);
+            Shader.SetGlobalFloat(_ID_HectonAtmosphereScatteringLutReady, 0f);
+            Shader.SetGlobalVector(_ID_HectonEclipseWaterShadowParams, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonEclipseWaterShadowDirection, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonRingCausticsParams, Vector4.zero);
+            Shader.SetGlobalVector(_ID_HectonRingCausticsDirection, Vector4.zero);
+
+            ReleaseFirmamentStarCubemap();
+            ReleaseAtmosphereScatteringLut();
+            _firmamentBakeComplete = false;
+            _firmamentBakedSeed = 0;
+            _firmamentBakedResolution = 0;
+            _atmosphereScatteringBakedWidth = 0;
+            _atmosphereScatteringBakedHeight = 0;
+        }
+
+        private void ReleaseFirmamentStarCubemap()
+        {
+            if (_bakedStarCubemap == null)
+                return;
+
+            if (_bakedStarCubemap.IsCreated())
+                _bakedStarCubemap.Release();
+
+            if (Application.isPlaying)
+                Destroy(_bakedStarCubemap);
+            else
+                DestroyImmediate(_bakedStarCubemap);
+
+            _bakedStarCubemap = null;
+        }
+
+        private void ReleaseAtmosphereScatteringLut()
+        {
+            if (_atmosphereScatteringLutTexture == null)
+                return;
+
+            if (_atmosphereScatteringLutTexture.IsCreated())
+                _atmosphereScatteringLutTexture.Release();
+
+            if (Application.isPlaying)
+                Destroy(_atmosphereScatteringLutTexture);
+            else
+                DestroyImmediate(_atmosphereScatteringLutTexture);
+
+            _atmosphereScatteringLutTexture = null;
         }
 
         private void PushSkyToRenderSettings()
@@ -2559,7 +2867,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private float ResolveStarMapSeed()
         {
             int seed = Mathf.RoundToInt(starMapSeed);
-            global::HectonWorldGenerator generator = global::HectonWorldGenerator.ActiveRuntimeInstance;
+            global::HectonWorldGenerator generator = GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
             if (generator == null)
                 return seed & 0x00FFFFFF;
 
@@ -2792,6 +3100,10 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             targetMaterial.SetFloat(_ID_NightBlend, _currentBlend);
             targetMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
             targetMaterial.SetFloat(_ID_StarSeed, _resolvedStarMapSeed);
+            targetMaterial.SetTexture(_ID_BakedStarCubemap, _firmamentBakeComplete ? _bakedStarCubemap : null);
+            targetMaterial.SetFloat(_ID_BakedStarCubemapReady, _firmamentBakeComplete && _bakedStarCubemap != null ? 1f : 0f);
+            targetMaterial.SetTexture(_ID_HectonAtmosphereScatteringLut, _firmamentBakeComplete ? _atmosphereScatteringLutTexture : Texture2D.blackTexture);
+            targetMaterial.SetFloat(_ID_HectonAtmosphereScatteringLutReady, _firmamentBakeComplete && _atmosphereScatteringLutTexture != null ? 1f : 0f);
             targetMaterial.SetFloat(_ID_SunElevation, sunElevationNormalized);
             targetMaterial.SetFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
             targetMaterial.SetFloat(_ID_PenumbraFactor, _penumbraFactor);
@@ -3144,7 +3456,52 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             Shader.SetGlobalFloat(_ID_CelestialZenithTransparency, zenithTransparency);
             Shader.SetGlobalFloat(_ID_CelestialAtmosphereBlendPower, atmosphereBlendPower);
             Shader.SetGlobalFloat(_ID_GameTime, _gameTime);
+            PublishFirmamentBakeGlobals();
+            PublishOceanCelestialProjectionGlobals(aegirDirection);
             PublishCelestialAtmosphereLut();
+        }
+
+        private void PublishOceanCelestialProjectionGlobals(Vector4 aegirDirection)
+        {
+            float2 planarDirection = new float2(aegirDirection.x, aegirDirection.z);
+            float planarLengthSq = math.lengthsq(planarDirection);
+            if (planarLengthSq <= 0.0001f)
+                planarDirection = new float2(1f, 0f);
+            else
+                planarDirection *= math.rsqrt(planarLengthSq);
+
+            float2 playerXZ = float2.zero;
+            if (playerTransform != null)
+            {
+                Vector3 playerPosition = playerTransform.position;
+                playerXZ = new float2(playerPosition.x, playerPosition.z);
+            }
+
+            float radius = math.max(256f, eclipseWaterShadowRadiusMeters);
+            float travelSpan = radius * 2f;
+            float travel = math.fmod(_gameTime * math.max(0f, eclipseWaterShadowScrollMetersPerSecond), travelSpan);
+            float2 shadowCenter = playerXZ + planarDirection * (travel - radius);
+            float waterShadowStrength = math.saturate(_penumbraFactor * eclipseWaterShadowDarkening);
+            Shader.SetGlobalVector(
+                _ID_HectonEclipseWaterShadowParams,
+                new Vector4(shadowCenter.x, shadowCenter.y, radius, waterShadowStrength));
+            Shader.SetGlobalVector(
+                _ID_HectonEclipseWaterShadowDirection,
+                new Vector4(planarDirection.x, planarDirection.y, math.saturate(eclipseWaterShadowSoftness), _penumbraFactor));
+
+            float sunAegirAlignment = math.saturate((math.dot(_resolvedSunDirection, new float3(aegirDirection.x, aegirDirection.y, aegirDirection.z)) - 0.45f) / 0.55f);
+            sunAegirAlignment = SmoothStep01(sunAegirAlignment);
+            float ringStrength = math.saturate(aegirRingCausticStrength * sunAegirAlignment);
+            Shader.SetGlobalVector(
+                _ID_HectonRingCausticsParams,
+                new Vector4(
+                    ringStrength,
+                    math.max(0.0005f, aegirRingCausticStripeScale),
+                    _gameTime * math.max(0f, aegirRingCausticScrollSpeed),
+                    math.max(0.001f, aegirRingCausticSoftness)));
+            Shader.SetGlobalVector(
+                _ID_HectonRingCausticsDirection,
+                new Vector4(planarDirection.x, planarDirection.y, sunAegirAlignment, 0f));
         }
 
         private void DisableLegacySunFlare()

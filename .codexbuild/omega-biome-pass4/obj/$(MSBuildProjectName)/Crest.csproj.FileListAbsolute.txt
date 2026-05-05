@@ -1,0 +1,9 @@
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\Crest.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\Crest.pdb
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Crest.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Crest.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Crest.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Crest.sourcelink.json
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Crest.csproj.Up2Date
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Crest.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Crest.pdb

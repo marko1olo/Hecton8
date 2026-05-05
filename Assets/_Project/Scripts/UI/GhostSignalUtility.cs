@@ -19,6 +19,18 @@ namespace Hecton8.UI
             float weakestIntensity,
             out Vector4 ping)
         {
+            if (!TryResolveCandidate(worldSeed, unscaledTimeSeconds, depthMeters, out ping))
+                return false;
+
+            return ping.w > weakestIntensity;
+        }
+
+        internal static bool TryResolveCandidate(
+            int worldSeed,
+            float unscaledTimeSeconds,
+            float depthMeters,
+            out Vector4 ping)
+        {
             ping = default;
             if (depthMeters < MinimumDepthMeters)
                 return false;
@@ -27,7 +39,7 @@ namespace Hecton8.UI
             if (cyclePosition > WindowSeconds)
                 return false;
 
-            int cycleIndex = Mathf.FloorToInt(unscaledTimeSeconds / CycleSeconds);
+            int cycleIndex = ResolveCycleIndex(unscaledTimeSeconds);
             uint hash = HashGhostSignal(
                 unchecked((uint)worldSeed),
                 unchecked((uint)cycleIndex),
@@ -36,9 +48,6 @@ namespace Hecton8.UI
                 return false;
 
             float intensity = 0.52f + (((hash >> 8) & 0xFFu) / 255f) * 0.24f;
-            if (intensity <= weakestIntensity)
-                return false;
-
             float angleRadians = (((hash >> 16) & 0xFFFFu) / 65535f) * Mathf.PI * 2f;
             float radius = 0.18f + (((hash >> 4) & 0x0Fu) / 15f) * 0.24f;
             float vertical = -0.18f + (((hash >> 12) & 0x0Fu) / 15f) * 0.36f;
@@ -48,6 +57,11 @@ namespace Hecton8.UI
                 Mathf.Cos(angleRadians) * radius,
                 intensity);
             return true;
+        }
+
+        internal static int ResolveCycleIndex(float unscaledTimeSeconds)
+        {
+            return Mathf.FloorToInt(unscaledTimeSeconds / CycleSeconds);
         }
 
         internal static uint HashGhostSignal(uint seed, uint cycleIndex, uint depthMeters)

@@ -1,0 +1,9 @@
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\Unity.ShaderGraph.Editor.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\Unity.ShaderGraph.Editor.pdb
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.ShaderGraph.Editor.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.ShaderGraph.Editor.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.ShaderGraph.Editor.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.ShaderGraph.Editor.sourcelink.json
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.Sh.1AC18AB2.Up2Date
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.ShaderGraph.Editor.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.ShaderGraph.Editor.pdb

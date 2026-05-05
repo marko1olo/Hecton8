@@ -1,0 +1,20 @@
+﻿{
+    "status":  "PASS",
+    "projectRoot":  "C:\\hades\\Hecton8",
+    "totalMarkdown":  418,
+    "activeMarkdown":  160,
+    "activeHeaderDebt":  41,
+    "activeMissingDate":  41,
+    "activeMissingStatus":  0,
+    "directDocsHeaderMissing":  0,
+    "architectureHeaderMissing":  0,
+    "rootLooseTextLogCount":  0,
+    "relocatedRootLogCount":  9,
+    "maxAllowedActiveHeaderDebt":  96,
+    "failureCount":  0,
+    "telemetryWarningRequested":  false,
+    "telemetryRuntimeEligible":  false,
+    "failures":  [
+
+                 ]
+}

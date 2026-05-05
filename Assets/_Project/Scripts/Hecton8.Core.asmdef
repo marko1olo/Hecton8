@@ -4,6 +4,7 @@
     "references": [
         "Hecton8.Bootstrap.Contracts",
         "Hecton8.World.Contracts",
+        "Hecton8.SpaceEngine098Terrain",
         "Hecton8.Input",
         "Hecton8.Input.Generated",
         "Unity.InputSystem",

@@ -47,6 +47,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         _StarIntensity ("Star Brightness", Range(0, 10)) = 2.0
         _StarTwinkleSpeed ("Twinkle Speed", Range(0.5, 8.0)) = 2.5
         _StarSeed ("Star Seed", Float) = 99173
+        _BakedStarCubemap ("Startup Baked Star Cubemap", Cube) = "" {}
+        _BakedStarCubemapReady ("Baked Star Cubemap Ready", Range(0, 1)) = 0.0
         _AtmosphereDensity ("Atmosphere Density", Range(0, 1)) = 0.0
 
         [Header(Sky Colors HDR)]
@@ -168,6 +170,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             #include "Hecton_CelestialAtmosphere.hlsl"
 
             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
+            TEXTURECUBE(_BakedStarCubemap); SAMPLER(sampler_BakedStarCubemap);
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _MainCloudTex_ST;
@@ -177,6 +180,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half   _StarIntensity;
                 half   _StarTwinkleSpeed;
                 float  _StarSeed;
+                half   _BakedStarCubemapReady;
                 half   _AtmosphereDensity;
 
                 half4  _SkyColorZenith;
@@ -583,10 +587,16 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                         + (half)((noiseTwinkle - 0.5) * (float)atmosphereTwinkle * (0.18 + (float)horizonTwinkle * 0.24));
                     flicker = saturate(flicker);
 
-                    starContrib = proceduralStarColor
+                    half3 bakedStarColor = (half3)SAMPLE_TEXTURECUBE(
+                        _BakedStarCubemap,
+                        sampler_BakedStarCubemap,
+                        Vf).rgb;
+                    half bakedReady = step(0.5h, _BakedStarCubemapReady);
+                    half3 starSourceColor = lerp(proceduralStarColor * starCore, bakedStarColor, bakedReady);
+
+                    starContrib = starSourceColor
                                 * _StarColor.rgb
                                 * _StarIntensity
-                                * starCore
                                 * flicker
                                 * starVisibility
                                 * zenithMask;
@@ -773,7 +783,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 float4 sharedAtmosphereSample = SampleHectonCelestialAtmosphere(
                     Vf,
                     _SkyColorHorizon.rgb,
-                    _SkyColorZenith.rgb);
+                    _SkyColorZenith.rgb,
+                    _SunDirection.xyz);
                 skyColor = (half3)ApplyHectonCelestialAtmosphere(
                     skyColor,
                     sharedAtmosphereSample,

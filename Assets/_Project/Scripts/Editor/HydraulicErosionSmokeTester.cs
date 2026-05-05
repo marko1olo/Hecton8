@@ -30,6 +30,17 @@ namespace Hecton8.Editor
         private const string MetricBlocksLabel = "metricBlocks";
         private const uint SmokeFailureWarningHash = 0x48594553u;
         private const uint NativeLeakContextHash = 0x48594E4Cu;
+        private const int ErosionSubGridSize = 32;
+        private const float ErosionHeightScaleMeters = 160f;
+        private const float ErosionInertia = 0.86f;
+        private const float ErosionChannelSpawnBias = 24f;
+        private const float ErosionChannelFlowBias = 2.75f;
+        private const float SedimentaryFlatSlopeDegrees = 2f;
+        private const float SedimentaryFlatSmoothingStrength = 0.95f;
+        private const float SedimentaryFlatSedimentThreshold = 0.00001f;
+        private const float CanyonDepthThreshold = 0.0002f;
+        private const float CanyonWallStrength = 4f;
+        private const float CanyonMaxLift01 = 0.02f;
 
         private struct ScenarioConfig
         {
@@ -62,7 +73,12 @@ namespace Hecton8.Editor
             public float SumWear;
             public float MaxSediment;
             public float MaxWear;
+            public float MaxBoundaryHeightDelta;
+            public float MaxBoundarySediment;
+            public float MaxBoundaryWear;
             public float Milliseconds;
+            public int BoundarySampleCount;
+            public int BoundaryNanCount;
         }
 
         /// <summary>
@@ -172,6 +188,8 @@ namespace Hecton8.Editor
             NativeArray<float> sediment = default;
             NativeArray<float> wear = default;
             NativeArray<HydraulicErosionMetricBlock> metricBlocks = default;
+            JobHandle handle = default;
+            bool handleScheduled = false;
             var result = new ScenarioResult
             {
                 Name = config.Name,
@@ -192,7 +210,7 @@ namespace Hecton8.Editor
                 metricBlocks = new NativeArray<HydraulicErosionMetricBlock>(blockCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 RegisterTempJobBuffers(before, heightA, heightB, sediment, wear, metricBlocks);
 
-                JobHandle handle = new ErosionFractalHeightmapJob
+                handle = new ErosionFractalHeightmapJob
                 {
                     Before = before,
                     Height = heightA,
@@ -200,6 +218,7 @@ namespace Hecton8.Editor
                     PrimarySeed = config.Seed,
                     RidgeSeed = config.Seed ^ 0x9E3779B9u
                 }.Schedule(pixelCount, 64);
+                handleScheduled = true;
 
                 handle = ScheduleErosion(config, heightA, heightB, sediment, wear, handle, out NativeArray<float> current);
                 handle = new HydraulicErosionMetricsJob
@@ -209,23 +228,31 @@ namespace Hecton8.Editor
                     WearMask = wear,
                     Blocks = metricBlocks,
                     SampleCount = pixelCount,
-                    BlockSize = BlockSize
+                    BlockSize = BlockSize,
+                    Width = config.Resolution,
+                    Height = config.Resolution,
+                    BoundaryMargin = config.Margin
                 }.Schedule(blockCount, 1, handle);
 
                 // COLD SYNC JOB: editor smoke tester must block to inspect deterministic result bounds.
-                handle.Complete();
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                handleScheduled = false;
 
                 ReduceMetrics(metricBlocks, ref result);
                 result.SentinelDelta = NativeMemorySentinel.ActiveAllocationCount - sentinelBefore;
                 result.TrackedByteDelta = NativeMemorySentinel.TrackedBytes - trackedBytesBefore;
                 result.Passed =
                     result.NanCount == 0 &&
+                    result.BoundaryNanCount == 0 &&
                     result.SentinelDelta == 6 &&
                     result.MinHeight >= -0.0001f &&
                     result.MaxHeight <= 1.0001f;
             }
             finally
             {
+                if (handleScheduled)
+                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+
                 DisposeTracked(ref metricBlocks);
                 DisposeTracked(ref before);
                 DisposeTracked(ref heightA);
@@ -265,17 +292,18 @@ namespace Hecton8.Editor
             {
                 Heightmap = heightA,
                 SedimentMask = sediment,
-                WearMask = wear,
+                ErosionDepthMask = wear,
                 Width = config.Resolution,
                 Height = config.Resolution,
                 CoreOffsetX = safeMargin,
                 CoreOffsetZ = safeMargin,
                 CoreWidth = math.max(1, config.Resolution - safeMargin * 2),
                 CoreHeight = math.max(1, config.Resolution - safeMargin * 2),
+                SubGridSize = ErosionSubGridSize,
                 DropletCount = math.max(0, config.Droplets),
                 MaxLifetime = math.max(1, config.Lifetime),
                 Seed = config.Seed,
-                Inertia = 0.05f,
+                Inertia = ErosionInertia,
                 CapacityFactor = 4f,
                 MinCapacity = 0.0001f,
                 ErosionRate = 0.35f,
@@ -286,14 +314,39 @@ namespace Hecton8.Editor
                 InitialSpeed = 1f,
                 DepressionFillStrength = 0.85f,
                 DepressionSpawnBias = 12f,
-                ChannelSpawnBias = 4f,
-                SpawnCandidateCount = 8,
+                ChannelSpawnBias = ErosionChannelSpawnBias,
+                ChannelFlowBias = ErosionChannelFlowBias,
+                CellSizeMeters = 1f,
+                HeightScaleMeters = ErosionHeightScaleMeters,
+                SedimentaryFlatSlopeDegrees = SedimentaryFlatSlopeDegrees,
+                SpawnCandidateCount = 12,
                 MinWater = 0.01f
             };
 
-            JobHandle handle = erosionJob.Schedule(dependency);
+            JobHandle handle = HydraulicErosionScheduler.ScheduleFourPhase(ref erosionJob, 1, dependency);
             current = heightA;
             NativeArray<float> next = heightB;
+
+            int cellCount = config.Resolution * config.Resolution;
+            for (int i = 0; i < 2; i++)
+            {
+                var flatJob = new SedimentaryFlatSmoothingJob
+                {
+                    InputHeights01 = current,
+                    OutputHeights01 = next,
+                    SedimentMask = sediment,
+                    Width = config.Resolution,
+                    Height = config.Resolution,
+                    CellSizeMeters = 1f,
+                    HeightScaleMeters = ErosionHeightScaleMeters,
+                    MaxSlopeDegrees = SedimentaryFlatSlopeDegrees,
+                    SedimentThreshold = SedimentaryFlatSedimentThreshold,
+                    Strength = SedimentaryFlatSmoothingStrength
+                };
+
+                handle = flatJob.Schedule(cellCount, 64, handle);
+                Swap(ref current, ref next);
+            }
 
             for (int i = 0; i < config.SlumpIterations; i++)
             {
@@ -305,15 +358,30 @@ namespace Hecton8.Editor
                     Width = config.Resolution,
                     Height = config.Resolution,
                     CellSizeMeters = 1f,
-                    HeightScaleMeters = 160f,
+                    HeightScaleMeters = ErosionHeightScaleMeters,
                     TalusAngleDegrees = config.TalusAngle,
                     Strength = config.SlumpStrength,
-                    WriteWearMask = true
+                    WriteWearMask = false
                 };
 
-                handle = slumpJob.Schedule(config.Resolution * config.Resolution, 64, handle);
+                handle = slumpJob.Schedule(cellCount, 64, handle);
                 Swap(ref current, ref next);
             }
+
+            var canyonJob = new CanyonWallSteepeningJob
+            {
+                InputHeights01 = current,
+                OutputHeights01 = next,
+                ErosionDepthMask = wear,
+                Width = config.Resolution,
+                Height = config.Resolution,
+                DepthThreshold = CanyonDepthThreshold,
+                Strength = CanyonWallStrength,
+                MaxLift01 = CanyonMaxLift01
+            };
+
+            handle = canyonJob.Schedule(cellCount, 64, handle);
+            Swap(ref current, ref next);
 
             return handle;
         }
@@ -327,8 +395,13 @@ namespace Hecton8.Editor
             float sumWear = 0f;
             float maxSediment = 0f;
             float maxWear = 0f;
+            float maxBoundaryHeightDelta = 0f;
+            float maxBoundarySediment = 0f;
+            float maxBoundaryWear = 0f;
             int sampleCount = 0;
             int nanCount = 0;
+            int boundarySampleCount = 0;
+            int boundaryNanCount = 0;
 
             for (int i = 0; i < blocks.Length; i++)
             {
@@ -342,10 +415,15 @@ namespace Hecton8.Editor
                     sumWear += block.SumWear;
                     maxSediment = math.max(maxSediment, block.MaxSediment);
                     maxWear = math.max(maxWear, block.MaxWear);
+                    maxBoundaryHeightDelta = math.max(maxBoundaryHeightDelta, block.MaxBoundaryHeightDelta);
+                    maxBoundarySediment = math.max(maxBoundarySediment, block.MaxBoundarySediment);
+                    maxBoundaryWear = math.max(maxBoundaryWear, block.MaxBoundaryWear);
                     sampleCount += block.SampleCount;
+                    boundarySampleCount += block.BoundarySampleCount;
                 }
 
                 nanCount += block.NanCount;
+                boundaryNanCount += block.BoundaryNanCount;
             }
 
             result.MinHeight = minHeight;
@@ -356,6 +434,11 @@ namespace Hecton8.Editor
             result.MaxSediment = maxSediment;
             result.MaxWear = maxWear;
             result.NanCount = nanCount;
+            result.MaxBoundaryHeightDelta = maxBoundaryHeightDelta;
+            result.MaxBoundarySediment = maxBoundarySediment;
+            result.MaxBoundaryWear = maxBoundaryWear;
+            result.BoundarySampleCount = boundarySampleCount;
+            result.BoundaryNanCount = boundaryNanCount;
         }
 
         private static string BuildJson(ScenarioResult[] results, int passCount)
@@ -390,6 +473,8 @@ namespace Hecton8.Editor
             builder.Append("\"lifetime\":").Append(result.Lifetime).Append(',');
             builder.Append("\"slumpIterations\":").Append(result.SlumpIterations).Append(',');
             builder.Append("\"nanCount\":").Append(result.NanCount).Append(',');
+            builder.Append("\"boundarySampleCount\":").Append(result.BoundarySampleCount).Append(',');
+            builder.Append("\"boundaryNanCount\":").Append(result.BoundaryNanCount).Append(',');
             builder.Append("\"sentinelDelta\":").Append(result.SentinelDelta).Append(',');
             builder.Append("\"trackedByteDelta\":").Append(result.TrackedByteDelta).Append(',');
             builder.Append("\"minHeight\":");
@@ -406,6 +491,12 @@ namespace Hecton8.Editor
             AppendFloat(builder, result.MaxSediment);
             builder.Append(",\"maxWear\":");
             AppendFloat(builder, result.MaxWear);
+            builder.Append(",\"maxBoundaryHeightDelta\":");
+            AppendFloat(builder, result.MaxBoundaryHeightDelta);
+            builder.Append(",\"maxBoundarySediment\":");
+            AppendFloat(builder, result.MaxBoundarySediment);
+            builder.Append(",\"maxBoundaryWear\":");
+            AppendFloat(builder, result.MaxBoundaryWear);
             builder.Append(",\"milliseconds\":");
             AppendFloat(builder, result.Milliseconds);
             builder.Append('}');

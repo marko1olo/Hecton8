@@ -1,330 +1,35 @@
-﻿diff --git a/Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs b/Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs
-index a4c73aef..c6310a38 100644
---- a/Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs
-+++ b/Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs
-@@ -9,7 +9,8 @@ namespace Hecton8.Audio
-         Sonar = 0,
-         PredatorKill = 1,
-         MeteorBoom = 2,
--        MechanicalWhirr = 3
-+        MechanicalWhirr = 3,
-+        LeviathanRoar = 4
-     }
- 
-     /// <summary>
-@@ -129,6 +130,9 @@ namespace Hecton8.Audio
-         private const int ListenerCapacity = 8;
-         private const int PendingAudioPingCapacity = 8;
-         private const int PendingStructuralStressCapacity = 8;
-+        private static readonly uint _overflowWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.Overflow"));
-+        private static readonly uint _audioPingQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.AudioPing"));
-+        private static readonly uint _structuralStressQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("ProceduralAudioEvents.StructuralStress"));
- 
-         // COLD ALLOC: RegistryBucket<IProceduralAudioEventListener>[8] - deferred procedural-audio listeners - owner: ProceduralAudioEvents
-         private static readonly RegistryBucket<IProceduralAudioEventListener> _listeners = new RegistryBucket<IProceduralAudioEventListener>(ListenerCapacity);
-@@ -140,6 +144,8 @@ namespace Hecton8.Audio
-         private static int _nextFrameAudioPingCount;
-         private static int _pendingStructuralStressCount;
-         private static int _nextFrameStructuralStressCount;
-+        private static int _droppedAudioPingCount;
-+        private static int _droppedStructuralStressCount;
-         private static bool _isDispatching;
- 
-         /// <summary>
-@@ -156,6 +162,10 @@ namespace Hecton8.Audio
-             }
-         }
- 
-+        internal static int DroppedAudioPingCount => _droppedAudioPingCount;
-+
-+        internal static int DroppedStructuralStressCount => _droppedStructuralStressCount;
-+
-         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-         private static void ResetStaticState()
-         {
-@@ -191,10 +201,19 @@ namespace Hecton8.Audio
-             _nextFrameAudioPingCount = 0;
-             _pendingStructuralStressCount = 0;
-             _nextFrameStructuralStressCount = 0;
-+            _droppedAudioPingCount = 0;
-+            _droppedStructuralStressCount = 0;
-             _isDispatching = false;
-             _listeners.Clear();
-         }
- 
-+#if UNITY_EDITOR || DEVELOPMENT_BUILD
-+        internal static void ResetForSmokeTest()
-+        {
-+            ResetStaticState();
-+        }
-+#endif
-+
-         /// <summary>
-         /// Registers one procedural audio listener.
-         /// </summary>
-@@ -264,7 +283,10 @@ namespace Hecton8.Audio
-         {
-             EnsureInitialized();
-             if (_pendingAudioPingCount + _nextFrameAudioPingCount >= PendingAudioPingCapacity)
-+            {
-+                ReportAudioPingOverflow();
-                 return;
-+            }
- 
-             AudioPingTriggerInfo info = new AudioPingTriggerInfo(startSampleFrame, sampleRate, intensity, chirpDurationSeconds);
-             EnqueueAudioPing(in info);
-@@ -280,7 +302,10 @@ namespace Hecton8.Audio
-         {
-             EnsureInitialized();
-             if (_pendingAudioPingCount + _nextFrameAudioPingCount >= PendingAudioPingCapacity)
-+            {
-+                ReportAudioPingOverflow();
-                 return;
-+            }
- 
-             AudioPingTriggerInfo info = new AudioPingTriggerInfo(
-                 worldPosition,
-@@ -313,7 +338,10 @@ namespace Hecton8.Audio
-         {
-             EnsureInitialized();
-             if (_pendingStructuralStressCount + _nextFrameStructuralStressCount >= PendingStructuralStressCapacity)
-+            {
-+                ReportStructuralStressOverflow();
-                 return;
-+            }
- 
-             StructuralStressAudioInfo info = new StructuralStressAudioInfo(worldPosition, stress01, pitchScale);
-             if (_isDispatching)
-@@ -489,6 +517,18 @@ namespace Hecton8.Audio
-                 || (_pendingStructuralStress.IsCreated && !_pendingStructuralStress.IsEmpty());
-         }
- 
-+        private static void ReportAudioPingOverflow()
-+        {
-+            _droppedAudioPingCount++;
-+            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _audioPingQueueHash, PendingAudioPingCapacity);
-+        }
-+
-+        private static void ReportStructuralStressOverflow()
-+        {
-+            _droppedStructuralStressCount++;
-+            GlobalTelemetryBus.PublishPerformanceWarning(_overflowWarningHash, _structuralStressQueueHash, PendingStructuralStressCapacity);
-+        }
-+
-         private static void PromoteNextFrameEvents()
-         {
-             if (_nextFrameAudioPings.IsCreated)
-diff --git a/Assets/_Project/Scripts/AutomationSmokeTester.cs b/Assets/_Project/Scripts/AutomationSmokeTester.cs
-index 95419e04..7117efde 100644
+﻿diff --git a/Assets/_Project/Scripts/AutomationSmokeTester.cs b/Assets/_Project/Scripts/AutomationSmokeTester.cs
+index 8c59573d..fa81203a 100644
 --- a/Assets/_Project/Scripts/AutomationSmokeTester.cs
 +++ b/Assets/_Project/Scripts/AutomationSmokeTester.cs
-@@ -1,6 +1,5 @@
- using Hecton8.Construction;
- using Unity.Collections;
--using Unity.Jobs;
- using UnityEngine;
- 
- namespace Hecton8.Debugging
-@@ -52,17 +51,15 @@ namespace Hecton8.Debugging
-                 storageCapacityByNode[2] = 1;
-                 result[0] = -1;
- 
--                new BaseLogisticsNetwork.LogisticsPipeRouteBfsJob
--                {
--                    NodeCount = 3,
--                    StartNodeIndex = 0,
--                    EdgeOffsets = edgeOffsets,
--                    EdgeDestinations = edgeDestinations,
--                    StorageCapacityByNode = storageCapacityByNode,
--                    Visited = visited,
--                    Queue = queue,
--                    ResultNodeIndex = result
--                }.Run();
-+                BaseLogisticsNetwork.ExecuteLogisticsRouteBfs(
-+                    3,
-+                    0,
-+                    edgeOffsets,
-+                    edgeDestinations,
-+                    storageCapacityByNode,
-+                    visited,
-+                    queue,
-+                    result);
- 
-                 routedNode = result[0];
-                 depositedUnits = routedNode == 2 ? 1 : 0;
-@@ -78,5 +75,6 @@ namespace Hecton8.Debugging
-                 result.Dispose();
-             }
-         }
-+
-     }
- }
+@@ -36,12 +36,12 @@ namespace Hecton8.Debugging
+             routedNode = -1;
+             depositedUnits = 0;
+
+-            NativeArray<int> edgeOffsets = new NativeArray<int>(4, Allocator.Temp, NativeArrayOptions.ClearMemory);
+-            NativeArray<int> edgeDestinations = new NativeArray<int>(2, Allocator.Temp, NativeArrayOptions.ClearMemory);
+-            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
+-            NativeArray<byte> visited = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
+-            NativeArray<int> queue = new NativeArray<int>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
+-            NativeArray<int> result = new NativeArray<int>(1, Allocator.Temp, NativeArrayOptions.ClearMemory);
++            NativeArray<int> edgeOffsets = new NativeArray<int>(4, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[4] - smoke CSR offsets - owner: AutomationSmokeTester
++            NativeArray<int> edgeDestinations = new NativeArray<int>(2, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[2] - smoke CSR destinations - owner: AutomationSmokeTester
++            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[3] - smoke storage flags - owner: AutomationSmokeTester
++            NativeArray<byte> visited = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[3] - smoke BFS visited set - owner: AutomationSmokeTester
++            NativeArray<int> queue = new NativeArray<int>(3, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[3] - smoke BFS queue - owner: AutomationSmokeTester
++            NativeArray<int> result = new NativeArray<int>(1, Allocator.Temp, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - smoke BFS result cell - owner: AutomationSmokeTester
+             RegisterTempArray(edgeOffsets, nameof(edgeOffsets));
+             RegisterTempArray(edgeDestinations, nameof(edgeDestinations));
+             RegisterTempArray(storageCapacityByNode, nameof(storageCapacityByNode));
 diff --git a/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs b/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs
-index cbe60503..18863743 100644
+index 022c7f5d..e5a44ada 100644
 --- a/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs
 +++ b/Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs
-@@ -117,61 +117,15 @@ namespace Hecton8.Construction
- 
-             public void Execute()
-             {
--                if (!ResultNodeIndex.IsCreated || ResultNodeIndex.Length <= 0)
--                    return;
--
--                ResultNodeIndex[0] = -1;
--
--                int safeNodeCount = math.min(NodeCount, math.min(StorageCapacityByNode.Length, math.min(Visited.Length, Queue.Length)));
--                if (safeNodeCount <= 0 ||
--                    StartNodeIndex < 0 ||
--                    StartNodeIndex >= safeNodeCount ||
--                    !EdgeOffsets.IsCreated ||
--                    EdgeOffsets.Length <= safeNodeCount ||
--                    !EdgeDestinations.IsCreated)
--                {
--                    return;
--                }
--
--                for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
--                    Visited[nodeIndex] = 0;
--
--                int head = 0;
--                int tail = 0;
--                Queue[tail++] = StartNodeIndex;
--                Visited[StartNodeIndex] = 1;
--
--                while (head < tail)
--                {
--                    int nodeIndex = Queue[head++];
--                    if (StorageCapacityByNode[nodeIndex] != 0)
--                    {
--                        ResultNodeIndex[0] = nodeIndex;
--                        return;
--                    }
--
--                    int edgeStart = EdgeOffsets[nodeIndex];
--                    int edgeEnd = EdgeOffsets[nodeIndex + 1];
--                    if (edgeStart < 0 || edgeEnd < edgeStart || edgeEnd > EdgeDestinations.Length)
--                        continue;
--
--                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
--                    {
--                        int destinationNodeIndex = EdgeDestinations[edgeIndex];
--                        if (destinationNodeIndex < 0 ||
--                            destinationNodeIndex >= safeNodeCount ||
--                            Visited[destinationNodeIndex] != 0)
--                        {
--                            continue;
--                        }
--
--                        Visited[destinationNodeIndex] = 1;
--                        if (tail >= safeNodeCount)
--                            return;
--
--                        Queue[tail++] = destinationNodeIndex;
--                    }
--                }
-+                ExecuteLogisticsRouteBfs(
-+                    NodeCount,
-+                    StartNodeIndex,
-+                    EdgeOffsets,
-+                    EdgeDestinations,
-+                    StorageCapacityByNode,
-+                    Visited,
-+                    Queue,
-+                    ResultNodeIndex);
-             }
-         }
- 
-@@ -188,6 +142,8 @@ namespace Hecton8.Construction
-         private static int s_NextReservationId = 1;
-         private const int RouteScratchInitialNodeCapacity = 32;
-         private const int RouteScratchInitialEdgeCapacity = 64;
-+        private const string NativeMemoryOwner = nameof(BaseLogisticsNetwork);
-+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-         private static NativeArray<int> s_RouteEdgeOffsets;
-         private static NativeArray<int> s_RouteEdgeDestinations;
-         private static NativeArray<int> s_RouteEdgeWriteCursor;
-@@ -413,17 +369,15 @@ namespace Hecton8.Construction
-             BuildRouteCsr(grid, topologyNodes, nodeCount, edgeCount);
- 
-             s_RouteResultNodeIndex[0] = -1;
--            new LogisticsPipeRouteBfsJob
--            {
--                NodeCount = nodeCount,
--                StartNodeIndex = startNodeIndex,
--                EdgeOffsets = s_RouteEdgeOffsets,
--                EdgeDestinations = s_RouteEdgeDestinations,
--                StorageCapacityByNode = s_RouteStorageCapacityByNode,
--                Visited = s_RouteVisited,
--                Queue = s_RouteQueue,
--                ResultNodeIndex = s_RouteResultNodeIndex
--            }.Run();
-+            ExecuteLogisticsRouteBfs(
-+                nodeCount,
-+                startNodeIndex,
-+                s_RouteEdgeOffsets,
-+                s_RouteEdgeDestinations,
-+                s_RouteStorageCapacityByNode,
-+                s_RouteVisited,
-+                s_RouteQueue,
-+                s_RouteResultNodeIndex);
- 
-             int targetNodeIndex = s_RouteResultNodeIndex[0];
-             if (targetNodeIndex < 0 || targetNodeIndex >= nodeCount)
-@@ -970,16 +924,16 @@ namespace Hecton8.Construction
- 
-         private static void EnsureRouteScratchCapacity(int nodeCount, int edgeCount)
-         {
--            EnsureNativeIntArray(ref s_RouteEdgeOffsets, math.max(RouteScratchInitialNodeCapacity + 1, nodeCount + 1));
--            EnsureNativeIntArray(ref s_RouteEdgeDestinations, math.max(RouteScratchInitialEdgeCapacity, edgeCount));
--            EnsureNativeIntArray(ref s_RouteEdgeWriteCursor, math.max(RouteScratchInitialNodeCapacity, nodeCount));
--            EnsureNativeByteArray(ref s_RouteStorageCapacityByNode, math.max(RouteScratchInitialNodeCapacity, nodeCount));
--            EnsureNativeByteArray(ref s_RouteVisited, math.max(RouteScratchInitialNodeCapacity, nodeCount));
--            EnsureNativeIntArray(ref s_RouteQueue, math.max(RouteScratchInitialNodeCapacity, nodeCount));
--            EnsureNativeIntArray(ref s_RouteResultNodeIndex, 1);
-+            EnsureNativeIntArray(ref s_RouteEdgeOffsets, math.max(RouteScratchInitialNodeCapacity + 1, nodeCount + 1), nameof(s_RouteEdgeOffsets));
-+            EnsureNativeIntArray(ref s_RouteEdgeDestinations, math.max(RouteScratchInitialEdgeCapacity, edgeCount), nameof(s_RouteEdgeDestinations));
-+            EnsureNativeIntArray(ref s_RouteEdgeWriteCursor, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteEdgeWriteCursor));
-+            EnsureNativeByteArray(ref s_RouteStorageCapacityByNode, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteStorageCapacityByNode));
-+            EnsureNativeByteArray(ref s_RouteVisited, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteVisited));
-+            EnsureNativeIntArray(ref s_RouteQueue, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteQueue));
-+            EnsureNativeIntArray(ref s_RouteResultNodeIndex, 1, nameof(s_RouteResultNodeIndex));
-         }
- 
--        private static void EnsureNativeIntArray(ref NativeArray<int> array, int requiredLength)
-+        private static void EnsureNativeIntArray(ref NativeArray<int> array, int requiredLength, string label)
-         {
-             int safeLength = math.max(1, requiredLength);
-             if (array.IsCreated && array.Length >= safeLength)
-@@ -987,9 +941,10 @@ namespace Hecton8.Construction
- 
-             DisposeNativeArray(ref array);
-             array = new NativeArray<int>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+            RegisterNativeArray(array, label);
-         }
- 
--        private static void EnsureNativeByteArray(ref NativeArray<byte> array, int requiredLength)
-+        private static void EnsureNativeByteArray(ref NativeArray<byte> array, int requiredLength, string label)
-         {
-             int safeLength = math.max(1, requiredLength);
-             if (array.IsCreated && array.Length >= safeLength)
-@@ -997,6 +952,7 @@ namespace Hecton8.Construction
- 
-             DisposeNativeArray(ref array);
-             array = new NativeArray<byte>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+            RegisterNativeArray(array, label);
-         }
- 
-         private static void DisposeRouteScratch()
-@@ -1015,10 +971,83 @@ namespace Hecton8.Construction
-             if (!array.IsCreated)
-                 return;
- 
-+            NativeMemorySentinel.UnregisterNativeArray(array);
-             array.Dispose();
+@@ -946,6 +946,27 @@ namespace Hecton8.Construction
              array = default;
          }
- 
-+        internal static void ExecuteLogisticsRouteBfs(
+
++        public static void ExecuteLogisticsRouteBfs(
 +            int nodeCount,
 +            int startNodeIndex,
 +            NativeArray<int> edgeOffsets,
@@ -334,915 +39,1223 @@ index cbe60503..18863743 100644
 +            NativeArray<int> queue,
 +            NativeArray<int> resultNodeIndex)
 +        {
-+            if (!resultNodeIndex.IsCreated || resultNodeIndex.Length <= 0)
-+                return;
-+
-+            resultNodeIndex[0] = -1;
-+
-+            int safeNodeCount = math.min(nodeCount, math.min(storageCapacityByNode.Length, math.min(visited.Length, queue.Length)));
-+            if (safeNodeCount <= 0 ||
-+                startNodeIndex < 0 ||
-+                startNodeIndex >= safeNodeCount ||
-+                !edgeOffsets.IsCreated ||
-+                edgeOffsets.Length <= safeNodeCount ||
-+                !edgeDestinations.IsCreated)
-+            {
-+                return;
-+            }
-+
-+            for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
-+                visited[nodeIndex] = 0;
-+
-+            int head = 0;
-+            int tail = 0;
-+            queue[tail++] = startNodeIndex;
-+            visited[startNodeIndex] = 1;
-+
-+            while (head < tail)
-+            {
-+                int nodeIndex = queue[head++];
-+                if (storageCapacityByNode[nodeIndex] != 0)
-+                {
-+                    resultNodeIndex[0] = nodeIndex;
-+                    return;
-+                }
-+
-+                int edgeStart = edgeOffsets[nodeIndex];
-+                int edgeEnd = edgeOffsets[nodeIndex + 1];
-+                if (edgeStart < 0 || edgeEnd < edgeStart || edgeEnd > edgeDestinations.Length)
-+                    continue;
-+
-+                for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
-+                {
-+                    int destinationNodeIndex = edgeDestinations[edgeIndex];
-+                    if (destinationNodeIndex < 0 ||
-+                        destinationNodeIndex >= safeNodeCount ||
-+                        visited[destinationNodeIndex] != 0)
-+                    {
-+                        continue;
-+                    }
-+
-+                    visited[destinationNodeIndex] = 1;
-+                    if (tail >= safeNodeCount)
-+                        return;
-+
-+                    queue[tail++] = destinationNodeIndex;
-+                }
-+            }
++            LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                nodeCount,
++                startNodeIndex,
++                edgeOffsets,
++                edgeDestinations,
++                storageCapacityByNode,
++                visited,
++                queue,
++                resultNodeIndex);
 +        }
 +
-+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-+        {
-+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-+        }
-+
-         private static int GetNextReservationId()
+         private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
          {
-             int nextId = s_NextReservationId++;
-diff --git a/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs b/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
-index fce2e4de..851466ec 100644
---- a/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
-+++ b/Assets/_Project/Scripts/Construction/HabitatGraphManager.cs
-@@ -280,7 +280,8 @@ namespace Hecton8.Construction
-             for (int pumpIndex = 0; pumpIndex < pumpCount; pumpIndex++)
+             NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+diff --git a/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
+index 7b03aa36..4e33679a 100644
+--- a/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
++++ b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
+@@ -1,7 +1,10 @@
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
++using System;
++using System.Collections.Generic;
+ using Hecton8.Audio;
+ using Hecton8.Construction;
+ using Hecton8.Core;
++using Hecton8.World;
+ using Hecton.UI.MainMenu;
+ using Unity.Burst;
+ using Unity.Collections;
+@@ -19,6 +22,8 @@ namespace Hecton8.Dev
+     {
+         private const string NativeMemoryOwner = nameof(OmegaAutonomySmokeTester);
+         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.TempJob;
++        // COLD ALLOC: List<InputSystemUIInputModule>[4] - editor smoke component scratch - owner: OmegaAutonomySmokeTester
++        private static readonly List<InputSystemUIInputModule> s_InputSystemModulesScratch = new List<InputSystemUIInputModule>(4);
+
+         public static bool Run(out string json)
+         {
+@@ -37,18 +42,31 @@ namespace Hecton8.Dev
+             bool inputGuardPass = RunMainMenuInputRoutingGuardSmoke(
+                 out bool inputModulePresent,
+                 out bool inputActionsBound,
+-                out bool legacyModuleRemoved);
++                out bool legacyModuleRemoved,
++                out bool inputRepairTelemetryPublished,
++                out int inputRepairTelemetryCode,
++                out int inputRepairTelemetryPublishCount,
++                out bool inputRepairTelemetryDeduped,
++                out int inputModuleCountAfterSecondRepair);
+             bool watchdogRegistryPass = RunRuntimeWatchdogRegistrySmoke(
+                 out bool watchdogRegistered,
+                 out bool watchdogUnregistered);
+-            bool burstClearPass = RunBurstClearSmoke(out int burstClearChecksum);
++            bool registryHijackPass = RunRegistrySlotHijackSmoke(out bool registryHijackBlocked);
++            bool burstClearPass = RunBurstClearSmoke(
++                out int burstClearChecksum,
++                out int burstClearNativeAllocationDelta);
++            Hecton8.Debugging.AutomationOmegaSmokeResult constructionAutomationResult =
++                Hecton8.Debugging.AutomationOmegaSmokeTester.RunLogisticsRouteStressSmoke();
++            bool constructionAutomationPass = constructionAutomationResult.Passed;
+
+             bool pass = routePass &&
+                         audioPass &&
+                         audioReentryPass &&
+                         inputGuardPass &&
+                         watchdogRegistryPass &&
+-                        burstClearPass;
++                        registryHijackPass &&
++                        burstClearPass &&
++                        constructionAutomationPass;
+             json = "{"
+                 + "\"tester\":\"OmegaAutonomySmokeTester\","
+                 + "\"status\":\"" + (pass ? "PASS" : "FAIL") + "\","
+@@ -67,12 +85,27 @@ namespace Hecton8.Dev
+                 + "\"mainMenuInputGuard\":{\"pass\":" + ToJsonBool(inputGuardPass)
+                 + ",\"inputModulePresent\":" + ToJsonBool(inputModulePresent)
+                 + ",\"inputActionsBound\":" + ToJsonBool(inputActionsBound)
+-                + ",\"legacyModuleRemoved\":" + ToJsonBool(legacyModuleRemoved) + "},"
++                + ",\"legacyModuleRemoved\":" + ToJsonBool(legacyModuleRemoved)
++                + ",\"repairTelemetryPublished\":" + ToJsonBool(inputRepairTelemetryPublished)
++                + ",\"repairTelemetryCode\":" + inputRepairTelemetryCode
++                + ",\"repairTelemetryPublishCount\":" + inputRepairTelemetryPublishCount
++                + ",\"repairTelemetryDeduped\":" + ToJsonBool(inputRepairTelemetryDeduped)
++                + ",\"moduleCountAfterSecondRepair\":" + inputModuleCountAfterSecondRepair + "},"
+                 + "\"runtimeWatchdogRegistry\":{\"pass\":" + ToJsonBool(watchdogRegistryPass)
+                 + ",\"registered\":" + ToJsonBool(watchdogRegistered)
+                 + ",\"unregistered\":" + ToJsonBool(watchdogUnregistered) + "},"
++                + "\"registrySlotHijack\":{\"pass\":" + ToJsonBool(registryHijackPass)
++                + ",\"blocked\":" + ToJsonBool(registryHijackBlocked) + "},"
+                 + "\"burstClear\":{\"pass\":" + ToJsonBool(burstClearPass)
+-                + ",\"checksum\":" + burstClearChecksum + "}"
++                + ",\"checksum\":" + burstClearChecksum
++                + ",\"nativeAllocationDelta\":" + burstClearNativeAllocationDelta + "},"
++                + "\"constructionAutomation\":{\"pass\":" + ToJsonBool(constructionAutomationPass)
++                + ",\"nodes\":" + constructionAutomationResult.NodeCount
++                + ",\"edges\":" + constructionAutomationResult.EdgeCount
++                + ",\"routedNode\":" + constructionAutomationResult.RoutedNode
++                + ",\"expectedStorageNode\":" + constructionAutomationResult.ExpectedStorageNode
++                + ",\"noStorageRouteNode\":" + constructionAutomationResult.NoStorageRouteNode
++                + ",\"invalidStartRouteNode\":" + constructionAutomationResult.InvalidStartRouteNode + "}"
+                 + "}";
+             return pass;
+         }
+@@ -171,33 +204,63 @@ namespace Hecton8.Dev
+         private static bool RunMainMenuInputRoutingGuardSmoke(
+             out bool inputModulePresent,
+             out bool inputActionsBound,
+-            out bool legacyModuleRemoved)
++            out bool legacyModuleRemoved,
++            out bool repairTelemetryPublished,
++            out int repairTelemetryCode,
++            out int repairTelemetryPublishCount,
++            out bool repairTelemetryDeduped,
++            out int moduleCountAfterSecondRepair)
+         {
+             inputModulePresent = false;
+             inputActionsBound = false;
+             legacyModuleRemoved = false;
++            repairTelemetryPublished = false;
++            repairTelemetryCode = 0;
++            repairTelemetryPublishCount = 0;
++            repairTelemetryDeduped = false;
++            moduleCountAfterSecondRepair = 0;
+
+             GameObject eventSystemRoot = null;
+             try
              {
-                 WaterPumpModule pump = WaterPumpModule.GetActivePump(pumpIndex);
--                if (pump == null || !pump.CanPump || !TryResolveModuleNodeIndex(pump.HostModule, out int startNodeIndex))
-+                int startNodeIndex;
-+                if (pump == null || !pump.CanPump || !TryResolveModuleNodeIndex(pump.HostModule, out startNodeIndex))
-                     continue;
- 
-                 float remainingDrainM3 = pump.ResolveDrainBudgetM3(deltaTime);
++                MainMenuInputRoutingGuard.ResetForSmokeTest();
+                 eventSystemRoot = new GameObject(
+                     "OmegaSmoke_EventSystem",
+                     typeof(EventSystem),
+                     typeof(StandaloneInputModule)); // COLD ALLOC: GameObject[1] - editor smoke EventSystem route probe - owner: OmegaAutonomySmokeTester
+
+-                MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
++                EventSystem eventSystem = eventSystemRoot.GetComponent<EventSystem>();
++                MainMenuInputRoutingGuard.EnsureInputSystemEventRouting(eventSystem);
++                int publishCountAfterFirstRepair = MainMenuInputRoutingGuard.RepairTelemetryPublishCountForSmoke;
++                MainMenuInputRoutingGuard.EnsureInputSystemEventRouting(eventSystem);
++                eventSystemRoot.GetComponents(s_InputSystemModulesScratch);
++                moduleCountAfterSecondRepair = s_InputSystemModulesScratch.Count;
++                s_InputSystemModulesScratch.Clear();
+
+                 InputSystemUIInputModule inputModule = eventSystemRoot.GetComponent<InputSystemUIInputModule>();
+                 StandaloneInputModule legacyInputModule = eventSystemRoot.GetComponent<StandaloneInputModule>();
+                 inputModulePresent = inputModule != null && inputModule.enabled;
+                 inputActionsBound = MainMenuInputRoutingGuard.HasUsableUiModuleActions(inputModule);
+                 legacyModuleRemoved = legacyInputModule == null || !legacyInputModule.enabled;
+-                return inputModulePresent && inputActionsBound && legacyModuleRemoved;
++                repairTelemetryPublished = MainMenuInputRoutingGuard.RepairTelemetryPublishedForSmoke;
++                repairTelemetryCode = MainMenuInputRoutingGuard.LastRepairTelemetryCodeForSmoke;
++                repairTelemetryPublishCount = MainMenuInputRoutingGuard.RepairTelemetryPublishCountForSmoke;
++                repairTelemetryDeduped = publishCountAfterFirstRepair == 1 && repairTelemetryPublishCount == 1;
++                return inputModulePresent &&
++                       inputActionsBound &&
++                       legacyModuleRemoved &&
++                       repairTelemetryPublished &&
++                       repairTelemetryCode == 14 &&
++                       repairTelemetryDeduped &&
++                       moduleCountAfterSecondRepair == 1;
+             }
+             finally
+             {
++                s_InputSystemModulesScratch.Clear();
+                 if (eventSystemRoot != null)
+-                    Object.DestroyImmediate(eventSystemRoot);
++                    UnityEngine.Object.DestroyImmediate(eventSystemRoot);
++
++                MainMenuInputRoutingGuard.ResetForSmokeTest();
+             }
+         }
+
+@@ -215,26 +278,81 @@ namespace Hecton8.Dev
+             }
+
+             GameObject watchdogRoot = null;
++            RuntimeWatchdog watchdog = null;
+             try
+             {
+                 watchdogRoot = new GameObject("OmegaSmoke_RuntimeWatchdog"); // COLD ALLOC: GameObject[1] - editor smoke watchdog registry owner - owner: OmegaAutonomySmokeTester
+-                RuntimeWatchdog watchdog = watchdogRoot.AddComponent<RuntimeWatchdog>();
++                watchdog = watchdogRoot.AddComponent<RuntimeWatchdog>();
+                 watchdog.InitializeService();
+                 registered = ReferenceEquals(GlobalRegistry.RuntimeWatchdog, watchdog);
+             }
+             finally
+             {
++                if (watchdog != null && ReferenceEquals(GlobalRegistry.RuntimeWatchdog, watchdog))
++                    GlobalRegistry.UnregisterRuntimeWatchdogRuntime(watchdog);
++
+                 if (watchdogRoot != null)
+-                    Object.DestroyImmediate(watchdogRoot);
++                    UnityEngine.Object.DestroyImmediate(watchdogRoot);
+             }
+
+             unregistered = GlobalRegistry.RuntimeWatchdog == null;
+             return registered && unregistered;
+         }
+
+-        private static bool RunBurstClearSmoke(out int checksum)
++        private static bool RunRegistrySlotHijackSmoke(out bool hijackBlocked)
++        {
++            hijackBlocked = false;
++            if (GlobalRegistry.RuntimeWatchdog != null)
++                return false;
++
++            GameObject primaryRoot = null;
++            GameObject hijackRoot = null;
++            RuntimeWatchdog primary = null;
++            RuntimeWatchdog hijack = null;
++            try
++            {
++                primaryRoot = new GameObject("OmegaSmoke_RuntimeWatchdog_Primary"); // COLD ALLOC: GameObject[1] - editor smoke registry hijack primary - owner: OmegaAutonomySmokeTester
++                primary = primaryRoot.AddComponent<RuntimeWatchdog>();
++                primary.InitializeService();
++                bool primaryRegistered = ReferenceEquals(GlobalRegistry.RuntimeWatchdog, primary);
++
++                hijackRoot = new GameObject("OmegaSmoke_RuntimeWatchdog_Hijack"); // COLD ALLOC: GameObject[1] - editor smoke registry hijack attempt - owner: OmegaAutonomySmokeTester
++                hijack = hijackRoot.AddComponent<RuntimeWatchdog>();
++                try
++                {
++                    hijack.InitializeService();
++                }
++                catch (InvalidOperationException)
++                {
++                    hijackBlocked = true;
++                }
++
++                return primaryRegistered &&
++                       hijackBlocked &&
++                       ReferenceEquals(GlobalRegistry.RuntimeWatchdog, primary);
++            }
++            finally
++            {
++                if (hijack != null && ReferenceEquals(GlobalRegistry.RuntimeWatchdog, hijack))
++                    GlobalRegistry.UnregisterRuntimeWatchdogRuntime(hijack);
++
++                if (primary != null && ReferenceEquals(GlobalRegistry.RuntimeWatchdog, primary))
++                    GlobalRegistry.UnregisterRuntimeWatchdogRuntime(primary);
++
++                if (hijackRoot != null)
++                    UnityEngine.Object.DestroyImmediate(hijackRoot);
++
++                if (primaryRoot != null)
++                    UnityEngine.Object.DestroyImmediate(primaryRoot);
++            }
++        }
++
++        private static bool RunBurstClearSmoke(out int checksum, out int nativeAllocationDelta)
+         {
+             checksum = 0;
++            nativeAllocationDelta = 0;
++            int allocationsBefore = NativeMemorySentinel.ActiveAllocationCount;
++            bool arraysCleared = false;
+             NativeArray<int> intValues = new NativeArray<int>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+             NativeArray<byte> byteValues = new NativeArray<byte>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+             RegisterNativeArray(intValues, nameof(intValues));
+@@ -242,11 +360,7 @@ namespace Hecton8.Dev
+
+             try
+             {
+-                for (int i = 0; i < intValues.Length; i++)
+-                {
+-                    intValues[i] = i + 1;
+-                    byteValues[i] = (byte)(i + 1);
+-                }
++                FillBurstClearArrays(intValues, byteValues);
+
+                 ClearIntArray(intValues);
+                 ClearByteArray(byteValues);
+@@ -254,13 +368,16 @@ namespace Hecton8.Dev
+                 for (int i = 0; i < intValues.Length; i++)
+                     checksum += intValues[i] + byteValues[i];
+
+-                return checksum == 0;
++                arraysCleared = checksum == 0;
+             }
+             finally
+             {
+                 DisposeTrackedNativeArray(ref intValues);
+                 DisposeTrackedNativeArray(ref byteValues);
+             }
++
++            nativeAllocationDelta = NativeMemorySentinel.ActiveAllocationCount - allocationsBefore;
++            return arraysCleared && nativeAllocationDelta == 0;
+         }
+
+         private static void ConfigureSimpleRoute(
+@@ -311,7 +428,7 @@ namespace Hecton8.Dev
+             NativeArray<int> result)
+         {
+             result[0] = -1;
+-            BaseLogisticsNetwork.ExecuteLogisticsRouteBfs(
++            LogisticsPipeRoutingKernel.ExecuteRouteBfs(
+                 nodeCount,
+                 0,
+                 edgeOffsets,
+@@ -324,18 +441,30 @@ namespace Hecton8.Dev
+
+         private static void ClearIntArray(NativeArray<int> values)
+         {
+-            new ClearIntArrayJob
++            JobHandle handle = new ClearIntArrayJob
+             {
+                 Values = values
+-            }.Schedule(values.Length, 32).Complete();
++            }.Schedule(values.Length, 32);
++            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+         }
+
+         private static void ClearByteArray(NativeArray<byte> values)
+         {
+-            new ClearByteArrayJob
++            JobHandle handle = new ClearByteArrayJob
+             {
+                 Values = values
+-            }.Schedule(values.Length, 32).Complete();
++            }.Schedule(values.Length, 32);
++            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
++        }
++
++        private static void FillBurstClearArrays(NativeArray<int> intValues, NativeArray<byte> byteValues)
++        {
++            JobHandle handle = new FillBurstClearArraysJob
++            {
++                IntValues = intValues,
++                ByteValues = byteValues
++            }.Schedule(intValues.Length, 32);
++            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+         }
+
+         private static string ToJsonBool(bool value)
+@@ -358,6 +487,20 @@ namespace Hecton8.Dev
+             array = default;
+         }
+
++        [BurstCompile]
++        private struct FillBurstClearArraysJob : IJobParallelFor
++        {
++            public NativeArray<int> IntValues;
++            public NativeArray<byte> ByteValues;
++
++            public void Execute(int index)
++            {
++                int value = index + 1;
++                IntValues[index] = value;
++                ByteValues[index] = (byte)value;
++            }
++        }
++
+         [BurstCompile]
+         private struct ClearIntArrayJob : IJobParallelFor
+         {
+diff --git a/Assets/_Project/Scripts/HectonCelestialEngine.cs b/Assets/_Project/Scripts/HectonCelestialEngine.cs
+index 5dad92db..8b794011 100644
+--- a/Assets/_Project/Scripts/HectonCelestialEngine.cs
++++ b/Assets/_Project/Scripts/HectonCelestialEngine.cs
+@@ -2559,7 +2559,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+         private float ResolveStarMapSeed()
+         {
+             int seed = Mathf.RoundToInt(starMapSeed);
+-            global::HectonWorldGenerator generator = global::HectonWorldGenerator.ActiveRuntimeInstance;
++            global::HectonWorldGenerator generator = GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
+             if (generator == null)
+                 return seed & 0x00FFFFFF;
+
+diff --git a/Assets/_Project/Scripts/MainMenuInputRoutingGuard.cs b/Assets/_Project/Scripts/MainMenuInputRoutingGuard.cs
+index 4fca4292..0b45dcef 100644
+--- a/Assets/_Project/Scripts/MainMenuInputRoutingGuard.cs
++++ b/Assets/_Project/Scripts/MainMenuInputRoutingGuard.cs
+@@ -16,19 +16,39 @@ namespace Hecton.UI.MainMenu
+         private static readonly uint _UiInputRepairWarningHash = unchecked((uint)LocHash.Compute("MainMenu.UIInput.Repair"));
+         private static readonly uint _UiInputRoutingContextHash = unchecked((uint)LocHash.Compute("InputSystemUIInputModule"));
+         private static bool _repairTelemetryPublished;
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++        private static int _lastRepairTelemetryCodeForSmoke;
++        private static int _repairTelemetryPublishCountForSmoke;
++#endif
+
+         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+         private static void ResetStaticState()
+         {
+             _repairTelemetryPublished = false;
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            _lastRepairTelemetryCodeForSmoke = 0;
++            _repairTelemetryPublishCountForSmoke = 0;
++#endif
+         }
+
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++        internal static bool RepairTelemetryPublishedForSmoke => _repairTelemetryPublished;
++
++        internal static int LastRepairTelemetryCodeForSmoke => _lastRepairTelemetryCodeForSmoke;
++
++        internal static int RepairTelemetryPublishCountForSmoke => _repairTelemetryPublishCountForSmoke;
++
++        internal static void ResetForSmokeTest()
++        {
++            _repairTelemetryPublished = false;
++            _lastRepairTelemetryCodeForSmoke = 0;
++            _repairTelemetryPublishCountForSmoke = 0;
++        }
++#endif
++
+         public static void EnsureInputSystemEventRouting()
+         {
+             bool createdEventSystem = false;
+-            bool removedLegacyModule = false;
+-            bool addedInputModule = false;
+-            bool assignedDefaultActions = false;
+
+             EventSystem eventSystem = EventSystem.current;
+             if (eventSystem == null)
+@@ -42,6 +62,23 @@ namespace Hecton.UI.MainMenu
+             if (eventSystem == null)
+                 return;
+
++            EnsureInputSystemEventRouting(eventSystem, createdEventSystem);
++        }
++
++        internal static void EnsureInputSystemEventRouting(EventSystem eventSystem)
++        {
++            EnsureInputSystemEventRouting(eventSystem, false);
++        }
++
++        private static void EnsureInputSystemEventRouting(EventSystem eventSystem, bool createdEventSystem)
++        {
++            if (eventSystem == null)
++                return;
++
++            bool removedLegacyModule = false;
++            bool addedInputModule = false;
++            bool assignedDefaultActions = false;
++
+             eventSystem.enabled = true;
+             eventSystem.sendNavigationEvents = true;
+
+@@ -123,17 +160,21 @@ namespace Hecton.UI.MainMenu
+                 return;
+
+             _repairTelemetryPublished = true;
+-            float repairCode = 0f;
++            int repairCode = 0;
+             if (createdEventSystem)
+-                repairCode += 1f;
++                repairCode += 1;
+             if (removedLegacyModule)
+-                repairCode += 2f;
++                repairCode += 2;
+             if (addedInputModule)
+-                repairCode += 4f;
++                repairCode += 4;
+             if (assignedDefaultActions)
+-                repairCode += 8f;
++                repairCode += 8;
+             if (!usableAfterRepair)
+-                repairCode += 16f;
++                repairCode += 16;
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            _lastRepairTelemetryCodeForSmoke = repairCode;
++            _repairTelemetryPublishCountForSmoke++;
++#endif
+
+             GlobalTelemetryBus.PublishPerformanceWarning(
+                 _UiInputRepairWarningHash,
 diff --git a/Assets/_Project/Scripts/PowerGrid.cs b/Assets/_Project/Scripts/PowerGrid.cs
-index 843f3d87..4c9d38d0 100644
+index 35ee8873..707aa824 100644
 --- a/Assets/_Project/Scripts/PowerGrid.cs
 +++ b/Assets/_Project/Scripts/PowerGrid.cs
-@@ -10,10 +10,12 @@ using Hecton8.Construction;
- using Hecton8.Core;
- using Hecton8.Gameplay;
- using Hecton8.Physics;
-+using Unity.Burst;
- using Unity.Collections;
- using Unity.Jobs;
- using Unity.Mathematics;
- using UnityEngine;
-+using Hecton8.World;
- 
- namespace Hecton8.Power
- {
-@@ -37,11 +39,17 @@ namespace Hecton8.Power
+@@ -36,10 +36,7 @@ namespace Hecton8.Power
+         private const float OverloadThermalDamagePerSecond = 18f;
+         private const float OverloadMeltdownTemperatureCelsius = 150f;
+         private const float CableThermalConductivityWattsPerCelsius = 140f;
+-        private const float MinimumCableThermalDeltaCelsius = 0.5f;
          private const int CableThermalRelaxationMaxIterations = 8;
-         private const float CableThermalConvergenceDeltaCelsius = 0.05f;
-         private const double CableThermalFrameBudgetMilliseconds = 1.0;
-+        private const float OceanThermalSinkTemperatureCelsius = 2f;
-+        private const float ThermalHeatInjectionScale = 0.001f;
-+        private const float ThermalDissipationApplyBlend = 0.25f;
-+        private const float MaximumAppliedThermalDeltaCelsius = 5f;
-         private const float MinimumSubmergedFloodFillRatio = 0.05f;
-         private const float SubmergedOverloadHeatJoulesMultiplier = 4.0f;
-         private const float MinimumSubmergedOverloadHeatJoules = 3200f;
-         private const float HydrogenPocketUnitsPerMegajoule = 0.04f;
-         private const float OxygenPocketUnitsPerMegajoule = 0.02f;
-+        private const string NativeMemoryOwner = nameof(PowerGrid);
-+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
- 
-         private enum BatteryDispatchMode : byte
+-        private const float CableThermalConvergenceDeltaCelsius = 0.05f;
+-        private const double CableThermalFrameBudgetMilliseconds = 1.0;
+         private const float OceanThermalSinkTemperatureCelsius = 2f;
+         private const float ThermalHeatInjectionScale = 0.001f;
+         private const float ThermalDissipationApplyBlend = 0.25f;
+@@ -1122,8 +1119,11 @@ namespace Hecton8.Power
+             return sink;
+         }
+
+-        private void ApplyThermalDissipationResult(int nodeCount)
++        private void ApplyThermalDissipationResult(int nodeCount, NativeArray<float> resultTemperatures)
          {
-@@ -82,6 +90,78 @@ namespace Hecton8.Power
-             public int RoomIndex;
-         }
- 
-+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-+        private struct ThermalJacobiDissipationJob : IJob
-+        {
-+            private const float MinConductance = 0.0001f;
-+
-+            public int NodeCount;
-+            public int MaxIterations;
-+            public float OceanTemperatureCelsius;
-+            public float ConvergenceDeltaCelsius;
-+
-+            [ReadOnly] public NativeArray<int> EdgeOffsets;
-+            [ReadOnly] public NativeArray<int> EdgeDestinations;
-+            [ReadOnly] public NativeArray<float> EdgeConductance;
-+            [ReadOnly] public NativeArray<float> HeatInjection;
-+            [ReadOnly] public NativeArray<float> HullSinkConductance;
-+
-+            public NativeArray<float> TemperatureFront;
-+            public NativeArray<float> TemperatureBack;
-+
-+            public void Execute()
-+            {
-+                int safeNodeCount = math.min(NodeCount, math.min(TemperatureFront.Length, TemperatureBack.Length));
-+                if (safeNodeCount <= 0)
-+                    return;
-+
-+                for (int iteration = 0; iteration < MaxIterations; iteration++)
-+                {
-+                    float maxDelta = 0f;
-+                    for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
-+                    {
-+                        float weightedTemperature = HeatInjection[nodeIndex];
-+                        float conductanceSum = 0f;
-+
-+                        int edgeStart = EdgeOffsets[nodeIndex];
-+                        int edgeEnd = EdgeOffsets[nodeIndex + 1];
-+                        for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
-+                        {
-+                            int neighborNodeIndex = EdgeDestinations[edgeIndex];
-+                            if (neighborNodeIndex < 0 || neighborNodeIndex >= safeNodeCount)
-+                                continue;
-+
-+                            float conductance = math.max(MinConductance, EdgeConductance[edgeIndex]);
-+                            conductanceSum += conductance;
-+                            weightedTemperature += conductance * TemperatureFront[neighborNodeIndex];
-+                        }
-+
-+                        float hullSinkConductance = HullSinkConductance[nodeIndex];
-+                        if (hullSinkConductance > 0f)
-+                        {
-+                            conductanceSum += hullSinkConductance;
-+                            weightedTemperature += hullSinkConductance * OceanTemperatureCelsius;
-+                        }
-+
-+                        float nextTemperature = conductanceSum > MinConductance
-+                            ? weightedTemperature / conductanceSum
-+                            : TemperatureFront[nodeIndex];
-+                        if (!math.isfinite(nextTemperature))
-+                            nextTemperature = TemperatureFront[nodeIndex];
-+
-+                        TemperatureBack[nodeIndex] = nextTemperature;
-+                        maxDelta = math.max(maxDelta, math.abs(nextTemperature - TemperatureFront[nodeIndex]));
-+                    }
-+
-+                    for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
-+                        TemperatureFront[nodeIndex] = TemperatureBack[nodeIndex];
-+
-+                    if (maxDelta < ConvergenceDeltaCelsius)
-+                        break;
-+                }
-+            }
-+        }
-+
-         /// <summary>Unique runtime ID for diagnostics.</summary>
-         public readonly int Id;
- 
-@@ -102,6 +182,13 @@ namespace Hecton8.Power
-         private readonly LogisticsNetworkGraph _logisticsGraph;
-         private NativeArray<BatteryDispatchRecord> _batteryDispatchRecords;
-         private NativeArray<BatteryDispatchResult> _batteryDispatchResults;
-+        private NativeArray<float> _thermalTemperatureFront;
-+        private NativeArray<float> _thermalTemperatureBack;
-+        private NativeArray<float> _thermalHeatInjection;
-+        private NativeArray<float> _thermalHullSinkConductance;
-+        private NativeArray<int> _thermalEdgeOffsets;
-+        private NativeArray<int> _thermalEdgeDestinations;
-+        private NativeArray<float> _thermalEdgeConductance;
- 
-         private float _totalGeneration;
-         private float _totalConsumption;
-@@ -227,6 +314,7 @@ namespace Hecton8.Power
-             _logisticsGraph.CompleteNodeStatePublish();
-             _logisticsGraph.Dispose();
-             DisposeBatteryDispatchBuffers();
-+            DisposeThermalDissipationBuffers();
-         }
- 
-         /// <summary>
-@@ -797,122 +885,265 @@ namespace Hecton8.Power
-             if (nodeCount <= 1)
-                 return;
- 
--            int iterationBudget = math.clamp(_cableThermalIterationBudget, 1, CableThermalRelaxationMaxIterations);
--            float iterationDeltaSeconds = BatteryDispatchDeltaTimeSeconds / iterationBudget;
--            double startTimeSeconds = Time.realtimeSinceStartupAsDouble;
--            bool budgetExceeded = false;
--            int completedIterations = 0;
-+            int directedEdgeCount = BuildThermalDissipationSnapshot(nodeCount);
-+            if (directedEdgeCount <= 0)
++            if (!resultTemperatures.IsCreated)
 +                return;
- 
--            for (int iteration = 0; iteration < iterationBudget; iteration++)
-+            ThermalJacobiDissipationJob job = new ThermalJacobiDissipationJob
-             {
--                float maxObservedDelta = 0f;
--                bool transferApplied = false;
--
--                for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
--                {
--                    if (((Time.realtimeSinceStartupAsDouble - startTimeSeconds) * 1000.0) >= CableThermalFrameBudgetMilliseconds)
--                    {
--                        budgetExceeded = true;
--                        break;
--                    }
-+                NodeCount = nodeCount,
-+                MaxIterations = math.clamp(_cableThermalIterationBudget, 1, CableThermalRelaxationMaxIterations),
-+                OceanTemperatureCelsius = OceanThermalSinkTemperatureCelsius,
-+                ConvergenceDeltaCelsius = CableThermalConvergenceDeltaCelsius,
-+                EdgeOffsets = _thermalEdgeOffsets,
-+                EdgeDestinations = _thermalEdgeDestinations,
-+                EdgeConductance = _thermalEdgeConductance,
-+                HeatInjection = _thermalHeatInjection,
-+                HullSinkConductance = _thermalHullSinkConductance,
-+                TemperatureFront = _thermalTemperatureFront,
-+                TemperatureBack = _thermalTemperatureBack
-+            };
-+            JobHandle thermalHandle = job.Schedule();
-+#if UNITY_EDITOR || DEVELOPMENT_BUILD
-+            long thermalStartTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-+#endif
-+            DispatcherJobSwap.TryComplete(ref thermalHandle, forceComplete: true);
-+#if UNITY_EDITOR || DEVELOPMENT_BUILD
-+            double thermalElapsedMilliseconds =
-+                (System.Diagnostics.Stopwatch.GetTimestamp() - thermalStartTicks) * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
-+            if (thermalElapsedMilliseconds > CableThermalFrameBudgetMilliseconds)
-+            {
-+                GlobalTelemetryBus.PublishJobBarrierStall(
-+                    nameof(PowerGrid),
-+                    nameof(ApplyCableThermalSharing),
-+                    (float)thermalElapsedMilliseconds);
-+            }
-+#endif
-+            ApplyThermalDissipationResult(nodeCount);
-+            AdaptCableThermalIterationBudget(false, _cableThermalIterationBudget, _cableThermalIterationBudget);
- 
--                    PowerNode sourceNode = _topologyNodes[nodeIndex];
--                    if (sourceNode == null)
--                        continue;
-+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-+            {
-+                PowerNode node = _topologyNodes[nodeIndex];
-+                if (node == null)
-+                    continue;
- 
--                    OverloadThermalBinding sourceBinding = _overloadThermalBindings[nodeIndex];
--                    if (sourceBinding.Atmosphere == null || sourceBinding.RoomIndex < 0)
--                        continue;
-+                OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
-+                if (binding.BaseModule == null || binding.Atmosphere == null || binding.RoomIndex < 0)
-+                    continue;
- 
--                    List<PowerNode> neighbors = sourceNode.Neighbors;
--                    if (neighbors == null)
--                        continue;
-+                float roomTemperature = binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex);
-+                TryTriggerThermalMeltdown(node, binding, roomTemperature, roomTemperature);
-+            }
-+        }
- 
--                    int neighborCount = neighbors.Count;
--                    for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
--                    {
--                        PowerNode destinationNode = neighbors[neighborIndex];
--                        if (destinationNode == null ||
--                            !ReferenceEquals(destinationNode.Grid, this) ||
--                            destinationNode.GraphScratchVersion != _graphBuildVersion ||
--                            destinationNode.GraphScratchIndex <= nodeIndex ||
--                            destinationNode.GraphScratchIndex >= nodeCount)
--                        {
--                            continue;
--                        }
-+        private void AdaptCableThermalIterationBudget(bool budgetExceeded, int completedIterations, int requestedIterations)
-+        {
-+            if (budgetExceeded)
-+            {
-+                _cableThermalIterationBudget = math.max(1, requestedIterations - 1);
-+                return;
-+            }
- 
--                        OverloadThermalBinding destinationBinding = _overloadThermalBindings[destinationNode.GraphScratchIndex];
--                        if (destinationBinding.Atmosphere == null ||
--                            destinationBinding.RoomIndex < 0 ||
--                            destinationBinding.RoomIndex == sourceBinding.RoomIndex ||
--                            !ReferenceEquals(destinationBinding.Atmosphere, sourceBinding.Atmosphere))
--                        {
--                            continue;
--                        }
-+            if (completedIterations >= requestedIterations && requestedIterations < CableThermalRelaxationMaxIterations)
-+                _cableThermalIterationBudget = requestedIterations + 1;
-+        }
- 
--                        float sourceTemperature = sourceBinding.Atmosphere.GetRoomTemperatureCelsius(sourceBinding.RoomIndex);
--                        float destinationTemperature = destinationBinding.Atmosphere.GetRoomTemperatureCelsius(destinationBinding.RoomIndex);
--                        float deltaTemperature = sourceTemperature - destinationTemperature;
--                        float absoluteDeltaTemperature = math.abs(deltaTemperature);
--                        maxObservedDelta = math.max(maxObservedDelta, absoluteDeltaTemperature);
--                        if (absoluteDeltaTemperature < MinimumCableThermalDeltaCelsius)
--                            continue;
-+        private int BuildThermalDissipationSnapshot(int nodeCount)
-+        {
-+            int directedEdgeCount = CountThermalDirectedEdges(nodeCount);
-+            EnsureThermalDissipationCapacity(nodeCount, directedEdgeCount);
- 
--                        float transferredHeatJoules = absoluteDeltaTemperature * CableThermalConductivityWattsPerCelsius * iterationDeltaSeconds;
--                        if (transferredHeatJoules <= 0f)
--                            continue;
-+            for (int nodeIndex = 0; nodeIndex <= nodeCount; nodeIndex++)
-+                _thermalEdgeOffsets[nodeIndex] = 0;
- 
--                        if (deltaTemperature > 0f)
--                        {
--                            sourceBinding.Atmosphere.TransferRoomHeatEnergyJoules(
--                                sourceBinding.RoomIndex,
--                                destinationBinding.RoomIndex,
--                                transferredHeatJoules);
--                        }
--                        else
--                        {
--                            destinationBinding.Atmosphere.TransferRoomHeatEnergyJoules(
--                                destinationBinding.RoomIndex,
--                                sourceBinding.RoomIndex,
--                                transferredHeatJoules);
--                        }
-+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-+            {
-+                PowerNode node = _topologyNodes[nodeIndex];
-+                OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
-+                float roomTemperature = binding.Atmosphere != null && binding.RoomIndex >= 0
-+                    ? binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex)
-+                    : OceanThermalSinkTemperatureCelsius;
-+                _thermalTemperatureFront[nodeIndex] = roomTemperature;
-+                _thermalTemperatureBack[nodeIndex] = roomTemperature;
-+                _thermalHeatInjection[nodeIndex] = ResolveNodeHeatInjection(node);
-+                _thermalHullSinkConductance[nodeIndex] = ResolveHullSinkConductance(in binding);
 +
-+                List<PowerNode> neighbors = node != null ? node.Neighbors : null;
-+                int neighborCount = neighbors != null ? neighbors.Count : 0;
-+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
-+                {
-+                    PowerNode neighbor = neighbors[neighborIndex];
-+                    if (!IsThermalNeighborValid(node, neighbor, nodeCount))
-+                        continue;
- 
--                        transferApplied = true;
--                    }
-+                    _thermalEdgeOffsets[nodeIndex + 1] = _thermalEdgeOffsets[nodeIndex + 1] + 1;
-                 }
-+            }
- 
--                completedIterations++;
--                if (budgetExceeded || !transferApplied || maxObservedDelta < CableThermalConvergenceDeltaCelsius)
--                    break;
-+            for (int nodeIndex = 1; nodeIndex <= nodeCount; nodeIndex++)
-+                _thermalEdgeOffsets[nodeIndex] = _thermalEdgeOffsets[nodeIndex] + _thermalEdgeOffsets[nodeIndex - 1];
-+
-+            int writeIndex = 0;
-+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-+            {
-+                PowerNode node = _topologyNodes[nodeIndex];
-+                List<PowerNode> neighbors = node != null ? node.Neighbors : null;
-+                int neighborCount = neighbors != null ? neighbors.Count : 0;
-+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
-+                {
-+                    PowerNode neighbor = neighbors[neighborIndex];
-+                    if (!IsThermalNeighborValid(node, neighbor, nodeCount))
-+                        continue;
-+
-+                    _thermalEdgeDestinations[writeIndex] = neighbor.GraphScratchIndex;
-+                    _thermalEdgeConductance[writeIndex] = CableThermalConductivityWattsPerCelsius /
-+                                                          math.max(MinEdgeResistance, ResolveEdgeResistance(node, neighbor));
-+                    writeIndex++;
-+                }
-             }
- 
--            AdaptCableThermalIterationBudget(budgetExceeded, completedIterations, iterationBudget);
-+            return writeIndex;
-+        }
- 
-+        private int CountThermalDirectedEdges(int nodeCount)
-+        {
-+            int directedEdgeCount = 0;
              for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
              {
-                 PowerNode node = _topologyNodes[nodeIndex];
--                if (node == null)
-+                List<PowerNode> neighbors = node != null ? node.Neighbors : null;
-+                int neighborCount = neighbors != null ? neighbors.Count : 0;
-+                for (int neighborIndex = 0; neighborIndex < neighborCount; neighborIndex++)
-+                {
-+                    if (IsThermalNeighborValid(node, neighbors[neighborIndex], nodeCount))
-+                        directedEdgeCount++;
-+                }
-+            }
-+
-+            return directedEdgeCount;
-+        }
-+
-+        private bool IsThermalNeighborValid(PowerNode source, PowerNode neighbor, int nodeCount)
-+        {
-+            return source != null &&
-+                   neighbor != null &&
-+                   ReferenceEquals(neighbor.Grid, this) &&
-+                   neighbor.GraphScratchVersion == _graphBuildVersion &&
-+                   neighbor.GraphScratchIndex >= 0 &&
-+                   neighbor.GraphScratchIndex < nodeCount &&
-+                   ShouldPublishPowerEdge(source, neighbor);
-+        }
-+
-+        private float ResolveNodeHeatInjection(PowerNode node)
-+        {
-+            if (node == null || node.Components == null)
-+                return 0f;
-+
-+            float heatWatts = 0f;
-+            List<IPowerComponent> components = node.Components;
-+            int componentCount = components.Count;
-+            for (int componentIndex = 0; componentIndex < componentCount; componentIndex++)
-+            {
-+                IPowerComponent component = components[componentIndex];
-+                if (component == null)
-                     continue;
- 
-+                float rating = component.PowerRating;
-+                if (rating < 0f && component.HasPower)
-+                    heatWatts += -rating;
-+                else if (rating > 0f && component is BioReactor)
-+                    heatWatts += rating * 0.5f;
-+            }
-+
-+            return math.max(0f, heatWatts * ThermalHeatInjectionScale);
-+        }
-+
-+        private float ResolveHullSinkConductance(in OverloadThermalBinding binding)
-+        {
-+            BaseModule baseModule = binding.BaseModule;
-+            if (baseModule == null)
-+                return 0f;
-+
-+            float surfaceArea = math.max(1f, baseModule.ResolveThermalSurfaceAreaSquareMeters());
-+            float sink = surfaceArea * 0.05f;
-+            if (baseModule.IsFlooded || baseModule.IntegrityState == BaseModuleIntegrityState.Ruptured)
-+                sink *= 8f;
-+            return sink;
-+        }
-+
-+        private void ApplyThermalDissipationResult(int nodeCount)
-+        {
-+            for (int nodeIndex = 0; nodeIndex < nodeCount; nodeIndex++)
-+            {
                  OverloadThermalBinding binding = _overloadThermalBindings[nodeIndex];
--                if (binding.BaseModule == null || binding.Atmosphere == null || binding.RoomIndex < 0)
-+                if (binding.Atmosphere == null || binding.RoomIndex < 0)
+@@ -1131,7 +1131,7 @@ namespace Hecton8.Power
                      continue;
- 
--                float roomTemperature = binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex);
--                TryTriggerThermalMeltdown(node, binding, roomTemperature, roomTemperature);
-+                float currentTemperature = binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex);
-+                float targetTemperature = _thermalTemperatureFront[nodeIndex];
-+                float deltaCelsius = math.clamp(
-+                    (targetTemperature - currentTemperature) * ThermalDissipationApplyBlend,
-+                    -MaximumAppliedThermalDeltaCelsius,
-+                    MaximumAppliedThermalDeltaCelsius);
-+                if (math.abs(deltaCelsius) > 0.001f && math.isfinite(deltaCelsius))
-+                    binding.Atmosphere.InjectRoomTemperatureDeltaCelsius(binding.RoomIndex, deltaCelsius);
-             }
-         }
- 
--        private void AdaptCableThermalIterationBudget(bool budgetExceeded, int completedIterations, int requestedIterations)
-+        private void EnsureThermalDissipationCapacity(int nodeCount, int directedEdgeCount)
-         {
--            if (budgetExceeded)
-+            int safeNodeCount = math.max(1, nodeCount);
-+            int safeEdgeCount = math.max(1, directedEdgeCount);
-+            if (!_thermalTemperatureFront.IsCreated || _thermalTemperatureFront.Length < safeNodeCount)
-             {
--                _cableThermalIterationBudget = math.max(1, requestedIterations - 1);
-+                DisposeThermalDissipationBuffers();
-+                // COLD ALLOC: NativeArray<float>[nodeCount] - thermal Jacobi front buffer - owner: PowerGrid
-+                _thermalTemperatureFront = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_thermalTemperatureFront, nameof(_thermalTemperatureFront));
-+                // COLD ALLOC: NativeArray<float>[nodeCount] - thermal Jacobi back buffer - owner: PowerGrid
-+                _thermalTemperatureBack = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_thermalTemperatureBack, nameof(_thermalTemperatureBack));
-+                // COLD ALLOC: NativeArray<float>[nodeCount] - thermal heat injection buffer - owner: PowerGrid
-+                _thermalHeatInjection = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_thermalHeatInjection, nameof(_thermalHeatInjection));
-+                // COLD ALLOC: NativeArray<float>[nodeCount] - hull/ocean thermal sink buffer - owner: PowerGrid
-+                _thermalHullSinkConductance = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_thermalHullSinkConductance, nameof(_thermalHullSinkConductance));
-+                // COLD ALLOC: NativeArray<int>[nodeCount+1] - thermal CSR edge offsets - owner: PowerGrid
-+                _thermalEdgeOffsets = new NativeArray<int>(safeNodeCount + 1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_thermalEdgeOffsets, nameof(_thermalEdgeOffsets));
-+                // COLD ALLOC: NativeArray<int>[edgeCount] - thermal CSR destinations - owner: PowerGrid
-+                _thermalEdgeDestinations = new NativeArray<int>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_thermalEdgeDestinations, nameof(_thermalEdgeDestinations));
-+                // COLD ALLOC: NativeArray<float>[edgeCount] - thermal CSR conductance - owner: PowerGrid
-+                _thermalEdgeConductance = new NativeArray<float>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_thermalEdgeConductance, nameof(_thermalEdgeConductance));
-                 return;
-             }
- 
--            if (completedIterations >= requestedIterations && requestedIterations < CableThermalRelaxationMaxIterations)
--                _cableThermalIterationBudget = requestedIterations + 1;
-+            if (!_thermalEdgeDestinations.IsCreated || _thermalEdgeDestinations.Length < safeEdgeCount)
-+            {
-+                DisposeTrackedNativeArray(ref _thermalEdgeDestinations);
-+                DisposeTrackedNativeArray(ref _thermalEdgeConductance);
-+                // COLD ALLOC: NativeArray<int>[edgeCount] - expanded thermal CSR destinations - owner: PowerGrid
-+                _thermalEdgeDestinations = new NativeArray<int>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_thermalEdgeDestinations, nameof(_thermalEdgeDestinations));
-+                // COLD ALLOC: NativeArray<float>[edgeCount] - expanded thermal CSR conductance - owner: PowerGrid
-+                _thermalEdgeConductance = new NativeArray<float>(safeEdgeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_thermalEdgeConductance, nameof(_thermalEdgeConductance));
-+            }
-+        }
-+
-+        private void DisposeThermalDissipationBuffers()
-+        {
-+            DisposeTrackedNativeArray(ref _thermalTemperatureFront);
-+            DisposeTrackedNativeArray(ref _thermalTemperatureBack);
-+            DisposeTrackedNativeArray(ref _thermalHeatInjection);
-+            DisposeTrackedNativeArray(ref _thermalHullSinkConductance);
-+            DisposeTrackedNativeArray(ref _thermalEdgeOffsets);
-+            DisposeTrackedNativeArray(ref _thermalEdgeDestinations);
-+            DisposeTrackedNativeArray(ref _thermalEdgeConductance);
-         }
- 
-         private void TryTriggerThermalMeltdown(
-@@ -1367,34 +1598,46 @@ namespace Hecton8.Power
- 
-             if (!_batteryDispatchRecords.IsCreated || _batteryDispatchRecords.Length < batteryCount)
-             {
--                if (_batteryDispatchRecords.IsCreated)
--                    _batteryDispatchRecords.Dispose();
-+                DisposeTrackedNativeArray(ref _batteryDispatchRecords);
- 
-                 _batteryDispatchRecords = new NativeArray<BatteryDispatchRecord>(
-                     batteryCount,
-                     Allocator.Persistent,
-                     NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_batteryDispatchRecords, nameof(_batteryDispatchRecords));
-             }
- 
-             if (!_batteryDispatchResults.IsCreated || _batteryDispatchResults.Length < batteryCount)
-             {
--                if (_batteryDispatchResults.IsCreated)
--                    _batteryDispatchResults.Dispose();
-+                DisposeTrackedNativeArray(ref _batteryDispatchResults);
- 
-                 _batteryDispatchResults = new NativeArray<BatteryDispatchResult>(
-                     batteryCount,
-                     Allocator.Persistent,
-                     NativeArrayOptions.ClearMemory);
-+                RegisterNativeArray(_batteryDispatchResults, nameof(_batteryDispatchResults));
-             }
-         }
- 
-         private void DisposeBatteryDispatchBuffers()
-         {
--            if (_batteryDispatchRecords.IsCreated)
--                _batteryDispatchRecords.Dispose();
-+            DisposeTrackedNativeArray(ref _batteryDispatchRecords);
-+            DisposeTrackedNativeArray(ref _batteryDispatchResults);
-+        }
-+
-+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-+        {
-+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-+        }
-+
-+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
-+        {
-+            if (!array.IsCreated)
-+                return;
- 
--            if (_batteryDispatchResults.IsCreated)
--                _batteryDispatchResults.Dispose();
-+            NativeMemorySentinel.UnregisterNativeArray(array);
-+            array.Dispose();
-+            array = default;
-         }
- 
-         private static bool ResolveBatteryEmergencyReserveActive(float totalStoredEnergyWattSeconds, float totalCapacityWattSeconds)
-diff --git a/Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs b/Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs
-index 40381d78..776608bf 100644
---- a/Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs
-+++ b/Assets/_Project/Scripts/Quest/QuestGraphEvaluator.cs
-@@ -4,6 +4,8 @@ using Hecton.Localization;
- using Hecton8.AtlasSignal;
- using Hecton8.Celestial;
- using Hecton8.Core;
-+using Hecton8.Crafting;
-+using Hecton8.Items;
- using Hecton8.Modding;
- using Hecton8.Narrative;
- using Unity.Collections;
-@@ -11,7 +13,7 @@ using UnityEngine;
- 
- namespace Hecton8.Quest
- {
--    internal sealed class QuestGraphEvaluator : IDisposable, INarrativeEventListener, IAtlasSignalEventListener, ICelestialEventListener
-+    internal sealed class QuestGraphEvaluator : IDisposable, INarrativeEventListener, IAtlasSignalEventListener, ICelestialEventListener, ICraftingEventListener
-     {
-         private const string EventSubscriberId = "quest.graph.evaluator";
-         private const float DepthTierTwoMeters = 100f;
-@@ -71,6 +73,7 @@ namespace Hecton8.Quest
-             _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, EventSubscriberId);
-             _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
-             NarrativeEvents.Register(this);
-+            CraftingEvents.Register(this);
-             CelestialEvents.Register(this);
-             AtlasSignalEvents.Register(this);
-             _activeEvaluators.Register(this);
-@@ -91,6 +94,7 @@ namespace Hecton8.Quest
-             _loreAcquiredSubscription?.Dispose();
-             _loreAcquiredSubscription = null;
-             NarrativeEvents.Unregister(this);
-+            CraftingEvents.Unregister(this);
-             CelestialEvents.Unregister(this);
-             AtlasSignalEvents.Unregister(this);
-             _activeEvaluators.Unregister(this);
-@@ -199,10 +203,43 @@ namespace Hecton8.Quest
- 
-         public void OnNarrativeEvent(in NarrativeEventPayload payload)
-         {
--            if ((NarrativeEventType)payload.EventType != NarrativeEventType.DepthTierReached)
-+            switch ((NarrativeEventType)payload.EventType)
-+            {
-+                case NarrativeEventType.DiscoveryMade:
-+                    EnqueueSignal(new QuestSignalPayload
-+                    {
-+                        EntityHash = payload.DiscoveryHash,
-+                        EventType = (ushort)QuestSignalKind.DiscoveryMade,
-+                        Timestamp = Time.timeAsDouble
-+                    });
-+                    return;
-+
-+                case NarrativeEventType.DepthTierReached:
-+                    UpdateDepth(MapDepthTierToMeters(payload.DepthTier));
-+                    return;
-+            }
-+        }
-+
-+        public void OnCraftingEvent(in CraftingEventPayload payload)
-+        {
-+            if ((CraftingEventType)payload.EventType != CraftingEventType.CraftCompleted)
-+                return;
-+
-+            if (!CraftingEvents.TryResolveItem(in payload, out ItemData resultItem) || resultItem == null)
-                 return;
- 
--            UpdateDepth(MapDepthTierToMeters(payload.DepthTier));
-+            uint itemHash = QuestFlagHashKernel.ComputeStableHash(resultItem.PersistentId);
-+            if (itemHash == 0u)
-+                return;
-+
-+            EnqueueSignal(new QuestSignalPayload
-+            {
-+                EntityHash = itemHash,
-+                EventType = (ushort)QuestSignalKind.ItemCollected,
-+                ItemId = itemHash,
-+                Timestamp = Time.timeAsDouble,
-+                NumericValue = 1f
-+            });
-         }
- 
-         private void HandleEclipseStart()
-diff --git a/Assets/_Project/Scripts/World/ScatterInstancingService.cs b/Assets/_Project/Scripts/World/ScatterInstancingService.cs
-index 1552f6ae..97f3735d 100644
---- a/Assets/_Project/Scripts/World/ScatterInstancingService.cs
-+++ b/Assets/_Project/Scripts/World/ScatterInstancingService.cs
-@@ -109,6 +109,9 @@ namespace Hecton8.World
-                 return;
-             }
- 
-+            Bounds aggregateBounds = default;
-+            bool hasAggregateBounds = false;
-+
-             for (int i = 0; i < knownPrototypes.Count; i++)
-             {
-                 GPUInstancerPrefabPrototype prototype = knownPrototypes[i];
-@@ -154,6 +157,14 @@ namespace Hecton8.World
-                     0,
-                     0,
-                     count);
-+
-+                AccumulateInstancingBounds(matrices, count, ref aggregateBounds, ref hasAggregateBounds);
-+            }
-+
-+            if (hasAggregateBounds)
-+            {
-+                aggregateBounds.Expand(8f);
-+                manager.instancingBounds = aggregateBounds;
-             }
-         }
- 
-@@ -214,5 +225,45 @@ namespace Hecton8.World
-             prototype = gpuiPrefab.prefabPrototype;
-             return prototype != null;
-         }
-+
-+        private static void AccumulateInstancingBounds(
-+            Matrix4x4[] matrices,
-+            int count,
-+            ref Bounds aggregateBounds,
-+            ref bool hasAggregateBounds)
-+        {
-+            if (matrices == null || count <= 0)
-+                return;
-+
-+            int safeCount = Mathf.Min(count, matrices.Length);
-+            for (int i = 0; i < safeCount; i++)
-+            {
-+                Matrix4x4 matrix = matrices[i];
-+                Vector3 position = new Vector3(matrix.m03, matrix.m13, matrix.m23);
-+                if (!IsFinite(position))
-+                    continue;
-+
-+                float scaleX = new Vector3(matrix.m00, matrix.m10, matrix.m20).magnitude;
-+                float scaleY = new Vector3(matrix.m01, matrix.m11, matrix.m21).magnitude;
-+                float scaleZ = new Vector3(matrix.m02, matrix.m12, matrix.m22).magnitude;
-+                float radius = Mathf.Max(2f, Mathf.Max(scaleX, Mathf.Max(scaleY, scaleZ)) * 4f);
-+                Bounds instanceBounds = new Bounds(position, Vector3.one * radius);
-+                if (!hasAggregateBounds)
-+                {
-+                    aggregateBounds = instanceBounds;
-+                    hasAggregateBounds = true;
-+                    continue;
-+                }
-+
-+                aggregateBounds.Encapsulate(instanceBounds);
-+            }
-+        }
-+
-+        private static bool IsFinite(Vector3 value)
-+        {
-+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
-+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
-+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
-+        }
-     }
- }
 
-diff --git a/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
+                 float currentTemperature = binding.Atmosphere.GetRoomTemperatureCelsius(binding.RoomIndex);
+-                float targetTemperature = _thermalTemperatureFront[nodeIndex];
++                float targetTemperature = resultTemperatures[nodeIndex];
+                 float deltaCelsius = math.clamp(
+                     (targetTemperature - currentTemperature) * ThermalDissipationApplyBlend,
+                     -MaximumAppliedThermalDeltaCelsius,
+@@ -1185,8 +1185,22 @@ namespace Hecton8.Power
+             }
+         }
+
++        private void CompleteThermalDissipationForTeardown()
++        {
++            if (!_thermalDissipationPending)
++                return;
++
++            DispatcherJobSwap.TryComplete(ref _thermalDissipationHandle, forceComplete: true);
++            _thermalDissipationPending = false;
++            _thermalDissipationResultInBackBuffer = false;
++            _thermalDissipationNodeCount = 0;
++            _thermalDissipationScheduledIterations = 0;
++            _thermalDissipationDeferredFrames = 0;
++        }
++
+         private void DisposeThermalDissipationBuffers()
+         {
++            CompleteThermalDissipationForTeardown();
+             DisposeTrackedNativeArray(ref _thermalTemperatureFront);
+             DisposeTrackedNativeArray(ref _thermalTemperatureBack);
+             DisposeTrackedNativeArray(ref _thermalHeatInjection);
+diff --git a/Assets/_Project/Scripts/SceneBootstrap.cs b/Assets/_Project/Scripts/SceneBootstrap.cs
+index 43bea270..86fc1bb5 100644
+--- a/Assets/_Project/Scripts/SceneBootstrap.cs
++++ b/Assets/_Project/Scripts/SceneBootstrap.cs
+@@ -1059,7 +1059,8 @@ namespace Hecton8.Bootstrap
+                 }
+             }
+
+-            global::HectonWorldGenerator legacyWorldGenerator = global::HectonWorldGenerator.ActiveRuntimeInstance;
++            global::HectonWorldGenerator legacyWorldGenerator =
++                GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
+             if (legacyWorldGenerator != null)
+             {
+                 if (IsTemporaryRuntimeShellObject(legacyWorldGenerator.gameObject))
+diff --git a/Assets/_Project/Scripts/UI/PDAMapTab.cs b/Assets/_Project/Scripts/UI/PDAMapTab.cs
+index 2b0d67cf..ae694222 100644
+--- a/Assets/_Project/Scripts/UI/PDAMapTab.cs
++++ b/Assets/_Project/Scripts/UI/PDAMapTab.cs
+@@ -1,10 +1,12 @@
+ using System;
+ using System.Collections.Generic;
+ using System.Runtime.InteropServices;
++using Hecton.Localization;
+ using Hecton8.Audio;
+ using Hecton8.Bootstrap;
+ using Hecton8.Caves;
+ using Hecton8.Core;
++using Hecton8.Environment;
+ using Hecton8.Gameplay;
+ using Hecton8.PDA;
+ using Hecton8.World;
+@@ -40,11 +42,6 @@ namespace Hecton8.UI
+         private const int MarkerUpdateQueueCapacity = 128;
+         private const int MaxMarkerUiUpdatesPerLateFrame = 10;
+         private const float MarkerVisualSize = 7f;
+-        private const float GhostSignalMinimumDepthMeters = 450f;
+-        private const float GhostSignalCycleSeconds = 137f;
+-        private const float GhostSignalWindowSeconds = 7f;
+-        private const uint GhostSignalSalt = 0x47535431u;
+-
+         private static readonly int SdfVolumeId = Shader.PropertyToID("_SdfVolume");
+         private static readonly int SdfRangeId = Shader.PropertyToID("_SdfRange");
+         private static readonly int GridDimensionsId = Shader.PropertyToID("_GridDimensions");
+@@ -56,6 +53,8 @@ namespace Hecton8.UI
+         private static readonly int PointCloudLocalToWorldId = Shader.PropertyToID("_PointCloudLocalToWorld");
+         private static readonly int PointSizeId = Shader.PropertyToID("_PointSize");
+         private static readonly int OpacityId = Shader.PropertyToID("_Opacity");
++        private static readonly uint _GhostSignalRejectedWarningHash = unchecked((uint)LocHash.Compute("PDAMapTab.GhostSignalRejected"));
++        private static readonly uint _GhostSignalContextHash = unchecked((uint)LocHash.Compute("GhostSignal"));
+
+         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+         private struct BuildCartographyTextureJob : IJobParallelFor
+@@ -289,6 +288,7 @@ namespace Hecton8.UI
+         private int _nextMarkerVisualSlot;
+         private int _activeVolumeVersion = -1;
+         private int _activeThreatPingCount;
++        private int _lastGhostSignalRejectedCycle = int.MinValue;
+         private Texture3D _sdfTexture;
+         private Texture2D _cartographyTexture;
+         private NativeArray<Color32> _cartographyPixels;
+@@ -1250,21 +1250,17 @@ namespace Hecton8.UI
+
+         private void TryAppendGhostSignalPing()
+         {
+-            Vector3 playerPosition = ResolvePlayerPosition();
+-            float depthMeters = Mathf.Max(0f, -playerPosition.y);
+-            if (depthMeters < GhostSignalMinimumDepthMeters)
+-                return;
+-
+-            float cyclePosition = Time.unscaledTime % GhostSignalCycleSeconds;
+-            if (cyclePosition > GhostSignalWindowSeconds)
+-                return;
+-
+-            int cycleIndex = Mathf.FloorToInt(Time.unscaledTime / GhostSignalCycleSeconds);
+-            int seed = global::HectonWorldGenerator.ActiveRuntimeInstance != null
+-                ? global::HectonWorldGenerator.ActiveRuntimeInstance.RuntimeWorldSeed
++            IWorldSeedProvider worldSeedProvider = GlobalRegistry.WorldSeedProvider;
++            int seed = worldSeedProvider != null && worldSeedProvider.IsInitialized
++                ? worldSeedProvider.RuntimeWorldSeed
+                 : 1;
+-            uint hash = HashGhostSignal((uint)seed, (uint)cycleIndex, (uint)Mathf.FloorToInt(depthMeters));
+-            if ((hash & 0xFFu) > 8u)
++            float unscaledTime = Time.unscaledTime;
++            float depthMeters = ResolvePlayerDepthMeters();
++            if (!GhostSignalUtility.TryResolveCandidate(
++                    seed,
++                    unscaledTime,
++                    depthMeters,
++                    out Vector4 ghostPing))
+                 return;
+
+             int weakestIndex = -1;
+@@ -1282,18 +1278,13 @@ namespace Hecton8.UI
+             if (weakestIndex < 0)
+                 return;
+
+-            float intensity = 0.52f + (((hash >> 8) & 0xFFu) / 255f) * 0.24f;
+-            if (intensity <= weakestIntensity)
++            if (ghostPing.w <= weakestIntensity)
++            {
++                TryPublishGhostSignalRejected(GhostSignalUtility.ResolveCycleIndex(unscaledTime), weakestIntensity);
+                 return;
++            }
+
+-            float angleRadians = (((hash >> 16) & 0xFFFFu) / 65535f) * Mathf.PI * 2f;
+-            float radius = 0.18f + (((hash >> 4) & 0x0Fu) / 15f) * 0.24f;
+-            float vertical = -0.18f + (((hash >> 12) & 0x0Fu) / 15f) * 0.36f;
+-            _threatPings[weakestIndex] = new Vector4(
+-                Mathf.Sin(angleRadians) * radius,
+-                vertical,
+-                Mathf.Cos(angleRadians) * radius,
+-                intensity);
++            _threatPings[weakestIndex] = ghostPing;
+         }
+
+         private void RecountThreatPings()
+@@ -1306,21 +1297,6 @@ namespace Hecton8.UI
+             }
+         }
+
+-        private static uint HashGhostSignal(uint seed, uint cycleIndex, uint depthMeters)
+-        {
+-            unchecked
+-            {
+-                uint hash = 2166136261u ^ GhostSignalSalt;
+-                hash = (hash ^ seed) * 16777619u;
+-                hash = (hash ^ cycleIndex) * 16777619u;
+-                hash = (hash ^ depthMeters) * 16777619u;
+-                hash ^= hash >> 13;
+-                hash *= 1274126177u;
+-                hash ^= hash >> 16;
+-                return hash;
+-            }
+-        }
+-
+         private void PushMaterialState()
+         {
+             if (_runtimeMapMaterial == null)
+@@ -1339,6 +1315,30 @@ namespace Hecton8.UI
+             return Vector3.zero;
+         }
+
++        private static float ResolvePlayerDepthMeters()
++        {
++            BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
++            if (biomeMatrixDirector != null)
++                return Mathf.Max(0f, biomeMatrixDirector.CurrentDepthMeters);
++
++            Vector3 playerPosition = ResolvePlayerPosition();
++            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
++            double absoluteY = playerAup.ToAbsoluteDouble3().y;
++            return (float)math.max(0d, -absoluteY);
++        }
++
++        private void TryPublishGhostSignalRejected(int cycleIndex, float weakestIntensity)
++        {
++            if (_lastGhostSignalRejectedCycle == cycleIndex)
++                return;
++
++            _lastGhostSignalRejectedCycle = cycleIndex;
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                _GhostSignalRejectedWarningHash,
++                _GhostSignalContextHash,
++                weakestIntensity);
++        }
++
+         private void TryAcquireStatusBuffer()
+         {
+             if (_statusBufferLease.IsValid)
+diff --git a/Docs/DOC_GOVERNANCE.md b/Docs/DOC_GOVERNANCE.md
+index 7bef0bdf..68dbd240 100644
+--- a/Docs/DOC_GOVERNANCE.md
++++ b/Docs/DOC_GOVERNANCE.md
+@@ -1,6 +1,6 @@
+ # Documentation Governance
+
+-Date: `2026-05-04`
++Date: `2026-05-05`
+ Status: `PENDING VERIFICATION`
+
+ Purpose: prevent workspace documentation from collapsing back into root-level noise.
+@@ -10,8 +10,8 @@ Current-state boundary:
+ - This file defines documentation placement and authority order only.
+ - It is not runtime proof and does not certify that every listed document is current by itself.
+ - Current documentation sorting truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`.
+-- Current project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, current source files, and fresh verification logs.
+-- Current warning-cleanup evidence starts at `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`.
++- Current project truth starts at `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`, `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`, `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`, `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`, `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`, current source files, and fresh verification logs.
++- Current warning-cleanup evidence starts at `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`; current Omega build warning classification is scoped in `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`.
+
+ ## Authority Order
+
+@@ -22,13 +22,14 @@ Current-state boundary:
+ 5. `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
+ 6. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+ 7. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
+-8. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+-9. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+-10. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
+-11. active execution docs under `Docs/`
+-12. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
+-13. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
+-14. archive bundles under `Docs/_Archive/`
++8. `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
++9. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
++10. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
++11. `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`
++12. active execution docs under `Docs/`
++13. long-lived reference bundles under `Docs/AI_Fauna`, `Docs/Flora_Pipeline`, `Docs/Scatter_Runtime`, `Docs/Legacy_World_Reference`, `Docs/Legacy_Backlog`, and similar category folders
++14. deprecated/historical snapshots under `Docs/DEPRECATED/` and `Docs/Reports/DEPRECATED/`
++15. archive bundles under `Docs/_Archive/`
+
+ ## What Belongs In Root
+
+diff --git a/Docs/README.md b/Docs/README.md
+index 612530d7..a393ec5c 100644
+--- a/Docs/README.md
++++ b/Docs/README.md
+@@ -1,9 +1,9 @@
+ # Docs Index
+
+-Date: `2026-05-04`
++Date: `2026-05-05`
+ Status: `PENDING VERIFICATION`
+
+-Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, `2026-05-02` documentation actuality sweep, `2026-05-03` foundation-hardening continuation, `2026-05-04` documentation/current-evidence recheck, and `2026-05-04` documentation sorting authority map.
++Purpose: active documentation entry point after the `2026-04-29` forensic audit, stale-doc archive pass, `2026-05-02` documentation actuality sweep, `2026-05-03` foundation-hardening continuation, `2026-05-04` documentation/current-evidence recheck, `2026-05-04` documentation sorting authority map, and `2026-05-05` Omega-autonomy bounded verification.
+
+ ## Read First
+
+@@ -17,6 +17,7 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
+ - `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` - current header normalization and archive/move queue.
+ - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` - latest documentation sweep and current May 4 build/guard/MCP evidence boundary.
+ - `Reports/2026-05-04_WARNING_CLEANUP.md` - latest first-party warning cleanup; Core build and post-refresh Unity console readback are clean for this slice.
++- `Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` - latest bounded Omega-autonomy evidence; latest serial Core build is `0 Warning(s)` / `0 Error(s)`, while the last warning-bearing Omega log is dependency/vendor-only with `0` first-party `Assets/_Project/Scripts` warning matches.
+ - `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` - latest foundation guard repair addendum; source guard exits `0`.
+ - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md` - latest celestial/meteor protocol source-build evidence; runtime visual/audio/profiler proof absent.
+ - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md` - celestial orbital protocol source-build evidence; PlayMode smoke and profiler proof absent.
+@@ -37,6 +38,7 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
+ - `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
+ - `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+ - `Reports/2026-05-04_WARNING_CLEANUP.md`
++- `Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
+ - `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+ - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
+ - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md`
+@@ -69,6 +71,7 @@ Current-state rule:
+ - use `Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` as the current header normalization and archive/move queue
+ - use `Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` as the latest broad documentation-sweep and current May 4 build/guard/MCP evidence addendum
+ - use `Reports/2026-05-04_WARNING_CLEANUP.md` as the latest first-party warning-cleanup addendum for Core compile and current post-refresh Unity console warning readback
++- use `Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` as the current bounded Omega-autonomy hardening report and current dependency-warning classification for the Omega build slice
+ - use `Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` as the latest foundation guard source/build addendum
+ - use the May 4 celestial reports as source-build evidence only; do not claim runtime celestial/meteor behavior without PlayMode/profiler proof
+ - use `Reports/2026-05-01_CURRENT_PROJECT_STATE.md` as the conceptual entry point for system ownership and active risks; the filename is retained as a stable anchor and now includes May 4 evidence
+@@ -81,6 +84,10 @@ Current-state rule:
+
+ Current verification boundary:
+
++- latest May 5 Omega bounded Core build evidence is `CodexArtifacts/dotnet-h8core-omega-autonomy-doc-continuation-build.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`, and `0` first-party `Assets/_Project` matches
++- last May 5 Omega warning-bearing baseline is `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log`: `Build succeeded`, `48 Warning(s)`, `0 Error(s)`; warning owners are dependency/vendor surfaces only: Unity URP PackageCache, GPUInstancer, Den.Tools/MapMagic, Crest, WaveHarmonic.Crest, Unity ShaderGraph/Core Editor PackageCache
++- first-party warning check against `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log` also returned `0` `Assets/_Project/Scripts` matches; older artifact logs may contain first-party warnings and must not be treated as current build output without rerunning the matching build
++- latest May 5 Omega smoke evidence is `CodexArtifacts/unity-omega-smoke-2026-05-05-doc-continuation.log` plus `Library/OmegaAutonomySmokeTester.json`, status `PASS`; Unity process exit code was `0`, but the log still contains licensing handshake/access-token errors, UnityConnect `Curl error 42`, MCP shutdown notice, and UTP memory-leak summary at editor shutdown, so this is scoped smoke proof, not project-wide PlayMode/profiler/player-build proof
+ - latest May 4 warning-cleanup local Core build `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 Warning(s)` and `0 Error(s)`; final post-cleanup Unity console readback after clear/script refresh returned `0` error/warning entries
+ - earlier fresh May 4 post-repair local Core build `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` returned `0 Warning(s)` and `0 Error(s)`
+ - latest May 4 local Editor, `Hecton8.World.Dots.csproj`, and `Hecton8.PlayModeTests.csproj` builds all returned `0 Warning(s)` and `0 Error(s)`
+diff --git a/Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md b/Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md
+index 57cbb672..aba229ce 100644
+--- a/Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md
++++ b/Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md
+@@ -44,7 +44,7 @@ Captured before this report file was added:
+ This report intentionally increases active report and active documentation counts by one after it is written.
+ Historical post-write quick count after this report, before root-log relocation: `Docs/**/*.md` total `403`, active `Docs/**/*.md` `192`, `Docs/Reports/*.md` `38`, root `.md` files `4`, root `.txt` / `.log` files `7`.
+ After `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` was added, counts were `Docs/**/*.md` total `404`, active `Docs/**/*.md` `193`, and `Docs/Reports/*.md` `39`.
+-After the root-log relocation addendum, Archivarius header normalization, SpaceEngine research header normalization, and documentation authority smoke-guard addendum, root `.txt` / `.log` files are `0`; total `Docs/**/*.md` is now `410`, active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports`, and `ARCHIVARIUS REPORTS/03_OBSOLETE` is now `156`, and `Docs/Reports/*.md` is now `42`.
++After the root-log relocation addendum, Archivarius header normalization, SpaceEngine research header normalization, documentation authority smoke-guard addendum, 2026-05-05 Omega documentation influx, and the second root-log relocation, root `.txt` / `.log` files are `0`; total `Docs/**/*.md` is now `418`, active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports`, and `ARCHIVARIUS REPORTS/03_OBSOLETE` is now `160`, and `Docs/Reports/*.md` is now `45`.
+
+ ## Current Authority Stack
+
+@@ -58,11 +58,12 @@ Use this order when deciding whether a document is current:
+ 6. `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
+ 7. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+ 8. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
+-9. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+-10. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+-11. domain-specific active contracts and reports
+-12. historical reports only after reading their latest delta/supersession notes
+-13. archive/deprecated folders only as preserved evidence
++9. `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
++10. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
++11. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
++12. domain-specific active contracts and reports
++13. historical reports only after reading their latest delta/supersession notes
++14. archive/deprecated folders only as preserved evidence
+
+ ## Root Sorting
+
+@@ -84,11 +85,13 @@ Root evidence artifacts, not documentation authority:
+
+ | Pattern | Handling |
+ |---|---|
++| `BROKEN_PREFABS.md` | generated prefab-audit snapshot; current content reports `0` broken prefabs, but it is not a canonical report until summarized in `Docs/Reports/` |
+ | `*.log` in repository root | none remain after relocation; if new root logs appear, move them into a dated deprecated evidence bundle or summarize them in a dated report before citation |
+ | `*.txt` in repository root | classify before use; current scan found no active root `.txt` authority |
+
+ Original sorting pass made no physical root file moves because the worktree was dirty across source, assets, generated artifacts, reports, and deprecated raw logs.
+ Follow-up root-log relocation moved the seven tracked repository-root `.log` files to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/` with `git mv`.
++Second root-log relocation moved two newly generated repository-root Omega build/restore logs to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-05/`.
+
+ ## Active Docs Root Sorting
+
+@@ -138,6 +141,7 @@ Current first-read reports:
+ - `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
+ - `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
+ - `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
++- `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
+ - `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+ - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+ - `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
+@@ -176,6 +180,12 @@ Historical but still useful evidence reports:
+ - Updated active indexes to point at this file as the current documentation sorting layer.
+ - Updated governance/root reference wording so the current authority stack includes warning cleanup and foundation guard repair before older state anchors.
+ - Updated the Archivarius authority classification so it no longer presents the pre-repair guard failure as current.
++
++## 2026-05-05 Addendum
++
++- Promoted `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` into the current first-read report stack for bounded Omega-autonomy verification.
++- Current Omega build boundary is now `CodexArtifacts/dotnet-h8core-omega-autonomy-doc-continuation-build.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`. The last warning-bearing Omega baseline remains `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log`: `Build succeeded`, `48 Warning(s)`, `0 Error(s)`, with warnings owned by dependency/vendor packages and `0` first-party `Assets/_Project/Scripts` matches.
++- Older warning-bearing artifact logs remain historical evidence only unless their exact build is rerun and promoted by a current report.
+ - Updated active reference-bundle boundary headers/read-first lines that still pointed at `2026-05-02` as the current-state boundary, and updated current Archivarius `01_GENERAL_INFO` read-first lines to include this sorting map.
+ - Moved seven repository-root `.log` files to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`.
+ - Added a local README for that raw-evidence bundle and updated active root/docs references.
+@@ -183,14 +193,18 @@ Historical but still useful evidence reports:
+ - Completed header normalization for `60` files under `Docs/ARCHIVARIUS REPORTS/`.
+ - Completed header normalization for current `Docs/SPACE_ENGINE_RESEARCH/*.md` files.
+ - Added an editor-only documentation authority smoke guard at `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs`.
++- Added decomposition, stress, and telemetry-warning hooks to the editor-only documentation authority smoke guard, then normalized the new active SpaceEngine Omega audit header so the active missing-`Status:` count returned to `0`.
++- Added the CI-facing documentation authority batch entrypoint `RunBatchAll`; direct Core/Editor Roslyn compile passed, but Unity batch execution is still blocked by licensing/project-lock environment failures and did not emit batch JSON.
++- Expanded the relocated-root-log counter to scan every `Root_Logs_*` bundle and moved two newly generated root logs into the 2026-05-05 deprecated evidence bundle.
+
+-No gameplay/runtime files, scenes, prefabs, project settings, packages, or assets were changed by this sorting pass. The only source addition is the editor-only smoke guard.
++No gameplay/runtime files, scenes, prefabs, project settings, packages, or assets were changed by this sorting pass. The only source changes are the editor-only smoke guard and compile-proof fixes in adjacent dirty smoke/import code.
+
+ ## Do Not Claim
+
+-- Do not claim documentation is fully clean. This pass maps authority and updates the active indexes; it does not normalize every old file header.
++- Do not claim documentation is fully clean. This pass maps authority and updates the active indexes; it does not normalize every old file header. Current active header debt is `41`.
+ - Do not claim archive/deprecated content has been revalidated.
+ - Do not claim Play Mode stability, zero-GC, frame time, memory retention, or player-build readiness from documentation sorting.
++- Do not claim Unity batch verification for documentation authority until `RunBatchAll` emits the batch JSON artifact from Unity with exit `0`.
+ - Do not cite root logs as current evidence unless a dated report summarizes the exact command and result.
+
+ ## Regression Model
+diff --git a/Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md b/Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md
+index 104dc4b6..3d66938a 100644
+--- a/Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md
++++ b/Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md
+@@ -11,24 +11,29 @@ Authority: `AGENTS.md`, project skill registry, local source evidence.
+ - `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+ - `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
+ - `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
++- `LOGI_Energy_Networks_Power_Grid_Graph_Flow.txt`
+ - `AUD_DSP_Audio_Synthesis_ThreadSafe_SPSC.txt`
+ - `UI_Data_Streaming_ZeroGC_Optimization.txt`
++- `CORE_Abyss_Survival_Systems_O2_Pressure_Logic.txt`
++- `STRM_World_Streaming_Residency_Chunk_Management.txt`
++- `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
+
+ ## Surgery Log
+
+ 1. `PowerGrid`
+    - Found persistent thermal and battery dispatch `NativeArray` buffers without local sentinel ownership wrapper.
+    - Added `NativeMemorySentinel.RegisterNativeArray` / unregister-on-dispose helpers with owner `PowerGrid` and lifetime `Session`.
+-   - Replaced direct thermal `job.Schedule().Complete()` with `DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)` and dev-build `GlobalTelemetryBus.PublishJobBarrierStall` when the swap exceeds `CableThermalFrameBudgetMilliseconds`.
++   - Replaced direct thermal `job.Schedule().Complete()` with dispatcher swap-window completion and dev-build `GlobalTelemetryBus.PublishJobBarrierStall` when the swap exceeds `CableThermalFrameBudgetMilliseconds`.
+
+ 2. `BaseLogisticsNetwork`
+    - Found route scratch `NativeArray` statics and a synchronous BFS `.Run()` path.
+    - Added route scratch sentinel registration/unregistration with owner `BaseLogisticsNetwork` and lifetime `Session`.
+-   - Extracted the BFS kernel into `ExecuteLogisticsRouteBfs(...)` so cold direct execution no longer calls `IJob.Run()`.
+-   - Raised initial route scratch capacity to `4096` nodes / `8192` directed edges to avoid churn during larger storage-route probes.
++   - Extracted a direct stateless route kernel entrypoint, `ExecuteLogisticsRouteBfs(...)`, so smoke/editor callers do not need `IJob.Run()`.
++   - Raised route scratch capacity to avoid churn during larger storage-route probes.
+
+ 3. `AutomationSmokeTester`
+    - Replaced the logistics smoke `.Run()` call with `BaseLogisticsNetwork.ExecuteLogisticsRouteBfs(...)`.
++   - Registered temp smoke arrays with `NativeMemorySentinel` before disposal.
+
+ 4. `ProceduralAudioEvents`
+    - Added bounded overflow counters for audio ping and structural stress queues.
+@@ -36,69 +41,88 @@ Authority: `AGENTS.md`, project skill registry, local source evidence.
+    - Added `GlobalTelemetryBus.PublishPerformanceWarning(...)` on queue overflow. No release hot-path `Debug.Log` was added.
+
+ 5. `OmegaAutonomySmokeTester`
+-   - Added dev-only smoke coverage for logistics BFS routing and procedural audio overflow behavior.
+-   - Registered even `Allocator.Temp` smoke arrays with `NativeMemorySentinel` as lifetime `Temp`, then unregistered before disposal.
++   - Moved smoke `NativeArray` allocations from `Allocator.Temp` to `Allocator.TempJob` and registered them as lifetime `TempJob`.
++   - Expanded logistics smoke coverage to simple route, no-storage route, and cyclic route.
++   - Added procedural-audio overflow and reentry smoke coverage.
++   - Added runtime-watchdog GlobalRegistry smoke coverage.
++   - Added Burst `IJobParallelFor` clear smoke coverage for int/byte buffers.
+    - Added editor batch runner writing `Library/OmegaAutonomySmokeTester.json`.
+
+-6. Compile blocker cleanup during the same pass
++6. `MainMenuInputRoutingGuard`
++   - Smoke failure found: direct `EventSystem.current` assignment is unreliable in headless editor batch mode and logged `Failed setting EventSystem.current to unknown EventSystem`.
++   - Extracted an internal overload accepting an explicit `EventSystem`, keeping the runtime `EventSystem.current` path intact while letting smoke verify repair behavior without the unstable setter.
++   - Added editor/development smoke probes for repair telemetry code and publish count.
++   - Verified the repair publishes exactly once for the stale EventSystem case: legacy module removed (`2`), input module added (`4`), default actions assigned (`8`), total code `14`.
++
++7. Compile blocker cleanup during the same bounded pass
+    - `ScatterInstancingService`: restored aggregate bounds locals before use.
+    - `HabitatGraphManager`: removed inline `out` declaration flow drift around `startNodeIndex`.
+    - `QuestGraphEvaluator`: restored missing item namespace access.
+    - `VisualCascadeSmokeTester`: changed the MX350 step cap from `const` to `static readonly` to avoid unreachable-guard warning.
+
++8. `2026-05-05` continuation cleanup
++   - `OmegaAutonomySmokeTester`: added registry-slot hijack smoke, construction logistics stress smoke inclusion, `NativeMemorySentinel` allocation-delta proof, and smoke-side module-count dedupe proof.
++   - `OmegaAutonomySmokeTester`: fixed batch-editor `RuntimeWatchdog` registry cleanup. The failed intermediate run proved `DestroyImmediate` alone did not reliably clear the `GlobalRegistry.RuntimeWatchdog` slot before the hijack smoke.
++   - `PDAMapTab`, `HectonCelestialEngine`, and `SceneBootstrap`: removed compile-blocking `HectonWorldGenerator.ActiveRuntimeInstance` references and resolved world seed / legacy generator access through `GlobalRegistry.WorldSeedProvider`.
++   - Corrected a smoke `COLD ALLOC` capacity comment from `[1]` to `[4]` for the reusable `InputSystemUIInputModule` scratch list.
++
++9. `2026-05-05` warning/documentation continuation
++   - Rechecked the current Omega build warning boundary instead of mixing old artifact logs into the current status.
++   - Ran a new serial Core build at `CodexArtifacts/dotnet-h8core-omega-autonomy-doc-continuation-build.log`; it returned `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
++   - Confirmed the last warning-bearing baseline, `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log`, contains `0` first-party `Assets/_Project/Scripts` matches and reports only dependency/vendor warnings.
++   - Promoted this report into `Docs/README.md`, `Docs/DOC_GOVERNANCE.md`, and `Docs/Reports/2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` so the May 5 Omega evidence is no longer hidden behind the May 4 first-party warning cleanup report.
++
+ ## Verification Data
+
+ - Scoped barrier scan:
+-  - Command: `rg -n "\.Complete\(|\.Run\(" Assets/_Project/Scripts/PowerGrid.cs Assets/_Project/Scripts/Construction/BaseLogisticsNetwork.cs Assets/_Project/Scripts/AutomationSmokeTester.cs Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs`
+-  - Result: no matches.
++  - Command: `rg -n -e "\.Complete\(" -e "\.Run\(" ...scoped files...`
++  - Files: `PowerGrid.cs`, `BaseLogisticsNetwork.cs`, `AutomationSmokeTester.cs`, `AutomationOmegaSmokeTester.cs`, `OmegaAutonomySmokeTester.cs`, `OmegaAutonomySmokeTestRunner.cs`, `ProceduralAudioEvents.cs`, `MainMenuInputRoutingGuard.cs`.
++  - Result: one text hit, `OmegaAutonomySmokeTester.Run(out json)` in the editor runner. This is the smoke method invocation, not `IJob.Run()` or `JobHandle.Complete()`.
+
+ - Scoped native sentinel scan:
+-  - Command: `rg -n "NativeArray<|RegisterNativeArray|UnregisterNativeArray|NativeAllocationLifetime" Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs`
+-  - Result: all six Temp smoke arrays are registered and unregistered.
+-  - `PowerGrid`, `BaseLogisticsNetwork`, and `ProceduralAudioEvents` persistent native buffers show sentinel registration/unregistration in the same scoped scan.
++  - Command: `rg -n "NativeArray<|NativeQueue<|RegisterNativeArray|RegisterNativeQueue|UnregisterNativeArray|UnregisterNativeQueue|NativeAllocationLifetime|Allocator\." ...scoped files...`
++  - Result: Omega smoke has eight `Allocator.TempJob` arrays, all registered through `NativeMemorySentinel` and unregistered before disposal.
++  - `AutomationOmegaSmokeTester` has six `Allocator.TempJob` arrays, all registered through `NativeMemorySentinel` and unregistered before disposal.
++  - `PowerGrid`, `BaseLogisticsNetwork`, `AutomationSmokeTester`, and `ProceduralAudioEvents` scoped native buffers show sentinel registration/unregistration in the same scan.
+
+ - Scoped static/string audit:
+-  - Files: `PowerGrid.cs`, `BaseLogisticsNetwork.cs`, `AutomationSmokeTester.cs`, `OmegaAutonomySmokeTester.cs`, `ProceduralAudioEvents.cs`, `OmegaAutonomySmokeTestRunner.cs`.
++  - Files: `PowerGrid.cs`, `BaseLogisticsNetwork.cs`, `AutomationSmokeTester.cs`, `AutomationOmegaSmokeTester.cs`, `OmegaAutonomySmokeTester.cs`, `OmegaAutonomySmokeTestRunner.cs`, `ProceduralAudioEvents.cs`, `MainMenuInputRoutingGuard.cs`.
+   - `_instance`, `Instance =>`, and `DontDestroyOnLoad`: no matches.
+-  - `.ToString(`, `string.Format`, and `$"`: no matches in those files.
+-
+-- Local Core compile during this pass:
+-  - Command: `dotnet build .\Hecton8.Core.csproj --no-restore --no-dependencies -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary`
+-  - Earlier result in this pass: `Build succeeded. 0 Warning(s) 0 Error(s). Time Elapsed 00:01:17.39`.
+-  - Current rerun did not produce a clean terminal result because external Unity/Bee and `dotnet build Hecton8.Core.csproj` processes were active.
+-
+-- Unity compile evidence:
+-  - External batch log `C:\hades\Hecton8\CodexArtifacts\unity-volumetric-biome-smoke-2026-05-05.log` reports `*** Tundra build success (62.67 seconds - 0:01:02), 12 items updated, 1808 evaluated`.
+-  - This is compile/import evidence. It is not proof that `OmegaAutonomySmokeTester` executed.
+-
+-- Warning artifact review:
+-  - External SARIF `.codex-artifacts/csc-core-cataclysm-postcleanup-2026-05-05.json` contains `52` `CS0414` entries.
+-  - All `52` entries have `suppressionStates = suppressedInSource`.
+-  - They were not treated as active compiler-warning proof for this scoped pass.
++  - `.ToString(`, `string.Format`, and `$"`: no matches in the scoped files.
++  - `EventSystem.current =`: no matches after the final smoke fix.
++
++- Compile evidence:
++  - Restore log: `C:\hades\Hecton8\CodexArtifacts\dotnet-h8core-omega-autonomy-current-restore3.log`.
++  - Latest serial build log: `C:\hades\Hecton8\CodexArtifacts\dotnet-h8core-omega-autonomy-doc-continuation-build.log`.
++  - Latest serial result: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`.
++  - Latest serial first-party warning check: `Select-String -SimpleMatch` against `Assets\_Project\Scripts`, `Assets/_Project/Scripts`, `Assets\_Project`, and `Assets/_Project` in `dotnet-h8core-omega-autonomy-doc-continuation-build.log` returned `0` matches.
++  - Build log: `C:\hades\Hecton8\CodexArtifacts\dotnet-h8core-omega-autonomy-current-build5.log`.
++  - Warning-bearing baseline result: `Build succeeded`, `48 Warning(s)`, `0 Error(s)`.
++  - Baseline warning classification: dependency/vendor assemblies only: Unity URP package cache, GPUInstancer, Den.Tools/MapMagic, Crest, WaveHarmonic.Crest, Unity ShaderGraph/Core Editor package cache. No first-party `Assets/_Project/Scripts` warning or error remained in that target build output.
++  - Baseline continuation check: `Select-String -SimpleMatch` against `Assets\_Project\Scripts`, `Assets/_Project/Scripts`, `Assets\_Project`, and `Assets/_Project` in `dotnet-h8core-omega-autonomy-current-build5.log` returned `0` matches.
++  - Earlier compile blocker removed: `HectonWorldGenerator.ActiveRuntimeInstance` references in `PDAMapTab`, `HectonCelestialEngine`, and `SceneBootstrap` are now `0` by scoped `rg`.
+
+ - Omega smoke JSON:
+-  - Command: `Unity.exe -batchmode -nographics -projectPath C:\hades\Hecton8 -executeMethod Hecton8.Editor.OmegaAutonomySmokeTestRunner.Run -logFile C:\hades\Hecton8\CodexArtifacts\unity-omega-smoke-2026-05-05.log -quit`
+-  - Launcher command returned `0`; Unity continued as a child process, then exited before final process scan.
++  - Runner: `Hecton8.Editor.OmegaAutonomySmokeTestRunner.Run`.
++  - Latest Unity log: `C:\hades\Hecton8\CodexArtifacts\unity-omega-smoke-2026-05-05-doc-continuation.log`.
++  - Unity process exit code: `0`.
+   - Output JSON at `Library/OmegaAutonomySmokeTester.json`:
+-    - `{"tester":"OmegaAutonomySmokeTester","status":"PASS","routeBfs":{"pass":true,"routedNode":2},"proceduralAudioOverflow":{"pass":true,"pendingAfterAudioOverflow":8,"droppedAudioPings":1,"droppedStructuralStress":1}}`
+-  - Log line:
+-    - `[OmegaAutonomySmokeTestRunner] {"tester":"OmegaAutonomySmokeTester","status":"PASS","routeBfs":{"pass":true,"routedNode":2},"proceduralAudioOverflow":{"pass":true,"pendingAfterAudioOverflow":8,"droppedAudioPings":1,"droppedStructuralStress":1}}`
+-
+-- Unity log residuals from the same smoke run:
+-  - `Curl error 42` / `[UnityConnect] Request timed out`.
++    - `{"tester":"OmegaAutonomySmokeTester","status":"PASS","routeBfs":{"pass":true,"routedNode":2,"noStorageNode":-1,"cycleRouteNode":3},"proceduralAudioOverflow":{"pass":true,"pendingAfterAudioOverflow":8,"droppedAudioPings":1,"droppedStructuralStress":1},"proceduralAudioReentry":{"pass":true,"pendingAfterFirstFlush":1,"pendingAfterSecondFlush":0,"dispatchCount":2},"mainMenuInputGuard":{"pass":true,"inputModulePresent":true,"inputActionsBound":true,"legacyModuleRemoved":true,"repairTelemetryPublished":true,"repairTelemetryCode":14,"repairTelemetryPublishCount":1,"repairTelemetryDeduped":true,"moduleCountAfterSecondRepair":1},"runtimeWatchdogRegistry":{"pass":true,"registered":true,"unregistered":true},"registrySlotHijack":{"pass":true,"blocked":true},"burstClear":{"pass":true,"checksum":0,"nativeAllocationDelta":0},"constructionAutomation":{"pass":true,"nodes":64,"edges":63,"routedNode":63,"expectedStorageNode":63,"noStorageRouteNode":-1,"invalidStartRouteNode":-1}}`
++  - Matching log line:
++    - `[OmegaAutonomySmokeTestRunner] {"tester":"OmegaAutonomySmokeTester","status":"PASS","routeBfs":{"pass":true,"routedNode":2,"noStorageNode":-1,"cycleRouteNode":3},"proceduralAudioOverflow":{"pass":true,"pendingAfterAudioOverflow":8,"droppedAudioPings":1,"droppedStructuralStress":1},"proceduralAudioReentry":{"pass":true,"pendingAfterFirstFlush":1,"pendingAfterSecondFlush":0,"dispatchCount":2},"mainMenuInputGuard":{"pass":true,"inputModulePresent":true,"inputActionsBound":true,"legacyModuleRemoved":true,"repairTelemetryPublished":true,"repairTelemetryCode":14,"repairTelemetryPublishCount":1,"repairTelemetryDeduped":true,"moduleCountAfterSecondRepair":1},"runtimeWatchdogRegistry":{"pass":true,"registered":true,"unregistered":true},"registrySlotHijack":{"pass":true,"blocked":true},"burstClear":{"pass":true,"checksum":0,"nativeAllocationDelta":0},"constructionAutomation":{"pass":true,"nodes":64,"edges":63,"routedNode":63,"expectedStorageNode":63,"noStorageRouteNode":-1,"invalidStartRouteNode":-1}}`
++
++- Failed verification attempts recorded, not hidden:
++  - `unity-omega-smoke-2026-05-05-rerun2.log`, `rerun3.log`, and `rerun4.log`: aborted because another Unity instance had the project open.
++  - `unity-omega-smoke-2026-05-05-final-attempt.log` and `unity-omega-smoke-2026-05-05-after-input-smoke-fix.log`: compiled, ran, and failed `mainMenuInputGuard` before the explicit-EventSystem overload fix.
++  - `unity-omega-smoke-2026-05-05-telemetry-proof-final.log`: compiled, ran, and threw `[GlobalRegistry] Registry slot hijack blocked for RuntimeWatchdog...` because smoke teardown relied on `DestroyImmediate` instead of explicit registry unregister. Fixed in `OmegaAutonomySmokeTester`.
++  - `dotnet-h8core-omega-autonomy-current-build4.log`: invalid build attempt during another Unity/Bee batch. `Temp\obj` was concurrently changed, causing false `project.assets.json`/editorconfig missing errors. Re-run after Unity/Bee exit succeeded.
++
++- Unity log residuals from the latest PASS run:
++  - Licensing startup errors: `HandshakeResponse reported an error`, `Failed to handshake to channel: "LicenseClient-danat"`, and `Access token is unavailable; failed to update`.
++  - `Curl error 42` during UnityConnect shutdown.
+   - `MCP-FOR-UNITY: No process found listening on port 8088` during editor shutdown.
+-  - `~StackAllocator(ALLOC_TEMP_MAIN) m_LastAlloc not NULL` at shutdown.
+-  - These are recorded as residual environment/editor warnings. They do not change the smoke JSON result, but they prevent claiming project-wide cleanliness.
+-
+-## Active Blockers
+-
+-- External Unity process was active during the first verification window:
+-  - `Unity.exe -batchmode -nographics -quit -projectPath C:\hades\Hecton8 -executeMethod Hecton8.World.VolumetricBiomeSmokeTester.RunBatchmode -logFile C:\hades\Hecton8\CodexArtifacts\unity-volumetric-biome-smoke-2026-05-05-run3.log`
+-- A later external Unity process replaced it:
+-  - `Unity.exe -batchmode -nographics -projectPath C:\hades\Hecton8 -executeMethod Hecton8.Editor.AutomationSmokeTestRunner.RunBatchExtractorStorageRouteSmokePass -quit -logFile C:\hades\unity-batch-automation-smoke-editor-after-route-capacity.log`
+-- External `dotnet build Hecton8.Core.csproj -m:1 -nr:false -p:UseSharedCompilation=false -v:minimal` was also active.
+-- I did not terminate external/user processes.
+-- After those processes exited, `OmegaAutonomySmokeTestRunner` ran and passed.
++  - `Leak Detected : Persistent allocates 5 individual allocations` and UTP memory label summary at shutdown, including `type=MemoryLeaks`, `phase=Immediate`.
++  - These are environment/editor residuals. They do not change the scoped smoke JSON result, but they prevent project-wide cleanliness claims.
+
+ ## Diff Evidence
+
+@@ -109,6 +133,6 @@ Authority: `AGENTS.md`, project skill registry, local source evidence.
+
+ `OMEGA VERIFIED (SCOPED)`.
+
+-Scope: the edited PowerGrid, BaseLogisticsNetwork, ProceduralAudioEvents, AutomationSmokeTester, and Omega smoke harness domain.
++Scope: the edited PowerGrid, BaseLogisticsNetwork, AutomationSmokeTester, ProceduralAudioEvents, MainMenuInputRoutingGuard, Omega smoke harness, and the bounded compile-blocker cleanup around `HectonWorldGenerator.ActiveRuntimeInstance` consumers.
+
+ Project-wide `OMEGA VERIFIED` is not claimed. Full Play Mode, profiler, player build, global singleton purge, and global native leak proof remain outside this scoped verification.
+diff --git a/Docs/Reports/README.md b/Docs/Reports/README.md
+index 66787360..cd068271 100644
+--- a/Docs/Reports/README.md
++++ b/Docs/Reports/README.md
+@@ -48,13 +48,13 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
+ - `DOOMSDAY_FLAW_REPORT.md`
+
+ `2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority classification map.
+-It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, and the follow-up relocation of repository-root logs into a deprecated evidence bundle.
++It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, the follow-up relocation of repository-root logs into a deprecated evidence bundle, and the 2026-05-05 documentation influx count boundary.
+
+ `2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` is the current bounded Omega-autonomy hardening evidence report.
+-It records the PowerGrid native-sentinel and job-barrier telemetry changes, BaseLogisticsNetwork route BFS `.Run()` removal, procedural audio overflow telemetry, Omega smoke harness, scoped no-`.Run()`/`.Complete()` scan, scoped native-memory registration scan, the earlier local Core compile result `0 Warning(s)` / `0 Error(s)`, external Unity compile/import evidence, and `OmegaAutonomySmokeTester` JSON `PASS`. Status is `OMEGA VERIFIED (SCOPED)` for that edited domain only; project-wide `OMEGA VERIFIED` is not claimed.
++It records the PowerGrid native-sentinel and job-barrier telemetry changes, BaseLogisticsNetwork route BFS `.Run()` removal, procedural audio overflow telemetry, the explicit-EventSystem `MainMenuInputRoutingGuard` smoke fix, repair telemetry code/dedupe proof, runtime-watchdog registry hijack smoke, `HectonWorldGenerator.ActiveRuntimeInstance` compile-blocker cleanup through `GlobalRegistry.WorldSeedProvider`, scoped no-`IJob.Run()`/`JobHandle.Complete()` scan, scoped native-memory registration scan, `Hecton8.Core` build evidence, and final `OmegaAutonomySmokeTester` JSON `PASS` covering route edge cases, procedural audio overflow/reentry, main-menu input repair, runtime-watchdog registry ownership, registry hijack blocking, Burst clear native allocation delta, and construction logistics automation. The latest serial Omega Core build is `Build succeeded`, `0 Warning(s)`, `0 Error(s)`; the last warning-bearing Omega baseline had `48 Warning(s)` owned by dependency/vendor code and `0` first-party `Assets/_Project/Scripts` warning matches. Status is `OMEGA VERIFIED (SCOPED)` for that edited domain only; project-wide `OMEGA VERIFIED` is not claimed.
+
+ `2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` is the current structural cleanup queue.
+-It records `41` active markdown files still missing `Date:` or `Status:`, notes that repository-root `.log` evidence artifacts have been moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`, records that active root `Docs/*.md` contract files, `Docs/ARCHITECTURE/*.md`, `Docs/ARCHIVARIUS REPORTS/*.md`, and `Docs/SPACE_ENGINE_RESEARCH/*.md` are no longer in the missing-header set, and keeps the remaining archive/deprecated move candidates queued for a separate pass. It also records the editor-only documentation authority smoke guard.
++It records `41` active markdown files still missing `Date:`, notes that repository-root `.log` evidence artifacts have been moved to dated `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_*` bundles, records that active root `Docs/*.md` contract files, `Docs/ARCHITECTURE/*.md`, `Docs/ARCHIVARIUS REPORTS/*.md`, and `Docs/SPACE_ENGINE_RESEARCH/*.md` are no longer in the missing-header set, and keeps the remaining archive/deprecated move candidates queued for a separate pass. It also records the editor-only documentation authority smoke guard, its three-pass stress runner, failed-audit telemetry hook, CI-facing `RunBatchAll` entrypoint, direct Roslyn compile evidence, and the current Unity licensing/project-lock blocker that prevents claiming batch smoke proof.
+
+ `2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest broad documentation and local evidence addendum.
+ It records the current source/doc counts, fresh `Hecton8.Core` and `Hecton8.Editor` compile results `0 Warning(s)` / `0 Error(s)`, historical `Hecton8.World.Dots` restore build `1 Warning(s)` / `0 Error(s)`, `Hecton8.PlayModeTests` restore build `0 Warning(s)` / `0 Error(s)`, and the pre-repair foundation guard failure. Read `2026-05-04_WARNING_CLEANUP.md` and `2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` next for the current warning-clean and guard-clean source/build addenda.
+diff --git "a/.\\Assets\\_Project\\Scripts\\AutomationOmegaSmokeTester.cs" "b/.\\Assets\\_Project\\Scripts\\AutomationOmegaSmokeTester.cs"
 new file mode 100644
-index 00000000..12199b33
+index 00000000..60644b28
 --- /dev/null
-+++ b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs
-@@ -0,0 +1,134 @@
-+#if UNITY_EDITOR || DEVELOPMENT_BUILD
-+using Hecton8.Audio;
++++ "b/.\\Assets\\_Project\\Scripts\\AutomationOmegaSmokeTester.cs"
+@@ -0,0 +1,146 @@
 +using Hecton8.Construction;
 +using Hecton8.Core;
++using Hecton8.World;
 +using Unity.Collections;
++using Unity.Jobs;
 +using UnityEngine;
 +
-+namespace Hecton8.Dev
++namespace Hecton8.Debugging
 +{
-+    /// <summary>
-+    /// Dev-only smoke for the bounded Omega autonomy hardening pass.
-+    /// </summary>
-+    public static class OmegaAutonomySmokeTester
++    public struct AutomationOmegaSmokeResult
 +    {
-+        private const string NativeMemoryOwner = nameof(OmegaAutonomySmokeTester);
-+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Temp;
++        public bool Passed;
++        public int NodeCount;
++        public int EdgeCount;
++        public int RoutedNode;
++        public int NoStorageRouteNode;
++        public int InvalidStartRouteNode;
++        public int ExpectedStorageNode;
++    }
 +
-+        public static bool Run(out string json)
++    [DisallowMultipleComponent]
++    [AddComponentMenu("Hecton8/Debug/Automation Omega Smoke Tester")]
++    public sealed class AutomationOmegaSmokeTester : MonoBehaviour
++    {
++        private const string NativeMemoryOwner = nameof(AutomationOmegaSmokeTester);
++        private const int StressNodeCount = 64;
++
++        [ContextMenu("Run Omega Logistics Route Stress Smoke")]
++        public void RunSmokePass()
 +        {
-+            bool routePass = RunRouteBfsSmoke(out int routedNode);
-+            bool audioPass = RunProceduralAudioOverflowSmoke(
-+                out int pendingAfterAudioOverflow,
-+                out int droppedAudioPings,
-+                out int droppedStructuralStress);
-+
-+            bool pass = routePass && audioPass;
-+            json = "{"
-+                + "\"tester\":\"OmegaAutonomySmokeTester\","
-+                + "\"status\":\"" + (pass ? "PASS" : "FAIL") + "\","
-+                + "\"routeBfs\":{\"pass\":" + ToJsonBool(routePass) + ",\"routedNode\":" + routedNode + "},"
-+                + "\"proceduralAudioOverflow\":{\"pass\":" + ToJsonBool(audioPass)
-+                + ",\"pendingAfterAudioOverflow\":" + pendingAfterAudioOverflow
-+                + ",\"droppedAudioPings\":" + droppedAudioPings
-+                + ",\"droppedStructuralStress\":" + droppedStructuralStress + "}"
-+                + "}";
-+            return pass;
++            RunLogisticsRouteStressSmoke();
 +        }
 +
-+        private static bool RunRouteBfsSmoke(out int routedNode)
++        public static AutomationOmegaSmokeResult RunLogisticsRouteStressSmoke()
 +        {
-+            routedNode = -1;
-+            NativeArray<int> edgeOffsets = new NativeArray<int>(4, Allocator.Temp, NativeArrayOptions.ClearMemory);
-+            NativeArray<int> edgeDestinations = new NativeArray<int>(2, Allocator.Temp, NativeArrayOptions.ClearMemory);
-+            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
-+            NativeArray<byte> visited = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
-+            NativeArray<int> queue = new NativeArray<int>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
-+            NativeArray<int> result = new NativeArray<int>(1, Allocator.Temp, NativeArrayOptions.ClearMemory);
-+            RegisterNativeArray(edgeOffsets, nameof(edgeOffsets));
-+            RegisterNativeArray(edgeDestinations, nameof(edgeDestinations));
-+            RegisterNativeArray(storageCapacityByNode, nameof(storageCapacityByNode));
-+            RegisterNativeArray(visited, nameof(visited));
-+            RegisterNativeArray(queue, nameof(queue));
-+            RegisterNativeArray(result, nameof(result));
++            int nodeCount = StressNodeCount;
++            int edgeCount = nodeCount - 1;
++            int storageNodeIndex = nodeCount - 1;
++
++            AutomationOmegaSmokeResult smokeResult = new AutomationOmegaSmokeResult
++            {
++                Passed = false,
++                NodeCount = nodeCount,
++                EdgeCount = edgeCount,
++                RoutedNode = -1,
++                NoStorageRouteNode = -1,
++                InvalidStartRouteNode = -1,
++                ExpectedStorageNode = storageNodeIndex
++            };
++
++            NativeArray<int> edgeOffsets = new NativeArray<int>(nodeCount + 1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[65] - omega smoke CSR offsets - owner: AutomationOmegaSmokeTester
++            NativeArray<int> edgeDestinations = new NativeArray<int>(edgeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[63] - omega smoke CSR destinations - owner: AutomationOmegaSmokeTester
++            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke storage flags - owner: AutomationOmegaSmokeTester
++            NativeArray<byte> visited = new NativeArray<byte>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke BFS visited set - owner: AutomationOmegaSmokeTester
++            NativeArray<int> queue = new NativeArray<int>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[64] - omega smoke BFS queue - owner: AutomationOmegaSmokeTester
++            NativeArray<int> routeResult = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - omega smoke BFS result cell - owner: AutomationOmegaSmokeTester
++            RegisterTempJobArray(edgeOffsets, nameof(edgeOffsets));
++            RegisterTempJobArray(edgeDestinations, nameof(edgeDestinations));
++            RegisterTempJobArray(storageCapacityByNode, nameof(storageCapacityByNode));
++            RegisterTempJobArray(visited, nameof(visited));
++            RegisterTempJobArray(queue, nameof(queue));
++            RegisterTempJobArray(routeResult, nameof(routeResult));
 +
 +            try
 +            {
-+                edgeOffsets[0] = 0;
-+                edgeOffsets[1] = 1;
-+                edgeOffsets[2] = 2;
-+                edgeOffsets[3] = 2;
-+                edgeDestinations[0] = 1;
-+                edgeDestinations[1] = 2;
-+                storageCapacityByNode[2] = 1;
++                JobHandle buildHandle = new LogisticsPipeRoutingKernel.BuildLinearStressGraphJob
++                {
++                    NodeCount = nodeCount,
++                    EdgeCount = edgeCount,
++                    StorageNodeIndex = storageNodeIndex,
++                    EdgeOffsets = edgeOffsets,
++                    EdgeDestinations = edgeDestinations,
++                    StorageCapacityByNode = storageCapacityByNode
++                }.Schedule(nodeCount + 1, 16);
 +
-+                BaseLogisticsNetwork.ExecuteLogisticsRouteBfs(
-+                    3,
++                // COLD SYNC JOB: batch smoke must inspect the generated deterministic CSR before process exit.
++                Hecton8.World.DispatcherJobSwap.TryComplete(ref buildHandle, forceComplete: true);
++
++                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                    nodeCount,
 +                    0,
 +                    edgeOffsets,
 +                    edgeDestinations,
 +                    storageCapacityByNode,
 +                    visited,
 +                    queue,
-+                    result);
++                    routeResult);
++                smokeResult.RoutedNode = routeResult[0];
 +
-+                routedNode = result[0];
-+                return routedNode == 2;
++                storageCapacityByNode[storageNodeIndex] = 0;
++                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                    nodeCount,
++                    0,
++                    edgeOffsets,
++                    edgeDestinations,
++                    storageCapacityByNode,
++                    visited,
++                    queue,
++                    routeResult);
++                smokeResult.NoStorageRouteNode = routeResult[0];
++
++                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                    nodeCount,
++                    -1,
++                    edgeOffsets,
++                    edgeDestinations,
++                    storageCapacityByNode,
++                    visited,
++                    queue,
++                    routeResult);
++                smokeResult.InvalidStartRouteNode = routeResult[0];
++
++                smokeResult.Passed =
++                    smokeResult.RoutedNode == storageNodeIndex &&
++                    smokeResult.NoStorageRouteNode == -1 &&
++                    smokeResult.InvalidStartRouteNode == -1;
++
++                return smokeResult;
 +            }
 +            finally
 +            {
-+                DisposeTrackedNativeArray(ref edgeOffsets);
-+                DisposeTrackedNativeArray(ref edgeDestinations);
-+                DisposeTrackedNativeArray(ref storageCapacityByNode);
-+                DisposeTrackedNativeArray(ref visited);
-+                DisposeTrackedNativeArray(ref queue);
-+                DisposeTrackedNativeArray(ref result);
++                DisposeTempJobArray(ref edgeOffsets);
++                DisposeTempJobArray(ref edgeDestinations);
++                DisposeTempJobArray(ref storageCapacityByNode);
++                DisposeTempJobArray(ref visited);
++                DisposeTempJobArray(ref queue);
++                DisposeTempJobArray(ref routeResult);
 +            }
 +        }
 +
-+        private static bool RunProceduralAudioOverflowSmoke(
-+            out int pendingAfterAudioOverflow,
-+            out int droppedAudioPings,
-+            out int droppedStructuralStress)
++        private static void RegisterTempJobArray<T>(NativeArray<T> array, string label) where T : struct
 +        {
-+            ProceduralAudioEvents.ResetForSmokeTest();
-+
-+            for (int i = 0; i < 9; i++)
-+                ProceduralAudioEvents.RaiseAudioPingTriggered(Vector3.zero, 1f, 0.05f, 1f, 22000f, ProceduralAudioPingKind.Sonar);
-+
-+            pendingAfterAudioOverflow = ProceduralAudioEvents.PendingCount;
-+            droppedAudioPings = ProceduralAudioEvents.DroppedAudioPingCount;
-+            bool audioOverflowPass = pendingAfterAudioOverflow == 8 && droppedAudioPings == 1;
-+
-+            ProceduralAudioEvents.FlushPending();
-+            for (int i = 0; i < 9; i++)
-+                ProceduralAudioEvents.RaiseStructuralStressTriggered(Vector3.zero, 1f, 1f);
-+
-+            droppedStructuralStress = ProceduralAudioEvents.DroppedStructuralStressCount;
-+            bool structuralOverflowPass = ProceduralAudioEvents.PendingCount == 8 && droppedStructuralStress == 1;
-+            ProceduralAudioEvents.ResetForSmokeTest();
-+            return audioOverflowPass && structuralOverflowPass;
++            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
 +        }
 +
-+        private static string ToJsonBool(bool value)
-+        {
-+            return value ? "true" : "false";
-+        }
-+
-+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
-+        {
-+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
-+        }
-+
-+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
++        private static void DisposeTempJobArray<T>(ref NativeArray<T> array) where T : struct
 +        {
 +            if (!array.IsCreated)
 +                return;
@@ -1253,270 +1266,12 @@ index 00000000..12199b33
 +        }
 +    }
 +}
-+#endif
-
-diff --git a/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs.meta b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs.meta
+diff --git "a/.\\Assets\\_Project\\Scripts\\AutomationOmegaSmokeTester.cs.meta" "b/.\\Assets\\_Project\\Scripts\\AutomationOmegaSmokeTester.cs.meta"
 new file mode 100644
-index 00000000..8041a16c
+index 00000000..97b73483
 --- /dev/null
-+++ b/Assets/_Project/Scripts/Dev/OmegaAutonomySmokeTester.cs.meta
++++ "b/.\\Assets\\_Project\\Scripts\\AutomationOmegaSmokeTester.cs.meta"
 @@ -0,0 +1,2 @@
 +fileFormatVersion: 2
-+guid: 278e615e0f4a48a7a8c7c62c99762b7a
-
-diff --git a/Assets/_Project/Scripts/Editor/OmegaAutonomySmokeTestRunner.cs b/Assets/_Project/Scripts/Editor/OmegaAutonomySmokeTestRunner.cs
-new file mode 100644
-index 00000000..6daa5f4b
---- /dev/null
-+++ b/Assets/_Project/Scripts/Editor/OmegaAutonomySmokeTestRunner.cs
-@@ -0,0 +1,58 @@
-+#if UNITY_EDITOR
-+using System;
-+using System.IO;
-+using Hecton8.Dev;
-+using UnityEditor;
-+using UnityEngine;
-+
-+namespace Hecton8.Editor
-+{
-+    internal static class OmegaAutonomySmokeTestRunner
-+    {
-+        private const string OutputRelativePath = "Library/OmegaAutonomySmokeTester.json";
-+
-+        public static void Run()
-+        {
-+            bool passed = false;
-+            string json;
-+
-+            try
-+            {
-+                passed = OmegaAutonomySmokeTester.Run(out json);
-+            }
-+            catch (Exception ex)
-+            {
-+                json = "{\"status\":\"EXCEPTION\",\"exception\":\"" +
-+                       EscapeJson(ex.GetType().FullName) +
-+                       "\",\"message\":\"" +
-+                       EscapeJson(ex.Message) +
-+                       "\"}";
-+            }
-+
-+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-+            string outputPath = Path.Combine(projectRoot, OutputRelativePath);
-+            string outputDirectory = Path.GetDirectoryName(outputPath);
-+            if (!string.IsNullOrEmpty(outputDirectory))
-+                Directory.CreateDirectory(outputDirectory);
-+
-+            File.WriteAllText(outputPath, json);
-+            Debug.Log("[OmegaAutonomySmokeTestRunner] " + json);
-+
-+            if (Application.isBatchMode)
-+                EditorApplication.Exit(passed ? 0 : 1);
-+        }
-+
-+        private static string EscapeJson(string value)
-+        {
-+            if (string.IsNullOrEmpty(value))
-+                return string.Empty;
-+
-+            return value
-+                .Replace("\\", "\\\\")
-+                .Replace("\"", "\\\"")
-+                .Replace("\r", "\\r")
-+                .Replace("\n", "\\n");
-+        }
-+    }
-+}
-+#endif
-
-diff --git a/Assets/_Project/Scripts/Editor/OmegaAutonomySmokeTestRunner.cs.meta b/Assets/_Project/Scripts/Editor/OmegaAutonomySmokeTestRunner.cs.meta
-new file mode 100644
-index 00000000..adfd7860
---- /dev/null
-+++ b/Assets/_Project/Scripts/Editor/OmegaAutonomySmokeTestRunner.cs.meta
-@@ -0,0 +1,11 @@
-+fileFormatVersion: 2
-+guid: 7cc760456fa247ad95dfe6f0c24b5bb6
-+MonoImporter:
-+  externalObjects: {}
-+  serializedVersion: 2
-+  defaultReferences: []
-+  executionOrder: 0
-+  icon: {instanceID: 0}
-+  userData: 
-+  assetBundleName: 
-+  assetBundleVariant: 
-
-diff --git a/Assets/_Project/Scripts/VisualCascadeSmokeTester.cs b/Assets/_Project/Scripts/VisualCascadeSmokeTester.cs
-new file mode 100644
-index 00000000..c628632d
---- /dev/null
-+++ b/Assets/_Project/Scripts/VisualCascadeSmokeTester.cs
-@@ -0,0 +1,157 @@
-+// ============================================================================
-+// HECTON-8 - VisualCascadeSmokeTester.cs
-+// Dev-only smoke coverage for volumetric/biolum/post-fx cascade budgets.
-+// ============================================================================
-+
-+using System.Text;
-+using Hecton8.Visor;
-+using UnityEngine;
-+
-+namespace Hecton8.Dev
-+{
-+    [DisallowMultipleComponent]
-+    [AddComponentMenu("Hecton8/Dev/Visual Cascade Smoke Tester")]
-+    public sealed class VisualCascadeSmokeTester : MonoBehaviour
-+    {
-+        private const long BytesPerKilobyte = 1024L;
-+        private const long BytesPerMegabyte = BytesPerKilobyte * 1024L;
-+        private const int Mx350GraphicsMemoryCeilingMb = 2048;
-+        private static readonly int VolumetricShadowStepCapMx350 = 15;
-+        private const int CausticsResolution = 256;
-+        private const int CausticsR8BytesPerPixel = 1;
-+        private const int BiolumVolumeResolution = 64;
-+        private const int RgbaHalfBytesPerVoxel = 8;
-+        private const int BiolumVolumeBufferCount = 2;
-+        private const int HistogramBinCount = 64;
-+        private const int HistogramBytesPerBin = 4;
-+        private const int ExposureStateBytes = 16;
-+        private const long CascadeFeatureBudgetBytes = 48L * BytesPerMegabyte;
-+
-+        [Header("Execution")]
-+        [SerializeField] private bool runOnStart = false;
-+        [SerializeField] private bool verboseLogging = false;
-+
-+#pragma warning disable CS0414
-+        [Header("Debug")]
-+        [SerializeField] private int _debugRunCount;
-+        [SerializeField] private bool _debugLastPass;
-+        [SerializeField] private string _debugLastIssue = string.Empty;
-+        [SerializeField] private float _debugEstimatedCascadeMb;
-+        [SerializeField] private float _debugCausticsKb;
-+        [SerializeField] private float _debugBiolumMb;
-+        [SerializeField] private float _debugExposureKb;
-+#pragma warning restore CS0414
-+
-+        // COLD ALLOC: StringBuilder[512] - visual cascade smoke report - owner: VisualCascadeSmokeTester
-+        private readonly StringBuilder _reportBuilder = new StringBuilder(512);
-+
-+        private void Start()
-+        {
-+            if (runOnStart)
-+                RunSmokePass();
-+        }
-+
-+        [ContextMenu("Run Visual Cascade Smoke Pass")]
-+        public void RunFromContextMenu()
-+        {
-+            RunSmokePass();
-+        }
-+
-+        public bool RunSmokePass()
-+        {
-+            _debugRunCount++;
-+            _debugLastPass = false;
-+            _debugLastIssue = string.Empty;
-+
-+            long causticsBytes = EstimateCausticsR8Bytes();
-+            long biolumBytes = EstimateBiolumDiffusionBytes();
-+            long exposureBytes = EstimateAutoExposureBytes();
-+            long totalBytes = causticsBytes + biolumBytes + exposureBytes;
-+
-+            _debugEstimatedCascadeMb = BytesToMegabytes(totalBytes);
-+            _debugCausticsKb = causticsBytes / (float)BytesPerKilobyte;
-+            _debugBiolumMb = BytesToMegabytes(biolumBytes);
-+            _debugExposureKb = exposureBytes / (float)BytesPerKilobyte;
-+
-+            if (VolumetricShadowStepCapMx350 >= 16)
-+                return Fail("volumetric-shadow-step-cap");
-+
-+            if (!ValidateRetinaModeSeparation())
-+                return Fail("retina-chromatic-distortion-conflict");
-+
-+            if (causticsBytes != CausticsResolution * CausticsResolution * CausticsR8BytesPerPixel)
-+                return Fail("caustics-r8-budget");
-+
-+            if (totalBytes > CascadeFeatureBudgetBytes)
-+                return Fail("cascade-feature-vram-budget");
-+
-+            _debugLastPass = true;
-+            LogPass(totalBytes, causticsBytes, biolumBytes, exposureBytes);
-+            return true;
-+        }
-+
-+        private static bool ValidateRetinaModeSeparation()
-+        {
-+            HectonRetinaDistortionFeature.RetinaOffsetBudget mx350Budget =
-+                HectonRetinaDistortionFeature.ResolveRetinaOffsetBudget(0.0038f, 0.014f, 1f, Mx350GraphicsMemoryCeilingMb);
-+            HectonRetinaDistortionFeature.RetinaOffsetBudget highBudget =
-+                HectonRetinaDistortionFeature.ResolveRetinaOffsetBudget(0.0038f, 0.014f, 1f, Mx350GraphicsMemoryCeilingMb + 1024);
-+
-+            bool mx350Separated = mx350Budget.ChromaticOffset > 0f && mx350Budget.DistortionOffset <= 0f;
-+            bool highSeparated = highBudget.ChromaticOffset <= 0f && highBudget.DistortionOffset > 0f;
-+            return mx350Separated && highSeparated;
-+        }
-+
-+        private static long EstimateCausticsR8Bytes()
-+        {
-+            return CausticsResolution * CausticsResolution * CausticsR8BytesPerPixel;
-+        }
-+
-+        private static long EstimateBiolumDiffusionBytes()
-+        {
-+            long voxelCount = BiolumVolumeResolution * BiolumVolumeResolution * BiolumVolumeResolution;
-+            return voxelCount * RgbaHalfBytesPerVoxel * BiolumVolumeBufferCount;
-+        }
-+
-+        private static long EstimateAutoExposureBytes()
-+        {
-+            return HistogramBinCount * HistogramBytesPerBin + ExposureStateBytes;
-+        }
-+
-+        private bool Fail(string issue)
-+        {
-+            _debugLastIssue = issue;
-+            _debugLastPass = false;
-+#if UNITY_EDITOR || DEVELOPMENT_BUILD
-+            _reportBuilder.Clear();
-+            _reportBuilder.Append("[VisualCascadeSmoke] FAIL issue=").Append(issue)
-+                .Append(" estimated=").Append(_debugEstimatedCascadeMb.ToString("0.00")).Append("MB")
-+                .Append(" caustics=").Append(_debugCausticsKb.ToString("0.00")).Append("KB")
-+                .Append(" biolum=").Append(_debugBiolumMb.ToString("0.00")).Append("MB")
-+                .Append(" exposure=").Append(_debugExposureKb.ToString("0.00")).Append("KB");
-+            Debug.LogError(_reportBuilder.ToString(), this);
-+#endif
-+            return false;
-+        }
-+
-+        private void LogPass(long totalBytes, long causticsBytes, long biolumBytes, long exposureBytes)
-+        {
-+#if UNITY_EDITOR || DEVELOPMENT_BUILD
-+            if (!verboseLogging)
-+                return;
-+
-+            _reportBuilder.Clear();
-+            _reportBuilder.Append("[VisualCascadeSmoke] PASS estimated=").Append(BytesToMegabytes(totalBytes).ToString("0.00")).Append("MB")
-+                .Append(" caustics=").Append((causticsBytes / (float)BytesPerKilobyte).ToString("0.00")).Append("KB")
-+                .Append(" biolum=").Append(BytesToMegabytes(biolumBytes).ToString("0.00")).Append("MB")
-+                .Append(" exposure=").Append((exposureBytes / (float)BytesPerKilobyte).ToString("0.00")).Append("KB");
-+            Debug.Log(_reportBuilder.ToString(), this);
-+#endif
-+        }
-+
-+        private static float BytesToMegabytes(long bytes)
-+        {
-+            return bytes > 0L ? bytes / (float)BytesPerMegabyte : 0f;
-+        }
-+    }
-+}
-
-diff --git a/Assets/_Project/Scripts/VisualCascadeSmokeTester.cs.meta b/Assets/_Project/Scripts/VisualCascadeSmokeTester.cs.meta
-new file mode 100644
-index 00000000..a5c5f86e
---- /dev/null
-+++ b/Assets/_Project/Scripts/VisualCascadeSmokeTester.cs.meta
-@@ -0,0 +1,2 @@
-+fileFormatVersion: 2
-+guid: d9f126b1d8e1cf5498590e0152926c42
++guid: be49e95185cc2f249be875acd10595e2
 \ No newline at end of file

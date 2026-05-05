@@ -4,6 +4,7 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Audio;
 using Hecton8.Narrative;
 using Hecton8.Quest;
 using Hecton8.SaveSystem;
@@ -31,7 +32,9 @@ namespace Hecton8.Gameplay
         private const float BioluminescentPredatorVisibilityScale = 2f;
         private const float NutritionalToxicityRegenFloor = 0.35f;
         private const float CriticalRadiationAdvisoryThresholdSeconds = 90f;
+        private const float LeviathanTraumaDamageThreshold01 = 0.40f;
         private const string RadiationCriticalDiscoveryId = "radiation_critical_advisory";
+        private const string LeviathanTraumaDiscoveryId = "leviathan_trauma_voice_log";
         private const string RadShieldQuestId = "quest_rad_shield";
         private static readonly char[] s_radiationCriticalMessage =
         {
@@ -93,7 +96,26 @@ namespace Hecton8.Gameplay
         public float MaxHealth => maxHealth;
 
         /// <summary>Gets the health percentage (0-1).</summary>
-        public float HealthPercent => currentHealth / maxHealth;
+        public float HealthPercent => currentHealth / Mathf.Max(0.0001f, maxHealth);
+
+        /// <summary>Composite panic/stress scalar from health loss and hazardous exposure.</summary>
+        public float Stress
+        {
+            get
+            {
+                float healthStress = Mathf.Clamp01(1f - HealthPercent);
+                float radiationStress = Mathf.Clamp01(_radiationExposureSeconds / Mathf.Max(1f, CriticalRadiationAdvisoryThresholdSeconds));
+                float toxicityStress = Mathf.Clamp01(_nutritionalToxicitySeverity01);
+                float pressureStress = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.PressureExposureSeverity01) : 0f;
+                float thermalStress = _survivalSystem != null ? Mathf.Clamp01(_survivalSystem.ThermalStressSeverity01) : 0f;
+                return Mathf.Clamp01(Mathf.Max(
+                    healthStress,
+                    Mathf.Max(radiationStress, Mathf.Max(toxicityStress, Mathf.Max(pressureStress, thermalStress)))));
+            }
+        }
+
+        /// <summary>Composite panic/stress scalar from health loss and hazardous exposure.</summary>
+        public float Stress01 => Stress;
 
         /// <summary>Gets whether the player is alive.</summary>
         public bool IsAlive => currentHealth > 0;
@@ -129,7 +151,7 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveRadiationFatigueScale(float exposureSeconds)
         {
-            return Mathf.Max(RadiationFatigueMinimumScale, 1f - (Mathf.Max(0f, exposureSeconds) * RadiationFatigueScalePerSecond));
+            return SomaticSurvivalMath.ResolveRadiationFatigueScale(exposureSeconds);
         }
 
         internal static bool ShouldActivateSurvivalGrace(
@@ -218,7 +240,7 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveNaturalHealthRegenerationMultiplier(float toxicitySeverity01)
         {
-            return Mathf.Lerp(1f, NutritionalToxicityRegenFloor, Mathf.Clamp01(toxicitySeverity01));
+            return SomaticSurvivalMath.ResolveNaturalHealthRegenerationMultiplier(toxicitySeverity01);
         }
 
         internal bool HasMutation(uint mutationBit)
@@ -256,6 +278,7 @@ namespace Hecton8.Gameplay
         private float _nutritionalToxicitySeverity01;
         private uint _mutationFlags;
         private bool _radiationCriticalAdvisoryIssued;
+        private bool _leviathanTraumaAdvisoryIssued;
         private HectonSurvivalSystem _survivalSystem;
 
         /// <summary>Initializes the health system.</summary>
@@ -343,6 +366,17 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        public bool TakeLeviathanDamage(float damage)
+        {
+            float previousHealth = currentHealth;
+            bool applied = TakeDamage(damage);
+            if (!applied)
+                return false;
+
+            TryIssueLeviathanTraumaAdvisory(previousHealth - currentHealth);
+            return true;
+        }
+
         /// <summary>Heals the player.</summary>
         /// <param name="amount">Amount of healing to apply.</param>
         /// <returns>Actual amount healed.</returns>
@@ -421,6 +455,26 @@ namespace Hecton8.Gameplay
                 return;
 
             audioService.PlayStatic2D(survivalGraceHeartbeatClip, survivalGraceHeartbeatVolume);
+        }
+
+        private void TryIssueLeviathanTraumaAdvisory(float appliedDamage)
+        {
+            if (_leviathanTraumaAdvisoryIssued ||
+                appliedDamage < Mathf.Max(MinimumRuntimeMaxHealth, maxHealth) * LeviathanTraumaDamageThreshold01)
+            {
+                return;
+            }
+
+            _leviathanTraumaAdvisoryIssued = true;
+            NarrativeEvents.RaiseDiscoveryMade(LeviathanTraumaDiscoveryId);
+            ProceduralAudioEvents.RaiseAudioPingTriggered(
+                transform.position,
+                1f,
+                0.6f,
+                1f,
+                260f,
+                ProceduralAudioPingKind.LeviathanRoar);
+            PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.7f, 1f, Mathf.Clamp01(HealthPercent), true));
         }
 
         private void EvaluateMutationThresholds()

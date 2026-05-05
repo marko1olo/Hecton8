@@ -1081,6 +1081,22 @@ namespace Hecton8.Core
     }
 
     /// <summary>
+    /// Deterministic world-seed provider exposed through <see cref="GlobalRegistry"/> for save/header validation.
+    /// </summary>
+    public interface IWorldSeedProvider
+    {
+        /// <summary>
+        /// True once the seed owner is registered and ready to answer save/load validation queries.
+        /// </summary>
+        bool IsInitialized { get; }
+
+        /// <summary>
+        /// Runtime world seed used by procedural geology and save-header consistency checks.
+        /// </summary>
+        int RuntimeWorldSeed { get; }
+    }
+
+    /// <summary>
     /// Authoritative encounter-direction service exposed through <see cref="GlobalRegistry"/>.
     /// </summary>
     public interface IEncounterDirectorService
@@ -1407,6 +1423,16 @@ namespace Hecton8.Core
         UIRTRuntime = 97,
         SettingsRuntime = 98,
         RuntimeWatchdogRuntime = 99,
+        CrashTelemetryRuntime = 100,
+        PlayerCriticalAudioRuntime = 101,
+        MapMagicRuntime = 102,
+        ProceduralFieldSamplerRuntime = 103,
+        ResourceDistributionRuntime = 104,
+        RandomEventRuntime = 105,
+        EclipseGameplayRuntime = 106,
+        WorldSeedProvider = 107,
+        GeologyTerrainSeamRuntime = 108,
+        GeologyVoxelBridgeRuntime = 109,
         Unknown = 255
     }
 
@@ -1522,6 +1548,30 @@ namespace Hecton8.Core
             Vector3 runtimeHitNormal,
             float power01,
             uint seed);
+
+        /// <summary>
+        /// Spawns one bounded debris burst using a pre-baked chunk definition.
+        /// </summary>
+        /// <param name="definition">Authoritative chunk definition.</param>
+        /// <param name="runtimeOrigin">Runtime-space origin of the intact object.</param>
+        /// <param name="runtimeRotation">Runtime-space rotation of the intact object.</param>
+        /// <param name="runtimeHitPoint">Runtime-space impact point.</param>
+        /// <param name="runtimeHitNormal">Runtime-space impact normal.</param>
+        /// <param name="power01">Normalized tool power.</param>
+        /// <param name="seed">Deterministic burst seed.</param>
+        /// <param name="maxChunkCount">Maximum authored chunks to activate. Values below one use all valid chunks.</param>
+        /// <param name="lifetimeSeconds">Optional pooled lifetime override. Values at or below zero use the default profile lifetime.</param>
+        /// <returns>True when the burst was accepted.</returns>
+        bool SpawnBurst(
+            IDebrisDefinition definition,
+            Vector3 runtimeOrigin,
+            Quaternion runtimeRotation,
+            Vector3 runtimeHitPoint,
+            Vector3 runtimeHitNormal,
+            float power01,
+            uint seed,
+            int maxChunkCount,
+            float lifetimeSeconds);
 
         /// <summary>
         /// Clears all active chunk bursts immediately.

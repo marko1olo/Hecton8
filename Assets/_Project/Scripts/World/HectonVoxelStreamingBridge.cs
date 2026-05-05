@@ -188,7 +188,9 @@ namespace Hecton8.World
                     return;
                 }
 
-                volume.name = $"VoxelCave_{request.Key}";
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                volume.name = "VoxelCave";
+#endif
                 _activeVolumes[request.Key] = volume;
                 RegisterChunkFade(request.Key, volume);
                 if (vegetationBridge != null)
@@ -430,8 +432,13 @@ namespace Hecton8.World
             if (!_chunkFadeStates.TryGetValue(key, out ChunkFadeState state))
                 return;
 
-            if (clearRenderer && state != null && state.Renderer != null)
+            if (clearRenderer &&
+                state != null &&
+                state.Renderer != null &&
+                ReferenceEquals(state.Renderer.sharedMaterial, state.RuntimeMaterial))
+            {
                 state.Renderer.sharedMaterial = state.OriginalMaterial;
+            }
 
             if (state != null && state.RuntimeMaterial != null)
                 Destroy(state.RuntimeMaterial);

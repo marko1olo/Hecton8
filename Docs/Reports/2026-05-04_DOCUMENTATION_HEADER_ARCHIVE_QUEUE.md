@@ -25,16 +25,16 @@ Read first:
 
 ## Inventory Snapshot
 
-Current scan after the root-log relocation, Archivarius header normalization, and documentation authority smoke-guard addendum:
+Current scan after the root-log relocation, Archivarius header normalization, documentation authority smoke-guard addendum, and 2026-05-05 Omega documentation influx:
 
 | Surface | Count |
 |---|---:|
-| `Docs/**/*.md`, total | `410` |
-| active `Docs/**/*.md`, excluding archive/deprecated/reports/obsolete | `156` |
-| `Docs/Reports/*.md` | `42` |
-| root `.md` files | `4` |
+| `Docs/**/*.md`, total | `418` |
+| active `Docs/**/*.md`, excluding archive/deprecated/reports/obsolete | `160` |
+| `Docs/Reports/*.md` | `45` |
+| root `.md` files | `5` |
 | root `.txt` / `.log` files | `0` |
-| relocated former root `.log` files in deprecated bundle | `7` |
+| relocated former root `.log` files in deprecated bundles | `9` |
 
 Header scan rule:
 
@@ -68,7 +68,7 @@ Result:
 Root active `Docs/*.md` contract file header normalization is complete for the four files previously missing `Date:`.
 `Docs/ARCHITECTURE/*.md` header normalization is also complete for the `23` files previously missing `Date:` or `Status:`.
 `Docs/ARCHIVARIUS REPORTS/` header normalization is complete for the `60` files previously missing strict headers in `01_GENERAL_INFO`, `02_ACTUAL_REPORTS`, and `03_OBSOLETE`.
-`Docs/SPACE_ENGINE_RESEARCH/` header normalization is complete for the two research artifacts currently present.
+`Docs/SPACE_ENGINE_RESEARCH/` header normalization is complete for the active research artifacts currently present.
 
 ## Relocated Root Evidence Logs
 
@@ -76,6 +76,7 @@ Repository root currently contains `0` `.log` files after the follow-up relocati
 Moved repository-root logs now live in:
 
 - `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/README.md`
+- `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-05/README.md`
 
 Moved files:
 
@@ -88,6 +89,8 @@ Moved files:
 | `unity-batch-autonomous-registry-sweep-rerun.log` | moved; raw evidence only; not documentation authority |
 | `unity-batch-final.log` | moved; raw evidence only; not documentation authority |
 | `unity-batch-smoke.log` | moved; raw evidence only; not documentation authority |
+| `omega-explicit-restore.log` | moved; raw evidence only; not documentation authority |
+| `omega-h8core-build-after-restore.log` | moved; raw evidence only; not documentation authority |
 
 Do not cite these logs directly as current evidence. Create or use a dated report that states exact command, date, exit code, and summary.
 
@@ -125,6 +128,10 @@ It is historical, but it has current supersession notes and is still a coherent 
 - Follow-up header rescan shows active root `Docs/*.md` contract files, `Docs/ARCHITECTURE/*.md`, and `Docs/ARCHIVARIUS REPORTS/*.md` are no longer in the missing-header set.
 - Added `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs` as an editor-only smoke guard for root loose text/log files, direct `Docs/` headers, `Docs/ARCHITECTURE/` headers, and active-header debt regression.
 - Normalized `Docs/SPACE_ENGINE_RESEARCH/*.md` headers after those research artifacts appeared during the pass.
+- Added a three-pass documentation authority stress runner, stateless path-policy decomposition, and `GlobalTelemetryBus.PublishPerformanceWarning` hook for failed documentation-authority audits.
+- Added `Hecton8.EditorTools.DocumentationAuthoritySmokeTester.RunBatchAll` as the CI-facing batch entrypoint. It writes smoke, stress, and batch JSON under `CodexArtifacts/` and exits Unity with `0` or `1`.
+- Normalized `Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_CODEX_AUDIT_2026-05-05.md` with a strict `Status:` header after it appeared without one.
+- Moved two newly generated repository-root Omega build/restore logs into `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-05/` and added a local README.
 - Did not move old reports because the worktree is already dirty and includes unrelated source, asset, artifact, report, and deprecated raw-log changes.
 
 ## Verification
@@ -136,8 +143,32 @@ Root text scan now reports `4` root `.md` files and `0` root `.txt` / `.log` fil
 Documentation authority smoke result:
 
 ```json
-{"status":"PASS","totalMarkdown":410,"activeMarkdown":156,"activeHeaderDebt":41,"activeMissingDate":41,"activeMissingStatus":0,"directDocsHeaderMissing":0,"architectureHeaderMissing":0,"rootLooseTextLogCount":0,"relocatedRootLogCount":7,"maxAllowedActiveHeaderDebt":96}
+{"status":"PASS","totalMarkdown":418,"activeMarkdown":160,"activeHeaderDebt":41,"activeMissingDate":41,"activeMissingStatus":0,"directDocsHeaderMissing":0,"architectureHeaderMissing":0,"rootLooseTextLogCount":0,"relocatedRootLogCount":9,"maxAllowedActiveHeaderDebt":96,"failureCount":0,"telemetryWarningRequested":false,"telemetryRuntimeEligible":false}
 ```
+
+Documentation authority stress result:
+
+```json
+{"status":"PASS","passCount":3,"failureCount":0,"finalTotalMarkdown":418,"finalActiveMarkdown":160,"finalActiveHeaderDebt":41,"finalRootLooseTextLogCount":0,"finalRelocatedRootLogCount":9}
+```
+
+Unity batch execution was attempted through `Hecton8.EditorTools.DocumentationAuthoritySmokeTester.RunMenuItem`, but the generated log stopped during early editor initialization and emitted no JSON artifact. The counted JSON above is the same filesystem audit contract executed directly from PowerShell and stored in `CodexArtifacts/documentation-authority-smoke.json` and `CodexArtifacts/documentation-authority-stress.json`.
+
+Follow-up batch hardening compile evidence:
+
+- `CodexArtifacts/csc-core-doc-authority-batch.json`: `0` errors, `52` warnings.
+- `CodexArtifacts/csc-editor-doc-authority-batch2.json`: `0` errors, `0` warnings.
+- `git diff --check -- Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs`: passed; Git reported only LF-to-CRLF working-copy normalization warning.
+- Static forensic scan of `DocumentationAuthoritySmokeTester.cs`: no `NativeArray`, `NativeList`, `NativeHashMap`, `NativeQueue`, `NativeReference`, `NativeMemorySentinel`, `JobHandle.Complete()`, `.Run(`, `DontDestroyOnLoad`, private static `_instance`, `string.Format`, or interpolation hits. Only `StringBuilder.ToString()` appears in editor JSON writers, not in `Update`, `Tick`, or `FixedTick`.
+
+Follow-up Unity batch attempt:
+
+- Command: `Unity.exe -batchmode -nographics -quit -projectPath C:\hades\Hecton8 -executeMethod Hecton8.EditorTools.DocumentationAuthoritySmokeTester.RunBatchAll -logFile C:\hades\Hecton8\CodexArtifacts\unity-documentation-authority-batch-final.log`
+- Result: exit `-1`; no `CodexArtifacts/documentation-authority-batch.json` was emitted.
+- Blocker in log: licensing handshake failed with response code `505`, status `Unsupported protocol version '1.18.1'`, then the Unity licensing client shut down.
+- Earlier rerun also hit a valid project-lock refusal while another batch owned `C:\hades\Hecton8`.
+
+Therefore the filesystem smoke/stress JSON is current evidence, but Unity batch execution remains pending on environment/licensing stability. The smoke guard now counts every `Root_Logs_*` bundle under `Docs/DEPRECATED/External_And_Log_Bundles/`, not only the original 2026-05-04 bundle.
 
 Scoped `git diff --check` excluding deprecated files passed.
 Full `git diff --check -- Docs` also passes in the current scan. Git still prints LF-to-CRLF working-copy warnings on touched markdown files; those are line-ending normalization warnings, not diff-check errors.
@@ -148,5 +179,6 @@ Full `git diff --check -- Docs` also passes in the current scan. Git still print
 - Do not claim archived/deprecated raw logs are clean.
 - Do not claim relocated root logs are current proof.
 - Do not claim Play Mode, GC, profiler, memory retention, player build, or scene/prefab proof from this documentation queue.
+- Do not claim Unity batch smoke proof for documentation authority until `RunBatchAll` emits `CodexArtifacts/documentation-authority-batch.json` from Unity with exit `0`.
 
 STATUS: PENDING VERIFICATION

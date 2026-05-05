@@ -16,19 +16,39 @@ namespace Hecton.UI.MainMenu
         private static readonly uint _UiInputRepairWarningHash = unchecked((uint)LocHash.Compute("MainMenu.UIInput.Repair"));
         private static readonly uint _UiInputRoutingContextHash = unchecked((uint)LocHash.Compute("InputSystemUIInputModule"));
         private static bool _repairTelemetryPublished;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        private static int _lastRepairTelemetryCodeForSmoke;
+        private static int _repairTelemetryPublishCountForSmoke;
+#endif
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
             _repairTelemetryPublished = false;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _lastRepairTelemetryCodeForSmoke = 0;
+            _repairTelemetryPublishCountForSmoke = 0;
+#endif
         }
+
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal static bool RepairTelemetryPublishedForSmoke => _repairTelemetryPublished;
+
+        internal static int LastRepairTelemetryCodeForSmoke => _lastRepairTelemetryCodeForSmoke;
+
+        internal static int RepairTelemetryPublishCountForSmoke => _repairTelemetryPublishCountForSmoke;
+
+        internal static void ResetForSmokeTest()
+        {
+            _repairTelemetryPublished = false;
+            _lastRepairTelemetryCodeForSmoke = 0;
+            _repairTelemetryPublishCountForSmoke = 0;
+        }
+#endif
 
         public static void EnsureInputSystemEventRouting()
         {
             bool createdEventSystem = false;
-            bool removedLegacyModule = false;
-            bool addedInputModule = false;
-            bool assignedDefaultActions = false;
 
             EventSystem eventSystem = EventSystem.current;
             if (eventSystem == null)
@@ -41,6 +61,23 @@ namespace Hecton.UI.MainMenu
 
             if (eventSystem == null)
                 return;
+
+            EnsureInputSystemEventRouting(eventSystem, createdEventSystem);
+        }
+
+        internal static void EnsureInputSystemEventRouting(EventSystem eventSystem)
+        {
+            EnsureInputSystemEventRouting(eventSystem, false);
+        }
+
+        private static void EnsureInputSystemEventRouting(EventSystem eventSystem, bool createdEventSystem)
+        {
+            if (eventSystem == null)
+                return;
+
+            bool removedLegacyModule = false;
+            bool addedInputModule = false;
+            bool assignedDefaultActions = false;
 
             eventSystem.enabled = true;
             eventSystem.sendNavigationEvents = true;
@@ -123,17 +160,21 @@ namespace Hecton.UI.MainMenu
                 return;
 
             _repairTelemetryPublished = true;
-            float repairCode = 0f;
+            int repairCode = 0;
             if (createdEventSystem)
-                repairCode += 1f;
+                repairCode += 1;
             if (removedLegacyModule)
-                repairCode += 2f;
+                repairCode += 2;
             if (addedInputModule)
-                repairCode += 4f;
+                repairCode += 4;
             if (assignedDefaultActions)
-                repairCode += 8f;
+                repairCode += 8;
             if (!usableAfterRepair)
-                repairCode += 16f;
+                repairCode += 16;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            _lastRepairTelemetryCodeForSmoke = repairCode;
+            _repairTelemetryPublishCountForSmoke++;
+#endif
 
             GlobalTelemetryBus.PublishPerformanceWarning(
                 _UiInputRepairWarningHash,

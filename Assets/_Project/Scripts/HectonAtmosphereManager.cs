@@ -335,17 +335,9 @@ namespace Hecton8.Atmosphere
 
         #region ══════════ Singleton ══════════
 
-        private static HectonAtmosphereManager _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
         public static HectonAtmosphereManager Instance
         {
-            get { return _instance; }
+            get { return GlobalRegistry.Atmosphere; }
         }
 
         #endregion
@@ -563,16 +555,12 @@ namespace Hecton8.Atmosphere
         {
             if (Application.isPlaying)
             {
-                if (_instance != null && _instance != this)
+                HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
+                if (registeredAtmosphere != null && !ReferenceEquals(registeredAtmosphere, this))
                 {
                     Destroy(this);
                     return;
                 }
-                _instance = this;
-            }
-            else
-            {
-                _instance = this;
             }
 
             _registeredToTickManager = false;
@@ -642,6 +630,7 @@ namespace Hecton8.Atmosphere
 
         private void OnDisable()
         {
+            bool wasRegisteredRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
             _autoUnderwaterState = false;
 
             if (Application.isPlaying)
@@ -659,12 +648,13 @@ namespace Hecton8.Atmosphere
             }
 #endif
 
-            if (_instance == this)
+            if (!Application.isPlaying || wasRegisteredRuntime)
                 ResetCycleShaderGlobals();
         }
 
         private void OnDestroy()
         {
+            bool wasRegisteredRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
             if (Application.isPlaying)
             {
                 MapMagicBiomeEvents.Unregister(this);
@@ -673,10 +663,8 @@ namespace Hecton8.Atmosphere
                 TryUnregisterService();
             }
 
-            if (_instance != this) return;
-            _instance = null;
-
-            ResetCycleShaderGlobals();
+            if (!Application.isPlaying || wasRegisteredRuntime)
+                ResetCycleShaderGlobals();
 
         }
 
@@ -705,6 +693,13 @@ namespace Hecton8.Atmosphere
         {
             if (_registeredAtmosphereRuntime || !Application.isPlaying)
                 return;
+
+            HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
+            if (registeredAtmosphere != null && !ReferenceEquals(registeredAtmosphere, this))
+            {
+                Destroy(this);
+                return;
+            }
 
             GlobalRegistry.RegisterAtmosphereRuntime(this);
             _registeredAtmosphereRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
@@ -978,7 +973,9 @@ namespace Hecton8.Atmosphere
 
             _sunLight.transform.rotation = finalRotation;
 
-            float3 sunForward = math.mul(finalRotation, new float3(0f, 0f, 1f));
+            Matrix4x4 rotationMatrix = Matrix4x4.Rotate(finalRotation);
+            Vector3 sunForwardVector = rotationMatrix.MultiplyVector(Vector3.forward);
+            float3 sunForward = new float3(sunForwardVector.x, sunForwardVector.y, sunForwardVector.z);
             _sunElevationDot = math.dot(-sunForward, new float3(0f, 1f, 0f));
 
             // v2.1 OPT: Dirty-write batching — only write to shader if changed

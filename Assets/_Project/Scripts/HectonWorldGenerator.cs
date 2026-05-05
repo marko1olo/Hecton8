@@ -446,17 +446,16 @@ public struct HectonColorJob : IJobParallelFor
 // ════════════════════════════════════════════════════════════════════════════════
 #region HectonWorldGenerator
 
-public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable
+public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IWorldSeedProvider
 {
     private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.WorldGenerator.Tick");
     private static readonly ProfilerMarker _physicsBakeBatchProfilerMarker = new ProfilerMarker("H8.WorldGenerator.PhysicsBakeBatch");
-    public static HectonWorldGenerator ActiveRuntimeInstance { get; private set; }
+    public bool IsInitialized => ReferenceEquals(GlobalRegistry.WorldSeedProvider, this);
     public int RuntimeWorldSeed => ComputeRuntimeWorldSeed();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStaticState()
     {
-        ActiveRuntimeInstance = null;
         _deferredPhysicsBakeTeardowns.Clear();
         _deferredPhysicsBakeTeardownRegistered = false;
     }
@@ -795,15 +794,14 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         if (!Application.isPlaying)
             return;
 
-        ActiveRuntimeInstance = this;
+        GlobalRegistry.RegisterWorldSeedProvider(this);
         StartStreaming();
         RegisterToTickManager();
     }
 
     void OnDisable()
     {
-        if (ReferenceEquals(ActiveRuntimeInstance, this))
-            ActiveRuntimeInstance = null;
+        GlobalRegistry.UnregisterWorldSeedProvider(this);
 
         UnregisterFromTickManager();
 
@@ -2604,8 +2602,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
 
     void OnDestroy()
     {
-        if (ReferenceEquals(ActiveRuntimeInstance, this))
-            ActiveRuntimeInstance = null;
+        GlobalRegistry.UnregisterWorldSeedProvider(this);
 
         if (!Application.isPlaying && !_streaming && _pendingChunks.Count == 0 && !_lutsReady)
         {

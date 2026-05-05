@@ -1,25 +1,109 @@
 using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
 namespace Hecton8.World
 {
     /// <summary>
-    /// Standalone deterministic hydraulic erosion kernel for heightmap buffers.
+    /// Schedules hydraulic erosion as four color-coded sub-grid phases.
+    /// </summary>
+    public static class HydraulicErosionScheduler
+    {
+        /// <summary>
+        /// Schedules red-black style XY parity phases so same-phase sub-grids never share a write boundary.
+        /// </summary>
+        /// <param name="job">Caller-owned erosion job configuration.</param>
+        /// <param name="innerLoopBatchCount">Batch count for sub-grid jobs.</param>
+        /// <param name="dependency">Upstream job dependency.</param>
+        /// <returns>Combined handle for all four erosion phases.</returns>
+        public static JobHandle ScheduleFourPhase(
+            ref HydraulicErosionJob job,
+            int innerLoopBatchCount,
+            JobHandle dependency)
+        {
+            int safeSubGridSize = math.max(8, job.SubGridSize);
+            int safeCoreWidth = math.max(1, job.CoreWidth);
+            int safeCoreHeight = math.max(1, job.CoreHeight);
+            int subGridCountX = math.max(1, (safeCoreWidth + safeSubGridSize - 1) / safeSubGridSize);
+            int subGridCountZ = math.max(1, (safeCoreHeight + safeSubGridSize - 1) / safeSubGridSize);
+            int subGridCount = subGridCountX * subGridCountZ;
+            int batchCount = math.max(1, innerLoopBatchCount);
+
+            job.SubGridSize = safeSubGridSize;
+            job.SubGridCountX = subGridCountX;
+            job.SubGridCountZ = subGridCountZ;
+
+            JobHandle handle = dependency;
+            for (int phaseZ = 0; phaseZ < 2; phaseZ++)
+            {
+                for (int phaseX = 0; phaseX < 2; phaseX++)
+                {
+                    job.PhaseX = phaseX;
+                    job.PhaseZ = phaseZ;
+                    handle = job.Schedule(subGridCount, batchCount, handle);
+                }
+            }
+
+            return handle;
+        }
+    }
+
+    /// <summary>
+    /// Deterministic hydraulic erosion kernel for heightmap buffers.
     /// </summary>
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-    public struct HydraulicErosionJob : IJob
+    public struct HydraulicErosionJob : IJobParallelFor
     {
-        /// <summary>Mutable heightmap in normalized 0..1 terrain space.</summary>
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // Unity's parallel-for safety handle cannot infer that every Execute index owns a disjoint
+        // height write rectangle. The scheduler filters each phase by X/Z parity, so same-phase
+        // workers mutate only non-adjacent sub-grids and cannot touch the same height cell.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Alternatives rejected: duplicating a full heightmap per sub-grid would multiply terrain
+        // memory and merge cost beyond the MX350 budget; serial IJob execution was the previous
+        // bottleneck and cannot satisfy the required droplet counts. Per-cell atomics are not
+        // available for float terrain edits and would destroy cache locality.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Invariant: ScheduleFourPhase writes PhaseX/PhaseZ before each Schedule call, and Execute
+        // returns unless its sub-grid parity matches that phase. Each active job clamps erosion and
+        // deposition to [writeMin, writeMax) inside its own sub-grid, with a one-cell movement inset.
+        [NativeDisableParallelForRestriction]
         public NativeArray<float> Heightmap;
 
         /// <summary>Mutable normalized-source sediment accumulation lane. Normalize after the job.</summary>
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // The sediment lane shares the same write footprint as Heightmap. Unity sees the NativeArray
+        // as globally mutable from multiple Execute calls, but same-phase workers can only write
+        // their own non-adjacent sub-grid windows selected by the four-phase parity filter.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Alternatives rejected: per-thread sediment buffers require an additional full-map reduction
+        // pass and extra TempJob memory; scalar scheduling prevents useful parallel erosion; locking
+        // or managed synchronization is illegal inside Burst and would violate the zero-GC mandate.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Invariant: every sediment write uses the same writeMin/writeMax bounds passed to the
+        // droplet simulation by Execute. The scheduler never runs adjacent sub-grid parities in the
+        // same phase, so no two live workers can update one sediment cell.
+        [NativeDisableParallelForRestriction]
         public NativeArray<float> SedimentMask;
 
-        /// <summary>Mutable normalized-source erosion/wear accumulation lane. Normalize after the job.</summary>
-        public NativeArray<float> WearMask;
+        /// <summary>Mutable raw erosion-depth lane used later by vegetation/scatter masks.</summary>
+        // SAFETY_JUSTIFICATION_PARAGRAPH_1:
+        // ErosionDepthMask is intentionally mutable because channel bias must read previously carved
+        // depth while the active sub-grid accumulates new erosion. Unity cannot prove this partition
+        // is safe, but same-phase writes are spatially isolated by sub-grid parity.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_2:
+        // Alternatives rejected: a read-only stale channel mask loses dendritic reinforcement inside
+        // a phase; a full copy-on-write mask doubles memory bandwidth; NativeStream/NativeList event
+        // accumulation would add variable-size native containers and a reduction pass.
+        // SAFETY_JUSTIFICATION_PARAGRAPH_3:
+        // Invariant: all erosion-depth writes occur through ErodeBrush using the Execute-owned
+        // write bounds. Channel sampling may read nearby cells, but write ownership remains exclusive
+        // for the active phase and later phases are chained by JobHandle dependency.
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> ErosionDepthMask;
 
         /// <summary>Heightmap width, including any overlap margin.</summary>
         public int Width;
@@ -39,7 +123,22 @@ namespace Hecton8.World
         /// <summary>Core chunk height excluding margin pixels.</summary>
         public int CoreHeight;
 
-        /// <summary>Number of simulated droplets.</summary>
+        /// <summary>Sub-grid edge size in cells.</summary>
+        public int SubGridSize;
+
+        /// <summary>Number of sub-grids on X. Filled by the scheduler.</summary>
+        public int SubGridCountX;
+
+        /// <summary>Number of sub-grids on Z. Filled by the scheduler.</summary>
+        public int SubGridCountZ;
+
+        /// <summary>Active phase X parity, 0 or 1.</summary>
+        public int PhaseX;
+
+        /// <summary>Active phase Z parity, 0 or 1.</summary>
+        public int PhaseZ;
+
+        /// <summary>Number of simulated droplets across all sub-grids.</summary>
         public int DropletCount;
 
         /// <summary>Maximum per-droplet integration steps.</summary>
@@ -84,113 +183,76 @@ namespace Hecton8.World
         /// <summary>Spawn score multiplier for already carved cells.</summary>
         public float ChannelSpawnBias;
 
+        /// <summary>Directional pull toward existing erosion-depth channels.</summary>
+        public float ChannelFlowBias;
+
+        /// <summary>World cell size in meters for slope-angle conversion.</summary>
+        public float CellSizeMeters;
+
+        /// <summary>World vertical scale represented by height 0..1.</summary>
+        public float HeightScaleMeters;
+
+        /// <summary>Slope threshold below which droplets dump all sediment.</summary>
+        public float SedimentaryFlatSlopeDegrees;
+
         /// <summary>Number of deterministic spawn candidates tested per droplet.</summary>
         public int SpawnCandidateCount;
 
         /// <summary>Minimum water volume before final deposition and termination.</summary>
         public float MinWater;
 
-        /// <summary>
-        /// Executes the droplet simulation in deterministic sequence.
-        /// </summary>
-        public void Execute()
+        /// <inheritdoc />
+        public void Execute(int subGridIndex)
         {
-            if (Width < 4 || Height < 4 || !Heightmap.IsCreated)
+            if (Width < 8 || Height < 8 || !Heightmap.IsCreated)
                 return;
 
+            int safeSubGridCountX = math.max(1, SubGridCountX);
+            int safeSubGridCountZ = math.max(1, SubGridCountZ);
+            int totalSubGrids = safeSubGridCountX * safeSubGridCountZ;
+            if (subGridIndex < 0 || subGridIndex >= totalSubGrids)
+                return;
+
+            int subGridX = subGridIndex % safeSubGridCountX;
+            int subGridZ = subGridIndex / safeSubGridCountX;
+            if ((subGridX & 1) != (PhaseX & 1) || (subGridZ & 1) != (PhaseZ & 1))
+                return;
+
+            int safeSubGridSize = math.max(8, SubGridSize);
+            int coreMinX = math.clamp(CoreOffsetX, 1, math.max(1, Width - 2));
+            int coreMinZ = math.clamp(CoreOffsetZ, 1, math.max(1, Height - 2));
+            int coreMaxX = math.clamp(CoreOffsetX + math.max(1, CoreWidth), coreMinX + 1, math.max(coreMinX + 1, Width - 1));
+            int coreMaxZ = math.clamp(CoreOffsetZ + math.max(1, CoreHeight), coreMinZ + 1, math.max(coreMinZ + 1, Height - 1));
+            int writeMinX = coreMinX + subGridX * safeSubGridSize;
+            int writeMinZ = coreMinZ + subGridZ * safeSubGridSize;
+            int writeMaxX = math.min(coreMaxX, writeMinX + safeSubGridSize);
+            int writeMaxZ = math.min(coreMaxZ, writeMinZ + safeSubGridSize);
+
+            if (writeMaxX - writeMinX < 5 || writeMaxZ - writeMinZ < 5)
+                return;
+
+            int motionMinX = writeMinX + 1;
+            int motionMinZ = writeMinZ + 1;
+            int motionMaxX = writeMaxX - 1;
+            int motionMaxZ = writeMaxZ - 1;
             int safeDropletCount = math.max(0, DropletCount);
-            int safeLifetime = math.max(1, MaxLifetime);
-            float safeInertia = math.saturate(Inertia);
-            float safeErosionRate = math.max(0f, ErosionRate);
-            float safeDepositRate = math.max(0f, DepositRate);
-            float safeEvaporation = math.saturate(EvaporationRate);
-            float safeGravity = math.max(0.001f, Gravity);
-            float safeInitialWater = math.max(0.001f, InitialWater);
-            float safeInitialSpeed = math.max(0.001f, InitialSpeed);
-            float safeMinWater = math.max(0.000001f, MinWater);
+            int baseDroplets = totalSubGrids > 0 ? safeDropletCount / totalSubGrids : 0;
+            int remainderDroplets = totalSubGrids > 0 ? safeDropletCount - baseDroplets * totalSubGrids : 0;
+            int dropletsForSubGrid = baseDroplets + (subGridIndex < remainderDroplets ? 1 : 0);
+            int dropletStart = subGridIndex * baseDroplets + math.min(subGridIndex, remainderDroplets);
 
-            for (int dropletIndex = 0; dropletIndex < safeDropletCount; dropletIndex++)
+            for (int localDroplet = 0; localDroplet < dropletsForSubGrid; localDroplet++)
             {
-                float2 position = ResolveSpawnPosition(dropletIndex);
-                float2 direction = float2.zero;
-                float speed = safeInitialSpeed;
-                float water = safeInitialWater;
-                float sediment = 0f;
-
-                for (int step = 0; step < safeLifetime; step++)
-                {
-                    if (!IsInsideDropletBounds(position))
-                        break;
-
-                    float height = SampleHeight(position);
-                    float2 gradient = SampleGradient(position);
-                    direction = direction * safeInertia - gradient * (1f - safeInertia);
-                    float directionLengthSq = math.lengthsq(direction);
-                    if (directionLengthSq <= 0.0000001f)
-                        direction = HashDirection(dropletIndex, step);
-                    else
-                        direction *= math.rsqrt(directionLengthSq);
-
-                    float2 nextPosition = position + direction;
-                    if (!IsInsideDropletBounds(nextPosition))
-                    {
-                        float deposited = DepositFlatSediment(position, sediment, height + sediment * DepressionFillStrength);
-                        sediment -= deposited;
-                        break;
-                    }
-
-                    float nextHeight = SampleHeight(nextPosition);
-                    float heightDelta = nextHeight - height;
-                    float capacity = CalculateSedimentCapacity(
-                        heightDelta,
-                        speed,
-                        water,
-                        CapacityFactor,
-                        MinCapacity);
-
-                    if (heightDelta > 0f || sediment > capacity)
-                    {
-                        float excessSediment = math.max(0f, sediment - capacity);
-                        float depositAmount = heightDelta > 0f
-                            ? math.min(sediment, heightDelta + excessSediment * safeDepositRate)
-                            : excessSediment * safeDepositRate;
-
-                        if (depositAmount > 0f)
-                        {
-                            float targetHeight = heightDelta > 0f
-                                ? nextHeight
-                                : height + depositAmount * math.max(0f, DepressionFillStrength);
-                            float deposited = DepositFlatSediment(position, depositAmount, targetHeight);
-                            sediment -= deposited;
-                        }
-                    }
-                    else
-                    {
-                        float erodeAmount = math.min((capacity - sediment) * safeErosionRate, math.max(0f, -heightDelta));
-                        if (erodeAmount > 0f)
-                            sediment += ErodeBrush(position, erodeAmount);
-                    }
-
-                    float speedSquared = speed * speed + (-heightDelta) * safeGravity;
-                    if (speedSquared <= 0.000001f)
-                    {
-                        float deposited = DepositFlatSediment(position, sediment, height + sediment * DepressionFillStrength);
-                        sediment -= deposited;
-                        break;
-                    }
-
-                    speed = math.sqrt(speedSquared);
-                    water *= 1f - safeEvaporation;
-                    position = nextPosition;
-
-                    if (water <= safeMinWater)
-                    {
-                        float finalHeight = SampleHeight(position);
-                        float deposited = DepositFlatSediment(position, sediment, finalHeight + sediment * DepressionFillStrength);
-                        sediment -= deposited;
-                        break;
-                    }
-                }
+                SimulateDroplet(
+                    dropletStart + localDroplet,
+                    motionMinX,
+                    motionMinZ,
+                    motionMaxX,
+                    motionMaxZ,
+                    writeMinX,
+                    writeMinZ,
+                    writeMaxX,
+                    writeMaxZ);
             }
         }
 
@@ -218,30 +280,142 @@ namespace Hecton8.World
             return math.max(rawCapacity, math.max(0f, minCapacity));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float2 ResolveSpawnPosition(int dropletIndex)
+        private void SimulateDroplet(
+            int dropletIndex,
+            int motionMinX,
+            int motionMinZ,
+            int motionMaxX,
+            int motionMaxZ,
+            int writeMinX,
+            int writeMinZ,
+            int writeMaxX,
+            int writeMaxZ)
         {
-            int minX = math.clamp(CoreOffsetX, 1, math.max(1, Width - 2));
-            int minZ = math.clamp(CoreOffsetZ, 1, math.max(1, Height - 2));
-            int maxX = math.clamp(CoreOffsetX + math.max(1, CoreWidth) - 1, minX, math.max(minX, Width - 2));
-            int maxZ = math.clamp(CoreOffsetZ + math.max(1, CoreHeight) - 1, minZ, math.max(minZ, Height - 2));
+            int safeLifetime = math.max(1, MaxLifetime);
+            float safeInertia = math.saturate(Inertia);
+            float safeErosionRate = math.max(0f, ErosionRate);
+            float safeDepositRate = math.max(0f, DepositRate);
+            float safeEvaporation = math.saturate(EvaporationRate);
+            float safeGravity = math.max(0.001f, Gravity);
+            float safeInitialWater = math.max(0.001f, InitialWater);
+            float safeInitialSpeed = math.max(0.001f, InitialSpeed);
+            float safeMinWater = math.max(0.000001f, MinWater);
+            float flatSlopeDegrees = math.max(0f, SedimentaryFlatSlopeDegrees);
+            float2 position = ResolveSpawnPosition(dropletIndex, motionMinX, motionMinZ, motionMaxX, motionMaxZ);
+            float2 direction = float2.zero;
+            float speed = safeInitialSpeed;
+            float water = safeInitialWater;
+            float sediment = 0f;
+
+            for (int step = 0; step < safeLifetime; step++)
+            {
+                if (!IsInsideDropletBounds(position, motionMinX, motionMinZ, motionMaxX, motionMaxZ))
+                    break;
+
+                float height = SampleHeight(position);
+                float2 gradient = SampleGradient(position);
+                float slopeDegrees = ResolveSlopeDegrees(gradient);
+                if (sediment > 0f && slopeDegrees <= flatSlopeDegrees)
+                {
+                    float deposited = DepositSedimentaryFlat(position, sediment, writeMinX, writeMinZ, writeMaxX, writeMaxZ);
+                    sediment -= deposited;
+                    break;
+                }
+
+                float2 channelGradient = SampleAccumulationGradient(ErosionDepthMask, position);
+                float2 hydraulicForce = -gradient + channelGradient * math.max(0f, ChannelFlowBias);
+                direction = direction * safeInertia + hydraulicForce * (1f - safeInertia) + channelGradient * math.max(0f, ChannelFlowBias) * 0.35f;
+                float directionLengthSq = math.lengthsq(direction);
+                if (directionLengthSq <= 0.0000001f)
+                    direction = HashDirection(dropletIndex, step);
+                else
+                    direction *= math.rsqrt(directionLengthSq);
+
+                float2 nextPosition = position + direction;
+                if (!IsInsideDropletBounds(nextPosition, motionMinX, motionMinZ, motionMaxX, motionMaxZ))
+                {
+                    float deposited = DepositSedimentaryFlat(position, sediment, writeMinX, writeMinZ, writeMaxX, writeMaxZ);
+                    sediment -= deposited;
+                    break;
+                }
+
+                float nextHeight = SampleHeight(nextPosition);
+                float heightDelta = nextHeight - height;
+                float capacity = CalculateSedimentCapacity(
+                    heightDelta,
+                    speed,
+                    water,
+                    CapacityFactor,
+                    MinCapacity);
+
+                if (heightDelta > 0f || sediment > capacity)
+                {
+                    float excessSediment = math.max(0f, sediment - capacity);
+                    float depositAmount = heightDelta > 0f
+                        ? math.min(sediment, heightDelta + excessSediment * safeDepositRate)
+                        : excessSediment * safeDepositRate;
+
+                    if (depositAmount > 0f)
+                    {
+                        float targetHeight = heightDelta > 0f
+                            ? nextHeight
+                            : height + depositAmount * math.max(0f, DepressionFillStrength);
+                        float deposited = DepositFlatSediment(position, depositAmount, targetHeight, writeMinX, writeMinZ, writeMaxX, writeMaxZ);
+                        sediment -= deposited;
+                    }
+                }
+                else
+                {
+                    float erodeAmount = math.min((capacity - sediment) * safeErosionRate, math.max(0f, -heightDelta));
+                    if (erodeAmount > 0f)
+                        sediment += ErodeBrush(position, erodeAmount, writeMinX, writeMinZ, writeMaxX, writeMaxZ);
+                }
+
+                float speedSquared = speed * speed + (-heightDelta) * safeGravity;
+                if (speedSquared <= 0.000001f)
+                {
+                    float deposited = DepositSedimentaryFlat(position, sediment, writeMinX, writeMinZ, writeMaxX, writeMaxZ);
+                    sediment -= deposited;
+                    break;
+                }
+
+                speed = math.sqrt(speedSquared);
+                water *= 1f - safeEvaporation;
+                position = nextPosition;
+
+                if (water <= safeMinWater)
+                {
+                    float deposited = DepositSedimentaryFlat(position, sediment, writeMinX, writeMinZ, writeMaxX, writeMaxZ);
+                    sediment -= deposited;
+                    break;
+                }
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float2 ResolveSpawnPosition(int dropletIndex, int minX, int minZ, int maxX, int maxZ)
+        {
+            int spawnMinX = math.clamp(minX, 1, math.max(1, Width - 2));
+            int spawnMinZ = math.clamp(minZ, 1, math.max(1, Height - 2));
+            int spawnMaxX = math.clamp(maxX - 1, spawnMinX, math.max(spawnMinX, Width - 2));
+            int spawnMaxZ = math.clamp(maxZ - 1, spawnMinZ, math.max(spawnMinZ, Height - 2));
             int candidates = math.max(1, SpawnCandidateCount);
 
             uint state = Hash((uint)dropletIndex ^ Seed ^ 0xA511E9B3u);
-            int bestX = minX;
-            int bestZ = minZ;
+            int bestX = spawnMinX;
+            int bestZ = spawnMinZ;
             float bestScore = -1f;
 
             for (int i = 0; i < candidates; i++)
             {
                 state = Hash(state + (uint)i * 0x9E3779B9u);
-                int x = minX + (int)(state % (uint)math.max(1, maxX - minX + 1));
+                int x = spawnMinX + (int)(state % (uint)math.max(1, spawnMaxX - spawnMinX + 1));
                 state = Hash(state ^ 0xB5297A4Du);
-                int z = minZ + (int)(state % (uint)math.max(1, maxZ - minZ + 1));
+                int z = spawnMinZ + (int)(state % (uint)math.max(1, spawnMaxZ - spawnMinZ + 1));
 
                 int index = z * Width + x;
                 float depression = CalculateLocalDepression(x, z);
-                float channel = WearMask.IsCreated ? math.saturate(WearMask[index] * 32f) : 0f;
+                float channel = ErosionDepthMask.IsCreated ? math.saturate(ErosionDepthMask[index] * 32f) : 0f;
                 float jitter = Hash01(state ^ 0x68E31DA4u);
                 float score = jitter +
                               depression * math.max(0f, DepressionSpawnBias) +
@@ -289,12 +463,12 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private bool IsInsideDropletBounds(float2 position)
+        private bool IsInsideDropletBounds(float2 position, int minX, int minZ, int maxX, int maxZ)
         {
-            return position.x >= 1f &&
-                   position.y >= 1f &&
-                   position.x < Width - 2f &&
-                   position.y < Height - 2f;
+            return position.x >= minX &&
+                   position.y >= minZ &&
+                   position.x < maxX &&
+                   position.y < maxZ;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -314,6 +488,25 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float SampleAccumulation(NativeArray<float> mask, float2 position)
+        {
+            if (!mask.IsCreated)
+                return 0f;
+
+            int x = math.clamp((int)math.floor(position.x), 0, Width - 2);
+            int z = math.clamp((int)math.floor(position.y), 0, Height - 2);
+            float fx = position.x - x;
+            float fz = position.y - z;
+
+            float h00 = math.saturate(mask[z * Width + x] * 32f);
+            float h10 = math.saturate(mask[z * Width + x + 1] * 32f);
+            float h01 = math.saturate(mask[(z + 1) * Width + x] * 32f);
+            float h11 = math.saturate(mask[(z + 1) * Width + x + 1] * 32f);
+
+            return math.lerp(math.lerp(h00, h10, fx), math.lerp(h01, h11, fx), fz);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private float2 SampleGradient(float2 position)
         {
             float left = SampleHeight(new float2(position.x - 1f, position.y));
@@ -324,10 +517,32 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float ErodeBrush(float2 position, float amount)
+        private float2 SampleAccumulationGradient(NativeArray<float> mask, float2 position)
         {
-            int centerX = math.clamp((int)math.floor(position.x), 1, Width - 2);
-            int centerZ = math.clamp((int)math.floor(position.y), 1, Height - 2);
+            if (!mask.IsCreated)
+                return float2.zero;
+
+            float left = SampleAccumulation(mask, new float2(position.x - 1f, position.y));
+            float right = SampleAccumulation(mask, new float2(position.x + 1f, position.y));
+            float down = SampleAccumulation(mask, new float2(position.x, position.y - 1f));
+            float up = SampleAccumulation(mask, new float2(position.x, position.y + 1f));
+            return new float2((right - left) * 0.5f, (up - down) * 0.5f);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveSlopeDegrees(float2 gradient01)
+        {
+            float worldGradient = math.length(gradient01) *
+                                  math.max(0.001f, HeightScaleMeters) /
+                                  math.max(0.001f, CellSizeMeters);
+            return math.degrees(math.atan(worldGradient));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ErodeBrush(float2 position, float amount, int writeMinX, int writeMinZ, int writeMaxX, int writeMaxZ)
+        {
+            int centerX = math.clamp((int)math.floor(position.x), writeMinX + 1, writeMaxX - 2);
+            int centerZ = math.clamp((int)math.floor(position.y), writeMinZ + 1, writeMaxZ - 2);
             float totalWeight = 0f;
 
             for (int oz = -1; oz <= 1; oz++)
@@ -357,8 +572,8 @@ namespace Hecton8.World
                     float current = math.saturate(Heightmap[index]);
                     float actual = math.min(current, requested);
                     Heightmap[index] = current - actual;
-                    if (WearMask.IsCreated)
-                        WearMask[index] += actual;
+                    if (ErosionDepthMask.IsCreated)
+                        ErosionDepthMask[index] += actual;
                     removed += actual;
                 }
             }
@@ -367,13 +582,53 @@ namespace Hecton8.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private float DepositFlatSediment(float2 position, float amount, float targetHeight)
+        private float DepositSedimentaryFlat(float2 position, float amount, int writeMinX, int writeMinZ, int writeMaxX, int writeMaxZ)
         {
             if (amount <= 0f)
                 return 0f;
 
-            int centerX = math.clamp((int)math.floor(position.x), 1, Width - 2);
-            int centerZ = math.clamp((int)math.floor(position.y), 1, Height - 2);
+            int centerX = math.clamp((int)math.floor(position.x), writeMinX + 2, writeMaxX - 3);
+            int centerZ = math.clamp((int)math.floor(position.y), writeMinZ + 2, writeMaxZ - 3);
+            float totalWeight = 0f;
+
+            for (int oz = -2; oz <= 2; oz++)
+            {
+                for (int ox = -2; ox <= 2; ox++)
+                {
+                    float2 cellCenter = new float2(centerX + ox + 0.5f, centerZ + oz + 0.5f);
+                    float distance = math.length(cellCenter - position);
+                    totalWeight += math.saturate(1f - distance * 0.28f);
+                }
+            }
+
+            if (totalWeight <= 0.000001f)
+                return DepositBilinear(position, amount);
+
+            for (int oz = -2; oz <= 2; oz++)
+            {
+                for (int ox = -2; ox <= 2; ox++)
+                {
+                    int index = (centerZ + oz) * Width + centerX + ox;
+                    float2 cellCenter = new float2(centerX + ox + 0.5f, centerZ + oz + 0.5f);
+                    float weight = math.saturate(1f - math.length(cellCenter - position) * 0.28f) / totalWeight;
+                    float deposit = amount * weight;
+                    Heightmap[index] = math.saturate(Heightmap[index] + deposit);
+                    if (SedimentMask.IsCreated)
+                        SedimentMask[index] += deposit;
+                }
+            }
+
+            return amount;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float DepositFlatSediment(float2 position, float amount, float targetHeight, int writeMinX, int writeMinZ, int writeMaxX, int writeMaxZ)
+        {
+            if (amount <= 0f)
+                return 0f;
+
+            int centerX = math.clamp((int)math.floor(position.x), writeMinX + 1, writeMaxX - 2);
+            int centerZ = math.clamp((int)math.floor(position.y), writeMinZ + 1, writeMaxZ - 2);
             float remaining = amount;
             float safeTargetHeight = math.saturate(targetHeight);
 
@@ -497,6 +752,170 @@ namespace Hecton8.World
         private static float Hash01(uint value)
         {
             return (Hash(value) & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+    }
+
+    /// <summary>
+    /// Smooths deposition cells into flat sedimentary plains after droplets dump payloads.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct SedimentaryFlatSmoothingJob : IJobParallelFor
+    {
+        /// <summary>Read-only height source.</summary>
+        [ReadOnly] public NativeArray<float> InputHeights01;
+
+        /// <summary>Read-only sediment accumulation mask.</summary>
+        [ReadOnly] public NativeArray<float> SedimentMask;
+
+        /// <summary>Write-only smoothed output.</summary>
+        [WriteOnly] public NativeArray<float> OutputHeights01;
+
+        /// <summary>Heightmap width.</summary>
+        public int Width;
+
+        /// <summary>Heightmap height.</summary>
+        public int Height;
+
+        /// <summary>Cell size in meters.</summary>
+        public float CellSizeMeters;
+
+        /// <summary>Vertical height scale in meters.</summary>
+        public float HeightScaleMeters;
+
+        /// <summary>Maximum slope angle allowed for forced flat deposition smoothing.</summary>
+        public float MaxSlopeDegrees;
+
+        /// <summary>Minimum sediment accumulator required to classify a cell as deposition flat.</summary>
+        public float SedimentThreshold;
+
+        /// <summary>Smoothing strength.</summary>
+        public float Strength;
+
+        /// <inheritdoc />
+        public void Execute(int index)
+        {
+            int x = index % Width;
+            int z = index / Width;
+            float center = math.saturate(InputHeights01[index]);
+            if (Width < 3 || Height < 3 || x <= 0 || z <= 0 || x >= Width - 1 || z >= Height - 1)
+            {
+                OutputHeights01[index] = center;
+                return;
+            }
+
+            float sediment = SedimentMask.IsCreated ? SedimentMask[index] : 0f;
+            if (sediment <= math.max(0f, SedimentThreshold))
+            {
+                OutputHeights01[index] = center;
+                return;
+            }
+
+            float slopeDegrees = ResolveSlopeDegrees(index);
+            if (slopeDegrees > math.max(0.001f, MaxSlopeDegrees) * 2f)
+            {
+                OutputHeights01[index] = center;
+                return;
+            }
+
+            float weightedHeight = 0f;
+            float totalWeight = 0f;
+            float sedimentScale = 1f / math.max(0.000001f, sediment);
+            for (int oz = -1; oz <= 1; oz++)
+            {
+                for (int ox = -1; ox <= 1; ox++)
+                {
+                    int sampleIndex = (z + oz) * Width + x + ox;
+                    float sampleSediment = SedimentMask.IsCreated ? SedimentMask[sampleIndex] : 0f;
+                    float weight = 1f + math.saturate(sampleSediment * sedimentScale) * 8f;
+                    weightedHeight += math.saturate(InputHeights01[sampleIndex]) * weight;
+                    totalWeight += weight;
+                }
+            }
+
+            float target = weightedHeight / math.max(0.000001f, totalWeight);
+            OutputHeights01[index] = math.saturate(math.lerp(center, target, math.saturate(Strength)));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private float ResolveSlopeDegrees(int index)
+        {
+            float left = math.saturate(InputHeights01[index - 1]);
+            float right = math.saturate(InputHeights01[index + 1]);
+            float back = math.saturate(InputHeights01[index - Width]);
+            float forward = math.saturate(InputHeights01[index + Width]);
+            float2 gradient = new float2((right - left) * 0.5f, (forward - back) * 0.5f);
+            float worldGradient = math.length(gradient) *
+                                  math.max(0.001f, HeightScaleMeters) /
+                                  math.max(0.001f, CellSizeMeters);
+            return math.degrees(math.atan(worldGradient));
+        }
+    }
+
+    /// <summary>
+    /// Raises immediate banks around deep erosion channels to sharpen canyon walls.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct CanyonWallSteepeningJob : IJobParallelFor
+    {
+        /// <summary>Read-only height source.</summary>
+        [ReadOnly] public NativeArray<float> InputHeights01;
+
+        /// <summary>Read-only erosion-depth mask.</summary>
+        [ReadOnly] public NativeArray<float> ErosionDepthMask;
+
+        /// <summary>Write-only bank-steepened output.</summary>
+        [WriteOnly] public NativeArray<float> OutputHeights01;
+
+        /// <summary>Heightmap width.</summary>
+        public int Width;
+
+        /// <summary>Heightmap height.</summary>
+        public int Height;
+
+        /// <summary>Minimum neighboring erosion depth before wall lift applies.</summary>
+        public float DepthThreshold;
+
+        /// <summary>Bank lift strength from neighboring channel depth.</summary>
+        public float Strength;
+
+        /// <summary>Maximum normalized lift per cell.</summary>
+        public float MaxLift01;
+
+        /// <inheritdoc />
+        public void Execute(int index)
+        {
+            int x = index % Width;
+            int z = index / Width;
+            float center = math.saturate(InputHeights01[index]);
+            if (Width < 3 || Height < 3 || x <= 0 || z <= 0 || x >= Width - 1 || z >= Height - 1 || !ErosionDepthMask.IsCreated)
+            {
+                OutputHeights01[index] = center;
+                return;
+            }
+
+            float centerDepth = ErosionDepthMask[index];
+            float maxNeighborDepth = 0f;
+            for (int oz = -1; oz <= 1; oz++)
+            {
+                for (int ox = -1; ox <= 1; ox++)
+                {
+                    if (ox == 0 && oz == 0)
+                        continue;
+
+                    maxNeighborDepth = math.max(maxNeighborDepth, ErosionDepthMask[(z + oz) * Width + x + ox]);
+                }
+            }
+
+            float threshold = math.max(0f, DepthThreshold);
+            float channelDelta = maxNeighborDepth - math.max(centerDepth, threshold);
+            if (channelDelta <= 0f)
+            {
+                OutputHeights01[index] = center;
+                return;
+            }
+
+            float lift = math.min(math.max(0f, MaxLift01), channelDelta * math.max(0f, Strength));
+            OutputHeights01[index] = math.saturate(center + lift);
         }
     }
 }

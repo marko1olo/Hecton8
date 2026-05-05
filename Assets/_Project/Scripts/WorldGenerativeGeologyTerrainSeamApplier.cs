@@ -22,14 +22,9 @@ namespace Hecton8.World
 
         private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyTerrainSeamApplier);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private const int TerrainPatchBridgeSampleBudgetMx350 = 131072;
 
-        internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            ActiveRuntimeInstance = null;
-        }
+        internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance => GlobalRegistry.GeologyTerrainSeam;
 
         private sealed class TerrainApplyState
         {
@@ -82,17 +77,18 @@ namespace Hecton8.World
         private readonly List<SeismicTrenchState> _activeTrenches = new List<SeismicTrenchState>(8);
         private readonly List<int> _terrainBucketScratch = new List<int>(8);
         private bool _registeredToTickManager;
+        private int _nextPatchTelemetryFrame;
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
+            GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
             ResolveReferences();
             ReconcileTerrainSeams();
         }
 
         private void OnEnable()
         {
-            ActiveRuntimeInstance = this;
+            GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
             ResolveReferences();
             TryRegisterToTickManager();
         }
@@ -109,8 +105,8 @@ namespace Hecton8.World
             RestoreAllTerrains();
             DisposeTerrainStateNativeBuffers();
 
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
+            if (ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, this))
+                GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(this);
         }
 
         private void OnDestroy()
@@ -119,8 +115,8 @@ namespace Hecton8.World
             RestoreAllTerrains();
             DisposeTerrainStateNativeBuffers();
 
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
+            if (ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, this))
+                GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(this);
         }
 
         public void SlowTick()
@@ -601,6 +597,10 @@ namespace Hecton8.World
                 state.patchBuffer = new float[rect.height, rect.width];
             }
 
+            WorldGenerativeGeologyTelemetry.PublishTerrainPatchBridgeWarningIfNeeded(
+                rect.width * rect.height,
+                TerrainPatchBridgeSampleBudgetMx350,
+                ref _nextPatchTelemetryFrame);
             CopyBaselinePatch(state.baselineHeights, state.heightmapResolution, rect, state.patchBuffer);
             return state.patchBuffer;
         }

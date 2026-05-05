@@ -63,6 +63,8 @@ namespace Hecton8.Crafting
         /// </param>
         void StartCraft(RecipeData recipe);
 
+        void StartCraft(RecipeData recipe, int multiplier);
+
         /// <summary>
         /// Отменяет текущий крафт.
         /// Возвращает списанные ингредиенты в инвентарь игрока.

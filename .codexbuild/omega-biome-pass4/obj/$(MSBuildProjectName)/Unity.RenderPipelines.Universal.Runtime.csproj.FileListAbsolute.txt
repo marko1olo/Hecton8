@@ -1,0 +1,8 @@
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\Unity.RenderPipelines.Universal.Runtime.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\bin\$(MSBuildProjectName)\Unity.RenderPipelines.Universal.Runtime.pdb
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.RenderPipelines.Universal.Runtime.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.RenderPipelines.Universal.Runtime.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.RenderPipelines.Universal.Runtime.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.RenderPipelines.Universal.Runtime.sourcelink.json
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.RenderPipelines.Universal.Runtime.dll
+C:\hades\Hecton8\.codexbuild\omega-biome-pass4\obj\$(MSBuildProjectName)\Unity.RenderPipelines.Universal.Runtime.pdb

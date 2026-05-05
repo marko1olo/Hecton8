@@ -61,6 +61,8 @@ namespace Hecton8.VFX
         private readonly List<ActiveShake> _activeShakes = new List<ActiveShake>(8);
         private const int MAX_ACTIVE_SHAKES = 8;
         private const float MAX_SHAKE_DISPLACEMENT = 0.5f;
+        private const float DEFAULT_SHAKE_CLIP_SAFE_DISPLACEMENT = 0.05f;
+        private float _shakeNoiseTime;
 
         // ═══ FOV STATE ═══
         public enum FOVState { Idle, SprintKick, DamageRecoil }
@@ -100,6 +102,18 @@ namespace Hecton8.VFX
         private bool _focusRaycastScheduled;
         private float _resolvedFocusDistance = 0.06f;
         private float _focusDistanceVelocity;
+        private float _pauseDepthOfFieldWeight;
+        private float _pauseDofBaseFocalLength;
+        private float _pauseDofBaseAperture;
+        private float _pauseDofBaseGaussianEnd;
+        private float _pauseDofBaseGaussianMaxRadius;
+        private bool _pauseDofDefaultsCaptured;
+        private bool _pauseDofOverrideEngaged;
+        private const float PauseDofFocusDistance = 0.1f;
+        private const float PauseDofFocalLength = 85f;
+        private const float PauseDofAperture = 2.8f;
+        private const float PauseDofGaussianEnd = 4f;
+        private const float PauseDofGaussianMaxRadius = 1f;
         private const int TransparentFxLayerIndex = 1;
         private const int WaterLayerIndex = 4;
         private const int UiLayerIndex = 5;
@@ -113,6 +127,9 @@ namespace Hecton8.VFX
         [Header("── Settings ──────────────────")]
         [SerializeField, Range(0f, 2f), Tooltip("Camera shake intensity multiplier (0 = off, 1 = default, 2 = double)")]
         private float _shakeIntensityMultiplier = 1.0f;
+
+        [SerializeField, Range(0.005f, 0.2f), Tooltip("Maximum presentation-space shake offset allowed inside tight submarine interiors.")]
+        private float _cameraShakeClipSafeDisplacement = DEFAULT_SHAKE_CLIP_SAFE_DISPLACEMENT;
 
         [SerializeField, Range(0f, 2f), Tooltip("FOV effects intensity multiplier (0 = off, 1 = default, 2 = double)")]
         private float _fovIntensityMultiplier = 1.0f;
@@ -285,7 +302,7 @@ namespace Hecton8.VFX
             // Singleton pattern
             if (_instance != null && _instance != this)
             {
-                Debug.LogError("[CameraJuiceSystem] Duplicate instance detected. Destroying duplicate.");
+                LogDuplicateInstanceDetected();
                 Destroy(gameObject);
                 return;
             }
@@ -293,7 +310,7 @@ namespace Hecton8.VFX
 
             if (!TryResolveCamera())
             {
-                Debug.LogError("[CameraJuiceSystem] MainCamera not found. System disabled.");
+                LogMainCameraMissing();
                 enabled = false;
                 return;
             }
@@ -302,7 +319,7 @@ namespace Hecton8.VFX
             TryResolveVolume();
             if (_urpVolume == null)
             {
-                Debug.LogError("[CameraJuiceSystem] URPVolume not found. Post-processing disabled.");
+                LogVolumeMissing();
                 _postProcessingEnabled = false;
             }
             else
@@ -310,15 +327,15 @@ namespace Hecton8.VFX
                 // Cache Volume overrides
                 if (_urpVolume.profile.TryGet(out _healthVignette) == false)
                 {
-                    Debug.LogWarning("[CameraJuiceSystem] Vignette override not found in Volume profile.");
+                    LogVignetteMissing();
                 }
                 if (_urpVolume.profile.TryGet(out _o2ChromaticAberration) == false)
                 {
-                    Debug.LogWarning("[CameraJuiceSystem] ChromaticAberration override not found in Volume profile.");
+                    LogChromaticAberrationMissing();
                 }
                 if (_urpVolume.profile.TryGet(out _interactionDoF) == false)
                 {
-                    Debug.LogWarning("[CameraJuiceSystem] DepthOfField override not found in Volume profile.");
+                    LogDepthOfFieldMissing();
                 }
             }
 
@@ -370,6 +387,9 @@ namespace Hecton8.VFX
             _focusTarget = null;
             _focusTargetTransform = null;
             _focusDistanceVelocity = 0f;
+            _pauseDepthOfFieldWeight = 0f;
+            _pauseDofOverrideEngaged = false;
+            _pauseDofDefaultsCaptured = false;
             _shakeOffset = Vector3.zero;
             ReleaseFocusRaycastBuffers();
 
@@ -515,6 +535,7 @@ namespace Hecton8.VFX
             try
             {
                 UpdateInteractionFocus(dt);
+                UpdatePauseDepthOfField(dt);
             }
             catch (Exception)
             {
@@ -535,6 +556,7 @@ namespace Hecton8.VFX
         public void LateFrameTick()
         {
             ResolveScheduledFocusRaycast();
+            ApplyPostAupShakeOffset();
         }
 
         // ═══ ISLOWTICKABLE ═══
@@ -575,6 +597,42 @@ namespace Hecton8.VFX
         }
 
         // ═══ ISAVEABLE ═══
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDuplicateInstanceDetected()
+        {
+            Debug.LogError("[CameraJuiceSystem] Duplicate instance detected. Destroying duplicate.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogMainCameraMissing()
+        {
+            Debug.LogError("[CameraJuiceSystem] MainCamera not found. System disabled.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogVolumeMissing()
+        {
+            Debug.LogError("[CameraJuiceSystem] URPVolume not found. Post-processing disabled.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogVignetteMissing()
+        {
+            Debug.LogWarning("[CameraJuiceSystem] Vignette override not found in Volume profile.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogChromaticAberrationMissing()
+        {
+            Debug.LogWarning("[CameraJuiceSystem] ChromaticAberration override not found in Volume profile.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogDepthOfFieldMissing()
+        {
+            Debug.LogWarning("[CameraJuiceSystem] DepthOfField override not found in Volume profile.");
+        }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogShakeCalculationFailed()
@@ -644,6 +702,15 @@ namespace Hecton8.VFX
         }
 
         // ═══ PUBLIC API ═══
+
+        /// <summary>
+        /// Applies the dispatcher-owned pause menu depth-of-field isolation weight.
+        /// </summary>
+        /// <param name="weight">Normalized pause menu focus weight.</param>
+        public void ApplyPauseDepthOfFieldWeight(float weight)
+        {
+            _pauseDepthOfFieldWeight = Mathf.Clamp01(weight);
+        }
 
         /// <summary>
         /// Trigger camera shake with specified profile and intensity scale.
@@ -849,12 +916,11 @@ namespace Hecton8.VFX
             if (effectiveShakeScale <= 0f)
             {
                 _shakeOffset = Vector3.zero;
-                if (_cameraTransform != null)
-                    _cameraTransform.localPosition = _cameraLocalRestPosition;
                 return;
             }
 
             _shakeOffset = Vector3.zero;
+            _shakeNoiseTime += Mathf.Max(0f, dt);
 
             // Iterate active shakes
             int count = _activeShakes.Count;
@@ -875,9 +941,10 @@ namespace Hecton8.VFX
                 float falloffValue = shake.Profile.FalloffCurve.Evaluate(t);
 
                 // Generate Perlin noise offset
-                float noiseX = Mathf.PerlinNoise(Time.time * shake.Profile.Frequency, 0f) * 2f - 1f;
-                float noiseY = Mathf.PerlinNoise(0f, Time.time * shake.Profile.Frequency) * 2f - 1f;
-                float noiseZ = Mathf.PerlinNoise(Time.time * shake.Profile.Frequency, Time.time * shake.Profile.Frequency) * 2f - 1f;
+                float noiseTime = _shakeNoiseTime * shake.Profile.Frequency;
+                float noiseX = Mathf.PerlinNoise(noiseTime, 0f) * 2f - 1f;
+                float noiseY = Mathf.PerlinNoise(0f, noiseTime) * 2f - 1f;
+                float noiseZ = Mathf.PerlinNoise(noiseTime, noiseTime) * 2f - 1f;
 
                 // Scale offset
                 float scale = shake.Profile.MaxDisplacement * falloffValue * shake.IntensityScale * effectiveShakeScale;
@@ -896,13 +963,33 @@ namespace Hecton8.VFX
             }
 
             // Clamp magnitude
-            if (_shakeOffset.magnitude > MAX_SHAKE_DISPLACEMENT)
+            float maxShakeDisplacement = Mathf.Min(
+                MAX_SHAKE_DISPLACEMENT,
+                Mathf.Max(0.005f, _cameraShakeClipSafeDisplacement));
+            if (_shakeOffset.magnitude > maxShakeDisplacement)
             {
-                _shakeOffset = _shakeOffset.normalized * MAX_SHAKE_DISPLACEMENT;
+                _shakeOffset = _shakeOffset.normalized * maxShakeDisplacement;
             }
 
-            // Apply to camera
-            _cameraTransform.localPosition = _cameraLocalRestPosition + _shakeOffset;
+            // Presentation offset only. LateFrameTick applies this after AUP-to-runtime convergence.
+        }
+
+        private void ApplyPostAupShakeOffset()
+        {
+            if (_cameraTransform == null)
+                return;
+
+            _cameraTransform.localPosition = _cameraLocalRestPosition + ResolveClipSafeShakeOffset(_shakeOffset);
+        }
+
+        private Vector3 ResolveClipSafeShakeOffset(Vector3 offset)
+        {
+            float maxShakeDisplacement = Mathf.Min(
+                MAX_SHAKE_DISPLACEMENT,
+                Mathf.Max(0.005f, _cameraShakeClipSafeDisplacement));
+            return offset.sqrMagnitude > maxShakeDisplacement * maxShakeDisplacement
+                ? offset.normalized * maxShakeDisplacement
+                : offset;
         }
 
         private void UpdateFOV(float dt)
@@ -972,6 +1059,63 @@ namespace Hecton8.VFX
             _interactionDoF.focusDistance.value = _focusDistance;
             _interactionDoF.active = true;
             ScheduleFocusRaycast();
+        }
+
+        private void UpdatePauseDepthOfField(float dt)
+        {
+            if (!_depthOfFieldEnabled || !_postProcessingEnabled) return;
+            if (_interactionDoF == null) return;
+
+            if (_pauseDepthOfFieldWeight <= 0f)
+            {
+                if (_pauseDofOverrideEngaged)
+                    RestorePauseDofOpticalDefaults();
+
+                _pauseDofOverrideEngaged = false;
+                _pauseDofDefaultsCaptured = false;
+                return;
+            }
+
+            if (!_pauseDofOverrideEngaged)
+            {
+                CapturePauseDofOpticalDefaults();
+                _pauseDofOverrideEngaged = true;
+            }
+
+            float easedBlend = EvaluateEaseInOutQuad(_pauseDepthOfFieldWeight);
+            float baseFocusDistance = _focusDistance > 0f ? _focusDistance : _worldFocusDistance;
+            _interactionDoF.focusDistance.value = Mathf.Lerp(
+                baseFocusDistance,
+                PauseDofFocusDistance,
+                easedBlend);
+            _interactionDoF.focalLength.value = Mathf.Lerp(_pauseDofBaseFocalLength, PauseDofFocalLength, easedBlend);
+            _interactionDoF.aperture.value = Mathf.Lerp(_pauseDofBaseAperture, PauseDofAperture, easedBlend);
+            _interactionDoF.gaussianEnd.value = Mathf.Lerp(_pauseDofBaseGaussianEnd, PauseDofGaussianEnd, easedBlend);
+            _interactionDoF.gaussianMaxRadius.value = Mathf.Lerp(_pauseDofBaseGaussianMaxRadius, PauseDofGaussianMaxRadius, easedBlend);
+            _interactionDoF.active = true;
+        }
+
+        private void CapturePauseDofOpticalDefaults()
+        {
+            if (_interactionDoF == null || _pauseDofDefaultsCaptured)
+                return;
+
+            _pauseDofBaseFocalLength = _interactionDoF.focalLength.value;
+            _pauseDofBaseAperture = _interactionDoF.aperture.value;
+            _pauseDofBaseGaussianEnd = _interactionDoF.gaussianEnd.value;
+            _pauseDofBaseGaussianMaxRadius = _interactionDoF.gaussianMaxRadius.value;
+            _pauseDofDefaultsCaptured = true;
+        }
+
+        private void RestorePauseDofOpticalDefaults()
+        {
+            if (_interactionDoF == null || !_pauseDofDefaultsCaptured)
+                return;
+
+            _interactionDoF.focalLength.value = _pauseDofBaseFocalLength;
+            _interactionDoF.aperture.value = _pauseDofBaseAperture;
+            _interactionDoF.gaussianEnd.value = _pauseDofBaseGaussianEnd;
+            _interactionDoF.gaussianMaxRadius.value = _pauseDofBaseGaussianMaxRadius;
         }
 
         private void EnsureFocusRaycastBuffers()

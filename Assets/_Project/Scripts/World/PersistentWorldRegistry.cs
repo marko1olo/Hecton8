@@ -1,9 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using Stopwatch = System.Diagnostics.Stopwatch;
 using System.Threading;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -487,8 +488,15 @@ namespace Hecton8.World
         private const ulong PoolGuidMixSalt = 11400714819323198485UL;
         private const long PersistentMemoryBudgetBytes = 10485760L;
         private const string MemoryBudgetOwnerName = "PersistentWorldRegistry";
+        private const string IndexedSectorPagingDesiredHashesLabel = "indexedSectorPagingDesiredSectorHashes";
+        private const string IndexedSectorPagingLoadedRecordsLabel = "indexedSectorPagingLoadedSectorRecords";
+        private const string SectorOverrideSnapshotRecordsLabel = "sectorOverrideSnapshotRecords";
+        private const string SectorOverrideEntityStatesLabel = "sectorOverrideEntityStates";
+        private const string SectorEntityStateAsyncWriteStatesLabel = "sectorEntityStateAsyncWriteStates";
         private static readonly int3 ApexFaunaTombstoneChunkId = new int3(int.MinValue, 0, 0);
         private static readonly long HydrationFrameBudgetTicks = Math.Max(1L, (long)(Stopwatch.Frequency * 0.0015d));
+        private static readonly uint _sectorEntityStateThrottleWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.EntityStateCompressionThrottle"));
+        private static readonly uint _sectorEntityStateQueueOverflowWarningHash = unchecked((uint)LocHash.Compute("PersistentWorldRegistry.EntityStateCompressionQueueOverflow"));
         private static int _nextInstanceUidCounter;
 
         [Header("Settings")]
@@ -509,6 +517,8 @@ namespace Hecton8.World
         [SerializeField] private int _debugHydratedRecordCount;
         [SerializeField] private int _debugSnapshotRecordCount;
         [SerializeField] private Vector3Int _debugPlayerChunk;
+        private int _lastEntityStateThrottleTelemetryFrame = int.MinValue;
+        private int _lastEntityStateQueueOverflowTelemetryFrame = int.MinValue;
 
         internal int ChunkSizeMeters => chunkSizeMeters;
 
@@ -719,77 +729,77 @@ namespace Hecton8.World
             hydrationRadiusInChunks = math.clamp(hydrationRadiusInChunks, 0, 2);
             _hydrationFrameCounter = 0;
 
-            // COLD ALLOC: NativeList<PersistentWorldItemRecord>[maxTrackedItems] — persistent dropped-item record store — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeList<PersistentWorldItemRecord>[maxTrackedItems] â€” persistent dropped-item record store â€” owner: PersistentWorldRegistry
             _records = new NativeList<PersistentWorldItemRecord>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeParallelMultiHashMap<int3,int>[maxTrackedItems] — dropped-item chunk lookup table — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeParallelMultiHashMap<int3,int>[maxTrackedItems] â€” dropped-item chunk lookup table â€” owner: PersistentWorldRegistry
             _recordsByChunk = new NativeParallelMultiHashMap<int3, int>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeList<PersistentWorldCompactDeltaRecord>[maxTrackedItems] — authoritative 16-byte dropped-item delta store — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeList<PersistentWorldCompactDeltaRecord>[maxTrackedItems] â€” authoritative 16-byte dropped-item delta store â€” owner: PersistentWorldRegistry
             _deltaRecords = new NativeList<PersistentWorldCompactDeltaRecord>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeHashMap<uint,int>[maxTrackedItems] — delta entity-to-index lookup keyed by InstanceUid — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeHashMap<uint,int>[maxTrackedItems] â€” delta entity-to-index lookup keyed by InstanceUid â€” owner: PersistentWorldRegistry
             _deltaRecordIndexByEntityId = new NativeHashMap<uint, int>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeParallelHashSet<uint>[maxTrackedItems] — tombstoned persistent instance UIDs preventing scene-authored respawn — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeParallelHashSet<uint>[maxTrackedItems] â€” tombstoned persistent instance UIDs preventing scene-authored respawn â€” owner: PersistentWorldRegistry
             _deletedInstanceUids = new NativeParallelHashSet<uint>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeParallelHashSet<ulong>[maxTrackedItems] — AUP-derived resource-node tombstones preventing procedural respawn — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeParallelHashSet<ulong>[maxTrackedItems] â€” AUP-derived resource-node tombstones preventing procedural respawn â€” owner: PersistentWorldRegistry
             _resourceNodeTombstoneIds = new NativeParallelHashSet<ulong>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeParallelHashSet<ulong>[maxTrackedItems] — AUP-derived resource-node metamorphosis overrides — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeParallelHashSet<ulong>[maxTrackedItems] â€” AUP-derived resource-node metamorphosis overrides â€” owner: PersistentWorldRegistry
             _resourceNodeMetamorphosedIds = new NativeParallelHashSet<ulong>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeHashMap<int3,ushort>[maxTrackedItems] — chunk-id to compact delta table index — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeHashMap<int3,ushort>[maxTrackedItems] â€” chunk-id to compact delta table index â€” owner: PersistentWorldRegistry
             _deltaChunkIndexByChunkId = new NativeHashMap<int3, ushort>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeList<int3>[maxTrackedItems] — compact delta chunk table — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeList<int3>[maxTrackedItems] â€” compact delta chunk table â€” owner: PersistentWorldRegistry
             _deltaChunkIds = new NativeList<int3>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeHashMap<ulong,ushort>[maxTrackedItems] — item-hash to compact delta table index — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeHashMap<ulong,ushort>[maxTrackedItems] â€” item-hash to compact delta table index â€” owner: PersistentWorldRegistry
             _deltaItemIndexByHash = new NativeHashMap<ulong, ushort>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeList<ulong>[maxTrackedItems] — compact delta item-hash table — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeList<ulong>[maxTrackedItems] â€” compact delta item-hash table â€” owner: PersistentWorldRegistry
             _deltaItemHashes = new NativeList<ulong>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeParallelMultiHashMap<uint,PersistentWorldCompactDeltaRecord>[maxTrackedItems] — chunk-hash to compact delta lookup — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeParallelMultiHashMap<uint,PersistentWorldCompactDeltaRecord>[maxTrackedItems] â€” chunk-hash to compact delta lookup â€” owner: PersistentWorldRegistry
             _deltaRecordsByChunk = new NativeParallelMultiHashMap<uint, PersistentWorldCompactDeltaRecord>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[maxTrackedItems] — immutable save snapshot for background binary writes — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeList<PersistentWorldDeltaRecord>[maxTrackedItems] â€” immutable save snapshot for background binary writes â€” owner: PersistentWorldRegistry
             _saveSnapshotDeltas = new NativeList<PersistentWorldDeltaRecord>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<PoolSlotData>[maxTrackedItems] — persistent hydration slot state store — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeArray<PoolSlotData>[maxTrackedItems] â€” persistent hydration slot state store â€” owner: PersistentWorldRegistry
             _poolSlotData = new NativeArray<PoolSlotData>(maxTrackedItems, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeHashMap<ulong,int>[maxTrackedItems] — hydration GUID to slot lookup — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeHashMap<ulong,int>[maxTrackedItems] â€” hydration GUID to slot lookup â€” owner: PersistentWorldRegistry
             _guidToPoolIndex = new NativeHashMap<ulong, int>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeHashMap<uint,EntityDataRecord>[maxTrackedItems] — authoritative dehydration payload store keyed by InstanceUid — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeHashMap<uint,EntityDataRecord>[maxTrackedItems] â€” authoritative dehydration payload store keyed by InstanceUid â€” owner: PersistentWorldRegistry
             _entityStateByInstanceUid = new NativeHashMap<uint, EntityDataRecord>(maxTrackedItems, Allocator.Persistent);
-            _floraSpawnStateByInstanceUid = new NativeHashMap<uint, EntityDataRecord>(maxTrackedItems, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,EntityDataRecord>[maxTrackedItems] — standalone flora spawn-timestamp payload store keyed by deterministic flora uid — owner: PersistentWorldRegistry
-            // COLD ALLOC: NativeHashMap<uint,float3>[maxTrackedItems] â€” deferred spawn impulse staging keyed by InstanceUid for persistent debris hydration â€” owner: PersistentWorldRegistry
+            _floraSpawnStateByInstanceUid = new NativeHashMap<uint, EntityDataRecord>(maxTrackedItems, Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,EntityDataRecord>[maxTrackedItems] â€” standalone flora spawn-timestamp payload store keyed by deterministic flora uid â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeHashMap<uint,float3>[maxTrackedItems] Ã¢â‚¬â€ deferred spawn impulse staging keyed by InstanceUid for persistent debris hydration Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _spawnImpulseByInstanceUid = new NativeHashMap<uint, float3>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeHashMap<uint,float3>[maxTrackedItems] — deferred spawn velocity-change staging keyed by InstanceUid for transport-relative dropped-item inheritance — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeHashMap<uint,float3>[maxTrackedItems] â€” deferred spawn velocity-change staging keyed by InstanceUid for transport-relative dropped-item inheritance â€” owner: PersistentWorldRegistry
             _spawnVelocityChangeByInstanceUid = new NativeHashMap<uint, float3>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: NativeQueue<int>(Persistent) — deferred dehydration queue — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeQueue<int>(Persistent) â€” deferred dehydration queue â€” owner: PersistentWorldRegistry
             _dehydrateQueue = new NativeQueue<int>(Allocator.Persistent);
-            // COLD ALLOC: NativeList<int>[maxTrackedItems] — time-sliced hydration backlog keyed by persistent record index — owner: PersistentWorldRegistry
+            // COLD ALLOC: NativeList<int>[maxTrackedItems] â€” time-sliced hydration backlog keyed by persistent record index â€” owner: PersistentWorldRegistry
             _pendingHydrationRecords = new NativeList<int>(maxTrackedItems, Allocator.Persistent);
-            // COLD ALLOC: GameObject[maxTrackedItems] — hydrated proxy instances by slot — owner: PersistentWorldRegistry
+            // COLD ALLOC: GameObject[maxTrackedItems] â€” hydrated proxy instances by slot â€” owner: PersistentWorldRegistry
             _hydratedInstancesBySlot = new GameObject[maxTrackedItems];
-            // COLD ALLOC: Transform[maxTrackedItems] — hydrated proxy transforms by slot — owner: PersistentWorldRegistry
+            // COLD ALLOC: Transform[maxTrackedItems] â€” hydrated proxy transforms by slot â€” owner: PersistentWorldRegistry
             _poolSlotTransforms = new Transform[maxTrackedItems];
-            // COLD ALLOC: Rigidbody[maxTrackedItems] — hydrated proxy rigidbodies by slot — owner: PersistentWorldRegistry
+            // COLD ALLOC: Rigidbody[maxTrackedItems] â€” hydrated proxy rigidbodies by slot â€” owner: PersistentWorldRegistry
             _poolSlotRigidbodies = new Rigidbody[maxTrackedItems];
-            // COLD ALLOC: Dictionary<int,GameObject>[128] — hydrated world-item proxy lookup — owner: PersistentWorldRegistry
+            // COLD ALLOC: Dictionary<int,GameObject>[128] â€” hydrated world-item proxy lookup â€” owner: PersistentWorldRegistry
             _hydratedInstancesByRecordIndex = new Dictionary<int, GameObject>(128);
-            // COLD ALLOC: Dictionary<ulong,ItemData>[1024] — persistent-id hash to ItemData lookup cache — owner: PersistentWorldRegistry
+            // COLD ALLOC: Dictionary<ulong,ItemData>[1024] â€” persistent-id hash to ItemData lookup cache â€” owner: PersistentWorldRegistry
             _itemLookupByHash = new Dictionary<ulong, ItemData>(1024);
-            // COLD ALLOC: List<ItemData>[1024] — item catalog scratch buffer for hash cache rebuilds — owner: PersistentWorldRegistry
+            // COLD ALLOC: List<ItemData>[1024] â€” item catalog scratch buffer for hash cache rebuilds â€” owner: PersistentWorldRegistry
             _itemCatalogScratch = new List<ItemData>(1024);
-            // COLD ALLOC: List<int>[256] â€” unique addressable prefab prewarm hash buffer for paged sector hydration â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: List<int>[256] Ã¢â‚¬â€ unique addressable prefab prewarm hash buffer for paged sector hydration Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _worldPrefabPrewarmHashScratch = new List<int>(256);
-            // COLD ALLOC: List<int>[256] â€” deferred addressable prefab release scratch buffer for paged sector eviction â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: List<int>[256] Ã¢â‚¬â€ deferred addressable prefab release scratch buffer for paged sector eviction Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _worldPrefabReleaseScratch = new List<int>(256);
-            // COLD ALLOC: List<int>[128] — hydrated record scratch buffer for sync/dehydrate passes — owner: PersistentWorldRegistry
+            // COLD ALLOC: List<int>[128] â€” hydrated record scratch buffer for sync/dehydrate passes â€” owner: PersistentWorldRegistry
             _recordIndexScratch = new List<int>(128);
-            // COLD ALLOC: List<EntityDataRecord>[128] — sector entity-state rewrite scratch buffer for MMF fauna hibernation pages — owner: PersistentWorldRegistry
+            // COLD ALLOC: List<EntityDataRecord>[128] â€” sector entity-state rewrite scratch buffer for MMF fauna hibernation pages â€” owner: PersistentWorldRegistry
             _entityStateScratch = new List<EntityDataRecord>(128);
-            _floraSpawnStateScratch = new List<EntityDataRecord>(128); // COLD ALLOC: List<EntityDataRecord>[128] — standalone flora spawn-state snapshot scratch — owner: PersistentWorldRegistry
-            // COLD ALLOC: List<SectorEntityStateWriteWork>[64] — async sector entity-state temp write handles — owner: PersistentWorldRegistry
+            _floraSpawnStateScratch = new List<EntityDataRecord>(128); // COLD ALLOC: List<EntityDataRecord>[128] â€” standalone flora spawn-state snapshot scratch â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: List<SectorEntityStateWriteWork>[64] â€” async sector entity-state temp write handles â€” owner: PersistentWorldRegistry
             _pendingEntityStateTempWrites = new List<SectorEntityStateWriteWork>(MaxPendingEntityStateTempWrites);
             // COLD ALLOC: List<long>[16] - due sector override commit queue - owner: PersistentWorldRegistry
             _dueSectorOverrideCommitHashes = new List<long>(16);
-            // COLD ALLOC: List<IndexedSectorEntryInfo>[256] â€” cached v8 sector directory entries for paged restore â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: List<IndexedSectorEntryInfo>[256] Ã¢â‚¬â€ cached v8 sector directory entries for paged restore Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _indexedSectorDirectory = new List<SaveBinaryStorage.IndexedSectorEntryInfo>(256);
-            // COLD ALLOC: Dictionary<long,SectorOverrideState>[32] â€” paged sector temp-override residency map â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: Dictionary<long,SectorOverrideState>[32] Ã¢â‚¬â€ paged sector temp-override residency map Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _sectorOverrideStates = new Dictionary<long, SectorOverrideState>(32);
-            // COLD ALLOC: HashSet<int>[256] â€” resident addressable world-prefab hash residency set â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: HashSet<int>[256] Ã¢â‚¬â€ resident addressable world-prefab hash residency set Ã¢â‚¬â€ owner: PersistentWorldRegistry
             _residentWorldPrefabHashes = new HashSet<int>();
             RegisterNativeMemorySentinelAllocations();
             RegisterPersistentMemoryBudget();
@@ -1910,6 +1920,11 @@ namespace Hecton8.World
             try
             {
                 desiredSectorHashes = new NativeArray<long>(PagedSectorHashCount, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    desiredSectorHashes,
+                    MemoryBudgetOwnerName,
+                    IndexedSectorPagingDesiredHashesLabel,
+                    NativeAllocationLifetime.TransientArena);
                 int hashCursor = 0;
                 for (int z = -1; z <= 1; z++)
                 {
@@ -1922,6 +1937,11 @@ namespace Hecton8.World
                 if (!await SnapshotResidentSectorOverridesAsync(desiredSectorHashes))
                     return;
                 loadedSectorRecords = new NativeList<PersistentWorldDeltaRecord>(math.max(16, maxTrackedItems), Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeList(
+                    loadedSectorRecords,
+                    MemoryBudgetOwnerName,
+                    IndexedSectorPagingLoadedRecordsLabel,
+                    NativeAllocationLifetime.TransientArena);
 
                 await Awaitable.BackgroundThreadAsync();
                 if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(_indexedSectorSavePath, desiredSectorHashes, loadedSectorRecords, out string error))
@@ -1981,9 +2001,16 @@ namespace Hecton8.World
             finally
             {
                 if (loadedSectorRecords.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeList(MemoryBudgetOwnerName, IndexedSectorPagingLoadedRecordsLabel);
                     loadedSectorRecords.Dispose();
+                }
+
                 if (desiredSectorHashes.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(desiredSectorHashes);
                     desiredSectorHashes.Dispose();
+                }
 
                 _indexedSectorPagingInFlight = false;
             }
@@ -2542,7 +2569,7 @@ namespace Hecton8.World
 
             SyncAllHydratedRecords();
 
-            // COLD ALLOC: Dictionary<long,List<PersistentWorldDeltaRecord>>[16] â€” resident sector snapshot buckets during page-out â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: Dictionary<long,List<PersistentWorldDeltaRecord>>[16] Ã¢â‚¬â€ resident sector snapshot buckets during page-out Ã¢â‚¬â€ owner: PersistentWorldRegistry
             Dictionary<long, List<PersistentWorldDeltaRecord>> sectors = new Dictionary<long, List<PersistentWorldDeltaRecord>>(16);
             Dictionary<long, List<EntityDataRecord>> sectorEntityStates = new Dictionary<long, List<EntityDataRecord>>(16);
             for (int i = 0; i < _records.Length; i++)
@@ -2557,7 +2584,7 @@ namespace Hecton8.World
 
                 if (!sectors.TryGetValue(sectorHash, out List<PersistentWorldDeltaRecord> bucket))
                 {
-                    // COLD ALLOC: List<PersistentWorldDeltaRecord>[16] â€” one resident sector override record bucket â€” owner: PersistentWorldRegistry
+                    // COLD ALLOC: List<PersistentWorldDeltaRecord>[16] Ã¢â‚¬â€ one resident sector override record bucket Ã¢â‚¬â€ owner: PersistentWorldRegistry
                     bucket = new List<PersistentWorldDeltaRecord>(16);
                     sectors.Add(sectorHash, bucket);
                 }
@@ -2624,6 +2651,11 @@ namespace Hecton8.World
                         KeyValuePair<long, List<PersistentWorldDeltaRecord>> pair = sectorEnumerator.Current;
                         List<PersistentWorldDeltaRecord> bucket = pair.Value;
                         NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                        NativeMemorySentinel.RegisterNativeArray(
+                            sectorRecords,
+                            MemoryBudgetOwnerName,
+                            SectorOverrideSnapshotRecordsLabel,
+                            NativeAllocationLifetime.TempJob);
                         try
                         {
                             for (int i = 0; i < bucket.Count; i++)
@@ -2649,6 +2681,11 @@ namespace Hecton8.World
                                     if (pendingEntityStateWrites >= MaxPendingEntityStateTempWrites)
                                     {
                                         await Awaitable.MainThreadAsync();
+                                        PublishSectorCompressionPerformanceWarning(
+                                            _sectorEntityStateThrottleWarningHash,
+                                            unchecked((uint)pendingEntityStateWrites),
+                                            MaxPendingEntityStateTempWrites,
+                                            ref _lastEntityStateThrottleTelemetryFrame);
                                         await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
                                         await Awaitable.BackgroundThreadAsync();
                                     }
@@ -2658,6 +2695,11 @@ namespace Hecton8.World
                                     break;
 
                                 NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStateBucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                                NativeMemorySentinel.RegisterNativeArray(
+                                    sectorStates,
+                                    MemoryBudgetOwnerName,
+                                    SectorOverrideEntityStatesLabel,
+                                    NativeAllocationLifetime.TempJob);
                                 try
                                 {
                                     for (int stateIndex = 0; stateIndex < entityStateBucket.Count; stateIndex++)
@@ -2686,7 +2728,11 @@ namespace Hecton8.World
                                 }
                                 finally
                                 {
-                                    sectorStates.Dispose();
+                                    if (sectorStates.IsCreated)
+                                    {
+                                        NativeMemorySentinel.UnregisterNativeArray(sectorStates);
+                                        sectorStates.Dispose();
+                                    }
                                 }
                             }
 
@@ -2694,7 +2740,11 @@ namespace Hecton8.World
                         }
                         finally
                         {
-                            sectorRecords.Dispose();
+                            if (sectorRecords.IsCreated)
+                            {
+                                NativeMemorySentinel.UnregisterNativeArray(sectorRecords);
+                                sectorRecords.Dispose();
+                            }
                         }
 
                         if (!string.IsNullOrEmpty(failureMessage))
@@ -2759,64 +2809,6 @@ namespace Hecton8.World
             }
 
             return true;
-#if false
-            // COLD ALLOC: NativeArray<PersistentWorldDeltaRecord>[sectorRecordCount] â€” resident sector override staging buffer â€” owner: PersistentWorldRegistry
-            foreach (KeyValuePair<long, List<PersistentWorldDeltaRecord>> pair in sectors)
-            {
-                List<PersistentWorldDeltaRecord> bucket = pair.Value;
-                NativeArray<PersistentWorldDeltaRecord> sectorRecords = new NativeArray<PersistentWorldDeltaRecord>(bucket.Count, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
-                try
-                {
-                    for (int i = 0; i < bucket.Count; i++)
-                        sectorRecords[i] = bucket[i];
-
-                    string tempPath = ResolveSectorOverrideTempPath(pair.Key);
-                    if (!SaveBinaryStorage.TryWriteIndexedPersistentWorldSectorOverride(tempPath, pair.Key, sectorRecords, chunkSizeMeters, out string error))
-                    {
-                        Debug.LogError($"[PersistentWorldRegistry] Sector override snapshot failed for 0x{pair.Key:X16}: {error}");
-                        continue;
-                    }
-
-                    if (!_sectorOverrideStates.TryGetValue(pair.Key, out SectorOverrideState state))
-                    {
-                        state = new SectorOverrideState();
-                        _sectorOverrideStates.Add(pair.Key, state);
-                    }
-
-                    state.TempPath = tempPath;
-                    if (sectorEntityStates.TryGetValue(pair.Key, out List<EntityDataRecord> entityStateBucket) &&
-                        entityStateBucket != null &&
-                        entityStateBucket.Count > 0)
-                    {
-                        // COLD ALLOC: EntityDataRecord[entityStateBucket.Count] — sector entity-state staging snapshot for indexed paging write — owner: PersistentWorldRegistry
-                        EntityDataRecord[] sectorStateArray = entityStateBucket.ToArray();
-                        NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(sectorStateArray, Allocator.Temp);
-                        try
-                        {
-                            string entityStateTempPath = ResolveSectorEntityStateTempPath(pair.Key);
-                            if (!SaveBinaryStorage.TryScheduleIndexedSectorEntityStateOverrideWrite(entityStateTempPath, pair.Key, sectorStates, chunkSizeMeters, out _, out string entityStateError))
-                            {
-                                Debug.LogError($"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{pair.Key:X16}: {entityStateError}");
-                            }
-                            else
-                            {
-                                state.EntityStateTempPath = entityStateTempPath;
-                            }
-                        }
-                        finally
-                        {
-                            sectorStates.Dispose();
-                        }
-                    }
-                    state.LastUnloadedTime = now;
-                    state.IsResident = false;
-                }
-                finally
-                {
-                    sectorRecords.Dispose();
-                }
-            }
-#endif
         }
 
         private bool ApplySectorOverrides(
@@ -2828,7 +2820,7 @@ namespace Hecton8.World
             if (!_indexedSectorPagingEnabled || _sectorOverrideStates == null || _sectorOverrideStates.Count <= 0)
                 return true;
 
-            // COLD ALLOC: Dictionary<long,List<PersistentWorldDeltaRecord>>[16] â€” paged sector merge map during override resolution â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: Dictionary<long,List<PersistentWorldDeltaRecord>>[16] Ã¢â‚¬â€ paged sector merge map during override resolution Ã¢â‚¬â€ owner: PersistentWorldRegistry
             Dictionary<long, List<PersistentWorldDeltaRecord>> sectorBuckets = new Dictionary<long, List<PersistentWorldDeltaRecord>>(16);
             for (int i = 0; i < loadedSectorRecords.Length; i++)
             {
@@ -2840,7 +2832,7 @@ namespace Hecton8.World
                 long sectorHash = ComputeSectorHash(in unpackedPosition);
                 if (!sectorBuckets.TryGetValue(sectorHash, out List<PersistentWorldDeltaRecord> bucket))
                 {
-                    // COLD ALLOC: List<PersistentWorldDeltaRecord>[16] â€” one paged sector merge bucket â€” owner: PersistentWorldRegistry
+                    // COLD ALLOC: List<PersistentWorldDeltaRecord>[16] Ã¢â‚¬â€ one paged sector merge bucket Ã¢â‚¬â€ owner: PersistentWorldRegistry
                     bucket = new List<PersistentWorldDeltaRecord>(16);
                     sectorBuckets.Add(sectorHash, bucket);
                 }
@@ -2867,7 +2859,7 @@ namespace Hecton8.World
                     return false;
                 }
 
-                // COLD ALLOC: List<PersistentWorldDeltaRecord>[N] â€” override-resolved sector records loaded from temp block â€” owner: PersistentWorldRegistry
+                // COLD ALLOC: List<PersistentWorldDeltaRecord>[N] Ã¢â‚¬â€ override-resolved sector records loaded from temp block Ã¢â‚¬â€ owner: PersistentWorldRegistry
                 List<PersistentWorldDeltaRecord> replacement = new List<PersistentWorldDeltaRecord>(overrideRecords.Length);
                 for (int recordIndex = 0; recordIndex < overrideRecords.Length; recordIndex++)
                 {
@@ -2906,7 +2898,7 @@ namespace Hecton8.World
                 return true;
             }
 
-            // COLD ALLOC: Dictionary<uint,EntityDataRecord>[64] â€” staged sector entity-state restore map during indexed paging â€” owner: PersistentWorldRegistry
+            // COLD ALLOC: Dictionary<uint,EntityDataRecord>[64] Ã¢â‚¬â€ staged sector entity-state restore map during indexed paging Ã¢â‚¬â€ owner: PersistentWorldRegistry
             stagedEntityStates = new Dictionary<uint, EntityDataRecord>(64);
             for (int i = 0; i < desiredSectorHashes.Length; i++)
             {
@@ -3727,6 +3719,11 @@ namespace Hecton8.World
             DrainPendingEntityStateTempWrites(MaxEntityStateTempWriteCompletionsPerTick);
             if (_pendingEntityStateTempWrites.Count >= MaxPendingEntityStateTempWrites)
             {
+                PublishSectorCompressionPerformanceWarning(
+                    _sectorEntityStateQueueOverflowWarningHash,
+                    unchecked((uint)sectorHash),
+                    _pendingEntityStateTempWrites.Count,
+                    ref _lastEntityStateQueueOverflowTelemetryFrame);
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
                 Debug.LogWarning("[PersistentWorldRegistry] Async entity-state temp write queue is full; dropped non-critical terrain/flora state.");
 #endif
@@ -3734,6 +3731,11 @@ namespace Hecton8.World
             }
 
             NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStates.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeMemorySentinel.RegisterNativeArray(
+                sectorStates,
+                MemoryBudgetOwnerName,
+                SectorEntityStateAsyncWriteStatesLabel,
+                NativeAllocationLifetime.TempJob);
             try
             {
                 for (int i = 0; i < entityStates.Count; i++)
@@ -3764,7 +3766,10 @@ namespace Hecton8.World
             finally
             {
                 if (sectorStates.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(sectorStates);
                     sectorStates.Dispose();
+                }
             }
         }
 
@@ -3812,6 +3817,23 @@ namespace Hecton8.World
             }
 
             return false;
+        }
+
+        private static void PublishSectorCompressionPerformanceWarning(
+            uint warningHash,
+            uint contextHash,
+            float scalarValue,
+            ref int lastTelemetryFrame)
+        {
+            if (!Application.isPlaying)
+                return;
+
+            int frame = Time.frameCount;
+            if (lastTelemetryFrame == frame)
+                return;
+
+            lastTelemetryFrame = frame;
+            GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, scalarValue);
         }
 
         private void DisposePendingEntityStateTempWritesDeferred()

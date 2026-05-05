@@ -58,9 +58,13 @@ namespace Hecton8.World
         private const float FloraPredatorAupQueryRadiusMeters = 700f;
         private const float FloraPredatorStealthRadiusMeters = 15f;
         private const float FloraPredatorStealthDimStrength = 0.82f;
+        private const string NativeMemoryOwner = nameof(EcosystemDirector);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
         private static readonly string[] SharkSpawnTokens = { "shark", "hunter", "stalker" };
         private static readonly string[] ScavengerSpawnTokens = { "scavenger", "crab", "eel", "carrion", "cleaner" };
+        private static readonly uint _FloraPredatorAupSaturationWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("EcosystemDirector.FloraPredatorAupSaturation"));
+        private static readonly uint _EcosystemDirectorContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute(nameof(EcosystemDirector)));
         // COLD ALLOC: SpatialQueryHit[64] — non-alloc predator diet validation scratch for spawn gating — owner: EcosystemDirector
         private static readonly SpatialQueryHit[] _predatorSpawnValidationHits = new SpatialQueryHit[PredatorSpawnValidationHitCapacity];
         // COLD ALLOC: SpatialQueryHit[64] - non-alloc Apex territory candidate query scratch - owner: EcosystemDirector
@@ -599,6 +603,7 @@ namespace Hecton8.World
         private float _biomeHostility01;
         private float _starvationAggressionPressure01;
         private int _hostilityTier;
+        private bool _floraPredatorAupSaturationTelemetryIssued;
         private int _nextHibernationPopulationSyncIndex;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
@@ -1604,6 +1609,7 @@ namespace Hecton8.World
             _floraPredatorAupUpload = new NativeArray<float4>(FloraPredatorAupBufferCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeList<EcosystemSectorSaveRecord>[maxTrackedSectors] - packed ecosystem persistence snapshot staging buffer - owner: EcosystemDirector
             _saveSnapshotSectors = new NativeList<EcosystemSectorSaveRecord>(maxTrackedSectors, Allocator.Persistent);
+            RegisterNativeMemorySentinelAllocations();
             // COLD ALLOC: FaunaBrain[16] - managed Apex brain lookup paired with Burst overlap result indices - owner: EcosystemDirector
             _apexTerritoryBrains = new FaunaBrain[ApexTerritoryOverlapCandidateCapacity];
             _floraPredatorAupBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4>(FloraPredatorAupBufferCapacity); // COLD ALLOC: GraphicsBuffer[32] - global flora predator AUP StructuredBuffer - owner: EcosystemDirector
@@ -1644,6 +1650,8 @@ namespace Hecton8.World
                 disposeDependency = _scheduledDiffusionHandle;
             if (_apexTerritoryOverlapScheduled)
                 disposeDependency = JobHandle.CombineDependencies(disposeDependency, _scheduledApexTerritoryOverlapHandle);
+
+            UnregisterNativeMemorySentinelAllocations();
 
             if (_sectorFrontStates.IsCreated)
                 _sectorFrontStates.Dispose(disposeDependency);
@@ -1687,6 +1695,31 @@ namespace Hecton8.World
             _biomeHostility01 = 0f;
             _starvationAggressionPressure01 = 0f;
             _hostilityTier = 0;
+            _floraPredatorAupSaturationTelemetryIssued = false;
+        }
+
+        private void RegisterNativeMemorySentinelAllocations()
+        {
+            NativeMemorySentinel.RegisterNativeArray(_sectorFrontStates, NativeMemoryOwner, nameof(_sectorFrontStates), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_sectorBackStates, NativeMemoryOwner, nameof(_sectorBackStates), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeHashMap(_sectorIndexByKey, NativeMemoryOwner, nameof(_sectorIndexByKey), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_pendingPredationEvents, NativeMemoryOwner, nameof(_pendingPredationEvents), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_apexTerritorySamples, NativeMemoryOwner, nameof(_apexTerritorySamples), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_apexTerritoryOverlapResults, NativeMemoryOwner, nameof(_apexTerritoryOverlapResults), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_floraPredatorAupUpload, NativeMemoryOwner, nameof(_floraPredatorAupUpload), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeList(_saveSnapshotSectors, NativeMemoryOwner, nameof(_saveSnapshotSectors), NativeMemoryLifetime);
+        }
+
+        private void UnregisterNativeMemorySentinelAllocations()
+        {
+            NativeMemorySentinel.UnregisterNativeArray(_sectorFrontStates);
+            NativeMemorySentinel.UnregisterNativeArray(_sectorBackStates);
+            NativeMemorySentinel.UnregisterNativeHashMap(NativeMemoryOwner, nameof(_sectorIndexByKey));
+            NativeMemorySentinel.UnregisterNativeArray(_pendingPredationEvents);
+            NativeMemorySentinel.UnregisterNativeArray(_apexTerritorySamples);
+            NativeMemorySentinel.UnregisterNativeArray(_apexTerritoryOverlapResults);
+            NativeMemorySentinel.UnregisterNativeArray(_floraPredatorAupUpload);
+            NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, nameof(_saveSnapshotSectors));
         }
 
         private void TryRegisterService()
@@ -2140,6 +2173,20 @@ namespace Hecton8.World
 
             if (uploadCount > 0)
                 GraphicsBufferUploadUtility.UploadNativeArray(_floraPredatorAupBuffer, _floraPredatorAupUpload, uploadCount);
+
+            bool saturated = hitCount >= FloraPredatorAupHitCapacity || uploadCount >= FloraPredatorAupBufferCapacity;
+            if (saturated && !_floraPredatorAupSaturationTelemetryIssued)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _FloraPredatorAupSaturationWarningHash,
+                    _EcosystemDirectorContextHash,
+                    math.max(hitCount, uploadCount));
+                _floraPredatorAupSaturationTelemetryIssued = true;
+            }
+            else if (!saturated)
+            {
+                _floraPredatorAupSaturationTelemetryIssued = false;
+            }
 
             Shader.SetGlobalBuffer(_PredatorAUPBufferId, _floraPredatorAupBuffer);
             Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);

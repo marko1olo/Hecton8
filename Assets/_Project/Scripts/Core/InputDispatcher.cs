@@ -15,6 +15,8 @@ namespace Hecton8.Core
     {
         private const int BufferedActionCapacity = 15;
         private const float DefaultBufferedActionMaxAgeSeconds = 0.25f;
+        private const float LookHotSwapBlendDurationSeconds = 0.25f;
+        private const float LookBlendEpsilon = 0.0001f;
 
         private struct BufferedActionEntry
         {
@@ -36,6 +38,10 @@ namespace Hecton8.Core
         private uint _latchedActionBits;
         private float _appliedLowMotorSpeed;
         private float _appliedHighMotorSpeed;
+        private float _lookBlendElapsed;
+        private bool _lookBlendActive;
+        private Vector2 _lookBlendFrom;
+        private Vector2 _lastDeliveredLookDelta;
         private PlayerInputState _currentState;
 
         internal static InputDispatcher ActiveRuntimeInstance { get; private set; }
@@ -190,7 +196,7 @@ namespace Hecton8.Core
         /// <param name="deltaTime">Game tick delta time.</param>
         public void Tick(float deltaTime)
         {
-            CaptureState();
+            CaptureState(deltaTime);
             DrainToolHaptics();
         }
 
@@ -262,14 +268,21 @@ namespace Hecton8.Core
         public void SwitchToPlayerInput()
         {
             if (_nativeInputManager != null)
+            {
                 _nativeInputManager.SwitchToPlayerInput();
+                BeginLookHotSwapBlend();
+            }
         }
 
         /// <inheritdoc />
         public void SwitchToUIInput()
         {
             if (_nativeInputManager != null)
+            {
                 _nativeInputManager.SwitchToUIInput();
+                _lookBlendActive = false;
+                _pendingLookDelta = Vector2.zero;
+            }
         }
 
         private void EnsureInputBinding()
@@ -446,7 +459,7 @@ namespace Hecton8.Core
             _registeredInputService = false;
         }
 
-        private void CaptureState()
+        private void CaptureState(float deltaTime = 0f)
         {
             EnsureInputBinding();
 
@@ -470,15 +483,63 @@ namespace Hecton8.Core
                 if (inputManager.IsSprinting)
                     actionBits |= (uint)PlayerInputAction.Sprint;
 
+                Vector2 lookDelta = _pendingLookDelta;
+                if (_lookBlendActive)
+                    lookDelta = ResolveLookHotSwapBlend(lookDelta, deltaTime);
+
                 state.MoveDelta = inputManager.MoveInput;
-                state.LookDelta = _pendingLookDelta;
+                state.LookDelta = lookDelta;
                 state.VerticalDelta = Mathf.Clamp(inputManager.VerticalMovementInput, -1f, 1f);
                 state.ActionsBitmask = actionBits;
+                _lastDeliveredLookDelta = lookDelta;
             }
 
             _currentState = state;
             _pendingLookDelta = Vector2.zero;
             _latchedActionBits = 0u;
+        }
+
+        private void BeginLookHotSwapBlend()
+        {
+            _lookBlendFrom = _lastDeliveredLookDelta;
+            _lookBlendElapsed = 0f;
+            _lookBlendActive = true;
+        }
+
+        private Vector2 ResolveLookHotSwapBlend(Vector2 targetLookDelta, float deltaTime)
+        {
+            _lookBlendElapsed = math.min(
+                _lookBlendElapsed + math.max(0f, deltaTime),
+                LookHotSwapBlendDurationSeconds);
+
+            float normalized = LookHotSwapBlendDurationSeconds > 0f
+                ? math.saturate(_lookBlendElapsed / LookHotSwapBlendDurationSeconds)
+                : 1f;
+            float eased = normalized * normalized * (3f - (2f * normalized));
+            Vector2 lookDelta = SlerpLookDelta(_lookBlendFrom, targetLookDelta, eased);
+            if (normalized >= 1f)
+                _lookBlendActive = false;
+
+            return lookDelta;
+        }
+
+        private static Vector2 SlerpLookDelta(Vector2 from, Vector2 to, float t)
+        {
+            float2 fromDelta = new float2(from.x, from.y);
+            float2 toDelta = new float2(to.x, to.y);
+            float fromMagnitude = math.length(fromDelta);
+            float toMagnitude = math.length(toDelta);
+
+            if (fromMagnitude <= LookBlendEpsilon || toMagnitude <= LookBlendEpsilon)
+                return Vector2.Lerp(from, to, t);
+
+            float2 fromNormal = fromDelta / fromMagnitude;
+            float2 toNormal = toDelta / toMagnitude;
+            float magnitude = math.lerp(fromMagnitude, toMagnitude, t);
+            quaternion fromRotation = quaternion.AxisAngle(new float3(0f, 0f, 1f), math.atan2(fromNormal.y, fromNormal.x));
+            quaternion toRotation = quaternion.AxisAngle(new float3(0f, 0f, 1f), math.atan2(toNormal.y, toNormal.x));
+            float3 blendedDirection = math.mul(math.slerp(fromRotation, toRotation, t), new float3(1f, 0f, 0f));
+            return new Vector2(blendedDirection.x * magnitude, blendedDirection.y * magnitude);
         }
 
         private void HandleLookInput(Vector2 lookDelta)
@@ -682,6 +743,10 @@ namespace Hecton8.Core
             _latchedActionBits = 0u;
             _appliedLowMotorSpeed = 0f;
             _appliedHighMotorSpeed = 0f;
+            _lookBlendElapsed = 0f;
+            _lookBlendActive = false;
+            _lookBlendFrom = Vector2.zero;
+            _lastDeliveredLookDelta = Vector2.zero;
             _currentState = default;
 
             for (int i = 0; i < BufferedActionCapacity; i++)

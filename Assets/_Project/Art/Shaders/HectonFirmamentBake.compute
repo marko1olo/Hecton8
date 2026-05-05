@@ -1,0 +1,195 @@
+#pragma kernel ClearStarCubemap
+#pragma kernel BakeSpectralStars
+#pragma kernel BakeAtmosphereLut
+
+RWTexture2DArray<float4> _BakedStarCubemap;
+RWTexture2D<float4> _HectonAtmosphereScatteringLUT;
+
+float4 _HectonStarBakeParams;       // x=star count, y=cubemap resolution, z=world seed, w=intensity
+float4 _HectonStarDistribution;     // x=band half-width radians, y=band probability, z=core bias, w=halo gain
+float4 _HectonAtmosphereLutSize;    // x=width, y=height
+float4 _HectonRayleighBeta;         // xyz=scatter beta
+float4 _HectonMieBeta;              // xyz=extinction beta, w=anisotropy g
+float4 _HectonAtmosphereParams;     // x=Rayleigh height, y=Mie height, z=density, w=exposure
+
+static const float HECTON_PI = 3.14159265359;
+static const float HECTON_INV_PI = 0.31830988618;
+
+uint HectonHash(uint state)
+{
+    state ^= 2747636419u;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    state ^= state >> 16;
+    state *= 2654435769u;
+    return state;
+}
+
+float HectonHash01(uint state)
+{
+    return (HectonHash(state) & 0x00FFFFFFu) / 16777215.0;
+}
+
+float3 HectonSpectralColor(float classRoll)
+{
+    if (classRoll < 0.00003) return float3(0.62, 0.78, 1.00); // O
+    if (classRoll < 0.00130) return float3(0.72, 0.84, 1.00); // B
+    if (classRoll < 0.00600) return float3(0.90, 0.94, 1.00); // A
+    if (classRoll < 0.03000) return float3(1.00, 0.98, 0.86); // F
+    if (classRoll < 0.07600) return float3(1.00, 0.92, 0.72); // G
+    if (classRoll < 0.12100) return float3(1.00, 0.74, 0.46); // K
+    return float3(1.00, 0.45, 0.32);                          // M
+}
+
+float3 HectonDirectionFromBand(uint starId, uint seed)
+{
+    float longitude = HectonHash01(starId * 747796405u + seed) * HECTON_PI * 2.0;
+    float latitudeRoll = HectonHash01(starId * 2891336453u + seed * 3u);
+    float bandHalfWidth = max(_HectonStarDistribution.x, 0.001);
+    float latitude = (latitudeRoll * 2.0 - 1.0) * bandHalfWidth;
+
+    float coreRoll = HectonHash01(starId * 1597334677u + seed * 5u);
+    float corePull = pow(saturate(1.0 - coreRoll), max(_HectonStarDistribution.z, 0.001));
+    latitude *= lerp(1.0, 0.22, corePull);
+
+    float cosLat = cos(latitude);
+    float3 milkyWayDirection = normalize(float3(
+        cos(longitude) * cosLat,
+        sin(latitude),
+        sin(longitude) * cosLat));
+
+    float z = HectonHash01(starId * 3812015801u + seed * 7u) * 2.0 - 1.0;
+    float a = HectonHash01(starId * 1103515245u + seed * 11u) * HECTON_PI * 2.0;
+    float r = sqrt(saturate(1.0 - z * z));
+    float3 isotropicDirection = float3(r * cos(a), z, r * sin(a));
+
+    float bandProbability = saturate(_HectonStarDistribution.y);
+    float useBand = step(HectonHash01(starId * 3266489917u + seed * 13u), bandProbability);
+    return normalize(lerp(isotropicDirection, milkyWayDirection, useBand));
+}
+
+void HectonDirectionToCubeFaceUv(float3 direction, out uint face, out float2 uv)
+{
+    float3 absDirection = abs(direction);
+    if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
+    {
+        face = direction.x >= 0.0 ? 0u : 1u;
+        uv = direction.x >= 0.0
+            ? float2(-direction.z, direction.y) / absDirection.x
+            : float2(direction.z, direction.y) / absDirection.x;
+    }
+    else if (absDirection.y >= absDirection.x && absDirection.y >= absDirection.z)
+    {
+        face = direction.y >= 0.0 ? 2u : 3u;
+        uv = direction.y >= 0.0
+            ? float2(direction.x, -direction.z) / absDirection.y
+            : float2(direction.x, direction.z) / absDirection.y;
+    }
+    else
+    {
+        face = direction.z >= 0.0 ? 4u : 5u;
+        uv = direction.z >= 0.0
+            ? float2(direction.x, direction.y) / absDirection.z
+            : float2(-direction.x, direction.y) / absDirection.z;
+    }
+
+    uv = uv * 0.5 + 0.5;
+}
+
+void HectonWriteStar(uint face, int2 pixel, int resolution, float3 color, float brightness)
+{
+    if (pixel.x < 0 || pixel.y < 0 || pixel.x >= resolution || pixel.y >= resolution)
+        return;
+
+    _BakedStarCubemap[uint3((uint)pixel.x, (uint)pixel.y, face)] = float4(color * brightness, 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void ClearStarCubemap(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint resolution = (uint)max(_HectonStarBakeParams.y, 1.0);
+    if (dispatchThreadId.x >= resolution || dispatchThreadId.y >= resolution || dispatchThreadId.z >= 6u)
+        return;
+
+    _BakedStarCubemap[dispatchThreadId] = float4(0.0, 0.0, 0.0, 1.0);
+}
+
+[numthreads(128, 1, 1)]
+void BakeSpectralStars(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint starId = dispatchThreadId.x;
+    uint starCount = (uint)max(_HectonStarBakeParams.x, 1.0);
+    if (starId >= starCount)
+        return;
+
+    uint seed = (uint)max(_HectonStarBakeParams.z, 1.0);
+    int resolution = (int)max(_HectonStarBakeParams.y, 1.0);
+    float intensity = max(_HectonStarBakeParams.w, 0.0);
+
+    float3 direction = HectonDirectionFromBand(starId, seed);
+    uint face;
+    float2 uv;
+    HectonDirectionToCubeFaceUv(direction, face, uv);
+
+    int2 pixel = (int2)floor(saturate(uv) * (resolution - 1));
+    float classRoll = HectonHash01(starId * 2246822519u + seed * 17u);
+    float magnitudeRoll = HectonHash01(starId * 668265263u + seed * 19u);
+    float3 spectralColor = HectonSpectralColor(classRoll);
+    float brightness = intensity * lerp(0.18, 1.85, pow(saturate(1.0 - magnitudeRoll), 5.0));
+    float halo = brightness * saturate(_HectonStarDistribution.w);
+
+    HectonWriteStar(face, pixel, resolution, spectralColor, brightness);
+    HectonWriteStar(face, pixel + int2(1, 0), resolution, spectralColor, halo * 0.18);
+    HectonWriteStar(face, pixel + int2(-1, 0), resolution, spectralColor, halo * 0.18);
+    HectonWriteStar(face, pixel + int2(0, 1), resolution, spectralColor, halo * 0.18);
+    HectonWriteStar(face, pixel + int2(0, -1), resolution, spectralColor, halo * 0.18);
+}
+
+float HectonRayleighPhase(float mu)
+{
+    return 0.75 * (1.0 + mu * mu) * HECTON_INV_PI * 0.25;
+}
+
+float HectonMiePhase(float mu, float g)
+{
+    float g2 = g * g;
+    float denom = pow(max(1.0 + g2 - 2.0 * g * mu, 0.001), 1.5);
+    return (3.0 * (1.0 - g2) * (1.0 + mu * mu)) /
+        (8.0 * HECTON_PI * (2.0 + g2) * denom);
+}
+
+[numthreads(8, 8, 1)]
+void BakeAtmosphereLut(uint3 dispatchThreadId : SV_DispatchThreadID)
+{
+    uint width = (uint)max(_HectonAtmosphereLutSize.x, 1.0);
+    uint height = (uint)max(_HectonAtmosphereLutSize.y, 1.0);
+    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
+        return;
+
+    float mu = ((dispatchThreadId.x + 0.5) / width) * 2.0 - 1.0;
+    float elevation01 = (dispatchThreadId.y + 0.5) / height;
+    float density = max(_HectonAtmosphereParams.z, 0.0);
+    float exposure = max(_HectonAtmosphereParams.w, 0.0);
+    float rayleighHeight = max(_HectonAtmosphereParams.x, 0.001);
+    float mieHeight = max(_HectonAtmosphereParams.y, 0.001);
+
+    float viewPath = 1.0 / max(0.06 + elevation01 * 0.94, 0.06);
+    float rayleighDepth = exp(-elevation01 * 6.0 / rayleighHeight) * viewPath * density;
+    float mieDepth = exp(-elevation01 * 4.0 / mieHeight) * viewPath * density;
+    float3 opticalDepth = _HectonRayleighBeta.xyz * rayleighDepth + _HectonMieBeta.xyz * mieDepth;
+    float3 transmittance = exp(-opticalDepth);
+
+    float rayleighPhase = HectonRayleighPhase(mu);
+    float miePhase = HectonMiePhase(mu, clamp(_HectonMieBeta.w, -0.95, 0.95));
+    float3 inscatter =
+        _HectonRayleighBeta.xyz * rayleighPhase * rayleighDepth +
+        _HectonMieBeta.xyz * miePhase * mieDepth;
+
+    float horizonWarmth = saturate(1.0 - elevation01) * saturate(mu * 0.5 + 0.5);
+    inscatter *= lerp(float3(0.68, 0.76, 1.0), float3(1.0, 0.55, 0.22), horizonWarmth * 0.62);
+    inscatter = inscatter * (1.0 - transmittance) * exposure;
+
+    float averageTransmittance = dot(transmittance, float3(0.2126, 0.7152, 0.0722));
+    _HectonAtmosphereScatteringLUT[dispatchThreadId.xy] = float4(inscatter, saturate(averageTransmittance));
+}

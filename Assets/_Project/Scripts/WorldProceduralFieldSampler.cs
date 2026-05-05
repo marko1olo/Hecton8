@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Unity.Burst;
@@ -34,7 +35,15 @@ namespace Hecton8.World
         private const int MaxSeafloorHeightCacheEntries = 4096;
         private const int NoiseLookupResolution = 512;
         private const int NoiseLookupMask = NoiseLookupResolution - 1;
+        private const int MaxBiomeInfluenceGridCellsMx350 = 4096;
+        private const string NativeMemoryOwner = nameof(WorldProceduralFieldSampler);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const NativeAllocationLifetime NativeMemoryTempJobLifetime = NativeAllocationLifetime.TempJob;
         private const float NoiseLookupValueScale = 1f / ushort.MaxValue;
+        private static readonly uint _biomeInfluenceGridCapacityWarningHash =
+            unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler.BiomeInfluenceGridCapacity"));
+        private static readonly uint _fieldSamplerTelemetryContextHash =
+            unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler"));
         private GraphicsBuffer _biomeInfluenceGraphicsBuffer;
         private int _biomeInfluenceGraphicsBufferCapacity;
 #if UNITY_EDITOR
@@ -412,7 +421,7 @@ namespace Hecton8.World
         private JobHandle _lastSamplingJobHandle;
         private bool _hasPendingSamplingJob;
 
-        internal static WorldProceduralFieldSampler ActiveRuntimeInstance { get; private set; }
+        internal static WorldProceduralFieldSampler ActiveRuntimeInstance => GlobalRegistry.ProceduralFieldSampler;
 
         private struct CachedHeightSample
         {
@@ -1852,7 +1861,6 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
 #if UNITY_EDITOR
             EnsureAssemblyReloadHook();
 #endif
@@ -1860,6 +1868,7 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
+            GlobalRegistry.RegisterProceduralFieldSampler(this);
             BiomeMatrixEvents.Register(this);
             _isDataDirty = true;
 #if UNITY_EDITOR
@@ -1870,6 +1879,8 @@ namespace Hecton8.World
         private void OnDisable()
         {
             BiomeMatrixEvents.Unregister(this);
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                GlobalRegistry.UnregisterProceduralFieldSampler(this);
             CompletePendingSamplingJob();
             DisposeBurstData();
             ReleaseBiomeInfluenceGraphicsBuffer();
@@ -1887,9 +1898,8 @@ namespace Hecton8.World
             DisposeBurstData();
             ReleaseBiomeInfluenceGraphicsBuffer();
             _isDataDirty = true;
-
             if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
+                GlobalRegistry.UnregisterProceduralFieldSampler(this);
 #if UNITY_EDITOR
             ReleaseAssemblyReloadHook();
 #endif
@@ -1928,11 +1938,12 @@ namespace Hecton8.World
 
         private static void TeardownActiveRuntimeInstanceForEditorReload()
         {
-            if (ActiveRuntimeInstance == null)
+            WorldProceduralFieldSampler activeInstance = ActiveRuntimeInstance;
+            if (activeInstance == null)
                 return;
 
-            ActiveRuntimeInstance.PrepareForEditorReload();
-            ActiveRuntimeInstance = null;
+            activeInstance.PrepareForEditorReload();
+            GlobalRegistry.UnregisterProceduralFieldSampler(activeInstance);
         }
 #endif
 
@@ -2112,6 +2123,14 @@ namespace Hecton8.World
 
             ReleaseBiomeInfluenceGraphicsBuffer();
             _biomeInfluenceGraphicsBufferCapacity = Mathf.NextPowerOfTwo(requiredCapacity);
+            if (Application.isPlaying && _biomeInfluenceGraphicsBufferCapacity > MaxBiomeInfluenceGridCellsMx350)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _biomeInfluenceGridCapacityWarningHash,
+                    _fieldSamplerTelemetryContextHash,
+                    _biomeInfluenceGraphicsBufferCapacity);
+            }
+
             // COLD ALLOC: GraphicsBuffer[_biomeInfluenceGraphicsBufferCapacity] - packed biome influence grid upload owned by WorldProceduralFieldSampler.
             _biomeInfluenceGraphicsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(_biomeInfluenceGraphicsBufferCapacity);
             return _biomeInfluenceGraphicsBuffer != null && _biomeInfluenceGraphicsBuffer.IsValid();
@@ -2133,9 +2152,12 @@ namespace Hecton8.World
             PrepareBurstData();
 
             // COLD SYNC JOB: prewarm Burst compilation and worker setup before player activation so the first runtime scatter pass does not absorb one-time compilation debt.
-            NativeArray<CellInputData> warmupInputs = new NativeArray<CellInputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<CellOutputData> warmupOutputs = new NativeArray<CellOutputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-            NativeArray<BiomeInfluenceCell> warmupInfluences = new NativeArray<BiomeInfluenceCell>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+            NativeArray<CellInputData> warmupInputs = new NativeArray<CellInputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CellInputData>[1] - Burst prewarm input lane - owner: WorldProceduralFieldSampler
+            NativeArray<CellOutputData> warmupOutputs = new NativeArray<CellOutputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CellOutputData>[1] - Burst prewarm output lane - owner: WorldProceduralFieldSampler
+            NativeArray<BiomeInfluenceCell> warmupInfluences = new NativeArray<BiomeInfluenceCell>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeInfluenceCell>[1] - Burst prewarm biome influence lane - owner: WorldProceduralFieldSampler
+            RegisterTrackedNativeArray(warmupInputs, nameof(warmupInputs), NativeMemoryTempJobLifetime);
+            RegisterTrackedNativeArray(warmupOutputs, nameof(warmupOutputs), NativeMemoryTempJobLifetime);
+            RegisterTrackedNativeArray(warmupInfluences, nameof(warmupInfluences), NativeMemoryTempJobLifetime);
 
             try
             {
@@ -2166,12 +2188,9 @@ namespace Hecton8.World
             finally
             {
                 EndScatterSamplingFrame();
-                if (warmupInputs.IsCreated)
-                    warmupInputs.Dispose();
-                if (warmupOutputs.IsCreated)
-                    warmupOutputs.Dispose();
-                if (warmupInfluences.IsCreated)
-                    warmupInfluences.Dispose();
+                DisposeTrackedNativeArray(ref warmupInputs);
+                DisposeTrackedNativeArray(ref warmupOutputs);
+                DisposeTrackedNativeArray(ref warmupInfluences);
             }
         }
 
@@ -2349,10 +2368,11 @@ namespace Hecton8.World
                 return;
 
             if (_noiseLookupTable.IsCreated)
-                _noiseLookupTable.Dispose();
+                DisposeTrackedNativeArray(ref _noiseLookupTable);
 
             // COLD ALLOC: NativeArray<ushort>[262144] - persistent tileable noise LUT replacing runtime analytical noise in dense field sampling - owner: WorldProceduralFieldSampler
             _noiseLookupTable = new NativeArray<ushort>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(_noiseLookupTable, nameof(_noiseLookupTable));
             for (int z = 0; z < NoiseLookupResolution; z++)
             {
                 float v = z / (float)NoiseLookupResolution;
@@ -2456,7 +2476,7 @@ namespace Hecton8.World
             if (_worldCaveDirector != null)
                 _worldCaveDirector.CollectEntranceHints(_caveEntranceHintBakeList);
 
-            EnsureNativeArrayCapacity(ref _burstBiomeFamilyData, _biomeFamilyBakeList.Count);
+            EnsureNativeArrayCapacity(ref _burstBiomeFamilyData, _biomeFamilyBakeList.Count, nameof(_burstBiomeFamilyData));
             _burstBiomeFamilyDataCount = _biomeFamilyBakeList.Count;
             for (int i = 0; i < _biomeFamilyBakeList.Count; i++)
             {
@@ -2468,8 +2488,8 @@ namespace Hecton8.World
                 };
             }
 
-            EnsureNativeArrayCapacity(ref _burstBiomeMatrixData, _biomeMatrixBakeList.Count);
-            EnsureNativeArrayCapacity(ref _burstBiomeMatrixIdToDataIndex, 256);
+            EnsureNativeArrayCapacity(ref _burstBiomeMatrixData, _biomeMatrixBakeList.Count, nameof(_burstBiomeMatrixData));
+            EnsureNativeArrayCapacity(ref _burstBiomeMatrixIdToDataIndex, 256, nameof(_burstBiomeMatrixIdToDataIndex));
             for (int i = 0; i < _burstBiomeMatrixIdToDataIndex.Length; i++)
                 _burstBiomeMatrixIdToDataIndex[i] = -1;
 
@@ -2502,7 +2522,7 @@ namespace Hecton8.World
                     _burstBiomeMatrixIdToDataIndex[matrixIndex] = i;
             }
 
-            EnsureNativeArrayCapacity(ref _burstZoneData, _anchors.Count);
+            EnsureNativeArrayCapacity(ref _burstZoneData, _anchors.Count, nameof(_burstZoneData));
             _burstZoneDataCount = 0;
             for (int i = 0; i < _anchors.Count; i++)
             {
@@ -2531,7 +2551,7 @@ namespace Hecton8.World
                 };
             }
 
-            EnsureNativeArrayCapacity(ref _burstCaveEntranceHints, _caveEntranceHintBakeList.Count);
+            EnsureNativeArrayCapacity(ref _burstCaveEntranceHints, _caveEntranceHintBakeList.Count, nameof(_burstCaveEntranceHints));
             _burstCaveEntranceHintCount = _caveEntranceHintBakeList.Count;
             for (int i = 0; i < _caveEntranceHintBakeList.Count; i++)
             {
@@ -4443,12 +4463,16 @@ namespace Hecton8.World
             _biomeFamilyBakeList.Add(family);
         }
 
-        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredCapacity) where T : struct
+        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredCapacity, string label) where T : struct
         {
             if (requiredCapacity <= 0)
             {
                 if (!array.IsCreated)
+                {
                     array = new NativeArray<T>(0, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                    RegisterTrackedNativeArray(array, label);
+                }
+
                 return;
             }
 
@@ -4456,9 +4480,40 @@ namespace Hecton8.World
                 return;
 
             if (array.IsCreated)
-                array.Dispose();
+                DisposeTrackedNativeArray(ref array);
 
             array = new NativeArray<T>(Mathf.NextPowerOfTwo(requiredCapacity), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+            RegisterTrackedNativeArray(array, label);
+        }
+
+        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            RegisterTrackedNativeArray(array, label, NativeMemoryLifetime);
+        }
+
+        private static void RegisterTrackedNativeArray<T>(
+            NativeArray<T> array,
+            string label,
+            NativeAllocationLifetime lifetime) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                NativeMemoryOwner,
+                label,
+                lifetime);
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private void DisposeBurstData()
@@ -4466,17 +4521,17 @@ namespace Hecton8.World
             CompletePendingSamplingJob();
 
             if (_burstZoneData.IsCreated)
-                _burstZoneData.Dispose();
+                DisposeTrackedNativeArray(ref _burstZoneData);
             if (_burstBiomeMatrixData.IsCreated)
-                _burstBiomeMatrixData.Dispose();
+                DisposeTrackedNativeArray(ref _burstBiomeMatrixData);
             if (_burstBiomeMatrixIdToDataIndex.IsCreated)
-                _burstBiomeMatrixIdToDataIndex.Dispose();
+                DisposeTrackedNativeArray(ref _burstBiomeMatrixIdToDataIndex);
             if (_burstBiomeFamilyData.IsCreated)
-                _burstBiomeFamilyData.Dispose();
+                DisposeTrackedNativeArray(ref _burstBiomeFamilyData);
             if (_burstCaveEntranceHints.IsCreated)
-                _burstCaveEntranceHints.Dispose();
+                DisposeTrackedNativeArray(ref _burstCaveEntranceHints);
             if (_noiseLookupTable.IsCreated)
-                _noiseLookupTable.Dispose();
+                DisposeTrackedNativeArray(ref _noiseLookupTable);
 
             _burstZoneDataCount = 0;
             _burstBiomeMatrixDataCount = 0;

@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using Hecton.Localization;
 using Hecton8.Core;
 using Unity.Collections;
@@ -16,17 +15,30 @@ namespace Hecton8.World
     public sealed class HectonSandboxAbyssalShelfSmokeTester : MonoBehaviour
     {
         private const int SampleCount = 12;
-        private const int JsonBufferLength = 768;
+        private const int JsonBufferLength = 1024;
         private const double SlopeProbeMeters = 64.0;
         private const float HighWorldY = 2000f;
         private const float LowWorldY = -5000f;
         private const float RequiredMinMeters = -4900f;
         private const float RequiredMaxMeters = 1900f;
+        private const float MaxAllowedSlopeDegrees = 58f;
+        private const float AupDeterminismToleranceMeters = 0.0001f;
+        private const float AupBoundaryContinuityToleranceMeters = 2f;
+        private const double AupBoundaryProbeMeters = 0.25;
+        private const int ChunkAuditResolution = 17;
+        private const double ChunkAuditSizeMeters = 1024.0;
+        private const double FarChunkOriginMeters = 50000.0;
         private const string NativeMemoryOwner = nameof(HectonSandboxAbyssalShelfSmokeTester);
         private static readonly uint _smokeFailureWarningHash =
             unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.SmokeFailure"));
         private static readonly uint _smokeCompletionWarningHash =
             unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.SmokeCompletionMs"));
+        private static readonly uint _smokeAupDriftWarningHash =
+            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.SmokeAupDrift"));
+        private static readonly uint _smokeCoverageWarningHash =
+            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.SmokeCoverage"));
+        private static readonly uint _smokeAupBoundaryWarningHash =
+            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.SmokeAupBoundary"));
         private static readonly uint _smokeContextHash =
             unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelfSmokeTester"));
 
@@ -42,11 +54,18 @@ namespace Hecton8.World
         [SerializeField] private float _debugMinHeightMeters;
         [SerializeField] private float _debugMaxHeightMeters;
         [SerializeField] private float _debugMaxSlopeDegrees;
+        [SerializeField] private float _debugAverageSlopeDegrees;
+        [SerializeField] private float _debugAverageActiveSlopeDegrees;
+        [SerializeField] private int _debugSlope30SampleCount;
         [SerializeField] private float _debugAupDeterminismDeltaMeters;
+        [SerializeField] private float _debugAupBoundaryDeltaMeters;
+        [SerializeField] private int _debugOriginChunkInvalidSampleCount;
+        [SerializeField] private int _debugFarChunkInvalidSampleCount;
+        [SerializeField] private float _debugHighChunkAupDeltaMeters;
         [SerializeField] private float _debugCompletionMilliseconds;
         [SerializeField] private string _debugJson = "NotRun";
 
-        // COLD ALLOC: char[768] - inspector JSON staging for sandbox smoke result - owner: HectonSandboxAbyssalShelfSmokeTester
+        // COLD ALLOC: char[1024] - inspector JSON staging for sandbox smoke result - owner: HectonSandboxAbyssalShelfSmokeTester
         private readonly char[] _jsonBuffer = new char[JsonBufferLength];
 
         public bool LastRunPassed => _debugPassed;
@@ -69,23 +88,29 @@ namespace Hecton8.World
         /// </summary>
         public bool RunSmokeTest()
         {
-            NativeArray<double2> positions = default;
+            NativeArray<AbsoluteUniversePosition> positions = default;
             NativeArray<HectonSandboxAbyssalShelfAuditSample> samples = default;
+            NativeArray<HectonSandboxAbyssalShelfSampleReduction> reductions = default;
+            NativeArray<HectonSandboxAbyssalShelfSmokeSummary> summary = default;
             JobHandle sampleHandle = default;
             bool sampleHandleScheduled = false;
             HectonSandboxAbyssalShelfParams parameters = CreateDefaultParameters();
 
             try
             {
-                positions = new NativeArray<double2>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                positions = new NativeArray<AbsoluteUniversePosition>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 samples = new NativeArray<HectonSandboxAbyssalShelfAuditSample>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                reductions = new NativeArray<HectonSandboxAbyssalShelfSampleReduction>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                summary = new NativeArray<HectonSandboxAbyssalShelfSmokeSummary>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 RegisterTempJobArray(positions, nameof(positions));
                 RegisterTempJobArray(samples, nameof(samples));
+                RegisterTempJobArray(reductions, nameof(reductions));
+                RegisterTempJobArray(summary, nameof(summary));
                 FillSamplePositions(positions);
 
                 var sampleJob = new HectonSandboxAbyssalShelfSmokeSampleJob
                 {
-                    PositionsAupXZ = positions,
+                    PositionsAup = positions,
                     OutputSamples = samples,
                     Parameters = parameters,
                     SlopeProbeMeters = SlopeProbeMeters
@@ -94,6 +119,27 @@ namespace Hecton8.World
                 long completeStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
                 sampleHandle = sampleJob.Schedule(SampleCount, 4);
                 sampleHandleScheduled = true;
+                sampleHandle = new HectonSandboxAbyssalShelfSmokeReductionJob
+                {
+                    Samples = samples,
+                    Reductions = reductions
+                }.Schedule(SampleCount, 4, sampleHandle);
+                sampleHandle = new HectonSandboxAbyssalShelfSmokeSummaryJob
+                {
+                    Reductions = reductions,
+                    Summary = summary,
+                    Parameters = parameters,
+                    RequiredSampleCount = SampleCount,
+                    RequiredMinHeightMeters = RequiredMinMeters,
+                    RequiredMaxHeightMeters = RequiredMaxMeters,
+                    MaxAllowedSlopeDegrees = MaxAllowedSlopeDegrees,
+                    AupDeterminismToleranceMeters = AupDeterminismToleranceMeters,
+                    AupBoundaryContinuityToleranceMeters = AupBoundaryContinuityToleranceMeters,
+                    AupBoundaryProbeMeters = AupBoundaryProbeMeters,
+                    ChunkAuditResolution = ChunkAuditResolution,
+                    ChunkAuditSizeMeters = ChunkAuditSizeMeters,
+                    FarChunkOriginMeters = FarChunkOriginMeters
+                }.Schedule(sampleHandle);
                 DispatcherJobSwap.TryComplete(ref sampleHandle, forceComplete: true);
                 sampleHandleScheduled = false;
                 _debugCompletionMilliseconds =
@@ -101,7 +147,7 @@ namespace Hecton8.World
                     1000.0 /
                     System.Diagnostics.Stopwatch.Frequency);
 
-                EvaluateSamples(samples, in parameters);
+                ApplySummary(summary[0]);
                 WriteDebugJson();
 
                 if (!_debugPassed)
@@ -111,7 +157,32 @@ namespace Hecton8.World
                         _smokeContextHash,
                         _debugInvalidSampleCount);
                 }
-                else if (_debugCompletionMilliseconds > 4f)
+
+                if (_debugAupDeterminismDeltaMeters > AupDeterminismToleranceMeters)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _smokeAupDriftWarningHash,
+                        _smokeContextHash,
+                        _debugAupDeterminismDeltaMeters);
+                }
+
+                if (_debugAupBoundaryDeltaMeters > AupBoundaryContinuityToleranceMeters)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _smokeAupBoundaryWarningHash,
+                        _smokeContextHash,
+                        _debugAupBoundaryDeltaMeters);
+                }
+
+                if (_debugCliffSampleCount > 0 || _debugPlateauSampleCount == 0 || _debugSlope30SampleCount == 0)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _smokeCoverageWarningHash,
+                        _smokeContextHash,
+                        _debugCliffSampleCount + _debugPlateauSampleCount + _debugSlope30SampleCount);
+                }
+
+                if (_debugPassed && _debugCompletionMilliseconds > 4f)
                 {
                     GlobalTelemetryBus.PublishPerformanceWarning(
                         _smokeCompletionWarningHash,
@@ -137,6 +208,18 @@ namespace Hecton8.World
                     NativeMemorySentinel.UnregisterNativeArray(samples);
                     samples.Dispose();
                 }
+
+                if (reductions.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(reductions);
+                    reductions.Dispose();
+                }
+
+                if (summary.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(summary);
+                    summary.Dispose();
+                }
             }
         }
 
@@ -152,7 +235,14 @@ namespace Hecton8.World
                 _debugMinHeightMeters,
                 _debugMaxHeightMeters,
                 _debugMaxSlopeDegrees,
+                _debugAverageSlopeDegrees,
+                _debugAverageActiveSlopeDegrees,
+                _debugSlope30SampleCount,
                 _debugAupDeterminismDeltaMeters,
+                _debugAupBoundaryDeltaMeters,
+                _debugOriginChunkInvalidSampleCount,
+                _debugFarChunkInvalidSampleCount,
+                _debugHighChunkAupDeltaMeters,
                 _debugCompletionMilliseconds,
                 out charsWritten);
         }
@@ -162,78 +252,57 @@ namespace Hecton8.World
             return new HectonSandboxAbyssalShelfParams
             {
                 AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters,
-                DescentRadiusMeters = 16500.0,
-                PlateCellSizeMeters = 2200.0,
+                DescentRadiusMeters = 17500.0,
+                PlateCellSizeMeters = 4200.0,
                 HighWorldY = HighWorldY,
                 LowWorldY = LowWorldY,
-                RidgeHeightMeters = 1750f,
-                RidgeMultiplier = 0.22f,
-                RidgeWidthMeters = 190f,
-                JunctionWidthMeters = 360f,
-                PlateUniformity = 0.86f,
-                DomainWarpMeters = 480f,
-                DomainWarpFrequency = 0.00018f,
+                RidgeHeightMeters = 700f,
+                RidgeMultiplier = 0.08f,
+                RidgeWidthMeters = 1450f,
+                JunctionWidthMeters = 2800f,
+                PlateUniformity = 0.78f,
+                DomainWarpMeters = 1450f,
+                DomainWarpFrequency = 0.00011f,
+                MacroExponentialFalloff = 3.1f,
                 Seed = 880031u
             };
         }
 
-        private static void FillSamplePositions(NativeArray<double2> positions)
+        private static void FillSamplePositions(NativeArray<AbsoluteUniversePosition> positions)
         {
-            positions[0] = new double2(0.0, 0.0);
-            positions[1] = new double2(15000.0, 0.0);
-            positions[2] = new double2(16500.0, 0.0);
-            positions[3] = new double2(-16500.0, 0.0);
-            positions[4] = new double2(0.0, 16500.0);
-            positions[5] = new double2(5000.0, 5000.0);
-            positions[6] = new double2(100000.0, 0.0);
-            positions[7] = new double2(100125.0, -99625.0);
-            positions[8] = new double2(-100125.0, 99625.0);
-            positions[9] = new double2(15000.0, 15000.0);
-            positions[10] = new double2(-15000.0, 15000.0);
-            positions[11] = new double2(7500.0, -12500.0);
+            double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+            positions[0] = HectonSandboxAbyssalShelfMath.BuildAupXZ(0.0, 0.0, cellSize);
+            positions[1] = HectonSandboxAbyssalShelfMath.BuildAupXZ(9000.0, 0.0, cellSize);
+            positions[2] = HectonSandboxAbyssalShelfMath.BuildAupXZ(12500.0, 0.0, cellSize);
+            positions[3] = HectonSandboxAbyssalShelfMath.BuildAupXZ(-15000.0, 0.0, cellSize);
+            positions[4] = HectonSandboxAbyssalShelfMath.BuildAupXZ(0.0, 16500.0, cellSize);
+            positions[5] = HectonSandboxAbyssalShelfMath.BuildAupXZ(5000.0, 5000.0, cellSize);
+            positions[6] = HectonSandboxAbyssalShelfMath.BuildAupXZ(50000.0, 50000.0, cellSize);
+            positions[7] = HectonSandboxAbyssalShelfMath.BuildAupXZ(50125.0, 50375.0, cellSize);
+            positions[8] = HectonSandboxAbyssalShelfMath.BuildAupXZ(-50000.0, 50000.0, cellSize);
+            positions[9] = HectonSandboxAbyssalShelfMath.BuildAupXZ(15000.0, 15000.0, cellSize);
+            positions[10] = HectonSandboxAbyssalShelfMath.BuildAupXZ(-15000.0, 15000.0, cellSize);
+            positions[11] = HectonSandboxAbyssalShelfMath.BuildAupXZ(7500.0, -12500.0, cellSize);
         }
 
-        private void EvaluateSamples(
-            NativeArray<HectonSandboxAbyssalShelfAuditSample> samples,
-            in HectonSandboxAbyssalShelfParams parameters)
+        private void ApplySummary(HectonSandboxAbyssalShelfSmokeSummary summary)
         {
-            _debugSampleCount = samples.Length;
-            _debugInvalidSampleCount = 0;
-            _debugCliffSampleCount = 0;
-            _debugPlateauSampleCount = 0;
-            _debugMinHeightMeters = float.MaxValue;
-            _debugMaxHeightMeters = float.MinValue;
-            _debugMaxSlopeDegrees = 0f;
-
-            for (int i = 0; i < samples.Length; i++)
-            {
-                HectonSandboxAbyssalShelfAuditSample sample = samples[i];
-                if ((sample.Flags & 0x03) != 0)
-                    _debugInvalidSampleCount++;
-
-                if ((sample.Flags & 0x04) != 0)
-                    _debugCliffSampleCount++;
-
-                if ((sample.Flags & 0x08) != 0)
-                    _debugPlateauSampleCount++;
-
-                _debugMinHeightMeters = math.min(_debugMinHeightMeters, sample.HeightMeters);
-                _debugMaxHeightMeters = math.max(_debugMaxHeightMeters, sample.HeightMeters);
-                _debugMaxSlopeDegrees = math.max(_debugMaxSlopeDegrees, sample.SlopeAngleDegrees);
-            }
-
-            float shiftedA = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(100125.0, -99625.0, in parameters);
-            float shiftedB = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(
-                20.0 * AbsoluteUniversePosition.CellSizeMeters + 125.0,
-                -20.0 * AbsoluteUniversePosition.CellSizeMeters + 375.0,
-                in parameters);
-            _debugAupDeterminismDeltaMeters = math.abs(shiftedA - shiftedB);
-            _debugPassed =
-                _debugSampleCount == SampleCount &&
-                _debugInvalidSampleCount == 0 &&
-                _debugMinHeightMeters <= RequiredMinMeters &&
-                _debugMaxHeightMeters >= RequiredMaxMeters &&
-                _debugAupDeterminismDeltaMeters <= 0.0001f;
+            _debugSampleCount = summary.SampleCount;
+            _debugInvalidSampleCount = summary.InvalidSampleCount;
+            _debugCliffSampleCount = summary.CliffSampleCount;
+            _debugPlateauSampleCount = summary.PlateauSampleCount;
+            _debugMinHeightMeters = summary.MinHeightMeters;
+            _debugMaxHeightMeters = summary.MaxHeightMeters;
+            _debugMaxSlopeDegrees = summary.MaxSlopeDegrees;
+            _debugAverageSlopeDegrees = summary.AverageSlopeDegrees;
+            _debugAverageActiveSlopeDegrees = summary.AverageActiveSlopeDegrees;
+            _debugSlope30SampleCount = summary.Slope30SampleCount;
+            _debugAupDeterminismDeltaMeters = summary.AupDeterminismDeltaMeters;
+            _debugAupBoundaryDeltaMeters = summary.AupBoundaryDeltaMeters;
+            _debugOriginChunkInvalidSampleCount = summary.OriginChunkInvalidSampleCount;
+            _debugFarChunkInvalidSampleCount = summary.FarChunkInvalidSampleCount;
+            _debugHighChunkAupDeltaMeters = summary.HighChunkAupDeltaMeters;
+            _debugPassed = summary.Passed != 0;
         }
 
         private void WriteDebugJson()
@@ -263,7 +332,14 @@ namespace Hecton8.World
             float minHeightMeters,
             float maxHeightMeters,
             float maxSlopeDegrees,
+            float averageSlopeDegrees,
+            float averageActiveSlopeDegrees,
+            int slope30SampleCount,
             float aupDeterminismDeltaMeters,
+            float aupBoundaryDeltaMeters,
+            int originChunkInvalidSampleCount,
+            int farChunkInvalidSampleCount,
+            float highChunkAupDeltaMeters,
             float completionMilliseconds,
             out int charsWritten)
         {
@@ -285,8 +361,22 @@ namespace Hecton8.World
                 AppendFloat(destination, ref cursor, maxHeightMeters) &&
                 AppendLiteral(destination, ref cursor, ",\"maxSlopeDegrees\":") &&
                 AppendFloat(destination, ref cursor, maxSlopeDegrees) &&
+                AppendLiteral(destination, ref cursor, ",\"averageSlopeDegrees\":") &&
+                AppendFloat(destination, ref cursor, averageSlopeDegrees) &&
+                AppendLiteral(destination, ref cursor, ",\"averageActiveSlopeDegrees\":") &&
+                AppendFloat(destination, ref cursor, averageActiveSlopeDegrees) &&
+                AppendLiteral(destination, ref cursor, ",\"slope30Samples\":") &&
+                AppendInt(destination, ref cursor, slope30SampleCount) &&
                 AppendLiteral(destination, ref cursor, ",\"aupDeltaMeters\":") &&
                 AppendFloat(destination, ref cursor, aupDeterminismDeltaMeters) &&
+                AppendLiteral(destination, ref cursor, ",\"aupBoundaryDeltaMeters\":") &&
+                AppendFloat(destination, ref cursor, aupBoundaryDeltaMeters) &&
+                AppendLiteral(destination, ref cursor, ",\"originChunkInvalid\":") &&
+                AppendInt(destination, ref cursor, originChunkInvalidSampleCount) &&
+                AppendLiteral(destination, ref cursor, ",\"farChunkInvalid\":") &&
+                AppendInt(destination, ref cursor, farChunkInvalidSampleCount) &&
+                AppendLiteral(destination, ref cursor, ",\"highChunkAupDeltaMeters\":") &&
+                AppendFloat(destination, ref cursor, highChunkAupDeltaMeters) &&
                 AppendLiteral(destination, ref cursor, ",\"completionMs\":") &&
                 AppendFloat(destination, ref cursor, completionMilliseconds) &&
                 AppendLiteral(destination, ref cursor, "}");
@@ -313,19 +403,87 @@ namespace Hecton8.World
 
         private static bool AppendInt(Span<char> destination, ref int cursor, int value)
         {
-            if (!value.TryFormat(destination.Slice(cursor), out int written, provider: CultureInfo.InvariantCulture))
+            if (value == 0)
+                return AppendChar(destination, ref cursor, '0');
+
+            long working = value;
+            if (working < 0L)
+            {
+                if (!AppendChar(destination, ref cursor, '-'))
+                    return false;
+
+                working = -working;
+            }
+
+            Span<char> scratch = stackalloc char[16];
+            int count = 0;
+            while (working > 0L)
+            {
+                scratch[count++] = (char)('0' + (working % 10L));
+                working /= 10L;
+            }
+
+            if (cursor + count > destination.Length)
                 return false;
 
-            cursor += written;
+            for (int i = count - 1; i >= 0; i--)
+                destination[cursor++] = scratch[i];
+
             return true;
         }
 
         private static bool AppendFloat(Span<char> destination, ref int cursor, float value)
         {
-            if (!value.TryFormat(destination.Slice(cursor), out int written, "0.###", CultureInfo.InvariantCulture))
+            if (float.IsNaN(value) || float.IsInfinity(value))
+                return AppendChar(destination, ref cursor, '0');
+
+            int scaled = (int)math.round(value * 1000f);
+            if (scaled < 0)
+            {
+                if (!AppendChar(destination, ref cursor, '-'))
+                    return false;
+
+                scaled = -scaled;
+            }
+
+            int whole = scaled / 1000;
+            int fraction = scaled - (whole * 1000);
+            if (!AppendInt(destination, ref cursor, whole))
                 return false;
 
-            cursor += written;
+            if (fraction == 0)
+                return true;
+
+            int digits = 3;
+            while (digits > 0 && fraction % 10 == 0)
+            {
+                fraction /= 10;
+                digits--;
+            }
+
+            if (!AppendChar(destination, ref cursor, '.'))
+                return false;
+
+            int divisor = digits == 3 ? 100 : digits == 2 ? 10 : 1;
+            for (int i = 0; i < digits; i++)
+            {
+                int digit = fraction / divisor;
+                if (!AppendChar(destination, ref cursor, (char)('0' + digit)))
+                    return false;
+
+                fraction -= digit * divisor;
+                divisor /= 10;
+            }
+
+            return true;
+        }
+
+        private static bool AppendChar(Span<char> destination, ref int cursor, char value)
+        {
+            if (cursor >= destination.Length)
+                return false;
+
+            destination[cursor++] = value;
             return true;
         }
     }

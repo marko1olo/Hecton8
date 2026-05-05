@@ -1,0 +1,8 @@
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun_bin\Hecton8.Input.Generated.dll
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun_bin\Hecton8.Input.Generated.pdb
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun_obj\Hecton8.Input.Generated.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun_obj\Hecton8.Input.Generated.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun_obj\Hecton8.Input.Generated.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun_obj\Hecton8.Input.Generated.sourcelink.json
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun_obj\Hecton8.Input.Generated.dll
+C:\hades\Hecton8\.codexbuild\persistenceux_rerun_obj\Hecton8.Input.Generated.pdb

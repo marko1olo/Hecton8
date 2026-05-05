@@ -71,6 +71,7 @@ using Hecton8.Power;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -93,15 +94,31 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, IFixedTickable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener
+    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, IFixedTickable, IUpdatable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener
     {
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
+        private const int ModuleWaterLevelShaderCapacity = 256;
+        private static readonly int s_ModuleAmbienceDataId = Shader.PropertyToID("_ModuleAmbienceData");
+        private static readonly int s_ModuleFloodAndFlickerDataId = Shader.PropertyToID("_ModuleFloodAndFlickerData");
+        private static readonly int s_ModuleWaterLevelCountId = Shader.PropertyToID("_ModuleWaterLevelCount");
+        // COLD ALLOC: Vector4[256] — global module center/radius upload scratch — owner: BaseModule
+        private static readonly Vector4[] s_moduleAmbienceData = new Vector4[ModuleWaterLevelShaderCapacity];
+        // COLD ALLOC: Vector4[256] — global module water/flicker upload scratch — owner: BaseModule
+        private static readonly Vector4[] s_moduleFloodAndFlickerData = new Vector4[ModuleWaterLevelShaderCapacity];
+        // COLD ALLOC: float[256] — legacy global module water-level upload scratch — owner: BaseModule
+        private static int s_lastModuleWaterLevelUploadFrame = -1;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetActiveModuleRegistry()
         {
             s_activeModules.Clear();
+            s_lastModuleWaterLevelUploadFrame = -1;
+            for (int i = 0; i < ModuleWaterLevelShaderCapacity; i++)
+            {
+                s_moduleAmbienceData[i] = Vector4.zero;
+                s_moduleFloodAndFlickerData[i] = new Vector4(0f, 0f, 1f, 0f);
+            }
         }
         // ══════════════════════════════════════════════════════════
         //  CONSTANTS
@@ -395,6 +412,19 @@ namespace Hecton8.Gameplay
         [Tooltip("Внутренние источники света. Выключаются при отсутствии питания.")]
         [SerializeField] private Light[] interiorLights;
 
+        [Header("Brownout Ambience")]
+        [Tooltip("Voltage ratio below which room lights enter deterministic brownout flicker.")]
+        [SerializeField, Range(0.01f, 1f)] private float brownoutActivationVoltageRatio = 0.80f;
+
+        [Tooltip("Deterministic noise frequency used by low-voltage light flicker.")]
+        [SerializeField, Min(0.1f)] private float brownoutFlickerSpeed = 19f;
+
+        [Tooltip("Minimum light intensity fraction during brownout flicker.")]
+        [SerializeField, Range(0f, 1f)] private float brownoutMinimumLightIntensityRatio = 0.04f;
+
+        [Tooltip("Emergency tint applied to interior point lights during brownout.")]
+        [SerializeField] private Color brownoutEmergencyEmissionColor = new Color(1f, 0.13f, 0.06f, 1f);
+
         [Tooltip("Локальный Volume для тумана / постпроцесса затопления.")]
         [SerializeField] private Volume floodedLocalVolume;
 
@@ -407,6 +437,13 @@ namespace Hecton8.Gameplay
         [SerializeField] private AudioClip floodClip;
         [SerializeField] private AudioClip drainClip;
         [SerializeField] private AudioClip deconstructClip;
+        [Tooltip("Optional authored 40Hz-style scrubber bed source. Pitch and volume are driven without allocation.")]
+        [SerializeField] private AudioSource oxygenScrubberHumSource;
+        [SerializeField] private AudioClip oxygenScrubberHumLoop;
+        [SerializeField, Range(0f, 1f)] private float oxygenScrubberHumVolume = 0.18f;
+        [SerializeField, Min(0.01f)] private float oxygenScrubberHumPoweredPitch = 1f;
+        [SerializeField, Min(0.01f)] private float oxygenScrubberHumFailPitch = 0.55f;
+        [SerializeField, Min(0.1f)] private float oxygenScrubberHumFailFadeSeconds = 3f;
         [Header("── Life Support ──────────────────────────────")]
         [Tooltip("Oxygen refill rate (units per second) when player is inside,\n" +
                  "module is powered, and not flooded.\n" +
@@ -456,6 +493,17 @@ namespace Hecton8.Gameplay
 
         private bool _hasPower = true;
         private bool _ambientLightsBrownedOut;
+        private bool _updatableRegistered;
+        private float _ambientVoltageSupplyRatio = 1f;
+        private float _brownoutFlickerTime;
+        private float _brownoutNoiseSeed;
+        private float[] _interiorLightBaseIntensities = Array.Empty<float>();
+        private Color[] _interiorLightBaseColors = Array.Empty<Color>();
+        private bool _brownoutVisualsApplied;
+        private float _currentBrownoutFlicker01 = 1f;
+        private float _oxygenHum01;
+        private float _oxygenHumTarget01;
+        private bool _oxygenHumActive;
         private float _basePowerRating;
         private float _parasitePowerDrainWatts;
         private float _parasiteRootPowerDrainWatts;
@@ -796,8 +844,17 @@ namespace Hecton8.Gameplay
             CacheReferences();
             ReadBuildablePower();
             ConfigureRuntimeComponentsFromSerializedState();
+            CaptureBrownoutLightBaselines();
+            ConfigureOxygenScrubberHumSource();
             _isDeconstructing = false;
             _ambientLightsBrownedOut = false;
+            _ambientVoltageSupplyRatio = 1f;
+            _brownoutFlickerTime = 0f;
+            _brownoutVisualsApplied = false;
+            _currentBrownoutFlicker01 = 1f;
+            _oxygenHum01 = 0f;
+            _oxygenHumTarget01 = 0f;
+            _oxygenHumActive = false;
             _breachLatched = IsBreached;
             _cachedAtmosphereRoomIndex = -1;
             _hasBreachCenterOfMassTarget = false;
@@ -1005,6 +1062,21 @@ namespace Hecton8.Gameplay
             ApplyFloodWeightedCenterOfMass(fixedDeltaTime, floodFill01);
         }
 
+        /// <summary>
+        /// Frame-rate ambience only. Registered while brownout flicker or scrubber hum fade is active.
+        /// </summary>
+        public void Tick(float deltaTime)
+        {
+            float dt = Mathf.Max(0f, deltaTime);
+            if (IsBrownoutFlickerActive())
+                ApplyBrownoutFlicker(dt);
+            else if (_brownoutVisualsApplied)
+                RestoreBrownoutVisuals();
+
+            UpdateOxygenScrubberHum(dt);
+            UpdateAmbienceTickRegistration();
+        }
+
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
@@ -1023,6 +1095,8 @@ namespace Hecton8.Gameplay
             CaptureModuleRigidbodyDefaults();
             CaptureFloodSurfaceDefaults();
             CapturePressureCompressionDefaults();
+            CaptureBrownoutLightBaselines();
+            ConfigureOxygenScrubberHumSource();
             ApplyCondensationVisualState(_condensationActive);
         }
 
@@ -1045,10 +1119,15 @@ namespace Hecton8.Gameplay
             UpdateFloodVisualStateImmediate();
             SetInteriorReefVisualActive(_interiorReefInfestationActive);
             ApplyCondensationVisualState(_condensationActive);
+            UpdateOxygenScrubberHumTarget();
+            UpdateAmbienceTickRegistration();
+            PublishActiveModuleWaterLevelsToShader(true);
         }
 
         private void OnDisable()
         {
+            TryUnregisterUpdatable();
+            RestoreBrownoutVisuals();
             s_activeModules.Remove(this);
             PhysicsEventBus.Unregister(this);
             TryUnregister();
@@ -1062,10 +1141,13 @@ namespace Hecton8.Gameplay
             ReleaseAllTrackedObjects();
             _cachedFloodLevel01 = 0f;
             ClearQueuedHydroStructuralLoad();
+            PublishActiveModuleWaterLevelsToShader(true);
         }
 
         private void OnDestroy()
         {
+            TryUnregisterUpdatable();
+            RestoreBrownoutVisuals();
             s_activeModules.Remove(this);
             PhysicsEventBus.Unregister(this);
             TryUnregister();
@@ -1074,6 +1156,7 @@ namespace Hecton8.Gameplay
             BaseDegradationSystem.ClearParasiteSporeHazard(this);
             Hecton8.Construction.BaseDegradationSystem.ClearParasiteStructuralState(this);
             BaseDegradationSystem.ClearPressureCompressionState(this);
+            PublishActiveModuleWaterLevelsToShader(true);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -1384,6 +1467,8 @@ namespace Hecton8.Gameplay
                 return false;
 
             _carbonFilterAvailable = available;
+            UpdateOxygenScrubberHumTarget();
+            UpdateAmbienceTickRegistration();
             return true;
         }
 
@@ -2146,16 +2231,29 @@ namespace Hecton8.Gameplay
 
         internal void SetAmbientLightsBrownout(bool brownedOut)
         {
+            SetAmbientPowerVisualState(brownedOut, brownedOut ? Mathf.Min(_ambientVoltageSupplyRatio, 0.5f) : 1f);
+        }
+
+        internal void SetAmbientPowerVisualState(bool brownedOut, float voltageSupplyRatio)
+        {
             if (_ambientLightsBrownedOut == brownedOut)
+            {
+                _ambientVoltageSupplyRatio = Mathf.Clamp01(float.IsFinite(voltageSupplyRatio) ? voltageSupplyRatio : 1f);
+                UpdateAmbienceTickRegistration();
                 return;
+            }
 
             _ambientLightsBrownedOut = brownedOut;
+            _ambientVoltageSupplyRatio = Mathf.Clamp01(float.IsFinite(voltageSupplyRatio) ? voltageSupplyRatio : 1f);
             SetLightsEnabled(ShouldLightsBeEnabled());
+            if (!IsBrownoutFlickerActive())
+                RestoreBrownoutVisuals();
+            UpdateAmbienceTickRegistration();
         }
 
         private bool HasOperationalPower => _solarEmpBlackoutRemainingSeconds <= 0.0001f &&
                                             _integrityComponent.HasOperationalPower(_hasPower);
-        private bool ShouldLightsBeEnabled() => HasOperationalPower && !_ambientLightsBrownedOut;
+        private bool ShouldLightsBeEnabled() => HasOperationalPower;
 
         public void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
         {
@@ -2182,6 +2280,8 @@ namespace Hecton8.Gameplay
             SetLightsEnabled(false);
             UpdateDrainDiagnostics();
             SyncSpatialRole();
+            UpdateOxygenScrubberHumTarget();
+            UpdateAmbienceTickRegistration();
         }
 
         private void AdvanceSolarEmpBlackout(float deltaTime)
@@ -2202,6 +2302,8 @@ namespace Hecton8.Gameplay
                 _integrityComponent.TryStartDrain(_hasPower);
             UpdateDrainDiagnostics();
             SyncSpatialRole();
+            UpdateOxygenScrubberHumTarget();
+            UpdateAmbienceTickRegistration();
         }
 
         private void TriggerCascadeFailure()
@@ -2303,6 +2405,8 @@ namespace Hecton8.Gameplay
                 _trackedPlayerSurvival);
 
             HandleLifeSupportSignals(signals);
+            UpdateOxygenScrubberHumTarget();
+            UpdateAmbienceTickRegistration();
         }
 
         private float ResolveAirRefillScale()
@@ -2531,6 +2635,7 @@ namespace Hecton8.Gameplay
             }
 
             UpdateFloodDistortionVolume(floodVisible);
+            PublishActiveModuleWaterLevelsToShader();
         }
 
         private void UpdateFloodDistortionVolume(bool floodVisible)
@@ -2562,6 +2667,57 @@ namespace Hecton8.Gameplay
 
             float localY = Mathf.Lerp(ResolveFloodSurfaceMinimumLocalY(), ResolveFloodSurfaceMaximumLocalY(), _cachedFloodLevel01);
             return transform.TransformPoint(new Vector3(0f, localY, 0f)).y;
+        }
+
+        private static void PublishActiveModuleWaterLevelsToShader(bool force = false)
+        {
+            int currentFrame = Time.frameCount;
+            if (!force && s_lastModuleWaterLevelUploadFrame == currentFrame)
+                return;
+
+            s_lastModuleWaterLevelUploadFrame = currentFrame;
+            int moduleCount = Mathf.Min(s_activeModules.Count, ModuleWaterLevelShaderCapacity);
+            for (int i = 0; i < moduleCount; i++)
+            {
+                BaseModule module = s_activeModules[i];
+                if (module == null)
+                {
+                    s_moduleAmbienceData[i] = Vector4.zero;
+                    s_moduleFloodAndFlickerData[i] = new Vector4(0f, 0f, 1f, 0f);
+                    continue;
+                }
+
+                module.ResolveModuleAmbienceBounds(out Vector3 centerWS, out float radiusMeters);
+                s_moduleAmbienceData[i] = new Vector4(centerWS.x, centerWS.y, centerWS.z, radiusMeters);
+                s_moduleFloodAndFlickerData[i] = new Vector4(
+                    module.ResolveFloodSurfaceWorldY(),
+                    Mathf.Clamp01(module._cachedFloodLevel01),
+                    Mathf.Clamp01(module._currentBrownoutFlicker01),
+                    1f);
+            }
+
+            for (int i = moduleCount; i < ModuleWaterLevelShaderCapacity; i++)
+            {
+                s_moduleAmbienceData[i] = Vector4.zero;
+                s_moduleFloodAndFlickerData[i] = new Vector4(0f, 0f, 1f, 0f);
+            }
+
+            Shader.SetGlobalVectorArray(s_ModuleAmbienceDataId, s_moduleAmbienceData);
+            Shader.SetGlobalVectorArray(s_ModuleFloodAndFlickerDataId, s_moduleFloodAndFlickerData);
+            Shader.SetGlobalInt(s_ModuleWaterLevelCountId, moduleCount);
+        }
+
+        private void ResolveModuleAmbienceBounds(out Vector3 centerWS, out float radiusMeters)
+        {
+            if (TryGetInteriorOverlapQuery(out centerWS, out Vector3 halfExtents, out _))
+            {
+                radiusMeters = Mathf.Max(0.5f, halfExtents.magnitude + 0.25f);
+                return;
+            }
+
+            centerWS = transform.position;
+            float volumeRadius = Mathf.Pow(Mathf.Max(1f, ResolveBuoyancyDisplacementVolumeCubicMeters()), 0.33333334f);
+            radiusMeters = Mathf.Max(2f, volumeRadius * 1.75f);
         }
 
         private void ApplyDeepSeaCompressionState(bool force)
@@ -2658,6 +2814,7 @@ namespace Hecton8.Gameplay
 
             bool wasFlooded = _integrityComponent.IsFlooded;
             SetWaterVolumeM3(Mathf.Min(capacityM3, waterVolumeM3 + deltaVolumeM3));
+            EmitPressureIncursionVisuals(deltaVolumeM3, depthMeters);
             _integrityComponent.ForceFlood();
             UpdateFloodVisualStateImmediate();
             if (!wasFlooded)
@@ -2693,6 +2850,30 @@ namespace Hecton8.Gameplay
             return Mathf.Max(0.0001f, moduleTemplate != null
                 ? Mathf.Max(moduleTemplate.BreachAreaSquareMeters, breachHoleAreaSquareMeters)
                 : breachHoleAreaSquareMeters);
+        }
+
+        private void EmitPressureIncursionVisuals(float deltaVolumeM3, float depthMeters)
+        {
+            if (deltaVolumeM3 <= 0f || depthMeters <= 0f)
+                return;
+
+            Vector3 localLeakPoint = _hasBreachCenterOfMassTarget
+                ? _breachCenterOfMassTargetLocal
+                : ResolveDefaultBreachLocalPoint();
+            float pressureDeltaKPa = Mathf.Max(0f, ResolveHydrostaticPressureKPa(depthMeters) - SurfacePressureKPa);
+            float pressureVisualScale = Mathf.Clamp01((pressureDeltaKPa * 0.001f) + (deltaVolumeM3 * 0.35f));
+            EmitHullBreachJet(localLeakPoint, Mathf.Lerp(1.5f, 7.5f, pressureVisualScale));
+
+            AbyssalFluidDecalManager fluidDecals = GlobalRegistry.AbyssalFluidDecals;
+            if (fluidDecals == null)
+                return;
+
+            Vector3 worldPoint = transform.TransformPoint(localLeakPoint);
+            Vector3 inwardDirection = transform.position - worldPoint;
+            if (inwardDirection.sqrMagnitude < 0.0001f)
+                inwardDirection = -transform.forward;
+            inwardDirection.Normalize();
+            fluidDecals.RegisterPressureSpray(worldPoint, inwardDirection, pressureVisualScale);
         }
 
         private void SetWaterVolumeM3(float nextVolumeM3)
@@ -2802,6 +2983,154 @@ namespace Hecton8.Gameplay
                 if (l != null && l.enabled != enabled)
                     l.enabled = enabled;
             }
+        }
+
+        private void CaptureBrownoutLightBaselines()
+        {
+            int count = interiorLights != null ? interiorLights.Length : 0;
+            if (_brownoutVisualsApplied &&
+                _interiorLightBaseIntensities != null &&
+                _interiorLightBaseIntensities.Length == count &&
+                _interiorLightBaseColors != null &&
+                _interiorLightBaseColors.Length == count)
+            {
+                return;
+            }
+
+            if (_interiorLightBaseIntensities == null || _interiorLightBaseIntensities.Length != count)
+                _interiorLightBaseIntensities = count > 0 ? new float[count] : Array.Empty<float>(); // COLD ALLOC: float[interiorLights] - module brownout intensity baselines - owner: BaseModule
+            if (_interiorLightBaseColors == null || _interiorLightBaseColors.Length != count)
+                _interiorLightBaseColors = count > 0 ? new Color[count] : Array.Empty<Color>(); // COLD ALLOC: Color[interiorLights] - module brownout color baselines - owner: BaseModule
+
+            for (int i = 0; i < count; i++)
+            {
+                Light light = interiorLights[i];
+                if (light == null)
+                {
+                    _interiorLightBaseIntensities[i] = 0f;
+                    _interiorLightBaseColors[i] = Color.black;
+                    continue;
+                }
+
+                _interiorLightBaseIntensities[i] = Mathf.Max(0f, light.intensity);
+                _interiorLightBaseColors[i] = light.color;
+            }
+
+            ulong entitySeed = EntityId.ToULong(GetEntityId());
+            _brownoutNoiseSeed = (float)(entitySeed & 0xFFFFu) * 0.01731f;
+        }
+
+        private bool IsBrownoutFlickerActive()
+        {
+            return HasOperationalPower &&
+                   _ambientLightsBrownedOut &&
+                   _ambientVoltageSupplyRatio < Mathf.Clamp01(brownoutActivationVoltageRatio);
+        }
+
+        private void ApplyBrownoutFlicker(float dt)
+        {
+            CaptureBrownoutLightBaselines();
+            _brownoutFlickerTime += Mathf.Max(0f, dt);
+            float speed = Mathf.Max(0.1f, brownoutFlickerSpeed);
+            float primaryNoise = noise.snoise(new float2(_brownoutFlickerTime * speed, _brownoutNoiseSeed));
+            float dropoutNoise = noise.snoise(new float2((_brownoutFlickerTime + 11.37f) * speed * 1.83f, _brownoutNoiseSeed + 7.19f));
+            float voltage01 = Mathf.Clamp01(_ambientVoltageSupplyRatio / Mathf.Max(0.01f, brownoutActivationVoltageRatio));
+            float flicker01 = Mathf.Lerp(
+                Mathf.Clamp01(brownoutMinimumLightIntensityRatio),
+                1f,
+                Mathf.Abs(primaryNoise) * voltage01);
+            if (dropoutNoise > 0.62f)
+                flicker01 *= 0.08f + 0.18f * voltage01;
+
+            int count = interiorLights != null ? Mathf.Min(interiorLights.Length, _interiorLightBaseIntensities.Length) : 0;
+            for (int i = 0; i < count; i++)
+            {
+                Light light = interiorLights[i];
+                if (light == null)
+                    continue;
+
+                if (!light.enabled)
+                    light.enabled = true;
+                light.intensity = _interiorLightBaseIntensities[i] * flicker01;
+                light.color = Color.Lerp(brownoutEmergencyEmissionColor, _interiorLightBaseColors[i], voltage01);
+            }
+
+            _currentBrownoutFlicker01 = flicker01;
+            PublishActiveModuleWaterLevelsToShader();
+            _brownoutVisualsApplied = true;
+        }
+
+        private void RestoreBrownoutVisuals()
+        {
+            int lightCount = interiorLights != null ? Mathf.Min(interiorLights.Length, _interiorLightBaseIntensities.Length) : 0;
+            for (int i = 0; i < lightCount; i++)
+            {
+                Light light = interiorLights[i];
+                if (light == null)
+                    continue;
+
+                light.intensity = _interiorLightBaseIntensities[i];
+                light.color = _interiorLightBaseColors[i];
+                light.enabled = ShouldLightsBeEnabled();
+            }
+
+            _currentBrownoutFlicker01 = 1f;
+            PublishActiveModuleWaterLevelsToShader();
+            _brownoutVisualsApplied = false;
+        }
+
+        private void ConfigureOxygenScrubberHumSource()
+        {
+            if (oxygenScrubberHumSource == null)
+                return;
+
+            if (oxygenScrubberHumLoop != null && oxygenScrubberHumSource.clip != oxygenScrubberHumLoop)
+                oxygenScrubberHumSource.clip = oxygenScrubberHumLoop;
+            oxygenScrubberHumSource.loop = true;
+            oxygenScrubberHumSource.playOnAwake = false;
+            oxygenScrubberHumSource.volume = 0f;
+            oxygenScrubberHumSource.pitch = Mathf.Max(0.01f, oxygenScrubberHumFailPitch);
+        }
+
+        private void UpdateOxygenScrubberHumTarget()
+        {
+            _oxygenHumTarget01 = HasOperationalPower &&
+                                 _carbonFilterAvailable &&
+                                 !_integrityComponent.IsFlooded
+                ? 1f
+                : 0f;
+        }
+
+        private void UpdateOxygenScrubberHum(float dt)
+        {
+            if (oxygenScrubberHumSource == null)
+                return;
+
+            ConfigureOxygenScrubberHumSource();
+            float fadeSeconds = _oxygenHumTarget01 > _oxygenHum01
+                ? 0.25f
+                : Mathf.Max(0.1f, oxygenScrubberHumFailFadeSeconds);
+            float alpha = dt > 0f ? 1f - Mathf.Exp(-dt / fadeSeconds) : 1f;
+            _oxygenHum01 = Mathf.Lerp(_oxygenHum01, _oxygenHumTarget01, alpha);
+
+            if (_oxygenHum01 <= 0.001f)
+            {
+                if (oxygenScrubberHumSource.isPlaying)
+                    oxygenScrubberHumSource.Stop();
+                oxygenScrubberHumSource.volume = 0f;
+                _oxygenHumActive = false;
+                return;
+            }
+
+            if (!oxygenScrubberHumSource.isPlaying)
+                oxygenScrubberHumSource.Play();
+
+            oxygenScrubberHumSource.volume = oxygenScrubberHumVolume * _oxygenHum01;
+            oxygenScrubberHumSource.pitch = Mathf.Lerp(
+                Mathf.Max(0.01f, oxygenScrubberHumFailPitch),
+                Mathf.Max(0.01f, oxygenScrubberHumPoweredPitch),
+                _oxygenHum01);
+            _oxygenHumActive = true;
         }
 
         /// <summary>
@@ -3487,6 +3816,42 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _tickRegistered = false;
+        }
+
+        private void UpdateAmbienceTickRegistration()
+        {
+            if (ShouldRunAmbienceTick())
+                TryRegisterUpdatable();
+            else
+                TryUnregisterUpdatable();
+        }
+
+        private bool ShouldRunAmbienceTick()
+        {
+            return IsBrownoutFlickerActive() ||
+                   _brownoutVisualsApplied ||
+                   Mathf.Abs(_oxygenHum01 - _oxygenHumTarget01) > 0.001f ||
+                   _oxygenHumActive;
+        }
+
+        private void TryRegisterUpdatable()
+        {
+            if (_updatableRegistered)
+                return;
+            if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _updatableRegistered = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void TryUnregisterUpdatable()
+        {
+            if (!_updatableRegistered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _updatableRegistered = false;
         }
 
         private void TryRegisterFixedTick()

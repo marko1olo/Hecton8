@@ -145,6 +145,25 @@ namespace Hecton8.AI
                 job.Execute(i);
         }
 
+        internal JobHandle ScheduleParasiteAttach(
+            NativeArray<FaunaParasiteAttachInput> inputs,
+            NativeArray<FaunaParasiteAttachResult> results,
+            int count,
+            JobHandle dependency = default)
+        {
+            int safeCount = math.min(math.max(0, count), math.min(inputs.Length, results.Length));
+            if (safeCount <= 0)
+                return dependency;
+
+            ParasiteAttachJob job = new ParasiteAttachJob
+            {
+                Inputs = inputs,
+                Results = results
+            };
+
+            return job.Schedule(safeCount, 32, dependency);
+        }
+
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct DataOnlyFaunaLodJob : IJobParallelFor
         {

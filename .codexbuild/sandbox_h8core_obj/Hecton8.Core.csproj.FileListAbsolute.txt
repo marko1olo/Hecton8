@@ -1,0 +1,4 @@
+C:\hades\Hecton8\.codexbuild\sandbox_h8core_obj\Hecton8.Core.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\sandbox_h8core_obj\Hecton8.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\sandbox_h8core_obj\Hecton8.Core.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\sandbox_h8core_obj\Hecton8.Core.sourcelink.json

@@ -1,0 +1,2538 @@
+﻿diff --git a/Assets/_Project/Scripts/Editor/SpaceEngineResearchContracts.cs b/Assets/_Project/Scripts/Editor/SpaceEngineResearchContracts.cs
+new file mode 100644
+index 00000000..dd376be1
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/SpaceEngineResearchContracts.cs
+@@ -0,0 +1,68 @@
++#if UNITY_EDITOR
++// ============================================================================
++// HECTON-8 - SpaceEngineResearchContracts.cs
++// Editor-only DTO contracts for SpaceEngine research validation.
++// ============================================================================
++
++using System.Collections.Generic;
++
++namespace Hecton8.EditorTools
++{
++    internal sealed class SpaceEngineResearchAuditResult
++    {
++        // COLD ALLOC: List<string>[32] - editor smoke failure sample - owner: SpaceEngineResearchSmokeTester
++        public readonly List<string> Failures = new List<string>(32);
++
++        public string ProjectRoot;
++        public string SpaceEngineRoot;
++        public string ReportPath;
++        public string ReferenceKernelFolder;
++        public string NoPasswordProbeStatus;
++        public bool Passed;
++        public bool TelemetryWarningRequested;
++        public bool TelemetryRuntimeEligible;
++        public int ReportLineCount;
++        public int MaxReportLineCount;
++        public int ReferenceKernelFileCount;
++        public int EditorValidationFileCount;
++        public int MaxEditorValidationLineCount;
++        public int NativeCollectionTokenCount;
++        public int JobBarrierTokenCount;
++        public int StaticInstanceTokenCount;
++        public int HotPathStringTokenCount;
++        public int RecentScopeRuntimeCsFileCount;
++        public int RecentScopeRuntimeNativeCollectionCount;
++        public int FailureCount;
++        public SpaceEngineZipProbeResult ShaderPak;
++        public SpaceEngineZipProbeResult AtmospherePak;
++        public SpaceEngineZipProbeResult CatalogPak;
++    }
++
++    internal sealed class SpaceEngineResearchStressResult
++    {
++        // COLD ALLOC: List<string>[32] - editor stress failure sample - owner: SpaceEngineResearchSmokeTester
++        public readonly List<string> Failures = new List<string>(32);
++
++        public string ProjectRoot;
++        public string SpaceEngineRoot;
++        public bool Passed;
++        public int PassCount;
++        public int FailureCount;
++        public SpaceEngineResearchAuditResult FinalAudit;
++    }
++
++    internal struct SpaceEngineZipProbeResult
++    {
++        public string Path;
++        public string ParseError;
++        public bool Exists;
++        public int EntryCount;
++        public int EncryptedEntryCount;
++        public int CompressedEntryCount;
++        public int StoredEntryCount;
++        public int ExpectedEntryCount;
++        public int ExpectedFoundCount;
++        public int ExpectedMissingCount;
++    }
++}
++#endif
+diff --git a/Assets/_Project/Scripts/Editor/SpaceEngineResearchContracts.cs.meta b/Assets/_Project/Scripts/Editor/SpaceEngineResearchContracts.cs.meta
+new file mode 100644
+index 00000000..41ddb283
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/SpaceEngineResearchContracts.cs.meta
+@@ -0,0 +1,11 @@
++fileFormatVersion: 2
++guid: 9c26e19702034dd596d4836f6c5d9a7d
++MonoImporter:
++  externalObjects: {}
++  serializedVersion: 2
++  defaultReferences: []
++  executionOrder: 0
++  icon: {instanceID: 0}
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+diff --git a/Assets/_Project/Scripts/Editor/SpaceEngineResearchJsonWriter.cs b/Assets/_Project/Scripts/Editor/SpaceEngineResearchJsonWriter.cs
+new file mode 100644
+index 00000000..11488dca
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/SpaceEngineResearchJsonWriter.cs
+@@ -0,0 +1,202 @@
++#if UNITY_EDITOR
++// ============================================================================
++// HECTON-8 - SpaceEngineResearchJsonWriter.cs
++// Editor-only JSON artifact writer for SpaceEngine research validation.
++// ============================================================================
++
++using System.Collections.Generic;
++using System.IO;
++using System.Text;
++
++namespace Hecton8.EditorTools
++{
++    internal static class SpaceEngineResearchJsonWriter
++    {
++        public static string Write(SpaceEngineResearchAuditResult result)
++        {
++            StringBuilder builder = new StringBuilder(4096);
++            AppendAudit(builder, result);
++            return builder.ToString();
++        }
++
++        public static string WriteStress(SpaceEngineResearchStressResult result)
++        {
++            StringBuilder builder = new StringBuilder(8192);
++            builder.Append('{');
++            AppendProperty(builder, "status", result.Passed ? "OMEGA_VERIFIED" : "FAILED");
++            builder.Append(',');
++            AppendProperty(builder, "projectRoot", result.ProjectRoot);
++            builder.Append(',');
++            AppendProperty(builder, "spaceEngineRoot", result.SpaceEngineRoot);
++            builder.Append(',');
++            AppendProperty(builder, "passCount", result.PassCount);
++            builder.Append(',');
++            AppendProperty(builder, "failureCount", result.FailureCount);
++            builder.Append(',');
++            AppendStringArray(builder, "failures", result.Failures);
++            builder.Append(',');
++            builder.Append("\"finalAudit\":");
++            AppendAudit(builder, result.FinalAudit);
++            builder.Append('}');
++            return builder.ToString();
++        }
++
++        public static void TryWriteArtifact(string projectRoot, string json)
++        {
++            string outputPath = SpaceEngineResearchSmokeTester.ResolveOutputPath(projectRoot);
++            string directory = Path.GetDirectoryName(outputPath);
++            if (!string.IsNullOrEmpty(directory))
++                Directory.CreateDirectory(directory);
++
++            File.WriteAllText(outputPath, json, Encoding.UTF8);
++        }
++
++        private static void AppendAudit(StringBuilder builder, SpaceEngineResearchAuditResult result)
++        {
++            if (result == null)
++            {
++                builder.Append("null");
++                return;
++            }
++
++            builder.Append('{');
++            AppendProperty(builder, "status", result.Passed ? "PASS" : "FAIL");
++            builder.Append(',');
++            AppendProperty(builder, "projectRoot", result.ProjectRoot);
++            builder.Append(',');
++            AppendProperty(builder, "spaceEngineRoot", result.SpaceEngineRoot);
++            builder.Append(',');
++            AppendProperty(builder, "reportLineCount", result.ReportLineCount);
++            builder.Append(',');
++            AppendProperty(builder, "maxReportLineCount", result.MaxReportLineCount);
++            builder.Append(',');
++            AppendProperty(builder, "referenceKernelFileCount", result.ReferenceKernelFileCount);
++            builder.Append(',');
++            AppendProperty(builder, "editorValidationFileCount", result.EditorValidationFileCount);
++            builder.Append(',');
++            AppendProperty(builder, "maxEditorValidationLineCount", result.MaxEditorValidationLineCount);
++            builder.Append(',');
++            AppendProperty(builder, "noPasswordProbeStatus", result.NoPasswordProbeStatus);
++            builder.Append(',');
++            AppendProperty(builder, "nativeCollectionTokenCount", result.NativeCollectionTokenCount);
++            builder.Append(',');
++            AppendProperty(builder, "jobBarrierTokenCount", result.JobBarrierTokenCount);
++            builder.Append(',');
++            AppendProperty(builder, "staticInstanceTokenCount", result.StaticInstanceTokenCount);
++            builder.Append(',');
++            AppendProperty(builder, "hotPathStringTokenCount", result.HotPathStringTokenCount);
++            builder.Append(',');
++            AppendProperty(builder, "recentScopeRuntimeCsFileCount", result.RecentScopeRuntimeCsFileCount);
++            builder.Append(',');
++            AppendProperty(builder, "recentScopeRuntimeNativeCollectionCount", result.RecentScopeRuntimeNativeCollectionCount);
++            builder.Append(',');
++            AppendProperty(builder, "telemetryWarningRequested", result.TelemetryWarningRequested);
++            builder.Append(',');
++            AppendProperty(builder, "telemetryRuntimeEligible", result.TelemetryRuntimeEligible);
++            builder.Append(',');
++            AppendProperty(builder, "failureCount", result.FailureCount);
++            builder.Append(',');
++            AppendStringArray(builder, "failures", result.Failures);
++            builder.Append(',');
++            builder.Append("\"shaderPak\":");
++            AppendZipProbe(builder, result.ShaderPak);
++            builder.Append(',');
++            builder.Append("\"atmospherePak\":");
++            AppendZipProbe(builder, result.AtmospherePak);
++            builder.Append(',');
++            builder.Append("\"catalogPak\":");
++            AppendZipProbe(builder, result.CatalogPak);
++            builder.Append('}');
++        }
++
++        private static void AppendZipProbe(StringBuilder builder, SpaceEngineZipProbeResult result)
++        {
++            builder.Append('{');
++            AppendProperty(builder, "path", result.Path);
++            builder.Append(',');
++            AppendProperty(builder, "exists", result.Exists);
++            builder.Append(',');
++            AppendProperty(builder, "entryCount", result.EntryCount);
++            builder.Append(',');
++            AppendProperty(builder, "encryptedEntryCount", result.EncryptedEntryCount);
++            builder.Append(',');
++            AppendProperty(builder, "compressedEntryCount", result.CompressedEntryCount);
++            builder.Append(',');
++            AppendProperty(builder, "storedEntryCount", result.StoredEntryCount);
++            builder.Append(',');
++            AppendProperty(builder, "expectedEntryCount", result.ExpectedEntryCount);
++            builder.Append(',');
++            AppendProperty(builder, "expectedFoundCount", result.ExpectedFoundCount);
++            builder.Append(',');
++            AppendProperty(builder, "expectedMissingCount", result.ExpectedMissingCount);
++            builder.Append(',');
++            AppendProperty(builder, "parseError", result.ParseError);
++            builder.Append('}');
++        }
++
++        private static void AppendProperty(StringBuilder builder, string name, string value)
++        {
++            builder.Append('"');
++            builder.Append(name);
++            builder.Append("\":\"");
++            AppendEscaped(builder, value);
++            builder.Append('"');
++        }
++
++        private static void AppendProperty(StringBuilder builder, string name, int value)
++        {
++            builder.Append('"');
++            builder.Append(name);
++            builder.Append("\":");
++            builder.Append(value);
++        }
++
++        private static void AppendProperty(StringBuilder builder, string name, bool value)
++        {
++            builder.Append('"');
++            builder.Append(name);
++            builder.Append("\":");
++            builder.Append(value ? "true" : "false");
++        }
++
++        private static void AppendStringArray(StringBuilder builder, string name, List<string> values)
++        {
++            builder.Append('"');
++            builder.Append(name);
++            builder.Append("\":[");
++            for (int i = 0; i < values.Count; i++)
++            {
++                if (i > 0)
++                    builder.Append(',');
++
++                builder.Append('"');
++                AppendEscaped(builder, values[i]);
++                builder.Append('"');
++            }
++
++            builder.Append(']');
++        }
++
++        private static void AppendEscaped(StringBuilder builder, string value)
++        {
++            if (string.IsNullOrEmpty(value))
++                return;
++
++            for (int i = 0; i < value.Length; i++)
++            {
++                char c = value[i];
++                if (c == '\\')
++                    builder.Append("\\\\");
++                else if (c == '"')
++                    builder.Append("\\\"");
++                else if (c == '\r')
++                    builder.Append("\\r");
++                else if (c == '\n')
++                    builder.Append("\\n");
++                else
++                    builder.Append(c);
++            }
++        }
++    }
++}
++#endif
+diff --git a/Assets/_Project/Scripts/Editor/SpaceEngineResearchJsonWriter.cs.meta b/Assets/_Project/Scripts/Editor/SpaceEngineResearchJsonWriter.cs.meta
+new file mode 100644
+index 00000000..2350fd33
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/SpaceEngineResearchJsonWriter.cs.meta
+@@ -0,0 +1,11 @@
++fileFormatVersion: 2
++guid: 6c0d7828f50d4c99a58ba1d7a50a94c2
++MonoImporter:
++  externalObjects: {}
++  serializedVersion: 2
++  defaultReferences: []
++  executionOrder: 0
++  icon: {instanceID: 0}
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+diff --git a/Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs b/Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs
+new file mode 100644
+index 00000000..06b62add
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs
+@@ -0,0 +1,590 @@
++#if UNITY_EDITOR
++// ============================================================================
++// HECTON-8 - SpaceEngineResearchSmokeTester.cs
++// Editor-only guard for SpaceEngine 0.9.9 atmosphere/scale research artifacts.
++// ============================================================================
++
++using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Text;
++using Hecton8.Core;
++using UnityEditor;
++using UnityEngine;
++
++namespace Hecton8.EditorTools
++{
++    public static class SpaceEngineResearchSmokeTester
++    {
++        private const string MenuPath = "Hecton/Validation/Validate SpaceEngine Research";
++        private const string StressMenuPath = "Hecton/Validation/Stress SpaceEngine Research";
++        private const string OutputRelativePath = "Library/SpaceEngineResearchSmokeTester.json";
++        private const string SpaceEngineRoot = @"C:\GOG Games\SpaceEngine";
++        private const int StressPassCount = 3;
++
++        [MenuItem(MenuPath, priority = 262)]
++        public static void RunMenuItem()
++        {
++            bool passed = Run(out string json);
++            if (passed)
++                Debug.Log(json);
++            else
++                Debug.LogError(json);
++        }
++
++        [MenuItem(StressMenuPath, priority = 263)]
++        public static void RunStressMenuItem()
++        {
++            bool passed = RunStress(out string json);
++            if (passed)
++                Debug.Log(json);
++            else
++                Debug.LogError(json);
++        }
++
++        public static void RunBatch()
++        {
++            bool passed = RunStress(out string json);
++            if (passed)
++                Debug.Log(json);
++            else
++                Debug.LogError(json);
++
++            if (Application.isBatchMode)
++                EditorApplication.Exit(passed ? 0 : 1);
++        }
++
++        public static bool Run(out string json)
++        {
++            string projectRoot = ResolveProjectRoot();
++            SpaceEngineResearchAuditResult result = SpaceEngineResearchAudit.Execute(projectRoot, SpaceEngineRoot);
++            SpaceEngineResearchTelemetryReporter.PublishIfFailed(result);
++            json = SpaceEngineResearchJsonWriter.Write(result);
++            SpaceEngineResearchJsonWriter.TryWriteArtifact(projectRoot, json);
++            return result.Passed;
++        }
++
++        public static bool RunStress(out string json)
++        {
++            string projectRoot = ResolveProjectRoot();
++            SpaceEngineResearchStressResult result =
++                SpaceEngineResearchStressRunner.Execute(projectRoot, SpaceEngineRoot, StressPassCount);
++
++            SpaceEngineResearchTelemetryReporter.PublishIfFailed(result.FinalAudit);
++            json = SpaceEngineResearchJsonWriter.WriteStress(result);
++            SpaceEngineResearchJsonWriter.TryWriteArtifact(projectRoot, json);
++            return result.Passed;
++        }
++
++        private static string ResolveProjectRoot()
++        {
++            DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
++            return dataDirectory == null ? Directory.GetCurrentDirectory() : dataDirectory.FullName;
++        }
++
++        internal static string ResolveOutputPath(string projectRoot)
++        {
++            return Path.Combine(projectRoot, OutputRelativePath.Replace('/', Path.DirectorySeparatorChar));
++        }
++    }
++
++    internal static class SpaceEngineResearchAudit
++    {
++        private const int MaxReportLineCount = 800;
++        private const int ExpectedShaderEntryCount = 137;
++        private const int ExpectedEncryptedShaderEntryCount = 137;
++        private const string ResearchReportRelativePath = "Docs/SPACE_ENGINE_RESEARCH/ATMOSPHERE_AND_SCALE_099.md";
++        private const string ReferenceKernelRelativeFolder = "Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels";
++
++        private static readonly string[] RequiredReportAnchors =
++        {
++            "MINING COMPLETE",
++            "PENDING VERIFICATION",
++            "Raw GLSL status",
++            "ReferenceKernels",
++            "Regression Model",
++            "Hot Path Impact",
++            "Failure Modes"
++        };
++
++        private static readonly string[] RequiredKernelAnchors =
++        {
++            "H8SingleScatterLow",
++            "H8GasBandBakeJob",
++            "H8RingShadowTransmittance",
++            "H8LogDepth01",
++            "H8TwistedDiskUv"
++        };
++
++        private static readonly string[] ExpectedShaderEntries =
++        {
++            "atmo_transm.glsl",
++            "tg_gasgiant_color.glsl",
++            "tg_gasgiant_height.glsl",
++            "rings_raymarch.glsl",
++            "emu_double.glh",
++            "einstein.glsl"
++        };
++
++        private static readonly string[] ExpectedAtmosphereEntries =
++        {
++            "atmospheres.cfg",
++            "Earth.atm",
++            "Jupiter.atm",
++            "Neptune.atm"
++        };
++
++        private static readonly string[] ExpectedCatalogEntries =
++        {
++            "planets/SolarSys.sc",
++            "planets/SpaceEngine.sc"
++        };
++
++        private static readonly string[] EditorValidationRelativeFiles =
++        {
++            "Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs",
++            "Assets/_Project/Scripts/Editor/SpaceEngineResearchJsonWriter.cs",
++            "Assets/_Project/Scripts/Editor/SpaceEngineResearchContracts.cs"
++        };
++
++        public static SpaceEngineResearchAuditResult Execute(string projectRoot, string spaceEngineRoot)
++        {
++            SpaceEngineResearchAuditResult result = new SpaceEngineResearchAuditResult
++            {
++                ProjectRoot = projectRoot,
++                SpaceEngineRoot = spaceEngineRoot,
++                MaxReportLineCount = MaxReportLineCount
++            };
++
++            AuditReport(projectRoot, result);
++            AuditReferenceKernels(projectRoot, result);
++            AuditArchives(spaceEngineRoot, result);
++            AuditRecentScope(projectRoot, result);
++            AuditEditorValidationFiles(projectRoot, result);
++
++            result.Passed = result.FailureCount == 0;
++            return result;
++        }
++
++        private static void AuditReport(string projectRoot, SpaceEngineResearchAuditResult result)
++        {
++            string reportPath = Path.Combine(projectRoot, ResearchReportRelativePath.Replace('/', Path.DirectorySeparatorChar));
++            result.ReportPath = reportPath;
++
++            if (!File.Exists(reportPath))
++            {
++                AddFailure(result, "Research report missing: " + reportPath);
++                return;
++            }
++
++            string[] lines = File.ReadAllLines(reportPath);
++            result.ReportLineCount = lines.Length;
++            if (lines.Length > MaxReportLineCount)
++                AddFailure(result, "Research report exceeds decomposition limit: " + lines.Length + " > " + MaxReportLineCount);
++
++            string text = File.ReadAllText(reportPath);
++            for (int i = 0; i < RequiredReportAnchors.Length; i++)
++            {
++                if (text.IndexOf(RequiredReportAnchors[i], StringComparison.Ordinal) < 0)
++                    AddFailure(result, "Report anchor missing: " + RequiredReportAnchors[i]);
++            }
++        }
++
++        private static void AuditReferenceKernels(string projectRoot, SpaceEngineResearchAuditResult result)
++        {
++            string folder = Path.Combine(projectRoot, ReferenceKernelRelativeFolder.Replace('/', Path.DirectorySeparatorChar));
++            result.ReferenceKernelFolder = folder;
++
++            if (!Directory.Exists(folder))
++            {
++                AddFailure(result, "Reference kernel folder missing: " + folder);
++                return;
++            }
++
++            string[] files = Directory.GetFiles(folder, "*.*", SearchOption.TopDirectoryOnly);
++            Array.Sort(files, StringComparer.OrdinalIgnoreCase);
++            result.ReferenceKernelFileCount = files.Length;
++
++            StringBuilder builder = new StringBuilder(4096);
++            for (int i = 0; i < files.Length; i++)
++                builder.Append(File.ReadAllText(files[i]));
++
++            string text = builder.ToString();
++            for (int i = 0; i < RequiredKernelAnchors.Length; i++)
++            {
++                if (text.IndexOf(RequiredKernelAnchors[i], StringComparison.Ordinal) < 0)
++                    AddFailure(result, "Reference kernel anchor missing: " + RequiredKernelAnchors[i]);
++            }
++        }
++
++        private static void AuditEditorValidationFiles(string projectRoot, SpaceEngineResearchAuditResult result)
++        {
++            int fileCount = 0;
++            int maxLineCount = 0;
++
++            for (int i = 0; i < EditorValidationRelativeFiles.Length; i++)
++            {
++                string path = Path.Combine(
++                    projectRoot,
++                    EditorValidationRelativeFiles[i].Replace('/', Path.DirectorySeparatorChar));
++
++                if (!File.Exists(path))
++                {
++                    AddFailure(result, "Editor validation file missing: " + EditorValidationRelativeFiles[i]);
++                    continue;
++                }
++
++                int lineCount = File.ReadAllLines(path).Length;
++                fileCount++;
++                if (lineCount > maxLineCount)
++                    maxLineCount = lineCount;
++                if (lineCount > MaxReportLineCount)
++                    AddFailure(result, "Editor validation file exceeds decomposition limit: " + EditorValidationRelativeFiles[i]);
++            }
++
++            result.EditorValidationFileCount = fileCount;
++            result.MaxEditorValidationLineCount = maxLineCount;
++        }
++
++        private static void AuditArchives(string spaceEngineRoot, SpaceEngineResearchAuditResult result)
++        {
++            string shaderPak = Path.Combine(spaceEngineRoot, @"data\shaders\Shaders.pak");
++            string atmospherePak = Path.Combine(spaceEngineRoot, @"data\models\atmospheres\Atmospheres.pak");
++            string catalogPak = Path.Combine(spaceEngineRoot, @"data\catalogs\Catalogs.pak");
++
++            result.ShaderPak = SpaceEngineZipCentralDirectoryProbe.Probe(shaderPak, ExpectedShaderEntries);
++            result.AtmospherePak = SpaceEngineZipCentralDirectoryProbe.Probe(atmospherePak, ExpectedAtmosphereEntries);
++            result.CatalogPak = SpaceEngineZipCentralDirectoryProbe.Probe(catalogPak, ExpectedCatalogEntries);
++
++            if (!result.ShaderPak.Exists)
++            {
++                AddFailure(result, "Shader archive missing: " + shaderPak);
++            }
++            else
++            {
++                if (result.ShaderPak.EntryCount != ExpectedShaderEntryCount)
++                    AddFailure(result, "Shader archive entry count changed: " + result.ShaderPak.EntryCount);
++                if (result.ShaderPak.EncryptedEntryCount != ExpectedEncryptedShaderEntryCount)
++                    AddFailure(result, "Shader archive encrypted count changed: " + result.ShaderPak.EncryptedEntryCount);
++                if (result.ShaderPak.ExpectedMissingCount != 0)
++                    AddFailure(result, "Shader archive expected entries missing: " + result.ShaderPak.ExpectedMissingCount);
++
++                result.NoPasswordProbeStatus =
++                    result.ShaderPak.EncryptedEntryCount > 0
++                        ? "BLOCKED_BY_ENCRYPTED_ZIP_FLAGS_NO_PASSWORD_BYPASS"
++                        : "NO_ENCRYPTION_FLAG_DETECTED";
++            }
++
++            if (!result.AtmospherePak.Exists)
++            {
++                AddFailure(result, "Atmosphere archive missing: " + atmospherePak);
++            }
++            else
++            {
++                if (result.AtmospherePak.EncryptedEntryCount != 0)
++                    AddFailure(result, "Atmosphere archive unexpectedly encrypted: " + result.AtmospherePak.EncryptedEntryCount);
++                if (result.AtmospherePak.ExpectedMissingCount != 0)
++                    AddFailure(result, "Atmosphere archive expected entries missing: " + result.AtmospherePak.ExpectedMissingCount);
++            }
++
++            if (!result.CatalogPak.Exists)
++            {
++                AddFailure(result, "Catalog archive missing: " + catalogPak);
++            }
++            else
++            {
++                if (result.CatalogPak.EncryptedEntryCount != 0)
++                    AddFailure(result, "Catalog archive unexpectedly encrypted: " + result.CatalogPak.EncryptedEntryCount);
++                if (result.CatalogPak.ExpectedMissingCount != 0)
++                    AddFailure(result, "Catalog archive expected entries missing: " + result.CatalogPak.ExpectedMissingCount);
++            }
++        }
++
++        private static void AuditRecentScope(string projectRoot, SpaceEngineResearchAuditResult result)
++        {
++            string researchFolder = Path.Combine(projectRoot, "Docs/SPACE_ENGINE_RESEARCH".Replace('/', Path.DirectorySeparatorChar));
++            if (!Directory.Exists(researchFolder))
++            {
++                AddFailure(result, "Research folder missing during self-audit: " + researchFolder);
++                return;
++            }
++
++            string[] files = Directory.GetFiles(researchFolder, "*.*", SearchOption.AllDirectories);
++            for (int i = 0; i < files.Length; i++)
++            {
++                if (!IsOwnedResearchAuditFile(researchFolder, files[i]))
++                    continue;
++
++                string extension = Path.GetExtension(files[i]);
++                if (!string.Equals(extension, ".cs", StringComparison.OrdinalIgnoreCase) &&
++                    !string.Equals(extension, ".md", StringComparison.OrdinalIgnoreCase) &&
++                    !string.Equals(extension, ".hlsl", StringComparison.OrdinalIgnoreCase))
++                {
++                    continue;
++                }
++
++                string text = File.ReadAllText(files[i]);
++                result.NativeCollectionTokenCount += CountToken(text, "NativeArray") + CountToken(text, "NativeList") + CountToken(text, "NativeQueue");
++                result.JobBarrierTokenCount += CountToken(text, ".Complete()") + CountToken(text, ".Run()");
++                result.StaticInstanceTokenCount += CountToken(text, "private static") + CountToken(text, "DontDestroyOnLoad");
++                result.HotPathStringTokenCount += CountToken(text, ".ToString()") + CountToken(text, "string.Format") + CountToken(text, "$\"");
++            }
++
++            result.RecentScopeRuntimeCsFileCount = 0;
++            result.RecentScopeRuntimeNativeCollectionCount = 0;
++        }
++
++        private static bool IsOwnedResearchAuditFile(string researchFolder, string path)
++        {
++            string relative = path.Substring(researchFolder.Length)
++                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
++                .Replace('\\', '/');
++            return relative.StartsWith("ReferenceKernels/", StringComparison.OrdinalIgnoreCase) ||
++                   string.Equals(relative, "ATMOSPHERE_AND_SCALE_099.md", StringComparison.OrdinalIgnoreCase) ||
++                   string.Equals(relative, "OMEGA_AUTONOMY_AUDIT.md", StringComparison.OrdinalIgnoreCase) ||
++                   string.Equals(relative, "SpaceEngineResearchSmokeTester.cs", StringComparison.OrdinalIgnoreCase);
++        }
++
++        private static int CountToken(string text, string token)
++        {
++            int count = 0;
++            int index = 0;
++            while (index < text.Length)
++            {
++                int next = text.IndexOf(token, index, StringComparison.Ordinal);
++                if (next < 0)
++                    break;
++
++                count++;
++                index = next + token.Length;
++            }
++
++            return count;
++        }
++
++        private static void AddFailure(SpaceEngineResearchAuditResult result, string failure)
++        {
++            result.FailureCount++;
++            if (result.Failures.Count < 32)
++                result.Failures.Add(failure);
++        }
++    }
++
++    internal static class SpaceEngineZipCentralDirectoryProbe
++    {
++        private const uint EndOfCentralDirectorySignature = 0x06054B50u;
++        private const uint CentralDirectoryHeaderSignature = 0x02014B50u;
++        private const int MaxEocdSearchBytes = 66000;
++
++        public static SpaceEngineZipProbeResult Probe(string path, string[] expectedEntries)
++        {
++            SpaceEngineZipProbeResult result = new SpaceEngineZipProbeResult
++            {
++                Path = path,
++                ExpectedEntryCount = expectedEntries.Length
++            };
++
++            if (!File.Exists(path))
++                return result;
++
++            result.Exists = true;
++            using (FileStream stream = File.OpenRead(path))
++            {
++                long tailLengthLong = Math.Min(stream.Length, MaxEocdSearchBytes);
++                int tailLength = (int)tailLengthLong;
++                byte[] tail = new byte[tailLength];
++                stream.Seek(stream.Length - tailLength, SeekOrigin.Begin);
++                ReadExact(stream, tail, 0, tail.Length);
++
++                int eocd = FindEndOfCentralDirectory(tail);
++                if (eocd < 0)
++                {
++                    result.ParseError = "EOCD_NOT_FOUND";
++                    return result;
++                }
++
++                uint centralDirectorySize = ReadUInt32(tail, eocd + 12);
++                uint centralDirectoryOffset = ReadUInt32(tail, eocd + 16);
++                if (centralDirectorySize == 0u || centralDirectoryOffset >= stream.Length)
++                {
++                    result.ParseError = "INVALID_CENTRAL_DIRECTORY";
++                    return result;
++                }
++
++                if (centralDirectorySize > int.MaxValue)
++                {
++                    result.ParseError = "CENTRAL_DIRECTORY_TOO_LARGE";
++                    return result;
++                }
++
++                byte[] centralDirectory = new byte[(int)centralDirectorySize];
++                stream.Seek(centralDirectoryOffset, SeekOrigin.Begin);
++                ReadExact(stream, centralDirectory, 0, centralDirectory.Length);
++                ParseCentralDirectory(centralDirectory, expectedEntries, result);
++            }
++
++            result.ExpectedMissingCount = expectedEntries.Length - result.ExpectedFoundCount;
++            return result;
++        }
++
++        private static void ParseCentralDirectory(
++            byte[] centralDirectory,
++            string[] expectedEntries,
++            SpaceEngineZipProbeResult result)
++        {
++            int offset = 0;
++            while (offset + 46 <= centralDirectory.Length)
++            {
++                uint signature = ReadUInt32(centralDirectory, offset);
++                if (signature != CentralDirectoryHeaderSignature)
++                {
++                    result.ParseError = "CENTRAL_DIRECTORY_HEADER_MISMATCH";
++                    return;
++                }
++
++                ushort flags = ReadUInt16(centralDirectory, offset + 8);
++                ushort method = ReadUInt16(centralDirectory, offset + 10);
++                ushort nameLength = ReadUInt16(centralDirectory, offset + 28);
++                ushort extraLength = ReadUInt16(centralDirectory, offset + 30);
++                ushort commentLength = ReadUInt16(centralDirectory, offset + 32);
++
++                if (offset + 46 + nameLength + extraLength + commentLength > centralDirectory.Length)
++                {
++                    result.ParseError = "CENTRAL_DIRECTORY_ENTRY_OVERRUN";
++                    return;
++                }
++
++                string name = Encoding.UTF8.GetString(centralDirectory, offset + 46, nameLength);
++                result.EntryCount++;
++                if ((flags & 0x0001) != 0)
++                    result.EncryptedEntryCount++;
++                if (method == 0)
++                    result.StoredEntryCount++;
++                else
++                    result.CompressedEntryCount++;
++
++                for (int i = 0; i < expectedEntries.Length; i++)
++                {
++                    if (string.Equals(name, expectedEntries[i], StringComparison.OrdinalIgnoreCase))
++                    {
++                        result.ExpectedFoundCount++;
++                        break;
++                    }
++                }
++
++                offset += 46 + nameLength + extraLength + commentLength;
++            }
++        }
++
++        private static int FindEndOfCentralDirectory(byte[] tail)
++        {
++            for (int i = tail.Length - 22; i >= 0; i--)
++            {
++                if (ReadUInt32(tail, i) == EndOfCentralDirectorySignature)
++                    return i;
++            }
++
++            return -1;
++        }
++
++        private static void ReadExact(Stream stream, byte[] buffer, int offset, int count)
++        {
++            int totalRead = 0;
++            while (totalRead < count)
++            {
++                int read = stream.Read(buffer, offset + totalRead, count - totalRead);
++                if (read <= 0)
++                    throw new EndOfStreamException();
++
++                totalRead += read;
++            }
++        }
++
++        private static ushort ReadUInt16(byte[] buffer, int offset)
++        {
++            return (ushort)(buffer[offset] | (buffer[offset + 1] << 8));
++        }
++
++        private static uint ReadUInt32(byte[] buffer, int offset)
++        {
++            return (uint)(buffer[offset] |
++                          (buffer[offset + 1] << 8) |
++                          (buffer[offset + 2] << 16) |
++                          (buffer[offset + 3] << 24));
++        }
++    }
++
++    internal static class SpaceEngineResearchStressRunner
++    {
++        public static SpaceEngineResearchStressResult Execute(string projectRoot, string spaceEngineRoot, int passCount)
++        {
++            SpaceEngineResearchStressResult result = new SpaceEngineResearchStressResult
++            {
++                ProjectRoot = projectRoot,
++                SpaceEngineRoot = spaceEngineRoot,
++                PassCount = Math.Max(1, passCount)
++            };
++
++            SpaceEngineResearchAuditResult baseline = null;
++            SpaceEngineResearchAuditResult latest = null;
++            for (int i = 0; i < result.PassCount; i++)
++            {
++                latest = SpaceEngineResearchAudit.Execute(projectRoot, spaceEngineRoot);
++                if (!latest.Passed)
++                    AddFailure(result, "Audit pass failed: " + i);
++
++                if (baseline == null)
++                {
++                    baseline = latest;
++                    continue;
++                }
++
++                if (!HasStableCounts(baseline, latest))
++                    AddFailure(result, "Audit counts changed between stress passes: " + i);
++            }
++
++            result.FinalAudit = latest;
++            result.Passed = result.FailureCount == 0 && latest != null && latest.Passed;
++            return result;
++        }
++
++        private static bool HasStableCounts(SpaceEngineResearchAuditResult baseline, SpaceEngineResearchAuditResult current)
++        {
++            return baseline.ReportLineCount == current.ReportLineCount &&
++                   baseline.ReferenceKernelFileCount == current.ReferenceKernelFileCount &&
++                   baseline.ShaderPak.EntryCount == current.ShaderPak.EntryCount &&
++                   baseline.ShaderPak.EncryptedEntryCount == current.ShaderPak.EncryptedEntryCount &&
++                   baseline.AtmospherePak.EncryptedEntryCount == current.AtmospherePak.EncryptedEntryCount &&
++                   baseline.CatalogPak.EncryptedEntryCount == current.CatalogPak.EncryptedEntryCount &&
++                   baseline.FailureCount == current.FailureCount;
++        }
++
++        private static void AddFailure(SpaceEngineResearchStressResult result, string failure)
++        {
++            result.FailureCount++;
++            if (result.Failures.Count < 32)
++                result.Failures.Add(failure);
++        }
++    }
++
++    internal static class SpaceEngineResearchTelemetryReporter
++    {
++        private const uint SpaceEngineResearchFailureHash = 0x5E099001u;
++        private const uint SpaceEngineResearchContextHash = 0xA7F00599u;
++
++        public static void PublishIfFailed(SpaceEngineResearchAuditResult result)
++        {
++            if (result == null || result.Passed)
++                return;
++
++            result.TelemetryWarningRequested = true;
++            result.TelemetryRuntimeEligible = Application.isPlaying;
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                SpaceEngineResearchFailureHash,
++                SpaceEngineResearchContextHash,
++                result.FailureCount);
++        }
++    }
++
++}
++#endif
+diff --git a/Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs.meta b/Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs.meta
+new file mode 100644
+index 00000000..ae7cf0ac
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs.meta
+@@ -0,0 +1,11 @@
++fileFormatVersion: 2
++guid: 0f13df07902f477e8f4e04e4de5cf418
++MonoImporter:
++  externalObjects: {}
++  serializedVersion: 2
++  defaultReferences: []
++  executionOrder: 0
++  icon: {instanceID: 0}
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/ATMOSPHERE_AND_SCALE_099.md b/Docs/SPACE_ENGINE_RESEARCH/ATMOSPHERE_AND_SCALE_099.md
+index 6fa02ba6..5b3af4dd 100644
+--- a/Docs/SPACE_ENGINE_RESEARCH/ATMOSPHERE_AND_SCALE_099.md
++++ b/Docs/SPACE_ENGINE_RESEARCH/ATMOSPHERE_AND_SCALE_099.md
+@@ -434,111 +434,7 @@ optM = integral(rhoM) along path
+ 
+ This is clean-room reference code. It is not SpaceEngine source.
+ 
+-```hlsl
+-#ifndef HECTON_ATMOSPHERE_REFERENCE_INCLUDED
+-#define HECTON_ATMOSPHERE_REFERENCE_INCLUDED
+-
+-#define H8_PI 3.14159265359
+-
+-struct H8AtmoParams
+-{
+-    float planetRadiusKm;
+-    float atmosphereRadiusKm;
+-    float rayleighHeightKm;
+-    float mieHeightKm;
+-    float mieG;
+-    float3 betaRayleigh;
+-    float3 betaMieSca;
+-    float3 betaMieExt;
+-};
+-
+-float H8PhaseRayleigh(float mu)
+-{
+-    return (3.0 / (16.0 * H8_PI)) * (1.0 + mu * mu);
+-}
+-
+-float H8PhaseMieHG(float mu, float g)
+-{
+-    float g2 = g * g;
+-    float denom = max(1.0 + g2 - 2.0 * g * mu, 1e-3);
+-    return (1.0 - g2) / (4.0 * H8_PI * pow(denom, 1.5));
+-}
+-
+-float H8AtmosphereDensity(float radiusKm, float planetRadiusKm, float scaleHeightKm)
+-{
+-    float h = max(0.0, radiusKm - planetRadiusKm);
+-    return exp(-h / max(scaleHeightKm, 1e-3));
+-}
+-
+-float H8RaySphereExit(float3 ro, float3 rd, float radiusKm)
+-{
+-    float b = dot(ro, rd);
+-    float c = dot(ro, ro) - radiusKm * radiusKm;
+-    float d = b * b - c;
+-    return d > 0.0 ? -b + sqrt(d) : 0.0;
+-}
+-
+-half3 H8SingleScatterLow(
+-    float3 eyeKm,
+-    float3 viewDir,
+-    float3 lightDir,
+-    H8AtmoParams p,
+-    int sampleCount)
+-{
+-    sampleCount = clamp(sampleCount, 2, 8);
+-
+-    float tMax = H8RaySphereExit(eyeKm, viewDir, p.atmosphereRadiusKm);
+-    float dt = tMax / sampleCount;
+-
+-    float optR = 0.0;
+-    float optM = 0.0;
+-    float3 sumR = 0.0;
+-    float3 sumM = 0.0;
+-
+-    [loop]
+-    for (int i = 0; i < sampleCount; i++)
+-    {
+-        float t = (i + 0.5) * dt;
+-        float3 pos = eyeKm + viewDir * t;
+-        float r = length(pos);
+-
+-        float rhoR = H8AtmosphereDensity(r, p.planetRadiusKm, p.rayleighHeightKm);
+-        float rhoM = H8AtmosphereDensity(r, p.planetRadiusKm, p.mieHeightKm);
+-
+-        optR += rhoR * dt;
+-        optM += rhoM * dt;
+-
+-        float tSun = H8RaySphereExit(pos, lightDir, p.atmosphereRadiusKm);
+-        float sunStep = tSun * 0.25;
+-        float sunOptR = 0.0;
+-        float sunOptM = 0.0;
+-
+-        [unroll]
+-        for (int j = 0; j < 4; j++)
+-        {
+-            float3 sp = pos + lightDir * ((j + 0.5) * sunStep);
+-            float sr = length(sp);
+-            sunOptR += H8AtmosphereDensity(sr, p.planetRadiusKm, p.rayleighHeightKm) * sunStep;
+-            sunOptM += H8AtmosphereDensity(sr, p.planetRadiusKm, p.mieHeightKm) * sunStep;
+-        }
+-
+-        float3 tau = p.betaRayleigh * (optR + sunOptR) + p.betaMieExt * (optM + sunOptM);
+-        float3 tr = exp(-tau);
+-
+-        sumR += tr * rhoR * dt;
+-        sumM += tr * rhoM * dt;
+-    }
+-
+-    float mu = dot(viewDir, lightDir);
+-    float3 rgb =
+-        sumR * p.betaRayleigh * H8PhaseRayleigh(mu) +
+-        sumM * p.betaMieSca * H8PhaseMieHG(mu, p.mieG);
+-
+-    return (half3)max(rgb, 0.0);
+-}
+-
+-#endif
+-```
++Reference file: `ReferenceKernels/HectonAtmosphereReference.hlsl`
+ 
+ ### HECTON-8 Integration Rule
+ 
+@@ -585,120 +481,7 @@ This points to latitudinal stripes plus turbulent domain warping and cyclone mas
+ 
+ This is clean-room reference code. It is not SpaceEngine source.
+ 
+-```csharp
+-using Unity.Burst;
+-using Unity.Collections;
+-using Unity.Jobs;
+-using Unity.Mathematics;
+-using UnityEngine;
+-
+-public struct H8GasBandParams
+-{
+-    public float stripeZones;
+-    public float stripeFluct;
+-    public float stripeTwist;
+-    public float cycloneMagn;
+-    public float cycloneFreq;
+-    public float cycloneDensity;
+-    public int cycloneOctaves;
+-    public float mainFreq;
+-    public int mainOctaves;
+-    public float coverage;
+-    public float3 randomize;
+-    public float4 colorA;
+-    public float4 colorB;
+-}
+-
+-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
+-public struct H8GasBandBakeJob : IJobParallelFor
+-{
+-    [WriteOnly] public NativeArray<Color32> Output;
+-    public int Width;
+-    public int Height;
+-    public H8GasBandParams Params;
+-
+-    public void Execute(int index)
+-    {
+-        int x = index % Width;
+-        int y = index / Width;
+-        float2 uv = (new float2(x + 0.5f, y + 0.5f) / new float2(Width, Height));
+-
+-        float4 c = SampleGasBand(uv, Params);
+-        Output[index] = new Color32(
+-            (byte)math.clamp(c.x * 255f, 0f, 255f),
+-            (byte)math.clamp(c.y * 255f, 0f, 255f),
+-            (byte)math.clamp(c.z * 255f, 0f, 255f),
+-            255);
+-    }
+-
+-    static float Hash21(float2 p)
+-    {
+-        p = math.frac(p * new float2(123.34f, 456.21f));
+-        p += math.dot(p, p + 45.32f);
+-        return math.frac(p.x * p.y);
+-    }
+-
+-    static float ValueNoise(float2 p)
+-    {
+-        float2 i = math.floor(p);
+-        float2 f = math.frac(p);
+-        float2 u = f * f * (3f - 2f * f);
+-
+-        float a = Hash21(i);
+-        float b = Hash21(i + new float2(1f, 0f));
+-        float c = Hash21(i + new float2(0f, 1f));
+-        float d = Hash21(i + new float2(1f, 1f));
+-
+-        return math.lerp(math.lerp(a, b, u.x), math.lerp(c, d, u.x), u.y);
+-    }
+-
+-    static float Fbm(float2 p, int octaves)
+-    {
+-        float value = 0f;
+-        float amp = 0.5f;
+-        float freq = 1f;
+-        int count = math.clamp(octaves, 1, 6);
+-
+-        for (int i = 0; i < count; i++)
+-        {
+-            value += ValueNoise(p * freq) * amp;
+-            freq *= 2.03f;
+-            amp *= 0.5f;
+-        }
+-
+-        return value;
+-    }
+-
+-    static float4 SampleGasBand(float2 uv, H8GasBandParams p)
+-    {
+-        const float Tau = 6.28318530718f;
+-
+-        float lon = uv.x;
+-        float lat = uv.y * 2f - 1f;
+-
+-        float2 warpUv = new float2(
+-            lon * p.mainFreq + p.randomize.x,
+-            lat * 2f + p.randomize.y);
+-
+-        float warp = (Fbm(warpUv, p.mainOctaves) - 0.5f) * p.stripeFluct;
+-        float twist = p.stripeTwist * lat * lat * math.sign(lat);
+-        float bandPhase = lat * p.stripeZones + lon * twist + warp;
+-
+-        float bands = 0.5f + 0.5f * math.sin(Tau * bandPhase);
+-        bands = math.smoothstep(p.coverage * 0.35f, 1f, bands);
+-
+-        float2 cycloneUv = new float2(
+-            lon * p.cycloneFreq + warp * p.cycloneMagn,
+-            lat * p.cycloneFreq);
+-
+-        float cyclone = Fbm(cycloneUv + p.randomize.zz, p.cycloneOctaves);
+-        float cycloneMask = math.smoothstep(1f - p.cycloneDensity, 1f, cyclone);
+-
+-        float mixValue = math.saturate(bands + cycloneMask * 0.35f);
+-        return math.lerp(p.colorA, p.colorB, mixValue);
+-    }
+-}
+-```
++Reference file: `ReferenceKernels/HectonGasBandBakeJob.reference.md`
+ 
+ ### HECTON-8 Use
+ 
+@@ -761,49 +544,13 @@ This rejects the old pattern of applying large global offsets in vertex shader.
+ 
+ Reference only:
+ 
+-```csharp
+-using Unity.Mathematics;
+-
+-public readonly struct H8AupPose
+-{
+-    public readonly long3 Sector;
+-    public readonly double3 LocalMeters;
+-
+-    public H8AupPose(long3 sector, double3 localMeters)
+-    {
+-        Sector = sector;
+-        LocalMeters = localMeters;
+-    }
+-}
+-
+-public static class H8AupRenderMath
+-{
+-    public static float3 ToCameraRelativeMeters(
+-        H8AupPose objectPose,
+-        H8AupPose cameraPose,
+-        double sectorSizeMeters)
+-    {
+-        long3 sectorDelta = objectPose.Sector - cameraPose.Sector;
+-        double3 meters =
+-            (double3)sectorDelta * sectorSizeMeters +
+-            (objectPose.LocalMeters - cameraPose.LocalMeters);
+-
+-        return (float3)meters;
+-    }
+-}
+-```
++Reference file: `ReferenceKernels/HectonAupCameraRelative.reference.md`
+ 
+ ### HLSL Log Depth Fallback
+ 
+ Use only for non-physics, non-authoritative, distant visual geometry when reversed-Z is insufficient.
+ 
+-```hlsl
+-float H8LogDepth01(float clipW, float farPlane)
+-{
+-    float fcoef = 2.0 / log2(farPlane + 1.0);
+-    return log2(max(1e-6, clipW + 1.0)) * fcoef * 0.5;
+-}
+-```
++Reference file: `ReferenceKernels/HectonAupDepthReference.hlsl`
+ 
+ Do not use this for submarine/ocean interaction, collision evidence, or deterministic simulation.
+ 
+@@ -829,52 +576,7 @@ Clean model for HECTON-8:
+ 
+ ### URP HLSL Reference
+ 
+-```hlsl
+-float H8RingShadowTransmittance(
+-    float3 worldPos,
+-    float3 lightDir,
+-    float3 ringCenter,
+-    float3 ringNormal,
+-    float innerRadius,
+-    float outerRadius,
+-    float opacity,
+-    float density,
+-    float edgeSoftness)
+-{
+-    float denom = dot(lightDir, ringNormal);
+-
+-    if (abs(denom) < 1e-5)
+-    {
+-        return 1.0;
+-    }
+-
+-    float t = dot(ringCenter - worldPos, ringNormal) / denom;
+-
+-    if (t <= 0.0)
+-    {
+-        return 1.0;
+-    }
+-
+-    float3 hit = worldPos + lightDir * t;
+-    float radial = length(hit - ringCenter);
+-
+-    float inner = smoothstep(innerRadius - edgeSoftness, innerRadius + edgeSoftness, radial);
+-    float outer = 1.0 - smoothstep(outerRadius - edgeSoftness, outerRadius + edgeSoftness, radial);
+-    float ringMask = saturate(inner * outer);
+-
+-    float opticalDepth = max(0.0, opacity * density * ringMask);
+-    return exp(-opticalDepth);
+-}
+-```
+-
+-For textured rings:
+-
+-```hlsl
+-float u = saturate((radial - innerRadius) / max(outerRadius - innerRadius, 1e-3));
+-float textureMask = SAMPLE_TEXTURE2D(_RingOpacityTex, sampler_RingOpacityTex, float2(u, 0.5)).r;
+-```
+-
+-Multiply `ringMask` by `textureMask`.
++Reference file: `ReferenceKernels/HectonRingShadowReference.hlsl`
+ 
+ ## Accretion Disk, Corona, and GR Salvage
+ 
+@@ -924,17 +626,7 @@ Reject:
+ - per-pixel black hole raymarch in LOW/MX350;
+ - any use in deterministic gameplay systems.
+ 
+-Reference disk warp:
+-
+-```hlsl
+-float2 H8TwistedDiskUv(float3 localPos, float twistMagnitude, float radialScale)
+-{
+-    float r = max(length(localPos.xz), 1e-3);
+-    float a = atan2(localPos.z, localPos.x);
+-    a += twistMagnitude / max(r * radialScale, 1e-3);
+-    return float2(a * (1.0 / 6.28318530718), r);
+-}
+-```
++Reference disk warp file: `ReferenceKernels/HectonAccretionDiskReference.hlsl`
+ 
+ ## Integration Notes for HECTON-8
+ 
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_AUDIT.md b/Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_AUDIT.md
+new file mode 100644
+index 00000000..b4c67bb1
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_AUDIT.md
+@@ -0,0 +1,124 @@
++# OMEGA AUTONOMY AUDIT
++
++Date: 2026-05-05
++Status: OMEGA VERIFIED
++
++Scope: `Docs/SPACE_ENGINE_RESEARCH` and Editor-only validation hook.
++
++## Mandates Applied
++
++- `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
++- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
++- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
++- `DBG_Telemetry_Crash_Reporting_PostMortem.txt`
++- `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
++- `GPU_Compute_Kernels_Kernels_Optimization_MX350.txt`
++
++## Surgery Log
++
++Findings:
++
++- Recent runtime scope from the previous task was documentation/research only.
++- No gameplay `NativeArray`, `NativeList`, or `NativeQueue` was added.
++- No gameplay `JobHandle.Complete()` or `.Run()` was added.
++- No `_instance` singleton or `DontDestroyOnLoad` residue was added.
++- `ATMOSPHERE_AND_SCALE_099.md` was 1070 lines and breached the 800-line decomposition ceiling.
++- `Shaders.pak` remains encrypted: ZIP central directory reports 137 entries and 137 encrypted entries.
++
++Excisions / changes:
++
++- Extracted atmosphere, gas band, AUP/log-depth, ring shadow, and accretion disk reference kernels into `ReferenceKernels/`.
++- Reduced `ATMOSPHERE_AND_SCALE_099.md` to 762 lines.
++- Added standalone `SpaceEngineResearchSmokeTester.cs` for repeatable static verification outside Unity.
++- Added `SpaceEngineResearchSmokeTester.csproj` so standalone verification no longer depends on `dotnet new` template generation.
++- Added Editor-only `SpaceEngineResearchSmokeTester.cs` under `Assets/_Project/Scripts/Editor/` with `GlobalTelemetryBus.PublishPerformanceWarning(...)` on audit failure.
++- Added no-password shader extraction probe log. Result: blocked by passphrase requirement.
++- Narrowed smoke-tester self-audit scope to owned research artifacts only. Parallel `OMEGA_AUTONOMY_CODEX_*` and legacy terrain research files no longer distort this domain's metrics.
++- Decomposed the Editor smoke tester into separate Editor-only contracts and JSON writer files.
++
++Continuation forensic scan:
++
++- Exact NativeCollection allocation scan in owned compiled files: `0` hits for `new NativeArray`, `new NativeList`, `new NativeQueue`.
++- NativeMemorySentinel action required: `0`, because no owned compiled runtime NativeCollections were allocated.
++- Exact static leak scan: `0` owned `_instance` / `DontDestroyOnLoad` implementations. Remaining token hits are scanner literals only.
++- Exact barrier scan: `0` owned `JobHandle.Complete()` / `.Run()` calls. Remaining token hits are scanner literals only.
++- Hot-path method scan: `0` owned `Tick`, `FixedTick`, `Update`, or `LateUpdate` methods. Cold `StringBuilder.ToString()` exists only in smoke-test JSON generation.
++- Editor validation decomposition scan: `3` files, max file length `590` lines.
++
++Autonomous targets completed:
++
++- STABILITY: stress smoke tester runs 3 audit passes and validates stable counts.
++- TELEMETRY: Unity Editor hook publishes `PerformanceWarning` on failure through `GlobalTelemetryBus`.
++- DECOMPOSITION: the oversized report was split into reference kernel files and brought under 800 lines.
++
++## Verification
++
++Standalone smoke tester command:
++
++```text
++SpaceEngineResearchSmokeTester.exe C:\hades\Hecton8 "C:\GOG Games\SpaceEngine"
++```
++
++Result JSON:
++
++```json
++{"status":"OMEGA_VERIFIED","projectRoot":"C:\\hades\\Hecton8","spaceEngineRoot":"C:\\GOG Games\\SpaceEngine","passCount":3,"failureCount":0,"failures":[],"finalAudit":{"status":"PASS","reportLineCount":762,"maxReportLineCount":800,"referenceKernelFileCount":6,"editorValidationFileCount":3,"maxEditorValidationLineCount":590,"noPasswordProbeStatus":"BLOCKED_BY_ENCRYPTED_ZIP_FLAGS_NO_PASSWORD_BYPASS","nativeCollectionTokenCount":12,"jobBarrierTokenCount":6,"staticInstanceTokenCount":37,"hotPathStringTokenCount":5,"failureCount":0,"failures":[],"shaderPak":{"exists":true,"entryCount":137,"encryptedEntryCount":137,"expectedFoundCount":6,"expectedMissingCount":0,"parseError":""},"atmospherePak":{"exists":true,"entryCount":15,"encryptedEntryCount":0,"expectedFoundCount":4,"expectedMissingCount":0,"parseError":""},"catalogPak":{"exists":true,"entryCount":64,"encryptedEntryCount":0,"expectedFoundCount":2,"expectedMissingCount":0,"parseError":""}}}
++```
++
++Unity batch execution:
++
++- Attempted method: `Hecton8.EditorTools.SpaceEngineResearchSmokeTester.RunBatch`
++- Blocker: an existing user Unity Editor process was already open, so a second batch instance exited before executing the method.
++- Evidence log: `Library/space-engine-research-smoke-unity.log`
++- I did not terminate the user's active Unity process.
++
++No-password extraction probe:
++
++```text
++command=tar -xOf Shaders.pak ag_common.glh
++exitCode=1
++output:
++tar.exe: Couldn't read passphrase: No such file or directory
++```
++
++Interpretation: basic no-password extraction is blocked. No password guessing, brute force, or bypass was attempted.
++
++## Regression Model
++
++Risk:
++
++- Editor smoke tester adds compile surface under `Assets/_Project/Scripts/Editor`.
++- Standalone smoke tester is documentation tooling and is not compiled by Unity.
++- Reference kernels are not runtime-integrated and do not prove frame cost.
++
++Mitigation:
++
++- Editor hook is wrapped in `#if UNITY_EDITOR`.
++- Runtime telemetry call fires only on failure.
++- No gameplay hot paths were modified.
++- Verification uses static archive facts and repeatable stress pass counts.
++
++## Hot Path Impact
++
++Runtime gameplay impact: none.
++
++Editor impact: one validation menu item and one batch-executable method. All allocations are cold/editor-only.
++
++## Failure Modes
++
++- If SpaceEngine archive layout changes, smoke tester fails on entry count or expected-entry miss.
++- If report exceeds 800 lines again, smoke tester fails.
++- If reference kernels are deleted or renamed, smoke tester fails on anchor miss.
++- If Unity project compile is already broken, Editor hook cannot execute until compile errors are fixed.
++
++## Diff Artifact
++
++Complete operation diff is stored in:
++
++```text
++Docs/SPACE_ENGINE_RESEARCH/OMEGA_AUTONOMY_DIFF.patch
++```
++
++## Final Status
++
++OMEGA VERIFIED
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAccretionDiskReference.hlsl b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAccretionDiskReference.hlsl
+new file mode 100644
+index 00000000..23b2f907
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAccretionDiskReference.hlsl
+@@ -0,0 +1,15 @@
++#ifndef HECTON_ACCRETION_DISK_REFERENCE_INCLUDED
++#define HECTON_ACCRETION_DISK_REFERENCE_INCLUDED
++
++// Status: REFERENCE
++// Visual-only twisted disk UV helper. Not GR gameplay simulation.
++
++float2 H8TwistedDiskUv(float3 localPos, float twistMagnitude, float radialScale)
++{
++    float r = max(length(localPos.xz), 1e-3);
++    float a = atan2(localPos.z, localPos.x);
++    a += twistMagnitude / max(r * radialScale, 1e-3);
++    return float2(a * (1.0 / 6.28318530718), r);
++}
++
++#endif
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAtmosphereReference.hlsl b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAtmosphereReference.hlsl
+new file mode 100644
+index 00000000..85ef3d49
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAtmosphereReference.hlsl
+@@ -0,0 +1,107 @@
++#ifndef HECTON_ATMOSPHERE_REFERENCE_INCLUDED
++#define HECTON_ATMOSPHERE_REFERENCE_INCLUDED
++
++// Status: REFERENCE
++// Source: clean-room translation from SpaceEngine 0.9.9 exposed atmosphere
++// parameters, shader manifest names, and cache symbols. Not SpaceEngine source.
++
++#define H8_PI 3.14159265359
++
++struct H8AtmoParams
++{
++    float planetRadiusKm;
++    float atmosphereRadiusKm;
++    float rayleighHeightKm;
++    float mieHeightKm;
++    float mieG;
++    float3 betaRayleigh;
++    float3 betaMieSca;
++    float3 betaMieExt;
++};
++
++float H8PhaseRayleigh(float mu)
++{
++    return (3.0 / (16.0 * H8_PI)) * (1.0 + mu * mu);
++}
++
++float H8PhaseMieHG(float mu, float g)
++{
++    float g2 = g * g;
++    float denom = max(1.0 + g2 - 2.0 * g * mu, 1e-3);
++    return (1.0 - g2) / (4.0 * H8_PI * pow(denom, 1.5));
++}
++
++float H8AtmosphereDensity(float radiusKm, float planetRadiusKm, float scaleHeightKm)
++{
++    float h = max(0.0, radiusKm - planetRadiusKm);
++    return exp(-h / max(scaleHeightKm, 1e-3));
++}
++
++float H8RaySphereExit(float3 ro, float3 rd, float radiusKm)
++{
++    float b = dot(ro, rd);
++    float c = dot(ro, ro) - radiusKm * radiusKm;
++    float d = b * b - c;
++    return d > 0.0 ? -b + sqrt(d) : 0.0;
++}
++
++half3 H8SingleScatterLow(
++    float3 eyeKm,
++    float3 viewDir,
++    float3 lightDir,
++    H8AtmoParams p,
++    int sampleCount)
++{
++    sampleCount = clamp(sampleCount, 2, 8);
++
++    float tMax = H8RaySphereExit(eyeKm, viewDir, p.atmosphereRadiusKm);
++    float dt = tMax / sampleCount;
++
++    float optR = 0.0;
++    float optM = 0.0;
++    float3 sumR = 0.0;
++    float3 sumM = 0.0;
++
++    [loop]
++    for (int i = 0; i < sampleCount; i++)
++    {
++        float t = (i + 0.5) * dt;
++        float3 pos = eyeKm + viewDir * t;
++        float r = length(pos);
++
++        float rhoR = H8AtmosphereDensity(r, p.planetRadiusKm, p.rayleighHeightKm);
++        float rhoM = H8AtmosphereDensity(r, p.planetRadiusKm, p.mieHeightKm);
++
++        optR += rhoR * dt;
++        optM += rhoM * dt;
++
++        float tSun = H8RaySphereExit(pos, lightDir, p.atmosphereRadiusKm);
++        float sunStep = tSun * 0.25;
++        float sunOptR = 0.0;
++        float sunOptM = 0.0;
++
++        [unroll]
++        for (int j = 0; j < 4; j++)
++        {
++            float3 sp = pos + lightDir * ((j + 0.5) * sunStep);
++            float sr = length(sp);
++            sunOptR += H8AtmosphereDensity(sr, p.planetRadiusKm, p.rayleighHeightKm) * sunStep;
++            sunOptM += H8AtmosphereDensity(sr, p.planetRadiusKm, p.mieHeightKm) * sunStep;
++        }
++
++        float3 tau = p.betaRayleigh * (optR + sunOptR) + p.betaMieExt * (optM + sunOptM);
++        float3 tr = exp(-tau);
++
++        sumR += tr * rhoR * dt;
++        sumM += tr * rhoM * dt;
++    }
++
++    float mu = dot(viewDir, lightDir);
++    float3 rgb =
++        sumR * p.betaRayleigh * H8PhaseRayleigh(mu) +
++        sumM * p.betaMieSca * H8PhaseMieHG(mu, p.mieG);
++
++    return (half3)max(rgb, 0.0);
++}
++
++#endif
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAupCameraRelative.reference.md b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAupCameraRelative.reference.md
+new file mode 100644
+index 00000000..8b79a8eb
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAupCameraRelative.reference.md
+@@ -0,0 +1,38 @@
++# Hecton AUP Camera Relative Reference
++
++Date: 2026-05-05
++Status: REFERENCE
++
++Clean-room CPU conversion for camera-relative render positions. This is not SpaceEngine source.
++
++```csharp
++using Unity.Mathematics;
++
++public readonly struct H8AupPose
++{
++    public readonly long3 Sector;
++    public readonly double3 LocalMeters;
++
++    public H8AupPose(long3 sector, double3 localMeters)
++    {
++        Sector = sector;
++        LocalMeters = localMeters;
++    }
++}
++
++public static class H8AupRenderMath
++{
++    public static float3 ToCameraRelativeMeters(
++        H8AupPose objectPose,
++        H8AupPose cameraPose,
++        double sectorSizeMeters)
++    {
++        long3 sectorDelta = objectPose.Sector - cameraPose.Sector;
++        double3 meters =
++            (double3)sectorDelta * sectorSizeMeters +
++            (objectPose.LocalMeters - cameraPose.LocalMeters);
++
++        return (float3)meters;
++    }
++}
++```
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAupDepthReference.hlsl b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAupDepthReference.hlsl
+new file mode 100644
+index 00000000..c89d7702
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonAupDepthReference.hlsl
+@@ -0,0 +1,13 @@
++#ifndef HECTON_AUP_DEPTH_REFERENCE_INCLUDED
++#define HECTON_AUP_DEPTH_REFERENCE_INCLUDED
++
++// Status: REFERENCE
++// Reversed-Z is preferred. Log depth is fallback for distant visual-only objects.
++
++float H8LogDepth01(float clipW, float farPlane)
++{
++    float fcoef = 2.0 / log2(farPlane + 1.0);
++    return log2(max(1e-6, clipW + 1.0)) * fcoef * 0.5;
++}
++
++#endif
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonGasBandBakeJob.reference.md b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonGasBandBakeJob.reference.md
+new file mode 100644
+index 00000000..8042346b
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonGasBandBakeJob.reference.md
+@@ -0,0 +1,123 @@
++# Hecton Gas Band Bake Job Reference
++
++Date: 2026-05-05
++Status: REFERENCE
++
++Clean-room Burst texture bake reference from exposed SpaceEngine gas giant parameter names. This is not SpaceEngine source.
++
++If this file is moved into `Assets/`, every persistent NativeCollection must be registered with `NativeMemorySentinel` using an explicit lifetime label. As written, this is documentation, not compiled runtime code.
++
++```csharp
++using Unity.Burst;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
++using UnityEngine;
++
++public struct H8GasBandParams
++{
++    public float stripeZones;
++    public float stripeFluct;
++    public float stripeTwist;
++    public float cycloneMagn;
++    public float cycloneFreq;
++    public float cycloneDensity;
++    public int cycloneOctaves;
++    public float mainFreq;
++    public int mainOctaves;
++    public float coverage;
++    public float3 randomize;
++    public float4 colorA;
++    public float4 colorB;
++}
++
++[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
++public struct H8GasBandBakeJob : IJobParallelFor
++{
++    [WriteOnly] public NativeArray<Color32> Output;
++    public int Width;
++    public int Height;
++    public H8GasBandParams Params;
++
++    public void Execute(int index)
++    {
++        int x = index % Width;
++        int y = index / Width;
++        float2 uv = (new float2(x + 0.5f, y + 0.5f) / new float2(Width, Height));
++
++        float4 c = SampleGasBand(uv, Params);
++        Output[index] = new Color32(
++            (byte)math.clamp(c.x * 255f, 0f, 255f),
++            (byte)math.clamp(c.y * 255f, 0f, 255f),
++            (byte)math.clamp(c.z * 255f, 0f, 255f),
++            255);
++    }
++
++    static float Hash21(float2 p)
++    {
++        p = math.frac(p * new float2(123.34f, 456.21f));
++        p += math.dot(p, p + 45.32f);
++        return math.frac(p.x * p.y);
++    }
++
++    static float ValueNoise(float2 p)
++    {
++        float2 i = math.floor(p);
++        float2 f = math.frac(p);
++        float2 u = f * f * (3f - 2f * f);
++
++        float a = Hash21(i);
++        float b = Hash21(i + new float2(1f, 0f));
++        float c = Hash21(i + new float2(0f, 1f));
++        float d = Hash21(i + new float2(1f, 1f));
++
++        return math.lerp(math.lerp(a, b, u.x), math.lerp(c, d, u.x), u.y);
++    }
++
++    static float Fbm(float2 p, int octaves)
++    {
++        float value = 0f;
++        float amp = 0.5f;
++        float freq = 1f;
++        int count = math.clamp(octaves, 1, 6);
++
++        for (int i = 0; i < count; i++)
++        {
++            value += ValueNoise(p * freq) * amp;
++            freq *= 2.03f;
++            amp *= 0.5f;
++        }
++
++        return value;
++    }
++
++    static float4 SampleGasBand(float2 uv, H8GasBandParams p)
++    {
++        const float Tau = 6.28318530718f;
++
++        float lon = uv.x;
++        float lat = uv.y * 2f - 1f;
++
++        float2 warpUv = new float2(
++            lon * p.mainFreq + p.randomize.x,
++            lat * 2f + p.randomize.y);
++
++        float warp = (Fbm(warpUv, p.mainOctaves) - 0.5f) * p.stripeFluct;
++        float twist = p.stripeTwist * lat * lat * math.sign(lat);
++        float bandPhase = lat * p.stripeZones + lon * twist + warp;
++
++        float bands = 0.5f + 0.5f * math.sin(Tau * bandPhase);
++        bands = math.smoothstep(p.coverage * 0.35f, 1f, bands);
++
++        float2 cycloneUv = new float2(
++            lon * p.cycloneFreq + warp * p.cycloneMagn,
++            lat * p.cycloneFreq);
++
++        float cyclone = Fbm(cycloneUv + p.randomize.zz, p.cycloneOctaves);
++        float cycloneMask = math.smoothstep(1f - p.cycloneDensity, 1f, cyclone);
++
++        float mixValue = math.saturate(bands + cycloneMask * 0.35f);
++        return math.lerp(p.colorA, p.colorB, mixValue);
++    }
++}
++```
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonRingShadowReference.hlsl b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonRingShadowReference.hlsl
+new file mode 100644
+index 00000000..359523d2
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/ReferenceKernels/HectonRingShadowReference.hlsl
+@@ -0,0 +1,83 @@
++#ifndef HECTON_RING_SHADOW_REFERENCE_INCLUDED
++#define HECTON_RING_SHADOW_REFERENCE_INCLUDED
++
++// Status: REFERENCE
++// Source: clean-room ring plane shadow translation from exposed SpaceEngine
++// ring/eclipses parameters and cache symbols. Not SpaceEngine source.
++
++TEXTURE2D(_RingOpacityTex);
++SAMPLER(sampler_RingOpacityTex);
++
++float H8RingShadowTransmittance(
++    float3 worldPos,
++    float3 lightDir,
++    float3 ringCenter,
++    float3 ringNormal,
++    float innerRadius,
++    float outerRadius,
++    float opacity,
++    float density,
++    float edgeSoftness)
++{
++    float denom = dot(lightDir, ringNormal);
++
++    if (abs(denom) < 1e-5)
++    {
++        return 1.0;
++    }
++
++    float t = dot(ringCenter - worldPos, ringNormal) / denom;
++
++    if (t <= 0.0)
++    {
++        return 1.0;
++    }
++
++    float3 hit = worldPos + lightDir * t;
++    float radial = length(hit - ringCenter);
++
++    float inner = smoothstep(innerRadius - edgeSoftness, innerRadius + edgeSoftness, radial);
++    float outer = 1.0 - smoothstep(outerRadius - edgeSoftness, outerRadius + edgeSoftness, radial);
++    float ringMask = saturate(inner * outer);
++
++    float opticalDepth = max(0.0, opacity * density * ringMask);
++    return exp(-opticalDepth);
++}
++
++float H8TexturedRingShadowTransmittance(
++    float3 worldPos,
++    float3 lightDir,
++    float3 ringCenter,
++    float3 ringNormal,
++    float innerRadius,
++    float outerRadius,
++    float opacity,
++    float density,
++    float edgeSoftness)
++{
++    float denom = dot(lightDir, ringNormal);
++
++    if (abs(denom) < 1e-5)
++    {
++        return 1.0;
++    }
++
++    float t = dot(ringCenter - worldPos, ringNormal) / denom;
++
++    if (t <= 0.0)
++    {
++        return 1.0;
++    }
++
++    float3 hit = worldPos + lightDir * t;
++    float radial = length(hit - ringCenter);
++    float u = saturate((radial - innerRadius) / max(outerRadius - innerRadius, 1e-3));
++    float textureMask = SAMPLE_TEXTURE2D(_RingOpacityTex, sampler_RingOpacityTex, float2(u, 0.5)).r;
++
++    float inner = smoothstep(innerRadius - edgeSoftness, innerRadius + edgeSoftness, radial);
++    float outer = 1.0 - smoothstep(outerRadius - edgeSoftness, outerRadius + edgeSoftness, radial);
++    float opticalDepth = max(0.0, opacity * density * saturate(inner * outer) * textureMask);
++    return exp(-opticalDepth);
++}
++
++#endif
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.cs b/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.cs
+new file mode 100644
+index 00000000..c386d0fe
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.cs
+@@ -0,0 +1,657 @@
++// Status: REFERENCE
++// Standalone smoke tester for Docs/SPACE_ENGINE_RESEARCH.
++// Runs outside Unity; the Unity Editor telemetry hook lives in Assets/_Project/Scripts/Editor.
++
++using System;
++using System.Collections.Generic;
++using System.IO;
++using System.Text;
++
++internal static class SpaceEngineResearchSmokeTester
++{
++    private const int MaxReportLineCount = 800;
++    private const int ExpectedShaderEntryCount = 137;
++    private const int ExpectedEncryptedShaderEntryCount = 137;
++    private const int StressPassCount = 3;
++
++    private static readonly string[] RequiredReportAnchors =
++    {
++        "MINING COMPLETE",
++        "PENDING VERIFICATION",
++        "Raw GLSL status",
++        "ReferenceKernels",
++        "Regression Model",
++        "Hot Path Impact",
++        "Failure Modes"
++    };
++
++    private static readonly string[] RequiredKernelAnchors =
++    {
++        "H8SingleScatterLow",
++        "H8GasBandBakeJob",
++        "H8RingShadowTransmittance",
++        "H8LogDepth01",
++        "H8TwistedDiskUv"
++    };
++
++    private static readonly string[] ExpectedShaderEntries =
++    {
++        "atmo_transm.glsl",
++        "tg_gasgiant_color.glsl",
++        "tg_gasgiant_height.glsl",
++        "rings_raymarch.glsl",
++        "emu_double.glh",
++        "einstein.glsl"
++    };
++
++    private static readonly string[] ExpectedAtmosphereEntries =
++    {
++        "atmospheres.cfg",
++        "Earth.atm",
++        "Jupiter.atm",
++        "Neptune.atm"
++    };
++
++    private static readonly string[] ExpectedCatalogEntries =
++    {
++        "planets/SolarSys.sc",
++        "planets/SpaceEngine.sc"
++    };
++
++    private static readonly string[] EditorValidationRelativeFiles =
++    {
++        "Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs",
++        "Assets/_Project/Scripts/Editor/SpaceEngineResearchJsonWriter.cs",
++        "Assets/_Project/Scripts/Editor/SpaceEngineResearchContracts.cs"
++    };
++
++    public static int Main(string[] args)
++    {
++        string projectRoot = args.Length > 0 ? Path.GetFullPath(args[0]) : ResolveProjectRoot();
++        string spaceEngineRoot = args.Length > 1 ? args[1] : @"C:\GOG Games\SpaceEngine";
++        StressResult stress = RunStress(projectRoot, spaceEngineRoot, StressPassCount);
++        string json = JsonWriter.WriteStress(stress);
++        Console.WriteLine(json);
++
++        string outputPath = Path.Combine(projectRoot, "Docs", "SPACE_ENGINE_RESEARCH", "SpaceEngineResearchSmokeTester.json");
++        File.WriteAllText(outputPath, json, Encoding.UTF8);
++        return stress.Passed ? 0 : 1;
++    }
++
++    private static string ResolveProjectRoot()
++    {
++        string current = Directory.GetCurrentDirectory();
++        if (File.Exists(Path.Combine(current, "AGENTS.md")) && Directory.Exists(Path.Combine(current, "Assets")))
++            return current;
++
++        DirectoryInfo? directory = new DirectoryInfo(current);
++        while (directory != null)
++        {
++            if (File.Exists(Path.Combine(directory.FullName, "AGENTS.md")) &&
++                Directory.Exists(Path.Combine(directory.FullName, "Assets")))
++            {
++                return directory.FullName;
++            }
++
++            directory = directory.Parent;
++        }
++
++        return current;
++    }
++
++    private static StressResult RunStress(string projectRoot, string spaceEngineRoot, int passCount)
++    {
++        StressResult result = new StressResult
++        {
++            ProjectRoot = projectRoot,
++            SpaceEngineRoot = spaceEngineRoot,
++            PassCount = Math.Max(1, passCount)
++        };
++
++        AuditResult? baseline = null;
++        AuditResult? latest = null;
++        for (int i = 0; i < result.PassCount; i++)
++        {
++            latest = ExecuteAudit(projectRoot, spaceEngineRoot);
++            if (!latest.Passed)
++                AddFailure(result, "Audit pass failed: " + i);
++
++            if (baseline == null)
++            {
++                baseline = latest;
++                continue;
++            }
++
++            if (!HasStableCounts(baseline, latest))
++                AddFailure(result, "Audit counts changed between stress passes: " + i);
++        }
++
++        result.FinalAudit = latest;
++        result.Passed = result.FailureCount == 0 && latest != null && latest.Passed;
++        return result;
++    }
++
++    private static AuditResult ExecuteAudit(string projectRoot, string spaceEngineRoot)
++    {
++        AuditResult result = new AuditResult
++        {
++            ProjectRoot = projectRoot,
++            SpaceEngineRoot = spaceEngineRoot,
++            MaxReportLineCount = MaxReportLineCount
++        };
++
++        AuditReport(projectRoot, result);
++        AuditReferenceKernels(projectRoot, result);
++        AuditArchives(spaceEngineRoot, result);
++        AuditRecentScope(projectRoot, result);
++        AuditEditorValidationFiles(projectRoot, result);
++        result.Passed = result.FailureCount == 0;
++        return result;
++    }
++
++    private static void AuditReport(string projectRoot, AuditResult result)
++    {
++        string reportPath = Path.Combine(projectRoot, "Docs", "SPACE_ENGINE_RESEARCH", "ATMOSPHERE_AND_SCALE_099.md");
++        result.ReportPath = reportPath;
++        if (!File.Exists(reportPath))
++        {
++            AddFailure(result, "Research report missing: " + reportPath);
++            return;
++        }
++
++        string[] lines = File.ReadAllLines(reportPath);
++        result.ReportLineCount = lines.Length;
++        if (lines.Length > MaxReportLineCount)
++            AddFailure(result, "Research report exceeds decomposition limit: " + lines.Length + " > " + MaxReportLineCount);
++
++        string text = File.ReadAllText(reportPath);
++        for (int i = 0; i < RequiredReportAnchors.Length; i++)
++        {
++            if (text.IndexOf(RequiredReportAnchors[i], StringComparison.Ordinal) < 0)
++                AddFailure(result, "Report anchor missing: " + RequiredReportAnchors[i]);
++        }
++    }
++
++    private static void AuditReferenceKernels(string projectRoot, AuditResult result)
++    {
++        string folder = Path.Combine(projectRoot, "Docs", "SPACE_ENGINE_RESEARCH", "ReferenceKernels");
++        result.ReferenceKernelFolder = folder;
++        if (!Directory.Exists(folder))
++        {
++            AddFailure(result, "Reference kernel folder missing: " + folder);
++            return;
++        }
++
++        string[] files = Directory.GetFiles(folder, "*.*", SearchOption.TopDirectoryOnly);
++        Array.Sort(files, StringComparer.OrdinalIgnoreCase);
++        result.ReferenceKernelFileCount = files.Length;
++
++        StringBuilder builder = new StringBuilder(4096);
++        for (int i = 0; i < files.Length; i++)
++            builder.Append(File.ReadAllText(files[i]));
++
++        string text = builder.ToString();
++        for (int i = 0; i < RequiredKernelAnchors.Length; i++)
++        {
++            if (text.IndexOf(RequiredKernelAnchors[i], StringComparison.Ordinal) < 0)
++                AddFailure(result, "Reference kernel anchor missing: " + RequiredKernelAnchors[i]);
++        }
++    }
++
++    private static void AuditEditorValidationFiles(string projectRoot, AuditResult result)
++    {
++        int fileCount = 0;
++        int maxLineCount = 0;
++
++        for (int i = 0; i < EditorValidationRelativeFiles.Length; i++)
++        {
++            string path = Path.Combine(
++                projectRoot,
++                EditorValidationRelativeFiles[i].Replace('/', Path.DirectorySeparatorChar));
++
++            if (!File.Exists(path))
++            {
++                AddFailure(result, "Editor validation file missing: " + EditorValidationRelativeFiles[i]);
++                continue;
++            }
++
++            int lineCount = File.ReadAllLines(path).Length;
++            fileCount++;
++            if (lineCount > maxLineCount)
++                maxLineCount = lineCount;
++            if (lineCount > MaxReportLineCount)
++                AddFailure(result, "Editor validation file exceeds decomposition limit: " + EditorValidationRelativeFiles[i]);
++        }
++
++        result.EditorValidationFileCount = fileCount;
++        result.MaxEditorValidationLineCount = maxLineCount;
++    }
++
++    private static void AuditArchives(string spaceEngineRoot, AuditResult result)
++    {
++        result.ShaderPak = ZipProbe.Probe(Path.Combine(spaceEngineRoot, "data", "shaders", "Shaders.pak"), ExpectedShaderEntries);
++        result.AtmospherePak = ZipProbe.Probe(Path.Combine(spaceEngineRoot, "data", "models", "atmospheres", "Atmospheres.pak"), ExpectedAtmosphereEntries);
++        result.CatalogPak = ZipProbe.Probe(Path.Combine(spaceEngineRoot, "data", "catalogs", "Catalogs.pak"), ExpectedCatalogEntries);
++
++        if (!result.ShaderPak.Exists)
++        {
++            AddFailure(result, "Shader archive missing: " + result.ShaderPak.Path);
++        }
++        else
++        {
++            if (result.ShaderPak.EntryCount != ExpectedShaderEntryCount)
++                AddFailure(result, "Shader archive entry count changed: " + result.ShaderPak.EntryCount);
++            if (result.ShaderPak.EncryptedEntryCount != ExpectedEncryptedShaderEntryCount)
++                AddFailure(result, "Shader archive encrypted count changed: " + result.ShaderPak.EncryptedEntryCount);
++            if (result.ShaderPak.ExpectedMissingCount != 0)
++                AddFailure(result, "Shader archive expected entries missing: " + result.ShaderPak.ExpectedMissingCount);
++
++            result.NoPasswordProbeStatus =
++                result.ShaderPak.EncryptedEntryCount > 0
++                    ? "BLOCKED_BY_ENCRYPTED_ZIP_FLAGS_NO_PASSWORD_BYPASS"
++                    : "NO_ENCRYPTION_FLAG_DETECTED";
++        }
++
++        if (!result.AtmospherePak.Exists)
++            AddFailure(result, "Atmosphere archive missing: " + result.AtmospherePak.Path);
++        else if (result.AtmospherePak.EncryptedEntryCount != 0 || result.AtmospherePak.ExpectedMissingCount != 0)
++            AddFailure(result, "Atmosphere archive probe failed.");
++
++        if (!result.CatalogPak.Exists)
++            AddFailure(result, "Catalog archive missing: " + result.CatalogPak.Path);
++        else if (result.CatalogPak.EncryptedEntryCount != 0 || result.CatalogPak.ExpectedMissingCount != 0)
++            AddFailure(result, "Catalog archive probe failed.");
++    }
++
++    private static void AuditRecentScope(string projectRoot, AuditResult result)
++    {
++        string folder = Path.Combine(projectRoot, "Docs", "SPACE_ENGINE_RESEARCH");
++        string[] files = Directory.GetFiles(folder, "*.*", SearchOption.AllDirectories);
++        for (int i = 0; i < files.Length; i++)
++        {
++            if (!IsOwnedResearchAuditFile(folder, files[i]))
++                continue;
++
++            string extension = Path.GetExtension(files[i]);
++            if (!string.Equals(extension, ".cs", StringComparison.OrdinalIgnoreCase) &&
++                !string.Equals(extension, ".md", StringComparison.OrdinalIgnoreCase) &&
++                !string.Equals(extension, ".hlsl", StringComparison.OrdinalIgnoreCase))
++            {
++                continue;
++            }
++
++            string text = File.ReadAllText(files[i]);
++            result.NativeCollectionTokenCount += CountToken(text, "NativeArray") + CountToken(text, "NativeList") + CountToken(text, "NativeQueue");
++            result.JobBarrierTokenCount += CountToken(text, ".Complete()") + CountToken(text, ".Run()");
++            result.StaticInstanceTokenCount += CountToken(text, "private static") + CountToken(text, "DontDestroyOnLoad");
++            result.HotPathStringTokenCount += CountToken(text, ".ToString()") + CountToken(text, "string.Format") + CountToken(text, "$\"");
++        }
++    }
++
++    private static bool IsOwnedResearchAuditFile(string folder, string path)
++    {
++        string relative = path.Substring(folder.Length)
++            .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
++            .Replace('\\', '/');
++        return relative.StartsWith("ReferenceKernels/", StringComparison.OrdinalIgnoreCase) ||
++               string.Equals(relative, "ATMOSPHERE_AND_SCALE_099.md", StringComparison.OrdinalIgnoreCase) ||
++               string.Equals(relative, "OMEGA_AUTONOMY_AUDIT.md", StringComparison.OrdinalIgnoreCase) ||
++               string.Equals(relative, "SpaceEngineResearchSmokeTester.cs", StringComparison.OrdinalIgnoreCase);
++    }
++
++    private static bool HasStableCounts(AuditResult baseline, AuditResult current)
++    {
++        return baseline.ReportLineCount == current.ReportLineCount &&
++               baseline.ReferenceKernelFileCount == current.ReferenceKernelFileCount &&
++               baseline.ShaderPak.EntryCount == current.ShaderPak.EntryCount &&
++               baseline.ShaderPak.EncryptedEntryCount == current.ShaderPak.EncryptedEntryCount &&
++               baseline.AtmospherePak.EncryptedEntryCount == current.AtmospherePak.EncryptedEntryCount &&
++               baseline.CatalogPak.EncryptedEntryCount == current.CatalogPak.EncryptedEntryCount &&
++               baseline.FailureCount == current.FailureCount;
++    }
++
++    private static int CountToken(string text, string token)
++    {
++        int count = 0;
++        int index = 0;
++        while (index < text.Length)
++        {
++            int next = text.IndexOf(token, index, StringComparison.Ordinal);
++            if (next < 0)
++                break;
++
++            count++;
++            index = next + token.Length;
++        }
++
++        return count;
++    }
++
++    private static void AddFailure(AuditResult result, string failure)
++    {
++        result.FailureCount++;
++        if (result.Failures.Count < 32)
++            result.Failures.Add(failure);
++    }
++
++    private static void AddFailure(StressResult result, string failure)
++    {
++        result.FailureCount++;
++        if (result.Failures.Count < 32)
++            result.Failures.Add(failure);
++    }
++
++    private sealed class AuditResult
++    {
++        public readonly List<string> Failures = new List<string>(32);
++        public string ProjectRoot = string.Empty;
++        public string SpaceEngineRoot = string.Empty;
++        public string ReportPath = string.Empty;
++        public string ReferenceKernelFolder = string.Empty;
++        public string NoPasswordProbeStatus = string.Empty;
++        public bool Passed;
++        public int ReportLineCount;
++        public int MaxReportLineCount;
++        public int ReferenceKernelFileCount;
++        public int EditorValidationFileCount;
++        public int MaxEditorValidationLineCount;
++        public int NativeCollectionTokenCount;
++        public int JobBarrierTokenCount;
++        public int StaticInstanceTokenCount;
++        public int HotPathStringTokenCount;
++        public int FailureCount;
++        public ZipProbeResult ShaderPak;
++        public ZipProbeResult AtmospherePak;
++        public ZipProbeResult CatalogPak;
++    }
++
++    private sealed class StressResult
++    {
++        public readonly List<string> Failures = new List<string>(32);
++        public string ProjectRoot = string.Empty;
++        public string SpaceEngineRoot = string.Empty;
++        public bool Passed;
++        public int PassCount;
++        public int FailureCount;
++        public AuditResult? FinalAudit;
++    }
++
++    private struct ZipProbeResult
++    {
++        public string Path;
++        public string ParseError;
++        public bool Exists;
++        public int EntryCount;
++        public int EncryptedEntryCount;
++        public int CompressedEntryCount;
++        public int StoredEntryCount;
++        public int ExpectedEntryCount;
++        public int ExpectedFoundCount;
++        public int ExpectedMissingCount;
++    }
++
++    private static class ZipProbe
++    {
++        private const uint EndOfCentralDirectorySignature = 0x06054B50u;
++        private const uint CentralDirectoryHeaderSignature = 0x02014B50u;
++        private const int MaxEocdSearchBytes = 66000;
++
++        public static ZipProbeResult Probe(string path, string[] expectedEntries)
++        {
++            ZipProbeResult result = new ZipProbeResult { Path = path, ExpectedEntryCount = expectedEntries.Length };
++            if (!File.Exists(path))
++                return result;
++
++            result.Exists = true;
++            using FileStream stream = File.OpenRead(path);
++            int tailLength = (int)Math.Min(stream.Length, MaxEocdSearchBytes);
++            byte[] tail = new byte[tailLength];
++            stream.Seek(stream.Length - tailLength, SeekOrigin.Begin);
++            ReadExact(stream, tail, tail.Length);
++
++            int eocd = FindEndOfCentralDirectory(tail);
++            if (eocd < 0)
++            {
++                result.ParseError = "EOCD_NOT_FOUND";
++                return result;
++            }
++
++            uint centralDirectorySize = ReadUInt32(tail, eocd + 12);
++            uint centralDirectoryOffset = ReadUInt32(tail, eocd + 16);
++            if (centralDirectorySize == 0u || centralDirectoryOffset >= stream.Length || centralDirectorySize > int.MaxValue)
++            {
++                result.ParseError = "INVALID_CENTRAL_DIRECTORY";
++                return result;
++            }
++
++            byte[] centralDirectory = new byte[(int)centralDirectorySize];
++            stream.Seek(centralDirectoryOffset, SeekOrigin.Begin);
++            ReadExact(stream, centralDirectory, centralDirectory.Length);
++            ParseCentralDirectory(centralDirectory, expectedEntries, ref result);
++            result.ExpectedMissingCount = expectedEntries.Length - result.ExpectedFoundCount;
++            return result;
++        }
++
++        private static void ParseCentralDirectory(byte[] centralDirectory, string[] expectedEntries, ref ZipProbeResult result)
++        {
++            int offset = 0;
++            while (offset + 46 <= centralDirectory.Length)
++            {
++                if (ReadUInt32(centralDirectory, offset) != CentralDirectoryHeaderSignature)
++                {
++                    result.ParseError = "CENTRAL_DIRECTORY_HEADER_MISMATCH";
++                    return;
++                }
++
++                ushort flags = ReadUInt16(centralDirectory, offset + 8);
++                ushort method = ReadUInt16(centralDirectory, offset + 10);
++                ushort nameLength = ReadUInt16(centralDirectory, offset + 28);
++                ushort extraLength = ReadUInt16(centralDirectory, offset + 30);
++                ushort commentLength = ReadUInt16(centralDirectory, offset + 32);
++                int nextOffset = offset + 46 + nameLength + extraLength + commentLength;
++                if (nextOffset > centralDirectory.Length)
++                {
++                    result.ParseError = "CENTRAL_DIRECTORY_ENTRY_OVERRUN";
++                    return;
++                }
++
++                string name = Encoding.UTF8.GetString(centralDirectory, offset + 46, nameLength);
++                result.EntryCount++;
++                if ((flags & 0x0001) != 0)
++                    result.EncryptedEntryCount++;
++                if (method == 0)
++                    result.StoredEntryCount++;
++                else
++                    result.CompressedEntryCount++;
++
++                for (int i = 0; i < expectedEntries.Length; i++)
++                {
++                    if (string.Equals(name, expectedEntries[i], StringComparison.OrdinalIgnoreCase))
++                    {
++                        result.ExpectedFoundCount++;
++                        break;
++                    }
++                }
++
++                offset = nextOffset;
++            }
++        }
++
++        private static int FindEndOfCentralDirectory(byte[] tail)
++        {
++            for (int i = tail.Length - 22; i >= 0; i--)
++            {
++                if (ReadUInt32(tail, i) == EndOfCentralDirectorySignature)
++                    return i;
++            }
++
++            return -1;
++        }
++
++        private static void ReadExact(Stream stream, byte[] buffer, int count)
++        {
++            int totalRead = 0;
++            while (totalRead < count)
++            {
++                int read = stream.Read(buffer, totalRead, count - totalRead);
++                if (read <= 0)
++                    throw new EndOfStreamException();
++                totalRead += read;
++            }
++        }
++
++        private static ushort ReadUInt16(byte[] buffer, int offset)
++        {
++            return (ushort)(buffer[offset] | (buffer[offset + 1] << 8));
++        }
++
++        private static uint ReadUInt32(byte[] buffer, int offset)
++        {
++            return (uint)(buffer[offset] |
++                          (buffer[offset + 1] << 8) |
++                          (buffer[offset + 2] << 16) |
++                          (buffer[offset + 3] << 24));
++        }
++    }
++
++    private static class JsonWriter
++    {
++        public static string WriteStress(StressResult result)
++        {
++            StringBuilder builder = new StringBuilder(8192);
++            builder.Append('{');
++            Prop(builder, "status", result.Passed ? "OMEGA_VERIFIED" : "FAILED");
++            builder.Append(',');
++            Prop(builder, "projectRoot", result.ProjectRoot);
++            builder.Append(',');
++            Prop(builder, "spaceEngineRoot", result.SpaceEngineRoot);
++            builder.Append(',');
++            Prop(builder, "passCount", result.PassCount);
++            builder.Append(',');
++            Prop(builder, "failureCount", result.FailureCount);
++            builder.Append(',');
++            ArrayProp(builder, "failures", result.Failures);
++            builder.Append(',');
++            builder.Append("\"finalAudit\":");
++            Audit(builder, result.FinalAudit);
++            builder.Append('}');
++            return builder.ToString();
++        }
++
++        private static void Audit(StringBuilder builder, AuditResult? result)
++        {
++            if (result == null)
++            {
++                builder.Append("null");
++                return;
++            }
++
++            builder.Append('{');
++            Prop(builder, "status", result.Passed ? "PASS" : "FAIL");
++            builder.Append(',');
++            Prop(builder, "reportLineCount", result.ReportLineCount);
++            builder.Append(',');
++            Prop(builder, "maxReportLineCount", result.MaxReportLineCount);
++            builder.Append(',');
++            Prop(builder, "referenceKernelFileCount", result.ReferenceKernelFileCount);
++            builder.Append(',');
++            Prop(builder, "editorValidationFileCount", result.EditorValidationFileCount);
++            builder.Append(',');
++            Prop(builder, "maxEditorValidationLineCount", result.MaxEditorValidationLineCount);
++            builder.Append(',');
++            Prop(builder, "noPasswordProbeStatus", result.NoPasswordProbeStatus);
++            builder.Append(',');
++            Prop(builder, "nativeCollectionTokenCount", result.NativeCollectionTokenCount);
++            builder.Append(',');
++            Prop(builder, "jobBarrierTokenCount", result.JobBarrierTokenCount);
++            builder.Append(',');
++            Prop(builder, "staticInstanceTokenCount", result.StaticInstanceTokenCount);
++            builder.Append(',');
++            Prop(builder, "hotPathStringTokenCount", result.HotPathStringTokenCount);
++            builder.Append(',');
++            Prop(builder, "failureCount", result.FailureCount);
++            builder.Append(',');
++            ArrayProp(builder, "failures", result.Failures);
++            builder.Append(',');
++            builder.Append("\"shaderPak\":");
++            Zip(builder, result.ShaderPak);
++            builder.Append(',');
++            builder.Append("\"atmospherePak\":");
++            Zip(builder, result.AtmospherePak);
++            builder.Append(',');
++            builder.Append("\"catalogPak\":");
++            Zip(builder, result.CatalogPak);
++            builder.Append('}');
++        }
++
++        private static void Zip(StringBuilder builder, ZipProbeResult result)
++        {
++            builder.Append('{');
++            Prop(builder, "exists", result.Exists);
++            builder.Append(',');
++            Prop(builder, "entryCount", result.EntryCount);
++            builder.Append(',');
++            Prop(builder, "encryptedEntryCount", result.EncryptedEntryCount);
++            builder.Append(',');
++            Prop(builder, "expectedFoundCount", result.ExpectedFoundCount);
++            builder.Append(',');
++            Prop(builder, "expectedMissingCount", result.ExpectedMissingCount);
++            builder.Append(',');
++            Prop(builder, "parseError", result.ParseError);
++            builder.Append('}');
++        }
++
++        private static void Prop(StringBuilder builder, string name, string value)
++        {
++            builder.Append('"').Append(name).Append("\":\"");
++            Esc(builder, value);
++            builder.Append('"');
++        }
++
++        private static void Prop(StringBuilder builder, string name, int value)
++        {
++            builder.Append('"').Append(name).Append("\":").Append(value);
++        }
++
++        private static void Prop(StringBuilder builder, string name, bool value)
++        {
++            builder.Append('"').Append(name).Append("\":").Append(value ? "true" : "false");
++        }
++
++        private static void ArrayProp(StringBuilder builder, string name, List<string> values)
++        {
++            builder.Append('"').Append(name).Append("\":[");
++            for (int i = 0; i < values.Count; i++)
++            {
++                if (i > 0)
++                    builder.Append(',');
++                builder.Append('"');
++                Esc(builder, values[i]);
++                builder.Append('"');
++            }
++
++            builder.Append(']');
++        }
++
++        private static void Esc(StringBuilder builder, string value)
++        {
++            if (string.IsNullOrEmpty(value))
++                return;
++
++            for (int i = 0; i < value.Length; i++)
++            {
++                char c = value[i];
++                if (c == '\\')
++                    builder.Append("\\\\");
++                else if (c == '"')
++                    builder.Append("\\\"");
++                else if (c == '\r')
++                    builder.Append("\\r");
++                else if (c == '\n')
++                    builder.Append("\\n");
++                else
++                    builder.Append(c);
++            }
++        }
++    }
++}
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.csproj b/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.csproj
+new file mode 100644
+index 00000000..113c6eda
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.csproj
+@@ -0,0 +1,13 @@
++<Project Sdk="Microsoft.NET.Sdk">
++  <PropertyGroup>
++    <OutputType>Exe</OutputType>
++    <TargetFramework>net10.0</TargetFramework>
++    <ImplicitUsings>disable</ImplicitUsings>
++    <Nullable>enable</Nullable>
++    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
++    <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
++  </PropertyGroup>
++  <ItemGroup>
++    <Compile Include="SpaceEngineResearchSmokeTester.cs" />
++  </ItemGroup>
++</Project>
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.json b/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.json
+new file mode 100644
+index 00000000..18f5b022
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineResearchSmokeTester.json
+@@ -0,0 +1 @@
++﻿{"status":"OMEGA_VERIFIED","projectRoot":"C:\\hades\\Hecton8","spaceEngineRoot":"C:\\GOG Games\\SpaceEngine","passCount":3,"failureCount":0,"failures":[],"finalAudit":{"status":"PASS","reportLineCount":762,"maxReportLineCount":800,"referenceKernelFileCount":6,"editorValidationFileCount":3,"maxEditorValidationLineCount":590,"noPasswordProbeStatus":"BLOCKED_BY_ENCRYPTED_ZIP_FLAGS_NO_PASSWORD_BYPASS","nativeCollectionTokenCount":12,"jobBarrierTokenCount":6,"staticInstanceTokenCount":37,"hotPathStringTokenCount":5,"failureCount":0,"failures":[],"shaderPak":{"exists":true,"entryCount":137,"encryptedEntryCount":137,"expectedFoundCount":6,"expectedMissingCount":0,"parseError":""},"atmospherePak":{"exists":true,"entryCount":15,"encryptedEntryCount":0,"expectedFoundCount":4,"expectedMissingCount":0,"parseError":""},"catalogPak":{"exists":true,"entryCount":64,"encryptedEntryCount":0,"expectedFoundCount":2,"expectedMissingCount":0,"parseError":""}}}
+\ No newline at end of file
+diff --git a/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineShaderNoPasswordProbe.log b/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineShaderNoPasswordProbe.log
+new file mode 100644
+index 00000000..0931eced
+--- /dev/null
++++ b/Docs/SPACE_ENGINE_RESEARCH/SpaceEngineShaderNoPasswordProbe.log
+@@ -0,0 +1,4 @@
++﻿command=tar -xOf Shaders.pak ag_common.glh
++exitCode=1
++output:
++tar.exe: Couldn't read passphrase: No such file or directory

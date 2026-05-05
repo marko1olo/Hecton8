@@ -56,7 +56,7 @@ namespace Hecton8.Editor
 
             try
             {
-                // COLD ALLOC: NativeArray smoke buffers — deterministic editor anomaly stress pass — owner: AnomalySmokeTester
+                // COLD ALLOC: NativeArray smoke buffers[PixelCount] — deterministic editor anomaly stress pass — owner: AnomalySmokeTester
                 heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);

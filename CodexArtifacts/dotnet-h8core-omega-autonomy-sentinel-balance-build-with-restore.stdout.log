@@ -1,0 +1,56 @@
+  Determining projects to restore...
+  Restored C:\hades\Hecton8\WaveHarmonic.Crest.Shared.csproj (in 88 ms).
+  Restored C:\hades\Hecton8\VolumetricLightBeam.csproj (in 311 ms).
+  Restored C:\hades\Hecton8\Crest.csproj (in 262 ms).
+  Restored C:\hades\Hecton8\WaveHarmonic.Crest.Shared.Editor.csproj (in 263 ms).
+  Restored C:\hades\Hecton8\Hecton8.World.Contracts.csproj (in 240 ms).
+  Restored C:\hades\Hecton8\Unity.RenderPipelines.Universal.Runtime.csproj (in 278 ms).
+  Restored C:\hades\Hecton8\ShapesRuntime.csproj (in 270 ms).
+  Restored C:\hades\Hecton8\Hecton8.Input.csproj (in 278 ms).
+  Restored C:\hades\Hecton8\Hecton8.Bootstrap.Contracts.csproj (in 13 ms).
+  Restored C:\hades\Hecton8\Unity.ShaderGraph.Editor.csproj (in 3 ms).
+  Restored C:\hades\Hecton8\Unity.RenderPipelines.Core.Editor.csproj (in 3 ms).
+  Restored C:\hades\Hecton8\MapMagic.csproj (in 4 ms).
+  Restored C:\hades\Hecton8\Hecton8.Core.csproj (in 23 ms).
+  Restored C:\hades\Hecton8\Hecton8.Input.Generated.csproj (in 3 ms).
+  Restored C:\hades\Hecton8\GPUInstancer.csproj (in 4 ms).
+  Restored C:\hades\Hecton8\EasySave3.csproj (in 9 ms).
+  Restored C:\hades\Hecton8\Den.Tools.csproj (in 3 ms).
+  Restored C:\hades\Hecton8\WaveHarmonic.Crest.csproj (in 14 ms).
+  Hecton8.Bootstrap.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.Bootstrap.Contracts.dll
+  Hecton8.World.Contracts -> C:\hades\Hecton8\Temp\bin\Debug\Hecton8.World.Contracts.dll
+CSC : error CS0016: Could not write to output file 'C:\hades\Hecton8\Temp\obj\Hecton8.Input.Generated\Hecton8.Input.Generated.sourcelink.json' -- 'Could not find a part of the path 'C:\hades\Hecton8\Temp\obj\Hecton8.Input.Generated\Hecton8.Input.Generated.sourcelink.json'.' [C:\hades\Hecton8\Hecton8.Input.Generated.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Unity.RenderPipelines.Universal.Runtime\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Unity.RenderPipelines.Universal.Runtime.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\GPUInstancer\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\GPUInstancer.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Den.Tools\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Den.Tools.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\MapMagic\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\MapMagic.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Crest\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Crest.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\WaveHarmonic.Crest\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\WaveHarmonic.Crest.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\WaveHarmonic.Crest.Shared\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\WaveHarmonic.Crest.Shared.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\ShapesRuntime\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\ShapesRuntime.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\EasySave3\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\EasySave3.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\VolumetricLightBeam\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\VolumetricLightBeam.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Unity.RenderPipelines.Core.Editor\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Unity.RenderPipelines.Core.Editor.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Unity.ShaderGraph.Editor\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Unity.ShaderGraph.Editor.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\WaveHarmonic.Crest.Shared.Editor\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\WaveHarmonic.Crest.Shared.Editor.csproj]
+
+Build FAILED.
+
+CSC : error CS0016: Could not write to output file 'C:\hades\Hecton8\Temp\obj\Hecton8.Input.Generated\Hecton8.Input.Generated.sourcelink.json' -- 'Could not find a part of the path 'C:\hades\Hecton8\Temp\obj\Hecton8.Input.Generated\Hecton8.Input.Generated.sourcelink.json'.' [C:\hades\Hecton8\Hecton8.Input.Generated.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Unity.RenderPipelines.Universal.Runtime\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Unity.RenderPipelines.Universal.Runtime.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\GPUInstancer\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\GPUInstancer.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Den.Tools\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Den.Tools.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\MapMagic\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\MapMagic.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Crest\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Crest.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\WaveHarmonic.Crest\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\WaveHarmonic.Crest.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\WaveHarmonic.Crest.Shared\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\WaveHarmonic.Crest.Shared.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\ShapesRuntime\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\ShapesRuntime.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\EasySave3\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\EasySave3.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\VolumetricLightBeam\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\VolumetricLightBeam.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Unity.RenderPipelines.Core.Editor\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Unity.RenderPipelines.Core.Editor.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\Unity.ShaderGraph.Editor\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\Unity.ShaderGraph.Editor.csproj]
+C:\Program Files\dotnet\sdk\10.0.202\Sdks\Microsoft.NET.Sdk\targets\Microsoft.PackageDependencyResolution.targets(266,5): error NETSDK1004: Assets file 'C:\hades\Hecton8\Temp\obj\WaveHarmonic.Crest.Shared.Editor\project.assets.json' not found. Run a NuGet package restore to generate this file. [C:\hades\Hecton8\WaveHarmonic.Crest.Shared.Editor.csproj]
+    0 Warning(s)
+    14 Error(s)
+
+Time Elapsed 00:00:44.31

@@ -43,7 +43,10 @@ namespace Hecton8.World
         private const int MaxPersistentDynamicObstacleCount = 512;
         private const int DirtyVolumeQueueCapacity = 32;
         private const int PendingObstacleClearQueueCapacity = 16;
+        private const int PureVoidScanBlockSize = 64;
         private const float PersistentObstacleMergeDistanceMeters = 2f;
+        private const string NativeMemoryOwner = nameof(VoxelDynamicNavGridRuntime);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const string DynamicClearanceBudgetWarningMessage = "[VoxelDynamicNavGridRuntime] Partial clearance dilation exceeded 1ms; next destroyed-flora clear uses reduced clearance radius.";
 
         // COLD ALLOC: Dictionary<int, VolumeRecord>(16) - voxel navgrid snapshots keyed by runtime volume instance ID - owner: VoxelDynamicNavGridRuntime
@@ -136,6 +139,45 @@ namespace Hecton8.World
                     return;
 
                 Passability[flatIndex] = DensityField[flatIndex] < SolidThreshold ? OpenCell : SolidCell;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        internal struct PureVoidBlockScanJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<byte> Passability;
+            [ReadOnly] public NativeArray<ushort> DistanceMap;
+            [WriteOnly] public NativeArray<int> BlockFlags;
+            public int PointCount;
+
+            public void Execute(int blockIndex)
+            {
+                int start = blockIndex * PureVoidScanBlockSize;
+                int end = math.min(start + PureVoidScanBlockSize, PointCount);
+                int pure = 1;
+                if (!Passability.IsCreated ||
+                    !DistanceMap.IsCreated ||
+                    !BlockFlags.IsCreated ||
+                    PointCount <= 0 ||
+                    Passability.Length < PointCount ||
+                    DistanceMap.Length < PointCount ||
+                    (uint)blockIndex >= (uint)BlockFlags.Length)
+                {
+                    pure = 0;
+                }
+                else
+                {
+                    for (int i = start; i < end; i++)
+                    {
+                        if (Passability[i] == OpenCell && DistanceMap[i] == ushort.MaxValue)
+                            continue;
+
+                        pure = 0;
+                        break;
+                    }
+                }
+
+                BlockFlags[blockIndex] = pure;
             }
         }
 
@@ -502,6 +544,7 @@ namespace Hecton8.World
             public NativeArray<byte> BaseNext;
             public NativeArray<ushort> CurrentDistance;
             public NativeArray<ushort> NextDistance;
+            public NativeArray<int> PureVoidBlockFlags;
             public NativeArray<NavObstaclePrimitive> PendingObstacleSnapshot;
             public JobHandle PendingDynamicUpdateHandle;
             public bool HasPendingDynamicUpdate;
@@ -509,6 +552,7 @@ namespace Hecton8.World
             public bool PortalsReady;
             public int3 PendingRegionMin;
             public int3 PendingRegionMax;
+            public int PureVoidBlockCount;
             public PortalNode[] Portals = System.Array.Empty<PortalNode>();
             public int PortalCount;
             public int[] FaceVisitScratch = System.Array.Empty<int>();
@@ -525,23 +569,13 @@ namespace Hecton8.World
                     HasPendingDynamicUpdate = false;
                 }
 
-                if (Current.IsCreated)
-                    Current.Dispose();
-
-                if (Next.IsCreated)
-                    Next.Dispose();
-
-                if (BaseCurrent.IsCreated)
-                    BaseCurrent.Dispose();
-
-                if (BaseNext.IsCreated)
-                    BaseNext.Dispose();
-
-                if (CurrentDistance.IsCreated)
-                    CurrentDistance.Dispose();
-
-                if (NextDistance.IsCreated)
-                    NextDistance.Dispose();
+                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref Current);
+                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref Next);
+                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref BaseCurrent);
+                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref BaseNext);
+                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref CurrentDistance);
+                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref NextDistance);
+                VoxelDynamicNavGridRuntime.DisposeTrackedNativeArray(ref PureVoidBlockFlags);
 
                 if (PendingObstacleSnapshot.IsCreated)
                     PendingObstacleSnapshot.Dispose();
@@ -552,6 +586,7 @@ namespace Hecton8.World
                 BaseNext = default;
                 CurrentDistance = default;
                 NextDistance = default;
+                PureVoidBlockFlags = default;
                 PendingObstacleSnapshot = default;
                 PendingDynamicUpdateHandle = default;
                 HasPendingDynamicUpdate = false;
@@ -566,6 +601,7 @@ namespace Hecton8.World
                 Origin = float3.zero;
                 Max = float3.zero;
                 CellSize = 0f;
+                PureVoidBlockCount = 0;
                 PortalCount = 0;
                 FaceVisitStamp = 0;
                 return true;
@@ -645,11 +681,13 @@ namespace Hecton8.World
             int pointCount,
             out NativeArray<byte> outputBuffer,
             out NativeArray<byte> baseOutputBuffer,
-            out NativeArray<ushort> distanceBuffer)
+            out NativeArray<ushort> distanceBuffer,
+            out NativeArray<int> pureVoidBlockFlags)
         {
             outputBuffer = default;
             baseOutputBuffer = default;
             distanceBuffer = default;
+            pureVoidBlockFlags = default;
             if (volume == null ||
                 pointCount <= 0 ||
                 dimensions.x <= 0 ||
@@ -700,12 +738,15 @@ namespace Hecton8.World
             if (!needsBuild)
                 return false;
 
-            EnsureBuffer(ref record.Current, pointCount);
-            EnsureBuffer(ref record.Next, pointCount);
-            EnsureBuffer(ref record.BaseCurrent, pointCount);
-            EnsureBuffer(ref record.BaseNext, pointCount);
-            EnsureBuffer(ref record.CurrentDistance, pointCount);
-            EnsureBuffer(ref record.NextDistance, pointCount);
+            EnsureBuffer(ref record.Current, pointCount, nameof(VolumeRecord.Current));
+            EnsureBuffer(ref record.Next, pointCount, nameof(VolumeRecord.Next));
+            EnsureBuffer(ref record.BaseCurrent, pointCount, nameof(VolumeRecord.BaseCurrent));
+            EnsureBuffer(ref record.BaseNext, pointCount, nameof(VolumeRecord.BaseNext));
+            EnsureBuffer(ref record.CurrentDistance, pointCount, nameof(VolumeRecord.CurrentDistance));
+            EnsureBuffer(ref record.NextDistance, pointCount, nameof(VolumeRecord.NextDistance));
+            int pureVoidBlockCount = ResolvePureVoidBlockCount(pointCount);
+            EnsureBuffer(ref record.PureVoidBlockFlags, pureVoidBlockCount, nameof(VolumeRecord.PureVoidBlockFlags));
+            record.PureVoidBlockCount = pureVoidBlockCount;
             EnsurePortalWorkCapacity(record);
             record.IsPureVoid = false;
             record.PortalsReady = false;
@@ -713,6 +754,7 @@ namespace Hecton8.World
             outputBuffer = record.Next;
             baseOutputBuffer = record.BaseNext;
             distanceBuffer = record.NextDistance;
+            pureVoidBlockFlags = record.PureVoidBlockFlags;
             return true;
         }
 
@@ -975,9 +1017,10 @@ namespace Hecton8.World
                     CellSize = record.CellSize
                 }.Schedule(regionPointCount, 64);
 
+                JobHandle dilationHandle;
                 using (_partialClearanceDilationScheduleMarker.Auto())
                 {
-                    record.PendingDynamicUpdateHandle = new PartialClearanceDilationJob
+                    dilationHandle = new PartialClearanceDilationJob
                     {
                         Passability = record.Next,
                         ReferenceDistanceMap = record.CurrentDistance,
@@ -988,6 +1031,13 @@ namespace Hecton8.World
                         AgentRadiusCells = clearanceRadiusCells
                     }.Schedule(resetHandle);
                 }
+
+                record.PendingDynamicUpdateHandle = SchedulePureVoidScan(
+                    record.Next,
+                    record.NextDistance,
+                    record.PureVoidBlockFlags,
+                    record.Next.Length,
+                    dilationHandle);
 
                 record.HasPendingDynamicUpdate = true;
                 record.PortalsReady = false;
@@ -1424,6 +1474,9 @@ namespace Hecton8.World
 
             if (_persistentDynamicObstacles.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeList(
+                    nameof(VoxelDynamicNavGridRuntime),
+                    nameof(_persistentDynamicObstacles));
                 _persistentDynamicObstacles.Dispose();
                 _persistentDynamicObstacles = default;
             }
@@ -1460,7 +1513,14 @@ namespace Hecton8.World
             }
 
             if (!_persistentDynamicObstacles.IsCreated)
+            {
                 _persistentDynamicObstacles = new NativeList<NavObstaclePrimitive>(MaxPersistentDynamicObstacleCount, Allocator.Persistent); // COLD ALLOC: NativeList<NavObstaclePrimitive>[512] - overgrowth/vine dynamic obstacle snapshot lane - owner: VoxelDynamicNavGridRuntime
+                NativeMemorySentinel.RegisterNativeList(
+                    _persistentDynamicObstacles,
+                    nameof(VoxelDynamicNavGridRuntime),
+                    nameof(_persistentDynamicObstacles),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void EnsureLifecycleOwner()
@@ -1600,26 +1660,64 @@ namespace Hecton8.World
             _pendingObstacleClearQueueCount++;
         }
 
-        private static void EnsureBuffer(ref NativeArray<byte> buffer, int length)
+        private static void EnsureBuffer(ref NativeArray<byte> buffer, int length, string label)
         {
             if (buffer.IsCreated && buffer.Length == length)
                 return;
 
             if (buffer.IsCreated)
-                buffer.Dispose();
+                DisposeTrackedNativeArray(ref buffer);
 
             buffer = new NativeArray<byte>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[pointCount] - double-buffered voxel passability snapshot - owner: VoxelDynamicNavGridRuntime
+            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
-        private static void EnsureBuffer(ref NativeArray<ushort> buffer, int length)
+        private static void EnsureBuffer(ref NativeArray<ushort> buffer, int length, string label)
         {
             if (buffer.IsCreated && buffer.Length == length)
                 return;
 
             if (buffer.IsCreated)
-                buffer.Dispose();
+                DisposeTrackedNativeArray(ref buffer);
 
             buffer = new NativeArray<ushort>(length, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ushort>[pointCount] - double-buffered voxel clearance-distance snapshot - owner: VoxelDynamicNavGridRuntime
+            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        private static void EnsureBuffer(ref NativeArray<int> buffer, int length, string label)
+        {
+            if (buffer.IsCreated && buffer.Length == length)
+                return;
+
+            if (buffer.IsCreated)
+                DisposeTrackedNativeArray(ref buffer);
+
+            buffer = new NativeArray<int>(length, Allocator.Persistent, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[pureVoidBlockCount] - Burst pure-void block scan flags - owner: VoxelDynamicNavGridRuntime
+            NativeMemorySentinel.RegisterNativeArray(buffer, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
+
+        internal static JobHandle SchedulePureVoidScan(
+            NativeArray<byte> passability,
+            NativeArray<ushort> distanceMap,
+            NativeArray<int> blockFlags,
+            int pointCount,
+            JobHandle dependency)
+        {
+            if (!blockFlags.IsCreated || pointCount <= 0)
+                return dependency;
+
+            return new PureVoidBlockScanJob
+            {
+                Passability = passability,
+                DistanceMap = distanceMap,
+                BlockFlags = blockFlags,
+                PointCount = pointCount
+            }.Schedule(blockFlags.Length, 32, dependency);
+        }
+
+        internal static int ResolvePureVoidBlockCount(int pointCount)
+        {
+            return math.max(1, (math.max(1, pointCount) + PureVoidScanBlockSize - 1) / PureVoidScanBlockSize);
         }
 
         private static void EvaluatePureVoidState(VolumeRecord record)
@@ -1648,15 +1746,18 @@ namespace Hecton8.World
             if (record == null ||
                 !record.Current.IsCreated ||
                 !record.CurrentDistance.IsCreated ||
+                !record.PureVoidBlockFlags.IsCreated ||
                 record.Current.Length <= 0 ||
-                record.Current.Length != record.CurrentDistance.Length)
+                record.Current.Length != record.CurrentDistance.Length ||
+                record.PureVoidBlockCount <= 0 ||
+                record.PureVoidBlockCount > record.PureVoidBlockFlags.Length)
             {
                 return false;
             }
 
-            for (int i = 0; i < record.Current.Length; i++)
+            for (int i = 0; i < record.PureVoidBlockCount; i++)
             {
-                if (record.Current[i] != OpenCell || record.CurrentDistance[i] != ushort.MaxValue)
+                if (record.PureVoidBlockFlags[i] == 0)
                     return false;
             }
 
@@ -1668,26 +1769,26 @@ namespace Hecton8.World
             if (record.HasPendingDynamicUpdate)
                 return false;
 
-            if (record.Current.IsCreated)
-                record.Current.Dispose();
-            if (record.Next.IsCreated)
-                record.Next.Dispose();
-            if (record.BaseCurrent.IsCreated)
-                record.BaseCurrent.Dispose();
-            if (record.BaseNext.IsCreated)
-                record.BaseNext.Dispose();
-            if (record.CurrentDistance.IsCreated)
-                record.CurrentDistance.Dispose();
-            if (record.NextDistance.IsCreated)
-                record.NextDistance.Dispose();
-
-            record.Current = default;
-            record.Next = default;
-            record.BaseCurrent = default;
-            record.BaseNext = default;
-            record.CurrentDistance = default;
-            record.NextDistance = default;
+            DisposeTrackedNativeArray(ref record.Current);
+            DisposeTrackedNativeArray(ref record.Next);
+            DisposeTrackedNativeArray(ref record.BaseCurrent);
+            DisposeTrackedNativeArray(ref record.BaseNext);
+            DisposeTrackedNativeArray(ref record.CurrentDistance);
+            DisposeTrackedNativeArray(ref record.NextDistance);
+            DisposeTrackedNativeArray(ref record.PureVoidBlockFlags);
+            record.PureVoidBlockCount = 0;
             return true;
+        }
+
+        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> buffer)
+            where T : struct
+        {
+            if (!buffer.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(buffer);
+            buffer.Dispose();
+            buffer = default;
         }
 
         private static int FlattenIndex(int x, int y, int z, int3 dimensions)
@@ -2578,6 +2679,59 @@ namespace Hecton8.World
                 dimensions.x * dimensions.y,
                 math.max(dimensions.x * dimensions.z, dimensions.y * dimensions.z));
         }
+
+#if UNITY_EDITOR
+        internal static void DrawEditorOpenCellGizmos(Vector3 playerRuntimePosition, float radiusMeters)
+        {
+            if (radiusMeters <= 0f || _records.Count <= 0)
+                return;
+
+            float radiusSq = radiusMeters * radiusMeters;
+            float3 playerPosition = new float3(playerRuntimePosition.x, playerRuntimePosition.y, playerRuntimePosition.z);
+            Color previousColor = Gizmos.color;
+            Gizmos.color = new Color(0.1f, 0.65f, 0.95f, 0.45f);
+
+            int drawnCells = 0;
+            Dictionary<int, VolumeRecord>.Enumerator enumerator = _records.GetEnumerator();
+            while (enumerator.MoveNext() && drawnCells < 2048)
+            {
+                VolumeRecord record = enumerator.Current.Value;
+                if (record == null ||
+                    record.IsPureVoid ||
+                    !record.Current.IsCreated ||
+                    record.Dimensions.x <= 0 ||
+                    record.Dimensions.y <= 0 ||
+                    record.Dimensions.z <= 0)
+                {
+                    continue;
+                }
+
+                int pointCount = math.min(record.Current.Length, record.Dimensions.x * record.Dimensions.y * record.Dimensions.z);
+                float cellSize = math.max(record.CellSize, 0.05f);
+                Vector3 wireSize = Vector3.one * math.min(cellSize * 0.32f, 0.32f);
+                int width = record.Dimensions.x;
+                int slice = record.Dimensions.x * record.Dimensions.y;
+                for (int flatIndex = 0; flatIndex < pointCount && drawnCells < 2048; flatIndex++)
+                {
+                    if (record.Current[flatIndex] != OpenCell)
+                        continue;
+
+                    int z = flatIndex / slice;
+                    int remainder = flatIndex - z * slice;
+                    int y = remainder / width;
+                    int x = remainder - y * width;
+                    float3 cellCenter = record.Origin + (new float3(x, y, z) + 0.5f) * cellSize;
+                    if (math.lengthsq(cellCenter - playerPosition) > radiusSq)
+                        continue;
+
+                    Gizmos.DrawWireCube(new Vector3(cellCenter.x, cellCenter.y, cellCenter.z), wireSize);
+                    drawnCells++;
+                }
+            }
+
+            Gizmos.color = previousColor;
+        }
+#endif
 
         private static void EnsurePortalCapacity(VolumeRecord record, int requiredCount)
         {

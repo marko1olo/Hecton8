@@ -1,0 +1,8 @@
+C:\hades\Hecton8\.codexbuild\savepass2_bin\EasySave3.dll
+C:\hades\Hecton8\.codexbuild\savepass2_bin\EasySave3.pdb
+C:\hades\Hecton8\.codexbuild\savepass2_obj\EasySave3.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codexbuild\savepass2_obj\EasySave3.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codexbuild\savepass2_obj\EasySave3.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codexbuild\savepass2_obj\EasySave3.sourcelink.json
+C:\hades\Hecton8\.codexbuild\savepass2_obj\EasySave3.dll
+C:\hades\Hecton8\.codexbuild\savepass2_obj\EasySave3.pdb

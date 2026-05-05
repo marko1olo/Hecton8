@@ -343,6 +343,15 @@ namespace Hecton8.Core
         /// </summary>
         public static int NativeCopyOperationCount => Volatile.Read(ref _nativeCopyOperationCount);
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+        internal static bool IsInitializedForSmoke => _ringBuffer.IsCreated;
+
+        internal static void ResetForSmokeTest()
+        {
+            DisposeStaticState();
+        }
+#endif
+
         /// <summary>
         /// Total whole megabytes copied through <see cref="UnsafeMemoryCopyGuard"/> since the last subsystem reset.
         /// </summary>

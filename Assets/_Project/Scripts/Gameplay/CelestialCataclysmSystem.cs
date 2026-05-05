@@ -66,6 +66,7 @@ namespace Hecton8.Gameplay
         private bool _reportedMissingFluidRuntime;
         private bool _reportedMissingCelestialRuntime;
         private bool _reportedMissingAegirTideDirection;
+        private bool _reportedMissingEmpVisorController;
         private float _baseFluidWaterLevel;
         private float _meteorFogShadowRemainingSeconds;
         private float _solarEmpGlitchRemainingSeconds;
@@ -86,6 +87,7 @@ namespace Hecton8.Gameplay
         private static readonly uint _TideFluidMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.TideFluidMissing"));
         private static readonly uint _TideCelestialMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.TideCelestialMissing"));
         private static readonly uint _TideAegirMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.TideAegirMissing"));
+        private static readonly uint _SolarEmpNoVisorControllerWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.SolarEmpNoVisorController"));
 
         private void OnEnable()
         {
@@ -101,6 +103,7 @@ namespace Hecton8.Gameplay
             _solarEmpGlitchRemainingSeconds = 0f;
             PublishMeteorFogShadows(0f);
             PublishSolarEmpGlitchGlobals(0f);
+            s_visorControllers.Clear();
         }
 
         private void OnDestroy()
@@ -403,12 +406,19 @@ namespace Hecton8.Gameplay
             PublishSolarEmpGlitchGlobals(clampedIntensity);
 
             VisorHUDController.CopyActiveControllersTo(s_visorControllers);
+            if (s_visorControllers.Count == 0)
+                PublishOnce(ref _reportedMissingEmpVisorController, _SolarEmpNoVisorControllerWarningHash, duration);
+            else
+                _reportedMissingEmpVisorController = false;
+
             for (int i = 0; i < s_visorControllers.Count; i++)
             {
                 VisorHUDController controller = s_visorControllers[i];
                 if (controller != null)
                     controller.GlitchPulse(duration);
             }
+
+            s_visorControllers.Clear();
         }
 
         private void AdvanceSolarEmpGlitch(float deltaTime)

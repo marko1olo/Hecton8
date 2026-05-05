@@ -41,6 +41,7 @@ namespace Hecton8.Gameplay
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
         private const float WakeSiltEmissionCooldownSeconds = 0.35f;
+        private const float WallSlideTelemetryMaxNormalY = 0.75f;
 
         private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _scheduledSweepConsumeProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Consume");
@@ -65,6 +66,11 @@ namespace Hecton8.Gameplay
         private bool _registeredMotorService;
         private float _encumbranceMovementMultiplier = 1f;
         private float _wakeSiltEmissionCooldown;
+        private Vector3 _lastWallSlideNormal;
+        private Vector3 _lastWallSlidePoint;
+        private float _lastWallSlideBlockedSpeed;
+        private float _lastWallSlideAngleDegrees;
+        private int _lastWallSlidePhysicsFrame = -1;
 
         /// <inheritdoc />
         public Rigidbody Body => _body;
@@ -80,6 +86,38 @@ namespace Hecton8.Gameplay
 
         /// <summary>Motor-owned sweep buffer. Reserved for kinematic queries only.</summary>
         public RaycastHit[] SweepHitBuffer => _sweepHitBuffer;
+
+        /// <summary>Returns the most recent KCC wall projection contact if it is still within the requested fixed-frame window.</summary>
+        public bool TryGetRecentWallSlideContact(
+            int maxPhysicsFrameAge,
+            out Vector3 normal,
+            out Vector3 point,
+            out float blockedSpeed,
+            out float slideAngleDegrees,
+            out int physicsFrame)
+        {
+            normal = Vector3.zero;
+            point = Vector3.zero;
+            blockedSpeed = 0f;
+            slideAngleDegrees = 0f;
+            physicsFrame = _lastWallSlidePhysicsFrame;
+
+            if (_lastWallSlidePhysicsFrame < 0)
+                return false;
+
+            int age = PhysicsFrame.Current - _lastWallSlidePhysicsFrame;
+            if (age < 0 || age > math.max(0, maxPhysicsFrameAge))
+                return false;
+
+            if (_lastWallSlideNormal.sqrMagnitude <= MinVectorMagnitudeSq)
+                return false;
+
+            normal = _lastWallSlideNormal;
+            point = _lastWallSlidePoint;
+            blockedSpeed = _lastWallSlideBlockedSpeed;
+            slideAngleDegrees = _lastWallSlideAngleDegrees;
+            return true;
+        }
 
         /// <summary>Binds authoritative body references owned by the locomotion controller.</summary>
         public void Bind(Rigidbody body, CapsuleCollider capsule)
@@ -108,6 +146,7 @@ namespace Hecton8.Gameplay
             InventoryEvents.Unregister(this);
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
+            ResetWallSlideContactState();
             DisposeScheduledSweepState();
             DisposeHydrodynamicGhostState();
         }
@@ -117,6 +156,7 @@ namespace Hecton8.Gameplay
             InventoryEvents.Unregister(this);
             TryUnregisterPostFixedTick();
             TryUnregisterMotorService();
+            ResetWallSlideContactState();
             DisposeScheduledSweepState();
             DisposeHydrodynamicGhostState();
         }
@@ -407,6 +447,13 @@ namespace Hecton8.Gameplay
                 Vector3 safeNormal = SafeNormal(nearestHit.normal, Vector3.up);
                 float displacementIntoWall = Vector3.Dot(remainingAfterAdvance, safeNormal);
                 Vector3 slideDisplacement = remainingAfterAdvance - (safeNormal * displacementIntoWall);
+                float slideAngleDegrees = ResolveProjectionAngleDegrees(remainingAfterAdvance, slideDisplacement);
+                if (safeNormal.y < WallSlideTelemetryMaxNormalY)
+                {
+                    float blockedSpeed = ResolveSlideBlockedSpeed(remainingAfterAdvance, slideDisplacement, safeNormal);
+                    RecordWallSlideContact(in nearestHit, safeNormal, slideAngleDegrees, blockedSpeed);
+                }
+
                 if (slideDisplacement.sqrMagnitude <= MinVectorMagnitudeSq)
                     break;
 
@@ -478,6 +525,7 @@ namespace Hecton8.Gameplay
         public void ResetRuntimeState()
         {
             _isGrounded = false;
+            ResetWallSlideContactState();
             ResetHydrodynamicAddedMassState();
         }
 
@@ -611,6 +659,48 @@ namespace Hecton8.Gameplay
         {
             float3 value3 = new float3(value.x, value.y, value.z);
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > MinVectorMagnitudeSq;
+        }
+
+        private void RecordWallSlideContact(in RaycastHit hit, Vector3 normal, float slideAngleDegrees, float blockedSpeed)
+        {
+            _lastWallSlideNormal = SafeNormal(normal, Vector3.up);
+            _lastWallSlidePoint = SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);
+            _lastWallSlideBlockedSpeed = math.max(0f, blockedSpeed);
+            _lastWallSlideAngleDegrees = math.max(0f, slideAngleDegrees);
+            _lastWallSlidePhysicsFrame = PhysicsFrame.Current;
+        }
+
+        private void ResetWallSlideContactState()
+        {
+            _lastWallSlideNormal = Vector3.zero;
+            _lastWallSlidePoint = Vector3.zero;
+            _lastWallSlideBlockedSpeed = 0f;
+            _lastWallSlideAngleDegrees = 0f;
+            _lastWallSlidePhysicsFrame = -1;
+        }
+
+        private float ResolveSlideBlockedSpeed(Vector3 intendedDisplacement, Vector3 slideDisplacement, Vector3 wallNormal)
+        {
+            Vector3 previousVelocity = _body != null ? SafeVelocity(_body.linearVelocity) : Vector3.zero;
+            Vector3 projectedVelocity = ProjectVelocityOnCollisionPlane(previousVelocity, wallNormal);
+            float velocityBlockedSpeed = (previousVelocity - projectedVelocity).magnitude;
+            float rejectedSpeed = (intendedDisplacement - slideDisplacement).magnitude / math.max(Time.fixedDeltaTime, 0.0001f);
+            return math.max(velocityBlockedSpeed, rejectedSpeed);
+        }
+
+        private static float ResolveProjectionAngleDegrees(Vector3 intendedDisplacement, Vector3 projectedDisplacement)
+        {
+            float intendedSqr = intendedDisplacement.sqrMagnitude;
+            if (intendedSqr <= MinVectorMagnitudeSq)
+                return 0f;
+
+            float projectedSqr = projectedDisplacement.sqrMagnitude;
+            if (projectedSqr <= MinVectorMagnitudeSq)
+                return 90f;
+
+            float invMagnitude = 1f / math.sqrt(intendedSqr * projectedSqr);
+            float dot = math.clamp(Vector3.Dot(intendedDisplacement, projectedDisplacement) * invMagnitude, -1f, 1f);
+            return math.degrees(math.acos(dot));
         }
 
         private static int GetHitColliderInstanceId(in RaycastHit hit)

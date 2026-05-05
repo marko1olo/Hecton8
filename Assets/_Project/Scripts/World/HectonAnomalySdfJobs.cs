@@ -86,6 +86,85 @@ namespace Hecton8.World
     }
 
     /// <summary>
+    /// Burst kernel that forces the nearest terrain-roof voxel in each XZ column to exact zero density.
+    /// </summary>
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    public struct SnapSDFTopCellsToTerrainJob : IJobParallelFor
+    {
+        /// <summary>Terrain heights in meters.</summary>
+        [ReadOnly] public NativeArray<float> TerrainHeights;
+
+        /// <summary>Terrain sample width.</summary>
+        public int TerrainWidth;
+
+        /// <summary>Terrain sample depth.</summary>
+        public int TerrainDepth;
+
+        /// <summary>Terrain sample size in meters.</summary>
+        public float TerrainCellSizeMeters;
+
+        /// <summary>Absolute universe origin of the terrain heightmap.</summary>
+        public double3 TerrainOriginAup;
+
+        /// <summary>SDF density array. Positive means solid.</summary>
+        public NativeArray<float> Sdf;
+
+        /// <summary>SDF sample width.</summary>
+        public int SdfWidth;
+
+        /// <summary>SDF sample height.</summary>
+        public int SdfHeight;
+
+        /// <summary>SDF sample depth.</summary>
+        public int SdfDepth;
+
+        /// <summary>SDF voxel size in meters.</summary>
+        public float VoxelSizeMeters;
+
+        /// <summary>Absolute universe origin of the SDF volume.</summary>
+        public double3 SdfOriginAup;
+
+        /// <inheritdoc />
+        public void Execute(int index)
+        {
+            int x = index % SdfWidth;
+            int z = index / SdfWidth;
+            if (z >= SdfDepth)
+                return;
+
+            double absX = SdfOriginAup.x + x * (double)VoxelSizeMeters;
+            double absZ = SdfOriginAup.z + z * (double)VoxelSizeMeters;
+            float terrainHeight = SampleTerrainHeight(absX, absZ);
+            int y = (int)math.round((terrainHeight - (float)SdfOriginAup.y) / VoxelSizeMeters);
+            y = math.clamp(y, 0, SdfHeight - 1);
+            Sdf[x + y * SdfWidth + z * SdfWidth * SdfHeight] = 0f;
+        }
+
+        private float SampleTerrainHeight(double absX, double absZ)
+        {
+            float tx = (float)((absX - TerrainOriginAup.x) / TerrainCellSizeMeters);
+            float tz = (float)((absZ - TerrainOriginAup.z) / TerrainCellSizeMeters);
+            tx = math.clamp(tx, 0f, TerrainWidth - 1f);
+            tz = math.clamp(tz, 0f, TerrainDepth - 1f);
+
+            int x0 = (int)math.floor(tx);
+            int z0 = (int)math.floor(tz);
+            int x1 = math.min(x0 + 1, TerrainWidth - 1);
+            int z1 = math.min(z0 + 1, TerrainDepth - 1);
+            float fx = tx - x0;
+            float fz = tz - z0;
+
+            float h00 = TerrainHeights[x0 + z0 * TerrainWidth];
+            float h10 = TerrainHeights[x1 + z0 * TerrainWidth];
+            float h01 = TerrainHeights[x0 + z1 * TerrainWidth];
+            float h11 = TerrainHeights[x1 + z1 * TerrainWidth];
+            float hx0 = math.lerp(h00, h10, fx);
+            float hx1 = math.lerp(h01, h11, fx);
+            return math.lerp(hx0, hx1, fz);
+        }
+    }
+
+    /// <summary>
     /// Burst kernel that unions a 1 km chthonic pillar into an SDF density array.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
@@ -151,6 +230,89 @@ namespace Hecton8.World
             float vertical = math.abs(local.y) - HeightMeters * 0.5f;
             float signedDistance = math.max(radial, vertical);
             Sdf[index] = math.max(Sdf[index], -signedDistance);
+        }
+    }
+
+    /// <summary>
+    /// Burst kernel that carves a sharp vertical fissure into an SDF density array.
+    /// </summary>
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    public struct InjectDeepFissureSDFJob : IJobParallelFor
+    {
+        /// <summary>SDF density array. Positive means solid.</summary>
+        public NativeArray<float> Sdf;
+
+        /// <summary>Optional packed biome influence cells, indexed like the SDF array.</summary>
+        public NativeArray<uint> BiomeInfluencePacked;
+
+        /// <summary>SDF sample width.</summary>
+        public int SdfWidth;
+
+        /// <summary>SDF sample height.</summary>
+        public int SdfHeight;
+
+        /// <summary>SDF sample depth.</summary>
+        public int SdfDepth;
+
+        /// <summary>SDF voxel size in meters.</summary>
+        public float VoxelSizeMeters;
+
+        /// <summary>Absolute universe origin of the SDF volume.</summary>
+        public double3 SdfOriginAup;
+
+        /// <summary>Absolute universe top-center coordinate of the fissure.</summary>
+        public double3 FissureTopAup;
+
+        /// <summary>Normalized fissure line direction in XZ.</summary>
+        public float2 DirectionXZ;
+
+        /// <summary>Half length of the fissure line in meters.</summary>
+        public float HalfLengthMeters;
+
+        /// <summary>Fissure half width in meters.</summary>
+        public float RadiusMeters;
+
+        /// <summary>Vertical depth carved downward from <see cref="FissureTopAup"/>.</summary>
+        public float DepthMeters;
+
+        /// <summary>Packed biome influence id written for voxels inside the fissure.</summary>
+        public uint FissureInfluencePacked;
+
+        /// <inheritdoc />
+        public void Execute(int index)
+        {
+            int slice = SdfWidth * SdfHeight;
+            int z = index / slice;
+            int rem = index - z * slice;
+            int y = rem / SdfWidth;
+            int x = rem - y * SdfWidth;
+
+            double3 abs = new double3(
+                SdfOriginAup.x + x * (double)VoxelSizeMeters,
+                SdfOriginAup.y + y * (double)VoxelSizeMeters,
+                SdfOriginAup.z + z * (double)VoxelSizeMeters);
+
+            float2 direction = math.normalizesafe(DirectionXZ, new float2(1f, 0f));
+            float2 delta = new float2(
+                (float)(abs.x - FissureTopAup.x),
+                (float)(abs.z - FissureTopAup.z));
+            float along = math.clamp(math.dot(delta, direction), -HalfLengthMeters, HalfLengthMeters);
+            float2 nearest = direction * along;
+            float horizontalDistance = math.length(delta - nearest);
+            float horizontalSignedDistance = horizontalDistance - RadiusMeters;
+            float depthBelowTop = (float)(FissureTopAup.y - abs.y);
+            float verticalSignedDistance = math.max(-depthBelowTop, depthBelowTop - DepthMeters);
+            float signedDistance = math.max(horizontalSignedDistance, verticalSignedDistance);
+            if (signedDistance >= 0f)
+                return;
+
+            float core01 = math.saturate(1f - horizontalDistance / math.max(0.001f, RadiusMeters));
+            float depth01 = math.saturate(depthBelowTop / math.max(0.001f, DepthMeters));
+            float negativeDensity = -math.max(math.abs(signedDistance), DepthMeters * core01 * depth01);
+            Sdf[index] = math.min(Sdf[index], negativeDensity);
+
+            if (BiomeInfluencePacked.IsCreated && BiomeInfluencePacked.Length > index)
+                BiomeInfluencePacked[index] = FissureInfluencePacked;
         }
     }
 
@@ -260,9 +422,9 @@ namespace Hecton8.World
             float x10 = math.lerp(c010, c110, fx);
             float x01 = math.lerp(c001, c101, fx);
             float x11 = math.lerp(c011, c111, fx);
-            float y0 = math.lerp(x00, x10, fy);
-            float y1 = math.lerp(x01, x11, fy);
-            return math.lerp(y0, y1, fz);
+            float yInterp0 = math.lerp(x00, x10, fy);
+            float yInterp1 = math.lerp(x01, x11, fy);
+            return math.lerp(yInterp0, yInterp1, fz);
         }
     }
 

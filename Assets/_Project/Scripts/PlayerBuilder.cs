@@ -208,6 +208,12 @@ namespace Hecton8.Building
         private string _semanticPlacementBlockReason = string.Empty;
         private bool _terrainSdfPlacementValid = true;
         private string _terrainSdfPlacementBlockReason = string.Empty;
+        private const float TerrainSdfBlockHapticCooldownSeconds = 0.35f;
+        private const float TerrainSdfBlockHapticPower = 0.35f;
+        private const float TerrainSdfBlockHapticRatedPower = 1f;
+        private const byte TerrainSdfBlockHapticPriority = 2;
+        private bool _terrainSdfWasBlocked;
+        private float _terrainSdfBlockHapticCooldown;
         private HabitatConstructionManager _habitatConstructionManager;
         private ModuleSocket _snappedGhostSocket;
         private bool _integrityPlacementValid = true;
@@ -748,6 +754,9 @@ namespace Hecton8.Building
         /// </summary>
         private void UpdateGhostPosition(float dt)
         {
+            if (_terrainSdfBlockHapticCooldown > 0f)
+                _terrainSdfBlockHapticCooldown = math.max(0f, _terrainSdfBlockHapticCooldown - math.max(0f, dt));
+
             if (playerCamera == null || _currentGhostObj == null || _habitatConstructionManager == null)
                 return;
 
@@ -1511,12 +1520,12 @@ namespace Hecton8.Building
             _terrainSdfPlacementValid = true;
             _terrainSdfPlacementBlockReason = string.Empty;
             if (!IsStructuralBuildable(activeBuildable) || _currentGhostObj == null || activeBuildable.ModuleTemplate == null)
-                return true;
+                return AcceptTerrainSdfPlacement();
 
             BaseModuleTemplate template = activeBuildable.ModuleTemplate;
             Vector3 proxyBoundsSize = template.ProxyBoundsSize;
             if (proxyBoundsSize.x <= 0.01f || proxyBoundsSize.y <= 0.01f || proxyBoundsSize.z <= 0.01f)
-                return true;
+                return AcceptTerrainSdfPlacement();
 
             Transform ghostTransform = _currentGhostObj.transform;
             Vector3 center = ghostTransform.TransformPoint(template.ProxyBoundsCenter);
@@ -1534,11 +1543,31 @@ namespace Hecton8.Building
                 _terrainSdfOverlapBuffer[i] = null;
 
             if (overlapCount <= 0)
-                return true;
+                return AcceptTerrainSdfPlacement();
 
             _terrainSdfPlacementValid = false;
             _terrainSdfPlacementBlockReason = "TERRAIN SDF OVERLAP";
+            TryQueueTerrainSdfBlockHaptic();
+            _terrainSdfWasBlocked = true;
             return false;
+        }
+
+        private bool AcceptTerrainSdfPlacement()
+        {
+            _terrainSdfWasBlocked = false;
+            return true;
+        }
+
+        private void TryQueueTerrainSdfBlockHaptic()
+        {
+            if (_terrainSdfWasBlocked || _terrainSdfBlockHapticCooldown > 0f)
+                return;
+
+            QueueToolHapticFeedback(
+                TerrainSdfBlockHapticPower,
+                TerrainSdfBlockHapticRatedPower,
+                TerrainSdfBlockHapticPriority);
+            _terrainSdfBlockHapticCooldown = TerrainSdfBlockHapticCooldownSeconds;
         }
 
         private void DrawBuildGhostProjection()

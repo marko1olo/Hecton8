@@ -42,6 +42,7 @@ namespace Hecton8.AI
         private const int RightObstacleRayIndex = 2;
         private const int PlayerLightOcclusionRayIndex = 3;
         private const float SideObstacleRayYawDegrees = 45f;
+        private const float PlayerFlashlightConeDotThreshold = 0.72f;
 
         [Header("── Avoidance ──────────────────────────────────")]
         public float avoidanceRange = 8f;
@@ -84,6 +85,9 @@ namespace Hecton8.AI
         public bool hasCurrentScavengeTarget;
         public Vector3 currentScavengeTargetPosition;
         public Component currentScavengeTargetOwner;
+        public bool hasPlayerFlashlightConeHit;
+        public float playerFlashlightExposure01;
+        public Vector3 playerFlashlightThreatPosition;
 
         [Header("── Flocking ──────────────────────────────────")]
         public LayerMask flockMask;
@@ -206,6 +210,9 @@ namespace Hecton8.AI
             _cachedScavengeToolPosition = default;
             _cachedScavengeToolOwner = null;
             _flashBlindUntilTimeSeconds = float.NegativeInfinity;
+            hasPlayerFlashlightConeHit = false;
+            playerFlashlightExposure01 = 0f;
+            playerFlashlightThreatPosition = default;
             ClearSpatialTargets();
         }
 
@@ -223,6 +230,9 @@ namespace Hecton8.AI
             _cachedSelfForward = selfForward.sqrMagnitude > 0.0001f ? selfForward.normalized : Vector3.forward;
             _cachedSelfAup = AbsoluteUniversePosition.FromRuntimePosition(_cachedSelfPosition);
             CachePerceptionSnapshot(in perceptionSnapshot);
+            hasPlayerFlashlightConeHit = false;
+            playerFlashlightExposure01 = 0f;
+            playerFlashlightThreatPosition = default;
 
             if (_hasPlayerSnapshot)
             {
@@ -248,6 +258,7 @@ namespace Hecton8.AI
             }
 
             UpdateMajorSenses();
+            UpdatePlayerFlashlightConeHit();
             UpdateObstacleAvoidance(dt, velocity);
             UpdateDistractorDetection();
             UpdatePreyDetection();
@@ -323,6 +334,50 @@ namespace Hecton8.AI
 
             if (visualContact)
                 RememberPlayerPosition(_cachedPlayerPosition);
+        }
+
+        private void UpdatePlayerFlashlightConeHit()
+        {
+            hasPlayerFlashlightConeHit = false;
+            playerFlashlightExposure01 = 0f;
+            playerFlashlightThreatPosition = default;
+
+            if (!reactToPlayerLight ||
+                !_playerFlashlightOn ||
+                !_hasPlayerSnapshot ||
+                !_hasPlayerForwardSnapshot ||
+                IsFlashBlinded())
+            {
+                return;
+            }
+
+            float3 toCreature = (float3)(_cachedSelfPosition - _cachedPlayerPosition);
+            float distanceSq = math.lengthsq(toCreature);
+            if (distanceSq <= 0.0001f)
+                return;
+
+            float range = math.max(1f, aggroDistance);
+            if (distanceSq > range * range)
+                return;
+
+            float distance = math.sqrt(distanceSq);
+            float3 lightDirection = math.normalizesafe((float3)_cachedPlayerForward, new float3(0f, 0f, 1f));
+            float flashlightDot = math.dot(lightDirection, toCreature / distance);
+            if (flashlightDot < PlayerFlashlightConeDotThreshold)
+                return;
+
+            if (!HasPlayerLightLineOfSight())
+                return;
+
+            float cone01 = math.saturate((flashlightDot - PlayerFlashlightConeDotThreshold) / math.max(0.001f, 1f - PlayerFlashlightConeDotThreshold));
+            float distance01 = 1f - math.saturate(distance / range);
+            float exposure01 = math.saturate(cone01 * distance01);
+            if (exposure01 <= 0.001f)
+                return;
+
+            hasPlayerFlashlightConeHit = true;
+            playerFlashlightExposure01 = exposure01;
+            playerFlashlightThreatPosition = _cachedPlayerPosition;
         }
 
         public void ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal playerNoise)

@@ -597,12 +597,14 @@ namespace Hecton8.Input
             _activeRebind = null;
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void Log(string message)
         {
             if (!verboseLogging) return;
             Debug.Log($"[RebindingManager] {message}");
         }
 
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private void LogWarning(string message)
         {
             Debug.LogWarning($"[RebindingManager] {message}");

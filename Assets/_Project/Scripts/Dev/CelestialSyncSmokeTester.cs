@@ -9,6 +9,7 @@
 using Hecton8.Atmosphere;
 using Hecton8.Audio;
 using Hecton8.Celestial;
+using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using UnityEngine;
@@ -120,8 +121,8 @@ namespace Hecton8.Dev
                     : UnityEngine.Object.FindAnyObjectByType<HectonCelestialEngine>(FindObjectsInactive.Include);
 
             if (eclipseGameplaySystem == null)
-                eclipseGameplaySystem = EclipseGameplaySystem.Instance != null
-                    ? EclipseGameplaySystem.Instance
+                eclipseGameplaySystem = GlobalRegistry.EclipseGameplay != null
+                    ? GlobalRegistry.EclipseGameplay
                     : UnityEngine.Object.FindAnyObjectByType<EclipseGameplaySystem>(FindObjectsInactive.Include);
 
             if (depthCacheBootstrap == null)
@@ -139,8 +140,8 @@ namespace Hecton8.Dev
                     : UnityEngine.Object.FindAnyObjectByType<SpatialAudioManager>(FindObjectsInactive.Include);
 
             if (randomEventSystem == null)
-                randomEventSystem = RandomEventSystem.Instance != null
-                    ? RandomEventSystem.Instance
+                randomEventSystem = GlobalRegistry.RandomEvents != null
+                    ? GlobalRegistry.RandomEvents
                     : UnityEngine.Object.FindAnyObjectByType<RandomEventSystem>(FindObjectsInactive.Include);
         }
 

@@ -246,6 +246,53 @@ namespace Hecton8.Gameplay
             float power01,
             uint seed)
         {
+            return EnqueueBurst(
+                definition,
+                runtimeOrigin,
+                runtimeRotation,
+                runtimeHitPoint,
+                runtimeHitNormal,
+                power01,
+                seed,
+                0,
+                0f);
+        }
+
+        /// <inheritdoc />
+        public bool SpawnBurst(
+            IDebrisDefinition definition,
+            Vector3 runtimeOrigin,
+            Quaternion runtimeRotation,
+            Vector3 runtimeHitPoint,
+            Vector3 runtimeHitNormal,
+            float power01,
+            uint seed,
+            int maxChunkCount,
+            float lifetimeSeconds)
+        {
+            return EnqueueBurst(
+                definition,
+                runtimeOrigin,
+                runtimeRotation,
+                runtimeHitPoint,
+                runtimeHitNormal,
+                power01,
+                seed,
+                maxChunkCount,
+                lifetimeSeconds);
+        }
+
+        private bool EnqueueBurst(
+            IDebrisDefinition definition,
+            Vector3 runtimeOrigin,
+            Quaternion runtimeRotation,
+            Vector3 runtimeHitPoint,
+            Vector3 runtimeHitNormal,
+            float power01,
+            uint seed,
+            int maxChunkCount,
+            float lifetimeSeconds)
+        {
             if (definition == null || !definition.IsValid)
                 return false;
 
@@ -263,7 +310,9 @@ namespace Hecton8.Gameplay
                 RuntimeHitPoint = runtimeHitPoint,
                 RuntimeHitNormal = runtimeHitNormal,
                 Power01 = math.saturate(power01),
-                Seed = seed != 0u ? seed : 1u
+                Seed = seed != 0u ? seed : 1u,
+                MaxChunkCount = math.max(0, maxChunkCount),
+                LifetimeSeconds = math.max(0f, lifetimeSeconds)
             };
             return true;
         }
@@ -356,11 +405,17 @@ namespace Hecton8.Gameplay
                 if (request.Definition == null || !request.Definition.IsValid)
                     continue;
 
-                int requiredSlots = CountValidChunks(request.Definition);
-                if (requiredSlots <= 0)
+                int validChunkCount = CountValidChunks(request.Definition);
+                if (validChunkCount <= 0)
                     continue;
 
-                if (CountFreeSlots() < requiredSlots)
+                int requestedSlots = request.MaxChunkCount > 0
+                    ? math.min(validChunkCount, request.MaxChunkCount)
+                    : validChunkCount;
+                if (requestedSlots <= 0)
+                    continue;
+
+                if (CountFreeSlots() < requestedSlots)
                 {
                     PublishDebrisPoolExhausted(ActiveSlotPoolExhaustedReason);
                     continue;
@@ -372,8 +427,16 @@ namespace Hecton8.Gameplay
                     new float3(request.RuntimeHitNormal.x, request.RuntimeHitNormal.y, request.RuntimeHitNormal.z),
                     new float3(0f, 1f, 0f));
 
-                for (int chunkIndex = 0; chunkIndex < request.Definition.ChunkCount; chunkIndex++)
+                int spawnedChunks = 0;
+                int authoredChunkCount = request.Definition.ChunkCount;
+                int startChunkIndex = authoredChunkCount > 0 ? rng.NextInt(0, authoredChunkCount) : 0;
+                float poolReturnDelay = request.LifetimeSeconds > 0f
+                    ? math.max(0.5f, request.LifetimeSeconds)
+                    : PoolReturnDelay;
+                float physicsPhaseDuration = math.min(PhysicsPhaseDuration, math.max(0.1f, poolReturnDelay * 0.65f));
+                for (int chunkOffset = 0; chunkOffset < authoredChunkCount && spawnedChunks < requestedSlots; chunkOffset++)
                 {
+                    int chunkIndex = (startChunkIndex + chunkOffset) % authoredChunkCount;
                     Mesh mesh = request.Definition.GetChunkMesh(chunkIndex);
                     if (mesh == null)
                         continue;
@@ -421,6 +484,8 @@ namespace Hecton8.Gameplay
                         AngularDamping = math.max(0.05f, request.Definition.AngularDamping),
                         BounceDamping = math.clamp(request.Definition.BounceDamping, 0f, 1f),
                         MassScale = massScale,
+                        PhysicsPhaseDuration = physicsPhaseDuration,
+                        PoolReturnDelay = poolReturnDelay,
                         Active = 1,
                         CollisionEnabled = 1,
                         Kinematic = 0
@@ -435,6 +500,7 @@ namespace Hecton8.Gameplay
                     _slotShadowModes[slotIndex] = request.Definition.ShadowCastingMode;
                     _slotReceiveShadows[slotIndex] = request.Definition.ReceiveShadows;
                     _slotLayerMasks[slotIndex] = request.Definition.RenderingLayerMask;
+                    spawnedChunks++;
                 }
             }
 
@@ -789,6 +855,8 @@ namespace Hecton8.Gameplay
             public Vector3 RuntimeHitNormal;
             public float Power01;
             public uint Seed;
+            public int MaxChunkCount;
+            public float LifetimeSeconds;
         }
 
         private struct DebrisInstanceData
@@ -813,6 +881,8 @@ namespace Hecton8.Gameplay
             public float AngularDamping;
             public float BounceDamping;
             public float MassScale;
+            public float PhysicsPhaseDuration;
+            public float PoolReturnDelay;
             public byte Active;
             public byte CollisionEnabled;
             public byte Kinematic;
@@ -856,6 +926,12 @@ namespace Hecton8.Gameplay
 
                     float inverseMass = 1f / math.max(0.2f, state.MassScale);
                     float3 randomDrift = rng.NextFloat3Direction() * (NoiseStrength * dt * inverseMass);
+                    float physicsPhaseDuration = state.PhysicsPhaseDuration > 0f
+                        ? state.PhysicsPhaseDuration
+                        : PhysicsPhaseDuration;
+                    float poolReturnDelay = state.PoolReturnDelay > 0f
+                        ? state.PoolReturnDelay
+                        : PoolReturnDelay;
 
                     if (state.CollisionEnabled != 0)
                     {
@@ -875,7 +951,7 @@ namespace Hecton8.Gameplay
                             state.Velocity.z *= lateralDamping;
                         }
 
-                        if (state.Age >= PhysicsPhaseDuration)
+                        if (state.Age >= physicsPhaseDuration)
                         {
                             state.CollisionEnabled = 0;
                             state.Kinematic = 1;
@@ -887,10 +963,10 @@ namespace Hecton8.Gameplay
                     }
                     else
                     {
-                        float sink01 = math.saturate((state.Age - PhysicsPhaseDuration) / math.max(0.0001f, PoolReturnDelay - PhysicsPhaseDuration));
+                        float sink01 = math.saturate((state.Age - physicsPhaseDuration) / math.max(0.0001f, poolReturnDelay - physicsPhaseDuration));
                         float sinkSmooth = sink01 * sink01 * (3f - (2f * sink01));
                         state.Position.y = math.lerp(state.SinkStartY, state.SinkTargetY, sinkSmooth);
-                        if (state.Age >= PoolReturnDelay)
+                        if (state.Age >= poolReturnDelay)
                             state.Active = 0;
                     }
 

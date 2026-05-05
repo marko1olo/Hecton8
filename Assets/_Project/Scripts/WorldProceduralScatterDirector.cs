@@ -25,7 +25,7 @@ namespace Hecton8.World
         private const float StartupScatterStabilizationDelaySeconds = 2f;
         private const int MaxRegisteredScatterDirectors = 4;
 
-        internal static WorldProceduralScatterDirector ActiveRuntimeInstance { get; private set; }
+        internal static WorldProceduralScatterDirector ActiveRuntimeInstance => GlobalRegistry.ProceduralScatter;
         // COLD ALLOC: RegistryBucket<WorldProceduralScatterDirector>[4] - active scatter directors for bootstrap lookup without scene scans - owner: WorldProceduralScatterDirector
         private static readonly RegistryBucket<WorldProceduralScatterDirector> _registeredScatterDirectors = new RegistryBucket<WorldProceduralScatterDirector>(MaxRegisteredScatterDirectors);
         /// <summary>
@@ -479,7 +479,6 @@ namespace Hecton8.World
             _emergencyCanopyGeologyProfile = null;
             _emergencyLandmarkGeologyProfile = null;
             _emergencyCaveGeologyProfile = null;
-            ActiveRuntimeInstance = null;
             _registeredScatterDirectors.Clear();
         }
         private Transform _scatterRootTransform;
@@ -650,7 +649,6 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
             _scatterState = ScatterState.Idle;
             _isSamplingJobRunning = false;
             EnsureWorkingMemory();
@@ -738,10 +736,9 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            GlobalRegistry.UnregisterWorldGenService(this);
+            if (ReferenceEquals(ActiveRuntimeInstance, this))
+                GlobalRegistry.UnregisterWorldGenService(this);
             TryUnregisterRuntimeDirector();
-            if (ActiveRuntimeInstance == this)
-                ActiveRuntimeInstance = null;
             UnregisterOriginShiftListener();
             CompleteSamplingJobIfNeeded();
             DisposeMigratorySargassumLane();
@@ -819,11 +816,12 @@ namespace Hecton8.World
 
         private static void TeardownActiveRuntimeInstanceForEditorReload()
         {
-            if (ActiveRuntimeInstance == null)
+            WorldProceduralScatterDirector activeInstance = ActiveRuntimeInstance;
+            if (activeInstance == null)
                 return;
 
-            ActiveRuntimeInstance.PrepareForEditorReload();
-            ActiveRuntimeInstance = null;
+            activeInstance.PrepareForEditorReload();
+            GlobalRegistry.UnregisterWorldGenService(activeInstance);
         }
 #endif
 

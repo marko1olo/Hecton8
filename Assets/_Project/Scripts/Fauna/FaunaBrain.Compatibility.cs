@@ -327,6 +327,7 @@ namespace Hecton8.AI
 
             int safeCapacity = math.max(1, capacity);
             _slots = new NativeArray<float4>(safeCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            NativeMemorySentinel.RegisterNativeArray(_slots, nameof(PredatorMemory), nameof(_slots), NativeAllocationLifetime.Session);
             _writeIndex = 0;
             _count = 0;
         }
@@ -435,6 +436,7 @@ namespace Hecton8.AI
             if (!_slots.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(_slots);
             _slots.Dispose();
             _slots = default;
             _writeIndex = 0;

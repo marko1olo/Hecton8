@@ -1,1320 +1,310 @@
-﻿diff --git a/Assets/_Project/Scripts/Editor/ErosionTestHarness.cs b/Assets/_Project/Scripts/Editor/ErosionTestHarness.cs
-index 05329c31..042433a8 100644
---- a/Assets/_Project/Scripts/Editor/ErosionTestHarness.cs
-+++ b/Assets/_Project/Scripts/Editor/ErosionTestHarness.cs
-@@ -1,4 +1,6 @@
- using System.IO;
-+using System.Text;
-+using Hecton8.Core;
- using Hecton8.World;
- using Unity.Collections;
- using Unity.Jobs;
-@@ -16,6 +18,14 @@ namespace Hecton8.Editor
-         private const int Resolution = 512;
-         private const int PixelCount = Resolution * Resolution;
-         private const string OutputFolder = "CodexArtifacts";
-+        private const string NativeMemoryOwner = nameof(ErosionTestHarness);
-+        private const string BeforeLabel = "before";
-+        private const string HeightALabel = "heightA";
-+        private const string HeightBLabel = "heightB";
-+        private const string SedimentLabel = "sediment";
-+        private const string WearLabel = "wear";
-+        private const string MetricsLabel = "metrics";
-+        private static readonly UTF8Encoding JsonEncoding = new UTF8Encoding(false); // COLD ALLOC: UTF8Encoding[1] - editor smoke JSON artifact writer - owner: ErosionTestHarness
+﻿diff --git a/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs b/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs
+index cea7dbc6..be181dec 100644
+--- a/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs
++++ b/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs
+@@ -62,7 +62,12 @@ namespace Hecton8.Editor
+             public float SumWear;
+             public float MaxSediment;
+             public float MaxWear;
++            public float MaxBoundaryHeightDelta;
++            public float MaxBoundarySediment;
++            public float MaxBoundaryWear;
+             public float Milliseconds;
++            public int BoundarySampleCount;
++            public int BoundaryNanCount;
+         }
  
          /// <summary>
-         /// Generates fractal terrain, runs erosion and slumping, and writes PNG artifacts.
-@@ -28,6 +38,7 @@ namespace Hecton8.Editor
-             NativeArray<float> heightB = default;
-             NativeArray<float> sediment = default;
-             NativeArray<float> wear = default;
-+            NativeArray<ErosionSmokeMetrics> metrics = default;
- 
-             try
-             {
-@@ -36,8 +47,17 @@ namespace Hecton8.Editor
-                 heightB = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                 sediment = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                 wear = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-+                metrics = new NativeArray<ErosionSmokeMetrics>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-+                RegisterTempJobBuffers(before, heightA, heightB, sediment, wear, metrics);
- 
--                GenerateFractalHeightmap(before, heightA);
-+                JobHandle handle = new ErosionFractalHeightmapJob
-+                {
-+                    Before = before,
-+                    Height = heightA,
-+                    Resolution = Resolution,
-+                    PrimarySeed = 0xC001CAFEu,
-+                    RidgeSeed = 0x6C8E9CF5u
-+                }.Schedule(PixelCount, 64);
- 
-                 var erosionJob = new HydraulicErosionJob
-                 {
-@@ -69,7 +89,7 @@ namespace Hecton8.Editor
-                     MinWater = 0.01f
-                 };
- 
--                JobHandle handle = erosionJob.Schedule();
-+                handle = erosionJob.Schedule(handle);
-                 NativeArray<float> current = heightA;
-                 NativeArray<float> next = heightB;
- 
-@@ -93,6 +113,15 @@ namespace Hecton8.Editor
-                     Swap(ref current, ref next);
-                 }
- 
-+                handle = new ErosionSmokeMetricsJob
-+                {
-+                    Before = before,
-+                    After = current,
-+                    Sediment = sediment,
-+                    Wear = wear,
-+                    Metrics = metrics
-+                }.Schedule(handle);
-+
-                 // COLD SYNC JOB: editor harness must block to write deterministic PNG artifacts.
-                 handle.Complete();
- 
-@@ -102,90 +131,46 @@ namespace Hecton8.Editor
-                 WriteHeightPng(current, Path.Combine(folder, "ErosionTestHarness_After.png"));
-                 WriteMaskPng(sediment, Path.Combine(folder, "ErosionTestHarness_SedimentMask.png"));
-                 WriteMaskPng(wear, Path.Combine(folder, "ErosionTestHarness_WearMask.png"));
-+                WriteMetricsJson(metrics[0], Path.Combine(folder, "ErosionTestHarness_Metrics.json"));
- 
-                 AssetDatabase.Refresh();
-                 Debug.Log("[ErosionTestHarness] Wrote erosion PNG artifacts to " + folder);
-             }
-             finally
-             {
--                if (before.IsCreated)
--                    before.Dispose();
--                if (heightA.IsCreated)
--                    heightA.Dispose();
--                if (heightB.IsCreated)
--                    heightB.Dispose();
--                if (sediment.IsCreated)
--                    sediment.Dispose();
--                if (wear.IsCreated)
--                    wear.Dispose();
--            }
--        }
--
--        private static void GenerateFractalHeightmap(NativeArray<float> before, NativeArray<float> height)
--        {
--            for (int z = 0; z < Resolution; z++)
--            {
--                for (int x = 0; x < Resolution; x++)
--                {
--                    float2 uv = new float2(x, z) * (1f / Resolution);
--                    float n = FractalValueNoise(uv * 7.5f, 0xC001CAFEu);
--                    float ridge = 1f - math.abs(FractalValueNoise(uv * 3.25f + new float2(19.3f, -7.1f), 0x6C8E9CF5u) * 2f - 1f);
--                    float basin = math.smoothstep(0.2f, 0.95f, n);
--                    float h = math.saturate(basin * 0.72f + math.pow(ridge, 3.2f) * 0.28f);
--                    int index = z * Resolution + x;
--                    before[index] = h;
--                    height[index] = h;
--                }
-+                DisposeTracked(ref before);
-+                DisposeTracked(ref heightA);
-+                DisposeTracked(ref heightB);
-+                DisposeTracked(ref sediment);
-+                DisposeTracked(ref wear);
-+                DisposeTracked(ref metrics);
-             }
-         }
- 
--        private static float FractalValueNoise(float2 sample, uint seed)
-+        private static void RegisterTempJobBuffers(
-+            NativeArray<float> before,
-+            NativeArray<float> heightA,
-+            NativeArray<float> heightB,
-+            NativeArray<float> sediment,
-+            NativeArray<float> wear,
-+            NativeArray<ErosionSmokeMetrics> metrics)
-         {
--            float amplitude = 0.5f;
--            float frequency = 1f;
--            float total = 0f;
--            float normalization = 0f;
--
--            for (int octave = 0; octave < 6; octave++)
--            {
--                total += ValueNoise(sample * frequency, seed + (uint)octave * 0x85EBCA6Bu) * amplitude;
--                normalization += amplitude;
--                amplitude *= 0.52f;
--                frequency *= 2.03f;
--            }
--
--            return total / math.max(0.0001f, normalization);
-+            NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(metrics, NativeMemoryOwner, MetricsLabel, NativeAllocationLifetime.TempJob);
-         }
- 
--        private static float ValueNoise(float2 sample, uint seed)
-+        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
-         {
--            float2 floorSample = math.floor(sample);
--            int2 cell = (int2)floorSample;
--            float2 local = sample - floorSample;
--            float2 smooth = local * local * (3f - 2f * local);
--
--            float a = Hash01(cell.x, cell.y, seed);
--            float b = Hash01(cell.x + 1, cell.y, seed);
--            float c = Hash01(cell.x, cell.y + 1, seed);
--            float d = Hash01(cell.x + 1, cell.y + 1, seed);
--
--            return math.lerp(
--                math.lerp(a, b, smooth.x),
--                math.lerp(c, d, smooth.x),
--                smooth.y);
--        }
-+            if (!array.IsCreated)
-+                return;
- 
--        private static float Hash01(int x, int y, uint seed)
--        {
--            uint hash = (uint)x * 0x8DA6B343u;
--            hash ^= (uint)y * 0xD8163841u;
--            hash ^= seed + 0x9E3779B9u + (hash << 6) + (hash >> 2);
--            hash ^= hash >> 16;
--            hash *= 0x7FEB352Du;
--            hash ^= hash >> 15;
--            hash *= 0x846CA68Bu;
--            hash ^= hash >> 16;
--            return (hash & 0x00FFFFFFu) * (1f / 16777215f);
-+            NativeMemorySentinel.UnregisterNativeArray(array);
-+            array.Dispose();
-+            array = default;
-         }
- 
-         private static void WriteHeightPng(NativeArray<float> heights, string path)
-@@ -217,6 +202,63 @@ namespace Hecton8.Editor
-             WritePng(pixels, path);
-         }
- 
-+        private static void WriteMetricsJson(ErosionSmokeMetrics metrics, string path)
-+        {
-+            StringBuilder builder = new StringBuilder(512); // COLD ALLOC: StringBuilder[512] - editor smoke JSON artifact buffer - owner: ErosionTestHarness
-+            builder.Append("{\n");
-+            AppendJsonProperty(builder, "schema", "hecton8.erosion_smoke_metrics.v1", true);
-+            AppendJsonProperty(builder, "resolution", Resolution, true);
-+            AppendJsonProperty(builder, "dropletCount", 300000, true);
-+            AppendJsonProperty(builder, "thermalIterations", 3, true);
-+            AppendJsonProperty(builder, "minBefore", metrics.MinBefore, true);
-+            AppendJsonProperty(builder, "maxBefore", metrics.MaxBefore, true);
-+            AppendJsonProperty(builder, "minAfter", metrics.MinAfter, true);
-+            AppendJsonProperty(builder, "maxAfter", metrics.MaxAfter, true);
-+            AppendJsonProperty(builder, "maxSediment", metrics.MaxSediment, true);
-+            AppendJsonProperty(builder, "maxWear", metrics.MaxWear, true);
-+            AppendJsonProperty(builder, "meanAbsoluteDelta", metrics.MeanAbsoluteDelta, true);
-+            AppendJsonProperty(builder, "changedCellCount", metrics.ChangedCellCount, true);
-+            AppendJsonProperty(builder, "nonFiniteCellCount", metrics.NonFiniteCellCount, false);
-+            builder.Append("\n}\n");
-+            File.WriteAllText(path, builder.ToString(), JsonEncoding);
-+        }
-+
-+        private static void AppendJsonProperty(StringBuilder builder, string name, string value, bool comma)
-+        {
-+            AppendJsonName(builder, name);
-+            builder.Append('"');
-+            builder.Append(value);
-+            builder.Append('"');
-+            if (comma)
-+                builder.Append(',');
-+            builder.Append('\n');
-+        }
-+
-+        private static void AppendJsonProperty(StringBuilder builder, string name, int value, bool comma)
-+        {
-+            AppendJsonName(builder, name);
-+            builder.Append(value);
-+            if (comma)
-+                builder.Append(',');
-+            builder.Append('\n');
-+        }
-+
-+        private static void AppendJsonProperty(StringBuilder builder, string name, float value, bool comma)
-+        {
-+            AppendJsonName(builder, name);
-+            builder.Append(value.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
-+            if (comma)
-+                builder.Append(',');
-+            builder.Append('\n');
-+        }
-+
-+        private static void AppendJsonName(StringBuilder builder, string name)
-+        {
-+            builder.Append("  \"");
-+            builder.Append(name);
-+            builder.Append("\": ");
-+        }
-+
-         private static void WritePng(Color32[] pixels, string path)
-         {
-             Texture2D texture = new Texture2D(Resolution, Resolution, TextureFormat.RGBA32, false, true);
-diff --git a/Assets/_Project/Scripts/World/HectonHydraulicErosionMapMagicNode.cs b/Assets/_Project/Scripts/World/HectonHydraulicErosionMapMagicNode.cs
-index 762a090d..af4d798b 100644
---- a/Assets/_Project/Scripts/World/HectonHydraulicErosionMapMagicNode.cs
-+++ b/Assets/_Project/Scripts/World/HectonHydraulicErosionMapMagicNode.cs
-@@ -1,5 +1,7 @@
- using System.Collections.Generic;
-+using System.Diagnostics;
- using Den.Tools.Matrices;
-+using Hecton8.Core;
- using Hecton8.World;
- using MapMagic.Nodes;
- using MapMagic.Products;
-@@ -20,6 +22,20 @@ namespace MapMagic.Nodes.MatrixGenerators
-     [UnityEngine.Scripting.Preserve]
-     public sealed class HectonHydraulicErosionMapMagicNode : Generator, IMultiInlet, IMultiOutlet, ICustomComplexity
-     {
-+        private const string NativeMemoryOwner = nameof(HectonHydraulicErosionMapMagicNode);
-+        private const string HeightALabel = "heightA";
-+        private const string HeightBLabel = "heightB";
-+        private const string SedimentLabel = "sediment";
-+        private const string WearLabel = "wear";
-+        private const int FullDropletTelemetryThreshold = 1000000;
-+        private const int DraftDropletTelemetryThreshold = 250000;
-+        private const int CellCountTelemetryThreshold = 1048576;
-+        private const float BarrierStallTelemetryThresholdMs = 25f;
-+        private const uint DropletBudgetWarningHash = 0x48594544u;
-+        private const uint CellBudgetWarningHash = 0x48594543u;
-+        private const uint BarrierStallWarningHash = 0x48594542u;
-+        private const uint HydraulicErosionNodeContextHash = 0x4859454Eu;
-+
-         /// <summary>Input heightmap matrix.</summary>
-         [Den.Tools.GUI.ValAttribute("Heightmap", "Inlet")]
-         public readonly Inlet<MatrixWorld> heightIn = new Inlet<MatrixWorld>();
-@@ -177,6 +193,7 @@ namespace MapMagic.Nodes.MatrixGenerators
-                 heightB = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                 sediment = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-                 wear = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-+                RegisterTempJobBuffers(heightA, heightB, sediment, wear);
- 
-                 for (int i = 0; i < cellCount; i++)
-                     heightA[i] = math.saturate(src.arr[i]);
-@@ -185,6 +202,7 @@ namespace MapMagic.Nodes.MatrixGenerators
-                 int coreWidth = math.max(1, width - safeMargin * 2);
-                 int coreHeight = math.max(1, height - safeMargin * 2);
-                 int resolvedDroplets = data.isDraft ? math.max(1, dropletCount / 4) : math.max(1, dropletCount);
-+                PublishColdPathBudgetWarnings(cellCount, resolvedDroplets, data.isDraft);
- 
-                 var erosionJob = new HydraulicErosionJob
-                 {
-@@ -251,7 +269,9 @@ namespace MapMagic.Nodes.MatrixGenerators
-                 }
- 
-                 // COLD SYNC JOB: MapMagic Generate must publish concrete matrix products before returning to the graph.
-+                long barrierStartTicks = Stopwatch.GetTimestamp();
-                 handle.Complete();
-+                PublishBarrierWarning(ElapsedMilliseconds(barrierStartTicks, Stopwatch.GetTimestamp()));
- 
-                 if (stop != null && stop.stop)
-                     return;
-@@ -267,17 +287,73 @@ namespace MapMagic.Nodes.MatrixGenerators
-             }
-             finally
-             {
--                if (heightA.IsCreated)
--                    heightA.Dispose();
--                if (heightB.IsCreated)
--                    heightB.Dispose();
--                if (sediment.IsCreated)
--                    sediment.Dispose();
--                if (wear.IsCreated)
--                    wear.Dispose();
-+                DisposeTracked(ref heightA);
-+                DisposeTracked(ref heightB);
-+                DisposeTracked(ref sediment);
-+                DisposeTracked(ref wear);
-             }
-         }
- 
-+        private static float ElapsedMilliseconds(long startTicks, long endTicks)
-+        {
-+            long rawDeltaTicks = endTicks - startTicks;
-+            long deltaTicks = rawDeltaTicks > 0L ? rawDeltaTicks : 0L;
-+            return (float)((deltaTicks * 1000.0) / Stopwatch.Frequency);
-+        }
-+
-+        private static void RegisterTempJobBuffers(
-+            NativeArray<float> heightA,
-+            NativeArray<float> heightB,
-+            NativeArray<float> sediment,
-+            NativeArray<float> wear)
-+        {
-+            NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
-+        }
-+
-+        private static void PublishColdPathBudgetWarnings(int cellCount, int resolvedDroplets, bool isDraft)
-+        {
-+            int dropletThreshold = isDraft ? DraftDropletTelemetryThreshold : FullDropletTelemetryThreshold;
-+            if (resolvedDroplets >= dropletThreshold)
-+            {
-+                GlobalTelemetryBus.PublishPerformanceWarning(
-+                    DropletBudgetWarningHash,
-+                    HydraulicErosionNodeContextHash,
-+                    resolvedDroplets);
-+            }
-+
-+            if (cellCount >= CellCountTelemetryThreshold)
-+            {
-+                GlobalTelemetryBus.PublishPerformanceWarning(
-+                    CellBudgetWarningHash,
-+                    HydraulicErosionNodeContextHash,
-+                    cellCount);
-+            }
-+        }
-+
-+        private static void PublishBarrierWarning(float barrierMilliseconds)
-+        {
-+            if (barrierMilliseconds < BarrierStallTelemetryThresholdMs)
-+                return;
-+
-+            GlobalTelemetryBus.PublishPerformanceWarning(
-+                BarrierStallWarningHash,
-+                HydraulicErosionNodeContextHash,
-+                barrierMilliseconds);
-+        }
-+
-+        private static void DisposeTracked(ref NativeArray<float> array)
-+        {
-+            if (!array.IsCreated)
-+                return;
-+
-+            NativeMemorySentinel.UnregisterNativeArray(array);
-+            array.Dispose();
-+            array = default;
-+        }
-+
-         private static float ResolveCellSizeMeters(MatrixWorld matrix)
-         {
-             int safeWidth = math.max(1, matrix.rect.size.x - 1);
-diff --git a/Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md b/Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md
-index 7acfa3cb..808fd10c 100644
---- a/Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md
-+++ b/Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md
-@@ -12,13 +12,18 @@ Scope: standalone Burst hydraulic erosion, thermal slumping, MapMagic generator
- - `.agents-skills/STRM_World_Streaming_Residency_Chunk_Management.txt`
- - `.agents-skills/GPU_Compute_Kernels_Kernels_Optimization_MX350.txt`
- - `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
-+- `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
-+- `.agents-skills/MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
- 
- ## Files Added
- 
- - `Assets/_Project/Scripts/World/HydraulicErosionJob.cs`
- - `Assets/_Project/Scripts/World/ThermalSlumpingJob.cs`
-+- `Assets/_Project/Scripts/World/ErosionHarnessJobs.cs`
-+- `Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs`
- - `Assets/_Project/Scripts/World/HectonHydraulicErosionMapMagicNode.cs`
- - `Assets/_Project/Scripts/Editor/ErosionTestHarness.cs`
-+- `Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs`
- 
- ## Implementation Facts
- 
-@@ -30,7 +35,11 @@ Scope: standalone Burst hydraulic erosion, thermal slumping, MapMagic generator
- - `HectonHydraulicErosionMapMagicNode` exposes a MapMagic height inlet and three outlets: eroded height, sediment mask, wear mask.
- - The MapMagic node reserves a configurable 4-pixel default margin by spawning droplets in the core while allowing flow into the overlapped boundary.
- - Sediment and wear outputs are normalized to strict `0.0..1.0` before MapMagic product storage.
--- `ErosionTestHarness` generates a 512x512 fractal heightmap, runs erosion plus slumping, and writes PNG outputs under `CodexArtifacts/`.
-+- `HectonHydraulicErosionMapMagicNode` registers and unregisters every `Allocator.TempJob` native buffer with `NativeMemorySentinel`.
-+- `HectonHydraulicErosionMapMagicNode` publishes `GlobalTelemetryBus.PublishPerformanceWarning` markers for large droplet budgets, large cell budgets, and blocking barrier stalls above 25 ms.
-+- `ErosionFractalHeightmapJob` moves editor-harness fractal terrain generation into a Burst `IJobParallelFor`.
-+- `ErosionSmokeMetricsJob` writes a blittable metrics record covering height ranges, sediment/wear maxima, mean absolute delta, changed cells, and non-finite cells.
-+- `ErosionTestHarness` generates a 512x512 fractal heightmap, runs erosion plus slumping, and writes PNG plus JSON metrics outputs under `CodexArtifacts/`.
- 
- ## Droplet Capacity Code
- 
-@@ -55,13 +64,60 @@ public static float CalculateSedimentCapacity(
- 
- - CPU: MapMagic generation can be expensive at high droplet counts. The node reduces droplets during draft generation. This is generation-time work, not gameplay Tick.
- - GC: hot job logic is unmanaged/Burst. MapMagic generation and editor harness allocate managed matrices/textures outside gameplay hot paths. Profiler proof absent.
--- Memory: all new native containers in the node and harness use `Allocator.TempJob`, complete before disposal, and do not persist across frames.
-+- Memory: all new native containers in the node and harness use `Allocator.TempJob`, register with `NativeMemorySentinel`, complete before disposal, unregister before disposal, and do not persist across frames.
- - Cadence: the only `.Complete()` calls are annotated blocking generation/editor harness sync points. No gameplay Tick owner was added.
- - Correctness: boundary bleed is implemented as a 4-pixel overlapped processing margin. True cross-tile validation requires MapMagic graph execution on adjacent chunks.
- 
- ## Verification
- 
--- Pending: Unity script import/compile.
-+- Passed: MCP `validate_script` standard diagnostics on `HydraulicErosionJob.cs`, `ThermalSlumpingJob.cs`, `HectonHydraulicErosionMapMagicNode.cs`, and `ErosionTestHarness.cs` returned zero errors and zero warnings.
-+- Blocked: Unity script refresh/import completed, but project compilation is blocked by unrelated current errors in `PlayerCriticalProceduralAudioRenderer.cs`, `HectonSurvivalSystem.cs`, `StorageCrate.cs`, and `PredatorCognitionDomain.cs`.
-+- Blocked: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` fails on unrelated stale/project errors before a clean assembly build can be claimed.
-+- Blocked: 2026-05-05 Unity MCP validation unavailable because no Unity Editor instance is connected (`instance_count: 0`).
-+- Blocked: 2026-05-05 local `dotnet build` exits `1`; diagnostic scan reports `Assets/_Project/Scripts/BaseModule.cs(349,34): error CS0246: BaseModuleCondensationSurface could not be found`.
-+- Passed: scoped source scan on erosion files found no `_instance` or `DontDestroyOnLoad`; `Run()` matches are editor harness/menu entry points only.
- - Pending: MapMagic node graph execution.
--- Pending: editor harness PNG generation.
-+- Pending: editor harness PNG/JSON generation; cannot execute until Unity Editor connection and project compilation are restored.
- - Pending: GCMonitor/profiler capture.
-+
-+## 2026-05-05 Omega-Autonomy Continuation
-+
-+Status: `PENDING VERIFICATION`
-+
-+### Additional Mandates Followed
-+
-+- `.agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
-+- `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
-+- `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
-+- `.agents-skills/VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`
-+- `.agents-skills/STRM_World_Streaming_Residency_Chunk_Management.txt`
-+- `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
-+
-+### Surgery Log
-+
-+- Registered MapMagic node TempJob buffers `heightA`, `heightB`, `sediment`, and `wear` with `NativeMemorySentinel` using `NativeAllocationLifetime.TempJob`.
-+- Registered editor harness TempJob buffers `before`, `heightA`, `heightB`, `sediment`, `wear`, and `metrics` with `NativeMemorySentinel`.
-+- Added `ErosionHarnessJobs` with Burst fractal heightmap generation and harness metrics jobs.
-+- Added `HydraulicErosionMetricsJob`, a Burst `IJobParallelFor` that scans height/sediment/wear buffers in blocks for smoke-test metrics.
-+- Added `HydraulicErosionSmokeTester`, an editor smoke runner with four scenarios: `dry_zero_power`, `tiny_margin_clamp`, `draft_tile`, and `thermal_stress`.
-+- Replaced the smoke tester scalar heightmap seed loop with `ErosionFractalHeightmapJob` so the smoke terrain generation is also Burst `IJobParallelFor` work.
-+- Added cold-path `GlobalTelemetryBus.PublishPerformanceWarning` calls for MapMagic droplet/cell budget violations and smoke-test failure reporting.
-+- Converted TempJob disposal in the MapMagic node and editor harness to unregister-before-dispose helper paths.
-+
-+### Forensic Audit Data
-+
-+- NativeCollections: scoped scan found all new caller-owned TempJob arrays are registered and unregistered in their owner files. Job structs still expose caller-owned `NativeArray<T>` fields; they do not allocate.
-+- Barriers: scoped scan found `.Complete()` at `HectonHydraulicErosionMapMagicNode.cs:273`, `ErosionTestHarness.cs:126`, and `HydraulicErosionSmokeTester.cs:216`. All are generation/editor sync points, not gameplay `Tick`, `FixedTick`, or `Update`.
-+- Static leaks: scoped scan found no `_instance` or `DontDestroyOnLoad` usage in the hydraulic erosion domain files.
-+- String churn: scoped fixed-string scan found no `$"` interpolated strings. `.ToString()` remains only in editor cold JSON/file output, not in gameplay `Tick`, `FixedTick`, or `Update`.
-+
-+### Verification Delta
-+
-+- Passed: scoped source audit for `NativeArray`, `NativeMemorySentinel`, `.Complete()`, `Run()`, hot-loop names, `.ToString()`, `string.Format`, `_instance`, `DontDestroyOnLoad`, `PublishPerformanceWarning`, and `Debug.Log` completed with findings limited to cold/editor paths.
-+- Passed: scoped fixed-string `rg -F '$"'` audit returned no interpolated-string matches.
-+- Blocked: MCP `validate_script` retry returned `no_unity_session`; Unity Editor diagnostics were unavailable in this session.
-+- Blocked: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` exits `1` before a clean domain compile can be claimed. Current blockers: `Temp/obj/Crest/project.assets.json` missing (`NETSDK1004`) and dependent `Unity.RenderPipelines.Universal.Runtime.dll` metadata missing (`CS0006`).
-+- Blocked: Unity batchmode harness attempt wrote `CodexArtifacts/unity-erosion-harness-2026-05-05.log`, but compilation stopped before `Hecton8.Editor.ErosionTestHarness.Run` executed. Blocking errors in that log are `Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs(90,24)` and `(96,24)` ambiguous `Assert.AreEqual`, plus `Assets/_Project/Scripts/HectonSurvivalSystem.cs(1132,60)` and `(1133,61)` missing `HectonPlayerMovement.CapsuleHeight`.
-+- Not found: batchmode log contains no compiler errors naming `ErosionHarnessJobs.cs`, `HydraulicErosionMetricsJob.cs`, `HectonHydraulicErosionMapMagicNode.cs`, `HydraulicErosionJob.cs`, or `HydraulicErosionSmokeTester.cs`.
-+- Artifact: `CodexArtifacts/2026-05-05_EROSION_OMEGA_DIFF.patch` contains the tracked diffs plus no-index diffs for new erosion smoke/metrics files and their Unity `.meta` files.
-+- Pending: `HydraulicErosionSmokeTester` execution and JSON artifact generation; blocked until Unity session/project compile is available.
-
-diff --git a/Assets/_Project/Scripts/World/ErosionHarnessJobs.cs b/Assets/_Project/Scripts/World/ErosionHarnessJobs.cs
-new file mode 100644
-index 00000000..eeee850f
---- /dev/null
-+++ b/Assets/_Project/Scripts/World/ErosionHarnessJobs.cs
-@@ -0,0 +1,200 @@
-+using Unity.Burst;
-+using Unity.Collections;
-+using Unity.Jobs;
-+using Unity.Mathematics;
-+
-+namespace Hecton8.World
-+{
-+    /// <summary>
-+    /// Burst terrain seed job used by the editor erosion harness.
-+    /// </summary>
-+    [BurstCompile]
-+    public struct ErosionFractalHeightmapJob : IJobParallelFor
-+    {
-+        /// <summary>Unmodified source height output.</summary>
-+        [WriteOnly]
-+        public NativeArray<float> Before;
-+
-+        /// <summary>Mutable erosion input height output.</summary>
-+        [WriteOnly]
-+        public NativeArray<float> Height;
-+
-+        /// <summary>Square heightmap resolution.</summary>
-+        public int Resolution;
-+
-+        /// <summary>Primary deterministic noise seed.</summary>
-+        public uint PrimarySeed;
-+
-+        /// <summary>Ridge deterministic noise seed.</summary>
-+        public uint RidgeSeed;
-+
-+        /// <inheritdoc />
-+        public void Execute(int index)
-+        {
-+            int safeResolution = math.max(1, Resolution);
-+            int x = index % safeResolution;
-+            int z = index / safeResolution;
-+            float2 uv = new float2(x, z) * (1f / safeResolution);
-+            float n = FractalValueNoise(uv * 7.5f, PrimarySeed);
-+            float ridge = 1f - math.abs(FractalValueNoise(uv * 3.25f + new float2(19.3f, -7.1f), RidgeSeed) * 2f - 1f);
-+            float h = math.saturate(math.smoothstep(0.2f, 0.95f, n) * 0.72f + math.pow(ridge, 3.2f) * 0.28f);
-+            Before[index] = h;
-+            Height[index] = h;
-+        }
-+
-+        private static float FractalValueNoise(float2 sample, uint seed)
-+        {
-+            float amplitude = 0.5f;
-+            float frequency = 1f;
-+            float total = 0f;
-+            float normalization = 0f;
-+
-+            for (int octave = 0; octave < 6; octave++)
-+            {
-+                total += ValueNoise(sample * frequency, seed + (uint)octave * 0x85EBCA6Bu) * amplitude;
-+                normalization += amplitude;
-+                amplitude *= 0.52f;
-+                frequency *= 2.03f;
-+            }
-+
-+            return total / math.max(0.0001f, normalization);
-+        }
-+
-+        private static float ValueNoise(float2 sample, uint seed)
-+        {
-+            float2 floorSample = math.floor(sample);
-+            int2 cell = (int2)floorSample;
-+            float2 local = sample - floorSample;
-+            float2 smooth = local * local * (3f - 2f * local);
-+
-+            float a = Hash01(cell.x, cell.y, seed);
-+            float b = Hash01(cell.x + 1, cell.y, seed);
-+            float c = Hash01(cell.x, cell.y + 1, seed);
-+            float d = Hash01(cell.x + 1, cell.y + 1, seed);
-+
-+            return math.lerp(
-+                math.lerp(a, b, smooth.x),
-+                math.lerp(c, d, smooth.x),
-+                smooth.y);
-+        }
-+
-+        private static float Hash01(int x, int y, uint seed)
-+        {
-+            uint hash = (uint)x * 0x8DA6B343u;
-+            hash ^= (uint)y * 0xD8163841u;
-+            hash ^= seed + 0x9E3779B9u + (hash << 6) + (hash >> 2);
-+            hash ^= hash >> 16;
-+            hash *= 0x7FEB352Du;
-+            hash ^= hash >> 15;
-+            hash *= 0x846CA68Bu;
-+            hash ^= hash >> 16;
-+            return (hash & 0x00FFFFFFu) * (1f / 16777215f);
-+        }
-+    }
-+
-+    /// <summary>
-+    /// Blittable erosion smoke-test metrics.
-+    /// </summary>
-+    public struct ErosionSmokeMetrics
-+    {
-+        /// <summary>Minimum source height.</summary>
-+        public float MinBefore;
-+
-+        /// <summary>Maximum source height.</summary>
-+        public float MaxBefore;
-+
-+        /// <summary>Minimum final height.</summary>
-+        public float MinAfter;
-+
-+        /// <summary>Maximum final height.</summary>
-+        public float MaxAfter;
-+
-+        /// <summary>Maximum normalized sediment accumulator before PNG normalization.</summary>
-+        public float MaxSediment;
-+
-+        /// <summary>Maximum normalized wear accumulator before PNG normalization.</summary>
-+        public float MaxWear;
-+
-+        /// <summary>Mean absolute height delta.</summary>
-+        public float MeanAbsoluteDelta;
-+
-+        /// <summary>Cells with measurable height change.</summary>
-+        public int ChangedCellCount;
-+
-+        /// <summary>Cells containing non-finite values in any sampled field.</summary>
-+        public int NonFiniteCellCount;
-+    }
-+
-+    /// <summary>
-+    /// Burst reduction job for editor erosion smoke-test metrics.
-+    /// </summary>
-+    [BurstCompile]
-+    public struct ErosionSmokeMetricsJob : IJob
-+    {
-+        /// <summary>Original heightmap.</summary>
-+        [ReadOnly] public NativeArray<float> Before;
-+
-+        /// <summary>Eroded heightmap.</summary>
-+        [ReadOnly] public NativeArray<float> After;
-+
-+        /// <summary>Sediment mask accumulator.</summary>
-+        [ReadOnly] public NativeArray<float> Sediment;
-+
-+        /// <summary>Wear mask accumulator.</summary>
-+        [ReadOnly] public NativeArray<float> Wear;
-+
-+        /// <summary>Single output metrics slot.</summary>
-+        [WriteOnly]
-+        public NativeArray<ErosionSmokeMetrics> Metrics;
-+
-+        /// <inheritdoc />
-+        public void Execute()
-+        {
-+            int count = math.min(math.min(Before.Length, After.Length), math.min(Sediment.Length, Wear.Length));
-+            ErosionSmokeMetrics metrics = default;
-+            metrics.MinBefore = float.MaxValue;
-+            metrics.MinAfter = float.MaxValue;
-+            metrics.MaxBefore = float.MinValue;
-+            metrics.MaxAfter = float.MinValue;
-+
-+            float absoluteDeltaSum = 0f;
-+            for (int i = 0; i < count; i++)
-+            {
-+                float before = Before[i];
-+                float after = After[i];
-+                float sediment = Sediment[i];
-+                float wear = Wear[i];
-+
-+                if (!math.isfinite(before) || !math.isfinite(after) || !math.isfinite(sediment) || !math.isfinite(wear))
-+                {
-+                    metrics.NonFiniteCellCount++;
-+                    continue;
-+                }
-+
-+                metrics.MinBefore = math.min(metrics.MinBefore, before);
-+                metrics.MaxBefore = math.max(metrics.MaxBefore, before);
-+                metrics.MinAfter = math.min(metrics.MinAfter, after);
-+                metrics.MaxAfter = math.max(metrics.MaxAfter, after);
-+                metrics.MaxSediment = math.max(metrics.MaxSediment, sediment);
-+                metrics.MaxWear = math.max(metrics.MaxWear, wear);
-+
-+                float delta = math.abs(after - before);
-+                absoluteDeltaSum += delta;
-+                if (delta > 0.00001f)
-+                    metrics.ChangedCellCount++;
-+            }
-+
-+            float validCount = math.max(1, count - metrics.NonFiniteCellCount);
-+            metrics.MeanAbsoluteDelta = absoluteDeltaSum / validCount;
-+            if (count == metrics.NonFiniteCellCount)
-+            {
-+                metrics.MinBefore = 0f;
-+                metrics.MaxBefore = 0f;
-+                metrics.MinAfter = 0f;
-+                metrics.MaxAfter = 0f;
-+            }
-+
-+            Metrics[0] = metrics;
-+        }
-+    }
-+}
-
-diff --git a/Assets/_Project/Scripts/World/ErosionHarnessJobs.cs.meta b/Assets/_Project/Scripts/World/ErosionHarnessJobs.cs.meta
-new file mode 100644
-index 00000000..79ef7518
---- /dev/null
-+++ b/Assets/_Project/Scripts/World/ErosionHarnessJobs.cs.meta
-@@ -0,0 +1,2 @@
-+fileFormatVersion: 2
-+guid: c3b10fe61a87a4f439ee04722ed684cc
-\ No newline at end of file
-
-diff --git a/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs b/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs
-new file mode 100644
-index 00000000..384cf2ed
---- /dev/null
-+++ b/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs
-@@ -0,0 +1,107 @@
-+using Unity.Burst;
-+using Unity.Collections;
-+using Unity.Jobs;
-+using Unity.Mathematics;
-+
-+namespace Hecton8.World
-+{
-+    /// <summary>
-+    /// Block-level erosion result metrics for cold-path verification and editor smoke tests.
-+    /// </summary>
-+    public struct HydraulicErosionMetricBlock
-+    {
-+        /// <summary>Minimum finite height in the block.</summary>
-+        public float MinHeight;
-+
-+        /// <summary>Maximum finite height in the block.</summary>
-+        public float MaxHeight;
-+
-+        /// <summary>Finite height sum in the block.</summary>
-+        public float SumHeight;
-+
-+        /// <summary>Finite sediment mask sum in the block.</summary>
-+        public float SumSediment;
-+
-+        /// <summary>Finite wear mask sum in the block.</summary>
-+        public float SumWear;
-+
-+        /// <summary>Maximum finite sediment value in the block.</summary>
-+        public float MaxSediment;
-+
-+        /// <summary>Maximum finite wear value in the block.</summary>
-+        public float MaxWear;
-+
-+        /// <summary>Number of sampled cells with non-finite height, sediment, or wear.</summary>
-+        public int NanCount;
-+
-+        /// <summary>Number of finite sampled cells in the block.</summary>
-+        public int SampleCount;
-+    }
-+
-+    /// <summary>
-+    /// Burst scan over erosion buffers. It replaces editor cold-path scalar metric loops with block-parallel work.
-+    /// </summary>
-+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-+    public struct HydraulicErosionMetricsJob : IJobParallelFor
-+    {
-+        /// <summary>Eroded height buffer to scan.</summary>
-+        [ReadOnly] public NativeArray<float> Heightmap;
-+
-+        /// <summary>Sediment mask buffer to scan.</summary>
-+        [ReadOnly] public NativeArray<float> SedimentMask;
-+
-+        /// <summary>Wear mask buffer to scan.</summary>
-+        [ReadOnly] public NativeArray<float> WearMask;
-+
-+        /// <summary>Block metric output buffer.</summary>
-+        [WriteOnly] public NativeArray<HydraulicErosionMetricBlock> Blocks;
-+
-+        /// <summary>Total number of valid samples in the scanned buffers.</summary>
-+        public int SampleCount;
-+
-+        /// <summary>Number of samples scanned per block.</summary>
-+        public int BlockSize;
-+
-+        /// <inheritdoc />
-+        public void Execute(int blockIndex)
-+        {
-+            int safeBlockSize = math.max(1, BlockSize);
-+            int start = blockIndex * safeBlockSize;
-+            int end = math.min(math.max(0, SampleCount), start + safeBlockSize);
-+
-+            var block = new HydraulicErosionMetricBlock
-+            {
-+                MinHeight = 1f,
-+                MaxHeight = 0f
-+            };
-+
-+            for (int i = start; i < end; i++)
-+            {
-+                float height = Heightmap[i];
-+                float sediment = SedimentMask[i];
-+                float wear = WearMask[i];
-+                bool invalid =
-+                    !math.isfinite(height) ||
-+                    !math.isfinite(sediment) ||
-+                    !math.isfinite(wear);
-+
-+                if (invalid)
-+                {
-+                    block.NanCount++;
-+                    continue;
-+                }
-+
-+                block.MinHeight = math.min(block.MinHeight, height);
-+                block.MaxHeight = math.max(block.MaxHeight, height);
-+                block.SumHeight += height;
-+                block.SumSediment += sediment;
-+                block.SumWear += wear;
-+                block.MaxSediment = math.max(block.MaxSediment, sediment);
-+                block.MaxWear = math.max(block.MaxWear, wear);
-+                block.SampleCount++;
-+            }
-+
-+            Blocks[blockIndex] = block;
-+        }
-+    }
-+}
-
-diff --git a/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs.meta b/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs.meta
-new file mode 100644
-index 00000000..30880c22
---- /dev/null
-+++ b/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs.meta
-@@ -0,0 +1,2 @@
-+fileFormatVersion: 2
-+guid: 9714e3ad4f25008409062c6b07af4485
-\ No newline at end of file
-
-diff --git a/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs b/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs
-new file mode 100644
-index 00000000..cea7dbc6
---- /dev/null
-+++ b/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs
-@@ -0,0 +1,462 @@
-+using System;
-+using System.Globalization;
-+using System.IO;
-+using System.Text;
-+using Hecton8.Core;
-+using Hecton8.World;
-+using Unity.Collections;
-+using Unity.Jobs;
-+using Unity.Mathematics;
-+using UnityEditor;
-+using UnityEngine;
-+
-+namespace Hecton8.Editor
-+{
-+    /// <summary>
-+    /// Editor-only smoke tester for hydraulic erosion native lifetime, deterministic bounds, and edge-case terrain inputs.
-+    /// </summary>
-+    public static class HydraulicErosionSmokeTester
-+    {
-+        private const int BlockSize = 256;
-+        private const int ScenarioCount = 4;
-+        private const string OutputFolder = "CodexArtifacts";
-+        private const string OutputFile = "HydraulicErosionSmokeTester.json";
-+        private const string NativeMemoryOwner = nameof(HydraulicErosionSmokeTester);
-+        private const string BeforeLabel = "before";
-+        private const string HeightALabel = "heightA";
-+        private const string HeightBLabel = "heightB";
-+        private const string SedimentLabel = "sediment";
-+        private const string WearLabel = "wear";
-+        private const string MetricBlocksLabel = "metricBlocks";
-+        private const uint SmokeFailureWarningHash = 0x48594553u;
-+        private const uint NativeLeakContextHash = 0x48594E4Cu;
-+
-+        private struct ScenarioConfig
-+        {
-+            public string Name;
-+            public int Resolution;
-+            public int Droplets;
-+            public int Lifetime;
-+            public int Margin;
-+            public int SlumpIterations;
-+            public float SlumpStrength;
-+            public float TalusAngle;
-+            public uint Seed;
-+        }
-+
-+        private struct ScenarioResult
-+        {
-+            public string Name;
-+            public bool Passed;
-+            public int Resolution;
-+            public int Droplets;
-+            public int Lifetime;
-+            public int SlumpIterations;
-+            public int NanCount;
-+            public int SentinelDelta;
-+            public long TrackedByteDelta;
-+            public float MinHeight;
-+            public float MaxHeight;
-+            public float MeanHeight;
-+            public float SumSediment;
-+            public float SumWear;
-+            public float MaxSediment;
-+            public float MaxWear;
-+            public float Milliseconds;
-+        }
-+
-+        /// <summary>
-+        /// Runs all smoke scenarios and writes a JSON artifact under CodexArtifacts.
-+        /// </summary>
-+        [MenuItem("Tools/Hecton/Dev/Terrain/Run Hydraulic Erosion Smoke Tester")]
-+        public static void RunMenu()
-+        {
-+            string path = RunAndWriteJson();
-+            Debug.Log("[HydraulicErosionSmokeTester] Wrote JSON artifact to " + path);
-+        }
-+
-+        /// <summary>
-+        /// Executes smoke scenarios and returns the JSON artifact path.
-+        /// </summary>
-+        public static string RunAndWriteJson()
-+        {
-+            // COLD ALLOC: ScenarioResult[4] - editor smoke result staging - owner: HydraulicErosionSmokeTester
-+            ScenarioResult[] results = new ScenarioResult[ScenarioCount];
-+            int passCount = 0;
-+
-+            for (int i = 0; i < ScenarioCount; i++)
-+            {
-+                results[i] = RunScenario(GetScenarioConfig(i));
-+                if (results[i].Passed)
-+                    passCount++;
-+            }
-+
-+            string folder = Path.Combine(Directory.GetParent(Application.dataPath).FullName, OutputFolder);
-+            Directory.CreateDirectory(folder);
-+            string path = Path.Combine(folder, OutputFile);
-+            File.WriteAllText(path, BuildJson(results, passCount));
-+            AssetDatabase.Refresh();
-+            return path;
-+        }
-+
-+        private static ScenarioConfig GetScenarioConfig(int index)
-+        {
-+            switch (index)
-+            {
-+                case 0:
-+                    return new ScenarioConfig
-+                    {
-+                        Name = "dry_zero_power",
-+                        Resolution = 8,
-+                        Droplets = 0,
-+                        Lifetime = 1,
-+                        Margin = 1,
-+                        SlumpIterations = 0,
-+                        SlumpStrength = 0f,
-+                        TalusAngle = 45f,
-+                        Seed = 0xA110CA7Eu
-+                    };
-+                case 1:
-+                    return new ScenarioConfig
-+                    {
-+                        Name = "tiny_margin_clamp",
-+                        Resolution = 16,
-+                        Droplets = 128,
-+                        Lifetime = 16,
-+                        Margin = 4,
-+                        SlumpIterations = 1,
-+                        SlumpStrength = 0.32f,
-+                        TalusAngle = 45f,
-+                        Seed = 0xBADC0DEu
-+                    };
-+                case 2:
-+                    return new ScenarioConfig
-+                    {
-+                        Name = "draft_tile",
-+                        Resolution = 64,
-+                        Droplets = 4096,
-+                        Lifetime = 32,
-+                        Margin = 4,
-+                        SlumpIterations = 2,
-+                        SlumpStrength = 0.32f,
-+                        TalusAngle = 45f,
-+                        Seed = 0xC001CAFEu
-+                    };
-+                default:
-+                    return new ScenarioConfig
-+                    {
-+                        Name = "thermal_stress",
-+                        Resolution = 96,
-+                        Droplets = 2048,
-+                        Lifetime = 24,
-+                        Margin = 4,
-+                        SlumpIterations = 4,
-+                        SlumpStrength = 0.75f,
-+                        TalusAngle = 25f,
-+                        Seed = 0xE80510A5u
-+                    };
-+            }
-+        }
-+
-+        private static ScenarioResult RunScenario(in ScenarioConfig config)
-+        {
-+            int pixelCount = config.Resolution * config.Resolution;
-+            int blockCount = (pixelCount + BlockSize - 1) / BlockSize;
-+            int sentinelBefore = NativeMemorySentinel.ActiveAllocationCount;
-+            long trackedBytesBefore = NativeMemorySentinel.TrackedBytes;
-+            long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
-+
-+            NativeArray<float> before = default;
-+            NativeArray<float> heightA = default;
-+            NativeArray<float> heightB = default;
-+            NativeArray<float> sediment = default;
-+            NativeArray<float> wear = default;
-+            NativeArray<HydraulicErosionMetricBlock> metricBlocks = default;
-+            var result = new ScenarioResult
-+            {
-+                Name = config.Name,
-+                Resolution = config.Resolution,
-+                Droplets = config.Droplets,
-+                Lifetime = config.Lifetime,
-+                SlumpIterations = config.SlumpIterations,
-+                MinHeight = 1f
-+            };
-+
-+            try
-+            {
-+                before = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-+                heightA = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-+                heightB = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-+                sediment = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-+                wear = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
-+                metricBlocks = new NativeArray<HydraulicErosionMetricBlock>(blockCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-+                RegisterTempJobBuffers(before, heightA, heightB, sediment, wear, metricBlocks);
-+
-+                JobHandle handle = new ErosionFractalHeightmapJob
-+                {
-+                    Before = before,
-+                    Height = heightA,
-+                    Resolution = config.Resolution,
-+                    PrimarySeed = config.Seed,
-+                    RidgeSeed = config.Seed ^ 0x9E3779B9u
-+                }.Schedule(pixelCount, 64);
-+
-+                handle = ScheduleErosion(config, heightA, heightB, sediment, wear, handle, out NativeArray<float> current);
-+                handle = new HydraulicErosionMetricsJob
-+                {
-+                    Heightmap = current,
-+                    SedimentMask = sediment,
-+                    WearMask = wear,
-+                    Blocks = metricBlocks,
-+                    SampleCount = pixelCount,
-+                    BlockSize = BlockSize
-+                }.Schedule(blockCount, 1, handle);
-+
-+                // COLD SYNC JOB: editor smoke tester must block to inspect deterministic result bounds.
-+                handle.Complete();
-+
-+                ReduceMetrics(metricBlocks, ref result);
-+                result.SentinelDelta = NativeMemorySentinel.ActiveAllocationCount - sentinelBefore;
-+                result.TrackedByteDelta = NativeMemorySentinel.TrackedBytes - trackedBytesBefore;
-+                result.Passed =
-+                    result.NanCount == 0 &&
-+                    result.SentinelDelta == 6 &&
-+                    result.MinHeight >= -0.0001f &&
-+                    result.MaxHeight <= 1.0001f;
-+            }
-+            finally
-+            {
-+                DisposeTracked(ref metricBlocks);
-+                DisposeTracked(ref before);
-+                DisposeTracked(ref heightA);
-+                DisposeTracked(ref heightB);
-+                DisposeTracked(ref sediment);
-+                DisposeTracked(ref wear);
-+            }
-+
-+            result.SentinelDelta = NativeMemorySentinel.ActiveAllocationCount - sentinelBefore;
-+            result.TrackedByteDelta = NativeMemorySentinel.TrackedBytes - trackedBytesBefore;
-+            result.Passed &= result.SentinelDelta == 0 && result.TrackedByteDelta == 0L;
-+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
-+            result.Milliseconds = (float)(elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
-+
-+            if (!result.Passed && Application.isPlaying)
-+            {
-+                GlobalTelemetryBus.PublishPerformanceWarning(
-+                    SmokeFailureWarningHash,
-+                    NativeLeakContextHash,
-+                    result.SentinelDelta);
-+            }
-+
-+            return result;
-+        }
-+
-+        private static JobHandle ScheduleErosion(
-+            in ScenarioConfig config,
-+            NativeArray<float> heightA,
-+            NativeArray<float> heightB,
-+            NativeArray<float> sediment,
-+            NativeArray<float> wear,
-+            JobHandle dependency,
-+            out NativeArray<float> current)
-+        {
-+            int safeMargin = math.clamp(config.Margin, 0, math.max(0, config.Resolution / 4));
-+            var erosionJob = new HydraulicErosionJob
-+            {
-+                Heightmap = heightA,
-+                SedimentMask = sediment,
-+                WearMask = wear,
-+                Width = config.Resolution,
-+                Height = config.Resolution,
-+                CoreOffsetX = safeMargin,
-+                CoreOffsetZ = safeMargin,
-+                CoreWidth = math.max(1, config.Resolution - safeMargin * 2),
-+                CoreHeight = math.max(1, config.Resolution - safeMargin * 2),
-+                DropletCount = math.max(0, config.Droplets),
-+                MaxLifetime = math.max(1, config.Lifetime),
-+                Seed = config.Seed,
-+                Inertia = 0.05f,
-+                CapacityFactor = 4f,
-+                MinCapacity = 0.0001f,
-+                ErosionRate = 0.35f,
-+                DepositRate = 0.18f,
-+                EvaporationRate = 0.015f,
-+                Gravity = 4f,
-+                InitialWater = config.Droplets <= 0 ? 0f : 1f,
-+                InitialSpeed = 1f,
-+                DepressionFillStrength = 0.85f,
-+                DepressionSpawnBias = 12f,
-+                ChannelSpawnBias = 4f,
-+                SpawnCandidateCount = 8,
-+                MinWater = 0.01f
-+            };
-+
-+            JobHandle handle = erosionJob.Schedule(dependency);
-+            current = heightA;
-+            NativeArray<float> next = heightB;
-+
-+            for (int i = 0; i < config.SlumpIterations; i++)
-+            {
-+                var slumpJob = new ThermalSlumpingJob
-+                {
-+                    InputHeights01 = current,
-+                    OutputHeights01 = next,
-+                    WearMask = wear,
+@@ -209,7 +214,10 @@ namespace Hecton8.Editor
+                     WearMask = wear,
+                     Blocks = metricBlocks,
+                     SampleCount = pixelCount,
+-                    BlockSize = BlockSize
++                    BlockSize = BlockSize,
 +                    Width = config.Resolution,
 +                    Height = config.Resolution,
-+                    CellSizeMeters = 1f,
-+                    HeightScaleMeters = 160f,
-+                    TalusAngleDegrees = config.TalusAngle,
-+                    Strength = config.SlumpStrength,
-+                    WriteWearMask = true
-+                };
++                    BoundaryMargin = config.Margin
+                 }.Schedule(blockCount, 1, handle);
+ 
+                 // COLD SYNC JOB: editor smoke tester must block to inspect deterministic result bounds.
+@@ -220,6 +228,7 @@ namespace Hecton8.Editor
+                 result.TrackedByteDelta = NativeMemorySentinel.TrackedBytes - trackedBytesBefore;
+                 result.Passed =
+                     result.NanCount == 0 &&
++                    result.BoundaryNanCount == 0 &&
+                     result.SentinelDelta == 6 &&
+                     result.MinHeight >= -0.0001f &&
+                     result.MaxHeight <= 1.0001f;
+@@ -327,8 +336,13 @@ namespace Hecton8.Editor
+             float sumWear = 0f;
+             float maxSediment = 0f;
+             float maxWear = 0f;
++            float maxBoundaryHeightDelta = 0f;
++            float maxBoundarySediment = 0f;
++            float maxBoundaryWear = 0f;
+             int sampleCount = 0;
+             int nanCount = 0;
++            int boundarySampleCount = 0;
++            int boundaryNanCount = 0;
+ 
+             for (int i = 0; i < blocks.Length; i++)
+             {
+@@ -342,10 +356,15 @@ namespace Hecton8.Editor
+                     sumWear += block.SumWear;
+                     maxSediment = math.max(maxSediment, block.MaxSediment);
+                     maxWear = math.max(maxWear, block.MaxWear);
++                    maxBoundaryHeightDelta = math.max(maxBoundaryHeightDelta, block.MaxBoundaryHeightDelta);
++                    maxBoundarySediment = math.max(maxBoundarySediment, block.MaxBoundarySediment);
++                    maxBoundaryWear = math.max(maxBoundaryWear, block.MaxBoundaryWear);
+                     sampleCount += block.SampleCount;
++                    boundarySampleCount += block.BoundarySampleCount;
+                 }
+ 
+                 nanCount += block.NanCount;
++                boundaryNanCount += block.BoundaryNanCount;
+             }
+ 
+             result.MinHeight = minHeight;
+@@ -356,6 +375,11 @@ namespace Hecton8.Editor
+             result.MaxSediment = maxSediment;
+             result.MaxWear = maxWear;
+             result.NanCount = nanCount;
++            result.MaxBoundaryHeightDelta = maxBoundaryHeightDelta;
++            result.MaxBoundarySediment = maxBoundarySediment;
++            result.MaxBoundaryWear = maxBoundaryWear;
++            result.BoundarySampleCount = boundarySampleCount;
++            result.BoundaryNanCount = boundaryNanCount;
+         }
+ 
+         private static string BuildJson(ScenarioResult[] results, int passCount)
+@@ -390,6 +414,8 @@ namespace Hecton8.Editor
+             builder.Append("\"lifetime\":").Append(result.Lifetime).Append(',');
+             builder.Append("\"slumpIterations\":").Append(result.SlumpIterations).Append(',');
+             builder.Append("\"nanCount\":").Append(result.NanCount).Append(',');
++            builder.Append("\"boundarySampleCount\":").Append(result.BoundarySampleCount).Append(',');
++            builder.Append("\"boundaryNanCount\":").Append(result.BoundaryNanCount).Append(',');
+             builder.Append("\"sentinelDelta\":").Append(result.SentinelDelta).Append(',');
+             builder.Append("\"trackedByteDelta\":").Append(result.TrackedByteDelta).Append(',');
+             builder.Append("\"minHeight\":");
+@@ -406,6 +432,12 @@ namespace Hecton8.Editor
+             AppendFloat(builder, result.MaxSediment);
+             builder.Append(",\"maxWear\":");
+             AppendFloat(builder, result.MaxWear);
++            builder.Append(",\"maxBoundaryHeightDelta\":");
++            AppendFloat(builder, result.MaxBoundaryHeightDelta);
++            builder.Append(",\"maxBoundarySediment\":");
++            AppendFloat(builder, result.MaxBoundarySediment);
++            builder.Append(",\"maxBoundaryWear\":");
++            AppendFloat(builder, result.MaxBoundaryWear);
+             builder.Append(",\"milliseconds\":");
+             AppendFloat(builder, result.Milliseconds);
+             builder.Append('}');
+diff --git a/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs b/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs
+index 384cf2ed..1f2ecfca 100644
+--- a/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs
++++ b/Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs
+@@ -31,11 +31,26 @@ namespace Hecton8.World
+         /// <summary>Maximum finite wear value in the block.</summary>
+         public float MaxWear;
+ 
++        /// <summary>Maximum finite height delta in the audited boundary band.</summary>
++        public float MaxBoundaryHeightDelta;
 +
-+                handle = slumpJob.Schedule(config.Resolution * config.Resolution, 64, handle);
-+                Swap(ref current, ref next);
-+            }
++        /// <summary>Maximum finite sediment value in the audited boundary band.</summary>
++        public float MaxBoundarySediment;
 +
-+            return handle;
-+        }
++        /// <summary>Maximum finite wear value in the audited boundary band.</summary>
++        public float MaxBoundaryWear;
 +
-+        private static void ReduceMetrics(NativeArray<HydraulicErosionMetricBlock> blocks, ref ScenarioResult result)
-+        {
-+            float minHeight = 1f;
-+            float maxHeight = 0f;
-+            float sumHeight = 0f;
-+            float sumSediment = 0f;
-+            float sumWear = 0f;
-+            float maxSediment = 0f;
-+            float maxWear = 0f;
-+            int sampleCount = 0;
-+            int nanCount = 0;
+         /// <summary>Number of sampled cells with non-finite height, sediment, or wear.</summary>
+         public int NanCount;
+ 
+         /// <summary>Number of finite sampled cells in the block.</summary>
+         public int SampleCount;
 +
-+            for (int i = 0; i < blocks.Length; i++)
-+            {
-+                HydraulicErosionMetricBlock block = blocks[i];
-+                if (block.SampleCount > 0)
++        /// <summary>Number of finite sampled cells in the audited boundary band.</summary>
++        public int BoundarySampleCount;
++
++        /// <summary>Number of boundary-band cells with non-finite height, sediment, wear, or neighbor data.</summary>
++        public int BoundaryNanCount;
+     }
+ 
+     /// <summary>
+@@ -62,12 +77,24 @@ namespace Hecton8.World
+         /// <summary>Number of samples scanned per block.</summary>
+         public int BlockSize;
+ 
++        /// <summary>Heightmap width in cells.</summary>
++        public int Width;
++
++        /// <summary>Heightmap height in cells.</summary>
++        public int Height;
++
++        /// <summary>Boundary band width to audit in cells.</summary>
++        public int BoundaryMargin;
++
+         /// <inheritdoc />
+         public void Execute(int blockIndex)
+         {
+             int safeBlockSize = math.max(1, BlockSize);
+             int start = blockIndex * safeBlockSize;
+             int end = math.min(math.max(0, SampleCount), start + safeBlockSize);
++            int safeWidth = math.max(1, Width);
++            int safeHeight = math.max(1, Height);
++            int safeMargin = math.clamp(BoundaryMargin, 0, math.max(0, math.min(safeWidth, safeHeight) / 2));
+ 
+             var block = new HydraulicErosionMetricBlock
+             {
+@@ -84,10 +111,22 @@ namespace Hecton8.World
+                     !math.isfinite(height) ||
+                     !math.isfinite(sediment) ||
+                     !math.isfinite(wear);
++                int x = i % safeWidth;
++                int z = i / safeWidth;
++                bool isBoundary =
++                    safeMargin > 0 &&
++                    z < safeHeight &&
++                    (x < safeMargin ||
++                     z < safeMargin ||
++                     x >= safeWidth - safeMargin ||
++                     z >= safeHeight - safeMargin);
+ 
+                 if (invalid)
+                 {
+                     block.NanCount++;
++                    if (isBoundary)
++                        block.BoundaryNanCount++;
++
+                     continue;
+                 }
+ 
+@@ -99,9 +138,54 @@ namespace Hecton8.World
+                 block.MaxSediment = math.max(block.MaxSediment, sediment);
+                 block.MaxWear = math.max(block.MaxWear, wear);
+                 block.SampleCount++;
++
++                if (isBoundary)
 +                {
-+                    minHeight = math.min(minHeight, block.MinHeight);
-+                    maxHeight = math.max(maxHeight, block.MaxHeight);
-+                    sumHeight += block.SumHeight;
-+                    sumSediment += block.SumSediment;
-+                    sumWear += block.SumWear;
-+                    maxSediment = math.max(maxSediment, block.MaxSediment);
-+                    maxWear = math.max(maxWear, block.MaxWear);
-+                    sampleCount += block.SampleCount;
++                    block.BoundarySampleCount++;
++                    block.MaxBoundarySediment = math.max(block.MaxBoundarySediment, sediment);
++                    block.MaxBoundaryWear = math.max(block.MaxBoundaryWear, wear);
++
++                    float boundaryDelta = MaxFiniteNeighborDelta(i, x, z, height, safeWidth, safeHeight);
++                    if (boundaryDelta < 0f)
++                        block.BoundaryNanCount++;
++                    else
++                        block.MaxBoundaryHeightDelta = math.max(block.MaxBoundaryHeightDelta, boundaryDelta);
 +                }
+             }
+ 
+             Blocks[blockIndex] = block;
+         }
 +
-+                nanCount += block.NanCount;
-+            }
++        private float MaxFiniteNeighborDelta(int index, int x, int z, float height, int width, int heightCount)
++        {
++            float maxDelta = 0f;
++            bool invalidNeighbor = false;
 +
-+            result.MinHeight = minHeight;
-+            result.MaxHeight = maxHeight;
-+            result.MeanHeight = sampleCount > 0 ? sumHeight / sampleCount : 0f;
-+            result.SumSediment = sumSediment;
-+            result.SumWear = sumWear;
-+            result.MaxSediment = maxSediment;
-+            result.MaxWear = maxWear;
-+            result.NanCount = nanCount;
++            if (x > 0)
++                AccumulateNeighborDelta(index - 1, height, ref maxDelta, ref invalidNeighbor);
++
++            if (x + 1 < width)
++                AccumulateNeighborDelta(index + 1, height, ref maxDelta, ref invalidNeighbor);
++
++            if (z > 0)
++                AccumulateNeighborDelta(index - width, height, ref maxDelta, ref invalidNeighbor);
++
++            if (z + 1 < heightCount)
++                AccumulateNeighborDelta(index + width, height, ref maxDelta, ref invalidNeighbor);
++
++            return invalidNeighbor ? -1f : maxDelta;
 +        }
 +
-+        private static string BuildJson(ScenarioResult[] results, int passCount)
++        private void AccumulateNeighborDelta(int neighborIndex, float height, ref float maxDelta, ref bool invalidNeighbor)
 +        {
-+            // COLD ALLOC: StringBuilder[2048] - editor smoke JSON report - owner: HydraulicErosionSmokeTester
-+            var builder = new StringBuilder(2048);
-+            builder.Append("{\n");
-+            builder.Append("  \"status\":\"PENDING VERIFICATION\",\n");
-+            builder.Append("  \"tester\":\"HydraulicErosionSmokeTester\",\n");
-+            builder.Append("  \"scenarioCount\":").Append(results.Length).Append(",\n");
-+            builder.Append("  \"passCount\":").Append(passCount).Append(",\n");
-+            builder.Append("  \"scenarios\":[\n");
-+
-+            for (int i = 0; i < results.Length; i++)
++            float neighborHeight = Heightmap[neighborIndex];
++            if (!math.isfinite(neighborHeight))
 +            {
-+                AppendScenarioJson(builder, results[i]);
-+                builder.Append(i == results.Length - 1 ? "\n" : ",\n");
++                invalidNeighbor = true;
++                return;
 +            }
 +
-+            builder.Append("  ]\n");
-+            builder.Append("}\n");
-+            return builder.ToString();
++            maxDelta = math.max(maxDelta, math.abs(height - neighborHeight));
 +        }
+     }
+ }
+diff --git a/Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md b/Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md
+index 808fd10c..60cb1dde 100644
+--- a/Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md
++++ b/Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md
+@@ -103,6 +103,7 @@ Status: `PENDING VERIFICATION`
+ - Replaced the smoke tester scalar heightmap seed loop with `ErosionFractalHeightmapJob` so the smoke terrain generation is also Burst `IJobParallelFor` work.
+ - Added cold-path `GlobalTelemetryBus.PublishPerformanceWarning` calls for MapMagic droplet/cell budget violations and smoke-test failure reporting.
+ - Converted TempJob disposal in the MapMagic node and editor harness to unregister-before-dispose helper paths.
++- Patched the editor-only `AnomalyTestHarness` assert overload ambiguity by replacing integer `Assert.AreEqual` calls with explicit boolean equality checks. This was a compile blocker for the Unity batchmode smoke pass, not part of the erosion runtime.
+ 
+ ### Forensic Audit Data
+ 
+@@ -119,5 +120,60 @@ Status: `PENDING VERIFICATION`
+ - Blocked: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` exits `1` before a clean domain compile can be claimed. Current blockers: `Temp/obj/Crest/project.assets.json` missing (`NETSDK1004`) and dependent `Unity.RenderPipelines.Universal.Runtime.dll` metadata missing (`CS0006`).
+ - Blocked: Unity batchmode harness attempt wrote `CodexArtifacts/unity-erosion-harness-2026-05-05.log`, but compilation stopped before `Hecton8.Editor.ErosionTestHarness.Run` executed. Blocking errors in that log are `Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs(90,24)` and `(96,24)` ambiguous `Assert.AreEqual`, plus `Assets/_Project/Scripts/HectonSurvivalSystem.cs(1132,60)` and `(1133,61)` missing `HectonPlayerMovement.CapsuleHeight`.
+ - Not found: batchmode log contains no compiler errors naming `ErosionHarnessJobs.cs`, `HydraulicErosionMetricsJob.cs`, `HectonHydraulicErosionMapMagicNode.cs`, `HydraulicErosionJob.cs`, or `HydraulicErosionSmokeTester.cs`.
+-- Artifact: `CodexArtifacts/2026-05-05_EROSION_OMEGA_DIFF.patch` contains the tracked diffs plus no-index diffs for new erosion smoke/metrics files and their Unity `.meta` files.
+-- Pending: `HydraulicErosionSmokeTester` execution and JSON artifact generation; blocked until Unity session/project compile is available.
++- Blocked: repeated 2026-05-05 hydraulic smoke reruns could not complete because unrelated Unity batchmode smoke runners repeatedly acquired the same project lock. Observed competing commands included `OmegaAutonomySmokeTestRunner.Run`, `OmegaSurvivalKinematicsSmokeTester.RunBatchModeSmokeTest`, `VisualOmegaSmokeTester.RunBatchModeSmokeTest`, `SavePersistenceOmegaSmokeTester.RunBatchModeSmokeTest`, `FaunaRuntimeSmokeTesterRunner.RunOmegaHeadlessSmoke`, `AnomalySmokeTester.Run`, `AutomationSmokeTestRunner.RunBatchOmegaAutomationSmokePass`, and `DocumentationAuthoritySmokeTester.RunMenuItem`.
++- Blocked: controlled hydraulic run wrote `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-exclusive.log` but stopped during Unity startup/domain reload before script compilation or `HydraulicErosionSmokeTester.RunMenu` execution. `CodexArtifacts/HydraulicErosionSmokeTester.json` was not created.
++- Artifact: `CodexArtifacts/2026-05-05_EROSION_OMEGA_DIFF.patch` is the scoped diff artifact for the current erosion continuation.
++- Historical pass: `HydraulicErosionSmokeTester` executed in Unity batchmode and wrote `CodexArtifacts/HydraulicErosionSmokeTester.json` before the boundary metrics were added. The current boundary metrics require a new JSON artifact.
 +
-+        private static void AppendScenarioJson(StringBuilder builder, in ScenarioResult result)
-+        {
-+            builder.Append("    {");
-+            builder.Append("\"name\":\"").Append(result.Name).Append("\",");
-+            builder.Append("\"passed\":").Append(result.Passed ? "true" : "false").Append(',');
-+            builder.Append("\"resolution\":").Append(result.Resolution).Append(',');
-+            builder.Append("\"droplets\":").Append(result.Droplets).Append(',');
-+            builder.Append("\"lifetime\":").Append(result.Lifetime).Append(',');
-+            builder.Append("\"slumpIterations\":").Append(result.SlumpIterations).Append(',');
-+            builder.Append("\"nanCount\":").Append(result.NanCount).Append(',');
-+            builder.Append("\"sentinelDelta\":").Append(result.SentinelDelta).Append(',');
-+            builder.Append("\"trackedByteDelta\":").Append(result.TrackedByteDelta).Append(',');
-+            builder.Append("\"minHeight\":");
-+            AppendFloat(builder, result.MinHeight);
-+            builder.Append(",\"maxHeight\":");
-+            AppendFloat(builder, result.MaxHeight);
-+            builder.Append(",\"meanHeight\":");
-+            AppendFloat(builder, result.MeanHeight);
-+            builder.Append(",\"sumSediment\":");
-+            AppendFloat(builder, result.SumSediment);
-+            builder.Append(",\"sumWear\":");
-+            AppendFloat(builder, result.SumWear);
-+            builder.Append(",\"maxSediment\":");
-+            AppendFloat(builder, result.MaxSediment);
-+            builder.Append(",\"maxWear\":");
-+            AppendFloat(builder, result.MaxWear);
-+            builder.Append(",\"milliseconds\":");
-+            AppendFloat(builder, result.Milliseconds);
-+            builder.Append('}');
-+        }
++### 2026-05-05 Smoke Rerun Attempt
 +
-+        private static void AppendFloat(StringBuilder builder, float value)
-+        {
-+            builder.Append(value.ToString("0.######", CultureInfo.InvariantCulture));
-+        }
++- Attempted: `Unity.exe -batchmode -nographics -quit -projectPath C:\hades\Hecton8 -executeMethod Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu -logFile C:\hades\Hecton8\CodexArtifacts\unity-hydraulic-smoke-2026-05-05-rerun2.log`.
++- Result: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-rerun2.log` contains startup and `Application will terminate with return code 1`; it contains no compiler diagnostics and no `HydraulicErosionSmokeTester` JSON result.
++- Attempted: same command with `-logFile -` to force stdout diagnostics. Shell returned exit code `0`, but no `CodexArtifacts/HydraulicErosionSmokeTester.json` artifact was produced.
++- Attempted: controlled `Start-Process -Wait` rerun writing `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-rerun3.log`. Process returned `ExitCode=1`; log again contains startup and `Application will terminate with return code 1`, with no compiler diagnostics and no smoke JSON.
++- Current source inspection after the older `unity-omega-smoke-2026-05-05-rerun.log` compile errors: `WorldProceduralFieldSampler.cs` now imports `Hecton.Localization`, `PDAMapTab.cs` now imports `Hecton8.Environment`, and `BaseLogisticsNetwork.cs` now exposes `ExecuteLogisticsRouteBfs`. These remove the specific `LocHash`, `BiomeMatrixDirector`, and `ExecuteLogisticsRouteBfs` source mismatches seen in that older log, but no successful Unity recompile was captured in this report.
++- Blocked: active external Unity/dotnet/ILPP build processes were observed during the rerun window. The hydraulic smoke result remains unverified.
 +
-+        private static void RegisterTempJobBuffers(
-+            NativeArray<float> before,
-+            NativeArray<float> heightA,
-+            NativeArray<float> heightB,
-+            NativeArray<float> sediment,
-+            NativeArray<float> wear,
-+            NativeArray<HydraulicErosionMetricBlock> metricBlocks)
-+        {
-+            NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
-+            NativeMemorySentinel.RegisterNativeArray(metricBlocks, NativeMemoryOwner, MetricBlocksLabel, NativeAllocationLifetime.TempJob);
-+        }
++### 2026-05-05 Previous Hydraulic Smoke Result
 +
-+        private static void DisposeTracked(ref NativeArray<float> array)
-+        {
-+            if (!array.IsCreated)
-+                return;
++- Passed: `Unity.exe -batchmode -nographics -quit -projectPath C:\hades\Hecton8 -executeMethod Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu -logFile C:\hades\Hecton8\CodexArtifacts\unity-hydraulic-smoke-2026-05-05-final3.log` completed with `Application will terminate with return code 0`.
++- Passed: `CodexArtifacts/HydraulicErosionSmokeTester.json` reports `scenarioCount=4`, `passCount=4`.
++- Passed: all four scenarios reported `nanCount=0`, `sentinelDelta=0`, and `trackedByteDelta=0`.
++- Scenario data: `dry_zero_power` 8x8, 0 droplets, 23.4236 ms, sediment/wear 0/0.
++- Scenario data: `tiny_margin_clamp` 16x16, 128 droplets, 31.0394 ms, max sediment/wear 0.922665/0.982978.
++- Scenario data: `draft_tile` 64x64, 4096 droplets, 1872.356 ms, max sediment/wear 0.621135/0.844835.
++- Scenario data: `thermal_stress` 96x96, 2048 droplets, 934.9957 ms, max sediment/wear 0.384809/0.637367.
++- Constraint: this successful JSON predates the current boundary-band metrics added to `HydraulicErosionMetricsJob` and `HydraulicErosionSmokeTester`. It does not contain `boundarySampleCount`, `boundaryNanCount`, `maxBoundaryHeightDelta`, `maxBoundarySediment`, or `maxBoundaryWear`, so it is historical evidence, not current working-tree verification.
 +
-+            NativeMemorySentinel.UnregisterNativeArray(array);
-+            array.Dispose();
-+            array = default;
-+        }
++### 2026-05-05 Boundary Metrics Rerun Attempts
 +
-+        private static void DisposeTracked(ref NativeArray<HydraulicErosionMetricBlock> array)
-+        {
-+            if (!array.IsCreated)
-+                return;
++- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-boundary.log` reached script compilation but failed before `HydraulicErosionSmokeTester` execution on `CrashTelemetryBuffer.cs(614,13)`, `(623,13)`, and `(631,13)` missing `TryRegisterRuntimeService` / `TryUnregisterRuntimeService`. Current source timestamp is later and now contains those methods, so this log is stale blocker evidence only.
++- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-boundary2.log` stopped after package registration. No `Application will terminate` line and no `CodexArtifacts/HydraulicErosionSmokeTester.json` were produced.
++- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-boundary-exclusive.log` started `HydraulicErosionSmokeTester.RunMenu`, but Bee reported `Modification date of Assets\_Project\Scripts\Dev\CelestialCataclysmSmokeTester.cs changed while running Csc` and `Tundra requires additional run`. No current boundary JSON was produced.
++- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-boundary-final.log` started `HydraulicErosionSmokeTester.RunMenu`, reached `ScriptCompilation Requested`, then exited without `Application will terminate`, without `Wrote JSON`, and without `CodexArtifacts/HydraulicErosionSmokeTester.json`.
++- Attempted: local monitored `unity-hydraulic-smoke-2026-05-05-codex-current.log` run was aborted before launch because another Unity process acquired the project lock between the no-process check and `Start-Process`. The competing command was another `HydraulicErosionSmokeTester.RunMenu` writing `unity-hydraulic-smoke-2026-05-05-boundary-final.log`.
++- Attempted: `CodexArtifacts/hydraulic-boundary-final2.log` started `HydraulicErosionSmokeTester.RunMenu` and reached Bee script compilation. Unity exited `-1`; Bee exited `2` with `More than one copy of bee_backend running in C:\hades\Hecton8 -- PID 34492 waiting`. No current boundary JSON was produced.
++- Observed: new unrelated Unity batchmode launches appeared at `2026-05-05 10:05:06` during the verification window: `OmegaAutonomySmokeTestRunner.Run`, `VolumetricBiomeSmokeTestRunner.Run`, `FaunaRuntimeSmokeTesterRunner.RunOmegaHeadlessSmoke`, and `SavePersistenceOmegaSmokeTester.RunBatchModeSmokeTest`.
++- Passed: `git diff --check -- Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md` returned no whitespace errors; Git emitted LF-to-CRLF warnings only.
++- Passed: scoped hot-path audit found one `.Complete()` at `HydraulicErosionSmokeTester.cs:224`, annotated as an editor cold sync. No `Run()`, `Update`, `LateUpdate`, `FixedUpdate`, `Tick`, `FixedTick`, `_instance`, `DontDestroyOnLoad`, or `$"` interpolated strings were found in the two boundary-metric source files.
++- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-current-final.log` exited before domain reload with `Application will terminate with return code 1`. The log contains startup arguments only and no compiler diagnostics; no current boundary JSON was produced.
++- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-current-exclusive.log` reached `HydraulicErosionSmokeTester.RunMenu`, package registration, script compilation, and Bee. Bee reported `ExitCode: -1 Duration: 1m:10s`, `Internal build system error. Read the full binlog without getting a BuildFinishedMessage.`, and `The backend process appears to still be running.` No current boundary JSON was produced.
++- Observed: after the current exclusive attempt, unrelated batchmode launches again owned the project lock: `FaunaRuntimeSmokeTesterRunner.RunOmegaHeadlessSmoke` writing `fauna-omega-smoke-final-clean-20260505-165056.log` and `OmegaAutonomySmokeTestRunner.Run` writing `omega-autonomy-smoke-construction-integrated-2026-05-05-final.log`.
++- Artifact: `CodexArtifacts/2026-05-05_EROSION_OMEGA_DIFF.patch` was refreshed after the boundary metrics/report edits and contains the current scoped Git diff for this domain.
 +
-+            NativeMemorySentinel.UnregisterNativeArray(array);
-+            array.Dispose();
-+            array = default;
-+        }
++### 2026-05-05 Current Boundary Smoke Result
 +
-+        private static void Swap(ref NativeArray<float> current, ref NativeArray<float> next)
-+        {
-+            NativeArray<float> swap = current;
-+            current = next;
-+            next = swap;
-+        }
-+    }
-+}
-
-diff --git a/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs.meta b/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs.meta
-new file mode 100644
-index 00000000..a637edef
---- /dev/null
-+++ b/Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs.meta
-@@ -0,0 +1,2 @@
-+fileFormatVersion: 2
-+guid: 7e1c9dddc72d7fa4e9a3d383d39ba60f
-\ No newline at end of file
++- Passed: direct Unity batchmode run `Unity.exe -batchmode -nographics -quit -projectPath C:\hades\Hecton8 -executeMethod Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu -logFile C:\hades\Hecton8\CodexArtifacts\unity-hydraulic-smoke-2026-05-05-current-direct-20260505-171339.log` completed with `Application will terminate with return code 0`.
++- Passed: `CodexArtifacts/HydraulicErosionSmokeTester.json` was regenerated after deleting the stale artifact and now contains current boundary metrics fields.
++- Passed: JSON reports `scenarioCount=4`, `passCount=4`, `status=PENDING VERIFICATION`, and tester `HydraulicErosionSmokeTester`.
++- Passed: all four scenarios report `nanCount=0`, `boundaryNanCount=0`, `sentinelDelta=0`, and `trackedByteDelta=0`.
++- Boundary data: `dry_zero_power` has `boundarySampleCount=28`, `maxBoundaryHeightDelta=0.604872`, `maxBoundarySediment=0`, `maxBoundaryWear=0`, `milliseconds=14.048`.
++- Boundary data: `tiny_margin_clamp` has `boundarySampleCount=192`, `maxBoundaryHeightDelta=0.484481`, `maxBoundarySediment=0.317379`, `maxBoundaryWear=0.289431`, `milliseconds=30.6578`.
++- Boundary data: `draft_tile` has `boundarySampleCount=960`, `maxBoundaryHeightDelta=0.224889`, `maxBoundarySediment=0.508141`, `maxBoundaryWear=0.41394`, `milliseconds=1565.129`.
++- Boundary data: `thermal_stress` has `boundarySampleCount=1472`, `maxBoundaryHeightDelta=0.127595`, `maxBoundarySediment=0.211816`, `maxBoundaryWear=0.122168`, `milliseconds=633.3935`.
++- Passed: post-run `git diff --check -- Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md` returned no whitespace errors; Git emitted LF-to-CRLF warnings only.
++- Passed: post-run scoped audit found no `$"` interpolated strings in `HydraulicErosionMetricsJob.cs`, `HydraulicErosionSmokeTester.cs`, `HectonHydraulicErosionMapMagicNode.cs`, or `ErosionTestHarness.cs`.
++- Finding: post-run scoped audit found `.Complete()` only at `ErosionTestHarness.cs:126`, `HectonHydraulicErosionMapMagicNode.cs:273`, and `HydraulicErosionSmokeTester.cs:224`; all three remain editor/generation sync points outside gameplay `Tick`, `FixedTick`, `Update`, or `LateUpdate`.
++- Finding: post-run scoped audit found native arrays in the MapMagic node, editor harness, and smoke tester paired with `NativeMemorySentinel.RegisterNativeArray` / `UnregisterNativeArray`; job structs expose caller-owned arrays only.
++- Current verification state: boundary smoke source is executed and JSON-backed on the current working tree. Runtime MapMagic adjacent-chunk seam proof and profiler GC proof remain outside this editor smoke and are still pending.
++- Status remains `PENDING VERIFICATION` under project authority rules; user-provided runtime/MapMagic graph logs are still required for in-game adjacency seam proof and profiler GC proof.

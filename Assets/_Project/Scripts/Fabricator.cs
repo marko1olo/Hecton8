@@ -98,6 +98,15 @@ namespace Hecton8.Crafting
         [SerializeField] private AudioClip   craftCancelSound;
         [SerializeField] private AudioClip   powerLostSound;
 
+        [Header("Fabrication Feedback")]
+        [Tooltip("Pre-authored GPU particle sparks emitted from the nozzle while fabrication advances.")]
+        [SerializeField] private ParticleSystem fabricationSparks;
+        [SerializeField, Min(0f)] private float fabricationSparksBaseRate = 18f;
+        [SerializeField] private AudioClip fabricationErrorBuzzerSound;
+        [SerializeField] private Renderer[] errorFeedbackRenderers;
+        [SerializeField] private Color errorEmissionColor = new Color(1f, 0.04f, 0.02f, 1f);
+        [SerializeField, Min(0.05f)] private float errorFlashDurationSeconds = 0.55f;
+
         [Header("── Physical Output ──────────────────────────")]
         [Tooltip("Optional socket used as the fabrication output origin.")]
         [SerializeField] private Transform outputSocket;
@@ -159,6 +168,11 @@ namespace Hecton8.Crafting
         private bool _tickRegistered;
         private int _lockedRecipeCount;
         private float _activeCraftPowerMultiplier = 1f;
+        private int _activeCraftMultiplier = 1;
+        private MaterialPropertyBlock _errorFeedbackBlock;
+        private float _errorFlashRemainingSeconds;
+        private bool _fabricationSparksPlaying;
+        private bool _errorFeedbackApplied;
 
         // ── Craft State ──
         private bool       _isCrafting;
@@ -177,6 +191,7 @@ namespace Hecton8.Crafting
             public float Progress;
             public float DurationSeconds;
             public float PowerMultiplier;
+            public int Multiplier;
         }
 
         private const int MaxLocalCraftReservations = 64;
@@ -216,6 +231,7 @@ namespace Hecton8.Crafting
         private const float ProgressPublishThreshold = 0.01f;
         private const string NativeMemoryOwner = nameof(Fabricator);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC API — QUERIES
@@ -232,7 +248,7 @@ namespace Hecton8.Crafting
 
         /// <summary>Нормализованный прогресс (0..1).</summary>
         public float CraftProgress => _isCrafting && _activeRecipe != null
-            ? Mathf.Clamp01(_craftTimer / _activeRecipe.craftTime)
+            ? Mathf.Clamp01(_craftTimer / Mathf.Max(0.001f, _activeRecipe.craftTime * Mathf.Max(1, _activeCraftMultiplier)))
             : 0f;
 
         /// <summary>Активный рецепт (null если не крафтим).</summary>
@@ -387,6 +403,7 @@ namespace Hecton8.Crafting
             if (_isCrafting)
                 CancelCraft();
 
+            SetFabricationSparksActive(false);
             TryUnregister();
         }
 
@@ -395,6 +412,7 @@ namespace Hecton8.Crafting
             UnregisterActiveFabricator(this);
             BaseLogisticsNetwork.UnregisterFabricator(this);
             TryUnregister();
+            SetFabricationSparksActive(false);
             DisposeCraftingScratch();
         }
 
@@ -432,6 +450,11 @@ namespace Hecton8.Crafting
         /// </summary>
         public bool CanCraft(RecipeData recipe)
         {
+            return CanCraft(recipe, 1);
+        }
+
+        public bool CanCraft(RecipeData recipe, int multiplier)
+        {
             if (recipe == null) return false;
             if (_isCrafting) return false;
             if (!HasOperationalPower) return false;
@@ -441,14 +464,15 @@ namespace Hecton8.Crafting
             if (!IsRecipeUnlocked(recipe)) return false;
             if (!PassesBiomeLock(recipe)) return false;
 
-            if (!HasIngredients(recipe))
+            int safeMultiplier = Mathf.Max(1, multiplier);
+            if (!HasIngredients(recipe, safeMultiplier))
                 return false;
 
             if (recipe.resultItem != null)
             {
                 InventoryGrid grid = _playerInventory.Grid;
-                int neededCells = recipe.resultItem.CellArea * recipe.resultQuantity;
-                int ingredientCells = CountReclaimableIngredientCells(recipe);
+                int neededCells = recipe.resultItem.CellArea * recipe.resultQuantity * safeMultiplier;
+                int ingredientCells = CountReclaimableIngredientCells(recipe, safeMultiplier);
                 int availableAfter = grid.FreeCells + ingredientCells;
 
                 if (neededCells > availableAfter)
@@ -518,13 +542,26 @@ namespace Hecton8.Crafting
         /// </summary>
         public bool StartCraft(RecipeData recipe)
         {
-            if (!CanCraft(recipe)) return false;
+            return StartCraft(recipe, 1);
+        }
+
+        public bool StartCraft(RecipeData recipe, int multiplier)
+        {
+            int safeMultiplier = Mathf.Max(1, multiplier);
+            if (!CanCraft(recipe, safeMultiplier))
+            {
+                TriggerCraftFailureFeedback();
+                return false;
+            }
 
             _activeRecipe = recipe;
-            if (!ConsumeIngredients(recipe))
+            _activeCraftMultiplier = safeMultiplier;
+            if (!ConsumeIngredients(recipe, safeMultiplier))
             {
                 RefundIngredients();
                 _activeRecipe = null;
+                _activeCraftMultiplier = 1;
+                TriggerCraftFailureFeedback();
                 return false;
             }
 
@@ -532,7 +569,8 @@ namespace Hecton8.Crafting
             _craftTimer   = 0f;
             _isCrafting   = true;
             _lastPublishedProgress = -1f;
-            EnqueueCraftingTask(recipe, _activeCraftPowerMultiplier);
+            EnqueueCraftingTask(recipe, _activeCraftPowerMultiplier, safeMultiplier);
+            SetFabricationSparksActive(true);
 
             // ── Уведомляем энергосеть: PowerRating изменился (0 → -craftPowerDraw) ──
             NotifyGridBalanceChanged();
@@ -547,6 +585,11 @@ namespace Hecton8.Crafting
         void IFabricator.StartCraft(RecipeData recipe)
         {
             StartCraft(recipe);
+        }
+
+        void IFabricator.StartCraft(RecipeData recipe, int multiplier)
+        {
+            StartCraft(recipe, multiplier);
         }
 
         /// <summary>
@@ -564,7 +607,9 @@ namespace Hecton8.Crafting
             _activeRecipe = null;
             _craftTimer   = 0f;
             _activeCraftPowerMultiplier = 1f;
+            _activeCraftMultiplier = 1;
             ClearCraftingTaskQueue();
+            SetFabricationSparksActive(false);
 
             // ── Уведомляем энергосеть: PowerRating изменился (-craftPowerDraw → 0) ──
             NotifyGridBalanceChanged();
@@ -590,8 +635,13 @@ namespace Hecton8.Crafting
         /// </summary>
         public void SlowTick()
         {
+            UpdateErrorFeedback(SlowTickDeltaSeconds);
+
             if (!_isCrafting)
+            {
+                SetFabricationSparksActive(false);
                 return;
+            }
 
             if (_activeRecipe == null)
             {
@@ -624,10 +674,12 @@ namespace Hecton8.Crafting
             if (!HasFabricationProgressPower())
             {
                 _craftingTaskQueue.Enqueue(task);
+                SetFabricationSparksActive(false);
                 return;
             }
 
             _activeCraftPowerMultiplier = Mathf.Max(1f, task.PowerMultiplier);
+            SetFabricationSparksActive(true);
             float previousProgress = task.Progress;
             bool craftCompleted = AdvanceCraftingTask(
                 ref task,
@@ -679,20 +731,22 @@ namespace Hecton8.Crafting
         /// После смены _isCrafting → PowerRating меняется с -craftPowerDraw на 0.
         /// NotifyGridBalanceChanged() заставляет сеть мгновенно пересчитать баланс.
         /// </summary>
-        private void EnqueueCraftingTask(RecipeData recipe, float powerMultiplier)
+        private void EnqueueCraftingTask(RecipeData recipe, float powerMultiplier, int multiplier)
         {
             EnsureCraftingScratch();
             ClearCraftingTaskQueue();
             if (!_craftingTaskQueue.IsCreated || recipe == null)
                 return;
 
+            int safeMultiplier = Mathf.Max(1, multiplier);
             _craftingTaskQueue.Enqueue(new CraftingTask
             {
                 ResultHashId = ComputeItemHash(recipe.resultItem),
-                ResultQuantity = math.max(1, recipe.resultQuantity),
+                ResultQuantity = ResolveCraftOutputQuantity(recipe, safeMultiplier),
                 Progress = 0f,
-                DurationSeconds = Mathf.Max(0.001f, recipe.craftTime),
-                PowerMultiplier = Mathf.Max(1f, powerMultiplier)
+                DurationSeconds = Mathf.Max(0.001f, recipe.craftTime * safeMultiplier),
+                PowerMultiplier = Mathf.Max(1f, powerMultiplier),
+                Multiplier = safeMultiplier
             });
         }
 
@@ -704,6 +758,15 @@ namespace Hecton8.Crafting
             while (_craftingTaskQueue.TryDequeue(out _))
             {
             }
+        }
+
+        private static int ResolveCraftOutputQuantity(RecipeData recipe, int multiplier)
+        {
+            if (recipe == null)
+                return 0;
+
+            long quantity = (long)math.max(1, recipe.resultQuantity) * math.max(1, multiplier);
+            return quantity > int.MaxValue ? int.MaxValue : (int)quantity;
         }
 
         private bool HasFabricationProgressPower()
@@ -722,6 +785,7 @@ namespace Hecton8.Crafting
         private void CompleteCraft()
         {
             RecipeData recipe = _activeRecipe;
+            int craftMultiplier = Mathf.Max(1, _activeCraftMultiplier);
             if (recipe == null)
             {
                 if (_networkReservation != null)
@@ -734,20 +798,41 @@ namespace Hecton8.Crafting
                 _craftTimer = 0f;
                 _lastPublishedProgress = 0f;
                 _activeCraftPowerMultiplier = 1f;
+                _activeCraftMultiplier = 1;
                 ClearCraftingTaskQueue();
+                SetFabricationSparksActive(false);
                 NotifyGridBalanceChanged();
                 return;
             }
 
             ItemData   result = recipe.resultItem;
-            float powerCost = ResolveCraftPowerCost(recipe);
-            float craftTemperatureDelta = ResolveCraftTemperatureDeltaCelsius();
+            int outputQuantity = ResolveCraftOutputQuantity(recipe, craftMultiplier);
+            float powerCost = ResolveCraftPowerCost(recipe) * craftMultiplier;
+            float craftTemperatureDelta = ResolveCraftTemperatureDeltaCelsius() * craftMultiplier;
 
             _isCrafting   = false;
             _activeRecipe = null;
             _craftTimer   = 0f;
             _activeCraftPowerMultiplier = 1f;
+            _activeCraftMultiplier = 1;
             ClearCraftingTaskQueue();
+            SetFabricationSparksActive(false);
+
+            if (_playerInventory != null && !_playerInventory.CommitCraftReservations(_localCraftReservations, _localCraftReservationCount))
+            {
+                _localCraftReservationCount = 0;
+                if (_networkReservation != null)
+                {
+                    BaseLogisticsNetwork.RollbackReserved(_networkReservation);
+                    _networkReservation = null;
+                }
+
+                NotifyGridBalanceChanged();
+                TriggerCraftFailureFeedback();
+                return;
+            }
+
+            _localCraftReservationCount = 0;
 
             if (_networkReservation != null)
             {
@@ -766,10 +851,10 @@ namespace Hecton8.Crafting
 
             ApplyCraftingThermodynamics(craftTemperatureDelta);
 
-            if (result != null && !TrySynthesizeCraftOutput(recipe, result) && _playerInventory != null)
+            if (result != null && !TrySynthesizeCraftOutput(recipe, result, outputQuantity) && _playerInventory != null)
             {
                 int resultHashId = ComputeItemHash(result);
-                for (int i = 0; i < recipe.resultQuantity; i++)
+                for (int i = 0; i < outputQuantity; i++)
                 {
                     if (resultHashId == 0 || !_playerInventory.TryAddItem(resultHashId, 1))
                     {
@@ -777,7 +862,7 @@ namespace Hecton8.Crafting
                         Debug.LogWarning(
                             $"[Fabricator] Инвентарь полон! " +
                             $"Не удалось добавить: {result.itemName} " +
-                            $"(потеряно {recipe.resultQuantity - i} шт.)");
+                            $"(потеряно {outputQuantity - i} шт.)");
 #endif
                         break;
                     }
@@ -790,15 +875,15 @@ namespace Hecton8.Crafting
                 CraftingEvents.RaiseCraftCompleted(result);
 
             PlaySound(craftCompleteSound);
-            TryRestartContinuousCraft(recipe);
+            TryRestartContinuousCraft(recipe, craftMultiplier);
         }
 
-        private void TryRestartContinuousCraft(RecipeData recipe)
+        private void TryRestartContinuousCraft(RecipeData recipe, int multiplier)
         {
             if (!isContinuous || recipe == null || _isCrafting)
                 return;
 
-            StartCraft(recipe);
+            StartCraft(recipe, multiplier);
         }
 
         // ══════════════════════════════════════════════════════════
@@ -941,7 +1026,7 @@ namespace Hecton8.Crafting
             thermalHostModule.TryInjectHostRoomTemperatureDeltaCelsius(deltaCelsius);
         }
 
-        private bool HasIngredients(RecipeData recipe)
+        private bool HasIngredients(RecipeData recipe, int multiplier = 1)
         {
             if (recipe == null || _playerInventory == null)
                 return false;
@@ -960,7 +1045,8 @@ namespace Hecton8.Crafting
                 _complexRecipeGraphQueue,
                 _complexRecipeRawCosts,
                 _complexRecipeRawCostCount,
-                _complexRecipeGraphStatus);
+                _complexRecipeGraphStatus,
+                Mathf.Max(1, multiplier));
         }
 
         private void EnsureCraftingScratch()
@@ -1130,7 +1216,7 @@ namespace Hecton8.Crafting
             array = default;
         }
 
-        private bool TrySynthesizeCraftOutput(RecipeData recipe, ItemData result)
+        private bool TrySynthesizeCraftOutput(RecipeData recipe, ItemData result, int quantityOverride)
         {
             if (recipe == null || result == null)
                 return false;
@@ -1139,7 +1225,7 @@ namespace Hecton8.Crafting
             if (registry == null)
                 return false;
 
-            int quantity = math.max(1, recipe.resultQuantity);
+            int quantity = math.max(1, quantityOverride);
             ResolveCraftOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange);
             bool synthesized = registry.TryRegisterDroppedItem(result, quantity, spawnPosition, Vector3.zero, velocityChange);
             if (!synthesized)
@@ -1352,13 +1438,14 @@ namespace Hecton8.Crafting
             return true;
         }
 
-        private int CountReclaimableIngredientCells(RecipeData recipe)
+        private int CountReclaimableIngredientCells(RecipeData recipe, int multiplier = 1)
         {
             if (recipe == null || recipe.ingredients == null || _playerInventory == null)
                 return 0;
 
             int total = 0;
             List<InventoryCost> costs = recipe.ingredients;
+            int safeMultiplier = Mathf.Max(1, multiplier);
 
             for (int i = 0, count = costs.Count; i < count; i++)
             {
@@ -1366,7 +1453,7 @@ namespace Hecton8.Crafting
                 if (cost == null || cost.item == null) continue;
 
                 int localAvailable = CountAvailableItemInInventory(_playerInventory, cost.item);
-                int requiredAmount = GetAdjustedIngredientAmount(cost);
+                int requiredAmount = GetAdjustedIngredientAmount(cost) * safeMultiplier;
                 int removableCount = localAvailable < requiredAmount ? localAvailable : requiredAmount;
                 total += cost.item.CellArea * removableCount;
             }
@@ -1374,7 +1461,7 @@ namespace Hecton8.Crafting
             return total;
         }
 
-        private bool ConsumeIngredients(RecipeData recipe)
+        private bool ConsumeIngredients(RecipeData recipe, int multiplier = 1)
         {
             if (recipe == null || recipe.ingredients == null || _playerInventory == null || _playerInventory.Grid == null)
                 return false;
@@ -1389,7 +1476,8 @@ namespace Hecton8.Crafting
                 _networkReservation = null;
             }
 
-            if (CraftingSystem.TryBuildRecipeCostBuffer(recipe, this, _craftRecipeCosts, out int recipeCostCount) &&
+            int safeMultiplier = Mathf.Max(1, multiplier);
+            if (CraftingSystem.TryBuildRecipeCostBuffer(recipe, this, _craftRecipeCosts, out int recipeCostCount, safeMultiplier) &&
                 TryReserveIngredientCostBuffer(_craftRecipeCosts, recipeCostCount))
                 return true;
 
@@ -1405,7 +1493,8 @@ namespace Hecton8.Crafting
                     _complexRecipeGraphQueue,
                     _complexRecipeRawCosts,
                     _complexRecipeRawCostCount,
-                    _complexRecipeGraphStatus))
+                    _complexRecipeGraphStatus,
+                    safeMultiplier))
             {
                 return TryReserveIngredientCostBuffer(_complexRecipeRawCosts, _complexRecipeRawCostCount[0]);
             }
@@ -1514,6 +1603,86 @@ namespace Hecton8.Crafting
                 1f,
                 pitchCarrierHz,
                 ProceduralAudioPingKind.MechanicalWhirr);
+        }
+
+        private void TriggerCraftFailureFeedback()
+        {
+            _errorFlashRemainingSeconds = Mathf.Max(_errorFlashRemainingSeconds, errorFlashDurationSeconds);
+            ApplyErrorFeedback(1f);
+            PlaySound(fabricationErrorBuzzerSound);
+            ProceduralAudioEvents.RaiseAudioPingTriggered(
+                transform.position,
+                0.85f,
+                0.12f,
+                1f,
+                180f,
+                ProceduralAudioPingKind.MechanicalWhirr);
+        }
+
+        private void SetFabricationSparksActive(bool active)
+        {
+            if (fabricationSparks == null)
+                return;
+
+            ParticleSystem.EmissionModule emission = fabricationSparks.emission;
+            float rate = active ? fabricationSparksBaseRate * Mathf.Max(1f, _activeCraftPowerMultiplier) : 0f;
+            emission.rateOverTime = rate;
+
+            if (active)
+            {
+                if (!_fabricationSparksPlaying)
+                {
+                    fabricationSparks.Play(false);
+                    _fabricationSparksPlaying = true;
+                }
+
+                return;
+            }
+
+            if (_fabricationSparksPlaying)
+            {
+                fabricationSparks.Stop(false, ParticleSystemStopBehavior.StopEmitting);
+                _fabricationSparksPlaying = false;
+            }
+        }
+
+        private void UpdateErrorFeedback(float deltaSeconds)
+        {
+            if (!(_errorFlashRemainingSeconds > 0f))
+            {
+                if (_errorFeedbackApplied)
+                    ApplyErrorFeedback(0f);
+                return;
+            }
+
+            _errorFlashRemainingSeconds = Mathf.Max(0f, _errorFlashRemainingSeconds - Mathf.Max(0f, deltaSeconds));
+            float intensity = Mathf.Clamp01(_errorFlashRemainingSeconds / Mathf.Max(0.001f, errorFlashDurationSeconds));
+            ApplyErrorFeedback(intensity);
+        }
+
+        private void ApplyErrorFeedback(float intensity)
+        {
+            if (errorFeedbackRenderers == null || errorFeedbackRenderers.Length == 0)
+            {
+                _errorFeedbackApplied = intensity > 0f;
+                return;
+            }
+
+            if (_errorFeedbackBlock == null)
+                _errorFeedbackBlock = new MaterialPropertyBlock();
+            Color color = errorEmissionColor * Mathf.Clamp01(intensity);
+            for (int index = 0; index < errorFeedbackRenderers.Length; index++)
+            {
+                Renderer renderer = errorFeedbackRenderers[index];
+                if (renderer == null)
+                    continue;
+
+                renderer.GetPropertyBlock(_errorFeedbackBlock);
+                _errorFeedbackBlock.SetColor(EmissionColorId, color);
+                renderer.SetPropertyBlock(_errorFeedbackBlock);
+            }
+
+            _errorFeedbackApplied = intensity > 0f;
         }
 
         private void EnsureScanLogSystem()

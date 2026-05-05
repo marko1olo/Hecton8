@@ -434,111 +434,7 @@ optM = integral(rhoM) along path
 
 This is clean-room reference code. It is not SpaceEngine source.
 
-```hlsl
-#ifndef HECTON_ATMOSPHERE_REFERENCE_INCLUDED
-#define HECTON_ATMOSPHERE_REFERENCE_INCLUDED
-
-#define H8_PI 3.14159265359
-
-struct H8AtmoParams
-{
-    float planetRadiusKm;
-    float atmosphereRadiusKm;
-    float rayleighHeightKm;
-    float mieHeightKm;
-    float mieG;
-    float3 betaRayleigh;
-    float3 betaMieSca;
-    float3 betaMieExt;
-};
-
-float H8PhaseRayleigh(float mu)
-{
-    return (3.0 / (16.0 * H8_PI)) * (1.0 + mu * mu);
-}
-
-float H8PhaseMieHG(float mu, float g)
-{
-    float g2 = g * g;
-    float denom = max(1.0 + g2 - 2.0 * g * mu, 1e-3);
-    return (1.0 - g2) / (4.0 * H8_PI * pow(denom, 1.5));
-}
-
-float H8AtmosphereDensity(float radiusKm, float planetRadiusKm, float scaleHeightKm)
-{
-    float h = max(0.0, radiusKm - planetRadiusKm);
-    return exp(-h / max(scaleHeightKm, 1e-3));
-}
-
-float H8RaySphereExit(float3 ro, float3 rd, float radiusKm)
-{
-    float b = dot(ro, rd);
-    float c = dot(ro, ro) - radiusKm * radiusKm;
-    float d = b * b - c;
-    return d > 0.0 ? -b + sqrt(d) : 0.0;
-}
-
-half3 H8SingleScatterLow(
-    float3 eyeKm,
-    float3 viewDir,
-    float3 lightDir,
-    H8AtmoParams p,
-    int sampleCount)
-{
-    sampleCount = clamp(sampleCount, 2, 8);
-
-    float tMax = H8RaySphereExit(eyeKm, viewDir, p.atmosphereRadiusKm);
-    float dt = tMax / sampleCount;
-
-    float optR = 0.0;
-    float optM = 0.0;
-    float3 sumR = 0.0;
-    float3 sumM = 0.0;
-
-    [loop]
-    for (int i = 0; i < sampleCount; i++)
-    {
-        float t = (i + 0.5) * dt;
-        float3 pos = eyeKm + viewDir * t;
-        float r = length(pos);
-
-        float rhoR = H8AtmosphereDensity(r, p.planetRadiusKm, p.rayleighHeightKm);
-        float rhoM = H8AtmosphereDensity(r, p.planetRadiusKm, p.mieHeightKm);
-
-        optR += rhoR * dt;
-        optM += rhoM * dt;
-
-        float tSun = H8RaySphereExit(pos, lightDir, p.atmosphereRadiusKm);
-        float sunStep = tSun * 0.25;
-        float sunOptR = 0.0;
-        float sunOptM = 0.0;
-
-        [unroll]
-        for (int j = 0; j < 4; j++)
-        {
-            float3 sp = pos + lightDir * ((j + 0.5) * sunStep);
-            float sr = length(sp);
-            sunOptR += H8AtmosphereDensity(sr, p.planetRadiusKm, p.rayleighHeightKm) * sunStep;
-            sunOptM += H8AtmosphereDensity(sr, p.planetRadiusKm, p.mieHeightKm) * sunStep;
-        }
-
-        float3 tau = p.betaRayleigh * (optR + sunOptR) + p.betaMieExt * (optM + sunOptM);
-        float3 tr = exp(-tau);
-
-        sumR += tr * rhoR * dt;
-        sumM += tr * rhoM * dt;
-    }
-
-    float mu = dot(viewDir, lightDir);
-    float3 rgb =
-        sumR * p.betaRayleigh * H8PhaseRayleigh(mu) +
-        sumM * p.betaMieSca * H8PhaseMieHG(mu, p.mieG);
-
-    return (half3)max(rgb, 0.0);
-}
-
-#endif
-```
+Reference file: `ReferenceKernels/HectonAtmosphereReference.hlsl`
 
 ### HECTON-8 Integration Rule
 
@@ -585,120 +481,7 @@ This points to latitudinal stripes plus turbulent domain warping and cyclone mas
 
 This is clean-room reference code. It is not SpaceEngine source.
 
-```csharp
-using Unity.Burst;
-using Unity.Collections;
-using Unity.Jobs;
-using Unity.Mathematics;
-using UnityEngine;
-
-public struct H8GasBandParams
-{
-    public float stripeZones;
-    public float stripeFluct;
-    public float stripeTwist;
-    public float cycloneMagn;
-    public float cycloneFreq;
-    public float cycloneDensity;
-    public int cycloneOctaves;
-    public float mainFreq;
-    public int mainOctaves;
-    public float coverage;
-    public float3 randomize;
-    public float4 colorA;
-    public float4 colorB;
-}
-
-[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Low)]
-public struct H8GasBandBakeJob : IJobParallelFor
-{
-    [WriteOnly] public NativeArray<Color32> Output;
-    public int Width;
-    public int Height;
-    public H8GasBandParams Params;
-
-    public void Execute(int index)
-    {
-        int x = index % Width;
-        int y = index / Width;
-        float2 uv = (new float2(x + 0.5f, y + 0.5f) / new float2(Width, Height));
-
-        float4 c = SampleGasBand(uv, Params);
-        Output[index] = new Color32(
-            (byte)math.clamp(c.x * 255f, 0f, 255f),
-            (byte)math.clamp(c.y * 255f, 0f, 255f),
-            (byte)math.clamp(c.z * 255f, 0f, 255f),
-            255);
-    }
-
-    static float Hash21(float2 p)
-    {
-        p = math.frac(p * new float2(123.34f, 456.21f));
-        p += math.dot(p, p + 45.32f);
-        return math.frac(p.x * p.y);
-    }
-
-    static float ValueNoise(float2 p)
-    {
-        float2 i = math.floor(p);
-        float2 f = math.frac(p);
-        float2 u = f * f * (3f - 2f * f);
-
-        float a = Hash21(i);
-        float b = Hash21(i + new float2(1f, 0f));
-        float c = Hash21(i + new float2(0f, 1f));
-        float d = Hash21(i + new float2(1f, 1f));
-
-        return math.lerp(math.lerp(a, b, u.x), math.lerp(c, d, u.x), u.y);
-    }
-
-    static float Fbm(float2 p, int octaves)
-    {
-        float value = 0f;
-        float amp = 0.5f;
-        float freq = 1f;
-        int count = math.clamp(octaves, 1, 6);
-
-        for (int i = 0; i < count; i++)
-        {
-            value += ValueNoise(p * freq) * amp;
-            freq *= 2.03f;
-            amp *= 0.5f;
-        }
-
-        return value;
-    }
-
-    static float4 SampleGasBand(float2 uv, H8GasBandParams p)
-    {
-        const float Tau = 6.28318530718f;
-
-        float lon = uv.x;
-        float lat = uv.y * 2f - 1f;
-
-        float2 warpUv = new float2(
-            lon * p.mainFreq + p.randomize.x,
-            lat * 2f + p.randomize.y);
-
-        float warp = (Fbm(warpUv, p.mainOctaves) - 0.5f) * p.stripeFluct;
-        float twist = p.stripeTwist * lat * lat * math.sign(lat);
-        float bandPhase = lat * p.stripeZones + lon * twist + warp;
-
-        float bands = 0.5f + 0.5f * math.sin(Tau * bandPhase);
-        bands = math.smoothstep(p.coverage * 0.35f, 1f, bands);
-
-        float2 cycloneUv = new float2(
-            lon * p.cycloneFreq + warp * p.cycloneMagn,
-            lat * p.cycloneFreq);
-
-        float cyclone = Fbm(cycloneUv + p.randomize.zz, p.cycloneOctaves);
-        float cycloneMask = math.smoothstep(1f - p.cycloneDensity, 1f, cyclone);
-
-        float mixValue = math.saturate(bands + cycloneMask * 0.35f);
-        return math.lerp(p.colorA, p.colorB, mixValue);
-    }
-}
-```
+Reference file: `ReferenceKernels/HectonGasBandBakeJob.reference.md`
 
 ### HECTON-8 Use
 
@@ -761,49 +544,13 @@ This rejects the old pattern of applying large global offsets in vertex shader. 
 
 Reference only:
 
-```csharp
-using Unity.Mathematics;
-
-public readonly struct H8AupPose
-{
-    public readonly long3 Sector;
-    public readonly double3 LocalMeters;
-
-    public H8AupPose(long3 sector, double3 localMeters)
-    {
-        Sector = sector;
-        LocalMeters = localMeters;
-    }
-}
-
-public static class H8AupRenderMath
-{
-    public static float3 ToCameraRelativeMeters(
-        H8AupPose objectPose,
-        H8AupPose cameraPose,
-        double sectorSizeMeters)
-    {
-        long3 sectorDelta = objectPose.Sector - cameraPose.Sector;
-        double3 meters =
-            (double3)sectorDelta * sectorSizeMeters +
-            (objectPose.LocalMeters - cameraPose.LocalMeters);
-
-        return (float3)meters;
-    }
-}
-```
+Reference file: `ReferenceKernels/HectonAupCameraRelative.reference.md`
 
 ### HLSL Log Depth Fallback
 
 Use only for non-physics, non-authoritative, distant visual geometry when reversed-Z is insufficient.
 
-```hlsl
-float H8LogDepth01(float clipW, float farPlane)
-{
-    float fcoef = 2.0 / log2(farPlane + 1.0);
-    return log2(max(1e-6, clipW + 1.0)) * fcoef * 0.5;
-}
-```
+Reference file: `ReferenceKernels/HectonAupDepthReference.hlsl`
 
 Do not use this for submarine/ocean interaction, collision evidence, or deterministic simulation.
 
@@ -829,52 +576,7 @@ Clean model for HECTON-8:
 
 ### URP HLSL Reference
 
-```hlsl
-float H8RingShadowTransmittance(
-    float3 worldPos,
-    float3 lightDir,
-    float3 ringCenter,
-    float3 ringNormal,
-    float innerRadius,
-    float outerRadius,
-    float opacity,
-    float density,
-    float edgeSoftness)
-{
-    float denom = dot(lightDir, ringNormal);
-
-    if (abs(denom) < 1e-5)
-    {
-        return 1.0;
-    }
-
-    float t = dot(ringCenter - worldPos, ringNormal) / denom;
-
-    if (t <= 0.0)
-    {
-        return 1.0;
-    }
-
-    float3 hit = worldPos + lightDir * t;
-    float radial = length(hit - ringCenter);
-
-    float inner = smoothstep(innerRadius - edgeSoftness, innerRadius + edgeSoftness, radial);
-    float outer = 1.0 - smoothstep(outerRadius - edgeSoftness, outerRadius + edgeSoftness, radial);
-    float ringMask = saturate(inner * outer);
-
-    float opticalDepth = max(0.0, opacity * density * ringMask);
-    return exp(-opticalDepth);
-}
-```
-
-For textured rings:
-
-```hlsl
-float u = saturate((radial - innerRadius) / max(outerRadius - innerRadius, 1e-3));
-float textureMask = SAMPLE_TEXTURE2D(_RingOpacityTex, sampler_RingOpacityTex, float2(u, 0.5)).r;
-```
-
-Multiply `ringMask` by `textureMask`.
+Reference file: `ReferenceKernels/HectonRingShadowReference.hlsl`
 
 ## Accretion Disk, Corona, and GR Salvage
 
@@ -924,17 +626,7 @@ Reject:
 - per-pixel black hole raymarch in LOW/MX350;
 - any use in deterministic gameplay systems.
 
-Reference disk warp:
-
-```hlsl
-float2 H8TwistedDiskUv(float3 localPos, float twistMagnitude, float radialScale)
-{
-    float r = max(length(localPos.xz), 1e-3);
-    float a = atan2(localPos.z, localPos.x);
-    a += twistMagnitude / max(r * radialScale, 1e-3);
-    return float2(a * (1.0 / 6.28318530718), r);
-}
-```
+Reference disk warp file: `ReferenceKernels/HectonAccretionDiskReference.hlsl`
 
 ## Integration Notes for HECTON-8
 

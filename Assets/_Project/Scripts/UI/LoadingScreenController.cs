@@ -7,6 +7,16 @@ using UnityEngine.UI;
 
 namespace Hecton8.UI
 {
+    public enum LoadingPipelineStage : byte
+    {
+        Idle = 0,
+        PagingSectors = 1,
+        HydratingEntities = 2,
+        BuildingNavGrid = 3,
+        SafeAupSnap = 4,
+        Completed = 5
+    }
+
     /// <summary>
     /// Standardized loading screen system that provides consistent loading feel across all scene transitions.
     /// Prevents broken bootstrap appearance by maintaining visual continuity during async operations.
@@ -37,6 +47,13 @@ namespace Hecton8.UI
             "90%", "91%", "92%", "93%", "94%", "95%", "96%", "97%", "98%", "99%",
             "100%"
         };
+
+        private static readonly char[] LoadingChars = "Loading...".ToCharArray();
+        private static readonly char[] PagingSectorsChars = "Paging Sectors...".ToCharArray();
+        private static readonly char[] HydratingEntitiesChars = "Hydrating Entities...".ToCharArray();
+        private static readonly char[] BuildingNavGridChars = "Building NavGrid...".ToCharArray();
+        private static readonly char[] SafeAupSnapChars = "Securing AUP Position...".ToCharArray();
+        private static readonly char[] LoadCompleteChars = "Load Complete.".ToCharArray();
 
         [Header("UI References")]
         [SerializeField, Tooltip("Main loading panel CanvasGroup")]
@@ -84,8 +101,11 @@ namespace Hecton8.UI
         private float _lastUnscaledTickTime;
         private VisibilityState _visibilityState;
         private string _currentProgressText = "0%";
-        private string _currentStatusText = "Loading...";
         private string _currentTipText = "Loading...";
+        // COLD ALLOC: char[128] - status text equality cache for zero-GC load-stage updates - owner: LoadingScreenController
+        private readonly char[] _currentStatusBuffer = new char[128];
+        private int _currentStatusLength = -1;
+        private LoadingPipelineStage _currentPipelineStage = LoadingPipelineStage.Idle;
 
         private CanvasGroup _canvasGroup;
 
@@ -118,7 +138,7 @@ namespace Hecton8.UI
             }
 
             UpdateProgress(0f);
-            UpdateStatus("Loading...");
+            UpdateStatus(LoadingChars);
             UpdateTip(GetRandomTip());
         }
 
@@ -218,11 +238,53 @@ namespace Hecton8.UI
         /// </summary>
         public void UpdateStatus(string status)
         {
-            if (_statusText == null || string.Equals(_currentStatusText, status, StringComparison.Ordinal))
+            if (string.IsNullOrEmpty(status))
                 return;
 
-            _currentStatusText = status;
-            _statusText.SetText(status);
+            UpdateStatus(status.AsSpan());
+        }
+
+        /// <summary>
+        /// Updates the loading status through a pooled char buffer, avoiding transient string allocations.
+        /// </summary>
+        public void UpdateStatus(ReadOnlySpan<char> status)
+        {
+            if (_statusText == null || status.Length <= 0)
+                return;
+
+            int safeLength = Mathf.Min(status.Length, _currentStatusBuffer.Length);
+            if (IsCurrentStatus(status, safeLength))
+                return;
+
+            status.Slice(0, safeLength).CopyTo(_currentStatusBuffer);
+            _currentStatusLength = safeLength;
+
+            if (CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+            {
+                try
+                {
+                    status.Slice(0, safeLength).CopyTo(lease.Buffer);
+                    _statusText.SetCharArray(lease.Buffer, 0, safeLength);
+                }
+                finally
+                {
+                    CharBufferPool.Release(in lease);
+                }
+
+                return;
+            }
+
+            _statusText.SetCharArray(_currentStatusBuffer, 0, safeLength);
+        }
+
+        public void UpdatePipelineStage(LoadingPipelineStage stage)
+        {
+            if (_currentPipelineStage == stage && _statusText != null)
+                return;
+
+            _currentPipelineStage = stage;
+            ResolvePipelineStageBuffer(stage, out char[] buffer, out int length);
+            UpdateStatus(buffer.AsSpan(0, length));
         }
 
         /// <summary>
@@ -243,6 +305,47 @@ namespace Hecton8.UI
         public void SetRandomTip()
         {
             UpdateTip(GetRandomTip());
+        }
+
+        private bool IsCurrentStatus(ReadOnlySpan<char> status, int safeLength)
+        {
+            if (_currentStatusLength != safeLength)
+                return false;
+
+            for (int i = 0; i < safeLength; i++)
+            {
+                if (_currentStatusBuffer[i] != status[i])
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static void ResolvePipelineStageBuffer(LoadingPipelineStage stage, out char[] buffer, out int length)
+        {
+            switch (stage)
+            {
+                case LoadingPipelineStage.PagingSectors:
+                    buffer = PagingSectorsChars;
+                    break;
+                case LoadingPipelineStage.HydratingEntities:
+                    buffer = HydratingEntitiesChars;
+                    break;
+                case LoadingPipelineStage.BuildingNavGrid:
+                    buffer = BuildingNavGridChars;
+                    break;
+                case LoadingPipelineStage.SafeAupSnap:
+                    buffer = SafeAupSnapChars;
+                    break;
+                case LoadingPipelineStage.Completed:
+                    buffer = LoadCompleteChars;
+                    break;
+                default:
+                    buffer = LoadingChars;
+                    break;
+            }
+
+            length = buffer.Length;
         }
 
         public void Tick(float deltaTime)

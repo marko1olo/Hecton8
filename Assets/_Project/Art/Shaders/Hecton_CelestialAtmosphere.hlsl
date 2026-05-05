@@ -3,9 +3,12 @@
 
 TEXTURE2D(_CelestialAtmosphereLUT);
 SAMPLER(sampler_CelestialAtmosphereLUT);
+TEXTURE2D(_HectonAtmosphereScatteringLUT);
+SAMPLER(sampler_HectonAtmosphereScatteringLUT);
 float _AtmosphereExposure;
 float _CelestialAtmosphereBlendPower;
 float _CelestialAtmosphereLUTReady;
+float _HectonAtmosphereScatteringLUTReady;
 float _CelestialHorizonDensity;
 float _CelestialZenithTransparency;
 
@@ -34,20 +37,37 @@ float4 BuildFallbackHectonCelestialAtmosphere(
 float4 SampleHectonCelestialAtmosphere(
     float3 viewRay,
     float3 skyHorizon,
-    float3 skyZenith)
+    float3 skyZenith,
+    float3 sunDirection)
 {
     float elevation01 = HectonCelestialElevation01(viewRay);
+    float4 authoredSample = BuildFallbackHectonCelestialAtmosphere(
+        elevation01,
+        skyHorizon,
+        skyZenith);
 
-    if (_CelestialAtmosphereLUTReady < 0.5)
-        return BuildFallbackHectonCelestialAtmosphere(
-            elevation01,
-            skyHorizon,
-            skyZenith);
+    if (_CelestialAtmosphereLUTReady >= 0.5)
+    {
+        authoredSample = SAMPLE_TEXTURE2D(
+            _CelestialAtmosphereLUT,
+            sampler_CelestialAtmosphereLUT,
+            float2(elevation01, 0.5));
+    }
 
-    return SAMPLE_TEXTURE2D(
-        _CelestialAtmosphereLUT,
-        sampler_CelestialAtmosphereLUT,
-        float2(elevation01, 0.5));
+    if (_HectonAtmosphereScatteringLUTReady < 0.5)
+        return authoredSample;
+
+    float3 normalizedSun = normalize(sunDirection);
+    float3 normalizedRay = normalize(viewRay);
+    float sunView01 = saturate(dot(normalizedRay, normalizedSun) * 0.5 + 0.5);
+    float4 physicalSample = SAMPLE_TEXTURE2D(
+        _HectonAtmosphereScatteringLUT,
+        sampler_HectonAtmosphereScatteringLUT,
+        float2(sunView01, elevation01));
+
+    physicalSample.rgb *= max(authoredSample.rgb, 0.0001);
+    physicalSample.a = saturate(physicalSample.a * authoredSample.a);
+    return physicalSample;
 }
 
 float ResolveHectonCelestialTransmittance(float lutTransmittance, float weight)

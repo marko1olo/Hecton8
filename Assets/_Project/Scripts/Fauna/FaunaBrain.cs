@@ -178,6 +178,25 @@ namespace Hecton8.AI
         private const float PredatorKillAudioRadiusMeters = 90f;
         private const float PredatorKillAudioRadiusMetersSqr = PredatorKillAudioRadiusMeters * PredatorKillAudioRadiusMeters;
         private const float PredatorKillAudioDurationSeconds = 0.18f;
+        private const float LeviathanAttackTelegraphLeadSeconds = 0.8f;
+        private const float LeviathanAttackTelegraphAudioDurationSeconds = 0.42f;
+        private const float LeviathanAttackTelegraphLowPassCutoffHz = 320f;
+        private const float LeviathanAttackTelegraphPullbackSpeedScale = 0.28f;
+        private const float LeviathanAttackTelegraphPullbackForceScale = 0.35f;
+        private const float LeviathanAttackBurstDurationSeconds = 0.28f;
+        private const float LeviathanAttackBurstMultiplier = 2.35f;
+        private const float PassiveFlashlightFleeDurationSeconds = 3f;
+        private const float PassiveFlashlightDimSeconds = 3.5f;
+        private const float PassiveFlashlightBiolumDimMultiplier = 0.2f;
+        private const float PassiveFlashlightBiolumResponseSharpness = 12f;
+        private const float CarrionLatchConsumeDistanceScale = 0.92f;
+        private const float CarrionLatchTearingFrequency = 9.5f;
+        private const float CarrionLatchTearingPitchDegrees = 17f;
+        private const float DeathSpiralFadeDelaySeconds = 60f;
+        private const float DeathSpiralFadeDurationSeconds = 8f;
+        private const float DeathSpiralTorqueMin = 0.08f;
+        private const float DeathSpiralTorqueMax = 0.26f;
+        private const int MaxBiolumPresentationLights = 4;
         private const float BiolumFlashBangBlindDurationSeconds = 0.35f;
         private const float BiolumFlashBangShaderRadiusMeters = 42f;
         private const float LeviathanBreachHeightDeltaMeters = 50f;
@@ -218,6 +237,12 @@ namespace Hecton8.AI
         private readonly Vector3[] _voxelRouteWaypoints = new Vector3[MaxVoxelRouteWaypointCount];
         // COLD ALLOC: AbsoluteUniversePosition[16] - origin-shift-stable route ownership for predator steering - owner: FaunaBrain
         private readonly AbsoluteUniversePosition[] _voxelRouteWaypointAups = new AbsoluteUniversePosition[MaxVoxelRouteWaypointCount];
+        // COLD ALLOC: Light[4] - owned biolum presentation light cache for flashlight/death response - owner: FaunaBrain
+        private readonly Light[] _biolumPresentationLights = new Light[MaxBiolumPresentationLights];
+        // COLD ALLOC: float[4] - base intensities for owned biolum presentation lights - owner: FaunaBrain
+        private readonly float[] _biolumPresentationBaseIntensities = new float[MaxBiolumPresentationLights];
+        // COLD ALLOC: List<Light>[4] - owned light discovery scratch without array allocations - owner: FaunaBrain
+        private readonly List<Light> _biolumPresentationLightScratch = new List<Light>(MaxBiolumPresentationLights);
 
         // --- Event Hooks ---
         public Action<AIState> OnStateChanged;
@@ -256,9 +281,34 @@ namespace Hecton8.AI
         private uint _cachedScanEntryHash;
         private float _breachDragBypassUntilTime;
         private float _baseLinearDamping;
+        private float _baseAngularDamping;
         private bool _baseLinearDampingCaptured;
+        private bool _baseGravityCaptured;
+        private bool _baseUseGravity;
+        private bool _baseIsKinematic;
+        private bool _baseDetectCollisions;
         private float _nextEggClutchTimeSeconds;
         private uint _eggClutchSequence;
+        private Transform _telegraphedAttackTarget;
+        private float _attackTelegraphBurstTime;
+        private float _attackBurstUntilTime;
+        private bool _attackTelegraphActive;
+        private bool _attackTelegraphAudioEmitted;
+        private float _passiveFlashlightDimUntilTime;
+        private float _faunaBiolumDim01 = 1f;
+        private float _deathDitherFade01;
+        private int _biolumPresentationLightCount;
+        private float _lastAppliedBiolumLightScale01 = 1f;
+        private uint _latchedCorpseNodeId;
+        private Vector3 _corpseLatchOffset;
+        private Vector3 _corpseLatchTargetPosition;
+        private Vector3 _corpseLatchCenterPosition;
+        private bool _corpseLatchActive;
+        private float _corpseTearingPhase;
+        private float _corpseTearingPitchRadians;
+        private bool _deathSpiralActive;
+        private float _deathSpiralStartTime;
+        private Vector3 _deathSpiralTorque;
 
         // ══════════════════════════════════════════════════════════
         //  SERIALIZATION MIGRATION (Option B Data Preservation)
@@ -316,6 +366,7 @@ namespace Hecton8.AI
         private void Awake()
         {
             _rb = GetComponent<Rigidbody>();
+            CaptureBaseRigidbodyPresentationState();
             if (!ValidatePrimitiveColliderRig())
             {
                 enabled = false;
@@ -323,6 +374,7 @@ namespace Hecton8.AI
             }
 
             _renderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
+            CacheBiolumPresentationLights();
             TryGetComponent(out _animator);
             CacheLogicalLodComponents();
             TryGetComponent(out _proceduralLeviathanSpineIk);
@@ -410,6 +462,17 @@ namespace Hecton8.AI
         public void OnSpawn()
         {
             _isDead = false;
+            _deathSpiralActive = false;
+            _deathSpiralStartTime = 0f;
+            _deathSpiralTorque = Vector3.zero;
+            _deathDitherFade01 = 0f;
+            _passiveFlashlightDimUntilTime = 0f;
+            _faunaBiolumDim01 = 1f;
+            _lastAppliedBiolumLightScale01 = -1f;
+            ClearAttackTelegraphState();
+            ClearCorpseLatchState();
+            RestoreBaseRigidbodyPresentationState();
+            ApplyBiolumPresentationLightScale(1f);
             _tier2HibernationRecordWritten = false;
             _tier2HibernationHandoffInProgress = false;
             _breachDragBypassUntilTime = 0f;
@@ -437,10 +500,20 @@ namespace Hecton8.AI
         public void OnDespawn()
         {
             _isDead = true;
+            _deathSpiralActive = false;
+            _deathSpiralStartTime = 0f;
+            _deathSpiralTorque = Vector3.zero;
+            _deathDitherFade01 = 0f;
+            _passiveFlashlightDimUntilTime = 0f;
+            _faunaBiolumDim01 = 1f;
+            _lastAppliedBiolumLightScale01 = -1f;
+            ClearAttackTelegraphState();
+            ClearCorpseLatchState();
+            ApplyBiolumPresentationLightScale(1f);
             _playerNoiseEmitterTransform = null;
             _tier2HibernationHandoffInProgress = false;
             _breachDragBypassUntilTime = 0f;
-            RestoreLeviathanBreachDragIfReady();
+            RestoreBaseRigidbodyPresentationState();
             SetLogicalLodTier(FaunaLogicalLodTier.Hibernating);
             _runtimeAggressionScale = 1f;
             ClearGeneticTraits();
@@ -557,6 +630,12 @@ namespace Hecton8.AI
                 return;
 
             _cognitionTimeSeconds += dt;
+            if (_isDead)
+            {
+                UpdateDeathSpiralPresentation(dt);
+                return;
+            }
+
             bool forceAggroTick = ShouldForceAggroCognitionTick();
             ResolveLogicalLodTier();
             if (_logicalLodTier != FaunaLogicalLodTier.FullSim && !forceAggroTick)
@@ -596,21 +675,34 @@ namespace Hecton8.AI
             float3 selfPosition = runtimeSelfPosition;
             CreatureUtilityEvaluation utilityEvaluation = EvaluateCognitionBrain(Time.frameCount, dt, selfPosition, out Transform attackTarget);
             ApplyCognitionEvaluation(in utilityEvaluation);
+            bool passiveFlashlightOverrideActive = TryApplyPassiveFlashlightReaction(selfPosition);
+            if (passiveFlashlightOverrideActive)
+                attackTarget = null;
+
             ApplyVoxelPathGuidance(selfPosition, utilityEvaluation.LegacyState);
-            bool ecologyOverrideActive = ApplyEcologyChainOverrides(selfPosition, dt);
+            bool ecologyOverrideActive = !passiveFlashlightOverrideActive && ApplyEcologyChainOverrides(selfPosition, dt);
             if (ecologyOverrideActive)
                 attackTarget = null;
 
             UpdateBioluminescentHypnosis();
+            UpdateFaunaBiolumPresentation(dt);
             UpdateEcholocationMimicry();
             UpdateProceduralStrikeIntent(_currentStateCache, attackTarget);
             UpdateProceduralHeadLookIntent();
             EmitLeviathanThreatPulse(in utilityEvaluation);
             if (!ecologyOverrideActive && utilityEvaluation.ShouldAttack && attackTarget != null)
             {
-                HandleAttackPerform(attackTarget);
-                float attackCooldown = _speciesProfile != null ? _speciesProfile.attackCooldown : 1f;
-                _utilityBrain.NotifyAttackPerformed(_cognitionTimeSeconds, attackCooldown);
+                if (TryAdvanceAttackTelegraph(attackTarget))
+                {
+                    HandleAttackPerform(attackTarget);
+                    float attackCooldown = _speciesProfile != null ? _speciesProfile.attackCooldown : 1f;
+                    _utilityBrain.NotifyAttackPerformed(_cognitionTimeSeconds, attackCooldown);
+                    ClearAttackTelegraphState();
+                }
+            }
+            else
+            {
+                ClearAttackTelegraphState();
             }
 
             if (_currentStateCache != oldState)
@@ -647,6 +739,18 @@ namespace Hecton8.AI
 
         private void UpdateEyeTracking(float dt, Vector3 selfPosition)
         {
+            if (_corpseLatchActive)
+            {
+                Vector3 toCorpse = _corpseLatchCenterPosition - selfPosition;
+                if (toCorpse.sqrMagnitude <= 0.0001f)
+                    toCorpse = transform.forward;
+
+                Vector3 baseDirection = toCorpse.normalized;
+                Quaternion tearPitch = Quaternion.AngleAxis(_corpseTearingPitchRadians * Mathf.Rad2Deg, transform.right);
+                LookDirection = tearPitch * baseDirection;
+                return;
+            }
+
             if (_speciesProfile == null || _speciesProfile.eyeTrackWeight <= 0.01f)
             {
                 LookDirection = transform.forward;
@@ -1383,25 +1487,32 @@ namespace Hecton8.AI
                 !_speciesProfile.isScavenger ||
                 _utilityBrain.HungerScore < ecosystemDirector.ScavengerHungerThreshold)
             {
+                ClearCorpseLatchState();
                 return false;
             }
 
             Vector3 selfWorldPosition = selfPosition;
             AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfWorldPosition);
             if (!ecosystemDirector.TryResolveCorpseScavengeTarget(in selfAup, out Vector3 corpsePosition, out uint corpseNodeId))
+            {
+                ClearCorpseLatchState();
                 return false;
+            }
 
             _baitFeedingTarget = null;
             float consumeDistance = ecosystemDirector.ScavengerConsumeDistanceMeters;
             if ((corpsePosition - selfWorldPosition).sqrMagnitude <= consumeDistance * consumeDistance &&
                 ecosystemDirector.TryConsumeCorpseScavengeTarget(corpseNodeId, ecosystemDirector.ScavengerConsumeUnitsPerSecond * dt))
             {
+                UpdateCorpseLatchState(corpsePosition, corpseNodeId, consumeDistance);
+                UpdateCarrionTearingAnimation(dt);
                 _utilityBrain.ForceSated(_cognitionTimeSeconds, HerbivoreSatedDurationSeconds);
                 TryReportFaunaFeedingObservation();
                 ApplyDirectedStateOverride(selfPosition, corpsePosition, AIState.Sated);
                 return true;
             }
 
+            ClearCorpseLatchState();
             _utilityBrain.ApplyExternalState(AIState.Investigate, _cognitionTimeSeconds);
             ApplyDirectedStateOverride(selfPosition, corpsePosition, AIState.Investigate);
             return true;
@@ -1533,7 +1644,7 @@ namespace Hecton8.AI
             if (_archetype == null || !_archetype.laysEggClutches)
                 return false;
 
-            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
             if (registry == null)
                 return false;
 
@@ -1931,12 +2042,24 @@ namespace Hecton8.AI
 
         public void FixedTick(float fdt)
         {
+            if (_isDead)
+            {
+                ApplyDeathSpiralFixedStep(fdt);
+                return;
+            }
+
             if (_spatialHandle != 0)
                 WorldSpatialHashGrid.Refresh(_spatialHandle);
             if (_faunaSpatialHandle != 0)
                 FaunaSpatialHashRegistry.Refresh(_faunaSpatialHandle);
 
-            if (_isDead || _lodDisabled) return;
+            if (_lodDisabled) return;
+            if (_corpseLatchActive)
+            {
+                ApplyCorpseLatchFixedStep();
+                return;
+            }
+
             Vector3 playerTargetPosition = default;
             if (_sensorSuite.TryGetPerceivedPlayerPosition(out Vector3 perceivedPlayerPosition))
                 playerTargetPosition = perceivedPlayerPosition;
@@ -1972,6 +2095,7 @@ namespace Hecton8.AI
             }
 
             ApplyLeviathanBreachAttack(ref desiredDirection, ref forceMultiplier, ref speedMultiplier);
+            ApplyLeviathanAttackTelegraphMotion(ref desiredDirection, ref forceMultiplier, ref speedMultiplier);
             
             _steeringEngine.FixedTick(
                 fdt, 
@@ -2042,10 +2166,337 @@ namespace Hecton8.AI
 
         private void RestoreLeviathanBreachDragIfReady()
         {
-            if (!_baseLinearDampingCaptured || _rb == null || _cognitionTimeSeconds < _breachDragBypassUntilTime)
+            if (!_baseLinearDampingCaptured || _rb == null || _breachDragBypassUntilTime <= 0f || _cognitionTimeSeconds < _breachDragBypassUntilTime)
                 return;
 
             _rb.linearDamping = _baseLinearDamping;
+            _breachDragBypassUntilTime = 0f;
+        }
+
+        private void CaptureBaseRigidbodyPresentationState()
+        {
+            if (_rb == null || _baseGravityCaptured)
+                return;
+
+            _baseUseGravity = _rb.useGravity;
+            _baseIsKinematic = _rb.isKinematic;
+            _baseDetectCollisions = _rb.detectCollisions;
+            _baseLinearDamping = _rb.linearDamping;
+            _baseAngularDamping = _rb.angularDamping;
+            _baseLinearDampingCaptured = true;
+            _baseGravityCaptured = true;
+        }
+
+        private void RestoreBaseRigidbodyPresentationState()
+        {
+            if (_rb == null || !_baseGravityCaptured)
+                return;
+
+            _rb.useGravity = _baseUseGravity;
+            _rb.isKinematic = _baseIsKinematic;
+            _rb.detectCollisions = _baseDetectCollisions;
+            _rb.linearDamping = _baseLinearDamping;
+            _rb.angularDamping = _baseAngularDamping;
+        }
+
+        private bool TryAdvanceAttackTelegraph(Transform attackTarget)
+        {
+            if (!ShouldUseProceduralLeviathanPresentation())
+                return true;
+
+            if (attackTarget == null || !attackTarget.gameObject.activeInHierarchy)
+            {
+                ClearAttackTelegraphState();
+                return false;
+            }
+
+            if (!_attackTelegraphActive || _telegraphedAttackTarget != attackTarget)
+            {
+                _telegraphedAttackTarget = attackTarget;
+                _attackTelegraphBurstTime = _cognitionTimeSeconds + LeviathanAttackTelegraphLeadSeconds;
+                _attackTelegraphActive = true;
+                _attackTelegraphAudioEmitted = false;
+            }
+
+            if (!_attackTelegraphAudioEmitted)
+            {
+                EmitLeviathanAttackTelegraphPing(attackTarget.position);
+                _attackTelegraphAudioEmitted = true;
+            }
+
+            if (_cognitionTimeSeconds < _attackTelegraphBurstTime)
+                return false;
+
+            _attackBurstUntilTime = Mathf.Max(_attackBurstUntilTime, _cognitionTimeSeconds + LeviathanAttackBurstDurationSeconds);
+            return true;
+        }
+
+        private void ClearAttackTelegraphState()
+        {
+            _telegraphedAttackTarget = null;
+            _attackTelegraphActive = false;
+            _attackTelegraphAudioEmitted = false;
+            _attackTelegraphBurstTime = 0f;
+            if (_proceduralLeviathanSpineIk != null)
+                _proceduralLeviathanSpineIk.SetAttackTelegraph(0f);
+        }
+
+        private void ApplyLeviathanAttackTelegraphMotion(ref Vector3 desiredDirection, ref float forceMultiplier, ref float speedMultiplier)
+        {
+            if (!ShouldUseProceduralLeviathanPresentation())
+                return;
+
+            if (_attackTelegraphActive && _telegraphedAttackTarget != null && _cognitionTimeSeconds < _attackTelegraphBurstTime)
+            {
+                Vector3 awayFromTarget = transform.position - _telegraphedAttackTarget.position;
+                if (awayFromTarget.sqrMagnitude > 0.0001f)
+                    desiredDirection = awayFromTarget.normalized;
+
+                forceMultiplier *= LeviathanAttackTelegraphPullbackForceScale;
+                speedMultiplier *= LeviathanAttackTelegraphPullbackSpeedScale;
+                return;
+            }
+
+            if (_cognitionTimeSeconds < _attackBurstUntilTime)
+            {
+                forceMultiplier = Mathf.Max(forceMultiplier, LeviathanAttackBurstMultiplier);
+                speedMultiplier = Mathf.Max(speedMultiplier, LeviathanAttackBurstMultiplier);
+            }
+        }
+
+        private void EmitLeviathanAttackTelegraphPing(Vector3 sourcePosition)
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Transform playerRoot = playerContext != null ? playerContext.PlayerTransform : null;
+            if (playerRoot == null)
+                return;
+
+            Vector3 listenerPosition = playerRoot.position;
+            float radius = PredatorKillAudioRadiusMeters * 2.5f;
+            float distanceSqr = (listenerPosition - sourcePosition).sqrMagnitude;
+            if (distanceSqr > radius * radius)
+                return;
+
+            float distance = Mathf.Sqrt(distanceSqr);
+            float proximity = 1f - Mathf.Clamp01(distance / radius);
+            float intensity = Mathf.Clamp01(0.45f + proximity * 0.55f);
+            float transmission01 = 1f;
+            float lowPassCutoffHz = LeviathanAttackTelegraphLowPassCutoffHz;
+            int sensoryMask = AcousticOcclusionUtility.BuildSensoryMask();
+            if (AcousticOcclusionUtility.TryGetCachedOcclusionPath(
+                    sourcePosition,
+                    listenerPosition,
+                    sensoryMask,
+                    transform,
+                    playerRoot,
+                    out AcousticOcclusionResult occlusion))
+            {
+                transmission01 = Mathf.Clamp01(occlusion.Transmission01);
+                lowPassCutoffHz = Mathf.Clamp(
+                    Mathf.Min(occlusion.LowPassCutoffHz, LeviathanAttackTelegraphLowPassCutoffHz),
+                    AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                    AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            }
+            else
+            {
+                AcousticOcclusionUtility.PrimeOcclusionPath(sourcePosition, listenerPosition, sensoryMask, transform, playerRoot);
+            }
+
+            ProceduralAudioEvents.RaiseAudioPingTriggered(
+                sourcePosition,
+                intensity,
+                LeviathanAttackTelegraphAudioDurationSeconds,
+                transmission01,
+                lowPassCutoffHz,
+                ProceduralAudioPingKind.LeviathanRoar);
+        }
+
+        private bool TryApplyPassiveFlashlightReaction(float3 selfPosition)
+        {
+            if (!_sensorSuite.hasPlayerFlashlightConeHit ||
+                !IsSmallPassiveFauna() ||
+                _isDead)
+            {
+                return false;
+            }
+
+            Vector3 threatPosition = _sensorSuite.playerFlashlightThreatPosition;
+            Vector3 awayDirection = (Vector3)selfPosition - threatPosition;
+            if (awayDirection.sqrMagnitude <= 0.0001f)
+                awayDirection = transform.forward;
+            awayDirection.Normalize();
+
+            _utilityBrain.ForceRetreat(threatPosition, _cognitionTimeSeconds, PassiveFlashlightFleeDurationSeconds);
+            _utilityBrain.ApplyExternalState(AIState.Escape, _cognitionTimeSeconds);
+            _stateMachine.currentState = AIState.Escape;
+            _currentStateCache = AIState.Escape;
+            _cachedDesiredDirection = awayDirection;
+            _sensorSuite.isScattering = true;
+            _sensorSuite.scatterDirection = awayDirection;
+            _passiveFlashlightDimUntilTime = Mathf.Max(_passiveFlashlightDimUntilTime, _cognitionTimeSeconds + PassiveFlashlightDimSeconds);
+            ClearAttackTelegraphState();
+            ClearCorpseLatchState();
+            return true;
+        }
+
+        private bool IsSmallPassiveFauna()
+        {
+            if (_faunaDataTemplate != null)
+            {
+                FaunaFoodChainTier tier = _faunaDataTemplate.FoodChainTier;
+                bool smallTier = tier == FaunaFoodChainTier.Microfauna ||
+                                 tier == FaunaFoodChainTier.SmallHerbivore ||
+                                 tier == FaunaFoodChainTier.SwarmPassive;
+                if (smallTier)
+                    return _faunaDataTemplate.LightReactionMode == FaunaLightReactionMode.Aversion ||
+                           !_utilityBrain.IsActivePredator;
+            }
+
+            if (_archetype != null)
+                return !_archetype.isAggressive && _archetype.maxHealth < LargeCorpseResourceMinHealth;
+
+            return !isAggressive && !_utilityBrain.IsActivePredator && !IsLeviathan();
+        }
+
+        private void CacheBiolumPresentationLights()
+        {
+            _biolumPresentationLightCount = 0;
+            _biolumPresentationLightScratch.Clear();
+            GetComponentsInChildren(true, _biolumPresentationLightScratch);
+
+            int sourceCount = _biolumPresentationLightScratch.Count;
+            for (int i = 0; i < sourceCount && _biolumPresentationLightCount < MaxBiolumPresentationLights; i++)
+            {
+                Light candidate = _biolumPresentationLightScratch[i];
+                if (candidate == null)
+                    continue;
+
+                _biolumPresentationLights[_biolumPresentationLightCount] = candidate;
+                _biolumPresentationBaseIntensities[_biolumPresentationLightCount] = Mathf.Max(0f, candidate.intensity);
+                _biolumPresentationLightCount++;
+            }
+
+            for (int i = _biolumPresentationLightCount; i < MaxBiolumPresentationLights; i++)
+            {
+                _biolumPresentationLights[i] = null;
+                _biolumPresentationBaseIntensities[i] = 0f;
+            }
+
+            _biolumPresentationLightScratch.Clear();
+        }
+
+        private void UpdateFaunaBiolumPresentation(float dt)
+        {
+            float targetDim = _cognitionTimeSeconds < _passiveFlashlightDimUntilTime
+                ? PassiveFlashlightBiolumDimMultiplier
+                : 1f;
+            float alpha = 1f - Mathf.Exp(-PassiveFlashlightBiolumResponseSharpness * Mathf.Max(0f, dt));
+            _faunaBiolumDim01 = Mathf.Lerp(_faunaBiolumDim01, targetDim, alpha);
+            float deathLightFade01 = 1f - Mathf.Clamp01(_deathDitherFade01);
+            ApplyBiolumPresentationLightScale(_faunaBiolumDim01 * deathLightFade01);
+        }
+
+        private void ApplyBiolumPresentationLightScale(float scale01)
+        {
+            float resolvedScale01 = Mathf.Clamp01(scale01);
+            if (_biolumPresentationLightCount <= 0)
+                return;
+
+            if (Mathf.Abs(_lastAppliedBiolumLightScale01 - resolvedScale01) < 0.001f)
+                return;
+
+            _lastAppliedBiolumLightScale01 = resolvedScale01;
+            for (int i = 0; i < _biolumPresentationLightCount; i++)
+            {
+                Light targetLight = _biolumPresentationLights[i];
+                if (targetLight == null)
+                    continue;
+
+                targetLight.intensity = _biolumPresentationBaseIntensities[i] * resolvedScale01;
+            }
+        }
+
+        private void UpdateCorpseLatchState(Vector3 corpsePosition, uint corpseNodeId, float consumeDistance)
+        {
+            if (corpseNodeId == 0u)
+            {
+                ClearCorpseLatchState();
+                return;
+            }
+
+            if (_latchedCorpseNodeId != corpseNodeId)
+            {
+                _latchedCorpseNodeId = corpseNodeId;
+                _corpseLatchOffset = ResolveCorpseSurfaceOffset(corpseNodeId, consumeDistance);
+                _corpseTearingPhase = 0f;
+            }
+
+            _corpseLatchCenterPosition = corpsePosition;
+            _corpseLatchTargetPosition = corpsePosition + _corpseLatchOffset;
+            _corpseLatchActive = true;
+        }
+
+        private Vector3 ResolveCorpseSurfaceOffset(uint corpseNodeId, float consumeDistance)
+        {
+            uint state = corpseNodeId ^ (_uniqueInstanceUid * 747796405u) ^ 0x9E3779B9u;
+            float x = NextSigned01(ref state);
+            float y = NextSigned01(ref state);
+            float z = NextSigned01(ref state);
+            int faceAxis = (int)(Next01(ref state) * 3f);
+            float faceSign = Next01(ref state) < 0.5f ? -1f : 1f;
+            float halfX = Mathf.Max(0.35f, consumeDistance * CarrionLatchConsumeDistanceScale);
+            float halfY = Mathf.Max(0.25f, consumeDistance * 0.58f);
+            float halfZ = Mathf.Max(0.35f, consumeDistance * 0.84f);
+            if (faceAxis == 0)
+                x = faceSign;
+            else if (faceAxis == 1)
+                y = faceSign;
+            else
+                z = faceSign;
+
+            return new Vector3(x * halfX, y * halfY, z * halfZ);
+        }
+
+        private static float Next01(ref uint state)
+        {
+            if (state == 0u)
+                state = 0xA511E9B3u;
+
+            state ^= state << 13;
+            state ^= state >> 17;
+            state ^= state << 5;
+            return (state & 0x00FFFFFFu) * (1f / 16777215f);
+        }
+
+        private static float NextSigned01(ref uint state)
+        {
+            return Next01(ref state) * 2f - 1f;
+        }
+
+        private void UpdateCarrionTearingAnimation(float dt)
+        {
+            _corpseTearingPhase += Mathf.Max(0f, dt) * CarrionLatchTearingFrequency;
+            _corpseTearingPitchRadians = Mathf.Sin(_corpseTearingPhase) * Mathf.Deg2Rad * CarrionLatchTearingPitchDegrees;
+        }
+
+        private void ApplyCorpseLatchFixedStep()
+        {
+            if (_rb == null)
+                return;
+
+            _rb.MovePosition(_corpseLatchTargetPosition);
+            _rb.linearVelocity = Vector3.zero;
+            _rb.angularVelocity = Vector3.zero;
+        }
+
+        private void ClearCorpseLatchState()
+        {
+            _latchedCorpseNodeId = 0u;
+            _corpseLatchActive = false;
+            _corpseLatchOffset = Vector3.zero;
+            _corpseLatchTargetPosition = Vector3.zero;
+            _corpseLatchCenterPosition = Vector3.zero;
+            _corpseTearingPitchRadians = 0f;
         }
 
         public void SlowTick()
@@ -2143,6 +2594,10 @@ namespace Hecton8.AI
             bool strikeActive = resolvedState == AIState.Aggressive && strikeTarget != null && !_isDead;
             float strikeRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
             _proceduralLeviathanSpineIk.SetStrikeIntent(strikeTarget, strikeRange, strikeActive);
+            float telegraphBlend = _attackTelegraphActive
+                ? 1f - Mathf.Clamp01((_attackTelegraphBurstTime - _cognitionTimeSeconds) / LeviathanAttackTelegraphLeadSeconds)
+                : 0f;
+            _proceduralLeviathanSpineIk.SetAttackTelegraph(telegraphBlend);
         }
 
         private void ClearProceduralStrikeIntent()
@@ -2152,6 +2607,7 @@ namespace Hecton8.AI
 
             float strikeRange = _speciesProfile != null ? _speciesProfile.attackRadius : math.max(1f, _stateMachine.attackRadius);
             _proceduralLeviathanSpineIk.SetStrikeIntent(null, strikeRange, false);
+            _proceduralLeviathanSpineIk.SetAttackTelegraph(0f);
             _proceduralLeviathanSpineIk.SetHeadLookTarget(default, false);
         }
 
@@ -2371,7 +2827,7 @@ namespace Hecton8.AI
                     ecosystemDirector.ReportPredation(target.position, 1);
 
                 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.Log($"[FAUNA] {gameObject.name} fed on {target.name}. Entering SATED state for {satedDur}s.");
+                Debug.Log("[FAUNA] Feed event. Entering SATED state.", this);
                 #endif
                 return;
             }
@@ -2399,7 +2855,7 @@ namespace Hecton8.AI
                         // In Subnautica, damage to scooter/seaglide is often handled via player health 
                         // or tool durability. Since scooter has no health, we apply physical force + noise.
                         #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.Log($"[LEVIATHAN] {gameObject.name} struck Player's Manta Scooter!");
+                        Debug.Log("[LEVIATHAN] Vehicle impact event.", this);
                         #endif
                     }
                 }
@@ -2635,6 +3091,79 @@ namespace Hecton8.AI
             _isDead = true;
             RegisterCorpseResourceNode();
             ReportApexPredatorKill();
+            BeginDeathSpiralPresentation();
+        }
+
+        private void BeginDeathSpiralPresentation()
+        {
+            ClearAttackTelegraphState();
+            ClearCorpseLatchState();
+            ClearProceduralStrikeIntent();
+            ClearVoxelPathGuidance();
+            ClearHibernationStarvationHuntCommand();
+            ClearEcholocationMimicSignal();
+            UnregisterSpatialHandle();
+            _utilityBrain.SetRuntimeActive(false);
+
+            if (_animator != null)
+                _animator.enabled = false;
+
+            CaptureBaseRigidbodyPresentationState();
+            _deathSpiralActive = true;
+            _deathSpiralStartTime = _cognitionTimeSeconds;
+            _deathDitherFade01 = 0f;
+            _passiveFlashlightDimUntilTime = 0f;
+            _faunaBiolumDim01 = 1f;
+            _lastAppliedBiolumLightScale01 = -1f;
+            _deathSpiralTorque = ResolveDeathSpiralTorque();
+
+            if (_rb != null)
+            {
+                _rb.isKinematic = false;
+                _rb.detectCollisions = true;
+                _rb.useGravity = true;
+                _rb.linearDamping = Mathf.Max(0.05f, _rb.linearDamping * 0.35f);
+                _rb.angularDamping = Mathf.Max(0.05f, _rb.angularDamping * 0.5f);
+                _rb.WakeUp();
+            }
+        }
+
+        private Vector3 ResolveDeathSpiralTorque()
+        {
+            float3 randomAxis = new float3(
+                _runtimeRandom.NextFloat(-1f, 1f),
+                _runtimeRandom.NextFloat(-0.25f, 0.25f),
+                _runtimeRandom.NextFloat(-1f, 1f));
+            randomAxis = math.normalizesafe(randomAxis, new float3(0f, 1f, 0f));
+            float magnitude = _runtimeRandom.NextFloat(DeathSpiralTorqueMin, DeathSpiralTorqueMax);
+            return (Vector3)(randomAxis * magnitude);
+        }
+
+        private void ApplyDeathSpiralFixedStep(float fdt)
+        {
+            if (!_deathSpiralActive || _rb == null || fdt <= 0f)
+                return;
+
+            if (_deathSpiralTorque.sqrMagnitude > 0.0001f)
+                PhysicsForceRouter.QueueTorque(_rb, _deathSpiralTorque, ForceMode.Acceleration);
+        }
+
+        private void UpdateDeathSpiralPresentation(float dt)
+        {
+            if (!_deathSpiralActive)
+                return;
+
+            float age = Mathf.Max(0f, _cognitionTimeSeconds - _deathSpiralStartTime);
+            float fadeAge = age - DeathSpiralFadeDelaySeconds;
+            if (fadeAge > 0f)
+            {
+                _deathDitherFade01 = Mathf.Clamp01(fadeAge / DeathSpiralFadeDurationSeconds);
+                ApplyBiolumPresentationLightScale(1f - _deathDitherFade01);
+            }
+
+            if (_deathDitherFade01 < 0.999f)
+                return;
+
             ObjectPoolManager pool = GlobalRegistry.ObjectPool;
             if (pool != null)
                 pool.Despawn(gameObject);

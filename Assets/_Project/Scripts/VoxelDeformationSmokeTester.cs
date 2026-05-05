@@ -5,6 +5,10 @@ using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
+#if UNITY_EDITOR
+using System.IO;
+using UnityEditor;
+#endif
 
 namespace Hecton8.Dev
 {
@@ -60,6 +64,29 @@ namespace Hecton8.Dev
             return $"run={_debugRunCount} pass={_debugLastPass} phase={_debugLastPhase} issue={issue}";
         }
 
+        public string BuildJsonStatus()
+        {
+            string escapedIssue = (_debugLastIssue ?? string.Empty).Replace("\\", "\\\\").Replace("\"", "\\\"");
+            return "{\"tester\":\"VoxelDeformationSmokeTester\",\"run\":" + _debugRunCount +
+                   ",\"pass\":" + (_debugLastPass ? "true" : "false") +
+                   ",\"phase\":\"" + _debugLastPhase +
+                   "\",\"issue\":\"" + escapedIssue + "\"}";
+        }
+
+#if UNITY_EDITOR
+        public static void RunBatchMode()
+        {
+            GameObject root = new GameObject("VoxelDeformationSmokeTester_Batch"); // COLD ALLOC: GameObject[1] - editor-only voxel deformation smoke root - owner: VoxelDeformationSmokeTester
+            VoxelDeformationSmokeTester tester = root.AddComponent<VoxelDeformationSmokeTester>();
+            bool pass = tester.TryRunImmediately();
+            string json = tester.BuildJsonStatus();
+            File.WriteAllText("Library/VoxelDeformationSmokeTester.json", json);
+            Debug.Log(json);
+            UnityEngine.Object.DestroyImmediate(root);
+            EditorApplication.Exit(pass ? 0 : 1);
+        }
+#endif
+
         private void RunSmokePass()
         {
             _isRunning = true;
@@ -71,6 +98,10 @@ namespace Hecton8.Dev
             try
             {
                 if (!ValidateBackpressureGuard())
+                    return;
+
+                _debugLastPhase = "BakePool";
+                if (!ValidatePhysicsBakePoolPressure())
                     return;
 
                 _debugLastPhase = "SdfMerge";
@@ -116,6 +147,20 @@ namespace Hecton8.Dev
             return Require(!inactiveAtThreshold && activeAboveThreshold && holdsUntilRelease && !releasesAtLowWater, "Backpressure hysteresis failed.");
         }
 
+        private bool ValidatePhysicsBakePoolPressure()
+        {
+            int capacity = global::HectonVoxelEngine.DebugVoxelPhysicsBakeMeshPoolSize;
+            bool notExhaustedBelowCapacity = global::HectonVoxelEngine.DebugResolveVoxelPhysicsBakePoolExhausted(capacity - 1);
+            bool exhaustedAtCapacity = global::HectonVoxelEngine.DebugResolveVoxelPhysicsBakePoolExhausted(capacity);
+            bool exhaustedAboveCapacity = global::HectonVoxelEngine.DebugResolveVoxelPhysicsBakePoolExhausted(capacity + 1);
+            return Require(
+                capacity > 0 &&
+                !notExhaustedBelowCapacity &&
+                exhaustedAtCapacity &&
+                exhaustedAboveCapacity,
+                "PhysX bake mesh pool exhaustion gate failed.");
+        }
+
         private bool ValidateSdfMerge()
         {
             byte subtractive = VoxelDeltaProcessor.DebugSubtractiveDeltaMode;
@@ -152,10 +197,15 @@ namespace Hecton8.Dev
         {
             NativeArray<byte> passability = default;
             NativeArray<ushort> distance = default;
+            NativeArray<int> pureVoidFlags = default;
             try
             {
                 passability = new NativeArray<byte>(8, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 distance = new NativeArray<ushort>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                pureVoidFlags = new NativeArray<int>(
+                    VoxelDynamicNavGridRuntime.ResolvePureVoidBlockCount(passability.Length),
+                    Allocator.TempJob,
+                    NativeArrayOptions.UninitializedMemory);
                 for (int i = 0; i < passability.Length; i++)
                     passability[i] = VoxelDynamicNavGridRuntime.OpenCell;
 
@@ -166,6 +216,12 @@ namespace Hecton8.Dev
                     Dimensions = new int3(2, 2, 2),
                     AgentRadiusCells = 1
                 }.Schedule();
+                handle = VoxelDynamicNavGridRuntime.SchedulePureVoidScan(
+                    passability,
+                    distance,
+                    pureVoidFlags,
+                    passability.Length,
+                    handle);
                 // COLD SYNC JOB: dev smoke tester validates a tiny nav dilation kernel outside gameplay.
                 handle.Complete();
 
@@ -175,7 +231,7 @@ namespace Hecton8.Dev
                         return Fail("Pure-void nav grid did not remain open with max distance.");
                 }
 
-                return true;
+                return Require(pureVoidFlags[0] == 1, "Burst pure-void block scan rejected open-water chunk.");
             }
             finally
             {
@@ -183,6 +239,8 @@ namespace Hecton8.Dev
                     passability.Dispose();
                 if (distance.IsCreated)
                     distance.Dispose();
+                if (pureVoidFlags.IsCreated)
+                    pureVoidFlags.Dispose();
             }
         }
 

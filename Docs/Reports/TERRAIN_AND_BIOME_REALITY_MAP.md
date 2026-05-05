@@ -176,3 +176,103 @@ Smoke tester:
 - Memory: one owner for the biome influence GPU buffer is `WorldProceduralFieldSampler`; duplicate scatter working-memory ownership was removed.
 - GPU: upload is a packed `uint` GraphicsBuffer stream; MX350 risk is bounded by single uint per scatter cell plus existing flora 4096 cap.
 - Correctness risk: full playmode traversal through an authored biome border is still required before any production verification claim.
+
+## 2026-05-05 OMEGA-AUTONOMY HARDENING PASS
+
+Status: `PENDING VERIFICATION`. `OMEGA VERIFIED` is not claimed because `AGENTS.md` requires user-provided logs for final fix confirmation; local Unity smoke evidence is recorded below.
+
+### Mandates Re-Checked
+
+- `AGENTS.md`: no fake verification; status remains `PENDING VERIFICATION` without user-provided production/runtime confirmation.
+- `OPT_Native_Memory_Collections_JobSystem_Protocol`: persistent NativeCollections require single owner and Sentinel tracking.
+- `OPT_Zero_GC_Policy_AllocFree_Mandate`: no new hot-path string allocation, LINQ, coroutine, or managed container allocation in the touched biome sampling path.
+- `MATH_Coordinate_Precision_AUP_FloatingOrigin`: no transform-space authority added; sampling remains fed by existing AUP/runtime position bridge.
+- `ARCH_Global_Registry_ServiceLocator_DI_Init`: removed the stale bootstrap fallback to the deleted `SaveManager.ActiveRuntimeInstance` API; active save authority is `GlobalRegistry.SaveRuntime`.
+
+### Surgery Log
+
+- `WorldProceduralFieldSampler`: registered persistent `_burstZoneData`, `_burstBiomeMatrixData`, `_burstBiomeMatrixIdToDataIndex`, `_burstBiomeFamilyData`, `_burstCaveEntranceHints`, and `_noiseLookupTable` with `NativeMemorySentinel`; unregisters now happen before disposal.
+- `WorldProceduralFieldSampler`: added `GlobalTelemetryBus.PublishPerformanceWarning` when biome influence GPU grid capacity grows past the MX350 soft cell budget of 4096.
+- `ResourceDistributionDirector`: registered pressure metamorphism and ghost proxy snap persistent NativeArrays with `NativeMemorySentinel`; immediate and deferred disposal paths both unregister first.
+- `VolumetricBiomeSmokeTester`: upgraded the cold smoke from 3 samples to a 256-sample Burst stress chain and registered all TempJob smoke arrays with `NativeMemorySentinel`.
+- `WorldVolumetricBiomeClassificationJobs`: added `VolumetricBiomeStressAuditJob`, a Burst `IJobParallelFor` that validates primary biome ID, required flag masks, and packed `uint` layout.
+- `GameBootstrapper`: removed a compile-breaking reference to `SaveManager.ActiveRuntimeInstance`, which no longer exists after the registry migration.
+- `AutomationOmegaSmokeTester`: added `using Hecton8.World;` so its cold smoke can resolve `DispatcherJobSwap`.
+
+### Burst Packing Logic
+
+The stress audit validates the same packed ABI used by the scatter GPU grid:
+
+```csharp
+uint expectedPack = (uint)(
+    cell.PrimaryBiomeId |
+    (cell.SecondaryBiomeId << 8) |
+    (cell.Blend255 << 16) |
+    (cell.Flags << 24));
+```
+
+### Verification
+
+- Direct Core compile: `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp` returned exit code 0 after the final sequential rerun.
+- Direct Editor compile: `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.rsp` returned exit code 0 after the final sequential rerun.
+- `git diff --check` on the biome/resource touched files returned no whitespace errors; only Git CRLF normalization warnings were emitted.
+- `rg` barrier sweep found no raw `.Complete()`, `.Run()`, or `JobHandle.CompleteAll` in the scoped biome/resource files. Remaining synchronization points are `DispatcherJobSwap.TryComplete` windows, including one cold forced smoke-test sync outside runtime `Tick`/`Update`.
+- Unity batchmode attempts for `Hecton8.World.VolumetricBiomeSmokeTester.RunBatchmode` initially wrote:
+  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run2.log`
+  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run3.log`
+- Both Unity batchmode attempts exited with code 1 before script execution; logs stop immediately after project path selection and contain no `VolumetricBiomeSmokeTester` PASS/FAIL line.
+- External Unity batch processes repeatedly occupied the project during this window:
+  - `Hecton8.EditorTools.DocumentationAuthoritySmokeTester.RunMenuItem`
+  - `Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu` (`final`, `final2`, `final3`)
+- After the external Unity processes exited, `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run4.log` reached `VolumetricBiomeSmokeTester.RunBatchmode` and emitted:
+  - `[VolumetricBiomeSmokeTester] PASS shallow=11 twilight=12 hadal=13 flags=16 stressSamples=256 stressFailures=0 packedChecksum=2952397042`
+- The same Unity log also contains non-domain service/runtime noise that prevents a "0 console errors" claim:
+  - Licensing handshake/access-token errors at lines 71, 74, and 88, followed by successful license resolution.
+  - UnityConnect CDN timeout / Curl callback abort at lines 424 and 426.
+  - Unity test protocol memory-leak marker and temp allocator warning at lines 456 and 457.
+
+### Residual Risk
+
+- Runtime GC proof is absent. Code review only: no new hot-path managed allocation was introduced in the modified biome sampling path.
+- Unity domain smoke proof exists for `VolumetricBiomeSmokeTester`; whole-console proof is not clean because the batch log contains Unity service errors and a temp allocator leak marker outside the smoke assertion line.
+
+## 2026-05-05 OMEGA-AUTONOMY HARDENING PASS 2
+
+Status: `PENDING VERIFICATION`. `OMEGA VERIFIED` is not claimed because `AGENTS.md` requires user-provided logs before a verified status, and pass-2 Unity smoke attempts did not reach a fresh PASS/FAIL assertion after the new code changes.
+
+### Mandates Re-Checked
+
+- `OPT_Native_Memory_Collections_JobSystem_Protocol`: scoped TempJob and Persistent NativeArrays must be Sentinel-owned.
+- `OPT_Zero_GC_Policy_AllocFree_Mandate`: no hot-path `.ToString()`, string interpolation, or `string.Format` introduced in scoped `Tick`/`Update` surfaces.
+- `MATH_Coordinate_Precision_AUP_FloatingOrigin`: no transform-space authority added; registry migration only changes lookup ownership.
+- `ARCH_Global_Registry_ServiceLocator_DI_Init`: procedural field sampler and resource distribution active ownership moved to `GlobalRegistry`; scatter active lookup now resolves through `GlobalRegistry.WorldGen`.
+
+### Surgery Log
+
+- `GlobalRegistry`: added concrete slots for `ProceduralFieldSampler` and `ResourceDistribution`, with register/unregister APIs and service-slot enum entries.
+- `WorldProceduralScatterDirector`: removed private static active-state ownership; `ActiveRuntimeInstance` now resolves from `GlobalRegistry.ProceduralScatter`.
+- `WorldProceduralFieldSampler`: removed private static active-state ownership; lifecycle now registers/unregisters through `GlobalRegistry`; TempJob prewarm arrays now register with `NativeMemorySentinel` using `TempJob` lifetime before disposal.
+- `ResourceDistributionDirector`: removed private static active-state ownership; runtime lifecycle now registers/unregisters through `GlobalRegistry`.
+- `VolumetricBiomeSmokeTester`: moved the 256-sample managed audit reduction into Burst jobs: `VolumetricBiomeStressBlockReduceJob` (`IJobParallelFor`) plus `VolumetricBiomeStressFinalReduceJob`.
+
+### Verification
+
+- Direct Core compile: `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp` returned exit code 0.
+- Direct Editor compile: `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.rsp` returned exit code 0.
+- `git diff --check` on scoped pass-2 files returned no whitespace errors; only Git CRLF normalization warnings were emitted.
+- Static sweeps on scoped pass-2 files:
+  - Raw `.Complete()`, `.Run()`, `JobHandle.CompleteAll`: 0 matches.
+  - Hot-path string purge regex for `.ToString()`, `string.Format`, `$"` in scoped `Tick`/`Update` surfaces: 0 matches.
+  - Static active assignment / private `_instance` / `DontDestroyOnLoad` residue in the three migrated world-gen classes: 0 owner assignments remaining.
+  - NativeArray allocation sites scanned: 10; untracked allocation sites after patch: 0 by code review against Sentinel registration calls.
+- Pass-2 Unity smoke attempts for `Hecton8.World.VolumetricBiomeSmokeTester.RunBatchmode`:
+  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run5.log`: reached Unity script compilation, no smoke assertion.
+  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run6.log`: exited with return code 1 before `executeMethod`.
+  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run7.log`: no smoke assertion before external Unity batch contention resumed.
+- Evidence JSON: `CodexArtifacts/omega-biome-autonomy-pass2-verification-2026-05-05.json`.
+
+### Residual Risk
+
+- Pass-2 smoke execution is blocked by repeated external Unity batch processes occupying the project. Compile proof is clean; fresh post-change Unity smoke proof is absent.
+- Whole-console clean status is not claimed.
+- The larger worktree contains many unrelated modified and untracked files. They were not reverted or normalized.

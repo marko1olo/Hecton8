@@ -27,14 +27,15 @@ Scope: standalone Burst hydraulic erosion, thermal slumping, MapMagic generator 
 
 ## Implementation Facts
 
-- `HydraulicErosionJob` is a Burst `IJob` over a caller-owned `NativeArray<float>` heightmap.
-- Droplets use deterministic hash RNG, momentum, sediment capacity, erosion, deposition, water evaporation, and final evaporation deposition.
-- Dendritic channel enforcement is implemented by choosing the best spawn cell from multiple deterministic candidates scored by local depression plus existing wear-channel intensity.
-- Local depression deposition fills the lowest cells in a 3x3 neighborhood toward a target height before fallback bilinear deposition, creating flat local sediment plains.
+- `HydraulicErosionJob` is a Burst `IJobParallelFor` over caller-owned `NativeArray<float>` heightmap, sediment, and erosion-depth buffers.
+- Droplets use deterministic hash RNG, high inertia, sediment capacity, erosion, deposition, water evaporation, and final evaporation deposition.
+- Dendritic channel enforcement is implemented by choosing the best spawn cell from multiple deterministic candidates scored by local depression plus existing erosion-depth intensity, then adding directional pull toward the erosion-depth gradient during flow integration.
+- Sedimentary deposition dumps the full carried payload when a droplet enters a slope band at or below 2 degrees, then a dedicated Burst smoothing pass flattens sediment-classified cells.
+- Canyon-wall steepening is a dedicated Burst post-pass that raises immediate non-channel banks next to deep erosion-depth cells.
 - `ThermalSlumpingJob` is a Burst `IJobParallelFor` that transfers material down slopes exceeding the critical talus angle.
-- `HectonHydraulicErosionMapMagicNode` exposes a MapMagic height inlet and three outlets: eroded height, sediment mask, wear mask.
+- `HectonHydraulicErosionMapMagicNode` exposes a MapMagic height inlet and three outlets: eroded height, sediment mask, erosion-depth mask.
 - The MapMagic node reserves a configurable 4-pixel default margin by spawning droplets in the core while allowing flow into the overlapped boundary.
-- Sediment and wear outputs are normalized to strict `0.0..1.0` before MapMagic product storage.
+- Sediment and erosion-depth outputs are normalized to strict `0.0..1.0` before MapMagic product storage.
 - `HectonHydraulicErosionMapMagicNode` registers and unregisters every `Allocator.TempJob` native buffer with `NativeMemorySentinel`.
 - `HectonHydraulicErosionMapMagicNode` publishes `GlobalTelemetryBus.PublishPerformanceWarning` markers for large droplet budgets, large cell budgets, and blocking barrier stalls above 25 ms.
 - `ErosionFractalHeightmapJob` moves editor-harness fractal terrain generation into a Burst `IJobParallelFor`.
@@ -103,6 +104,7 @@ Status: `PENDING VERIFICATION`
 - Replaced the smoke tester scalar heightmap seed loop with `ErosionFractalHeightmapJob` so the smoke terrain generation is also Burst `IJobParallelFor` work.
 - Added cold-path `GlobalTelemetryBus.PublishPerformanceWarning` calls for MapMagic droplet/cell budget violations and smoke-test failure reporting.
 - Converted TempJob disposal in the MapMagic node and editor harness to unregister-before-dispose helper paths.
+- Patched the editor-only `AnomalyTestHarness` assert overload ambiguity by replacing integer `Assert.AreEqual` calls with explicit boolean equality checks. This was a compile blocker for the Unity batchmode smoke pass, not part of the erosion runtime.
 
 ### Forensic Audit Data
 
@@ -119,5 +121,154 @@ Status: `PENDING VERIFICATION`
 - Blocked: `dotnet build .\Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` exits `1` before a clean domain compile can be claimed. Current blockers: `Temp/obj/Crest/project.assets.json` missing (`NETSDK1004`) and dependent `Unity.RenderPipelines.Universal.Runtime.dll` metadata missing (`CS0006`).
 - Blocked: Unity batchmode harness attempt wrote `CodexArtifacts/unity-erosion-harness-2026-05-05.log`, but compilation stopped before `Hecton8.Editor.ErosionTestHarness.Run` executed. Blocking errors in that log are `Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs(90,24)` and `(96,24)` ambiguous `Assert.AreEqual`, plus `Assets/_Project/Scripts/HectonSurvivalSystem.cs(1132,60)` and `(1133,61)` missing `HectonPlayerMovement.CapsuleHeight`.
 - Not found: batchmode log contains no compiler errors naming `ErosionHarnessJobs.cs`, `HydraulicErosionMetricsJob.cs`, `HectonHydraulicErosionMapMagicNode.cs`, `HydraulicErosionJob.cs`, or `HydraulicErosionSmokeTester.cs`.
-- Artifact: `CodexArtifacts/2026-05-05_EROSION_OMEGA_DIFF.patch` contains the tracked diffs plus no-index diffs for new erosion smoke/metrics files and their Unity `.meta` files.
-- Pending: `HydraulicErosionSmokeTester` execution and JSON artifact generation; blocked until Unity session/project compile is available.
+- Blocked: repeated 2026-05-05 hydraulic smoke reruns could not complete because unrelated Unity batchmode smoke runners repeatedly acquired the same project lock. Observed competing commands included `OmegaAutonomySmokeTestRunner.Run`, `OmegaSurvivalKinematicsSmokeTester.RunBatchModeSmokeTest`, `VisualOmegaSmokeTester.RunBatchModeSmokeTest`, `SavePersistenceOmegaSmokeTester.RunBatchModeSmokeTest`, `FaunaRuntimeSmokeTesterRunner.RunOmegaHeadlessSmoke`, `AnomalySmokeTester.Run`, `AutomationSmokeTestRunner.RunBatchOmegaAutomationSmokePass`, and `DocumentationAuthoritySmokeTester.RunMenuItem`.
+- Blocked: controlled hydraulic run wrote `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-exclusive.log` but stopped during Unity startup/domain reload before script compilation or `HydraulicErosionSmokeTester.RunMenu` execution. `CodexArtifacts/HydraulicErosionSmokeTester.json` was not created.
+- Artifact: `CodexArtifacts/2026-05-05_EROSION_OMEGA_DIFF.patch` is the scoped diff artifact for the current erosion continuation.
+- Historical pass: `HydraulicErosionSmokeTester` executed in Unity batchmode and wrote `CodexArtifacts/HydraulicErosionSmokeTester.json` before the boundary metrics were added. The current boundary metrics require a new JSON artifact.
+
+### 2026-05-05 Smoke Rerun Attempt
+
+- Attempted: `Unity.exe -batchmode -nographics -quit -projectPath C:\hades\Hecton8 -executeMethod Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu -logFile C:\hades\Hecton8\CodexArtifacts\unity-hydraulic-smoke-2026-05-05-rerun2.log`.
+- Result: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-rerun2.log` contains startup and `Application will terminate with return code 1`; it contains no compiler diagnostics and no `HydraulicErosionSmokeTester` JSON result.
+- Attempted: same command with `-logFile -` to force stdout diagnostics. Shell returned exit code `0`, but no `CodexArtifacts/HydraulicErosionSmokeTester.json` artifact was produced.
+- Attempted: controlled `Start-Process -Wait` rerun writing `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-rerun3.log`. Process returned `ExitCode=1`; log again contains startup and `Application will terminate with return code 1`, with no compiler diagnostics and no smoke JSON.
+- Current source inspection after the older `unity-omega-smoke-2026-05-05-rerun.log` compile errors: `WorldProceduralFieldSampler.cs` now imports `Hecton.Localization`, `PDAMapTab.cs` now imports `Hecton8.Environment`, and `BaseLogisticsNetwork.cs` now exposes `ExecuteLogisticsRouteBfs`. These remove the specific `LocHash`, `BiomeMatrixDirector`, and `ExecuteLogisticsRouteBfs` source mismatches seen in that older log, but no successful Unity recompile was captured in this report.
+- Blocked: active external Unity/dotnet/ILPP build processes were observed during the rerun window. The hydraulic smoke result remains unverified.
+
+### 2026-05-05 Previous Hydraulic Smoke Result
+
+- Passed: `Unity.exe -batchmode -nographics -quit -projectPath C:\hades\Hecton8 -executeMethod Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu -logFile C:\hades\Hecton8\CodexArtifacts\unity-hydraulic-smoke-2026-05-05-final3.log` completed with `Application will terminate with return code 0`.
+- Passed: `CodexArtifacts/HydraulicErosionSmokeTester.json` reports `scenarioCount=4`, `passCount=4`.
+- Passed: all four scenarios reported `nanCount=0`, `sentinelDelta=0`, and `trackedByteDelta=0`.
+- Scenario data: `dry_zero_power` 8x8, 0 droplets, 23.4236 ms, sediment/wear 0/0.
+- Scenario data: `tiny_margin_clamp` 16x16, 128 droplets, 31.0394 ms, max sediment/wear 0.922665/0.982978.
+- Scenario data: `draft_tile` 64x64, 4096 droplets, 1872.356 ms, max sediment/wear 0.621135/0.844835.
+- Scenario data: `thermal_stress` 96x96, 2048 droplets, 934.9957 ms, max sediment/wear 0.384809/0.637367.
+- Constraint: this successful JSON predates the current boundary-band metrics added to `HydraulicErosionMetricsJob` and `HydraulicErosionSmokeTester`. It does not contain `boundarySampleCount`, `boundaryNanCount`, `maxBoundaryHeightDelta`, `maxBoundarySediment`, or `maxBoundaryWear`, so it is historical evidence, not current working-tree verification.
+
+### 2026-05-05 Boundary Metrics Rerun Attempts
+
+- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-boundary.log` reached script compilation but failed before `HydraulicErosionSmokeTester` execution on `CrashTelemetryBuffer.cs(614,13)`, `(623,13)`, and `(631,13)` missing `TryRegisterRuntimeService` / `TryUnregisterRuntimeService`. Current source timestamp is later and now contains those methods, so this log is stale blocker evidence only.
+- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-boundary2.log` stopped after package registration. No `Application will terminate` line and no `CodexArtifacts/HydraulicErosionSmokeTester.json` were produced.
+- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-boundary-exclusive.log` started `HydraulicErosionSmokeTester.RunMenu`, but Bee reported `Modification date of Assets\_Project\Scripts\Dev\CelestialCataclysmSmokeTester.cs changed while running Csc` and `Tundra requires additional run`. No current boundary JSON was produced.
+- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-boundary-final.log` started `HydraulicErosionSmokeTester.RunMenu`, reached `ScriptCompilation Requested`, then exited without `Application will terminate`, without `Wrote JSON`, and without `CodexArtifacts/HydraulicErosionSmokeTester.json`.
+- Attempted: local monitored `unity-hydraulic-smoke-2026-05-05-codex-current.log` run was aborted before launch because another Unity process acquired the project lock between the no-process check and `Start-Process`. The competing command was another `HydraulicErosionSmokeTester.RunMenu` writing `unity-hydraulic-smoke-2026-05-05-boundary-final.log`.
+- Attempted: `CodexArtifacts/hydraulic-boundary-final2.log` started `HydraulicErosionSmokeTester.RunMenu` and reached Bee script compilation. Unity exited `-1`; Bee exited `2` with `More than one copy of bee_backend running in C:\hades\Hecton8 -- PID 34492 waiting`. No current boundary JSON was produced.
+- Observed: new unrelated Unity batchmode launches appeared at `2026-05-05 10:05:06` during the verification window: `OmegaAutonomySmokeTestRunner.Run`, `VolumetricBiomeSmokeTestRunner.Run`, `FaunaRuntimeSmokeTesterRunner.RunOmegaHeadlessSmoke`, and `SavePersistenceOmegaSmokeTester.RunBatchModeSmokeTest`.
+- Passed: `git diff --check -- Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md` returned no whitespace errors; Git emitted LF-to-CRLF warnings only.
+- Passed: scoped hot-path audit found one `.Complete()` at `HydraulicErosionSmokeTester.cs:224`, annotated as an editor cold sync. No `Run()`, `Update`, `LateUpdate`, `FixedUpdate`, `Tick`, `FixedTick`, `_instance`, `DontDestroyOnLoad`, or `$"` interpolated strings were found in the two boundary-metric source files.
+- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-current-final.log` exited before domain reload with `Application will terminate with return code 1`. The log contains startup arguments only and no compiler diagnostics; no current boundary JSON was produced.
+- Attempted: `CodexArtifacts/unity-hydraulic-smoke-2026-05-05-current-exclusive.log` reached `HydraulicErosionSmokeTester.RunMenu`, package registration, script compilation, and Bee. Bee reported `ExitCode: -1 Duration: 1m:10s`, `Internal build system error. Read the full binlog without getting a BuildFinishedMessage.`, and `The backend process appears to still be running.` No current boundary JSON was produced.
+- Observed: after the current exclusive attempt, unrelated batchmode launches again owned the project lock: `FaunaRuntimeSmokeTesterRunner.RunOmegaHeadlessSmoke` writing `fauna-omega-smoke-final-clean-20260505-165056.log` and `OmegaAutonomySmokeTestRunner.Run` writing `omega-autonomy-smoke-construction-integrated-2026-05-05-final.log`.
+- Artifact: `CodexArtifacts/2026-05-05_EROSION_OMEGA_DIFF.patch` was refreshed after the boundary metrics/report edits and contains the current scoped Git diff for this domain.
+
+### 2026-05-05 Current Boundary Smoke Result
+
+- Passed: direct Unity batchmode run `Unity.exe -batchmode -nographics -quit -projectPath C:\hades\Hecton8 -executeMethod Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu -logFile C:\hades\Hecton8\CodexArtifacts\unity-hydraulic-smoke-2026-05-05-current-direct-20260505-171339.log` completed with `Application will terminate with return code 0`.
+- Passed: `CodexArtifacts/HydraulicErosionSmokeTester.json` was regenerated after deleting the stale artifact and now contains current boundary metrics fields.
+- Passed: JSON reports `scenarioCount=4`, `passCount=4`, `status=PENDING VERIFICATION`, and tester `HydraulicErosionSmokeTester`.
+- Passed: all four scenarios report `nanCount=0`, `boundaryNanCount=0`, `sentinelDelta=0`, and `trackedByteDelta=0`.
+- Boundary data: `dry_zero_power` has `boundarySampleCount=28`, `maxBoundaryHeightDelta=0.604872`, `maxBoundarySediment=0`, `maxBoundaryWear=0`, `milliseconds=14.048`.
+- Boundary data: `tiny_margin_clamp` has `boundarySampleCount=192`, `maxBoundaryHeightDelta=0.484481`, `maxBoundarySediment=0.317379`, `maxBoundaryWear=0.289431`, `milliseconds=30.6578`.
+- Boundary data: `draft_tile` has `boundarySampleCount=960`, `maxBoundaryHeightDelta=0.224889`, `maxBoundarySediment=0.508141`, `maxBoundaryWear=0.41394`, `milliseconds=1565.129`.
+- Boundary data: `thermal_stress` has `boundarySampleCount=1472`, `maxBoundaryHeightDelta=0.127595`, `maxBoundarySediment=0.211816`, `maxBoundaryWear=0.122168`, `milliseconds=633.3935`.
+- Passed: post-run `git diff --check -- Assets/_Project/Scripts/World/HydraulicErosionMetricsJob.cs Assets/_Project/Scripts/Editor/HydraulicErosionSmokeTester.cs Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md` returned no whitespace errors; Git emitted LF-to-CRLF warnings only.
+- Passed: post-run scoped audit found no `$"` interpolated strings in `HydraulicErosionMetricsJob.cs`, `HydraulicErosionSmokeTester.cs`, `HectonHydraulicErosionMapMagicNode.cs`, or `ErosionTestHarness.cs`.
+- Finding: post-run scoped audit found `.Complete()` only at `ErosionTestHarness.cs:126`, `HectonHydraulicErosionMapMagicNode.cs:273`, and `HydraulicErosionSmokeTester.cs:224`; all three remain editor/generation sync points outside gameplay `Tick`, `FixedTick`, `Update`, or `LateUpdate`.
+- Finding: post-run scoped audit found native arrays in the MapMagic node, editor harness, and smoke tester paired with `NativeMemorySentinel.RegisterNativeArray` / `UnregisterNativeArray`; job structs expose caller-owned arrays only.
+- Current verification state: boundary smoke source is executed and JSON-backed on the current working tree. Runtime MapMagic adjacent-chunk seam proof and profiler GC proof remain outside this editor smoke and are still pending.
+- Status remains `PENDING VERIFICATION` under project authority rules; user-provided runtime/MapMagic graph logs are still required for in-game adjacency seam proof and profiler GC proof.
+
+## 2026-05-05 Dendritic Veins And Sediment Flats Pass
+
+Status: `PENDING VERIFICATION`
+
+Requested status label: `EROSION VEINS VERIFIED` is not promoted to project verification status until current working-tree compile/smoke/profiler evidence exists.
+
+### Mandates Followed
+
+- `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `.agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `.agents-skills/OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
+- `.agents-skills/GPU_Compute_Kernels_Kernels_Optimization_MX350.txt`
+- `.agents-skills/VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`
+
+### Surgery Log
+
+- Converted `HydraulicErosionJob` from single-lane `IJob` to Burst `IJobParallelFor` over fixed-size sub-grids.
+- Added `HydraulicErosionScheduler.ScheduleFourPhase`, which schedules `(phaseX, phaseZ)` parity phases `(0,0)`, `(1,0)`, `(0,1)`, and `(1,1)` with sequential dependencies. Same-phase sub-grids never share write boundaries; inactive parity sub-grids absorb boundary overlap.
+- Replaced hydraulic `WearMask` with `ErosionDepthMask` in the droplet job. Thermal slumping no longer writes to this lane, so the exported mask remains hydraulic riverbed depth only.
+- Raised default and enforced MapMagic runtime minima for dendritic formation: `Inertia >= 0.72`, `ChannelSpawnBias >= 12`, `ChannelFlowBias >= 1.5`, and `SpawnCandidateCount >= 12`.
+- Added full-payload sediment dumping at `SedimentaryFlatSlopeDegrees = 2`, plus `SedimentaryFlatSmoothingJob` for sediment-classified flat plains.
+- Added `CanyonWallSteepeningJob` to lift immediate banks around deeper erosion-depth cells, sharpening river canyon walls after erosion/slumping.
+- Updated `ErosionTestHarness` and `HydraulicErosionSmokeTester` to run the four-phase erosion, flat smoothing, canyon wall pass, and `DispatcherJobSwap.TryComplete` cold sync.
+
+### Dendritic Channel Bias Burst Logic
+
+```csharp
+float channel = ErosionDepthMask.IsCreated ? math.saturate(ErosionDepthMask[index] * 32f) : 0f;
+float spawnScore = jitter +
+                   depression * math.max(0f, DepressionSpawnBias) +
+                   channel * math.max(0f, ChannelSpawnBias);
+
+float2 channelGradient = SampleAccumulationGradient(ErosionDepthMask, position);
+float2 hydraulicForce = -gradient + channelGradient * math.max(0f, ChannelFlowBias);
+direction = direction * safeInertia +
+            hydraulicForce * (1f - safeInertia) +
+            channelGradient * math.max(0f, ChannelFlowBias) * 0.35f;
+```
+
+### Verification Delta
+
+- Passed: Unity MCP `validate_script` standard diagnostics returned zero errors and zero warnings for `HydraulicErosionJob.cs`, `HectonHydraulicErosionMapMagicNode.cs`, `ErosionTestHarness.cs`, and `HydraulicErosionSmokeTester.cs`.
+- Passed: Unity MCP executed `Hecton8.Editor.HydraulicErosionSmokeTester.RunAndWriteJson()` and wrote `CodexArtifacts/HydraulicErosionSmokeTester.json`.
+- Passed: current JSON reports `scenarioCount=4`, `passCount=4`, and all scenarios `passed=true`, `nanCount=0`, `boundaryNanCount=0`, `sentinelDelta=0`, and `trackedByteDelta=0`.
+- Scenario data: `dry_zero_power` 8x8, 0 droplets, `milliseconds=33.6702`, `sumSediment=0`, `sumWear=0`.
+- Scenario data: `tiny_margin_clamp` 16x16, 128 droplets, `milliseconds=22.5875`, `maxSediment=0.817494`, `maxWear=0.920643`.
+- Scenario data: `draft_tile` 64x64, 4096 droplets, `milliseconds=93.7701`, `maxSediment=0.691269`, `maxWear=0.968217`.
+- Scenario data: `thermal_stress` 96x96, 2048 droplets, `milliseconds=84.2058`, `maxSediment=0.399059`, `maxWear=0.617553`.
+- Attempted: `dotnet build .\Hecton8.Core.csproj -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -p:BaseIntermediateOutputPath=.codexbuild\erosion_obj\ -p:OutputPath=.codexbuild\erosion_bin\` timed out after 120 seconds without compiler diagnostics. Orphan MSBuild node processes left by the timeout were terminated by PID after parent process exit.
+- Pending: MapMagic scene-03 terrain sandbox graph execution.
+- Pending: profiler/GC proof for generation path.
+
+## 2026-05-05 Omega-Autonomy V2 Crucible
+
+Status: `PENDING VERIFICATION`
+
+Requested status label: `OMEGA V2 VERIFIED` is scoped to the self-audit pass only. Project authority status remains pending without user-provided profiler and Scene 03 MapMagic graph logs.
+
+### Garbage Found
+
+- Defect: `HydraulicErosionJob` used `NativeDisableParallelForRestriction` on `Heightmap`, `SedimentMask`, and `ErosionDepthMask` with only a short shared comment. Mandate requires explicit safety proof for native safety suppression.
+- Defect: `HectonHydraulicErosionMapMagicNode.Generate` could throw after scheduling erosion and before the blocking sync, then enter `finally` and dispose TempJob buffers while a live job handle still referenced them.
+- Defect: `ErosionTestHarness.Run` had the same live-handle disposal risk after the fractal heightmap job was scheduled.
+- Defect: `HydraulicErosionSmokeTester.RunScenario` had the same live-handle disposal risk after the fractal heightmap job was scheduled.
+- Defect: `ErosionTestHarness.WriteMacroShelfPreviewArtifacts` marked `handleScheduled` only after the second scheduled job. If the second schedule failed, the first scheduled job could remain live while buffers disposed.
+
+### Excision
+
+- Added three-paragraph `SAFETY_JUSTIFICATION_PARAGRAPH_1/2/3` blocks immediately above each `NativeDisableParallelForRestriction` field.
+- Moved job handle ownership into outer scope for MapMagic generation, editor harness, and smoke scenario.
+- Added `handleScheduled` guards that call `DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)` in `finally` before any `NativeMemorySentinel.UnregisterNativeArray` and `Dispose()`.
+- Moved the macro shelf `handleScheduled = true` assignment immediately after the first scheduled job.
+
+### Negative Findings
+
+- No `NativeList` or `NativeQueue` allocation found in touched scope.
+- All touched-scope `NativeArray` allocations are `Allocator.TempJob`, registered through `NativeMemorySentinel.RegisterNativeArray`, and disposed through unregister-before-dispose helpers in `finally`.
+- No LINQ usage found in touched scope.
+- No `foreach` loop found in touched scope.
+- No `string.Format` found in touched scope.
+- `.ToString()` remains only in editor cold JSON writer paths, not `Update`, `Tick`, `FixedUpdate`, `LateUpdate`, or `SlowTick`.
+- No `transform.position`, `Vector3.Distance`, or `math.distance` usage found in touched scope.
+- No `GlobalRegistry` calls, `Awake`, or `OnEnable` methods found in touched scope.
+
+### Verification Delta
+
+- Passed: Unity MCP `validate_script` standard diagnostics returned zero errors and zero warnings for `HydraulicErosionJob.cs`, `HectonHydraulicErosionMapMagicNode.cs`, `ErosionTestHarness.cs`, and `HydraulicErosionSmokeTester.cs` after the Crucible fixes.
+- Passed: Unity MCP executed `Hecton8.Editor.HydraulicErosionSmokeTester.RunAndWriteJson()` after the Crucible fixes and wrote `CodexArtifacts/HydraulicErosionSmokeTester.json`.
+- Passed: current JSON reports `scenarioCount=4`, `passCount=4`, and all scenarios `passed=true`, `nanCount=0`, `boundaryNanCount=0`, `sentinelDelta=0`, and `trackedByteDelta=0`.
+- Scenario data: `dry_zero_power` 8x8, 0 droplets, `milliseconds=903.1918`, `sumSediment=0`, `sumWear=0`.
+- Scenario data: `tiny_margin_clamp` 16x16, 128 droplets, `milliseconds=202.7419`, `maxSediment=0.75611`, `maxWear=0.775886`.
+- Scenario data: `draft_tile` 64x64, 4096 droplets, `milliseconds=336.4043`, `maxSediment=0.698055`, `maxWear=0.893405`.
+- Scenario data: `thermal_stress` 96x96, 2048 droplets, `milliseconds=174.3129`, `maxSediment=0.382892`, `maxWear=0.513876`.

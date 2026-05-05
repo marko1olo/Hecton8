@@ -1,0 +1,9 @@
+UnityEngine.Assertions.AssertionException: Perfect bowl basin count mismatch.
+Assertion failure. Values are not equal.
+Expected: 0 == 1
+  at UnityEngine.Assertions.Assert.Fail (System.String message, System.String userMessage) [0x00030] in <5ea200363ab142a582463089d51cabd3>:0 
+  at UnityEngine.Assertions.Assert.AreEqual[T] (T expected, T actual, System.String message, System.Collections.Generic.IEqualityComparer`1[T] comparer) [0x00054] in <5ea200363ab142a582463089d51cabd3>:0 
+  at UnityEngine.Assertions.Assert.AreEqual[T] (T expected, T actual, System.String message) [0x00008] in <5ea200363ab142a582463089d51cabd3>:0 
+  at UnityEngine.Assertions.Assert.AreEqual (System.Int32 expected, System.Int32 actual, System.String message) [0x00004] in <5ea200363ab142a582463089d51cabd3>:0 
+  at Hecton8.Editor.AnomalySmokeTester.RunSmoke () [0x000de] in C:\hades\Hecton8\Assets\_Project\Scripts\Editor\AnomalySmokeTester.cs:99 
+  at Hecton8.Editor.AnomalySmokeBatchAutoRunner.RunIfFlagged () [0x0002a] in C:\hades\Hecton8\Assets\_Project\Scripts\Editor\AnomalySmokeBatchAutoRunner.cs:29 

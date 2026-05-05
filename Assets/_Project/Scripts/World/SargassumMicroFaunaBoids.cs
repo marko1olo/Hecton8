@@ -3775,7 +3775,7 @@ namespace Hecton8.World
                 _playerMovement.ApplyPhysicalTrauma(traumaImpulse, Mathf.Lerp(leviathanStrikeTraumaWeight * 0.65f, leviathanStrikeTraumaWeight, speed01));
 
             if (_playerHealth != null)
-                _playerHealth.TakeDamage(leviathanStrikeDamage);
+                _playerHealth.TakeLeviathanDamage(leviathanStrikeDamage);
 
             _leviathanStrikeCooldownTimer = leviathanStrikeCooldown;
         }

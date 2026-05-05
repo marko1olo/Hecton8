@@ -139,6 +139,8 @@ namespace Hecton8.World
         private const int MaxCrystallizationSampleCapacity = 32;
         private const int VentBufferRingSize = 3;
         private const float VentStateCompareEpsilon = 0.01f;
+        private const string NativeMemoryOwner = nameof(AbyssalThermalManager);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const uint ThermalHashSeed = 0xC6BC2796u;
         private const float ThermalSpatialEventLifetimeSeconds = 1.25f;
         private const float DryAirDensityKilogramsPerCubicMeter = 1.225f;
@@ -1267,12 +1269,14 @@ namespace Hecton8.World
             JobHandle dependency = _crystallizationJobActive ? _crystallizationJobHandle : default;
             if (_crystallizationSamples.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_crystallizationSamples);
                 dependency = _crystallizationSamples.Dispose(dependency);
                 _crystallizationSamples = default;
             }
 
             if (_crystallizationResults.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_crystallizationResults);
                 dependency = _crystallizationResults.Dispose(dependency);
                 _crystallizationResults = default;
             }
@@ -1475,6 +1479,7 @@ namespace Hecton8.World
                     MaxCrystallizationSampleCapacity,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_crystallizationSamples, NativeMemoryOwner, nameof(_crystallizationSamples), NativeMemoryLifetime);
             }
 
             if (!_crystallizationResults.IsCreated)
@@ -1484,6 +1489,7 @@ namespace Hecton8.World
                     MaxCrystallizationSampleCapacity,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(_crystallizationResults, NativeMemoryOwner, nameof(_crystallizationResults), NativeMemoryLifetime);
             }
 
             if (_bioCableVisuals == null || _bioCableVisuals.Length != MaxVentCapacity)

@@ -90,6 +90,7 @@ namespace Hecton8.Audio
         private const float Tier1ReducedDspDistanceMeters = 40f;
         private const float Tier1UpdateIntervalSeconds = 1f / 30f;
         private const float Tier1LowPassCutoffHertz = 1800f;
+        private const float VoxelSourceOcclusionUpdateIntervalSeconds = 0.2f;
         private const float StereoPanDistanceNormalizationMeters = 15f;
         private const int MaxImpactRadarEmitters = 16;
         private const float ImpactEmitterLifetimeMinSeconds = 0.18f;
@@ -306,6 +307,9 @@ namespace Hecton8.Audio
         private float[] _startTimes2D;
         private float[] _baseVolumes;
         private float[] _basePitches;
+        private float[] _sourceVoxelLowPassCutoffs;
+        private float[] _sourceVoxelTransmissions;
+        private float[] _sourceVoxelNextUpdateTimes;
         private float[] _smoothedDopplerRatios;
         private float[] _previousRelativeVelocities;
         private float[] _arrivalTimes;
@@ -624,6 +628,9 @@ namespace Hecton8.Audio
             _startTimes = new float[_poolSize];
             _baseVolumes = new float[_poolSize];
             _basePitches = new float[_poolSize];
+            _sourceVoxelLowPassCutoffs = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - per-source voxel occlusion LPF cache - owner: SpatialAudioManager
+            _sourceVoxelTransmissions = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - per-source voxel transmission cache - owner: SpatialAudioManager
+            _sourceVoxelNextUpdateTimes = new float[_poolSize]; // COLD ALLOC: float[_poolSize] - throttled voxel occlusion refresh cadence - owner: SpatialAudioManager
             _smoothedDopplerRatios = new float[_poolSize];
             _previousRelativeVelocities = new float[_poolSize];
             _arrivalTimes = new float[_poolSize];
@@ -641,6 +648,9 @@ namespace Hecton8.Audio
                 _activeWorldIndices[i] = -1;
                 _activeWorldSlots[i] = -1;
                 _basePitches[i] = 1f;
+                _sourceVoxelLowPassCutoffs[i] = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+                _sourceVoxelTransmissions[i] = 1f;
+                _sourceVoxelNextUpdateTimes[i] = 0f;
                 _smoothedDopplerRatios[i] = 1f;
                 _previousRelativeVelocities[i] = 0f;
             }
@@ -966,6 +976,8 @@ namespace Hecton8.Audio
                 lowPassCutoffHz,
                 AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
                 AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            if (_sourceVoxelLowPassCutoffs != null && index >= 0 && index < _sourceVoxelLowPassCutoffs.Length)
+                cutoff = math.min(cutoff, _sourceVoxelLowPassCutoffs[index]);
             if (cutoff < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f)
                 ApplyLowPassFilter(index, true, cutoff);
 
@@ -1969,6 +1981,15 @@ private int AcquireSourceIndex()
             if (_basePitches != null && sourceIndex < _basePitches.Length)
                 _basePitches[sourceIndex] = 1f;
 
+            if (_sourceVoxelLowPassCutoffs != null && sourceIndex < _sourceVoxelLowPassCutoffs.Length)
+                _sourceVoxelLowPassCutoffs[sourceIndex] = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+
+            if (_sourceVoxelTransmissions != null && sourceIndex < _sourceVoxelTransmissions.Length)
+                _sourceVoxelTransmissions[sourceIndex] = 1f;
+
+            if (_sourceVoxelNextUpdateTimes != null && sourceIndex < _sourceVoxelNextUpdateTimes.Length)
+                _sourceVoxelNextUpdateTimes[sourceIndex] = 0f;
+
             if (_smoothedDopplerRatios != null && sourceIndex < _smoothedDopplerRatios.Length)
                 _smoothedDopplerRatios[sourceIndex] = 1f;
 
@@ -1993,6 +2014,65 @@ private int AcquireSourceIndex()
             ResetHaasState(sourceIndex);
         }
 
+        private bool TryRefreshSourceVoxelOcclusion(
+            int sourceIndex,
+            Vector3 sourcePosition,
+            float now,
+            bool forceImmediate,
+            out float transmission01,
+            out float lowPassCutoffHz)
+        {
+            transmission01 = 1f;
+            lowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            if (_sourceVoxelLowPassCutoffs == null ||
+                _sourceVoxelTransmissions == null ||
+                _sourceVoxelNextUpdateTimes == null ||
+                sourceIndex < 0 ||
+                sourceIndex >= _sourceVoxelLowPassCutoffs.Length ||
+                sourceIndex >= _sourceVoxelTransmissions.Length ||
+                sourceIndex >= _sourceVoxelNextUpdateTimes.Length)
+            {
+                return false;
+            }
+
+            transmission01 = math.saturate(_sourceVoxelTransmissions[sourceIndex]);
+            lowPassCutoffHz = math.clamp(
+                _sourceVoxelLowPassCutoffs[sourceIndex],
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            if (!forceImmediate && now < _sourceVoxelNextUpdateTimes[sourceIndex])
+                return lowPassCutoffHz < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f || transmission01 < 0.999f;
+
+            _sourceVoxelNextUpdateTimes[sourceIndex] = now + VoxelSourceOcclusionUpdateIntervalSeconds;
+            _sourceVoxelTransmissions[sourceIndex] = 1f;
+            _sourceVoxelLowPassCutoffs[sourceIndex] = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+            transmission01 = 1f;
+            lowPassCutoffHz = AcousticOcclusionUtility.OpenLowPassCutoffHertz;
+
+            Transform listener = ResolveListenerTransform();
+            if (listener == null)
+                return false;
+
+            Vector3 sourceAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
+            Vector3 listenerAbsolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(listener.position);
+            if (!AcousticOcclusionUtility.TryTraceVoxelDensityOcclusion(
+                    sourceAbsolutePosition,
+                    listenerAbsolutePosition,
+                    out AcousticVoxelOcclusionResult voxelOcclusion))
+            {
+                return false;
+            }
+
+            transmission01 = math.saturate(voxelOcclusion.Transmission01);
+            lowPassCutoffHz = math.clamp(
+                voxelOcclusion.LowPassCutoffHz,
+                AcousticOcclusionUtility.MinimumLowPassCutoffHertz,
+                AcousticOcclusionUtility.OpenLowPassCutoffHertz);
+            _sourceVoxelTransmissions[sourceIndex] = transmission01;
+            _sourceVoxelLowPassCutoffs[sourceIndex] = lowPassCutoffHz;
+            return lowPassCutoffHz < AcousticOcclusionUtility.OpenLowPassCutoffHertz - 1f || transmission01 < 0.999f;
+        }
+
         private void UpdateWorldSourceAudioLod(int sourceIndex, AudioSource source, float now, bool forceImmediate)
         {
             if (source == null)
@@ -2001,6 +2081,15 @@ private int AcquireSourceIndex()
             AudioLodTier resolvedTier = ResolveAudioLodTier(source.transform.position);
             bool rearHemisphereFilterEnabled = TryResolveRearHemisphereLowPassCutoff(source.transform.position, out float rearHemisphereCutoff);
             bool caveLowPassEnabled = TryResolveCaveExternalLowPassCutoff(source, source.transform.position, out float caveLowPassCutoff);
+            bool voxelLowPassEnabled = TryRefreshSourceVoxelOcclusion(
+                sourceIndex,
+                source.transform.position,
+                now,
+                forceImmediate,
+                out float voxelTransmission01,
+                out float voxelLowPassCutoff);
+            if (_baseVolumes != null && sourceIndex >= 0 && sourceIndex < _baseVolumes.Length)
+                source.volume = _baseVolumes[sourceIndex] * voxelTransmission01;
             if (!forceImmediate &&
                 resolvedTier == AudioLodTier.Tier1Reduced &&
                 _audioLodTiers[sourceIndex] == AudioLodTier.Tier1Reduced &&
@@ -2020,9 +2109,11 @@ private int AcquireSourceIndex()
                         tierZeroCutoff = math.min(tierZeroCutoff, rearHemisphereCutoff);
                     if (caveLowPassEnabled)
                         tierZeroCutoff = math.min(tierZeroCutoff, caveLowPassCutoff);
+                    if (voxelLowPassEnabled)
+                        tierZeroCutoff = math.min(tierZeroCutoff, voxelLowPassCutoff);
                     ApplyLowPassFilter(
                         sourceIndex,
-                        rearHemisphereFilterEnabled || caveLowPassEnabled,
+                        rearHemisphereFilterEnabled || caveLowPassEnabled || voxelLowPassEnabled,
                         tierZeroCutoff);
                     _nextTierUpdateTimes[sourceIndex] = 0f;
                     return;
@@ -2035,6 +2126,8 @@ private int AcquireSourceIndex()
                         tierOneCutoff = math.min(tierOneCutoff, rearHemisphereCutoff);
                     if (caveLowPassEnabled)
                         tierOneCutoff = math.min(tierOneCutoff, caveLowPassCutoff);
+                    if (voxelLowPassEnabled)
+                        tierOneCutoff = math.min(tierOneCutoff, voxelLowPassCutoff);
                     ApplyLowPassFilter(sourceIndex, true, tierOneCutoff);
                     _nextTierUpdateTimes[sourceIndex] = now + Tier1UpdateIntervalSeconds;
                     return;
@@ -2141,6 +2234,11 @@ private int AcquireSourceIndex()
                     AcousticRadarBinCount,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[360] - HUD acoustic radar ring - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(
+                    _acousticRadarIntensityBins,
+                    nameof(SpatialAudioManager),
+                    nameof(_acousticRadarIntensityBins),
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_acousticRadarGrid.IsCreated)
@@ -2149,6 +2247,11 @@ private int AcquireSourceIndex()
                     AcousticRadarGridCellCount,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float>[32] - 8x4 acoustic radar energy grid - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeArray(
+                    _acousticRadarGrid,
+                    nameof(SpatialAudioManager),
+                    nameof(_acousticRadarGrid),
+                    NativeAllocationLifetime.Session);
             }
 
             if (_acousticRadarGridUploadScratch == null || _acousticRadarGridUploadScratch.Length != AcousticRadarGridCellCount)
@@ -2181,19 +2284,28 @@ private int AcquireSourceIndex()
             }
 
             if (!_pendingDelayedAudioEvents.IsCreated)
+            {
                 _pendingDelayedAudioEvents = new NativeList<DelayedAudioEvent>(MaxDelayedAudioEvents, Allocator.Persistent); // COLD ALLOC: NativeList<DelayedAudioEvent>[16] - active delayed world-event schedule - owner: SpatialAudioManager
+                NativeMemorySentinel.RegisterNativeList(
+                    _pendingDelayedAudioEvents,
+                    nameof(SpatialAudioManager),
+                    nameof(_pendingDelayedAudioEvents),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private void ReleaseTelemetryCaches()
         {
             if (_acousticRadarIntensityBins.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticRadarIntensityBins);
                 _acousticRadarIntensityBins.Dispose();
                 _acousticRadarIntensityBins = default;
             }
 
             if (_acousticRadarGrid.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_acousticRadarGrid);
                 _acousticRadarGrid.Dispose();
                 _acousticRadarGrid = default;
             }
@@ -2213,6 +2325,7 @@ private int AcquireSourceIndex()
 
             if (_pendingDelayedAudioEvents.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeList(nameof(SpatialAudioManager), nameof(_pendingDelayedAudioEvents));
                 _pendingDelayedAudioEvents.Dispose();
                 _pendingDelayedAudioEvents = default;
             }

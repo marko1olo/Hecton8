@@ -1,0 +1,1253 @@
+﻿diff --git a/Assets/_Project/Scripts/Core/GlobalRegistry.cs b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+index ac7984f5..9b76ec75 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistry.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+@@ -56,6 +56,8 @@ namespace Hecton8.Core
+         // COLD ALLOC: NoOpInputService[1] - null-object fallback for premature GlobalRegistry.Input reads - owner: GlobalRegistry
+         private static readonly IInputService _noOpInputService = new NoOpInputService();
+         private static readonly uint _inputDependencyWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.Input"));
++        private static readonly uint _serviceReboundOverflowWarningHash = unchecked((uint)LocHash.Compute("GlobalRegistry.ServiceReboundOverflow"));
++        private static readonly uint _globalRegistryTelemetryContextHash = unchecked((uint)LocHash.Compute("GlobalRegistry"));
+         private const int MaxPendingServiceRebounds = 64;
+         private const uint PlayerResolutionMask =
+             (1u << (int)GlobalRegistryResolutionScope.PlayerContext) |
+@@ -128,12 +130,19 @@ namespace Hecton8.Core
+         private static IFluidSim _fluidSimulation;
+         private static ILogisticsService _logistics;
+         private static IWorldGenService _worldGen;
++        private static IWorldSeedProvider _worldSeedProvider;
++        private static WorldProceduralFieldSampler _proceduralFieldSamplerRuntime;
++        private static ResourceDistributionDirector _resourceDistributionRuntime;
++        private static WorldGenerativeGeologyTerrainSeamApplier _geologyTerrainSeamRuntime;
++        private static WorldGenerativeGeologyVoxelBridgeDirector _geologyVoxelBridgeRuntime;
+         private static IEncounterDirectorService _encounterDirector;
+         private static IQuestSystem _questSystem;
+         private static PersistentWorldRegistry _persistentWorldRegistry;
+         private static WorldStateManager _worldStateRuntime;
+         private static IPDALogbookService _pdaLogbook;
+         private static IProfileService _profile;
++        private static EclipseGameplaySystem _eclipseGameplayRuntime;
++        private static RandomEventSystem _randomEventRuntime;
+         private static HectonFluidEngine _fluidRuntime;
+         private static AbyssalThermalManager _thermodynamicsRuntime;
+         private static HectonNarrativeDirector _narrativeDirectorRuntime;
+@@ -152,6 +161,7 @@ namespace Hecton8.Core
+         private static FirstHourDirector _firstHourRuntime;
+         private static EmergencyServiceRelayDirector _emergencyRelayRuntime;
+         private static HectonAtmosphereManager _atmosphereRuntime;
++        private static MapMagicBridge _mapMagicRuntime;
+         private static BeaconNetworkSystem _beaconNetworkRuntime;
+         private static ScanLogSystem _scanLogRuntime;
+         private static ToolDurabilitySystem _toolDurabilityRuntime;
+@@ -197,6 +207,8 @@ namespace Hecton8.Core
+         private static UIRTManager _uiRTRuntime;
+         private static SettingsManager _settingsRuntime;
+         private static RuntimeWatchdog _runtimeWatchdogRuntime;
++        private static CrashTelemetryBuffer _crashTelemetryRuntime;
++        private static PlayerCriticalProceduralAudioRenderer _playerCriticalAudioRuntime;
+         private static GameTickManager _tickManager;
+         private static SystemDispatcher _dispatcher;
+         private static RenderDispatcher _renderDispatcher;
+@@ -269,6 +281,16 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IAudioService Audio => _audio;
+ 
++        /// <summary>
++        /// Authoritative crash telemetry runtime owner.
++        /// </summary>
++        public static CrashTelemetryBuffer CrashTelemetry => _crashTelemetryRuntime;
++
++        /// <summary>
++        /// Authoritative player critical procedural audio runtime owner.
++        /// </summary>
++        public static PlayerCriticalProceduralAudioRenderer PlayerCriticalAudio => _playerCriticalAudioRuntime;
++
+         /// <summary>
+         /// Registered scene service slot.
+         /// </summary>
+@@ -446,6 +468,36 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IWorldGenService WorldGen => _worldGen;
+ 
++        /// <summary>
++        /// Registered deterministic world-seed provider slot.
++        /// </summary>
++        public static IWorldSeedProvider WorldSeedProvider => _worldSeedProvider;
++
++        /// <summary>
++        /// Registered concrete procedural scatter runtime owner.
++        /// </summary>
++        public static WorldProceduralScatterDirector ProceduralScatter => _worldGen as WorldProceduralScatterDirector;
++
++        /// <summary>
++        /// Registered concrete procedural field sampler runtime owner.
++        /// </summary>
++        public static WorldProceduralFieldSampler ProceduralFieldSampler => _proceduralFieldSamplerRuntime;
++
++        /// <summary>
++        /// Registered concrete resource-distribution runtime owner.
++        /// </summary>
++        public static ResourceDistributionDirector ResourceDistribution => _resourceDistributionRuntime;
++
++        /// <summary>
++        /// Registered terrain/voxel seam applier runtime owner.
++        /// </summary>
++        public static WorldGenerativeGeologyTerrainSeamApplier GeologyTerrainSeam => _geologyTerrainSeamRuntime;
++
++        /// <summary>
++        /// Registered geology voxel bridge runtime owner.
++        /// </summary>
++        public static WorldGenerativeGeologyVoxelBridgeDirector GeologyVoxelBridge => _geologyVoxelBridgeRuntime;
++
+         /// <summary>
+         /// Registered encounter-direction service slot.
+         /// </summary>
+@@ -476,6 +528,16 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IProfileService Profile => _profile;
+ 
++        /// <summary>
++        /// Registered eclipse-gameplay runtime owner.
++        /// </summary>
++        public static EclipseGameplaySystem EclipseGameplay => _eclipseGameplayRuntime;
++
++        /// <summary>
++        /// Registered random-event runtime owner.
++        /// </summary>
++        public static RandomEventSystem RandomEvents => _randomEventRuntime;
++
+         /// <summary>
+         /// Registered fluid simulation runtime owner.
+         /// </summary>
+@@ -566,6 +628,11 @@ namespace Hecton8.Core
+         /// </summary>
+         public static HectonAtmosphereManager Atmosphere => _atmosphereRuntime;
+ 
++        /// <summary>
++        /// Registered MapMagic bridge runtime owner.
++        /// </summary>
++        public static MapMagicBridge MapMagic => _mapMagicRuntime;
++
+         /// <summary>
+         /// Registered beacon-network runtime owner.
+         /// </summary>
+@@ -897,6 +964,11 @@ namespace Hecton8.Core
+             _fluidSimulation = null;
+             _logistics = null;
+             _worldGen = null;
++            _worldSeedProvider = null;
++            _proceduralFieldSamplerRuntime = null;
++            _resourceDistributionRuntime = null;
++            _geologyTerrainSeamRuntime = null;
++            _geologyVoxelBridgeRuntime = null;
+             _encounterDirector = null;
+             _questSystem = null;
+             _persistentWorldRegistry = null;
+@@ -921,6 +993,7 @@ namespace Hecton8.Core
+             _firstHourRuntime = null;
+             _emergencyRelayRuntime = null;
+             _atmosphereRuntime = null;
++            _mapMagicRuntime = null;
+             _beaconNetworkRuntime = null;
+             _scanLogRuntime = null;
+             _toolDurabilityRuntime = null;
+@@ -966,6 +1039,8 @@ namespace Hecton8.Core
+             _uiRTRuntime = null;
+             _settingsRuntime = null;
+             _runtimeWatchdogRuntime = null;
++            _crashTelemetryRuntime = null;
++            _playerCriticalAudioRuntime = null;
+             _tickManager = null;
+             _dispatcher = null;
+             _renderDispatcher = null;
+@@ -1301,6 +1376,47 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _worldGen, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the deterministic world-seed provider.
++        /// </summary>
++        /// <param name="instance">World-seed provider instance.</param>
++        public static void RegisterWorldSeedProvider(IWorldSeedProvider instance)
++        {
++            RegisterServiceAllowSameInstance(ref _worldSeedProvider, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative procedural field sampler runtime owner.
++        /// </summary>
++        public static void RegisterProceduralFieldSampler(WorldProceduralFieldSampler instance)
++        {
++            RegisterServiceAllowSameInstance(ref _proceduralFieldSamplerRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative resource-distribution runtime owner.
++        /// </summary>
++        public static void RegisterResourceDistribution(ResourceDistributionDirector instance)
++        {
++            RegisterServiceAllowSameInstance(ref _resourceDistributionRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative terrain/voxel seam applier runtime owner.
++        /// </summary>
++        public static void RegisterGeologyTerrainSeamRuntime(WorldGenerativeGeologyTerrainSeamApplier instance)
++        {
++            RegisterServiceAllowSameInstance(ref _geologyTerrainSeamRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative geology voxel bridge runtime owner.
++        /// </summary>
++        public static void RegisterGeologyVoxelBridgeRuntime(WorldGenerativeGeologyVoxelBridgeDirector instance)
++        {
++            RegisterServiceAllowSameInstance(ref _geologyVoxelBridgeRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative encounter-direction service.
+         /// </summary>
+@@ -1351,6 +1467,22 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _profile, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative eclipse-gameplay runtime owner.
++        /// </summary>
++        public static void RegisterEclipseGameplayRuntime(EclipseGameplaySystem instance)
++        {
++            RegisterService(ref _eclipseGameplayRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative random-event runtime owner.
++        /// </summary>
++        public static void RegisterRandomEventRuntime(RandomEventSystem instance)
++        {
++            RegisterService(ref _randomEventRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative fluid simulation runtime owner.
+         /// </summary>
+@@ -1453,6 +1585,22 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _audioLogRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative crash telemetry runtime owner.
++        /// </summary>
++        public static void RegisterCrashTelemetryRuntime(CrashTelemetryBuffer instance)
++        {
++            RegisterServiceAllowSameInstance(ref _crashTelemetryRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative player critical procedural audio owner.
++        /// </summary>
++        public static void RegisterPlayerCriticalAudioRuntime(PlayerCriticalProceduralAudioRenderer instance)
++        {
++            RegisterServiceAllowSameInstance(ref _playerCriticalAudioRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative acoustic-zone runtime owner.
+         /// </summary>
+@@ -1501,6 +1649,14 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _atmosphereRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative MapMagic bridge runtime owner.
++        /// </summary>
++        public static void RegisterMapMagicRuntime(MapMagicBridge instance)
++        {
++            RegisterServiceAllowSameInstance(ref _mapMagicRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative beacon-network runtime owner.
+         /// </summary>
+@@ -2102,6 +2258,47 @@ namespace Hecton8.Core
+             UnregisterService(ref _worldGen, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current deterministic world-seed provider if the owner matches.
++        /// </summary>
++        /// <param name="instance">Service owner requesting unregistration.</param>
++        public static void UnregisterWorldSeedProvider(IWorldSeedProvider instance)
++        {
++            UnregisterService(ref _worldSeedProvider, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current procedural field sampler runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterProceduralFieldSampler(WorldProceduralFieldSampler instance)
++        {
++            UnregisterService(ref _proceduralFieldSamplerRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current resource-distribution runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterResourceDistribution(ResourceDistributionDirector instance)
++        {
++            UnregisterService(ref _resourceDistributionRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current terrain/voxel seam applier runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterGeologyTerrainSeamRuntime(WorldGenerativeGeologyTerrainSeamApplier instance)
++        {
++            UnregisterService(ref _geologyTerrainSeamRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current geology voxel bridge runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterGeologyVoxelBridgeRuntime(WorldGenerativeGeologyVoxelBridgeDirector instance)
++        {
++            UnregisterService(ref _geologyVoxelBridgeRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current encounter-direction service if the owner matches.
+         /// </summary>
+@@ -2152,6 +2349,22 @@ namespace Hecton8.Core
+             UnregisterService(ref _profile, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current eclipse-gameplay runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterEclipseGameplayRuntime(EclipseGameplaySystem instance)
++        {
++            UnregisterService(ref _eclipseGameplayRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current random-event runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterRandomEventRuntime(RandomEventSystem instance)
++        {
++            UnregisterService(ref _randomEventRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current fluid simulation runtime owner if the owner matches.
+         /// </summary>
+@@ -2254,6 +2467,22 @@ namespace Hecton8.Core
+             UnregisterService(ref _audioLogRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current crash telemetry runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterCrashTelemetryRuntime(CrashTelemetryBuffer instance)
++        {
++            UnregisterService(ref _crashTelemetryRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current player critical procedural audio owner if the owner matches.
++        /// </summary>
++        public static void UnregisterPlayerCriticalAudioRuntime(PlayerCriticalProceduralAudioRenderer instance)
++        {
++            UnregisterService(ref _playerCriticalAudioRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current acoustic-zone runtime owner if the owner matches.
+         /// </summary>
+@@ -2302,6 +2531,14 @@ namespace Hecton8.Core
+             UnregisterService(ref _atmosphereRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current MapMagic bridge runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterMapMagicRuntime(MapMagicBridge instance)
++        {
++            UnregisterService(ref _mapMagicRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current beacon-network runtime owner if the owner matches.
+         /// </summary>
+@@ -3221,6 +3458,7 @@ namespace Hecton8.Core
+             EnsureServiceReboundQueue();
+             if (_pendingServiceReboundCount + _nextFrameServiceReboundCount >= MaxPendingServiceRebounds)
+             {
++                PublishServiceReboundOverflowWarning();
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                 if (!_serviceReboundOverflowLogged)
+                 {
+@@ -3234,6 +3472,7 @@ namespace Hecton8.Core
+             int referenceSlot = ReserveServiceReboundReferenceSlot(previousService, currentService);
+             if (referenceSlot < 0)
+             {
++                PublishServiceReboundOverflowWarning();
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+                 if (!_serviceReboundOverflowLogged)
+                 {
+@@ -3266,6 +3505,14 @@ namespace Hecton8.Core
+             }
+         }
+ 
++        private static void PublishServiceReboundOverflowWarning()
++        {
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                _serviceReboundOverflowWarningHash,
++                _globalRegistryTelemetryContextHash,
++                _pendingServiceReboundCount + _nextFrameServiceReboundCount);
++        }
++
+         private static void EnsureServiceReboundQueue()
+         {
+             if (!_pendingServiceRebounds.IsCreated)
+@@ -3401,12 +3648,19 @@ namespace Hecton8.Core
+             if (serviceType == typeof(IFluidSim)) return GlobalRegistryServiceSlot.FluidSimulation;
+             if (serviceType == typeof(ILogisticsService)) return GlobalRegistryServiceSlot.Logistics;
+             if (serviceType == typeof(IWorldGenService)) return GlobalRegistryServiceSlot.WorldGen;
++            if (serviceType == typeof(IWorldSeedProvider)) return GlobalRegistryServiceSlot.WorldSeedProvider;
++            if (serviceType == typeof(WorldProceduralFieldSampler)) return GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime;
++            if (serviceType == typeof(ResourceDistributionDirector)) return GlobalRegistryServiceSlot.ResourceDistributionRuntime;
++            if (serviceType == typeof(WorldGenerativeGeologyTerrainSeamApplier)) return GlobalRegistryServiceSlot.GeologyTerrainSeamRuntime;
++            if (serviceType == typeof(WorldGenerativeGeologyVoxelBridgeDirector)) return GlobalRegistryServiceSlot.GeologyVoxelBridgeRuntime;
+             if (serviceType == typeof(IEncounterDirectorService)) return GlobalRegistryServiceSlot.EncounterDirector;
+             if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
+             if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
+             if (serviceType == typeof(WorldStateManager)) return GlobalRegistryServiceSlot.WorldStateRuntime;
+             if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
+             if (serviceType == typeof(IProfileService)) return GlobalRegistryServiceSlot.Profile;
++            if (serviceType == typeof(EclipseGameplaySystem)) return GlobalRegistryServiceSlot.EclipseGameplayRuntime;
++            if (serviceType == typeof(RandomEventSystem)) return GlobalRegistryServiceSlot.RandomEventRuntime;
+             if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;
+             if (serviceType == typeof(AbyssalThermalManager)) return GlobalRegistryServiceSlot.ThermodynamicsRuntime;
+             if (serviceType == typeof(HectonNarrativeDirector)) return GlobalRegistryServiceSlot.NarrativeDirectorRuntime;
+@@ -3419,12 +3673,15 @@ namespace Hecton8.Core
+             if (serviceType == typeof(HectonBiolumManager)) return GlobalRegistryServiceSlot.BiolumManagerRuntime;
+             if (serviceType == typeof(LocalizationManager)) return GlobalRegistryServiceSlot.LocalizationRuntime;
+             if (serviceType == typeof(AudioLogSystem)) return GlobalRegistryServiceSlot.AudioLogRuntime;
++            if (serviceType == typeof(CrashTelemetryBuffer)) return GlobalRegistryServiceSlot.CrashTelemetryRuntime;
++            if (serviceType == typeof(PlayerCriticalProceduralAudioRenderer)) return GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime;
+             if (serviceType == typeof(AcousticZoneController)) return GlobalRegistryServiceSlot.AcousticZoneRuntime;
+             if (serviceType == typeof(HectonSurfaceWeatherDirector)) return GlobalRegistryServiceSlot.SurfaceWeatherRuntime;
+             if (serviceType == typeof(AtlasSignalSystem)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
+             if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
+             if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
+             if (serviceType == typeof(HectonAtmosphereManager)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
++            if (serviceType == typeof(MapMagicBridge)) return GlobalRegistryServiceSlot.MapMagicRuntime;
+             if (serviceType == typeof(BeaconNetworkSystem)) return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
+             if (serviceType == typeof(ScanLogSystem)) return GlobalRegistryServiceSlot.ScanLogRuntime;
+             if (serviceType == typeof(ToolDurabilitySystem)) return GlobalRegistryServiceSlot.ToolDurabilityRuntime;
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+index 092fc372..87362c53 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+@@ -1080,6 +1080,22 @@ namespace Hecton8.Core
+         void ClearScatterPreview();
+     }
+ 
++    /// <summary>
++    /// Deterministic world-seed provider exposed through <see cref="GlobalRegistry"/> for save/header validation.
++    /// </summary>
++    public interface IWorldSeedProvider
++    {
++        /// <summary>
++        /// True once the seed owner is registered and ready to answer save/load validation queries.
++        /// </summary>
++        bool IsInitialized { get; }
++
++        /// <summary>
++        /// Runtime world seed used by procedural geology and save-header consistency checks.
++        /// </summary>
++        int RuntimeWorldSeed { get; }
++    }
++
+     /// <summary>
+     /// Authoritative encounter-direction service exposed through <see cref="GlobalRegistry"/>.
+     /// </summary>
+@@ -1407,6 +1423,16 @@ namespace Hecton8.Core
+         UIRTRuntime = 97,
+         SettingsRuntime = 98,
+         RuntimeWatchdogRuntime = 99,
++        CrashTelemetryRuntime = 100,
++        PlayerCriticalAudioRuntime = 101,
++        MapMagicRuntime = 102,
++        ProceduralFieldSamplerRuntime = 103,
++        ResourceDistributionRuntime = 104,
++        RandomEventRuntime = 105,
++        EclipseGameplayRuntime = 106,
++        WorldSeedProvider = 107,
++        GeologyTerrainSeamRuntime = 108,
++        GeologyVoxelBridgeRuntime = 109,
+         Unknown = 255
+     }
+ 
+diff --git a/Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs b/Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs
+index 26eb944e..305b2d90 100644
+--- a/Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs
++++ b/Assets/_Project/Scripts/WorldGenerativeGeologyTerrainSeamApplier.cs
+@@ -22,14 +22,9 @@ namespace Hecton8.World
+ 
+         private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyTerrainSeamApplier);
+         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
++        private const int TerrainPatchBridgeSampleBudgetMx350 = 131072;
+ 
+-        internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance { get; private set; }
+-
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState()
+-        {
+-            ActiveRuntimeInstance = null;
+-        }
++        internal static WorldGenerativeGeologyTerrainSeamApplier ActiveRuntimeInstance => GlobalRegistry.GeologyTerrainSeam;
+ 
+         private sealed class TerrainApplyState
+         {
+@@ -82,17 +77,18 @@ namespace Hecton8.World
+         private readonly List<SeismicTrenchState> _activeTrenches = new List<SeismicTrenchState>(8);
+         private readonly List<int> _terrainBucketScratch = new List<int>(8);
+         private bool _registeredToTickManager;
++        private int _nextPatchTelemetryFrame;
+ 
+         private void Awake()
+         {
+-            ActiveRuntimeInstance = this;
++            GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
+             ResolveReferences();
+             ReconcileTerrainSeams();
+         }
+ 
+         private void OnEnable()
+         {
+-            ActiveRuntimeInstance = this;
++            GlobalRegistry.RegisterGeologyTerrainSeamRuntime(this);
+             ResolveReferences();
+             TryRegisterToTickManager();
+         }
+@@ -109,8 +105,8 @@ namespace Hecton8.World
+             RestoreAllTerrains();
+             DisposeTerrainStateNativeBuffers();
+ 
+-            if (ReferenceEquals(ActiveRuntimeInstance, this))
+-                ActiveRuntimeInstance = null;
++            if (ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, this))
++                GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(this);
+         }
+ 
+         private void OnDestroy()
+@@ -119,8 +115,8 @@ namespace Hecton8.World
+             RestoreAllTerrains();
+             DisposeTerrainStateNativeBuffers();
+ 
+-            if (ReferenceEquals(ActiveRuntimeInstance, this))
+-                ActiveRuntimeInstance = null;
++            if (ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, this))
++                GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(this);
+         }
+ 
+         public void SlowTick()
+@@ -601,6 +597,10 @@ namespace Hecton8.World
+                 state.patchBuffer = new float[rect.height, rect.width];
+             }
+ 
++            WorldGenerativeGeologyTelemetry.PublishTerrainPatchBridgeWarningIfNeeded(
++                rect.width * rect.height,
++                TerrainPatchBridgeSampleBudgetMx350,
++                ref _nextPatchTelemetryFrame);
+             CopyBaselinePatch(state.baselineHeights, state.heightmapResolution, rect, state.patchBuffer);
+             return state.patchBuffer;
+         }
+diff --git a/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs b/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+index 6f24cb24..ad7cd1c6 100644
+--- a/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
++++ b/Assets/_Project/Scripts/WorldGenerativeGeologyVoxelBridgeDirector.cs
+@@ -135,13 +135,14 @@ namespace Hecton8.World
+     [DefaultExecutionOrder(-4028)]
+     public sealed class WorldGenerativeGeologyVoxelBridgeDirector : MonoBehaviour, ISlowTickable, ITickable, IUpdatable, IRandomEventListener
+     {
+-        internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance { get; private set; }
++        private const string NativeMemoryOwner = nameof(WorldGenerativeGeologyVoxelBridgeDirector);
++        private const string EmptyNodesLabel = "emptyCaveNodes";
++        private const string EmptyTunnelsLabel = "emptyCaveTunnels";
++        private const string EntrancesLabel = "caveEntrances";
++        private const string StructuresLabel = "caveStructures";
++        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+ 
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState()
+-        {
+-            ActiveRuntimeInstance = null;
+-        }
++        internal static WorldGenerativeGeologyVoxelBridgeDirector ActiveRuntimeInstance => GlobalRegistry.GeologyVoxelBridge;
+ 
+         private sealed class PendingRequestState : System.IDisposable
+         {
+@@ -233,6 +234,8 @@ namespace Hecton8.World
+         private bool _registeredToSlowTickManager;
+         private bool _startupReconcilePending = true;
+         private int _estimatedWarmedPoolCount;
++        private int _nextQueueTelemetryFrame;
++        private int _nextFaultTelemetryFrame;
+         private CancellationTokenSource _lifetimeCancellation;
+         private bool _randomEventHooksRegistered;
+ 
+@@ -241,7 +244,7 @@ namespace Hecton8.World
+             if (!CanUseRuntimeDispatcher())
+                 return;
+ 
+-            ActiveRuntimeInstance = this;
++            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
+             ResolveReferences();
+             QueueStartupReconcile();
+         }
+@@ -252,7 +255,7 @@ namespace Hecton8.World
+             if (!CanUseRuntimeDispatcher())
+                 return;
+ 
+-            ActiveRuntimeInstance = this;
++            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
+             EnsureLifetimeCancellation();
+             RegisterRandomEventHooks();
+             QueueStartupReconcile();
+@@ -275,7 +278,7 @@ namespace Hecton8.World
+             if (!CanUseRuntimeDispatcher())
+                 return;
+ 
+-            ActiveRuntimeInstance = this;
++            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
+             EnsureLifetimeCancellation();
+             RegisterRandomEventHooks();
+             QueueStartupReconcile();
+@@ -311,14 +314,14 @@ namespace Hecton8.World
+             CancelAllPendingRequests();
+             ClearAllVolumes();
+ 
+-            if (ReferenceEquals(ActiveRuntimeInstance, this))
+-                ActiveRuntimeInstance = null;
++            if (ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, this))
++                GlobalRegistry.UnregisterGeologyVoxelBridgeRuntime(this);
+         }
+ 
+         private void OnDestroy()
+         {
+-            if (ReferenceEquals(ActiveRuntimeInstance, this))
+-                ActiveRuntimeInstance = null;
++            if (ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, this))
++                GlobalRegistry.UnregisterGeologyVoxelBridgeRuntime(this);
+         }
+ 
+         public void Tick(float deltaTime)
+@@ -810,6 +813,9 @@ namespace Hecton8.World
+             }
+ 
+             _debugQueuedLaunches = _queuedLaunchOrder.Count;
++            WorldGenerativeGeologyTelemetry.PublishVoxelQueuePressureIfNeeded(
++                _debugQueuedLaunches,
++                ref _nextQueueTelemetryFrame);
+         }
+ 
+         private void FlushQueuedLaunches()
+@@ -881,7 +887,13 @@ namespace Hecton8.World
+             try
+             {
+                 if (voxelEngine == null)
++                {
++                    WorldGenerativeGeologyTelemetry.PublishVoxelFaultIfNeeded(
++                        WorldGenerativeGeologyTelemetry.VoxelEngineMissingWarningHash,
++                        1f,
++                        ref _nextFaultTelemetryFrame);
+                     return;
++                }
+ 
+                 long buildDataStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                 BuildVoxelRequestData(
+@@ -896,8 +908,9 @@ namespace Hecton8.World
+                     out NativeArray<CaveEntrance> entranceArray,
+                     out NativeArray<CaveStructure> structureArray);
+                 float buildDataMs = (float)((System.Diagnostics.Stopwatch.GetTimestamp() - buildDataStartTimestamp) * 1000.0d / System.Diagnostics.Stopwatch.Frequency);
+-                NativeArray<CaveNode> nodes = new NativeArray<CaveNode>(0, Allocator.Persistent);
+-                NativeArray<CaveTunnel> tunnels = new NativeArray<CaveTunnel>(0, Allocator.Persistent);
++                WorldGenerativeGeologyTelemetry.PublishVoxelBuildDataBudgetIfNeeded(buildDataMs);
++                NativeArray<CaveNode> nodes = AllocateTrackedNativeArray<CaveNode>(0, EmptyNodesLabel, NativeArrayOptions.UninitializedMemory);
++                NativeArray<CaveTunnel> tunnels = AllocateTrackedNativeArray<CaveTunnel>(0, EmptyTunnelsLabel, NativeArrayOptions.UninitializedMemory);
+                 NativeArray<CaveEntrance> entrances = entranceArray;
+                 TraceRequestPrepared(
+                     request.runtimeKey,
+@@ -940,7 +953,13 @@ namespace Hecton8.World
+                             ct: token);
+ 
+                     if (volume == null)
++                    {
++                        WorldGenerativeGeologyTelemetry.PublishVoxelFaultIfNeeded(
++                            WorldGenerativeGeologyTelemetry.VoxelVolumeNullWarningHash,
++                            gridDimension,
++                            ref _nextFaultTelemetryFrame);
+                         return;
++                    }
+ 
+                     if (!isActiveAndEnabled ||
+                         !_desiredSignatures.TryGetValue(request.runtimeKey, out int desiredSignature) ||
+@@ -993,10 +1012,10 @@ namespace Hecton8.World
+                 }
+                 finally
+                 {
+-                    if (nodes.IsCreated) nodes.Dispose();
+-                    if (tunnels.IsCreated) tunnels.Dispose();
+-                    if (entrances.IsCreated) entrances.Dispose();
+-                    if (structureArray.IsCreated) structureArray.Dispose();
++                    DisposeTrackedNativeArray(ref nodes);
++                    DisposeTrackedNativeArray(ref tunnels);
++                    DisposeTrackedNativeArray(ref entrances);
++                    DisposeTrackedNativeArray(ref structureArray);
+                 }
+             }
+             catch (OperationCanceledException)
+@@ -1085,9 +1104,9 @@ namespace Hecton8.World
+ 
+             Vector3 upOffset = Vector3.up * Mathf.Max(0.75f, request.size.y * 0.08f);
+             entrances = BuildEntrances(request);
+-            structures = new NativeArray<CaveStructure>(
++            structures = AllocateTrackedNativeArray<CaveStructure>(
+                 ResolveStructureCount(request.archetype),
+-                Allocator.Persistent,
++                StructuresLabel,
+                 NativeArrayOptions.UninitializedMemory);
+ 
+             switch (request.archetype)
+@@ -1305,9 +1324,9 @@ namespace Hecton8.World
+         private NativeArray<CaveEntrance> BuildEntrances(in WorldGenerativeGeologyVoxelBlendRequest request)
+         {
+             if (!VoxelSeamDirector.ShouldCreateCaveMouth(request.hasTerrainSample, request.slopeDegrees, request.caveBlendMode))
+-                return new NativeArray<CaveEntrance>(0, Allocator.Persistent);
++                return AllocateTrackedNativeArray<CaveEntrance>(0, EntrancesLabel, NativeArrayOptions.UninitializedMemory);
+ 
+-            NativeArray<CaveEntrance> entrances = new NativeArray<CaveEntrance>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            NativeArray<CaveEntrance> entrances = AllocateTrackedNativeArray<CaveEntrance>(1, EntrancesLabel, NativeArrayOptions.UninitializedMemory);
+             Vector3 terrainNormal = ResolveCaveEntranceTerrainNormal(request);
+             entrances[0] = VoxelSeamDirector.BuildCaveEntrance(
+                 request.RuntimeTerrainContactPosition,
+@@ -1321,6 +1340,37 @@ namespace Hecton8.World
+             return entrances;
+         }
+ 
++        private static NativeArray<T> AllocateTrackedNativeArray<T>(
++            int length,
++            string label,
++            NativeArrayOptions options)
++            where T : struct
++        {
++            NativeArray<T> array = new NativeArray<T>(length, Allocator.Persistent, options);
++            RegisterTrackedNativeArray(array, label);
++            return array;
++        }
++
++        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label)
++            where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
++        }
++
++        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array)
++            where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
++        }
++
+         private static Vector3 ResolveCaveEntranceTerrainNormal(in WorldGenerativeGeologyVoxelBlendRequest request)
+         {
+             if (!request.hasTerrainSample)
+diff --git a/Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs b/Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs
+new file mode 100644
+index 00000000..25d9fe66
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs
+@@ -0,0 +1,288 @@
++using Hecton8.Core;
++#if UNITY_EDITOR
++using UnityEditor;
++#endif
++using UnityEngine;
++
++namespace Hecton8.World
++{
++    /// <summary>
++    /// Cold-path smoke harness for registry-backed world-generation runtime ownership.
++    /// </summary>
++    [DisallowMultipleComponent]
++    [AddComponentMenu("Hecton/World/World Gen Registry Smoke Tester")]
++    public sealed class WorldGenRegistrySmokeTester : MonoBehaviour
++    {
++        public readonly struct WorldGenRegistrySmokeReport
++        {
++            public const int ExpectedRegistryQueueNativeAllocationDelta = 2;
++
++            public WorldGenRegistrySmokeReport(
++                bool passed,
++                bool fieldSamplerRegistered,
++                bool fieldSamplerReleased,
++                bool resourceDistributionRegistered,
++                bool resourceDistributionReleased,
++                bool geologyTerrainSeamRegistered,
++                bool geologyTerrainSeamReleased,
++                bool geologyVoxelBridgeRegistered,
++                bool geologyVoxelBridgeReleased,
++                bool worldGenRegistered,
++                bool worldGenReleased,
++                int pendingReboundCountBefore,
++                int pendingReboundCountAfter,
++                int nativeAllocationCountBefore,
++                int nativeAllocationCountAfter,
++                int expectedNativeAllocationDelta)
++            {
++                Passed = passed;
++                FieldSamplerRegistered = fieldSamplerRegistered;
++                FieldSamplerReleased = fieldSamplerReleased;
++                ResourceDistributionRegistered = resourceDistributionRegistered;
++                ResourceDistributionReleased = resourceDistributionReleased;
++                GeologyTerrainSeamRegistered = geologyTerrainSeamRegistered;
++                GeologyTerrainSeamReleased = geologyTerrainSeamReleased;
++                GeologyVoxelBridgeRegistered = geologyVoxelBridgeRegistered;
++                GeologyVoxelBridgeReleased = geologyVoxelBridgeReleased;
++                WorldGenRegistered = worldGenRegistered;
++                WorldGenReleased = worldGenReleased;
++                PendingReboundCountBefore = pendingReboundCountBefore;
++                PendingReboundCountAfter = pendingReboundCountAfter;
++                NativeAllocationCountBefore = nativeAllocationCountBefore;
++                NativeAllocationCountAfter = nativeAllocationCountAfter;
++                ExpectedNativeAllocationDelta = expectedNativeAllocationDelta;
++            }
++
++            public bool Passed { get; }
++            public bool FieldSamplerRegistered { get; }
++            public bool FieldSamplerReleased { get; }
++            public bool ResourceDistributionRegistered { get; }
++            public bool ResourceDistributionReleased { get; }
++            public bool GeologyTerrainSeamRegistered { get; }
++            public bool GeologyTerrainSeamReleased { get; }
++            public bool GeologyVoxelBridgeRegistered { get; }
++            public bool GeologyVoxelBridgeReleased { get; }
++            public bool WorldGenRegistered { get; }
++            public bool WorldGenReleased { get; }
++            public int PendingReboundCountBefore { get; }
++            public int PendingReboundCountAfter { get; }
++            public int NativeAllocationCountBefore { get; }
++            public int NativeAllocationCountAfter { get; }
++            public int NativeAllocationDelta => NativeAllocationCountAfter - NativeAllocationCountBefore;
++            public int ExpectedNativeAllocationDelta { get; }
++            public bool NativeAllocationDeltaWithinExpectedRegistryQueueBudget =>
++                NativeAllocationDelta >= 0 && NativeAllocationDelta <= ExpectedNativeAllocationDelta;
++        }
++
++        [ContextMenu("Run World Gen Registry Smoke Test")]
++        public void RunSmokeTest()
++        {
++            RunHeadlessSmokeTest(out WorldGenRegistrySmokeReport report);
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            Debug.Log(
++                report.Passed
++                    ? "[WorldGenRegistrySmokeTester] PASS"
++                    : "[WorldGenRegistrySmokeTester] FAIL",
++                this);
++#endif
++        }
++
++        public static bool RunHeadlessSmokeTest(out WorldGenRegistrySmokeReport report)
++        {
++            int pendingBefore = GlobalRegistry.PendingServiceReboundCount;
++            int nativeBefore = GlobalRegistry.NativeAllocationCount;
++            bool fieldSamplerRegistered = false;
++            bool fieldSamplerReleased = false;
++            bool resourceDistributionRegistered = false;
++            bool resourceDistributionReleased = false;
++            bool geologyTerrainSeamRegistered = false;
++            bool geologyTerrainSeamReleased = false;
++            bool geologyVoxelBridgeRegistered = false;
++            bool geologyVoxelBridgeReleased = false;
++            bool worldGenRegistered = false;
++            bool worldGenReleased = false;
++
++            GameObject fieldSamplerObject = null;
++            GameObject resourceObject = null;
++            GameObject terrainSeamObject = null;
++            GameObject voxelBridgeObject = null;
++            SmokeWorldGenService worldGenService = null;
++
++            try
++            {
++                if (GlobalRegistry.ProceduralFieldSampler == null)
++                {
++                    fieldSamplerObject = new GameObject("[WorldGenRegistrySmokeTester.FieldSampler]"); // COLD ALLOC: GameObject[1] - registry smoke field sampler owner - owner: WorldGenRegistrySmokeTester
++                    WorldProceduralFieldSampler fieldSampler = fieldSamplerObject.AddComponent<WorldProceduralFieldSampler>();
++                    GlobalRegistry.RegisterProceduralFieldSampler(fieldSampler);
++                    fieldSamplerRegistered = ReferenceEquals(GlobalRegistry.ProceduralFieldSampler, fieldSampler) &&
++                                             ReferenceEquals(WorldProceduralFieldSampler.ActiveRuntimeInstance, fieldSampler);
++                    GlobalRegistry.UnregisterProceduralFieldSampler(fieldSampler);
++                    Object.DestroyImmediate(fieldSamplerObject);
++                    fieldSamplerObject = null;
++                    fieldSamplerReleased = GlobalRegistry.ProceduralFieldSampler == null &&
++                                           WorldProceduralFieldSampler.ActiveRuntimeInstance == null;
++                }
++
++                if (GlobalRegistry.ResourceDistribution == null)
++                {
++                    resourceObject = new GameObject("[WorldGenRegistrySmokeTester.ResourceDistribution]"); // COLD ALLOC: GameObject[1] - registry smoke resource-distribution owner - owner: WorldGenRegistrySmokeTester
++                    ResourceDistributionDirector resourceDistribution = resourceObject.AddComponent<ResourceDistributionDirector>();
++                    GlobalRegistry.RegisterResourceDistribution(resourceDistribution);
++                    resourceDistributionRegistered = ReferenceEquals(GlobalRegistry.ResourceDistribution, resourceDistribution) &&
++                                                     ReferenceEquals(ResourceDistributionDirector.ActiveRuntimeInstance, resourceDistribution);
++                    GlobalRegistry.UnregisterResourceDistribution(resourceDistribution);
++                    resourceDistributionReleased = GlobalRegistry.ResourceDistribution == null &&
++                                                   ResourceDistributionDirector.ActiveRuntimeInstance == null;
++                    Object.DestroyImmediate(resourceObject);
++                    resourceObject = null;
++                }
++
++                if (GlobalRegistry.GeologyTerrainSeam == null)
++                {
++                    terrainSeamObject = new GameObject("[WorldGenRegistrySmokeTester.TerrainSeam]"); // COLD ALLOC: GameObject[1] - registry smoke geology terrain seam owner - owner: WorldGenRegistrySmokeTester
++                    WorldGenerativeGeologyTerrainSeamApplier terrainSeam = terrainSeamObject.AddComponent<WorldGenerativeGeologyTerrainSeamApplier>();
++                    GlobalRegistry.RegisterGeologyTerrainSeamRuntime(terrainSeam);
++                    geologyTerrainSeamRegistered = ReferenceEquals(GlobalRegistry.GeologyTerrainSeam, terrainSeam) &&
++                                                   ReferenceEquals(WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance, terrainSeam);
++                    GlobalRegistry.UnregisterGeologyTerrainSeamRuntime(terrainSeam);
++                    geologyTerrainSeamReleased = GlobalRegistry.GeologyTerrainSeam == null &&
++                                                 WorldGenerativeGeologyTerrainSeamApplier.ActiveRuntimeInstance == null;
++                    Object.DestroyImmediate(terrainSeamObject);
++                    terrainSeamObject = null;
++                }
++
++                if (GlobalRegistry.GeologyVoxelBridge == null)
++                {
++                    voxelBridgeObject = new GameObject("[WorldGenRegistrySmokeTester.VoxelBridge]"); // COLD ALLOC: GameObject[1] - registry smoke geology voxel bridge owner - owner: WorldGenRegistrySmokeTester
++                    WorldGenerativeGeologyVoxelBridgeDirector voxelBridge = voxelBridgeObject.AddComponent<WorldGenerativeGeologyVoxelBridgeDirector>();
++                    GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(voxelBridge);
++                    geologyVoxelBridgeRegistered = ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, voxelBridge) &&
++                                                   ReferenceEquals(WorldGenerativeGeologyVoxelBridgeDirector.ActiveRuntimeInstance, voxelBridge);
++                    GlobalRegistry.UnregisterGeologyVoxelBridgeRuntime(voxelBridge);
++                    geologyVoxelBridgeReleased = GlobalRegistry.GeologyVoxelBridge == null &&
++                                                 WorldGenerativeGeologyVoxelBridgeDirector.ActiveRuntimeInstance == null;
++                    Object.DestroyImmediate(voxelBridgeObject);
++                    voxelBridgeObject = null;
++                }
++
++                if (GlobalRegistry.WorldGen == null)
++                {
++                    worldGenService = new SmokeWorldGenService(); // COLD ALLOC: SmokeWorldGenService[1] - registry smoke service stub - owner: WorldGenRegistrySmokeTester
++                    GlobalRegistry.RegisterWorldGenService(worldGenService);
++                    worldGenRegistered = ReferenceEquals(GlobalRegistry.WorldGen, worldGenService);
++                    GlobalRegistry.UnregisterWorldGenService(worldGenService);
++                    worldGenReleased = GlobalRegistry.WorldGen == null;
++                }
++            }
++            finally
++            {
++                if (fieldSamplerObject != null)
++                    Object.DestroyImmediate(fieldSamplerObject);
++
++                if (resourceObject != null)
++                    Object.DestroyImmediate(resourceObject);
++
++                if (terrainSeamObject != null)
++                    Object.DestroyImmediate(terrainSeamObject);
++
++                if (voxelBridgeObject != null)
++                    Object.DestroyImmediate(voxelBridgeObject);
++
++                if (worldGenService != null && ReferenceEquals(GlobalRegistry.WorldGen, worldGenService))
++                    GlobalRegistry.UnregisterWorldGenService(worldGenService);
++            }
++
++            GlobalRegistry.FlushPendingServiceReboundEvents();
++
++            int pendingAfter = GlobalRegistry.PendingServiceReboundCount;
++            int nativeAfter = GlobalRegistry.NativeAllocationCount;
++            bool passed =
++                fieldSamplerRegistered &&
++                fieldSamplerReleased &&
++                resourceDistributionRegistered &&
++                resourceDistributionReleased &&
++                geologyTerrainSeamRegistered &&
++                geologyTerrainSeamReleased &&
++                geologyVoxelBridgeRegistered &&
++                geologyVoxelBridgeReleased &&
++                worldGenRegistered &&
++                worldGenReleased &&
++                pendingAfter == 0 &&
++                nativeAfter >= nativeBefore &&
++                nativeAfter - nativeBefore <= WorldGenRegistrySmokeReport.ExpectedRegistryQueueNativeAllocationDelta;
++
++            report = new WorldGenRegistrySmokeReport(
++                passed,
++                fieldSamplerRegistered,
++                fieldSamplerReleased,
++                resourceDistributionRegistered,
++                resourceDistributionReleased,
++                geologyTerrainSeamRegistered,
++                geologyTerrainSeamReleased,
++                geologyVoxelBridgeRegistered,
++                geologyVoxelBridgeReleased,
++                worldGenRegistered,
++                worldGenReleased,
++                pendingBefore,
++                pendingAfter,
++                nativeBefore,
++                nativeAfter,
++                WorldGenRegistrySmokeReport.ExpectedRegistryQueueNativeAllocationDelta);
++            return passed;
++        }
++
++        public static void RunBatchmode()
++        {
++            bool passed = RunHeadlessSmokeTest(out WorldGenRegistrySmokeReport report);
++            Debug.Log(
++                "[WorldGenRegistrySmokeTester] " +
++                "{\"tester\":\"WorldGenRegistrySmokeTester\"," +
++                "\"status\":\"" + (passed ? "PASS" : "FAIL") + "\"," +
++                "\"fieldSamplerRegistered\":" + Bool01(report.FieldSamplerRegistered) + "," +
++                "\"fieldSamplerReleased\":" + Bool01(report.FieldSamplerReleased) + "," +
++                "\"resourceDistributionRegistered\":" + Bool01(report.ResourceDistributionRegistered) + "," +
++                "\"resourceDistributionReleased\":" + Bool01(report.ResourceDistributionReleased) + "," +
++                "\"geologyTerrainSeamRegistered\":" + Bool01(report.GeologyTerrainSeamRegistered) + "," +
++                "\"geologyTerrainSeamReleased\":" + Bool01(report.GeologyTerrainSeamReleased) + "," +
++                "\"geologyVoxelBridgeRegistered\":" + Bool01(report.GeologyVoxelBridgeRegistered) + "," +
++                "\"geologyVoxelBridgeReleased\":" + Bool01(report.GeologyVoxelBridgeReleased) + "," +
++                "\"worldGenRegistered\":" + Bool01(report.WorldGenRegistered) + "," +
++                "\"worldGenReleased\":" + Bool01(report.WorldGenReleased) + "," +
++                "\"pendingBefore\":" + report.PendingReboundCountBefore + "," +
++                "\"pendingAfter\":" + report.PendingReboundCountAfter + "," +
++                "\"nativeBefore\":" + report.NativeAllocationCountBefore + "," +
++                "\"nativeAfter\":" + report.NativeAllocationCountAfter + "," +
++                "\"nativeDelta\":" + report.NativeAllocationDelta + "," +
++                "\"expectedNativeDeltaMax\":" + report.ExpectedNativeAllocationDelta + "}");
++
++#if UNITY_EDITOR
++            if (Application.isBatchMode)
++                EditorApplication.Exit(passed ? 0 : 1);
++#endif
++        }
++
++        private static int Bool01(bool value)
++        {
++            return value ? 1 : 0;
++        }
++
++        private sealed class SmokeWorldGenService : IWorldGenService
++        {
++            public bool IsInitialized => ReferenceEquals(GlobalRegistry.WorldGen, this);
++
++            public bool TryPrimeBootstrapScatterPass()
++            {
++                return true;
++            }
++
++            public void RebuildScatterPreview()
++            {
++            }
++
++            public void ClearScatterPreview()
++            {
++            }
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs.meta b/Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs.meta
+new file mode 100644
+index 00000000..6ea1a776
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/WorldGenRegistrySmokeTester.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: 8e10ce5de8726344284d83cbd7c4804a
+\ No newline at end of file
+diff --git a/Assets/_Project/Scripts/World/WorldGenerativeGeologyTelemetry.cs b/Assets/_Project/Scripts/World/WorldGenerativeGeologyTelemetry.cs
+new file mode 100644
+index 00000000..fb844e5f
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/WorldGenerativeGeologyTelemetry.cs
+@@ -0,0 +1,87 @@
++using Hecton8.Core;
++using UnityEngine;
++
++namespace Hecton8.World
++{
++    /// <summary>
++    /// Stateless telemetry gates for world-generation geology. Callers own rate-limit frame state.
++    /// </summary>
++    internal static class WorldGenerativeGeologyTelemetry
++    {
++        internal const uint VoxelEngineMissingWarningHash = 0x56425845u;
++        internal const uint VoxelVolumeNullWarningHash = 0x5642584Eu;
++
++        private const int VoxelQueueTelemetryFrameInterval = 120;
++        private const int VoxelFaultTelemetryFrameInterval = 120;
++        private const int TerrainPatchTelemetryFrameInterval = 120;
++        private const int QueuedLaunchTelemetryThreshold = 4;
++        private const uint QueuePressureWarningHash = 0x56425851u;
++        private const uint BuildDataBudgetWarningHash = 0x56425842u;
++        private const uint TerrainPatchBridgeWarningHash = 0x54485042u;
++        private const uint VoxelBridgeTelemetryContextHash = 0x56425843u;
++        private const uint TerrainSeamTelemetryContextHash = 0x54534D43u;
++        private const float BuildDataTelemetryThresholdMs = 4f;
++
++        internal static void PublishVoxelQueuePressureIfNeeded(int queuedLaunchCount, ref int nextTelemetryFrame)
++        {
++            if (!Application.isPlaying || queuedLaunchCount < QueuedLaunchTelemetryThreshold)
++                return;
++
++            int frame = Time.frameCount;
++            if (frame < nextTelemetryFrame)
++                return;
++
++            nextTelemetryFrame = frame + VoxelQueueTelemetryFrameInterval;
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                QueuePressureWarningHash,
++                VoxelBridgeTelemetryContextHash,
++                queuedLaunchCount);
++        }
++
++        internal static void PublishVoxelBuildDataBudgetIfNeeded(float buildDataMs)
++        {
++            if (!Application.isPlaying || buildDataMs < BuildDataTelemetryThresholdMs)
++                return;
++
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                BuildDataBudgetWarningHash,
++                VoxelBridgeTelemetryContextHash,
++                buildDataMs);
++        }
++
++        internal static void PublishVoxelFaultIfNeeded(uint warningHash, float scalarValue, ref int nextTelemetryFrame)
++        {
++            if (!Application.isPlaying)
++                return;
++
++            int frame = Time.frameCount;
++            if (frame < nextTelemetryFrame)
++                return;
++
++            nextTelemetryFrame = frame + VoxelFaultTelemetryFrameInterval;
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                warningHash,
++                VoxelBridgeTelemetryContextHash,
++                scalarValue);
++        }
++
++        internal static void PublishTerrainPatchBridgeWarningIfNeeded(
++            int patchSampleCount,
++            int patchSampleBudget,
++            ref int nextTelemetryFrame)
++        {
++            if (!Application.isPlaying || patchSampleCount <= patchSampleBudget)
++                return;
++
++            int frame = Time.frameCount;
++            if (frame < nextTelemetryFrame)
++                return;
++
++            nextTelemetryFrame = frame + TerrainPatchTelemetryFrameInterval;
++            GlobalTelemetryBus.PublishPerformanceWarning(
++                TerrainPatchBridgeWarningHash,
++                TerrainSeamTelemetryContextHash,
++                patchSampleCount);
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/World/WorldGenerativeGeologyTelemetry.cs.meta b/Assets/_Project/Scripts/World/WorldGenerativeGeologyTelemetry.cs.meta
+new file mode 100644
+index 00000000..40d8430e
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/WorldGenerativeGeologyTelemetry.cs.meta
+@@ -0,0 +1,11 @@
++fileFormatVersion: 2
++guid: 1c784ff882f44f119a0bda6b33954077
++MonoImporter:
++  externalObjects: {}
++  serializedVersion: 2
++  defaultReferences: []
++  executionOrder: 0
++  icon: {instanceID: 0}
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 
+diff --git a/Assets/_Project/Scripts/Editor/WorldGenRegistrySmokeTestRunner.cs b/Assets/_Project/Scripts/Editor/WorldGenRegistrySmokeTestRunner.cs
+new file mode 100644
+index 00000000..d161e83e
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/WorldGenRegistrySmokeTestRunner.cs
+@@ -0,0 +1,44 @@
++using Hecton8.World;
++using UnityEditor;
++using UnityEngine;
++
++namespace Hecton8.Editor
++{
++    public static class WorldGenRegistrySmokeTestRunner
++    {
++        public static void Run()
++        {
++            bool passed = WorldGenRegistrySmokeTester.RunHeadlessSmokeTest(
++                out WorldGenRegistrySmokeTester.WorldGenRegistrySmokeReport report);
++
++            Debug.Log(
++                "[WorldGenRegistrySmokeTestRunner] " +
++                "{\"tester\":\"WorldGenRegistrySmokeTester\"," +
++                "\"status\":\"" + (passed ? "PASS" : "FAIL") + "\"," +
++                "\"fieldSamplerRegistered\":" + Bool01(report.FieldSamplerRegistered) + "," +
++                "\"fieldSamplerReleased\":" + Bool01(report.FieldSamplerReleased) + "," +
++                "\"resourceDistributionRegistered\":" + Bool01(report.ResourceDistributionRegistered) + "," +
++                "\"resourceDistributionReleased\":" + Bool01(report.ResourceDistributionReleased) + "," +
++                "\"geologyTerrainSeamRegistered\":" + Bool01(report.GeologyTerrainSeamRegistered) + "," +
++                "\"geologyTerrainSeamReleased\":" + Bool01(report.GeologyTerrainSeamReleased) + "," +
++                "\"geologyVoxelBridgeRegistered\":" + Bool01(report.GeologyVoxelBridgeRegistered) + "," +
++                "\"geologyVoxelBridgeReleased\":" + Bool01(report.GeologyVoxelBridgeReleased) + "," +
++                "\"worldGenRegistered\":" + Bool01(report.WorldGenRegistered) + "," +
++                "\"worldGenReleased\":" + Bool01(report.WorldGenReleased) + "," +
++                "\"pendingBefore\":" + report.PendingReboundCountBefore + "," +
++                "\"pendingAfter\":" + report.PendingReboundCountAfter + "," +
++                "\"nativeBefore\":" + report.NativeAllocationCountBefore + "," +
++                "\"nativeAfter\":" + report.NativeAllocationCountAfter + "," +
++                "\"nativeDelta\":" + report.NativeAllocationDelta + "," +
++                "\"expectedNativeDeltaMax\":" + report.ExpectedNativeAllocationDelta + "}");
++
++            if (Application.isBatchMode)
++                EditorApplication.Exit(passed ? 0 : 1);
++        }
++
++        private static int Bool01(bool value)
++        {
++            return value ? 1 : 0;
++        }
++    }
++}
+diff --git a/Assets/_Project/Scripts/Editor/WorldGenRegistrySmokeTestRunner.cs.meta b/Assets/_Project/Scripts/Editor/WorldGenRegistrySmokeTestRunner.cs.meta
+new file mode 100644
+index 00000000..a85fc438
+--- /dev/null
++++ b/Assets/_Project/Scripts/Editor/WorldGenRegistrySmokeTestRunner.cs.meta
+@@ -0,0 +1,11 @@
++fileFormatVersion: 2
++guid: 8708c3bfedba44f0b8ce7af6824f0791
++MonoImporter:
++  externalObjects: {}
++  serializedVersion: 2
++  defaultReferences: []
++  executionOrder: 0
++  icon: {instanceID: 0}
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 

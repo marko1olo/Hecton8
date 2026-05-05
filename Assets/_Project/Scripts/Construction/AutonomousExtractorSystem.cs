@@ -141,6 +141,8 @@ namespace Hecton8.Construction
         private void OnEnable()
         {
             TryRegisterToGlobalRegistry();
+            if (!_serviceRegistered)
+                return;
 
             if (!Application.isPlaying || GlobalRegistry.Dispatcher == null)
                 return;
@@ -477,7 +479,7 @@ namespace Hecton8.Construction
                 nextCompletedCounts[i] = _completedCycleCounts[i];
             }
 
-            DisposeNativeBuffers();
+            DisposeNativeBuffersImmediate();
             _jobInputs = nextInputs;
             _jobResults = nextResults;
             _cycleTimers = nextCycleTimers;
@@ -485,10 +487,13 @@ namespace Hecton8.Construction
             _bufferedUnitCounts = nextBufferedCounts;
             _completedCycleCounts = nextCompletedCounts;
             RegisterNativeBuffers();
-            GlobalTelemetryBus.PublishPerformanceWarning(
-                ExtractorCapacityGrowthWarningHash,
-                ExtractorCapacityGrowthContextHash,
-                nextCapacity);
+            if (currentCapacity > 0)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    ExtractorCapacityGrowthWarningHash,
+                    ExtractorCapacityGrowthContextHash,
+                    nextCapacity);
+            }
         }
 
         private JobHandle CancelScheduledJobForTeardown()
@@ -506,6 +511,16 @@ namespace Hecton8.Construction
         private JobHandle DisposeNativeBuffers()
         {
             return DisposeNativeBuffers(default);
+        }
+
+        private void DisposeNativeBuffersImmediate()
+        {
+            DisposeNativeArrayImmediate(ref _jobInputs);
+            DisposeNativeArrayImmediate(ref _jobResults);
+            DisposeNativeArrayImmediate(ref _cycleTimers);
+            DisposeNativeArrayImmediate(ref _bufferedItemHashIds);
+            DisposeNativeArrayImmediate(ref _bufferedUnitCounts);
+            DisposeNativeArrayImmediate(ref _completedCycleCounts);
         }
 
         private JobHandle DisposeNativeBuffers(JobHandle dependency)
@@ -547,6 +562,16 @@ namespace Hecton8.Construction
             array = default;
             return disposeHandle;
         }
+
+        private static void DisposeNativeArrayImmediate<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
+        }
     }
 
     /// <summary>
@@ -562,6 +587,8 @@ namespace Hecton8.Construction
         private const string DefaultNodeScaleBlockedReason = "VEIN TOO SMALL";
         private const int PlacementOverlapCapacity = 24;
         private const int ResourceNodeLookupCacheCapacity = PlacementOverlapCapacity;
+        private const uint ExtractorOverflowDropWarningHash = 0x6DAE28B7u;
+        private const uint ExtractorOverflowDropContextHash = 0xD9113EF2u;
         // COLD ALLOC: Collider[24] — placement/resource-node overlap buffer — owner: AutonomousExtractorModule
         private static readonly Collider[] PlacementOverlapBuffer = new Collider[PlacementOverlapCapacity];
 
@@ -792,6 +819,10 @@ namespace Hecton8.Construction
                 return false;
 
             ResolveOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ExtractorOverflowDropWarningHash,
+                ExtractorOverflowDropContextHash,
+                quantity);
             return registry.TryRegisterDroppedItem(item, quantity, spawnPosition, Vector3.zero, velocityChange);
         }
 

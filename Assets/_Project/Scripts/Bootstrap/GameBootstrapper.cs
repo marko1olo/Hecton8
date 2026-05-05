@@ -55,6 +55,8 @@ namespace Hecton8.Bootstrap
         private const int OptionalServiceTimeoutMilliseconds = 2000;
         private const int ShaderWarmupTimeoutMilliseconds = 5000;
         private const int SuspiciousGraphicsMemoryFallbackThresholdMb = 256;
+        private const int ObjectPoolWarmupInstantiationsPerFrame = 50;
+        private const int ObjectPoolWarmupMinimumFrames = 60;
         private const string FatalBootOverlayMessageTemplate =
             "BIOS ERROR 0xBOOT_FATAL\nPHASE: {0}\nACTION: SEE fatal_boot_crash.log";
         private const int FatalBootCrashLogBufferBytes = 24576;
@@ -560,6 +562,9 @@ namespace Hecton8.Bootstrap
             try
             {
                 bool initialized = InitializeCoreLayer();
+                if (initialized && !await WarmObjectPoolPresetsAsync(ct))
+                    return false;
+
                 await Awaitable.NextFrameAsync(cancellationToken: ct);
                 return initialized;
             }
@@ -567,6 +572,21 @@ namespace Hecton8.Bootstrap
             {
                 return false;
             }
+        }
+
+        private static async Awaitable<bool> WarmObjectPoolPresetsAsync(CancellationToken ct)
+        {
+            ObjectPoolManager objectPoolManager = GlobalRegistry.ObjectPool;
+            if (objectPoolManager == null)
+                objectPoolManager = ObjectPoolManager.ActiveRuntimeInstance;
+
+            if (objectPoolManager == null || objectPoolManager.AreWarmupPresetsCompleted)
+                return true;
+
+            return await objectPoolManager.WarmupPresetsAsync(
+                ObjectPoolWarmupInstantiationsPerFrame,
+                ObjectPoolWarmupMinimumFrames,
+                ct);
         }
 
         private async Awaitable<bool> InitializeEnvironmentPhaseAsync(CancellationToken ct)
@@ -1327,8 +1347,6 @@ namespace Hecton8.Bootstrap
         private static SaveManager EnsureSaveServiceRegistered()
         {
             SaveManager saveManager = GlobalRegistry.SaveRuntime;
-            if (saveManager == null)
-                saveManager = SaveManager.ActiveRuntimeInstance;
 
             if (saveManager == null)
             {

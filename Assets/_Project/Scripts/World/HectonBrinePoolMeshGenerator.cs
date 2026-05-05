@@ -22,12 +22,23 @@ namespace Hecton8.World
         private const uint BrineGeneratorContextHash = 0x414E4252u;
 
         [Header("Rendering")]
+        [Tooltip("Material assigned to generated flat brine pool surfaces.")]
         [SerializeField] private Material brineMaterial;
 
+        [Tooltip("Optional dense glowing fog material assigned to a coplanar child mesh under each pool.")]
+        [SerializeField] private Material brineFogMaterial;
+
         [Header("Hazard")]
+        [Tooltip("Trigger collider depth below the generated brine surface, in meters.")]
         [SerializeField] private float colliderDepthMeters = 4f;
+
+        [Tooltip("Toxicity hazard intensity sent to HectonHazardManager.")]
         [SerializeField] private float hazardIntensity = 1f;
+
+        [Tooltip("Visor glitch bias sent to HectonHazardManager for brine toxicity.")]
         [SerializeField] private float hazardVisorGlitchBias = 1f;
+
+        [Tooltip("Stable id base added to generated basin ids for hazard registration.")]
         [SerializeField] private int hazardIdBase = 870000;
 
         // COLD ALLOC: List<ActiveBrinePool>[32] — spawned brine pool bookkeeping — owner: HectonBrinePoolMeshGenerator
@@ -141,6 +152,7 @@ namespace Hecton8.World
             Transform existing = transform.Find("Generated Brine Pools");
             if (existing != null)
             {
+                existing.gameObject.layer = HectonLayerMasks.TriggerZone;
                 _poolRoot = existing;
                 return;
             }
@@ -148,6 +160,7 @@ namespace Hecton8.World
             // COLD ALLOC: GameObject[1] — brine pool container — owner: HectonBrinePoolMeshGenerator
             var rootObject = new GameObject("Generated Brine Pools");
             rootObject.transform.SetParent(transform, false);
+            rootObject.layer = HectonLayerMasks.TriggerZone;
             _poolRoot = rootObject.transform;
         }
 
@@ -168,13 +181,16 @@ namespace Hecton8.World
             var poolObject = new GameObject($"BrinePool_{poolBounds.BasinId:000}");
             poolObject.transform.SetParent(_poolRoot, false);
             poolObject.transform.position = center;
+            poolObject.layer = HectonLayerMasks.TriggerZone;
 
             MeshFilter meshFilter = poolObject.AddComponent<MeshFilter>();
             MeshRenderer meshRenderer = poolObject.AddComponent<MeshRenderer>();
             if (brineMaterial != null)
                 meshRenderer.sharedMaterial = brineMaterial;
 
-            meshFilter.sharedMesh = CreateFlatPoolMesh(sizeX, sizeZ, poolBounds.MaskedCount);
+            Mesh poolMesh = CreateFlatPoolMesh(sizeX, sizeZ, poolBounds.MaskedCount);
+            meshFilter.sharedMesh = poolMesh;
+            CreateFogVolume(poolObject.transform, poolMesh);
 
             BoxCollider collider = poolObject.AddComponent<BoxCollider>();
             collider.isTrigger = true;
@@ -182,6 +198,23 @@ namespace Hecton8.World
             collider.size = new Vector3(sizeX, math.max(0.01f, colliderDepthMeters), sizeZ);
             poolObject.AddComponent<ToxinHazard>();
             return poolObject;
+        }
+
+        private void CreateFogVolume(Transform poolTransform, Mesh poolMesh)
+        {
+            if (brineFogMaterial == null || poolMesh == null)
+                return;
+
+            // COLD ALLOC: GameObject[1] — generated brine fog render proxy — owner: HectonBrinePoolMeshGenerator
+            var fogObject = new GameObject("BrinePoolFog");
+            fogObject.transform.SetParent(poolTransform, false);
+            fogObject.transform.localPosition = new Vector3(0f, -0.05f, 0f);
+            fogObject.layer = HectonLayerMasks.TriggerZone;
+
+            MeshFilter meshFilter = fogObject.AddComponent<MeshFilter>();
+            MeshRenderer meshRenderer = fogObject.AddComponent<MeshRenderer>();
+            meshFilter.sharedMesh = poolMesh;
+            meshRenderer.sharedMaterial = brineFogMaterial;
         }
 
         private Mesh CreateFlatPoolMesh(float sizeX, float sizeZ, int maskedCount)

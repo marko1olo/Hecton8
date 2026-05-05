@@ -228,7 +228,8 @@ namespace Hecton8.Crafting
             NativeArray<int> complexGraphQueue,
             NativeArray<int2> complexRawCosts,
             NativeArray<int> complexRawCostCount,
-            NativeArray<byte> complexGraphStatus)
+            NativeArray<byte> complexGraphStatus,
+            int recipeMultiplier = 1)
         {
             if (recipe == null ||
                 fabricator == null ||
@@ -257,7 +258,8 @@ namespace Hecton8.Crafting
                 return false;
             }
 
-            if (!TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out int recipeCostCount))
+            int safeMultiplier = math.max(1, recipeMultiplier);
+            if (!TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out int recipeCostCount, safeMultiplier))
                 return false;
 
             MergeAccessibleNetworkCounts(fabricator, availableItemCounts, recipeCosts, recipeCostCount);
@@ -284,7 +286,8 @@ namespace Hecton8.Crafting
                     complexGraphQueue,
                     complexRawCosts,
                     complexRawCostCount,
-                    complexGraphStatus))
+                    complexGraphStatus,
+                    safeMultiplier))
             {
                 return false;
             }
@@ -314,7 +317,8 @@ namespace Hecton8.Crafting
             NativeArray<int> graphQueue,
             NativeArray<int2> rawCosts,
             NativeArray<int> rawCostCount,
-            NativeArray<byte> graphStatus)
+            NativeArray<byte> graphStatus,
+            int recipeMultiplier = 1)
         {
             if (recipe == null ||
                 fabricator == null ||
@@ -356,6 +360,7 @@ namespace Hecton8.Crafting
             int nodeCount = 0;
             int edgeCount = 0;
             bool expandedAnySubcomponent = false;
+            int safeMultiplier = math.max(1, recipeMultiplier);
 
             for (int ingredientIndex = 0; ingredientIndex < recipe.ingredients.Count; ingredientIndex++)
             {
@@ -368,7 +373,8 @@ namespace Hecton8.Crafting
                 if (itemHashId == 0 || adjustedAmount <= 0)
                     continue;
 
-                int nodeIndex = AppendComplexRecipeNode(graphNodes, ref nodeCount, itemHashId, adjustedAmount);
+                int scaledAmount = ScaleCostAmount(adjustedAmount, safeMultiplier);
+                int nodeIndex = AppendComplexRecipeNode(graphNodes, ref nodeCount, itemHashId, scaledAmount);
                 if (nodeIndex < 0)
                     return false;
 
@@ -382,7 +388,7 @@ namespace Hecton8.Crafting
                         ref edgeCount,
                         nodeIndex,
                         itemHashId,
-                        adjustedAmount,
+                        scaledAmount,
                         0,
                         itemHashId,
                         ref expandedAnySubcomponent))
@@ -506,7 +512,8 @@ namespace Hecton8.Crafting
             RecipeData recipe,
             Fabricator fabricator,
             NativeArray<int2> recipeCosts,
-            out int recipeCostCount)
+            out int recipeCostCount,
+            int recipeMultiplier = 1)
         {
             recipeCostCount = 0;
             if (recipe == null || fabricator == null || !recipeCosts.IsCreated)
@@ -518,6 +525,7 @@ namespace Hecton8.Crafting
             if (recipe.ingredients == null || recipe.ingredients.Count == 0)
                 return false;
 
+            int safeMultiplier = math.max(1, recipeMultiplier);
             for (int ingredientIndex = 0; ingredientIndex < recipe.ingredients.Count; ingredientIndex++)
             {
                 InventoryCost cost = recipe.ingredients[ingredientIndex];
@@ -529,11 +537,12 @@ namespace Hecton8.Crafting
                 if (itemHashId == 0 || adjustedAmount <= 0)
                     continue;
 
+                adjustedAmount = ScaleCostAmount(adjustedAmount, safeMultiplier);
                 int existingIndex = FindCostIndex(recipeCosts, recipeCostCount, itemHashId);
                 if (existingIndex >= 0)
                 {
                     int2 existing = recipeCosts[existingIndex];
-                    existing.y += adjustedAmount;
+                    existing.y = ScaleCostAmount(existing.y, 1, adjustedAmount);
                     recipeCosts[existingIndex] = existing;
                     continue;
                 }
@@ -547,6 +556,15 @@ namespace Hecton8.Crafting
             return recipeCostCount > 0;
         }
 
+        private static int ScaleCostAmount(int baseAmount, int multiplier, int additive = 0)
+        {
+            if (baseAmount <= 0)
+                return math.max(0, additive);
+
+            long scaled = (long)baseAmount * math.max(1, multiplier) + math.max(0, additive);
+            return scaled > int.MaxValue ? int.MaxValue : (int)scaled;
+        }
+
         public static bool TryBuildDeconstructionYieldBuffer(
             RecipeData recipe,
             Fabricator fabricator,
@@ -557,7 +575,8 @@ namespace Hecton8.Crafting
             NativeArray<int2> flattenedCosts,
             NativeArray<int2> outputYields,
             NativeArray<int> outputCount,
-            int scrapItemHashId)
+            int scrapItemHashId,
+            int recipeMultiplier = 1)
         {
             if (recipe == null ||
                 fabricator == null ||
@@ -572,7 +591,8 @@ namespace Hecton8.Crafting
                 return false;
             }
 
-            if (!TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out int recipeCostCount))
+            int safeMultiplier = math.max(1, recipeMultiplier);
+            if (!TryBuildRecipeCostBuffer(recipe, fabricator, recipeCosts, out int recipeCostCount, safeMultiplier))
                 return false;
 
             NativeArray<int2> sourceCosts = recipeCosts;

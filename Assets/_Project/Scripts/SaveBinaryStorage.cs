@@ -306,7 +306,19 @@ namespace Hecton8.SaveSystem
         private const ulong ModPayloadSectorMask = 0xFFFF000000000000UL;
         private const string Lz4DllName = "liblz4";
         private const int Lz4HighCompressionLevel = 9;
+        private const string NativeMemoryOwner = nameof(SaveBinaryStorage);
+        private const string EntityStateWriteSourceStatesLabel = "indexedSectorEntityStateSourceStates";
+        private const string EntityStateWriteSortEntriesLabel = "indexedSectorEntityStateSortEntries";
+        private const string EntityStateWriteRadixScratchLabel = "indexedSectorEntityStateRadixScratch";
+        private const string EntityStateWriteSortedStatesLabel = "indexedSectorEntityStateSortedStates";
+        private const string EntityStateWriteFileBytesLabel = "indexedSectorEntityStateFileBytes";
+        private const string EntityStateWriteDictionaryScratchLabel = "indexedSectorEntityStateDictionaryScratch";
+        private const string EntityStateWriteResultLengthLabel = "indexedSectorEntityStateResultLength";
+        private const string EntityStateWriteRadixCountsLabel = "indexedSectorEntityStateRadixCounts";
+        private const string EntityStateWriteRadixOffsetsLabel = "indexedSectorEntityStateRadixOffsets";
         private static int s_runtimeLz4CompressionProfile = (int)Lz4CompressionProfile.HighCompression;
+        private static int s_indexedSectorQuarantineReported;
+        private static readonly uint _indexedSectorQuarantineWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.IndexedSectorQuarantine"));
 
         internal enum Lz4CompressionProfile : int
         {
@@ -412,8 +424,52 @@ namespace Hecton8.SaveSystem
 
             internal bool IsCompleted => IsCreated && Handle.IsCompleted;
 
+            internal void RegisterNativeMemorySentinel()
+            {
+                RegisterArray(SourceStates, EntityStateWriteSourceStatesLabel);
+                RegisterArray(SortEntries, EntityStateWriteSortEntriesLabel);
+                RegisterArray(RadixScratch, EntityStateWriteRadixScratchLabel);
+                RegisterArray(SortedEntityStates, EntityStateWriteSortedStatesLabel);
+                RegisterArray(FileBytes, EntityStateWriteFileBytesLabel);
+                RegisterArray(DictionaryScratch, EntityStateWriteDictionaryScratchLabel);
+                RegisterArray(ResultLength, EntityStateWriteResultLengthLabel);
+                RegisterArray(RadixCounts, EntityStateWriteRadixCountsLabel);
+                RegisterArray(RadixOffsets, EntityStateWriteRadixOffsetsLabel);
+            }
+
+            private static void RegisterArray<T>(NativeArray<T> array, string label) where T : struct
+            {
+                if (!array.IsCreated)
+                    return;
+
+                NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
+            }
+
+            private void UnregisterNativeMemorySentinel()
+            {
+                UnregisterArray(SourceStates);
+                UnregisterArray(SortEntries);
+                UnregisterArray(RadixScratch);
+                UnregisterArray(SortedEntityStates);
+                UnregisterArray(FileBytes);
+                UnregisterArray(DictionaryScratch);
+                UnregisterArray(ResultLength);
+                UnregisterArray(RadixCounts);
+                UnregisterArray(RadixOffsets);
+            }
+
+            private static void UnregisterArray<T>(NativeArray<T> array) where T : struct
+            {
+                if (!array.IsCreated)
+                    return;
+
+                NativeMemorySentinel.UnregisterNativeArray(array);
+            }
+
             internal void Dispose()
             {
+                UnregisterNativeMemorySentinel();
+
                 if (SourceStates.IsCreated)
                     SourceStates.Dispose();
                 if (SortEntries.IsCreated)
@@ -438,6 +494,8 @@ namespace Hecton8.SaveSystem
 
             internal JobHandle DisposeDeferred(JobHandle dependency)
             {
+                UnregisterNativeMemorySentinel();
+
                 JobHandle disposeHandle = JobHandle.CombineDependencies(Handle, dependency);
                 if (SourceStates.IsCreated)
                     disposeHandle = SourceStates.Dispose(disposeHandle);
@@ -1516,8 +1574,11 @@ namespace Hecton8.SaveSystem
                 return false;
             }
 
-            return entry.ByteOffset >= minimumByteOffset &&
-                   entry.ByteOffset <= fileLength - entry.CompressedSize;
+            return SaveIndexedSectorBoundsMath.IsIndexedSectorBlockWithinFileBounds(
+                entry.ByteOffset,
+                entry.CompressedSize,
+                minimumByteOffset,
+                fileLength);
         }
 
         private static int ResolveIndexedSectorDirectorySlot(long sectorHash)
@@ -2707,6 +2768,7 @@ namespace Hecton8.SaveSystem
                 writeHandle.ResultLength = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 writeHandle.RadixCounts = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 writeHandle.RadixOffsets = new NativeArray<int>(1 << 16, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                writeHandle.RegisterNativeMemorySentinel();
             }
             catch (Exception ex)
             {
@@ -2945,6 +3007,11 @@ namespace Hecton8.SaveSystem
 
         private static void ReportIndexedSectorQuarantine(long sectorHash, string primaryError, string backupError)
         {
+            Interlocked.Exchange(ref s_indexedSectorQuarantineReported, 1);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _indexedSectorQuarantineWarningHash,
+                unchecked((uint)sectorHash),
+                1f);
             CrashTelemetryBuffer.ReportSaveSystemCriticalFault();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             Debug.LogWarning($"[SaveBinaryStorage] QUARANTINED indexed sector 0x{sectorHash:X16}. Primary: {primaryError} Backup: {backupError}");
@@ -2966,6 +3033,11 @@ namespace Hecton8.SaveSystem
         internal static bool IsModPayloadSectorHash(long sectorHash)
         {
             return (((ulong)sectorHash) & ModPayloadSectorMask) == ModPayloadSectorPrefix;
+        }
+
+        internal static bool ConsumeIndexedSectorQuarantineFlag()
+        {
+            return Interlocked.Exchange(ref s_indexedSectorQuarantineReported, 0) != 0;
         }
 
         internal static bool TryCommitModPayloadSubSector(

@@ -13,8 +13,6 @@ namespace Hecton8.Core
     [DefaultExecutionOrder(-9922)]
     public sealed class PlayerInventoryManager : MonoBehaviour, IPlayerInventoryService, IUpdatable
     {
-        private static PlayerInventoryManager _instance;
-
         [Header("── Inventory Capacity ──────────────────")]
         [Tooltip("Authoritative player carry-capacity ceiling used by UI/readiness systems. Current inventory mass above this value is treated as encumbered.")]
         [SerializeField, Min(1f)] private float carryCapacityKilograms = 200f;
@@ -77,19 +75,14 @@ namespace Hecton8.Core
             }
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
-
         /// <summary>
         /// Ensures a live runtime instance exists.
         /// </summary>
         public static PlayerInventoryManager EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            IPlayerInventoryService registeredService = GlobalRegistry.RegisteredPlayerInventory;
+            if (registeredService != null)
+                return registeredService as PlayerInventoryManager;
 
             GameObject runtimeRoot = new GameObject("[PlayerInventoryManager]"); // COLD ALLOC: GameObject[1] - bootstrap-owned player inventory/tooling service root - owner: PlayerInventoryManager
             return runtimeRoot.AddComponent<PlayerInventoryManager>();
@@ -108,10 +101,6 @@ namespace Hecton8.Core
                 return;
             }
 
-            EnsureSingletonOwnership();
-            if (_instance != this)
-                return;
-
             _isInitialized = true;
             TryRegisterUpdatable();
             TryRegisterService();
@@ -122,11 +111,6 @@ namespace Hecton8.Core
         public void Tick(float deltaTime)
         {
             SyncInventoryContext();
-        }
-
-        private void Awake()
-        {
-            EnsureSingletonOwnership();
         }
 
         private void OnEnable()
@@ -149,20 +133,6 @@ namespace Hecton8.Core
         {
             TryUnregisterUpdatable();
             TryUnregisterService();
-
-            if (_instance == this)
-                _instance = null;
-        }
-
-        private void EnsureSingletonOwnership()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
         }
 
         private void SyncInventoryContext()

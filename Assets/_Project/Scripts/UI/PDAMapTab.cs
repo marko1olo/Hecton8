@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Hecton.Localization;
 using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.PDA;
 using Hecton8.World;
@@ -40,11 +42,6 @@ namespace Hecton8.UI
         private const int MarkerUpdateQueueCapacity = 128;
         private const int MaxMarkerUiUpdatesPerLateFrame = 10;
         private const float MarkerVisualSize = 7f;
-        private const float GhostSignalMinimumDepthMeters = 450f;
-        private const float GhostSignalCycleSeconds = 137f;
-        private const float GhostSignalWindowSeconds = 7f;
-        private const uint GhostSignalSalt = 0x47535431u;
-
         private static readonly int SdfVolumeId = Shader.PropertyToID("_SdfVolume");
         private static readonly int SdfRangeId = Shader.PropertyToID("_SdfRange");
         private static readonly int GridDimensionsId = Shader.PropertyToID("_GridDimensions");
@@ -56,6 +53,8 @@ namespace Hecton8.UI
         private static readonly int PointCloudLocalToWorldId = Shader.PropertyToID("_PointCloudLocalToWorld");
         private static readonly int PointSizeId = Shader.PropertyToID("_PointSize");
         private static readonly int OpacityId = Shader.PropertyToID("_Opacity");
+        private static readonly uint _GhostSignalRejectedWarningHash = unchecked((uint)LocHash.Compute("PDAMapTab.GhostSignalRejected"));
+        private static readonly uint _GhostSignalContextHash = unchecked((uint)LocHash.Compute("GhostSignal"));
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct BuildCartographyTextureJob : IJobParallelFor
@@ -289,6 +288,7 @@ namespace Hecton8.UI
         private int _nextMarkerVisualSlot;
         private int _activeVolumeVersion = -1;
         private int _activeThreatPingCount;
+        private int _lastGhostSignalRejectedCycle = int.MinValue;
         private Texture3D _sdfTexture;
         private Texture2D _cartographyTexture;
         private NativeArray<Color32> _cartographyPixels;
@@ -1250,21 +1250,17 @@ namespace Hecton8.UI
 
         private void TryAppendGhostSignalPing()
         {
-            Vector3 playerPosition = ResolvePlayerPosition();
-            float depthMeters = Mathf.Max(0f, -playerPosition.y);
-            if (depthMeters < GhostSignalMinimumDepthMeters)
-                return;
-
-            float cyclePosition = Time.unscaledTime % GhostSignalCycleSeconds;
-            if (cyclePosition > GhostSignalWindowSeconds)
-                return;
-
-            int cycleIndex = Mathf.FloorToInt(Time.unscaledTime / GhostSignalCycleSeconds);
-            int seed = global::HectonWorldGenerator.ActiveRuntimeInstance != null
-                ? global::HectonWorldGenerator.ActiveRuntimeInstance.RuntimeWorldSeed
+            IWorldSeedProvider worldSeedProvider = GlobalRegistry.WorldSeedProvider;
+            int seed = worldSeedProvider != null && worldSeedProvider.IsInitialized
+                ? worldSeedProvider.RuntimeWorldSeed
                 : 1;
-            uint hash = HashGhostSignal((uint)seed, (uint)cycleIndex, (uint)Mathf.FloorToInt(depthMeters));
-            if ((hash & 0xFFu) > 8u)
+            float unscaledTime = Time.unscaledTime;
+            float depthMeters = ResolvePlayerDepthMeters();
+            if (!GhostSignalUtility.TryResolveCandidate(
+                    seed,
+                    unscaledTime,
+                    depthMeters,
+                    out Vector4 ghostPing))
                 return;
 
             int weakestIndex = -1;
@@ -1282,18 +1278,13 @@ namespace Hecton8.UI
             if (weakestIndex < 0)
                 return;
 
-            float intensity = 0.52f + (((hash >> 8) & 0xFFu) / 255f) * 0.24f;
-            if (intensity <= weakestIntensity)
+            if (ghostPing.w <= weakestIntensity)
+            {
+                TryPublishGhostSignalRejected(GhostSignalUtility.ResolveCycleIndex(unscaledTime), weakestIntensity);
                 return;
+            }
 
-            float angleRadians = (((hash >> 16) & 0xFFFFu) / 65535f) * Mathf.PI * 2f;
-            float radius = 0.18f + (((hash >> 4) & 0x0Fu) / 15f) * 0.24f;
-            float vertical = -0.18f + (((hash >> 12) & 0x0Fu) / 15f) * 0.36f;
-            _threatPings[weakestIndex] = new Vector4(
-                Mathf.Sin(angleRadians) * radius,
-                vertical,
-                Mathf.Cos(angleRadians) * radius,
-                intensity);
+            _threatPings[weakestIndex] = ghostPing;
         }
 
         private void RecountThreatPings()
@@ -1303,21 +1294,6 @@ namespace Hecton8.UI
             {
                 if (_threatPings[i].w > 0f)
                     _activeThreatPingCount++;
-            }
-        }
-
-        private static uint HashGhostSignal(uint seed, uint cycleIndex, uint depthMeters)
-        {
-            unchecked
-            {
-                uint hash = 2166136261u ^ GhostSignalSalt;
-                hash = (hash ^ seed) * 16777619u;
-                hash = (hash ^ cycleIndex) * 16777619u;
-                hash = (hash ^ depthMeters) * 16777619u;
-                hash ^= hash >> 13;
-                hash *= 1274126177u;
-                hash ^= hash >> 16;
-                return hash;
             }
         }
 
@@ -1337,6 +1313,30 @@ namespace Hecton8.UI
                 return playerTransform.position;
 
             return Vector3.zero;
+        }
+
+        private static float ResolvePlayerDepthMeters()
+        {
+            BiomeMatrixDirector biomeMatrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            if (biomeMatrixDirector != null)
+                return Mathf.Max(0f, biomeMatrixDirector.CurrentDepthMeters);
+
+            Vector3 playerPosition = ResolvePlayerPosition();
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerPosition);
+            double absoluteY = playerAup.ToAbsoluteDouble3().y;
+            return (float)math.max(0d, -absoluteY);
+        }
+
+        private void TryPublishGhostSignalRejected(int cycleIndex, float weakestIntensity)
+        {
+            if (_lastGhostSignalRejectedCycle == cycleIndex)
+                return;
+
+            _lastGhostSignalRejectedCycle = cycleIndex;
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _GhostSignalRejectedWarningHash,
+                _GhostSignalContextHash,
+                weakestIntensity);
         }
 
         private void TryAcquireStatusBuffer()

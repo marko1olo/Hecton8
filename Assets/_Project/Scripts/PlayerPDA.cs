@@ -1414,7 +1414,12 @@ namespace Hecton8.UI
             Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
             if (audioManager == null) return;
 
-            audioManager.PlayStatic2D(clip, audioVolume);
+            audioManager.PlayAtPoint(clip, ResolvePdaAudioPosition(), audioVolume, 1f, audioManager.InterfaceGroup);
+        }
+
+        private Vector3 ResolvePdaAudioPosition()
+        {
+            return pdaPanel != null ? pdaPanel.transform.position : transform.position;
         }
 
         // ══════════════════════════════════════════════════════════

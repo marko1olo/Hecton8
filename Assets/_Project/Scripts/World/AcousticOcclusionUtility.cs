@@ -146,6 +146,9 @@ namespace Hecton8.World
         private const float CaveVoxelDdaEpsilon = 0.000001f;
         private const float VoxelDensityTransmissionScale = 1.65f;
         private const float VoxelDensityLowPassScale = 7.5f;
+        private const float VoxelDensityHeavyOcclusionThreshold01 = 0.78f;
+        private const float VoxelDensityHeavyLowPassStartHertz = 650f;
+        private const float VoxelDensityHardLowPassCutoffHertz = 300f;
         private const int VoxelDensityMaximumDdaSteps = 4096;
 
         private static int PlayerLayer = -1;
@@ -775,13 +778,34 @@ namespace Hecton8.World
         private static void EnsureRuntimeBuffers()
         {
             if (!_queryCommands.IsCreated)
+            {
                 _queryCommands = new NativeList<RaycastCommand>(MaxQueuedRequests, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeList(
+                    _queryCommands,
+                    nameof(AcousticOcclusionUtility),
+                    nameof(_queryCommands),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_queryResults.IsCreated)
+            {
                 _queryResults = new NativeArray<RaycastHit>(MaxQueuedRequests * MaxOcclusionHits, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _queryResults,
+                    nameof(AcousticOcclusionUtility),
+                    nameof(_queryResults),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_enclosureCommands.IsCreated)
+            {
                 _enclosureCommands = new NativeList<RaycastCommand>(EnclosureProbeSliceCount, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeList(
+                    _enclosureCommands,
+                    nameof(AcousticOcclusionUtility),
+                    nameof(_enclosureCommands),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_enclosureResults.IsCreated)
             {
@@ -789,13 +813,32 @@ namespace Hecton8.World
                     EnclosureProbeSliceCount,
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _enclosureResults,
+                    nameof(AcousticOcclusionUtility),
+                    nameof(_enclosureResults),
+                    NativeAllocationLifetime.Session);
             }
 
             if (!_forwardEchoCommands.IsCreated)
+            {
                 _forwardEchoCommands = new NativeArray<RaycastCommand>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _forwardEchoCommands,
+                    nameof(AcousticOcclusionUtility),
+                    nameof(_forwardEchoCommands),
+                    NativeAllocationLifetime.Session);
+            }
 
             if (!_forwardEchoResults.IsCreated)
+            {
                 _forwardEchoResults = new NativeArray<RaycastHit>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _forwardEchoResults,
+                    nameof(AcousticOcclusionUtility),
+                    nameof(_forwardEchoResults),
+                    NativeAllocationLifetime.Session);
+            }
         }
 
         private static void AdvanceFrameFence()
@@ -935,36 +978,42 @@ namespace Hecton8.World
 
             if (_queryCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeList(nameof(AcousticOcclusionUtility), nameof(_queryCommands));
                 disposeHandle = _queryCommands.Dispose(disposeHandle);
                 _queryCommands = default;
             }
 
             if (_queryResults.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_queryResults);
                 disposeHandle = _queryResults.Dispose(disposeHandle);
                 _queryResults = default;
             }
 
             if (_enclosureCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeList(nameof(AcousticOcclusionUtility), nameof(_enclosureCommands));
                 disposeHandle = _enclosureCommands.Dispose(disposeHandle);
                 _enclosureCommands = default;
             }
 
             if (_enclosureResults.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_enclosureResults);
                 disposeHandle = _enclosureResults.Dispose(disposeHandle);
                 _enclosureResults = default;
             }
 
             if (_forwardEchoCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_forwardEchoCommands);
                 disposeHandle = _forwardEchoCommands.Dispose(disposeHandle);
                 _forwardEchoCommands = default;
             }
 
             if (_forwardEchoResults.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_forwardEchoResults);
                 disposeHandle = _forwardEchoResults.Dispose(disposeHandle);
                 _forwardEchoResults = default;
             }
@@ -1451,8 +1500,20 @@ namespace Hecton8.World
 
         private static float ResolveVoxelDensityLowPassCutoff(float density01)
         {
+            float density = math.saturate(density01);
+            if (density >= VoxelDensityHeavyOcclusionThreshold01)
+            {
+                float hardOcclusionT = math.saturate(
+                    (density - VoxelDensityHeavyOcclusionThreshold01) /
+                    math.max(1f - VoxelDensityHeavyOcclusionThreshold01, 0.0001f));
+                return math.clamp(
+                    math.lerp(VoxelDensityHeavyLowPassStartHertz, VoxelDensityHardLowPassCutoffHertz, hardOcclusionT),
+                    MinimumLowPassCutoffHertz,
+                    OpenLowPassCutoffHertz);
+            }
+
             return math.clamp(
-                OpenLowPassCutoffHertz / (1f + (math.saturate(density01) * VoxelDensityLowPassScale)),
+                OpenLowPassCutoffHertz / (1f + (density * VoxelDensityLowPassScale)),
                 MinimumLowPassCutoffHertz,
                 OpenLowPassCutoffHertz);
         }

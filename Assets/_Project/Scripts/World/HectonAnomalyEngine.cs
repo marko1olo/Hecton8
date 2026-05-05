@@ -147,7 +147,7 @@ namespace Hecton8.World
                 Settings = safeSettings
             };
 
-            return floodJob.Schedule(scanHandle);
+            return floodJob.Schedule(1, 1, scanHandle);
         }
 
         /// <summary>
@@ -169,22 +169,74 @@ namespace Hecton8.World
         {
             ValidateTerrainSdfBuffers(terrainHeights, terrainWidth, terrainDepth, sdf, sdfWidth, sdfHeight, sdfDepth);
 
+            int safeSdfWidth = math.max(1, sdfWidth);
+            int safeSdfHeight = math.max(1, sdfHeight);
+            int safeSdfDepth = math.max(1, sdfDepth);
+            float safeTerrainCellSize = math.max(0.001f, terrainCellSizeMeters);
+            float safeVoxelSize = math.max(0.001f, voxelSizeMeters);
+
             var job = new SnapSDFToTerrainJob
             {
                 TerrainHeights = terrainHeights,
                 TerrainWidth = math.max(1, terrainWidth),
                 TerrainDepth = math.max(1, terrainDepth),
-                TerrainCellSizeMeters = math.max(0.001f, terrainCellSizeMeters),
+                TerrainCellSizeMeters = safeTerrainCellSize,
                 TerrainOriginAup = terrainOriginAup,
                 Sdf = sdf,
-                SdfWidth = math.max(1, sdfWidth),
-                SdfHeight = math.max(1, sdfHeight),
-                SdfDepth = math.max(1, sdfDepth),
-                VoxelSizeMeters = math.max(0.001f, voxelSizeMeters),
+                SdfWidth = safeSdfWidth,
+                SdfHeight = safeSdfHeight,
+                SdfDepth = safeSdfDepth,
+                VoxelSizeMeters = safeVoxelSize,
                 SdfOriginAup = sdfOriginAup
             };
 
-            return job.Schedule(sdfWidth * sdfHeight * sdfDepth, 64, dependency);
+            JobHandle densityHandle = job.Schedule(safeSdfWidth * safeSdfHeight * safeSdfDepth, 64, dependency);
+            var topCellJob = new SnapSDFTopCellsToTerrainJob
+            {
+                TerrainHeights = terrainHeights,
+                TerrainWidth = math.max(1, terrainWidth),
+                TerrainDepth = math.max(1, terrainDepth),
+                TerrainCellSizeMeters = safeTerrainCellSize,
+                TerrainOriginAup = terrainOriginAup,
+                Sdf = sdf,
+                SdfWidth = safeSdfWidth,
+                SdfHeight = safeSdfHeight,
+                SdfDepth = safeSdfDepth,
+                VoxelSizeMeters = safeVoxelSize,
+                SdfOriginAup = sdfOriginAup
+            };
+
+            return topCellJob.Schedule(safeSdfWidth * safeSdfDepth, 64, densityHandle);
+        }
+
+        /// <summary>
+        /// Schedules ridge-derived pillar coordinate and fissure mask detection.
+        /// </summary>
+        public static JobHandle ScheduleRidgeFeatureDetection(
+            NativeArray<float> heightmap,
+            NativeArray<AnomalyFeatureRecord> featureRecords,
+            NativeArray<byte> fissureMask,
+            AnomalyRidgeDetectionSettings settings,
+            JobHandle dependency = default)
+        {
+            AnomalyRidgeDetectionSettings safeSettings = settings.Sanitized();
+            int cellCount = checked(safeSettings.Width * safeSettings.Height);
+            if (heightmap.Length < cellCount)
+                throw new ArgumentException("Heightmap length is smaller than Width * Height.", nameof(heightmap));
+            if (featureRecords.Length < cellCount)
+                throw new ArgumentException("Feature record length is smaller than Width * Height.", nameof(featureRecords));
+            if (fissureMask.Length < cellCount)
+                throw new ArgumentException("Fissure mask length is smaller than Width * Height.", nameof(fissureMask));
+
+            var job = new AnomalyRidgeFeatureDetectionJob
+            {
+                Heightmap = heightmap,
+                FeatureRecords = featureRecords,
+                FissureMask = fissureMask,
+                Settings = safeSettings
+            };
+
+            return job.Schedule(cellCount, 64, dependency);
         }
 
         /// <summary>
@@ -221,7 +273,93 @@ namespace Hecton8.World
                 NoiseFrequency = math.max(0.000001f, noiseFrequency)
             };
 
-            return job.Schedule(sdfWidth * sdfHeight * sdfDepth, 64, dependency);
+            int safeSdfWidth = math.max(1, sdfWidth);
+            int safeSdfHeight = math.max(1, sdfHeight);
+            int safeSdfDepth = math.max(1, sdfDepth);
+            return job.Schedule(safeSdfWidth * safeSdfHeight * safeSdfDepth, 64, dependency);
+        }
+
+        /// <summary>
+        /// Schedules injection of a deep negative fissure trench into a signed density field.
+        /// </summary>
+        public static JobHandle InjectDeepFissureSDF(
+            NativeArray<float> sdf,
+            int sdfWidth,
+            int sdfHeight,
+            int sdfDepth,
+            float voxelSizeMeters,
+            double3 sdfOriginAup,
+            double3 fissureTopAup,
+            float2 directionXz,
+            float halfLengthMeters,
+            float radiusMeters,
+            float depthMeters = 1000f,
+            uint fissureInfluencePacked = 0u,
+            JobHandle dependency = default)
+        {
+            NativeArray<uint> emptyInfluence = default;
+            return InjectDeepFissureSDF(
+                sdf,
+                emptyInfluence,
+                sdfWidth,
+                sdfHeight,
+                sdfDepth,
+                voxelSizeMeters,
+                sdfOriginAup,
+                fissureTopAup,
+                directionXz,
+                halfLengthMeters,
+                radiusMeters,
+                depthMeters,
+                fissureInfluencePacked,
+                dependency);
+        }
+
+        /// <summary>
+        /// Schedules injection of a deep negative fissure trench and optional packed biome influence cells.
+        /// </summary>
+        public static JobHandle InjectDeepFissureSDF(
+            NativeArray<float> sdf,
+            NativeArray<uint> biomeInfluencePacked,
+            int sdfWidth,
+            int sdfHeight,
+            int sdfDepth,
+            float voxelSizeMeters,
+            double3 sdfOriginAup,
+            double3 fissureTopAup,
+            float2 directionXz,
+            float halfLengthMeters,
+            float radiusMeters,
+            float depthMeters = 1000f,
+            uint fissureInfluencePacked = 0u,
+            JobHandle dependency = default)
+        {
+            ValidateSdfBuffer(sdf, sdfWidth, sdfHeight, sdfDepth);
+            int safeSdfWidth = math.max(1, sdfWidth);
+            int safeSdfHeight = math.max(1, sdfHeight);
+            int safeSdfDepth = math.max(1, sdfDepth);
+            int sdfCount = checked(safeSdfWidth * safeSdfHeight * safeSdfDepth);
+            if (biomeInfluencePacked.IsCreated && biomeInfluencePacked.Length < sdfCount)
+                throw new ArgumentException("Biome influence array is smaller than sdfWidth * sdfHeight * sdfDepth.", nameof(biomeInfluencePacked));
+
+            var job = new InjectDeepFissureSDFJob
+            {
+                Sdf = sdf,
+                BiomeInfluencePacked = biomeInfluencePacked,
+                SdfWidth = safeSdfWidth,
+                SdfHeight = safeSdfHeight,
+                SdfDepth = safeSdfDepth,
+                VoxelSizeMeters = math.max(0.001f, voxelSizeMeters),
+                SdfOriginAup = sdfOriginAup,
+                FissureTopAup = fissureTopAup,
+                DirectionXZ = math.normalizesafe(directionXz, new float2(1f, 0f)),
+                HalfLengthMeters = math.max(0.001f, halfLengthMeters),
+                RadiusMeters = math.max(0.001f, radiusMeters),
+                DepthMeters = math.max(0.001f, depthMeters),
+                FissureInfluencePacked = fissureInfluencePacked
+            };
+
+            return job.Schedule(sdfCount, 64, dependency);
         }
 
         /// <summary>
@@ -257,7 +395,21 @@ namespace Hecton8.World
                 Strength = math.saturate(strength)
             };
 
-            return job.Schedule(sdfWidth * sdfHeight * sdfDepth, 64, dependency);
+            int safeSdfWidth = math.max(1, sdfWidth);
+            int safeSdfHeight = math.max(1, sdfHeight);
+            int safeSdfDepth = math.max(1, sdfDepth);
+            return job.Schedule(safeSdfWidth * safeSdfHeight * safeSdfDepth, 64, dependency);
+        }
+
+        /// <summary>
+        /// Packs a procedural biome influence cell into the project-standard byte layout.
+        /// </summary>
+        public static uint PackBiomeInfluenceCell(byte primaryBiomeId, byte secondaryBiomeId, byte blend255, byte flags)
+        {
+            return (uint)primaryBiomeId |
+                   ((uint)secondaryBiomeId << 8) |
+                   ((uint)blend255 << 16) |
+                   ((uint)flags << 24);
         }
 
         private static void ValidateTerrainSdfBuffers(
@@ -359,7 +511,7 @@ namespace Hecton8.World
     /// Burst flood-fill kernel that expands candidate minima to their spill lip and writes basin extents.
     /// </summary>
     [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
-    public struct ClosedBasinFloodFillJob : IJob
+    public struct ClosedBasinFloodFillJob : IJobParallelFor
     {
         /// <summary>Input heightmap in meters.</summary>
         [ReadOnly] public NativeArray<float> Heightmap;
@@ -386,27 +538,30 @@ namespace Hecton8.World
         public AnomalyBasinDetectionSettings Settings;
 
         /// <inheritdoc />
-        public void Execute()
+        public void Execute(int index)
         {
+            if (index != 0)
+                return;
+
             int cellCount = Settings.Width * Settings.Height;
             int stamp = 1;
             int basinId = 1;
 
-            for (int index = 0; index < cellCount; index++)
+            for (int candidateIndex = 0; candidateIndex < cellCount; candidateIndex++)
             {
-                if (CandidateMask[index] == 0 || BasinMask[index] != 0)
+                if (CandidateMask[candidateIndex] == 0 || BasinMask[candidateIndex] != 0)
                     continue;
 
-                AnomalyBasinRecord record = ResolveCandidate(index, stamp, basinId, out int nextStamp);
+                AnomalyBasinRecord record = ResolveCandidate(candidateIndex, stamp, basinId, out int nextStamp);
                 stamp = nextStamp;
                 if (record.Valid == 0)
                 {
-                    BasinRecords[index] = default;
+                    BasinRecords[candidateIndex] = default;
                     continue;
                 }
 
                 basinId++;
-                BasinRecords[index] = record;
+                BasinRecords[candidateIndex] = record;
             }
         }
 

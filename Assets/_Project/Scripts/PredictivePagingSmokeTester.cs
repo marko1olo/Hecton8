@@ -50,45 +50,39 @@ namespace Hecton8.Dev
         public void RunPredictivePagingSmokePass()
         {
             _debugLastPass = false;
-            if (!SaveManager.TryComputePredictiveIndexedPagingSectorHash(
+            if (!SavePredictivePagingMath.TryComputeIndexedSectorProjection(
                     currentRuntimePosition,
                     currentWorldVelocity,
                     lookaheadSeconds,
                     chunkSizeMeters,
-                    out long currentSectorHash,
-                    out long projectedSectorHash,
-                    out int3 currentChunkId,
-                    out int3 projectedChunkId))
+                    out PredictiveIndexedPagingProjection projection))
             {
                 Debug.LogError("[PredictivePagingSmokeTester] Predictive paging math rejected valid finite inputs.");
                 return;
             }
 
-            _debugCurrentSectorHash = currentSectorHash;
-            _debugProjectedSectorHash = projectedSectorHash;
-            _debugCurrentChunkId = currentChunkId;
-            _debugProjectedChunkId = projectedChunkId;
+            _debugCurrentSectorHash = projection.CurrentSectorHash;
+            _debugProjectedSectorHash = projection.ProjectedSectorHash;
+            _debugCurrentChunkId = projection.CurrentChunkId;
+            _debugProjectedChunkId = projection.ProjectedChunkId;
 
-            if (currentSectorHash == projectedSectorHash)
+            if (projection.CurrentSectorHash == projection.ProjectedSectorHash)
             {
                 Debug.LogError("[PredictivePagingSmokeTester] 20s projection did not cross the expected paged sector boundary.");
                 return;
             }
 
-            if (math.all(currentChunkId == projectedChunkId))
+            if (math.all(projection.CurrentChunkId == projection.ProjectedChunkId))
             {
                 Debug.LogError("[PredictivePagingSmokeTester] 20s projection did not cross the expected chunk boundary.");
                 return;
             }
 
-            if (SaveManager.TryComputePredictiveIndexedPagingSectorHash(
+            if (SavePredictivePagingMath.TryComputeIndexedSectorProjection(
                     new Vector3(float.NaN, 0f, 0f),
                     currentWorldVelocity,
                     lookaheadSeconds,
                     chunkSizeMeters,
-                    out _,
-                    out _,
-                    out _,
                     out _))
             {
                 Debug.LogError("[PredictivePagingSmokeTester] Predictive paging math accepted NaN input.");

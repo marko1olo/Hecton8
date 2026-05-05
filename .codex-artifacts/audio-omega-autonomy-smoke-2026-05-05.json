@@ -1,0 +1,118 @@
+﻿{
+    "tester":  "AudioOmegaAutonomySmokeTester",
+    "source_runner":  "PowerShell mirror of Editor smoke test",
+    "timestamp":  "2026-05-05T16:56:27.6256659+04:00",
+    "status":  "PASS",
+    "passed":  27,
+    "failed":  0,
+    "checks":  [
+                   {
+                       "name":  "renderer authority moved to GlobalRegistry",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "crash telemetry authority moved to GlobalRegistry",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "music director authority moved to GlobalRegistry",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "renderer runtime registration is outside Awake",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "crash telemetry runtime registration is outside Awake",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "music director runtime registration is outside Awake",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "renderer duplicate owner aborts OnEnable",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "crash telemetry duplicate owner aborts OnEnable",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "music director duplicate owner aborts lifecycle",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "crash telemetry owns no DDOL call",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "GlobalRegistry service slots are unique",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "GlobalRegistry exposes crash telemetry runtime",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "GlobalRegistry exposes player critical audio runtime",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "GlobalRegistry resolves audio runtime slots",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "GlobalRegistry reset clears audio runtime slots",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "acoustic occlusion NativeArrays registered",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "acoustic occlusion NativeLists registered",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "spatial audio radar NativeCollections registered",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "grain bank cold bake moved to Burst helper",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "renderer no longer owns metallic grain-bank job",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "audio overflow emits performance telemetry on main thread",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "OnAudioFilterRead stays bridge-only",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "hot DSP block has no JobHandle completion",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "renderer Tick has no string formatting",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "crash telemetry Tick has no string formatting",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "music director Tick has no string formatting",
+                       "passed":  true
+                   },
+                   {
+                       "name":  "spatial audio Tick has no string formatting",
+                       "passed":  true
+                   }
+               ]
+}

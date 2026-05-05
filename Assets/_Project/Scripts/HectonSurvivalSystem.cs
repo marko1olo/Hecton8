@@ -174,7 +174,7 @@ namespace Hecton8.Gameplay
     /// <summary>
     /// Core survival simulation for the Hecton diving suit.
     /// Attach to the player GameObject and assign a SurvivalStats asset.
-    /// 
+    ///
     /// FEATURES:
     ///   • Zero-GC Tick System (ITickable, ISlowTickable)
     ///   • Atmospheric Hazards (Pressure, Temperature, Radiation)
@@ -364,6 +364,9 @@ namespace Hecton8.Gameplay
         private const string NativeMemoryOwner = nameof(HectonSurvivalSystem);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly int _MembraneTissueHashId = LocHash.Compute("Data_MembraneTissue");
+        private static readonly uint _ThermalShockNonFiniteWarningHash = unchecked((uint)LocHash.Compute("Survival.ThermalShock.NonFinite"));
+        private static readonly uint _AirPocketInvalidRefillWarningHash = unchecked((uint)LocHash.Compute("Survival.AirPocket.InvalidRefill"));
+        private static readonly uint _SurvivalRuntimeContextHash = unchecked((uint)LocHash.Compute(nameof(HectonSurvivalSystem)));
 
         private const float Epsilon       = 0.1f;
         private const float DirtySentinel = -9999f;
@@ -654,12 +657,7 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveHypothermiaFrostIntensity01(float internalTemperatureCelsius)
         {
-            if (!math.isfinite(internalTemperatureCelsius) || internalTemperatureCelsius >= HypothermiaFrostStartCelsius)
-                return 0f;
-
-            return math.saturate(
-                (HypothermiaFrostStartCelsius - internalTemperatureCelsius) /
-                math.max(0.01f, HypothermiaFrostStartCelsius - HypothermiaFrostFullCelsius));
+            return SomaticSurvivalMath.ResolveHypothermiaFrostIntensity01(internalTemperatureCelsius);
         }
 
         public void Tick(float deltaTime)
@@ -870,27 +868,14 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveExternalThermalShockTemperature(float fallbackTemperatureCelsius, float sampledThermalTemperatureCelsius)
         {
-            if (!math.isfinite(sampledThermalTemperatureCelsius))
-                return fallbackTemperatureCelsius;
-
-            if (!math.isfinite(fallbackTemperatureCelsius))
-                return sampledThermalTemperatureCelsius;
-
-            return math.max(fallbackTemperatureCelsius, sampledThermalTemperatureCelsius);
+            return SomaticSurvivalMath.ResolveExternalThermalShockTemperature(
+                fallbackTemperatureCelsius,
+                sampledThermalTemperatureCelsius);
         }
 
         internal static float ResolveThermalShockSeverity01(float externalTemperatureCelsius)
         {
-            if (!math.isfinite(externalTemperatureCelsius))
-                return 0f;
-
-            float hotSeverity = math.saturate(
-                (externalTemperatureCelsius - ThermalShockBoilingThresholdCelsius) /
-                math.max(0.01f, ThermalShockFullSeverityRangeCelsius));
-            float coldSeverity = math.saturate(
-                (ThermalShockFreezingThresholdCelsius - externalTemperatureCelsius) /
-                math.max(0.01f, ThermalShockFullSeverityRangeCelsius));
-            return math.max(hotSeverity, coldSeverity);
+            return SomaticSurvivalMath.ResolveThermalShockSeverity01(externalTemperatureCelsius);
         }
 
         internal static float ResolveThermalShockDamagePerSecond(
@@ -898,13 +883,10 @@ namespace Hecton8.Gameplay
             float baseTemperatureDamageRate,
             float damageMultiplier)
         {
-            float severity01 = ResolveThermalShockSeverity01(externalTemperatureCelsius);
-            if (severity01 <= 0f)
-                return 0f;
-
-            return math.max(0f, baseTemperatureDamageRate) *
-                   math.lerp(3f, 8f, severity01) *
-                   math.max(0f, damageMultiplier);
+            return SomaticSurvivalMath.ResolveThermalShockDamagePerSecond(
+                externalTemperatureCelsius,
+                baseTemperatureDamageRate,
+                damageMultiplier);
         }
 
         private void ApplyThermalShockDamage(float externalTemperatureCelsius, float dt)
@@ -913,6 +895,15 @@ namespace Hecton8.Gameplay
                 externalTemperatureCelsius,
                 stats != null ? stats.TempDamageRate : 0f,
                 ResolveThermalShockDamageMultiplier());
+            if (!math.isfinite(damagePerSecond))
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _ThermalShockNonFiniteWarningHash,
+                    _SurvivalRuntimeContextHash,
+                    externalTemperatureCelsius);
+                return;
+            }
+
             if (damagePerSecond <= 0f)
                 return;
 
@@ -1056,44 +1047,25 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveNitrogenBuildUpDelta(float ascentMetersPerSecond, float ascentOriginDepthMeters, float deltaTime)
         {
-            if (!math.isfinite(ascentMetersPerSecond) ||
-                !math.isfinite(ascentOriginDepthMeters) ||
-                !math.isfinite(deltaTime) ||
-                deltaTime <= 0f ||
-                ascentMetersPerSecond <= NitrogenAscentRiskMetersPerSecond ||
-                ascentOriginDepthMeters <= NitrogenAscentRiskDepthMeters)
-            {
-                return 0f;
-            }
-
-            float speedExcess = ascentMetersPerSecond - NitrogenAscentRiskMetersPerSecond;
-            float depthScale = math.saturate(
-                (ascentOriginDepthMeters - NitrogenAscentRiskDepthMeters) /
-                math.max(0.01f, NitrogenBuildUpDepthFullRangeMeters));
-            return speedExcess * depthScale * NitrogenBuildUpPerExcessMeterSecond * deltaTime;
+            return SomaticSurvivalMath.ResolveNitrogenBuildUpDelta(
+                ascentMetersPerSecond,
+                ascentOriginDepthMeters,
+                deltaTime);
         }
 
         internal static float ResolveNitrogenNarcosis01(float nitrogenBuildUp)
         {
-            if (!math.isfinite(nitrogenBuildUp) || nitrogenBuildUp <= NitrogenCriticalBuildUp)
-                return 0f;
-
-            return math.saturate((nitrogenBuildUp - NitrogenCriticalBuildUp) / math.max(0.01f, NitrogenNarcosisFullRange));
+            return SomaticSurvivalMath.ResolveNitrogenNarcosis01(nitrogenBuildUp);
         }
 
         internal static float ResolveNitrogenStaminaMultiplier(float nitrogenBuildUp)
         {
-            return nitrogenBuildUp > NitrogenCriticalBuildUp ? NitrogenStaminaPenaltyMultiplier : 1f;
+            return SomaticSurvivalMath.ResolveNitrogenStaminaMultiplier(nitrogenBuildUp);
         }
 
         internal static float ResolveDecompressionVomitSeverity01(float nitrogenBuildUp)
         {
-            if (!math.isfinite(nitrogenBuildUp) || nitrogenBuildUp <= DecompressionVomitThreshold)
-                return 0f;
-
-            return math.saturate(
-                (nitrogenBuildUp - DecompressionVomitThreshold) /
-                math.max(0.01f, NitrogenBuildUpHardCap - DecompressionVomitThreshold));
+            return SomaticSurvivalMath.ResolveDecompressionVomitSeverity01(nitrogenBuildUp);
         }
 
         private void ApplyNitrogenMovementPenalty()
@@ -1108,6 +1080,15 @@ namespace Hecton8.Gameplay
         {
             if (!TrySamplePlayerAupAirPocket(out float oxygenRefillFraction))
                 return;
+
+            if (!math.isfinite(oxygenRefillFraction) || oxygenRefillFraction <= 0f)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _AirPocketInvalidRefillWarningHash,
+                    _SurvivalRuntimeContextHash,
+                    oxygenRefillFraction);
+                return;
+            }
 
             oxygen = math.max(
                 oxygen,
@@ -1224,7 +1205,7 @@ namespace Hecton8.Gameplay
 
             float excess = currentRad - stats.RadiationThreshold;
             float damage = excess * stats.RadiationDamageRate * radiationExposureScale * dt;
-            
+
             integrity = math.max(0f, integrity - damage);
             MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.RadiationExposure);
         }
@@ -1270,7 +1251,7 @@ namespace Hecton8.Gameplay
 
         internal static float ResolveNutritionalToxicityDamagePerSecond(float severity01, float baseDamageRate)
         {
-            return math.max(0f, baseDamageRate) * NutritionalToxicityDamageScale * math.saturate(severity01);
+            return SomaticSurvivalMath.ResolveNutritionalToxicityDamagePerSecond(severity01, baseDamageRate);
         }
 
         internal float ResolveEnvironmentalResistance(HazardType hazardType)
@@ -1564,7 +1545,7 @@ namespace Hecton8.Gameplay
             }
 
             var atmosphere = Hecton8.Core.GlobalRegistry.Atmosphere;
-            
+
             // Temperature Publishing (Atmosphere + Local)
             float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
             float totalTemp = baseTemp +
@@ -3055,10 +3036,7 @@ namespace Hecton8.Gameplay
 
         internal static bool ShouldForceSuitPunctureBleeding(float damageAmount, float maxIntegrity)
         {
-            if (!math.isfinite(damageAmount) || !math.isfinite(maxIntegrity) || maxIntegrity <= 0f)
-                return false;
-
-            return damageAmount >= maxIntegrity * SuitPunctureBleedDamageFraction;
+            return SomaticSurvivalMath.ShouldForceSuitPunctureBleeding(damageAmount, maxIntegrity);
         }
 
         private void TryApplyTraumaStates(float damageMagnitude, float severity01)

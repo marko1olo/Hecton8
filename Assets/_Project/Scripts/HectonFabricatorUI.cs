@@ -32,6 +32,8 @@ namespace Hecton8.UI
         private const float HologramBaseDistanceMeters = 1f;
         private const float HologramSpinDegreesPerSecond = 36f;
         private const float SelectedHologramScaleMultiplier = 2.8f;
+        private const string NativeMemoryOwner = nameof(HectonFabricatorUI);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         private struct RecipeListEntry
         {
@@ -46,6 +48,9 @@ namespace Hecton8.UI
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int CraftProgressId = Shader.PropertyToID("_CraftProgress");
+        private static readonly int ScanProgressId = Shader.PropertyToID("_ScanProgress");
+        private static readonly int GlitchAmountId = Shader.PropertyToID("_GlitchAmount");
 
         [Header("References")]
         [SerializeField] private Camera hudCamera;
@@ -78,6 +83,9 @@ namespace Hecton8.UI
         [SerializeField] private Color recipeSelectedColor = new Color(1f, 0.97f, 0.72f, 1f);
         [SerializeField] private Color recipeUnavailableColor = new Color(1f, 0.52f, 0.32f, 0.92f);
         [SerializeField] private Color inflationColor = new Color(1f, 0.28f, 0.22f, 1f);
+
+        [Header("Batch Crafting")]
+        [SerializeField, Min(1)] private int craftBatchMultiplier = 1;
 
         [Header("Diagnostics")]
         [SerializeField] private bool _debugIsOpen;
@@ -124,6 +132,12 @@ namespace Hecton8.UI
         private JobHandle _recipePointerHandle;
 
         public static bool IsMenuOpen { get; private set; }
+        public int CraftBatchMultiplier
+        {
+            get => Mathf.Max(1, craftBatchMultiplier);
+            set => craftBatchMultiplier = Mathf.Max(1, value);
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -177,6 +191,7 @@ namespace Hecton8.UI
 
             if (_hologramMatrices.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_hologramMatrices);
                 _hologramMatrices.Dispose();
                 _hologramMatrices = default;
             }
@@ -191,6 +206,7 @@ namespace Hecton8.UI
 
             if (_recipePointerCommands.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_recipePointerCommands);
                 if (hadScheduledRecipePointerJob)
                 {
                     recipePointerDisposeHandle = _recipePointerCommands.Dispose(recipePointerDisposeHandle);
@@ -204,6 +220,7 @@ namespace Hecton8.UI
 
             if (_recipePointerHits.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_recipePointerHits);
                 if (hadScheduledRecipePointerJob)
                 {
                     recipePointerDisposeHandle = _recipePointerHits.Dispose(recipePointerDisposeHandle);
@@ -386,7 +403,7 @@ namespace Hecton8.UI
             if (recipe == null)
                 return;
 
-            _currentFabricator.StartCraft(recipe);
+            _currentFabricator.StartCraft(recipe, Mathf.Max(1, craftBatchMultiplier));
         }
 
         private void HandleCancelInput()
@@ -654,7 +671,7 @@ namespace Hecton8.UI
             }
 
             RecipeData recipe = ResolveDisplayRecipe();
-            if (recipe == null || recipe.ingredients == null || recipe.ingredients.Count == 0)
+            if (recipe == null)
             {
                 _debugVisibleInstanceCount = 0;
                 return;
@@ -669,7 +686,9 @@ namespace Hecton8.UI
                 return;
             }
 
-            int visibleCount = BuildHologramMatrices(recipe, deltaTime);
+            int visibleCount = recipe.ingredients != null && recipe.ingredients.Count > 0
+                ? BuildHologramMatrices(recipe, deltaTime)
+                : 0;
             _debugVisibleInstanceCount = visibleCount;
             if (visibleCount <= 0)
             {
@@ -717,6 +736,7 @@ namespace Hecton8.UI
             Quaternion worldRotation = Quaternion.Euler(0f, animationTime * HologramSpinDegreesPerSecond, 0f);
             Vector3 scale = Vector3.one * (hologramCellSize * SelectedHologramScaleMultiplier * pulseScale);
             _selectedRecipeHologramBuffer[0] = Matrix4x4.TRS(anchorPosition, worldRotation, scale);
+            UpdateHologramMaterialState(recipe);
 
             Graphics.DrawMeshInstanced(
                 proxyMesh,
@@ -731,6 +751,38 @@ namespace Hecton8.UI
                 null,
                 LightProbeUsage.Off,
                 null);
+        }
+
+        private void UpdateHologramMaterialState(RecipeData recipe)
+        {
+            if (_runtimeHologramMaterial == null)
+                return;
+
+            float progress = ResolveHologramRevealProgress(recipe);
+            if (_runtimeHologramMaterial.HasProperty(CraftProgressId))
+                _runtimeHologramMaterial.SetFloat(CraftProgressId, progress);
+
+            if (_runtimeHologramMaterial.HasProperty(ScanProgressId))
+                _runtimeHologramMaterial.SetFloat(ScanProgressId, progress);
+
+            if (_runtimeHologramMaterial.HasProperty(GlitchAmountId))
+            {
+                float glitch = _currentFabricator != null && _currentFabricator.IsPausedNoPower
+                    ? 0.82f
+                    : Mathf.Lerp(0.05f, 0.28f, 1f - Mathf.Abs((progress * 2f) - 1f));
+                _runtimeHologramMaterial.SetFloat(GlitchAmountId, glitch);
+            }
+        }
+
+        private float ResolveHologramRevealProgress(RecipeData recipe)
+        {
+            if (_currentFabricator == null || recipe == null)
+                return 0f;
+
+            if (_currentFabricator.IsCrafting && ReferenceEquals(_currentFabricator.ActiveRecipe, recipe))
+                return Mathf.Clamp01(_currentFabricator.CraftProgress);
+
+            return 1f;
         }
 
         private Mesh ResolveProxyMesh(ItemData item)
@@ -812,6 +864,11 @@ namespace Hecton8.UI
                 return;
 
             _hologramMatrices = new NativeArray<Matrix4x4>(MaxVisibleHologramInstances, Allocator.Persistent);
+            NativeMemorySentinel.RegisterNativeArray(
+                _hologramMatrices,
+                NativeMemoryOwner,
+                nameof(_hologramMatrices),
+                NativeMemoryLifetime);
         }
 
         private void EnsureHologramResources()
@@ -865,10 +922,24 @@ namespace Hecton8.UI
         private void EnsureRecipePointerBuffers()
         {
             if (!_recipePointerCommands.IsCreated)
+            {
                 _recipePointerCommands = new NativeArray<RaycastCommand>(1, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _recipePointerCommands,
+                    NativeMemoryOwner,
+                    nameof(_recipePointerCommands),
+                    NativeMemoryLifetime);
+            }
 
             if (!_recipePointerHits.IsCreated)
+            {
                 _recipePointerHits = new NativeArray<RaycastHit>(1, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _recipePointerHits,
+                    NativeMemoryOwner,
+                    nameof(_recipePointerHits),
+                    NativeMemoryLifetime);
+            }
         }
 
         private void EnsureRecipeListPool()

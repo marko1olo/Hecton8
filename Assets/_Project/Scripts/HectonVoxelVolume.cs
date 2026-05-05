@@ -1678,7 +1678,7 @@ namespace Hecton8.Caves
                 Vector3 absoluteCenter = worldCenter + committedOffset;
                 if (_deltaProcessor != null)
                 {
-                    _deltaProcessor.ApplyImmediateAbsoluteCrater(this, absoluteCenter, stampRadius * remainingPower, DefaultDeltaMaterialId);
+                    _deltaProcessor.ApplyImmediateAbsoluteLaserCrater(this, absoluteCenter, stampRadius * remainingPower, direction, DefaultDeltaMaterialId);
                     modified = true;
                 }
                 else

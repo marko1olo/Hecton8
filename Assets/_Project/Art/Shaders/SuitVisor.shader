@@ -790,6 +790,17 @@ Shader "NASAPunk/SuitVisor"
                 finalAlpha = saturate(finalAlpha);
 
                 finalColor = MixFog(finalColor, IN.fogCoord);
+                if (biosRecoverySwitch > 0.5)
+                {
+                    float biosSceneDither = ResolveFrostBlueNoise(screenUV, _Time.y + 11.0);
+                    float biosSceneScan = abs(frac(screenUV.y * _ScreenParams.y * 0.31 + _Time.y * 11.0) - 0.5);
+                    float biosSceneLuminance = sqrt(saturate(dot(finalColor, float3(0.2126, 0.7152, 0.0722))));
+                    float biosSceneThreshold = 0.42 + (biosSceneDither - 0.5) * 0.28 + biosSceneScan * 0.16;
+                    float biosSceneBit = step(biosSceneThreshold, biosSceneLuminance);
+                    float biosSceneLine = step(0.22, frac(screenUV.y * _ScreenParams.y * 0.42));
+                    finalColor = float3(0.0, biosSceneBit * biosSceneLine * (0.82 + sin(_Time.y * 2.1) * 0.04), 0.0);
+                    finalAlpha = saturate(max(finalAlpha, 0.72));
+                }
                 return float4(finalColor, finalAlpha);
             }
             ENDHLSL

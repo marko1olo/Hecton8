@@ -59,6 +59,33 @@ namespace Hecton8.EditorTools
             return result.Passed;
         }
 
+        public static void RunBatchAll()
+        {
+            string projectRoot = ResolveProjectRoot();
+            DocumentationAuthorityAuditResult auditResult = DocumentationAuthorityAudit.Execute(projectRoot);
+            DocumentationAuthorityTelemetryReporter.PublishIfFailed(auditResult);
+            string smokeJson = DocumentationAuthorityJsonWriter.Write(auditResult);
+            DocumentationAuthorityJsonWriter.TryWriteArtifact(projectRoot, smokeJson);
+            DocumentationAuthorityJsonWriter.TryWriteCodexArtifact(projectRoot, smokeJson);
+
+            DocumentationAuthorityStressResult stressResult =
+                DocumentationAuthorityStressRunner.Execute(projectRoot, StressPassCount);
+            string stressJson = DocumentationAuthorityJsonWriter.WriteStress(stressResult);
+            DocumentationAuthorityJsonWriter.TryWriteStressArtifact(projectRoot, stressJson);
+            DocumentationAuthorityJsonWriter.TryWriteCodexStressArtifact(projectRoot, stressJson);
+
+            bool passed = auditResult.Passed && stressResult.Passed;
+            string batchJson = DocumentationAuthorityJsonWriter.WriteBatch(auditResult, stressResult, passed);
+            DocumentationAuthorityJsonWriter.TryWriteBatchArtifact(projectRoot, batchJson);
+
+            if (passed)
+                Debug.Log(batchJson);
+            else
+                Debug.LogError(batchJson);
+
+            EditorApplication.Exit(passed ? 0 : 1);
+        }
+
         private static string ResolveProjectRoot()
         {
             DirectoryInfo dataDirectory = Directory.GetParent(Application.dataPath);
@@ -72,7 +99,7 @@ namespace Hecton8.EditorTools
         private const int MaxAllowedActiveHeaderDebt = 96;
         private const int MaxListedFailures = 24;
         private const string DocsFolderName = "Docs";
-        private const string RootLogsArchive = "Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04";
+        private const string RootLogsArchiveRoot = "Docs/DEPRECATED/External_And_Log_Bundles";
 
         public static DocumentationAuthorityAuditResult Execute(string projectRoot)
         {
@@ -116,12 +143,16 @@ namespace Hecton8.EditorTools
 
         private static void CountRelocatedRootLogs(string projectRoot, DocumentationAuthorityAuditResult result)
         {
-            string archivePath = Path.Combine(projectRoot, RootLogsArchive.Replace('/', Path.DirectorySeparatorChar));
-            if (!Directory.Exists(archivePath))
+            string archiveRootPath = Path.Combine(projectRoot, RootLogsArchiveRoot.Replace('/', Path.DirectorySeparatorChar));
+            if (!Directory.Exists(archiveRootPath))
                 return;
 
-            string[] archiveLogs = Directory.GetFiles(archivePath, "*.log", SearchOption.TopDirectoryOnly);
-            result.RelocatedRootLogCount = archiveLogs.Length;
+            string[] bundlePaths = Directory.GetDirectories(archiveRootPath, "Root_Logs_*", SearchOption.TopDirectoryOnly);
+            for (int i = 0; i < bundlePaths.Length; i++)
+            {
+                string[] archiveLogs = Directory.GetFiles(bundlePaths[i], "*.log", SearchOption.TopDirectoryOnly);
+                result.RelocatedRootLogCount += archiveLogs.Length;
+            }
         }
 
         private static void AuditDocumentationHeaders(string projectRoot, DocumentationAuthorityAuditResult result)
@@ -368,6 +399,9 @@ namespace Hecton8.EditorTools
     {
         private const string ArtifactPath = "Temp/CodexArtifacts/documentation-authority-smoke.json";
         private const string StressArtifactPath = "Temp/CodexArtifacts/documentation-authority-stress.json";
+        private const string CodexArtifactPath = "CodexArtifacts/documentation-authority-smoke.json";
+        private const string CodexStressArtifactPath = "CodexArtifacts/documentation-authority-stress.json";
+        private const string BatchArtifactPath = "CodexArtifacts/documentation-authority-batch.json";
 
         public static string Write(DocumentationAuthorityAuditResult result)
         {
@@ -427,6 +461,40 @@ namespace Hecton8.EditorTools
             return builder.ToString();
         }
 
+        public static string WriteBatch(
+            DocumentationAuthorityAuditResult auditResult,
+            DocumentationAuthorityStressResult stressResult,
+            bool passed)
+        {
+            DocumentationAuthorityAuditResult finalAudit = stressResult.FinalAudit;
+            builderCache.Clear();
+            StringBuilder builder = builderCache;
+            builder.AppendLine("{");
+            AppendProperty(builder, "status", passed ? "PASS" : "FAIL", comma: true);
+            AppendProperty(builder, "smokeStatus", auditResult.Passed ? "PASS" : "FAIL", comma: true);
+            AppendProperty(builder, "stressStatus", stressResult.Passed ? "PASS" : "FAIL", comma: true);
+            AppendProperty(builder, "projectRoot", auditResult.ProjectRoot, comma: true);
+            AppendProperty(builder, "totalMarkdown", auditResult.TotalMarkdownCount, comma: true);
+            AppendProperty(builder, "activeMarkdown", auditResult.ActiveMarkdownCount, comma: true);
+            AppendProperty(builder, "activeHeaderDebt", auditResult.ActiveHeaderDebt, comma: true);
+            AppendProperty(builder, "activeMissingDate", auditResult.ActiveMissingDateCount, comma: true);
+            AppendProperty(builder, "activeMissingStatus", auditResult.ActiveMissingStatusCount, comma: true);
+            AppendProperty(builder, "directDocsHeaderMissing", auditResult.DirectDocsHeaderMissingCount, comma: true);
+            AppendProperty(builder, "architectureHeaderMissing", auditResult.ArchitectureHeaderMissingCount, comma: true);
+            AppendProperty(builder, "rootLooseTextLogCount", auditResult.RootLooseTextLogCount, comma: true);
+            AppendProperty(builder, "relocatedRootLogCount", auditResult.RelocatedRootLogCount, comma: true);
+            AppendProperty(builder, "stressPassCount", stressResult.PassCount, comma: true);
+            AppendProperty(builder, "stressFailureCount", stressResult.FailureCount, comma: true);
+            AppendProperty(builder, "finalStressTotalMarkdown", finalAudit != null ? finalAudit.TotalMarkdownCount : 0, comma: true);
+            AppendProperty(builder, "finalStressActiveHeaderDebt", finalAudit != null ? finalAudit.ActiveHeaderDebt : 0, comma: true);
+            AppendProperty(builder, "telemetryWarningRequested", auditResult.TelemetryWarningRequested, comma: true);
+            AppendProperty(builder, "telemetryRuntimeEligible", auditResult.TelemetryRuntimeEligible, comma: true);
+            AppendProperty(builder, "smokeArtifact", CodexArtifactPath, comma: true);
+            AppendProperty(builder, "stressArtifact", CodexStressArtifactPath, comma: false);
+            builder.Append('}');
+            return builder.ToString();
+        }
+
         public static void TryWriteArtifact(string projectRoot, string json)
         {
             string absolutePath = Path.Combine(projectRoot, ArtifactPath.Replace('/', Path.DirectorySeparatorChar));
@@ -436,6 +504,24 @@ namespace Hecton8.EditorTools
         public static void TryWriteStressArtifact(string projectRoot, string json)
         {
             string absolutePath = Path.Combine(projectRoot, StressArtifactPath.Replace('/', Path.DirectorySeparatorChar));
+            WriteArtifact(absolutePath, json);
+        }
+
+        public static void TryWriteCodexArtifact(string projectRoot, string json)
+        {
+            string absolutePath = Path.Combine(projectRoot, CodexArtifactPath.Replace('/', Path.DirectorySeparatorChar));
+            WriteArtifact(absolutePath, json);
+        }
+
+        public static void TryWriteCodexStressArtifact(string projectRoot, string json)
+        {
+            string absolutePath = Path.Combine(projectRoot, CodexStressArtifactPath.Replace('/', Path.DirectorySeparatorChar));
+            WriteArtifact(absolutePath, json);
+        }
+
+        public static void TryWriteBatchArtifact(string projectRoot, string json)
+        {
+            string absolutePath = Path.Combine(projectRoot, BatchArtifactPath.Replace('/', Path.DirectorySeparatorChar));
             WriteArtifact(absolutePath, json);
         }
 
@@ -512,6 +598,9 @@ namespace Hecton8.EditorTools
 
             builder.Append('"');
         }
+
+        // COLD ALLOC: StringBuilder[2048] - editor batch summary writer reuse - owner: DocumentationAuthoritySmokeTester
+        private static readonly StringBuilder builderCache = new StringBuilder(2048);
     }
 }
 #endif

@@ -1,0 +1,9 @@
+﻿{
+    "tester":  "CelestialCataclysmSourceOmegaSmoke",
+    "status":  "PASS",
+    "sourceChecks":  8,
+    "failed":  [
+
+               ],
+    "unityBatchMode":  "SKIPPED_ACTIVE_EDITOR"
+}

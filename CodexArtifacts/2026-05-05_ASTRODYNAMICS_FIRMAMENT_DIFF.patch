@@ -1,0 +1,1593 @@
+﻿diff --git a/Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader b/Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader
+index 853476d9..67f84960 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader
++++ b/Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader
+@@ -47,6 +47,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
+         _StarIntensity ("Star Brightness", Range(0, 10)) = 2.0
+         _StarTwinkleSpeed ("Twinkle Speed", Range(0.5, 8.0)) = 2.5
+         _StarSeed ("Star Seed", Float) = 99173
++        _BakedStarCubemap ("Startup Baked Star Cubemap", Cube) = "" {}
++        _BakedStarCubemapReady ("Baked Star Cubemap Ready", Range(0, 1)) = 0.0
+         _AtmosphereDensity ("Atmosphere Density", Range(0, 1)) = 0.0
+ 
+         [Header(Sky Colors HDR)]
+@@ -168,6 +170,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
+             #include "Hecton_CelestialAtmosphere.hlsl"
+ 
+             TEXTURE2D(_MainCloudTex);       SAMPLER(sampler_MainCloudTex);
++            TEXTURECUBE(_BakedStarCubemap); SAMPLER(sampler_BakedStarCubemap);
+ 
+             CBUFFER_START(UnityPerMaterial)
+                 float4 _MainCloudTex_ST;
+@@ -177,6 +180,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
+                 half   _StarIntensity;
+                 half   _StarTwinkleSpeed;
+                 float  _StarSeed;
++                half   _BakedStarCubemapReady;
+                 half   _AtmosphereDensity;
+ 
+                 half4  _SkyColorZenith;
+@@ -583,10 +587,16 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
+                         + (half)((noiseTwinkle - 0.5) * (float)atmosphereTwinkle * (0.18 + (float)horizonTwinkle * 0.24));
+                     flicker = saturate(flicker);
+ 
+-                    starContrib = proceduralStarColor
++                    half3 bakedStarColor = (half3)SAMPLE_TEXTURECUBE(
++                        _BakedStarCubemap,
++                        sampler_BakedStarCubemap,
++                        Vf).rgb;
++                    half bakedReady = step(0.5h, _BakedStarCubemapReady);
++                    half3 starSourceColor = lerp(proceduralStarColor * starCore, bakedStarColor, bakedReady);
++
++                    starContrib = starSourceColor
+                                 * _StarColor.rgb
+                                 * _StarIntensity
+-                                * starCore
+                                 * flicker
+                                 * starVisibility
+                                 * zenithMask;
+@@ -773,7 +783,8 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
+                 float4 sharedAtmosphereSample = SampleHectonCelestialAtmosphere(
+                     Vf,
+                     _SkyColorHorizon.rgb,
+-                    _SkyColorZenith.rgb);
++                    _SkyColorZenith.rgb,
++                    _SunDirection.xyz);
+                 skyColor = (half3)ApplyHectonCelestialAtmosphere(
+                     skyColor,
+                     sharedAtmosphereSample,
+diff --git a/Assets/_Project/Art/Shaders/Hecton_CelestialAtmosphere.hlsl b/Assets/_Project/Art/Shaders/Hecton_CelestialAtmosphere.hlsl
+index 0da3f2fb..6d5c1cbb 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_CelestialAtmosphere.hlsl
++++ b/Assets/_Project/Art/Shaders/Hecton_CelestialAtmosphere.hlsl
+@@ -3,9 +3,12 @@
+ 
+ TEXTURE2D(_CelestialAtmosphereLUT);
+ SAMPLER(sampler_CelestialAtmosphereLUT);
++TEXTURE2D(_HectonAtmosphereScatteringLUT);
++SAMPLER(sampler_HectonAtmosphereScatteringLUT);
+ float _AtmosphereExposure;
+ float _CelestialAtmosphereBlendPower;
+ float _CelestialAtmosphereLUTReady;
++float _HectonAtmosphereScatteringLUTReady;
+ float _CelestialHorizonDensity;
+ float _CelestialZenithTransparency;
+ 
+@@ -34,20 +37,37 @@ float4 BuildFallbackHectonCelestialAtmosphere(
+ float4 SampleHectonCelestialAtmosphere(
+     float3 viewRay,
+     float3 skyHorizon,
+-    float3 skyZenith)
++    float3 skyZenith,
++    float3 sunDirection)
+ {
+     float elevation01 = HectonCelestialElevation01(viewRay);
++    float4 authoredSample = BuildFallbackHectonCelestialAtmosphere(
++        elevation01,
++        skyHorizon,
++        skyZenith);
++
++    if (_CelestialAtmosphereLUTReady >= 0.5)
++    {
++        authoredSample = SAMPLE_TEXTURE2D(
++            _CelestialAtmosphereLUT,
++            sampler_CelestialAtmosphereLUT,
++            float2(elevation01, 0.5));
++    }
+ 
+-    if (_CelestialAtmosphereLUTReady < 0.5)
+-        return BuildFallbackHectonCelestialAtmosphere(
+-            elevation01,
+-            skyHorizon,
+-            skyZenith);
++    if (_HectonAtmosphereScatteringLUTReady < 0.5)
++        return authoredSample;
++
++    float3 normalizedSun = normalize(sunDirection);
++    float3 normalizedRay = normalize(viewRay);
++    float sunView01 = saturate(dot(normalizedRay, normalizedSun) * 0.5 + 0.5);
++    float4 physicalSample = SAMPLE_TEXTURE2D(
++        _HectonAtmosphereScatteringLUT,
++        sampler_HectonAtmosphereScatteringLUT,
++        float2(sunView01, elevation01));
+ 
+-    return SAMPLE_TEXTURE2D(
+-        _CelestialAtmosphereLUT,
+-        sampler_CelestialAtmosphereLUT,
+-        float2(elevation01, 0.5));
++    physicalSample.rgb *= max(authoredSample.rgb, 0.0001);
++    physicalSample.a = saturate(physicalSample.a * authoredSample.a);
++    return physicalSample;
+ }
+ 
+ float ResolveHectonCelestialTransmittance(float lutTransmittance, float weight)
+diff --git a/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl b/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
+index 8908478f..d709d008 100644
+--- a/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
++++ b/Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl
+@@ -35,6 +35,10 @@ float4 _HectonProjectedCausticsColor;
+ float4 _FinalGiantAbyssLight;
+ float4 _SunDirection;
+ float4 _AegirDirection;
++float4 _HectonEclipseWaterShadowParams;    // xy=center xz, z=radius, w=darkening
++float4 _HectonEclipseWaterShadowDirection; // xy=travel direction, z=softness, w=penumbra
++float4 _HectonRingCausticsParams;          // x=strength, y=stripe scale, z=phase, w=softness
++float4 _HectonRingCausticsDirection;       // xy=band direction, z=sun alignment, w=reserved
+ float4 _HectonCausticsSimulationParamsA;
+ float4 _HectonCausticsSimulationParamsB;
+ float4 _HectonCausticsSimulationParamsC;
+@@ -339,6 +343,45 @@ half3 HectonCoreLitEvaluateGiantAbyssLight(float3 normalWS)
+     return (half3)(_FinalGiantAbyssLight.rgb * facing);
+ }
+ 
++float HectonCoreLitEvaluateEclipseWaterShadow(float3 positionWS)
++{
++    float strength = saturate(_HectonEclipseWaterShadowParams.w);
++    if (strength <= 0.0001)
++        return 1.0;
++
++    float radius = max(_HectonEclipseWaterShadowParams.z, 1.0);
++    float softness = saturate(_HectonEclipseWaterShadowDirection.z);
++    float innerRadius = radius * saturate(1.0 - softness);
++    float distanceToShadow = distance(positionWS.xz, _HectonEclipseWaterShadowParams.xy);
++    float shadowMask = 1.0 - smoothstep(innerRadius, radius, distanceToShadow);
++    return saturate(1.0 - shadowMask * strength);
++}
++
++float HectonCoreLitEvaluateRingCausticShadow(float3 positionWS)
++{
++    float strength = saturate(_HectonRingCausticsParams.x * _HectonRingCausticsDirection.z);
++    if (strength <= 0.0001)
++        return 1.0;
++
++    float2 direction = _HectonRingCausticsDirection.xy;
++    float lenSq = dot(direction, direction);
++    direction = lenSq > 0.0001 ? direction * rsqrt(lenSq) : float2(1.0, 0.0);
++
++    float stripeScale = max(_HectonRingCausticsParams.y, 0.0001);
++    float phase = _HectonRingCausticsParams.z;
++    float softness = max(_HectonRingCausticsParams.w, 0.001);
++    float stripePhase = dot(positionWS.xz, direction) * stripeScale + phase;
++    float stripeWave = abs(sin(stripePhase * 6.2831853));
++    float darkBand = 1.0 - smoothstep(softness, softness + 0.18, stripeWave);
++    return saturate(1.0 - darkBand * strength);
++}
++
++float HectonCoreLitEvaluateCelestialWaterShadow(float3 positionWS)
++{
++    return HectonCoreLitEvaluateEclipseWaterShadow(positionWS) *
++           HectonCoreLitEvaluateRingCausticShadow(positionWS);
++}
++
+ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 normalWS)
+ {
+     if (_HectonProjectedCausticsParams.x <= 0.0001)
+@@ -362,13 +405,15 @@ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 norma
+     float directionalWeight = HectonCoreLitEvaluateDirectionalCausticsWeight(normalWS);
+     float caustics = SAMPLE_TEXTURE2D_LOD(_HectonProjectedCausticsTex, sampler_HectonProjectedCausticsTex, uv, 0).r;
+     float shadowTerm = HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
+-    return caustics * depthFade * upFacing * directionalWeight * shadowTerm * _HectonProjectedCausticsParams.x;
++    float celestialShadow = HectonCoreLitEvaluateCelestialWaterShadow(positionWS);
++    return caustics * depthFade * upFacing * directionalWeight * shadowTerm * celestialShadow * _HectonProjectedCausticsParams.x;
+ }
+ 
+ half3 HectonCoreLitEvaluateProjectedCausticsScattering(float3 positionWS, float3 normalWS)
+ {
+     float mask = HectonCoreLitEvaluateProjectedCausticsMask(positionWS, normalWS);
+-    return (half3)(_HectonProjectedCausticsColor.rgb * mask) + (HectonCoreLitEvaluateGiantAbyssLight(normalWS) * (half)(mask * 0.35));
++    float celestialShadow = HectonCoreLitEvaluateCelestialWaterShadow(positionWS);
++    return (half3)(_HectonProjectedCausticsColor.rgb * mask) + (HectonCoreLitEvaluateGiantAbyssLight(normalWS) * (half)(mask * 0.35 * celestialShadow));
+ }
+ 
+ half HectonCoreLitEvaluateNoirFog(half fogRaw)
+diff --git a/Assets/_Project/Scripts/Dev/CelestialCataclysmSmokeTester.cs b/Assets/_Project/Scripts/Dev/CelestialCataclysmSmokeTester.cs
+index 25bec6be..aa5de7f3 100644
+--- a/Assets/_Project/Scripts/Dev/CelestialCataclysmSmokeTester.cs
++++ b/Assets/_Project/Scripts/Dev/CelestialCataclysmSmokeTester.cs
+@@ -4,6 +4,7 @@
+ // ============================================================================
+ 
+ using System;
++using System.IO;
+ using Hecton8.Caves;
+ using Hecton8.Celestial;
+ using Hecton8.Core;
+@@ -27,10 +28,33 @@ namespace Hecton8.Dev
+         private const string TitaniumScrapAssetPath = "Assets/_Project/Data/Items/Resources/Raw/Data_TitaniumScrap.asset";
+         private const string VolumetricComputePath = "Assets/_Project/Art/Shaders/Hecton_VolumetricLight.compute";
+         private const string CataclysmSystemPath = "Assets/_Project/Scripts/Gameplay/CelestialCataclysmSystem.cs";
++        private const string EclipseGameplaySystemPath = "Assets/_Project/Scripts/Gameplay/EclipseGameplaySystem.cs";
++        private const string RandomEventSystemPath = "Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs";
++        private const string RandomEventMeteorMathPath = "Assets/_Project/Scripts/Gameplay/RandomEventMeteorMath.cs";
++        private const string CelestialSyncSmokeTesterPath = "Assets/_Project/Scripts/Dev/CelestialSyncSmokeTester.cs";
++        private const string CelestialEnginePath = "Assets/_Project/Scripts/HectonCelestialEngine.cs";
++        private const string AtmosphereManagerPath = "Assets/_Project/Scripts/HectonAtmosphereManager.cs";
++        private const string FirmamentComputePath = "Assets/_Project/Art/Shaders/HectonFirmamentBake.compute";
++        private const string AlienSkyShaderPath = "Assets/_Project/Art/Shaders/Hecton_AlienSky_Master.shader";
++        private const string CelestialAtmosphereIncludePath = "Assets/_Project/Art/Shaders/Hecton_CelestialAtmosphere.hlsl";
++        private const string CoreLitIncludePath = "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl";
+         private const string AlienSkyShaderName = "HECTON/Sky/Hecton_AlienSky_Master";
+-        private const string BatchJsonPass = "{\"tester\":\"CelestialCataclysmSmokeTester\",\"status\":\"PASS\",\"issue\":\"\"}";
+-        private const string BatchJsonFailPrefix = "{\"tester\":\"CelestialCataclysmSmokeTester\",\"status\":\"FAIL\",\"issue\":\"";
+-        private const string BatchJsonFailSuffix = "\"}";
++        private const string LegacyFluidInstanceToken = "HectonFluidEngine" + ".Instance";
++        private const string LegacyEclipseInstanceToken = "EclipseGameplaySystem" + ".Instance";
++        private const string LegacyEclipsePublicInstanceToken = "public " + "static EclipseGameplaySystem " + "Instance";
++        private const string LegacyRandomEventInstanceToken = "RandomEventSystem" + ".Instance";
++        private const string LegacyRandomEventPublicInstanceToken = "public " + "static RandomEventSystem " + "Instance";
++        private const string JobCompleteToken = ".Complete" + "(";
++        private const string JobRunToken = ".Run" + "(";
++        private const string StringFormatToken = "string" + ".Format";
++        private const string ToStringToken = "ToString" + "(";
++        private const char InterpolationDollar = (char)36;
++        private const char QuoteChar = (char)34;
++        private const string BatchJsonStatusPrefix = "{\"tester\":\"CelestialCataclysmSmokeTester\",\"status\":\"";
++        private const string BatchJsonIssueSegment = "\",\"issue\":\"";
++        private const string BatchJsonSourceChecksSegment = "\",\"sourceChecks\":";
++        private const string BatchJsonTelemetryContractsSegment = ",\"telemetryContracts\":";
++        private const string BatchJsonSuffix = "}";
+ 
+         [Header("Execution")]
+         [SerializeField] private bool runOnStart = false;
+@@ -45,6 +69,8 @@ namespace Hecton8.Dev
+         [SerializeField] private float _debugLunarMultiplier;
+         [SerializeField] private int _debugSolarFlareIndex;
+         [SerializeField] private int _debugMeteorFogShadowParamsId;
++        [SerializeField] private int _debugOmegaSourceChecks;
++        [SerializeField] private int _debugOmegaTelemetryContracts;
+ #pragma warning restore CS0414
+ 
+         private static readonly int _AtmosphereDensityId = Shader.PropertyToID("_AtmosphereDensity");
+@@ -52,6 +78,10 @@ namespace Hecton8.Dev
+         private static readonly int _MeteorFogShadowPositionsId = Shader.PropertyToID("_MeteorFogShadowPositions");
+         private static readonly int _MeteorFogShadowParamsId = Shader.PropertyToID("_MeteorFogShadowParams");
+         private static readonly int _SolarEmpGlitchParamsId = Shader.PropertyToID("_SolarEmpGlitchParams");
++        private static readonly int _BakedStarCubemapReadyId = Shader.PropertyToID("_BakedStarCubemapReady");
++        private static readonly int _HectonAtmosphereScatteringLutReadyId = Shader.PropertyToID("_HectonAtmosphereScatteringLUTReady");
++        private static readonly int _HectonEclipseWaterShadowParamsId = Shader.PropertyToID("_HectonEclipseWaterShadowParams");
++        private static readonly int _HectonRingCausticsParamsId = Shader.PropertyToID("_HectonRingCausticsParams");
+ 
+ #if UNITY_EDITOR
+         public static void RunBatchModeSmokeTest()
+@@ -64,7 +94,7 @@ namespace Hecton8.Dev
+             CelestialCataclysmSmokeTester tester = smokeRoot.AddComponent<CelestialCataclysmSmokeTester>();
+             bool pass = tester.RunSmokePass();
+             string issue = SanitizeJsonField(tester._debugLastIssue);
+-            Debug.Log(pass ? BatchJsonPass : BatchJsonFailPrefix + issue + BatchJsonFailSuffix);
++            Debug.Log(BuildBatchJson(pass, issue, tester._debugOmegaSourceChecks, tester._debugOmegaTelemetryContracts));
+             DestroyImmediate(smokeRoot);
+ 
+             if (Application.isBatchMode)
+@@ -89,6 +119,8 @@ namespace Hecton8.Dev
+             _debugRunCount++;
+             _debugLastPass = false;
+             _debugLastIssue = string.Empty;
++            _debugOmegaSourceChecks = 0;
++            _debugOmegaTelemetryContracts = 0;
+ 
+             if (!ValidateRandomEventContracts())
+                 return false;
+@@ -99,6 +131,9 @@ namespace Hecton8.Dev
+             if (!ValidateShaderContracts())
+                 return false;
+ 
++            if (!ValidateFirmamentContracts())
++                return false;
++
+             if (!ValidateOmegaContracts())
+                 return false;
+ 
+@@ -143,6 +178,12 @@ namespace Hecton8.Dev
+             if (typeof(GlobalRegistry).GetProperty(nameof(GlobalRegistry.Fluid)) == null)
+                 return Fail("GlobalRegistry.Fluid runtime slot missing.");
+ 
++            if (typeof(GlobalRegistry).GetProperty(nameof(GlobalRegistry.EclipseGameplay)) == null)
++                return Fail("GlobalRegistry.EclipseGameplay runtime slot missing.");
++
++            if (typeof(GlobalRegistry).GetProperty(nameof(GlobalRegistry.RandomEvents)) == null)
++                return Fail("GlobalRegistry.RandomEvents runtime slot missing.");
++
+             if (typeof(GlobalTelemetryBus).GetMethod(
+                     nameof(GlobalTelemetryBus.PublishPerformanceWarning),
+                     new[] { typeof(uint), typeof(uint), typeof(float) }) == null)
+@@ -150,6 +191,8 @@ namespace Hecton8.Dev
+                 return Fail("GlobalTelemetryBus.PublishPerformanceWarning(uint,uint,float) missing.");
+             }
+ 
++            _debugOmegaTelemetryContracts++;
++
+             if (typeof(VisorHUDController).GetMethod(nameof(VisorHUDController.GlitchPulse), new[] { typeof(float) }) == null)
+                 return Fail("VisorHUDController.GlitchPulse(float) missing.");
+ 
+@@ -161,7 +204,9 @@ namespace Hecton8.Dev
+             _debugMeteorFogShadowParamsId = _MeteorFogShadowParamsId;
+             if (_AtmosphereDensityId == 0 || _FinalGiantAbyssLightId == 0 ||
+                 _MeteorFogShadowPositionsId == 0 || _MeteorFogShadowParamsId == 0 ||
+-                _SolarEmpGlitchParamsId == 0)
++                _SolarEmpGlitchParamsId == 0 ||
++                _BakedStarCubemapReadyId == 0 || _HectonAtmosphereScatteringLutReadyId == 0 ||
++                _HectonEclipseWaterShadowParamsId == 0 || _HectonRingCausticsParamsId == 0)
+             {
+                 return Fail("One or more cataclysm shader property IDs resolved to zero.");
+             }
+@@ -176,6 +221,77 @@ namespace Hecton8.Dev
+             return true;
+         }
+ 
++        private bool ValidateFirmamentContracts()
++        {
++#if UNITY_EDITOR
++            ComputeShader firmamentCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(FirmamentComputePath);
++            if (firmamentCompute == null)
++                return Fail("HectonFirmamentBake.compute missing.");
++
++            string computeSource = ReadAssetText(FirmamentComputePath);
++            if (!computeSource.Contains("#pragma kernel BakeSpectralStars") ||
++                !computeSource.Contains("#pragma kernel BakeAtmosphereLut") ||
++                !computeSource.Contains("HectonSpectralColor") ||
++                !computeSource.Contains("_BakedStarCubemap"))
++            {
++                return Fail("Firmament compute shader lacks bake kernels or spectral contract.");
++            }
++            _debugOmegaSourceChecks++;
++
++            string celestialSource = ReadAssetText(CelestialEnginePath);
++            if (!celestialSource.Contains("FirmamentStartupStarCount = 100000") ||
++                !celestialSource.Contains("TryBakeFirmamentOnce") ||
++                !celestialSource.Contains("_BakedStarCubemapReady") ||
++                !celestialSource.Contains("_HectonAtmosphereScatteringLUTReady"))
++            {
++                return Fail("HectonCelestialEngine lacks startup firmament bake contract.");
++            }
++            _debugOmegaSourceChecks++;
++
++            string alienSkySource = ReadAssetText(AlienSkyShaderPath);
++            if (!alienSkySource.Contains("_BakedStarCubemap") ||
++                !alienSkySource.Contains("SAMPLE_TEXTURECUBE") ||
++                !alienSkySource.Contains("_HectonAtmosphereScatteringLUT"))
++            {
++                return Fail("Alien sky shader does not sample baked stars and scattering LUT.");
++            }
++            _debugOmegaSourceChecks++;
++
++            string atmosphereInclude = ReadAssetText(CelestialAtmosphereIncludePath);
++            if (!atmosphereInclude.Contains("sunView01") ||
++                !atmosphereInclude.Contains("_HectonAtmosphereScatteringLUTReady"))
++            {
++                return Fail("Celestial atmosphere include lacks sun-direction LUT sampling.");
++            }
++            _debugOmegaSourceChecks++;
++
++            string coreLitSource = ReadAssetText(CoreLitIncludePath);
++            if (!coreLitSource.Contains("_HectonEclipseWaterShadowParams") ||
++                !coreLitSource.Contains("HectonCoreLitEvaluateRingCausticShadow"))
++            {
++                return Fail("CoreLit shader lacks eclipse water shadow or ring caustic contract.");
++            }
++            _debugOmegaSourceChecks++;
++
++            string randomEventSource = ReadAssetText(RandomEventSystemPath);
++            if (!randomEventSource.Contains("_MeteorWaterImpactParams") ||
++                !randomEventSource.Contains("RegisterMassiveDisplacement"))
++            {
++                return Fail("RandomEventSystem lacks meteor water impact displacement contract.");
++            }
++            _debugOmegaSourceChecks++;
++
++            string atmosphereManagerSource = ReadAssetText(AtmosphereManagerPath);
++            if (!atmosphereManagerSource.Contains("Matrix4x4.Rotate") ||
++                !atmosphereManagerSource.Contains("MultiplyVector(Vector3.forward)"))
++            {
++                return Fail("HectonAtmosphereManager lacks Matrix4x4 sun tracking contract.");
++            }
++            _debugOmegaSourceChecks++;
++#endif
++            return true;
++        }
++
+         private bool ValidateOmegaContracts()
+         {
+ #if UNITY_EDITOR
+@@ -184,14 +300,136 @@ namespace Hecton8.Dev
+                 return Fail("CelestialCataclysmSystem source script missing.");
+ 
+             string source = script.text;
+-            if (source.Contains("HectonFluidEngine.Instance"))
++            if (source.Contains(LegacyFluidInstanceToken))
+                 return Fail("CelestialCataclysmSystem still bypasses GlobalRegistry.Fluid.");
++            _debugOmegaSourceChecks++;
++
++            if (source.Contains(JobCompleteToken) || source.Contains(JobRunToken))
++                return Fail("CelestialCataclysmSystem has a direct job barrier token.");
++            _debugOmegaSourceChecks++;
++
++            if (ContainsInterpolationToken(source) || source.Contains(StringFormatToken) || source.Contains(ToStringToken))
++                return Fail("CelestialCataclysmSystem has managed string formatting tokens.");
++            _debugOmegaSourceChecks++;
+ 
+             if (!source.Contains("GlobalTelemetryBus.PublishPerformanceWarning"))
+                 return Fail("CelestialCataclysmSystem lacks GlobalTelemetryBus warning path.");
++            _debugOmegaTelemetryContracts++;
++
++            if (!source.Contains("SolarEmpNoVisorController"))
++                return Fail("CelestialCataclysmSystem lacks Solar EMP no-visor telemetry.");
++            _debugOmegaTelemetryContracts++;
+ 
+             if (!source.Contains("_SolarEmpGlitchParams"))
+                 return Fail("CelestialCataclysmSystem lacks Solar EMP glitch global.");
++
++            if (!source.Contains("s_visorControllers.Clear()"))
++                return Fail("CelestialCataclysmSystem leaves static visor scratch references uncleared.");
++            _debugOmegaSourceChecks++;
++
++            MonoScript eclipseGameplay = AssetDatabase.LoadAssetAtPath<MonoScript>(EclipseGameplaySystemPath);
++            if (eclipseGameplay == null)
++                return Fail("EclipseGameplaySystem source script missing.");
++
++            string eclipseGameplaySource = eclipseGameplay.text;
++            if (eclipseGameplaySource.Contains(LegacyEclipseInstanceToken) ||
++                eclipseGameplaySource.Contains(LegacyEclipsePublicInstanceToken))
++            {
++                return Fail("EclipseGameplaySystem still exposes a singleton Instance.");
++            }
++            _debugOmegaSourceChecks++;
++
++            if (ContainsInterpolationToken(eclipseGameplaySource) ||
++                eclipseGameplaySource.Contains(StringFormatToken) ||
++                eclipseGameplaySource.Contains(ToStringToken))
++            {
++                return Fail("EclipseGameplaySystem has managed string formatting tokens.");
++            }
++            _debugOmegaSourceChecks++;
++
++            if (!ValidateNativeQueueSentinelPair(eclipseGameplaySource, "_pendingEvents") ||
++                !ValidateNativeQueueSentinelPair(eclipseGameplaySource, "_nextFrameEvents"))
++            {
++                return Fail("EclipseGameplayEvents has an unregistered NativeQueue.");
++            }
++            _debugOmegaSourceChecks++;
++
++            if (!eclipseGameplaySource.Contains("GlobalTelemetryBus.PublishPerformanceWarning") ||
++                !eclipseGameplaySource.Contains("EclipseNoEcosystemDirector"))
++            {
++                return Fail("EclipseGameplaySystem lacks missing-ecosystem telemetry.");
++            }
++            _debugOmegaTelemetryContracts++;
++
++            MonoScript randomEvents = AssetDatabase.LoadAssetAtPath<MonoScript>(RandomEventSystemPath);
++            if (randomEvents == null)
++                return Fail("RandomEventSystem source script missing.");
++
++            string randomEventSource = randomEvents.text;
++            if (randomEventSource.Contains(LegacyRandomEventInstanceToken) ||
++                randomEventSource.Contains(LegacyRandomEventPublicInstanceToken))
++            {
++                return Fail("RandomEventSystem still exposes a singleton Instance.");
++            }
++            _debugOmegaSourceChecks++;
++
++            if (ContainsInterpolationToken(randomEventSource) ||
++                randomEventSource.Contains(StringFormatToken) ||
++                randomEventSource.Contains(ToStringToken))
++            {
++                return Fail("RandomEventSystem has managed string formatting tokens.");
++            }
++            _debugOmegaSourceChecks++;
++
++            if (!ValidateNativeQueueSentinelPair(randomEventSource, "_pendingStarted") ||
++                !ValidateNativeQueueSentinelPair(randomEventSource, "_nextFrameStarted") ||
++                !ValidateNativeQueueSentinelPair(randomEventSource, "_pendingEnded") ||
++                !ValidateNativeQueueSentinelPair(randomEventSource, "_nextFrameEnded") ||
++                !ValidateNativeQueueSentinelPair(randomEventSource, "_pendingSeismicShockwaves") ||
++                !ValidateNativeQueueSentinelPair(randomEventSource, "_nextFrameSeismicShockwaves"))
++            {
++                return Fail("RandomEventEvents has an unregistered NativeQueue.");
++            }
++            _debugOmegaSourceChecks++;
++
++            if (!randomEventSource.Contains("RandomEventMeteorMath.EvaluateMeteorFlash") ||
++                !randomEventSource.Contains("RandomEventMeteorMath.Hash01"))
++            {
++                return Fail("RandomEventSystem still owns meteor math instead of RandomEventMeteorMath.");
++            }
++            _debugOmegaSourceChecks++;
++
++            MonoScript meteorMath = AssetDatabase.LoadAssetAtPath<MonoScript>(RandomEventMeteorMathPath);
++            if (meteorMath == null)
++                return Fail("RandomEventMeteorMath source script missing.");
++
++            string meteorMathSource = meteorMath.text;
++            if (!meteorMathSource.Contains("EvaluateMeteorFlash") ||
++                !meteorMathSource.Contains("Hash01"))
++            {
++                return Fail("RandomEventMeteorMath lacks meteor flash/hash contracts.");
++            }
++            _debugOmegaSourceChecks++;
++
++            if (ContainsInterpolationToken(meteorMathSource) ||
++                meteorMathSource.Contains(StringFormatToken) ||
++                meteorMathSource.Contains(ToStringToken))
++            {
++                return Fail("RandomEventMeteorMath has managed string formatting tokens.");
++            }
++            _debugOmegaSourceChecks++;
++
++            MonoScript syncSmoke = AssetDatabase.LoadAssetAtPath<MonoScript>(CelestialSyncSmokeTesterPath);
++            if (syncSmoke == null)
++                return Fail("CelestialSyncSmokeTester source script missing.");
++
++            string syncSmokeSource = syncSmoke.text;
++            if (syncSmokeSource.Contains(LegacyEclipseInstanceToken) ||
++                syncSmokeSource.Contains(LegacyRandomEventInstanceToken))
++            {
++                return Fail("CelestialSyncSmokeTester still reads a legacy celestial singleton.");
++            }
++            _debugOmegaSourceChecks++;
+ #endif
+             return true;
+         }
+@@ -249,6 +487,46 @@ namespace Hecton8.Dev
+         {
+             return string.IsNullOrEmpty(value) ? string.Empty : value.Replace('"', '\'');
+         }
++
++        private static bool ContainsInterpolationToken(string source)
++        {
++            if (string.IsNullOrEmpty(source))
++                return false;
++
++            for (int i = 1; i < source.Length; i++)
++            {
++                if (source[i - 1] == InterpolationDollar && source[i] == QuoteChar)
++                    return true;
++            }
++
++            return false;
++        }
++
++        private static bool ValidateNativeQueueSentinelPair(string source, string fieldName)
++        {
++            return source.Contains("NativeMemorySentinel.RegisterNativeQueue") &&
++                   source.Contains("NativeMemorySentinel.UnregisterNativeQueue") &&
++                   source.Contains("nameof(" + fieldName + ")");
++        }
++
++        private static string ReadAssetText(string assetPath)
++        {
++            string fullPath = Path.Combine(Directory.GetCurrentDirectory(), assetPath);
++            return File.Exists(fullPath) ? File.ReadAllText(fullPath) : string.Empty;
++        }
++
++        private static string BuildBatchJson(bool pass, string issue, int sourceChecks, int telemetryContracts)
++        {
++            return BatchJsonStatusPrefix +
++                   (pass ? "PASS" : "FAIL") +
++                   BatchJsonIssueSegment +
++                   issue +
++                   BatchJsonSourceChecksSegment +
++                   sourceChecks +
++                   BatchJsonTelemetryContractsSegment +
++                   telemetryContracts +
++                   BatchJsonSuffix;
++        }
+ #endif
+     }
+ }
+diff --git a/Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs b/Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs
+index 121016d4..55d3fbbf 100644
+--- a/Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs
++++ b/Assets/_Project/Scripts/Gameplay/RandomEventSystem.cs
+@@ -21,6 +21,7 @@
+ // ============================================================================
+ 
+ using Hecton.Localization;
++using Hecton8.Atmosphere;
+ using Hecton8.Audio;
+ using Hecton8.Bootstrap;
+ using Hecton8.Caves;
+@@ -622,8 +623,6 @@ namespace Hecton8.Gameplay
+     {
+         public const int EventTypeCount = 7;
+ 
+-        private const float MeteorHashToUnit = 1f / 16777215f;
+-
+         // ══════════════════════════════════════════════════════════
+         //  INSPECTOR
+         // ══════════════════════════════════════════════════════════
+@@ -668,19 +667,13 @@ namespace Hecton8.Gameplay
+         [SerializeField, Range(80f, 800f)] private float meteorBoomLowPassCutoffHz = 260f;
+         [SerializeField, Range(4f, 36f)] private float meteorBoomVerticalOffsetMeters = 18f;
+         [SerializeField, Range(0f, 32f)] private float meteorBoomHorizontalOffsetMeters = 14f;
++        [SerializeField, Range(4f, 96f)] private float meteorWaterImpactRadiusMeters = 42f;
++        [SerializeField, Range(0.5f, 12f)] private float meteorWaterImpactDurationSeconds = 5.5f;
++        [SerializeField, Range(0f, 1f)] private float meteorWaterImpactEnvelopeThreshold = 0.18f;
+ 
+         [Header("Solar EMP Flare")]
+         [SerializeField, Range(0f, 1f)] private float solarFlareIntensity = 1f;
+ 
+-        // ══════════════════════════════════════════════════════════
+-        //  SINGLETON
+-        // ══════════════════════════════════════════════════════════
+-
+-        public static RandomEventSystem Instance { get; private set; }
+-
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState() => Instance = null;
+-
+         // ══════════════════════════════════════════════════════════
+         //  PRIVATE STATE
+         // ══════════════════════════════════════════════════════════
+@@ -693,6 +686,7 @@ namespace Hecton8.Gameplay
+         // COLD ALLOC: Rigidbody[48] - reusable unique rigidbody buffer for cave-collapse impulse routing - owner: RandomEventSystem
+         private readonly Rigidbody[] _seismicBodyBuffer = new Rigidbody[48];
+         private bool _registered;
++        private bool _registeredRuntime;
+         private float _meteorSeed = 99173f;
+         private int _meteorLastBoomIndex = -1;
+         [SerializeField] private float _debugMeteorFlash;
+@@ -702,19 +696,16 @@ namespace Hecton8.Gameplay
+         private static readonly int _ShaderGlitchActive = Shader.PropertyToID("_HUDGlitchActive");
+         private static readonly int _ShaderMeteorShowerParams = Shader.PropertyToID("_MeteorShowerParams");
+         private static readonly int _ShaderMeteorShowerDirection = Shader.PropertyToID("_MeteorShowerDirection");
++        private static readonly int _ShaderMeteorWaterImpactPosition = Shader.PropertyToID("_MeteorWaterImpactPosition");
++        private static readonly int _ShaderMeteorWaterImpactParams = Shader.PropertyToID("_MeteorWaterImpactParams");
+ 
+         // ══════════════════════════════════════════════════════════
+         //  LIFECYCLE
+         // ══════════════════════════════════════════════════════════
+ 
+-        private void Awake()
+-        {
+-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
+-            Instance = this;
+-        }
+-
+         private void OnEnable()
+         {
++            TryRegisterRuntime();
+             TryRegister();
+ 
+             ResolveSurvivalSystem();
+@@ -723,6 +714,7 @@ namespace Hecton8.Gameplay
+         private void OnDisable()
+         {
+             TryUnregister();
++            TryUnregisterRuntime();
+ 
+             // Сбрасываем все активные события
+             for (int i = 0; i < _eventTimers.Length; i++)
+@@ -737,14 +729,13 @@ namespace Hecton8.Gameplay
+             Shader.SetGlobalFloat(_ShaderBiolumStorm, 0f);
+             Shader.SetGlobalFloat(_ShaderGlitchActive, 0f);
+             PublishMeteorShowerGlobals(0f, 0f, 0f);
++            PublishMeteorWaterImpactGlobals(Vector3.zero, 0f, 0f, 0f);
+         }
+ 
+         private void OnDestroy()
+         {
+             TryUnregister();
+-
+-            if (Instance == this)
+-                Instance = null;
++            TryUnregisterRuntime();
+         }
+ 
+         // ══════════════════════════════════════════════════════════
+@@ -796,6 +787,17 @@ namespace Hecton8.Gameplay
+             _registered = GlobalRegistry.SlowTickables.Contains(this);
+         }
+ 
++        private void TryRegisterRuntime()
++        {
++            if (_registeredRuntime)
++                return;
++            if (!Application.isPlaying)
++                return;
++
++            GlobalRegistry.RegisterRandomEventRuntime(this);
++            _registeredRuntime = GlobalRegistry.RandomEvents == this;
++        }
++
+         private void TryUnregister()
+         {
+             if (!_registered)
+@@ -805,6 +807,15 @@ namespace Hecton8.Gameplay
+             _registered = false;
+         }
+ 
++        private void TryUnregisterRuntime()
++        {
++            if (!_registeredRuntime)
++                return;
++
++            GlobalRegistry.UnregisterRandomEventRuntime(this);
++            _registeredRuntime = false;
++        }
++
+         // ══════════════════════════════════════════════════════════
+         //  PUBLIC API
+         // ══════════════════════════════════════════════════════════
+@@ -817,16 +828,7 @@ namespace Hecton8.Gameplay
+ 
+         public static float EvaluateMeteorFlashForSmoke(float eventAgeSeconds, float seed, float flashRate)
+         {
+-            float safeRate = Mathf.Max(0.01f, flashRate);
+-            float phase = Mathf.Max(0f, eventAgeSeconds) * safeRate + seed * 0.017f;
+-            int flashIndex = Mathf.FloorToInt(phase);
+-            float local = phase - flashIndex;
+-            float gate = Hash01(unchecked((uint)flashIndex), unchecked((uint)Mathf.RoundToInt(seed)));
+-            if (gate < 0.56f)
+-                return 0f;
+-
+-            float envelope = Mathf.Exp(-local * 11.5f);
+-            return Mathf.Clamp01(envelope * Mathf.Lerp(0.45f, 1f, gate));
++            return RandomEventMeteorMath.EvaluateMeteorFlash(eventAgeSeconds, seed, flashRate);
+         }
+ 
+         // ══════════════════════════════════════════════════════════
+@@ -1071,26 +1073,52 @@ namespace Hecton8.Gameplay
+                 sourcePosition,
+                 Mathf.Clamp01(flash * envelope * meteorBoomIntensity),
+                 meteorBoomLowPassCutoffHz);
++            TryPublishMeteorWaterImpact(sourcePosition, flash, envelope);
+         }
+ 
+         private Vector3 ResolveMeteorBoomPosition(Vector3 playerPosition, int boomIndex)
+         {
+-            float angle = Hash01(unchecked((uint)boomIndex), unchecked((uint)Mathf.RoundToInt(_meteorSeed))) * Mathf.PI * 2f;
++            float angle = RandomEventMeteorMath.Hash01(unchecked((uint)boomIndex), unchecked((uint)Mathf.RoundToInt(_meteorSeed))) * Mathf.PI * 2f;
+             Vector3 horizontal = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle));
+             return playerPosition
+                  + horizontal * Mathf.Max(0f, meteorBoomHorizontalOffsetMeters)
+                  + Vector3.up * Mathf.Max(4f, meteorBoomVerticalOffsetMeters);
+         }
+ 
+-        private static float Hash01(uint a, uint b)
++        private void TryPublishMeteorWaterImpact(Vector3 meteorSourcePosition, float flash, float envelope)
+         {
+-            uint state = a * 747796405u + b * 2891336453u + 0x9E3779B9u;
+-            state ^= state >> 16;
+-            state *= 2246822519u;
+-            state ^= state >> 13;
+-            state *= 3266489917u;
+-            state ^= state >> 16;
+-            return (state & 0x00FFFFFFu) * MeteorHashToUnit;
++            float impactEnvelope = Mathf.Clamp01(flash * envelope);
++            if (impactEnvelope < meteorWaterImpactEnvelopeThreshold)
++                return;
++
++            float seaLevelY = ResolveCurrentSeaLevelY();
++            if (meteorSourcePosition.y < seaLevelY)
++                return;
++
++            Vector3 impactPosition = new Vector3(meteorSourcePosition.x, seaLevelY, meteorSourcePosition.z);
++            float radius = Mathf.Max(4f, meteorWaterImpactRadiusMeters);
++            float duration = Mathf.Max(0.5f, meteorWaterImpactDurationSeconds);
++            PublishMeteorWaterImpactGlobals(impactPosition, radius, duration, impactEnvelope);
++
++            SargassumGlobalDragManager sargassumDrag = GlobalRegistry.SargassumDrag;
++            if (sargassumDrag != null)
++                sargassumDrag.RegisterMassiveDisplacement(impactPosition, radius, duration);
++        }
++
++        private static float ResolveCurrentSeaLevelY()
++        {
++            HectonAtmosphereManager atmosphere = GlobalRegistry.Atmosphere;
++            return atmosphere != null ? atmosphere.SeaLevelY : 0f;
++        }
++
++        private static void PublishMeteorWaterImpactGlobals(Vector3 impactPosition, float radius, float duration, float intensity)
++        {
++            Shader.SetGlobalVector(
++                _ShaderMeteorWaterImpactPosition,
++                new Vector4(impactPosition.x, impactPosition.y, impactPosition.z, Mathf.Clamp01(intensity)));
++            Shader.SetGlobalVector(
++                _ShaderMeteorWaterImpactParams,
++                new Vector4(Mathf.Max(0f, radius), Mathf.Max(0f, duration), Time.time, Mathf.Clamp01(intensity)));
+         }
+ 
+         private bool TryResolveSeismicContext(
+diff --git a/Assets/_Project/Scripts/HectonAtmosphereManager.cs b/Assets/_Project/Scripts/HectonAtmosphereManager.cs
+index ecf271b9..867632bc 100644
+--- a/Assets/_Project/Scripts/HectonAtmosphereManager.cs
++++ b/Assets/_Project/Scripts/HectonAtmosphereManager.cs
+@@ -335,17 +335,9 @@ namespace Hecton8.Atmosphere
+ 
+         #region ══════════ Singleton ══════════
+ 
+-        private static HectonAtmosphereManager _instance;
+-
+-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+-        private static void ResetStaticState()
+-        {
+-            _instance = null;
+-        }
+-
+         public static HectonAtmosphereManager Instance
+         {
+-            get { return _instance; }
++            get { return GlobalRegistry.Atmosphere; }
+         }
+ 
+         #endregion
+@@ -563,16 +555,12 @@ namespace Hecton8.Atmosphere
+         {
+             if (Application.isPlaying)
+             {
+-                if (_instance != null && _instance != this)
++                HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
++                if (registeredAtmosphere != null && !ReferenceEquals(registeredAtmosphere, this))
+                 {
+                     Destroy(this);
+                     return;
+                 }
+-                _instance = this;
+-            }
+-            else
+-            {
+-                _instance = this;
+             }
+ 
+             _registeredToTickManager = false;
+@@ -642,6 +630,7 @@ namespace Hecton8.Atmosphere
+ 
+         private void OnDisable()
+         {
++            bool wasRegisteredRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+             _autoUnderwaterState = false;
+ 
+             if (Application.isPlaying)
+@@ -659,12 +648,13 @@ namespace Hecton8.Atmosphere
+             }
+ #endif
+ 
+-            if (_instance == this)
++            if (!Application.isPlaying || wasRegisteredRuntime)
+                 ResetCycleShaderGlobals();
+         }
+ 
+         private void OnDestroy()
+         {
++            bool wasRegisteredRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+             if (Application.isPlaying)
+             {
+                 MapMagicBiomeEvents.Unregister(this);
+@@ -673,10 +663,8 @@ namespace Hecton8.Atmosphere
+                 TryUnregisterService();
+             }
+ 
+-            if (_instance != this) return;
+-            _instance = null;
+-
+-            ResetCycleShaderGlobals();
++            if (!Application.isPlaying || wasRegisteredRuntime)
++                ResetCycleShaderGlobals();
+ 
+         }
+ 
+@@ -706,6 +694,13 @@ namespace Hecton8.Atmosphere
+             if (_registeredAtmosphereRuntime || !Application.isPlaying)
+                 return;
+ 
++            HectonAtmosphereManager registeredAtmosphere = GlobalRegistry.Atmosphere;
++            if (registeredAtmosphere != null && !ReferenceEquals(registeredAtmosphere, this))
++            {
++                Destroy(this);
++                return;
++            }
++
+             GlobalRegistry.RegisterAtmosphereRuntime(this);
+             _registeredAtmosphereRuntime = ReferenceEquals(GlobalRegistry.Atmosphere, this);
+         }
+@@ -978,7 +973,9 @@ namespace Hecton8.Atmosphere
+ 
+             _sunLight.transform.rotation = finalRotation;
+ 
+-            float3 sunForward = math.mul(finalRotation, new float3(0f, 0f, 1f));
++            Matrix4x4 rotationMatrix = Matrix4x4.Rotate(finalRotation);
++            Vector3 sunForwardVector = rotationMatrix.MultiplyVector(Vector3.forward);
++            float3 sunForward = new float3(sunForwardVector.x, sunForwardVector.y, sunForwardVector.z);
+             _sunElevationDot = math.dot(-sunForward, new float3(0f, 1f, 0f));
+ 
+             // v2.1 OPT: Dirty-write batching — only write to shader if changed
+diff --git a/Assets/_Project/Scripts/HectonCelestialEngine.cs b/Assets/_Project/Scripts/HectonCelestialEngine.cs
+index 5dad92db..96ce98fe 100644
+--- a/Assets/_Project/Scripts/HectonCelestialEngine.cs
++++ b/Assets/_Project/Scripts/HectonCelestialEngine.cs
+@@ -589,6 +589,30 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+         [SerializeField] private float stormEmissionIntensity = 1.0f;
+         [SerializeField] private float starMapSeed = 99173f;
+ 
++        [Header("GPU Firmament Bake")]
++        [SerializeField] private ComputeShader firmamentBakeCompute;
++        [SerializeField] private bool enableGpuFirmamentBake = true;
++        [SerializeField, Range(256, 2048)] private int firmamentCubemapResolution = 1024;
++        [SerializeField, Range(0.1f, 6f)] private float firmamentStarIntensity = 1.35f;
++        [SerializeField, Range(0.02f, 0.32f)] private float firmamentMilkyWayHalfWidthRadians = 0.11f;
++        [SerializeField, Range(0f, 1f)] private float firmamentMilkyWayProbability = 0.76f;
++        [SerializeField, Range(0.1f, 4f)] private float firmamentMilkyWayCoreBias = 1.8f;
++        [SerializeField, Range(0f, 1f)] private float firmamentStarHaloGain = 0.35f;
++        [SerializeField, Range(64, 512)] private int atmosphereScatteringLutWidth = 256;
++        [SerializeField, Range(16, 128)] private int atmosphereScatteringLutHeight = 64;
++        [SerializeField, Range(0f, 4f)] private float atmosphereScatteringDensity = 1f;
++        [SerializeField, Range(0f, 12f)] private float atmosphereScatteringExposure = 4.4f;
++
++        [Header("Ocean Celestial Projection")]
++        [SerializeField, Min(256f)] private float eclipseWaterShadowRadiusMeters = 4200f;
++        [SerializeField, Range(0f, 1f)] private float eclipseWaterShadowDarkening = 0.58f;
++        [SerializeField, Range(0.02f, 0.85f)] private float eclipseWaterShadowSoftness = 0.34f;
++        [SerializeField, Range(0f, 80f)] private float eclipseWaterShadowScrollMetersPerSecond = 11f;
++        [SerializeField, Range(0f, 1f)] private float aegirRingCausticStrength = 0.22f;
++        [SerializeField, Range(0.0005f, 0.08f)] private float aegirRingCausticStripeScale = 0.018f;
++        [SerializeField, Range(0.005f, 0.45f)] private float aegirRingCausticSoftness = 0.08f;
++        [SerializeField, Range(0f, 0.25f)] private float aegirRingCausticScrollSpeed = 0.014f;
++
+         [Header("═══ TRANSITION CURVES ═══")]
+         [SerializeField] private float twilightStartAngle = 5f;
+         [SerializeField] private float twilightEndAngle = -5f;
+@@ -648,6 +672,16 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+         private Color _resolvedSkyHorizon;
+         private Color _resolvedSkyNadir;
+         private Texture2D _celestialAtmosphereLutTexture;
++        private RenderTexture _bakedStarCubemap;
++        private RenderTexture _atmosphereScatteringLutTexture;
++        private bool _firmamentBakeComplete;
++        private int _firmamentBakedSeed;
++        private int _firmamentBakedResolution;
++        private int _atmosphereScatteringBakedWidth;
++        private int _atmosphereScatteringBakedHeight;
++        private int _firmamentClearKernel = -1;
++        private int _firmamentStarKernel = -1;
++        private int _firmamentAtmosphereKernel = -1;
+         private float _currentAtmosphereExposure = 1f;
+         private float _lastAtmosphereBakeSunElevation = float.PositiveInfinity;
+         private float _lastAtmosphereBakeDayWeight = -1f;
+@@ -719,8 +753,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+         private const int CelestialBodyCacheCapacity = 8;
+         private const float AtmosphereWeightBlendThreshold = 0.01f;
+         private const int CelestialAtmosphereLutResolution = 512;
++        private const int FirmamentStartupStarCount = 100000;
+         private const int BestVisualDefaultsVersion = 5;
+         private const float NightAtmosphereInscatterFloor = 0.001f;
++#if UNITY_EDITOR
++        private const string FirmamentBakeComputeAssetPath = "Assets/_Project/Art/Shaders/HectonFirmamentBake.compute";
++#endif
+         private bool _editorPreviewDirty;
+         private readonly List<ObserverRelativeCelestialBody> _observerBodyCache = new List<ObserverRelativeCelestialBody>(CelestialBodyCacheCapacity); // COLD ALLOC: List<ObserverRelativeCelestialBody>[8] - cold observer-body cache for moon renderer discovery - owner: HectonCelestialEngine
+         private readonly List<Renderer> _moonRenderers = new List<Renderer>(CelestialBodyCacheCapacity); // COLD ALLOC: List<Renderer>[8] - cached moon renderers for shared atmosphere overrides - owner: HectonCelestialEngine
+@@ -739,6 +777,20 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+         private static readonly int _ID_Blend              = Shader.PropertyToID("_Blend");
+         private static readonly int _ID_StarIntensity      = Shader.PropertyToID("_StarIntensity");
+         private static readonly int _ID_StarSeed           = Shader.PropertyToID("_StarSeed");
++        private static readonly int _ID_BakedStarCubemap   = Shader.PropertyToID("_BakedStarCubemap");
++        private static readonly int _ID_BakedStarCubemapReady = Shader.PropertyToID("_BakedStarCubemapReady");
++        private static readonly int _ID_HectonStarBakeParams = Shader.PropertyToID("_HectonStarBakeParams");
++        private static readonly int _ID_HectonStarDistribution = Shader.PropertyToID("_HectonStarDistribution");
++        private static readonly int _ID_HectonAtmosphereScatteringLut = Shader.PropertyToID("_HectonAtmosphereScatteringLUT");
++        private static readonly int _ID_HectonAtmosphereScatteringLutReady = Shader.PropertyToID("_HectonAtmosphereScatteringLUTReady");
++        private static readonly int _ID_HectonAtmosphereLutSize = Shader.PropertyToID("_HectonAtmosphereLutSize");
++        private static readonly int _ID_HectonRayleighBeta = Shader.PropertyToID("_HectonRayleighBeta");
++        private static readonly int _ID_HectonMieBeta = Shader.PropertyToID("_HectonMieBeta");
++        private static readonly int _ID_HectonAtmosphereParams = Shader.PropertyToID("_HectonAtmosphereParams");
++        private static readonly int _ID_HectonEclipseWaterShadowParams = Shader.PropertyToID("_HectonEclipseWaterShadowParams");
++        private static readonly int _ID_HectonEclipseWaterShadowDirection = Shader.PropertyToID("_HectonEclipseWaterShadowDirection");
++        private static readonly int _ID_HectonRingCausticsParams = Shader.PropertyToID("_HectonRingCausticsParams");
++        private static readonly int _ID_HectonRingCausticsDirection = Shader.PropertyToID("_HectonRingCausticsDirection");
+         private static readonly int _ID_FresnelSunDir      = Shader.PropertyToID("_FresnelSunDir");
+         private static readonly int _ID_SunBacklitFactor   = Shader.PropertyToID("_SunBacklitFactor");
+         private static readonly int _ID_GlobalRotation     = Shader.PropertyToID("_GlobalRotation");
+@@ -884,6 +936,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+         {
+             ForceMandatedSkyMaterialReference();
+             EnsureCelestialAtmosphereLutReady();
++            ResolveFirmamentBakeCompute();
+         }
+ 
+         private void OnEnable()
+@@ -900,6 +953,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+             ForceMandatedSkyMaterialReference();
+             ValidateReferences();
+             EnsureCelestialAtmosphereLutReady();
++            ResolveFirmamentBakeCompute();
+             InitializeMaterialPropertyBlocks();
+             InitializePlanetShineLight();
+             CacheCelestialTextureDefaults();
+@@ -937,6 +991,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+             SyncCrestPrimaryLight();
+ 
+             ApplySkyboxMaterialOwnership(forceAssignment: true);
++            _resolvedStarMapSeed = ResolveStarMapSeed();
++            TryBakeFirmamentOnce();
+ 
+             if (Application.isPlaying)
+             {
+@@ -984,6 +1040,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+                 BiomeMatrixEvents.Unregister(this);
+ 
+             ReleaseCelestialAtmosphereLut();
++            ReleaseFirmamentBakeResources();
+             RestoreCelestialTextureDefaults();
+             RestoreSunDefaults();
+             CleanupPlanetShineLight();
+@@ -1015,6 +1072,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+             }
+ 
+             ReleaseCelestialAtmosphereLut();
++            ReleaseFirmamentBakeResources();
+             TryUnregisterFromTickManager();
+         }
+ 
+@@ -1159,6 +1217,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+             UpdateSkyboxBlend(sunElevation);
+             UpdateStarIntensity(sunElevation);
+             _resolvedStarMapSeed = ResolveStarMapSeed();
++            TryBakeFirmamentOnce();
+             ResolveSkyColors(out _resolvedSkyZenith, out _resolvedSkyHorizon, out _resolvedSkyNadir);
+             UpdateDynamicCelestialAtmosphere(sunElevation, false);
+             UpdateGlobalShaderData();
+@@ -1740,6 +1799,255 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+             _lastAtmosphereBakeSkyNadir = default;
+         }
+ 
++        private void TryBakeFirmamentOnce()
++        {
++            if (_firmamentBakeComplete)
++            {
++                PublishFirmamentBakeGlobals();
++                return;
++            }
++
++            if (!Application.isPlaying || !enableGpuFirmamentBake)
++            {
++                PublishFirmamentBakeGlobals();
++                return;
++            }
++
++            ResolveFirmamentBakeCompute();
++            if (firmamentBakeCompute == null || !TryResolveFirmamentKernels())
++            {
++                PublishFirmamentBakeGlobals();
++                return;
++            }
++
++            int starResolution = Mathf.Clamp(firmamentCubemapResolution, 256, 2048);
++            int atmosphereWidth = Mathf.Clamp(atmosphereScatteringLutWidth, 64, 512);
++            int atmosphereHeight = Mathf.Clamp(atmosphereScatteringLutHeight, 16, 128);
++            EnsureFirmamentStarCubemap(starResolution);
++            EnsureAtmosphereScatteringLut(atmosphereWidth, atmosphereHeight);
++
++            if (_bakedStarCubemap == null || _atmosphereScatteringLutTexture == null)
++            {
++                PublishFirmamentBakeGlobals();
++                return;
++            }
++
++            int seed = Mathf.Max(1, Mathf.RoundToInt(_resolvedStarMapSeed));
++            firmamentBakeCompute.SetVector(
++                _ID_HectonStarBakeParams,
++                new Vector4(
++                    FirmamentStartupStarCount,
++                    starResolution,
++                    seed,
++                    Mathf.Max(0f, firmamentStarIntensity)));
++            firmamentBakeCompute.SetVector(
++                _ID_HectonStarDistribution,
++                new Vector4(
++                    Mathf.Max(0.001f, firmamentMilkyWayHalfWidthRadians),
++                    Mathf.Clamp01(firmamentMilkyWayProbability),
++                    Mathf.Max(0.001f, firmamentMilkyWayCoreBias),
++                    Mathf.Clamp01(firmamentStarHaloGain)));
++            firmamentBakeCompute.SetTexture(_firmamentClearKernel, _ID_BakedStarCubemap, _bakedStarCubemap);
++            firmamentBakeCompute.SetTexture(_firmamentStarKernel, _ID_BakedStarCubemap, _bakedStarCubemap);
++            firmamentBakeCompute.Dispatch(
++                _firmamentClearKernel,
++                Mathf.CeilToInt(starResolution / 8f),
++                Mathf.CeilToInt(starResolution / 8f),
++                6);
++            firmamentBakeCompute.Dispatch(
++                _firmamentStarKernel,
++                Mathf.CeilToInt(FirmamentStartupStarCount / 128f),
++                1,
++                1);
++
++            firmamentBakeCompute.SetTexture(_firmamentAtmosphereKernel, _ID_HectonAtmosphereScatteringLut, _atmosphereScatteringLutTexture);
++            firmamentBakeCompute.SetVector(_ID_HectonAtmosphereLutSize, new Vector4(atmosphereWidth, atmosphereHeight, 0f, 0f));
++            firmamentBakeCompute.SetVector(_ID_HectonRayleighBeta, new Vector4(0.0058f, 0.0135f, 0.0331f, 0f));
++            firmamentBakeCompute.SetVector(_ID_HectonMieBeta, new Vector4(0.004f, 0.004f, 0.004f, 0.8f));
++            firmamentBakeCompute.SetVector(
++                _ID_HectonAtmosphereParams,
++                new Vector4(
++                    8f,
++                    2f,
++                    Mathf.Max(0f, atmosphereScatteringDensity),
++                    Mathf.Max(0f, atmosphereScatteringExposure)));
++            firmamentBakeCompute.Dispatch(
++                _firmamentAtmosphereKernel,
++                Mathf.CeilToInt(atmosphereWidth / 8f),
++                Mathf.CeilToInt(atmosphereHeight / 8f),
++                1);
++
++            _firmamentBakedSeed = seed;
++            _firmamentBakedResolution = starResolution;
++            _atmosphereScatteringBakedWidth = atmosphereWidth;
++            _atmosphereScatteringBakedHeight = atmosphereHeight;
++            _firmamentBakeComplete = true;
++            PublishFirmamentBakeGlobals();
++        }
++
++        private void ResolveFirmamentBakeCompute()
++        {
++#if UNITY_EDITOR
++            if (firmamentBakeCompute == null)
++                firmamentBakeCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(FirmamentBakeComputeAssetPath);
++#endif
++        }
++
++        private bool TryResolveFirmamentKernels()
++        {
++            if (firmamentBakeCompute == null)
++                return false;
++
++            if (_firmamentClearKernel < 0)
++            {
++                if (!firmamentBakeCompute.HasKernel("ClearStarCubemap"))
++                    return false;
++
++                _firmamentClearKernel = firmamentBakeCompute.FindKernel("ClearStarCubemap");
++            }
++
++            if (_firmamentStarKernel < 0)
++            {
++                if (!firmamentBakeCompute.HasKernel("BakeSpectralStars"))
++                    return false;
++
++                _firmamentStarKernel = firmamentBakeCompute.FindKernel("BakeSpectralStars");
++            }
++
++            if (_firmamentAtmosphereKernel < 0)
++            {
++                if (!firmamentBakeCompute.HasKernel("BakeAtmosphereLut"))
++                    return false;
++
++                _firmamentAtmosphereKernel = firmamentBakeCompute.FindKernel("BakeAtmosphereLut");
++            }
++
++            return true;
++        }
++
++        private void EnsureFirmamentStarCubemap(int resolution)
++        {
++            if (_bakedStarCubemap != null &&
++                _bakedStarCubemap.width == resolution &&
++                _bakedStarCubemap.IsCreated())
++            {
++                return;
++            }
++
++            ReleaseFirmamentStarCubemap();
++            _bakedStarCubemap = new RenderTexture(
++                resolution,
++                resolution,
++                0,
++                RenderTextureFormat.ARGBHalf,
++                RenderTextureReadWrite.Linear)
++            {
++                name = "__HectonBakedSpectralStarCubemap",
++                dimension = TextureDimension.Cube,
++                volumeDepth = 6,
++                enableRandomWrite = true,
++                useMipMap = false,
++                autoGenerateMips = false,
++                wrapMode = TextureWrapMode.Clamp,
++                filterMode = FilterMode.Bilinear,
++                anisoLevel = 0
++            }; // COLD ALLOC: RenderTexture[cubemap] - startup spectral star bake target - owner: HectonCelestialEngine
++            _bakedStarCubemap.Create();
++        }
++
++        private void EnsureAtmosphereScatteringLut(int width, int height)
++        {
++            if (_atmosphereScatteringLutTexture != null &&
++                _atmosphereScatteringLutTexture.width == width &&
++                _atmosphereScatteringLutTexture.height == height &&
++                _atmosphereScatteringLutTexture.IsCreated())
++            {
++                return;
++            }
++
++            ReleaseAtmosphereScatteringLut();
++            _atmosphereScatteringLutTexture = new RenderTexture(
++                width,
++                height,
++                0,
++                RenderTextureFormat.ARGBHalf,
++                RenderTextureReadWrite.Linear)
++            {
++                name = "__HectonAtmosphereScatteringLUT",
++                dimension = TextureDimension.Tex2D,
++                enableRandomWrite = true,
++                useMipMap = false,
++                autoGenerateMips = false,
++                wrapMode = TextureWrapMode.Clamp,
++                filterMode = FilterMode.Bilinear,
++                anisoLevel = 0
++            }; // COLD ALLOC: RenderTexture[2D LUT] - startup Rayleigh/Mie scattering lookup - owner: HectonCelestialEngine
++            _atmosphereScatteringLutTexture.Create();
++        }
++
++        private void PublishFirmamentBakeGlobals()
++        {
++            bool hasBakedStars = _firmamentBakeComplete && _bakedStarCubemap != null;
++            bool hasAtmosphereLut = _firmamentBakeComplete && _atmosphereScatteringLutTexture != null;
++
++            Shader.SetGlobalTexture(_ID_BakedStarCubemap, hasBakedStars ? _bakedStarCubemap : null);
++            Shader.SetGlobalFloat(_ID_BakedStarCubemapReady, hasBakedStars ? 1f : 0f);
++            Shader.SetGlobalTexture(_ID_HectonAtmosphereScatteringLut, hasAtmosphereLut ? _atmosphereScatteringLutTexture : Texture2D.blackTexture);
++            Shader.SetGlobalFloat(_ID_HectonAtmosphereScatteringLutReady, hasAtmosphereLut ? 1f : 0f);
++        }
++
++        private void ReleaseFirmamentBakeResources()
++        {
++            Shader.SetGlobalTexture(_ID_BakedStarCubemap, null);
++            Shader.SetGlobalFloat(_ID_BakedStarCubemapReady, 0f);
++            Shader.SetGlobalTexture(_ID_HectonAtmosphereScatteringLut, Texture2D.blackTexture);
++            Shader.SetGlobalFloat(_ID_HectonAtmosphereScatteringLutReady, 0f);
++            Shader.SetGlobalVector(_ID_HectonEclipseWaterShadowParams, Vector4.zero);
++            Shader.SetGlobalVector(_ID_HectonEclipseWaterShadowDirection, Vector4.zero);
++            Shader.SetGlobalVector(_ID_HectonRingCausticsParams, Vector4.zero);
++            Shader.SetGlobalVector(_ID_HectonRingCausticsDirection, Vector4.zero);
++
++            ReleaseFirmamentStarCubemap();
++            ReleaseAtmosphereScatteringLut();
++            _firmamentBakeComplete = false;
++            _firmamentBakedSeed = 0;
++            _firmamentBakedResolution = 0;
++            _atmosphereScatteringBakedWidth = 0;
++            _atmosphereScatteringBakedHeight = 0;
++        }
++
++        private void ReleaseFirmamentStarCubemap()
++        {
++            if (_bakedStarCubemap == null)
++                return;
++
++            if (_bakedStarCubemap.IsCreated())
++                _bakedStarCubemap.Release();
++
++            if (Application.isPlaying)
++                Destroy(_bakedStarCubemap);
++            else
++                DestroyImmediate(_bakedStarCubemap);
++
++            _bakedStarCubemap = null;
++        }
++
++        private void ReleaseAtmosphereScatteringLut()
++        {
++            if (_atmosphereScatteringLutTexture == null)
++                return;
++
++            if (_atmosphereScatteringLutTexture.IsCreated())
++                _atmosphereScatteringLutTexture.Release();
++
++            if (Application.isPlaying)
++                Destroy(_atmosphereScatteringLutTexture);
++            else
++                DestroyImmediate(_atmosphereScatteringLutTexture);
++
++            _atmosphereScatteringLutTexture = null;
++        }
++
+         private void PushSkyToRenderSettings()
+         {
+             AtmosphericLightingState state = BuildSurfaceAtmosphericLightingState();
+@@ -2559,7 +2867,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+         private float ResolveStarMapSeed()
+         {
+             int seed = Mathf.RoundToInt(starMapSeed);
+-            global::HectonWorldGenerator generator = global::HectonWorldGenerator.ActiveRuntimeInstance;
++            global::HectonWorldGenerator generator = GlobalRegistry.WorldSeedProvider as global::HectonWorldGenerator;
+             if (generator == null)
+                 return seed & 0x00FFFFFF;
+ 
+@@ -2792,6 +3100,10 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+             targetMaterial.SetFloat(_ID_NightBlend, _currentBlend);
+             targetMaterial.SetFloat(_ID_StarIntensity, _currentStarIntensity);
+             targetMaterial.SetFloat(_ID_StarSeed, _resolvedStarMapSeed);
++            targetMaterial.SetTexture(_ID_BakedStarCubemap, _firmamentBakeComplete ? _bakedStarCubemap : null);
++            targetMaterial.SetFloat(_ID_BakedStarCubemapReady, _firmamentBakeComplete && _bakedStarCubemap != null ? 1f : 0f);
++            targetMaterial.SetTexture(_ID_HectonAtmosphereScatteringLut, _firmamentBakeComplete ? _atmosphereScatteringLutTexture : Texture2D.blackTexture);
++            targetMaterial.SetFloat(_ID_HectonAtmosphereScatteringLutReady, _firmamentBakeComplete && _atmosphereScatteringLutTexture != null ? 1f : 0f);
+             targetMaterial.SetFloat(_ID_SunElevation, sunElevationNormalized);
+             targetMaterial.SetFloat(_ID_EclipseOcclusion, _smoothedOcclusionFactor);
+             targetMaterial.SetFloat(_ID_PenumbraFactor, _penumbraFactor);
+@@ -3144,9 +3456,54 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
+             Shader.SetGlobalFloat(_ID_CelestialZenithTransparency, zenithTransparency);
+             Shader.SetGlobalFloat(_ID_CelestialAtmosphereBlendPower, atmosphereBlendPower);
+             Shader.SetGlobalFloat(_ID_GameTime, _gameTime);
++            PublishFirmamentBakeGlobals();
++            PublishOceanCelestialProjectionGlobals(aegirDirection);
+             PublishCelestialAtmosphereLut();
+         }
+ 
++        private void PublishOceanCelestialProjectionGlobals(Vector4 aegirDirection)
++        {
++            float2 planarDirection = new float2(aegirDirection.x, aegirDirection.z);
++            float planarLengthSq = math.lengthsq(planarDirection);
++            if (planarLengthSq <= 0.0001f)
++                planarDirection = new float2(1f, 0f);
++            else
++                planarDirection *= math.rsqrt(planarLengthSq);
++
++            float2 playerXZ = float2.zero;
++            if (playerTransform != null)
++            {
++                Vector3 playerPosition = playerTransform.position;
++                playerXZ = new float2(playerPosition.x, playerPosition.z);
++            }
++
++            float radius = math.max(256f, eclipseWaterShadowRadiusMeters);
++            float travelSpan = radius * 2f;
++            float travel = math.fmod(_gameTime * math.max(0f, eclipseWaterShadowScrollMetersPerSecond), travelSpan);
++            float2 shadowCenter = playerXZ + planarDirection * (travel - radius);
++            float waterShadowStrength = math.saturate(_penumbraFactor * eclipseWaterShadowDarkening);
++            Shader.SetGlobalVector(
++                _ID_HectonEclipseWaterShadowParams,
++                new Vector4(shadowCenter.x, shadowCenter.y, radius, waterShadowStrength));
++            Shader.SetGlobalVector(
++                _ID_HectonEclipseWaterShadowDirection,
++                new Vector4(planarDirection.x, planarDirection.y, math.saturate(eclipseWaterShadowSoftness), _penumbraFactor));
++
++            float sunAegirAlignment = math.saturate((math.dot(_resolvedSunDirection, new float3(aegirDirection.x, aegirDirection.y, aegirDirection.z)) - 0.45f) / 0.55f);
++            sunAegirAlignment = SmoothStep01(sunAegirAlignment);
++            float ringStrength = math.saturate(aegirRingCausticStrength * sunAegirAlignment);
++            Shader.SetGlobalVector(
++                _ID_HectonRingCausticsParams,
++                new Vector4(
++                    ringStrength,
++                    math.max(0.0005f, aegirRingCausticStripeScale),
++                    _gameTime * math.max(0f, aegirRingCausticScrollSpeed),
++                    math.max(0.001f, aegirRingCausticSoftness)));
++            Shader.SetGlobalVector(
++                _ID_HectonRingCausticsDirection,
++                new Vector4(planarDirection.x, planarDirection.y, sunAegirAlignment, 0f));
++        }
++
+         private void DisableLegacySunFlare()
+         {
+             if (_sunLensFlare == null)
+diff --git a/Assets/_Project/Art/Shaders/HectonFirmamentBake.compute b/Assets/_Project/Art/Shaders/HectonFirmamentBake.compute
+new file mode 100644
+index 00000000..7319af0d
+--- /dev/null
++++ b/Assets/_Project/Art/Shaders/HectonFirmamentBake.compute
+@@ -0,0 +1,195 @@
++#pragma kernel ClearStarCubemap
++#pragma kernel BakeSpectralStars
++#pragma kernel BakeAtmosphereLut
++
++RWTexture2DArray<float4> _BakedStarCubemap;
++RWTexture2D<float4> _HectonAtmosphereScatteringLUT;
++
++float4 _HectonStarBakeParams;       // x=star count, y=cubemap resolution, z=world seed, w=intensity
++float4 _HectonStarDistribution;     // x=band half-width radians, y=band probability, z=core bias, w=halo gain
++float4 _HectonAtmosphereLutSize;    // x=width, y=height
++float4 _HectonRayleighBeta;         // xyz=scatter beta
++float4 _HectonMieBeta;              // xyz=extinction beta, w=anisotropy g
++float4 _HectonAtmosphereParams;     // x=Rayleigh height, y=Mie height, z=density, w=exposure
++
++static const float HECTON_PI = 3.14159265359;
++static const float HECTON_INV_PI = 0.31830988618;
++
++uint HectonHash(uint state)
++{
++    state ^= 2747636419u;
++    state *= 2654435769u;
++    state ^= state >> 16;
++    state *= 2654435769u;
++    state ^= state >> 16;
++    state *= 2654435769u;
++    return state;
++}
++
++float HectonHash01(uint state)
++{
++    return (HectonHash(state) & 0x00FFFFFFu) / 16777215.0;
++}
++
++float3 HectonSpectralColor(float classRoll)
++{
++    if (classRoll < 0.00003) return float3(0.62, 0.78, 1.00); // O
++    if (classRoll < 0.00130) return float3(0.72, 0.84, 1.00); // B
++    if (classRoll < 0.00600) return float3(0.90, 0.94, 1.00); // A
++    if (classRoll < 0.03000) return float3(1.00, 0.98, 0.86); // F
++    if (classRoll < 0.07600) return float3(1.00, 0.92, 0.72); // G
++    if (classRoll < 0.12100) return float3(1.00, 0.74, 0.46); // K
++    return float3(1.00, 0.45, 0.32);                          // M
++}
++
++float3 HectonDirectionFromBand(uint starId, uint seed)
++{
++    float longitude = HectonHash01(starId * 747796405u + seed) * HECTON_PI * 2.0;
++    float latitudeRoll = HectonHash01(starId * 2891336453u + seed * 3u);
++    float bandHalfWidth = max(_HectonStarDistribution.x, 0.001);
++    float latitude = (latitudeRoll * 2.0 - 1.0) * bandHalfWidth;
++
++    float coreRoll = HectonHash01(starId * 1597334677u + seed * 5u);
++    float corePull = pow(saturate(1.0 - coreRoll), max(_HectonStarDistribution.z, 0.001));
++    latitude *= lerp(1.0, 0.22, corePull);
++
++    float cosLat = cos(latitude);
++    float3 milkyWayDirection = normalize(float3(
++        cos(longitude) * cosLat,
++        sin(latitude),
++        sin(longitude) * cosLat));
++
++    float z = HectonHash01(starId * 3812015801u + seed * 7u) * 2.0 - 1.0;
++    float a = HectonHash01(starId * 1103515245u + seed * 11u) * HECTON_PI * 2.0;
++    float r = sqrt(saturate(1.0 - z * z));
++    float3 isotropicDirection = float3(r * cos(a), z, r * sin(a));
++
++    float bandProbability = saturate(_HectonStarDistribution.y);
++    float useBand = step(HectonHash01(starId * 3266489917u + seed * 13u), bandProbability);
++    return normalize(lerp(isotropicDirection, milkyWayDirection, useBand));
++}
++
++void HectonDirectionToCubeFaceUv(float3 direction, out uint face, out float2 uv)
++{
++    float3 absDirection = abs(direction);
++    if (absDirection.x >= absDirection.y && absDirection.x >= absDirection.z)
++    {
++        face = direction.x >= 0.0 ? 0u : 1u;
++        uv = direction.x >= 0.0
++            ? float2(-direction.z, direction.y) / absDirection.x
++            : float2(direction.z, direction.y) / absDirection.x;
++    }
++    else if (absDirection.y >= absDirection.x && absDirection.y >= absDirection.z)
++    {
++        face = direction.y >= 0.0 ? 2u : 3u;
++        uv = direction.y >= 0.0
++            ? float2(direction.x, -direction.z) / absDirection.y
++            : float2(direction.x, direction.z) / absDirection.y;
++    }
++    else
++    {
++        face = direction.z >= 0.0 ? 4u : 5u;
++        uv = direction.z >= 0.0
++            ? float2(direction.x, direction.y) / absDirection.z
++            : float2(-direction.x, direction.y) / absDirection.z;
++    }
++
++    uv = uv * 0.5 + 0.5;
++}
++
++void HectonWriteStar(uint face, int2 pixel, int resolution, float3 color, float brightness)
++{
++    if (pixel.x < 0 || pixel.y < 0 || pixel.x >= resolution || pixel.y >= resolution)
++        return;
++
++    _BakedStarCubemap[uint3((uint)pixel.x, (uint)pixel.y, face)] = float4(color * brightness, 1.0);
++}
++
++[numthreads(8, 8, 1)]
++void ClearStarCubemap(uint3 dispatchThreadId : SV_DispatchThreadID)
++{
++    uint resolution = (uint)max(_HectonStarBakeParams.y, 1.0);
++    if (dispatchThreadId.x >= resolution || dispatchThreadId.y >= resolution || dispatchThreadId.z >= 6u)
++        return;
++
++    _BakedStarCubemap[dispatchThreadId] = float4(0.0, 0.0, 0.0, 1.0);
++}
++
++[numthreads(128, 1, 1)]
++void BakeSpectralStars(uint3 dispatchThreadId : SV_DispatchThreadID)
++{
++    uint starId = dispatchThreadId.x;
++    uint starCount = (uint)max(_HectonStarBakeParams.x, 1.0);
++    if (starId >= starCount)
++        return;
++
++    uint seed = (uint)max(_HectonStarBakeParams.z, 1.0);
++    int resolution = (int)max(_HectonStarBakeParams.y, 1.0);
++    float intensity = max(_HectonStarBakeParams.w, 0.0);
++
++    float3 direction = HectonDirectionFromBand(starId, seed);
++    uint face;
++    float2 uv;
++    HectonDirectionToCubeFaceUv(direction, face, uv);
++
++    int2 pixel = (int2)floor(saturate(uv) * (resolution - 1));
++    float classRoll = HectonHash01(starId * 2246822519u + seed * 17u);
++    float magnitudeRoll = HectonHash01(starId * 668265263u + seed * 19u);
++    float3 spectralColor = HectonSpectralColor(classRoll);
++    float brightness = intensity * lerp(0.18, 1.85, pow(saturate(1.0 - magnitudeRoll), 5.0));
++    float halo = brightness * saturate(_HectonStarDistribution.w);
++
++    HectonWriteStar(face, pixel, resolution, spectralColor, brightness);
++    HectonWriteStar(face, pixel + int2(1, 0), resolution, spectralColor, halo * 0.18);
++    HectonWriteStar(face, pixel + int2(-1, 0), resolution, spectralColor, halo * 0.18);
++    HectonWriteStar(face, pixel + int2(0, 1), resolution, spectralColor, halo * 0.18);
++    HectonWriteStar(face, pixel + int2(0, -1), resolution, spectralColor, halo * 0.18);
++}
++
++float HectonRayleighPhase(float mu)
++{
++    return 0.75 * (1.0 + mu * mu) * HECTON_INV_PI * 0.25;
++}
++
++float HectonMiePhase(float mu, float g)
++{
++    float g2 = g * g;
++    float denom = pow(max(1.0 + g2 - 2.0 * g * mu, 0.001), 1.5);
++    return (3.0 * (1.0 - g2) * (1.0 + mu * mu)) /
++        (8.0 * HECTON_PI * (2.0 + g2) * denom);
++}
++
++[numthreads(8, 8, 1)]
++void BakeAtmosphereLut(uint3 dispatchThreadId : SV_DispatchThreadID)
++{
++    uint width = (uint)max(_HectonAtmosphereLutSize.x, 1.0);
++    uint height = (uint)max(_HectonAtmosphereLutSize.y, 1.0);
++    if (dispatchThreadId.x >= width || dispatchThreadId.y >= height)
++        return;
++
++    float mu = ((dispatchThreadId.x + 0.5) / width) * 2.0 - 1.0;
++    float elevation01 = (dispatchThreadId.y + 0.5) / height;
++    float density = max(_HectonAtmosphereParams.z, 0.0);
++    float exposure = max(_HectonAtmosphereParams.w, 0.0);
++    float rayleighHeight = max(_HectonAtmosphereParams.x, 0.001);
++    float mieHeight = max(_HectonAtmosphereParams.y, 0.001);
++
++    float viewPath = 1.0 / max(0.06 + elevation01 * 0.94, 0.06);
++    float rayleighDepth = exp(-elevation01 * 6.0 / rayleighHeight) * viewPath * density;
++    float mieDepth = exp(-elevation01 * 4.0 / mieHeight) * viewPath * density;
++    float3 opticalDepth = _HectonRayleighBeta.xyz * rayleighDepth + _HectonMieBeta.xyz * mieDepth;
++    float3 transmittance = exp(-opticalDepth);
++
++    float rayleighPhase = HectonRayleighPhase(mu);
++    float miePhase = HectonMiePhase(mu, clamp(_HectonMieBeta.w, -0.95, 0.95));
++    float3 inscatter =
++        _HectonRayleighBeta.xyz * rayleighPhase * rayleighDepth +
++        _HectonMieBeta.xyz * miePhase * mieDepth;
++
++    float horizonWarmth = saturate(1.0 - elevation01) * saturate(mu * 0.5 + 0.5);
++    inscatter *= lerp(float3(0.68, 0.76, 1.0), float3(1.0, 0.55, 0.22), horizonWarmth * 0.62);
++    inscatter = inscatter * (1.0 - transmittance) * exposure;
++
++    float averageTransmittance = dot(transmittance, float3(0.2126, 0.7152, 0.0722));
++    _HectonAtmosphereScatteringLUT[dispatchThreadId.xy] = float4(inscatter, saturate(averageTransmittance));
++}
+diff --git a/Assets/_Project/Art/Shaders/HectonFirmamentBake.compute.meta b/Assets/_Project/Art/Shaders/HectonFirmamentBake.compute.meta
+new file mode 100644
+index 00000000..0b4666d9
+--- /dev/null
++++ b/Assets/_Project/Art/Shaders/HectonFirmamentBake.compute.meta
+@@ -0,0 +1,8 @@
++fileFormatVersion: 2
++guid: 3d3dbb06ac1845de9a9b7d553e55b27f
++ComputeShaderImporter:
++  externalObjects: {}
++  currentAPIMask: 4
++  userData: 
++  assetBundleName: 
++  assetBundleVariant: 

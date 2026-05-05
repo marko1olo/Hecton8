@@ -71,7 +71,8 @@ namespace Hecton8.Inventory
             }
         }
 
-        private struct InventoryRadixSortKernel
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct InventoryRadixSortJob : IJob
         {
             private const int ByteBucketCount = 256;
             private const int PackedKeyPassCount = 6;
@@ -448,8 +449,6 @@ namespace Hecton8.Inventory
                 stackable);
         }
 
-        private static PlayerInventory _instance;
-
         [Header("── Grid Settings ──────────────────")]
         [Tooltip("Inventory grid column count.")]
         [SerializeField] private int columns = 8;
@@ -503,7 +502,6 @@ namespace Hecton8.Inventory
         private TraumaDispatcher _traumaDispatcher;
         private int _pressurizedContainerProtectionCount;
 
-        public static PlayerInventory Instance => _instance;
         public float TotalWeight { get; private set; }
         public float TotalMassKg { get; private set; }
         public float TotalVolumeM3 { get; private set; }
@@ -547,13 +545,6 @@ namespace Hecton8.Inventory
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
             _grid = new InventoryGrid(columns, rows);
             // COLD ALLOC: ushort[columns * rows] — anchor stack counts — owner: PlayerInventory
             _stackCounts = new NativeArray<ushort>(columns * rows, Allocator.Persistent, NativeArrayOptions.ClearMemory);
@@ -654,8 +645,6 @@ namespace Hecton8.Inventory
             DisposeNativeArray(ref _thermalRunawayPairs);
             DisposeNativeArray(ref _thermalRunawayCounters);
 
-            if (_instance == this)
-                _instance = null;
         }
 
         private void RegisterNativeMemorySentinel()
@@ -1325,14 +1314,16 @@ namespace Hecton8.Inventory
             for (int i = 0; i < count; i++)
                 _sortEntriesNative[i] = BuildInventorySortEntry(in _sortBuffer[i], i);
 
-            // ZERO-GC INLINE KERNEL: inventory sort is explicit user action outside gameplay hot paths.
-            new InventoryRadixSortKernel
+            JobHandle sortHandle = new InventoryRadixSortJob
             {
                 Entries = _sortEntriesNative,
                 Scratch = _sortScratchNative,
                 Counts = _sortRadixCounts,
                 Count = count
-            }.Execute();
+            }.Schedule();
+
+            // COLD SYNC JOB: explicit user sort command; no Tick/SlowTick barrier.
+            DispatcherJobSwap.TryComplete(ref sortHandle, forceComplete: true);
 
             for (int i = 0; i < count; i++)
                 _sortedPlacements[i] = _sortBuffer[_sortEntriesNative[i].OriginalIndex];

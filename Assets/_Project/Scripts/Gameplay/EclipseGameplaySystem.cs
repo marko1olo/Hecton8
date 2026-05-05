@@ -325,15 +325,6 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 1f)] private float acousticPitchShiftStartOcclusion = 0.85f;
 
         // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
-
-        public static EclipseGameplaySystem Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
-
-        // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
         // ══════════════════════════════════════════════════════════
 
@@ -342,8 +333,15 @@ namespace Hecton8.Gameplay
         private float _currentTempDrop;
         private bool  _predatorsRisen;
         private bool  _registered;
+        private bool  _registeredRuntime;
+        private bool  _reportedMissingEcosystemDirector;
         private float _currentBiolumMultiplier = 1f;
         private float _currentAcousticPitchShiftCents;
+
+        private static readonly uint _EclipseGameplayContextHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplaySystem"));
+        private static readonly uint _EclipseNoEcosystemDirectorWarningHash =
+            unchecked((uint)LocHash.Compute("EclipseGameplay.NoEcosystemDirector"));
 
         private static readonly int _ShaderBiolumMultiplier =
             Shader.PropertyToID("_EclipseBiolumMultiplier");
@@ -363,14 +361,9 @@ namespace Hecton8.Gameplay
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
 
-        private void Awake()
-        {
-            if (Instance != null && Instance != this) { Destroy(gameObject); return; }
-            Instance = this;
-        }
-
         private void OnEnable()
         {
+            TryRegisterRuntime();
             TryRegister();
             CelestialEvents.Register(this);
         }
@@ -378,6 +371,7 @@ namespace Hecton8.Gameplay
         private void OnDisable()
         {
             TryUnregister();
+            TryUnregisterRuntime();
             CelestialEvents.Unregister(this);
             ApplyPredatorShallowMigration(0f, 0f);
             _currentBiolumMultiplier = 1f;
@@ -388,10 +382,8 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             TryUnregister();
+            TryUnregisterRuntime();
             CelestialEvents.Unregister(this);
-
-            if (Instance == this)
-                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -426,7 +418,7 @@ namespace Hecton8.Gameplay
                     EclipseGameplayEvents.RaiseNightPredatorsRising(predatorRiseIntensity);
                     ApplyPredatorShallowMigration(predatorRiseIntensity, predatorRiseHoldSeconds);
 
-                    LogNightPredatorsRising(predatorRiseIntensity);
+                    LogNightPredatorsRising();
                 }
 
                 PublishBiolumMultiplier(ResolveTargetBiolumMultiplier());
@@ -444,14 +436,34 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void TryRegisterRuntime()
+        {
+            if (_registeredRuntime)
+                return;
+            if (!Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterEclipseGameplayRuntime(this);
+            _registeredRuntime = GlobalRegistry.EclipseGameplay == this;
+        }
+
+        private void TryUnregisterRuntime()
+        {
+            if (!_registeredRuntime)
+                return;
+
+            GlobalRegistry.UnregisterEclipseGameplayRuntime(this);
+            _registeredRuntime = false;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  EVENT HANDLERS
         // ══════════════════════════════════════════════════════════
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        private static void LogNightPredatorsRising(float intensity)
+        private static void LogNightPredatorsRising()
         {
-            Debug.Log($"[Eclipse] Night predators rising! Intensity: {intensity:F2}");
+            Debug.Log("[Eclipse] Night predators rising.");
         }
 
         private void HandleEclipseStart()
@@ -493,8 +505,13 @@ namespace Hecton8.Gameplay
         {
             IEcosystemDirectorService ecosystemDirector = GlobalRegistry.EcosystemDirector;
             if (ecosystemDirector == null)
+            {
+                if (intensity01 > 0f)
+                    PublishOnce(ref _reportedMissingEcosystemDirector, _EclipseNoEcosystemDirectorWarningHash, intensity01);
                 return;
+            }
 
+            _reportedMissingEcosystemDirector = false;
             ecosystemDirector.ApplyEclipsePredatorShallowMigration(
                 Mathf.Clamp01(intensity01),
                 Mathf.Max(0f, holdSeconds));
@@ -560,6 +577,15 @@ namespace Hecton8.Gameplay
             _currentAcousticPitchShiftCents = clampedCents;
             if (GlobalRegistry.Audio is SpatialAudioManager spatialAudioManager)
                 spatialAudioManager.SetEclipseAcousticPitchShiftCents(clampedCents);
+        }
+
+        private static void PublishOnce(ref bool latch, uint warningHash, float scalarValue)
+        {
+            if (latch)
+                return;
+
+            latch = true;
+            GlobalTelemetryBus.PublishPerformanceWarning(warningHash, _EclipseGameplayContextHash, scalarValue);
         }
 
         void ICelestialEventListener.OnCelestialEclipseStarted()

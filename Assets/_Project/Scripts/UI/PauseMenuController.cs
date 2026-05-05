@@ -317,6 +317,7 @@ namespace Hecton8.UI
 
             // TASK 33: Ensure correct input mode restoration
             GlobalRegistry.Input.SwitchToUIInput();
+            SystemDispatcher.RequestPauseDepthOfField(true);
 
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -387,6 +388,7 @@ namespace Hecton8.UI
             _cancelRequested = false;
             if (wasOpen)
                 UnregisterOpenMenu();
+            SystemDispatcher.RequestPauseDepthOfField(false);
             _activeSection = PauseSection.Main;
 
             if (_canvasGroup != null)

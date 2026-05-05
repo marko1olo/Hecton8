@@ -44,7 +44,7 @@ Captured before this report file was added:
 This report intentionally increases active report and active documentation counts by one after it is written.
 Historical post-write quick count after this report, before root-log relocation: `Docs/**/*.md` total `403`, active `Docs/**/*.md` `192`, `Docs/Reports/*.md` `38`, root `.md` files `4`, root `.txt` / `.log` files `7`.
 After `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` was added, counts were `Docs/**/*.md` total `404`, active `Docs/**/*.md` `193`, and `Docs/Reports/*.md` `39`.
-After the root-log relocation addendum, Archivarius header normalization, SpaceEngine research header normalization, and documentation authority smoke-guard addendum, root `.txt` / `.log` files are `0`; total `Docs/**/*.md` is now `410`, active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports`, and `ARCHIVARIUS REPORTS/03_OBSOLETE` is now `156`, and `Docs/Reports/*.md` is now `42`.
+After the root-log relocation addendum, Archivarius header normalization, SpaceEngine research header normalization, documentation authority smoke-guard addendum, 2026-05-05 Omega documentation influx, and the second root-log relocation, root `.txt` / `.log` files are `0`; total `Docs/**/*.md` is now `418`, active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports`, and `ARCHIVARIUS REPORTS/03_OBSOLETE` is now `160`, and `Docs/Reports/*.md` is now `45`.
 
 ## Current Authority Stack
 
@@ -58,11 +58,12 @@ Use this order when deciding whether a document is current:
 6. `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
 7. `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 8. `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
-9. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
-10. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
-11. domain-specific active contracts and reports
-12. historical reports only after reading their latest delta/supersession notes
-13. archive/deprecated folders only as preserved evidence
+9. `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
+10. `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
+11. `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
+12. domain-specific active contracts and reports
+13. historical reports only after reading their latest delta/supersession notes
+14. archive/deprecated folders only as preserved evidence
 
 ## Root Sorting
 
@@ -84,11 +85,13 @@ Root evidence artifacts, not documentation authority:
 
 | Pattern | Handling |
 |---|---|
+| `BROKEN_PREFABS.md` | generated prefab-audit snapshot; current content reports `0` broken prefabs, but it is not a canonical report until summarized in `Docs/Reports/` |
 | `*.log` in repository root | none remain after relocation; if new root logs appear, move them into a dated deprecated evidence bundle or summarize them in a dated report before citation |
 | `*.txt` in repository root | classify before use; current scan found no active root `.txt` authority |
 
 Original sorting pass made no physical root file moves because the worktree was dirty across source, assets, generated artifacts, reports, and deprecated raw logs.
 Follow-up root-log relocation moved the seven tracked repository-root `.log` files to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/` with `git mv`.
+Second root-log relocation moved two newly generated repository-root Omega build/restore logs to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-05/`.
 
 ## Active Docs Root Sorting
 
@@ -138,6 +141,7 @@ Current first-read reports:
 - `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
 - `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
+- `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
 - `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
 - `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
@@ -176,6 +180,12 @@ Historical but still useful evidence reports:
 - Updated active indexes to point at this file as the current documentation sorting layer.
 - Updated governance/root reference wording so the current authority stack includes warning cleanup and foundation guard repair before older state anchors.
 - Updated the Archivarius authority classification so it no longer presents the pre-repair guard failure as current.
+
+## 2026-05-05 Addendum
+
+- Promoted `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` into the current first-read report stack for bounded Omega-autonomy verification.
+- Current Omega build boundary is now `CodexArtifacts/dotnet-h8core-omega-autonomy-doc-continuation-build.log`: `Build succeeded`, `0 Warning(s)`, `0 Error(s)`. The last warning-bearing Omega baseline remains `CodexArtifacts/dotnet-h8core-omega-autonomy-current-build5.log`: `Build succeeded`, `48 Warning(s)`, `0 Error(s)`, with warnings owned by dependency/vendor packages and `0` first-party `Assets/_Project/Scripts` matches.
+- Older warning-bearing artifact logs remain historical evidence only unless their exact build is rerun and promoted by a current report.
 - Updated active reference-bundle boundary headers/read-first lines that still pointed at `2026-05-02` as the current-state boundary, and updated current Archivarius `01_GENERAL_INFO` read-first lines to include this sorting map.
 - Moved seven repository-root `.log` files to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`.
 - Added a local README for that raw-evidence bundle and updated active root/docs references.
@@ -183,14 +193,18 @@ Historical but still useful evidence reports:
 - Completed header normalization for `60` files under `Docs/ARCHIVARIUS REPORTS/`.
 - Completed header normalization for current `Docs/SPACE_ENGINE_RESEARCH/*.md` files.
 - Added an editor-only documentation authority smoke guard at `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs`.
+- Added decomposition, stress, and telemetry-warning hooks to the editor-only documentation authority smoke guard, then normalized the new active SpaceEngine Omega audit header so the active missing-`Status:` count returned to `0`.
+- Added the CI-facing documentation authority batch entrypoint `RunBatchAll`; direct Core/Editor Roslyn compile passed, but Unity batch execution is still blocked by licensing/project-lock environment failures and did not emit batch JSON.
+- Expanded the relocated-root-log counter to scan every `Root_Logs_*` bundle and moved two newly generated root logs into the 2026-05-05 deprecated evidence bundle.
 
-No gameplay/runtime files, scenes, prefabs, project settings, packages, or assets were changed by this sorting pass. The only source addition is the editor-only smoke guard.
+No gameplay/runtime files, scenes, prefabs, project settings, packages, or assets were changed by this sorting pass. The only source changes are the editor-only smoke guard and compile-proof fixes in adjacent dirty smoke/import code.
 
 ## Do Not Claim
 
-- Do not claim documentation is fully clean. This pass maps authority and updates the active indexes; it does not normalize every old file header.
+- Do not claim documentation is fully clean. This pass maps authority and updates the active indexes; it does not normalize every old file header. Current active header debt is `41`.
 - Do not claim archive/deprecated content has been revalidated.
 - Do not claim Play Mode stability, zero-GC, frame time, memory retention, or player-build readiness from documentation sorting.
+- Do not claim Unity batch verification for documentation authority until `RunBatchAll` emits the batch JSON artifact from Unity with exit `0`.
 - Do not cite root logs as current evidence unless a dated report summarizes the exact command and result.
 
 ## Regression Model

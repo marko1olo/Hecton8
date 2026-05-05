@@ -1,7 +1,10 @@
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
+using System;
+using System.Collections.Generic;
 using Hecton8.Audio;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.World;
 using Hecton.UI.MainMenu;
 using Unity.Burst;
 using Unity.Collections;
@@ -19,9 +22,17 @@ namespace Hecton8.Dev
     {
         private const string NativeMemoryOwner = nameof(OmegaAutonomySmokeTester);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.TempJob;
+        private static readonly uint s_NativeSentinelImbalanceWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("OmegaAutonomySmokeTester.NativeSentinelImbalance"));
+        private static readonly uint s_NativeSentinelBalanceContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("OmegaAutonomySmokeTester.NativeSentinelBalance"));
+        // COLD ALLOC: List<InputSystemUIInputModule>[4] - editor smoke component scratch - owner: OmegaAutonomySmokeTester
+        private static readonly List<InputSystemUIInputModule> s_InputSystemModulesScratch = new List<InputSystemUIInputModule>(4);
 
         public static bool Run(out string json)
         {
+            int nativeAllocationsBefore = NativeMemorySentinel.ActiveAllocationCount;
+            long nativeBytesBefore = NativeMemorySentinel.TrackedBytes;
+            bool globalTelemetryWasInitialized = GlobalTelemetryBus.IsInitializedForSmoke;
+
             bool routePass = RunRouteBfsSmoke(
                 out int routedNode,
                 out int noStorageNode,
@@ -37,18 +48,49 @@ namespace Hecton8.Dev
             bool inputGuardPass = RunMainMenuInputRoutingGuardSmoke(
                 out bool inputModulePresent,
                 out bool inputActionsBound,
-                out bool legacyModuleRemoved);
+                out bool legacyModuleRemoved,
+                out bool inputRepairTelemetryPublished,
+                out int inputRepairTelemetryCode,
+                out int inputRepairTelemetryPublishCount,
+                out bool inputRepairTelemetryDeduped,
+                out int inputModuleCountAfterSecondRepair);
             bool watchdogRegistryPass = RunRuntimeWatchdogRegistrySmoke(
                 out bool watchdogRegistered,
                 out bool watchdogUnregistered);
-            bool burstClearPass = RunBurstClearSmoke(out int burstClearChecksum);
+            bool registryHijackPass = RunRegistrySlotHijackSmoke(out bool registryHijackBlocked);
+            bool burstClearPass = RunBurstClearSmoke(
+                out int burstClearChecksum,
+                out int burstClearNativeAllocationDelta);
+            Hecton8.Debugging.AutomationOmegaSmokeResult constructionAutomationResult =
+                Hecton8.Debugging.AutomationOmegaSmokeTester.RunLogisticsRouteStressSmoke();
+            bool constructionAutomationPass = constructionAutomationResult.Passed;
+            if (!globalTelemetryWasInitialized)
+                GlobalTelemetryBus.ResetForSmokeTest();
+
+            int nativeAllocationDelta = NativeMemorySentinel.ActiveAllocationCount - nativeAllocationsBefore;
+            long nativeTrackedByteDelta = NativeMemorySentinel.TrackedBytes - nativeBytesBefore;
+            bool nativeSentinelBalancePass = nativeAllocationDelta == 0 && nativeTrackedByteDelta == 0L;
+            bool nativeSentinelWarningRequested = false;
+            if (!nativeSentinelBalancePass)
+            {
+                nativeSentinelWarningRequested = true;
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    s_NativeSentinelImbalanceWarningHash,
+                    s_NativeSentinelBalanceContextHash,
+                    nativeAllocationDelta);
+                if (!globalTelemetryWasInitialized)
+                    GlobalTelemetryBus.ResetForSmokeTest();
+            }
 
             bool pass = routePass &&
                         audioPass &&
                         audioReentryPass &&
                         inputGuardPass &&
                         watchdogRegistryPass &&
-                        burstClearPass;
+                        registryHijackPass &&
+                        burstClearPass &&
+                        constructionAutomationPass &&
+                        nativeSentinelBalancePass;
             json = "{"
                 + "\"tester\":\"OmegaAutonomySmokeTester\","
                 + "\"status\":\"" + (pass ? "PASS" : "FAIL") + "\","
@@ -67,12 +109,32 @@ namespace Hecton8.Dev
                 + "\"mainMenuInputGuard\":{\"pass\":" + ToJsonBool(inputGuardPass)
                 + ",\"inputModulePresent\":" + ToJsonBool(inputModulePresent)
                 + ",\"inputActionsBound\":" + ToJsonBool(inputActionsBound)
-                + ",\"legacyModuleRemoved\":" + ToJsonBool(legacyModuleRemoved) + "},"
+                + ",\"legacyModuleRemoved\":" + ToJsonBool(legacyModuleRemoved)
+                + ",\"repairTelemetryPublished\":" + ToJsonBool(inputRepairTelemetryPublished)
+                + ",\"repairTelemetryCode\":" + inputRepairTelemetryCode
+                + ",\"repairTelemetryPublishCount\":" + inputRepairTelemetryPublishCount
+                + ",\"repairTelemetryDeduped\":" + ToJsonBool(inputRepairTelemetryDeduped)
+                + ",\"moduleCountAfterSecondRepair\":" + inputModuleCountAfterSecondRepair + "},"
                 + "\"runtimeWatchdogRegistry\":{\"pass\":" + ToJsonBool(watchdogRegistryPass)
                 + ",\"registered\":" + ToJsonBool(watchdogRegistered)
                 + ",\"unregistered\":" + ToJsonBool(watchdogUnregistered) + "},"
+                + "\"registrySlotHijack\":{\"pass\":" + ToJsonBool(registryHijackPass)
+                + ",\"blocked\":" + ToJsonBool(registryHijackBlocked) + "},"
                 + "\"burstClear\":{\"pass\":" + ToJsonBool(burstClearPass)
-                + ",\"checksum\":" + burstClearChecksum + "}"
+                + ",\"checksum\":" + burstClearChecksum
+                + ",\"nativeAllocationDelta\":" + burstClearNativeAllocationDelta + "},"
+                + "\"constructionAutomation\":{\"pass\":" + ToJsonBool(constructionAutomationPass)
+                + ",\"nodes\":" + constructionAutomationResult.NodeCount
+                + ",\"edges\":" + constructionAutomationResult.EdgeCount
+                + ",\"routedNode\":" + constructionAutomationResult.RoutedNode
+                + ",\"expectedStorageNode\":" + constructionAutomationResult.ExpectedStorageNode
+                + ",\"noStorageRouteNode\":" + constructionAutomationResult.NoStorageRouteNode
+                + ",\"invalidStartRouteNode\":" + constructionAutomationResult.InvalidStartRouteNode + "},"
+                + "\"nativeSentinelBalance\":{\"pass\":" + ToJsonBool(nativeSentinelBalancePass)
+                + ",\"allocationDelta\":" + nativeAllocationDelta
+                + ",\"trackedByteDelta\":" + nativeTrackedByteDelta
+                + ",\"telemetryWarningRequested\":" + ToJsonBool(nativeSentinelWarningRequested)
+                + ",\"telemetryWasInitializedBefore\":" + ToJsonBool(globalTelemetryWasInitialized) + "}"
                 + "}";
             return pass;
         }
@@ -171,33 +233,63 @@ namespace Hecton8.Dev
         private static bool RunMainMenuInputRoutingGuardSmoke(
             out bool inputModulePresent,
             out bool inputActionsBound,
-            out bool legacyModuleRemoved)
+            out bool legacyModuleRemoved,
+            out bool repairTelemetryPublished,
+            out int repairTelemetryCode,
+            out int repairTelemetryPublishCount,
+            out bool repairTelemetryDeduped,
+            out int moduleCountAfterSecondRepair)
         {
             inputModulePresent = false;
             inputActionsBound = false;
             legacyModuleRemoved = false;
+            repairTelemetryPublished = false;
+            repairTelemetryCode = 0;
+            repairTelemetryPublishCount = 0;
+            repairTelemetryDeduped = false;
+            moduleCountAfterSecondRepair = 0;
 
             GameObject eventSystemRoot = null;
             try
             {
+                MainMenuInputRoutingGuard.ResetForSmokeTest();
                 eventSystemRoot = new GameObject(
                     "OmegaSmoke_EventSystem",
                     typeof(EventSystem),
                     typeof(StandaloneInputModule)); // COLD ALLOC: GameObject[1] - editor smoke EventSystem route probe - owner: OmegaAutonomySmokeTester
 
-                MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
+                EventSystem eventSystem = eventSystemRoot.GetComponent<EventSystem>();
+                MainMenuInputRoutingGuard.EnsureInputSystemEventRouting(eventSystem);
+                int publishCountAfterFirstRepair = MainMenuInputRoutingGuard.RepairTelemetryPublishCountForSmoke;
+                MainMenuInputRoutingGuard.EnsureInputSystemEventRouting(eventSystem);
+                eventSystemRoot.GetComponents(s_InputSystemModulesScratch);
+                moduleCountAfterSecondRepair = s_InputSystemModulesScratch.Count;
+                s_InputSystemModulesScratch.Clear();
 
                 InputSystemUIInputModule inputModule = eventSystemRoot.GetComponent<InputSystemUIInputModule>();
                 StandaloneInputModule legacyInputModule = eventSystemRoot.GetComponent<StandaloneInputModule>();
                 inputModulePresent = inputModule != null && inputModule.enabled;
                 inputActionsBound = MainMenuInputRoutingGuard.HasUsableUiModuleActions(inputModule);
                 legacyModuleRemoved = legacyInputModule == null || !legacyInputModule.enabled;
-                return inputModulePresent && inputActionsBound && legacyModuleRemoved;
+                repairTelemetryPublished = MainMenuInputRoutingGuard.RepairTelemetryPublishedForSmoke;
+                repairTelemetryCode = MainMenuInputRoutingGuard.LastRepairTelemetryCodeForSmoke;
+                repairTelemetryPublishCount = MainMenuInputRoutingGuard.RepairTelemetryPublishCountForSmoke;
+                repairTelemetryDeduped = publishCountAfterFirstRepair == 1 && repairTelemetryPublishCount == 1;
+                return inputModulePresent &&
+                       inputActionsBound &&
+                       legacyModuleRemoved &&
+                       repairTelemetryPublished &&
+                       repairTelemetryCode == 14 &&
+                       repairTelemetryDeduped &&
+                       moduleCountAfterSecondRepair == 1;
             }
             finally
             {
+                s_InputSystemModulesScratch.Clear();
                 if (eventSystemRoot != null)
-                    Object.DestroyImmediate(eventSystemRoot);
+                    UnityEngine.Object.DestroyImmediate(eventSystemRoot);
+
+                MainMenuInputRoutingGuard.ResetForSmokeTest();
             }
         }
 
@@ -215,52 +307,111 @@ namespace Hecton8.Dev
             }
 
             GameObject watchdogRoot = null;
+            RuntimeWatchdog watchdog = null;
             try
             {
                 watchdogRoot = new GameObject("OmegaSmoke_RuntimeWatchdog"); // COLD ALLOC: GameObject[1] - editor smoke watchdog registry owner - owner: OmegaAutonomySmokeTester
-                RuntimeWatchdog watchdog = watchdogRoot.AddComponent<RuntimeWatchdog>();
+                watchdog = watchdogRoot.AddComponent<RuntimeWatchdog>();
                 watchdog.InitializeService();
                 registered = ReferenceEquals(GlobalRegistry.RuntimeWatchdog, watchdog);
             }
             finally
             {
+                if (watchdog != null && ReferenceEquals(GlobalRegistry.RuntimeWatchdog, watchdog))
+                    GlobalRegistry.UnregisterRuntimeWatchdogRuntime(watchdog);
+
                 if (watchdogRoot != null)
-                    Object.DestroyImmediate(watchdogRoot);
+                    UnityEngine.Object.DestroyImmediate(watchdogRoot);
             }
 
             unregistered = GlobalRegistry.RuntimeWatchdog == null;
             return registered && unregistered;
         }
 
-        private static bool RunBurstClearSmoke(out int checksum)
+        private static bool RunRegistrySlotHijackSmoke(out bool hijackBlocked)
+        {
+            hijackBlocked = false;
+            if (GlobalRegistry.RuntimeWatchdog != null)
+                return false;
+
+            GameObject primaryRoot = null;
+            GameObject hijackRoot = null;
+            RuntimeWatchdog primary = null;
+            RuntimeWatchdog hijack = null;
+            try
+            {
+                primaryRoot = new GameObject("OmegaSmoke_RuntimeWatchdog_Primary"); // COLD ALLOC: GameObject[1] - editor smoke registry hijack primary - owner: OmegaAutonomySmokeTester
+                primary = primaryRoot.AddComponent<RuntimeWatchdog>();
+                primary.InitializeService();
+                bool primaryRegistered = ReferenceEquals(GlobalRegistry.RuntimeWatchdog, primary);
+
+                hijackRoot = new GameObject("OmegaSmoke_RuntimeWatchdog_Hijack"); // COLD ALLOC: GameObject[1] - editor smoke registry hijack attempt - owner: OmegaAutonomySmokeTester
+                hijack = hijackRoot.AddComponent<RuntimeWatchdog>();
+                try
+                {
+                    hijack.InitializeService();
+                }
+                catch (InvalidOperationException)
+                {
+                    hijackBlocked = true;
+                }
+
+                return primaryRegistered &&
+                       hijackBlocked &&
+                       ReferenceEquals(GlobalRegistry.RuntimeWatchdog, primary);
+            }
+            finally
+            {
+                if (hijack != null && ReferenceEquals(GlobalRegistry.RuntimeWatchdog, hijack))
+                    GlobalRegistry.UnregisterRuntimeWatchdogRuntime(hijack);
+
+                if (primary != null && ReferenceEquals(GlobalRegistry.RuntimeWatchdog, primary))
+                    GlobalRegistry.UnregisterRuntimeWatchdogRuntime(primary);
+
+                if (hijackRoot != null)
+                    UnityEngine.Object.DestroyImmediate(hijackRoot);
+
+                if (primaryRoot != null)
+                    UnityEngine.Object.DestroyImmediate(primaryRoot);
+            }
+        }
+
+        private static bool RunBurstClearSmoke(out int checksum, out int nativeAllocationDelta)
         {
             checksum = 0;
+            nativeAllocationDelta = 0;
+            int allocationsBefore = NativeMemorySentinel.ActiveAllocationCount;
+            bool arraysCleared = false;
             NativeArray<int> intValues = new NativeArray<int>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
             NativeArray<byte> byteValues = new NativeArray<byte>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<int> checksumTerms = new NativeArray<int>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+            NativeArray<int> checksumResult = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
             RegisterNativeArray(intValues, nameof(intValues));
             RegisterNativeArray(byteValues, nameof(byteValues));
+            RegisterNativeArray(checksumTerms, nameof(checksumTerms));
+            RegisterNativeArray(checksumResult, nameof(checksumResult));
 
             try
             {
-                for (int i = 0; i < intValues.Length; i++)
-                {
-                    intValues[i] = i + 1;
-                    byteValues[i] = (byte)(i + 1);
-                }
+                FillBurstClearArrays(intValues, byteValues);
 
                 ClearIntArray(intValues);
                 ClearByteArray(byteValues);
 
-                for (int i = 0; i < intValues.Length; i++)
-                    checksum += intValues[i] + byteValues[i];
-
-                return checksum == 0;
+                ComputeBurstClearChecksum(intValues, byteValues, checksumTerms, checksumResult);
+                checksum = checksumResult[0];
+                arraysCleared = checksum == 0;
             }
             finally
             {
                 DisposeTrackedNativeArray(ref intValues);
                 DisposeTrackedNativeArray(ref byteValues);
+                DisposeTrackedNativeArray(ref checksumTerms);
+                DisposeTrackedNativeArray(ref checksumResult);
             }
+
+            nativeAllocationDelta = NativeMemorySentinel.ActiveAllocationCount - allocationsBefore;
+            return arraysCleared && nativeAllocationDelta == 0;
         }
 
         private static void ConfigureSimpleRoute(
@@ -311,7 +462,7 @@ namespace Hecton8.Dev
             NativeArray<int> result)
         {
             result[0] = -1;
-            BaseLogisticsNetwork.ExecuteLogisticsRouteBfs(
+            LogisticsPipeRoutingKernel.ExecuteRouteBfs(
                 nodeCount,
                 0,
                 edgeOffsets,
@@ -324,18 +475,51 @@ namespace Hecton8.Dev
 
         private static void ClearIntArray(NativeArray<int> values)
         {
-            new ClearIntArrayJob
+            JobHandle handle = new ClearIntArrayJob
             {
                 Values = values
-            }.Schedule(values.Length, 32).Complete();
+            }.Schedule(values.Length, 32);
+            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
         }
 
         private static void ClearByteArray(NativeArray<byte> values)
         {
-            new ClearByteArrayJob
+            JobHandle handle = new ClearByteArrayJob
             {
                 Values = values
-            }.Schedule(values.Length, 32).Complete();
+            }.Schedule(values.Length, 32);
+            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+        }
+
+        private static void FillBurstClearArrays(NativeArray<int> intValues, NativeArray<byte> byteValues)
+        {
+            JobHandle handle = new FillBurstClearArraysJob
+            {
+                IntValues = intValues,
+                ByteValues = byteValues
+            }.Schedule(intValues.Length, 32);
+            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+        }
+
+        private static void ComputeBurstClearChecksum(
+            NativeArray<int> intValues,
+            NativeArray<byte> byteValues,
+            NativeArray<int> checksumTerms,
+            NativeArray<int> checksumResult)
+        {
+            JobHandle handle = new BurstClearChecksumTermsJob
+            {
+                IntValues = intValues,
+                ByteValues = byteValues,
+                ChecksumTerms = checksumTerms
+            }.Schedule(intValues.Length, 32);
+
+            handle = new BurstClearChecksumSummaryJob
+            {
+                ChecksumTerms = checksumTerms,
+                ChecksumResult = checksumResult
+            }.Schedule(handle);
+            DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
         }
 
         private static string ToJsonBool(bool value)
@@ -359,6 +543,20 @@ namespace Hecton8.Dev
         }
 
         [BurstCompile]
+        private struct FillBurstClearArraysJob : IJobParallelFor
+        {
+            public NativeArray<int> IntValues;
+            public NativeArray<byte> ByteValues;
+
+            public void Execute(int index)
+            {
+                int value = index + 1;
+                IntValues[index] = value;
+                ByteValues[index] = (byte)value;
+            }
+        }
+
+        [BurstCompile]
         private struct ClearIntArrayJob : IJobParallelFor
         {
             public NativeArray<int> Values;
@@ -377,6 +575,35 @@ namespace Hecton8.Dev
             public void Execute(int index)
             {
                 Values[index] = 0;
+            }
+        }
+
+        [BurstCompile]
+        private struct BurstClearChecksumTermsJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<int> IntValues;
+            [ReadOnly] public NativeArray<byte> ByteValues;
+            [WriteOnly] public NativeArray<int> ChecksumTerms;
+
+            public void Execute(int index)
+            {
+                ChecksumTerms[index] = IntValues[index] + ByteValues[index];
+            }
+        }
+
+        [BurstCompile]
+        private struct BurstClearChecksumSummaryJob : IJob
+        {
+            [ReadOnly] public NativeArray<int> ChecksumTerms;
+            [WriteOnly] public NativeArray<int> ChecksumResult;
+
+            public void Execute()
+            {
+                int checksum = 0;
+                for (int i = 0; i < ChecksumTerms.Length; i++)
+                    checksum += ChecksumTerms[i];
+
+                ChecksumResult[0] = checksum;
             }
         }
 

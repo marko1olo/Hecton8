@@ -1,0 +1,1732 @@
+﻿diff --git a/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs b/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
+index 02632906..c9f4daf8 100644
+--- a/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
++++ b/Assets/_Project/Scripts/Bootstrap/GameBootstrapper.cs
+@@ -1327,8 +1327,6 @@ namespace Hecton8.Bootstrap
+         private static SaveManager EnsureSaveServiceRegistered()
+         {
+             SaveManager saveManager = GlobalRegistry.SaveRuntime;
+-            if (saveManager == null)
+-                saveManager = SaveManager.ActiveRuntimeInstance;
+ 
+             if (saveManager == null)
+             {
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistry.cs b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+index ac7984f5..f4220842 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistry.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistry.cs
+@@ -128,12 +128,16 @@ namespace Hecton8.Core
+         private static IFluidSim _fluidSimulation;
+         private static ILogisticsService _logistics;
+         private static IWorldGenService _worldGen;
++        private static WorldProceduralFieldSampler _proceduralFieldSamplerRuntime;
++        private static ResourceDistributionDirector _resourceDistributionRuntime;
+         private static IEncounterDirectorService _encounterDirector;
+         private static IQuestSystem _questSystem;
+         private static PersistentWorldRegistry _persistentWorldRegistry;
+         private static WorldStateManager _worldStateRuntime;
+         private static IPDALogbookService _pdaLogbook;
+         private static IProfileService _profile;
++        private static EclipseGameplaySystem _eclipseGameplayRuntime;
++        private static RandomEventSystem _randomEventRuntime;
+         private static HectonFluidEngine _fluidRuntime;
+         private static AbyssalThermalManager _thermodynamicsRuntime;
+         private static HectonNarrativeDirector _narrativeDirectorRuntime;
+@@ -152,6 +156,7 @@ namespace Hecton8.Core
+         private static FirstHourDirector _firstHourRuntime;
+         private static EmergencyServiceRelayDirector _emergencyRelayRuntime;
+         private static HectonAtmosphereManager _atmosphereRuntime;
++        private static MapMagicBridge _mapMagicRuntime;
+         private static BeaconNetworkSystem _beaconNetworkRuntime;
+         private static ScanLogSystem _scanLogRuntime;
+         private static ToolDurabilitySystem _toolDurabilityRuntime;
+@@ -197,6 +202,8 @@ namespace Hecton8.Core
+         private static UIRTManager _uiRTRuntime;
+         private static SettingsManager _settingsRuntime;
+         private static RuntimeWatchdog _runtimeWatchdogRuntime;
++        private static CrashTelemetryBuffer _crashTelemetryRuntime;
++        private static PlayerCriticalProceduralAudioRenderer _playerCriticalAudioRuntime;
+         private static GameTickManager _tickManager;
+         private static SystemDispatcher _dispatcher;
+         private static RenderDispatcher _renderDispatcher;
+@@ -269,6 +276,16 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IAudioService Audio => _audio;
+ 
++        /// <summary>
++        /// Authoritative crash telemetry runtime owner.
++        /// </summary>
++        public static CrashTelemetryBuffer CrashTelemetry => _crashTelemetryRuntime;
++
++        /// <summary>
++        /// Authoritative player critical procedural audio runtime owner.
++        /// </summary>
++        public static PlayerCriticalProceduralAudioRenderer PlayerCriticalAudio => _playerCriticalAudioRuntime;
++
+         /// <summary>
+         /// Registered scene service slot.
+         /// </summary>
+@@ -446,6 +463,21 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IWorldGenService WorldGen => _worldGen;
+ 
++        /// <summary>
++        /// Registered concrete procedural scatter runtime owner.
++        /// </summary>
++        public static WorldProceduralScatterDirector ProceduralScatter => _worldGen as WorldProceduralScatterDirector;
++
++        /// <summary>
++        /// Registered concrete procedural field sampler runtime owner.
++        /// </summary>
++        public static WorldProceduralFieldSampler ProceduralFieldSampler => _proceduralFieldSamplerRuntime;
++
++        /// <summary>
++        /// Registered concrete resource-distribution runtime owner.
++        /// </summary>
++        public static ResourceDistributionDirector ResourceDistribution => _resourceDistributionRuntime;
++
+         /// <summary>
+         /// Registered encounter-direction service slot.
+         /// </summary>
+@@ -476,6 +508,16 @@ namespace Hecton8.Core
+         /// </summary>
+         public static IProfileService Profile => _profile;
+ 
++        /// <summary>
++        /// Registered eclipse-gameplay runtime owner.
++        /// </summary>
++        public static EclipseGameplaySystem EclipseGameplay => _eclipseGameplayRuntime;
++
++        /// <summary>
++        /// Registered random-event runtime owner.
++        /// </summary>
++        public static RandomEventSystem RandomEvents => _randomEventRuntime;
++
+         /// <summary>
+         /// Registered fluid simulation runtime owner.
+         /// </summary>
+@@ -566,6 +608,11 @@ namespace Hecton8.Core
+         /// </summary>
+         public static HectonAtmosphereManager Atmosphere => _atmosphereRuntime;
+ 
++        /// <summary>
++        /// Registered MapMagic bridge runtime owner.
++        /// </summary>
++        public static MapMagicBridge MapMagic => _mapMagicRuntime;
++
+         /// <summary>
+         /// Registered beacon-network runtime owner.
+         /// </summary>
+@@ -897,6 +944,8 @@ namespace Hecton8.Core
+             _fluidSimulation = null;
+             _logistics = null;
+             _worldGen = null;
++            _proceduralFieldSamplerRuntime = null;
++            _resourceDistributionRuntime = null;
+             _encounterDirector = null;
+             _questSystem = null;
+             _persistentWorldRegistry = null;
+@@ -921,6 +970,7 @@ namespace Hecton8.Core
+             _firstHourRuntime = null;
+             _emergencyRelayRuntime = null;
+             _atmosphereRuntime = null;
++            _mapMagicRuntime = null;
+             _beaconNetworkRuntime = null;
+             _scanLogRuntime = null;
+             _toolDurabilityRuntime = null;
+@@ -966,6 +1016,8 @@ namespace Hecton8.Core
+             _uiRTRuntime = null;
+             _settingsRuntime = null;
+             _runtimeWatchdogRuntime = null;
++            _crashTelemetryRuntime = null;
++            _playerCriticalAudioRuntime = null;
+             _tickManager = null;
+             _dispatcher = null;
+             _renderDispatcher = null;
+@@ -1301,6 +1353,22 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _worldGen, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative procedural field sampler runtime owner.
++        /// </summary>
++        public static void RegisterProceduralFieldSampler(WorldProceduralFieldSampler instance)
++        {
++            RegisterServiceAllowSameInstance(ref _proceduralFieldSamplerRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative resource-distribution runtime owner.
++        /// </summary>
++        public static void RegisterResourceDistribution(ResourceDistributionDirector instance)
++        {
++            RegisterServiceAllowSameInstance(ref _resourceDistributionRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative encounter-direction service.
+         /// </summary>
+@@ -1351,6 +1419,22 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _profile, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative eclipse-gameplay runtime owner.
++        /// </summary>
++        public static void RegisterEclipseGameplayRuntime(EclipseGameplaySystem instance)
++        {
++            RegisterService(ref _eclipseGameplayRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative random-event runtime owner.
++        /// </summary>
++        public static void RegisterRandomEventRuntime(RandomEventSystem instance)
++        {
++            RegisterService(ref _randomEventRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative fluid simulation runtime owner.
+         /// </summary>
+@@ -1453,6 +1537,22 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _audioLogRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative crash telemetry runtime owner.
++        /// </summary>
++        public static void RegisterCrashTelemetryRuntime(CrashTelemetryBuffer instance)
++        {
++            RegisterServiceAllowSameInstance(ref _crashTelemetryRuntime, instance);
++        }
++
++        /// <summary>
++        /// Registers the authoritative player critical procedural audio owner.
++        /// </summary>
++        public static void RegisterPlayerCriticalAudioRuntime(PlayerCriticalProceduralAudioRenderer instance)
++        {
++            RegisterServiceAllowSameInstance(ref _playerCriticalAudioRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative acoustic-zone runtime owner.
+         /// </summary>
+@@ -1501,6 +1601,14 @@ namespace Hecton8.Core
+             RegisterServiceAllowSameInstance(ref _atmosphereRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Registers the authoritative MapMagic bridge runtime owner.
++        /// </summary>
++        public static void RegisterMapMagicRuntime(MapMagicBridge instance)
++        {
++            RegisterServiceAllowSameInstance(ref _mapMagicRuntime, instance);
++        }
++
+         /// <summary>
+         /// Registers the authoritative beacon-network runtime owner.
+         /// </summary>
+@@ -2102,6 +2210,22 @@ namespace Hecton8.Core
+             UnregisterService(ref _worldGen, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current procedural field sampler runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterProceduralFieldSampler(WorldProceduralFieldSampler instance)
++        {
++            UnregisterService(ref _proceduralFieldSamplerRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current resource-distribution runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterResourceDistribution(ResourceDistributionDirector instance)
++        {
++            UnregisterService(ref _resourceDistributionRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current encounter-direction service if the owner matches.
+         /// </summary>
+@@ -2152,6 +2276,22 @@ namespace Hecton8.Core
+             UnregisterService(ref _profile, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current eclipse-gameplay runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterEclipseGameplayRuntime(EclipseGameplaySystem instance)
++        {
++            UnregisterService(ref _eclipseGameplayRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current random-event runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterRandomEventRuntime(RandomEventSystem instance)
++        {
++            UnregisterService(ref _randomEventRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current fluid simulation runtime owner if the owner matches.
+         /// </summary>
+@@ -2254,6 +2394,22 @@ namespace Hecton8.Core
+             UnregisterService(ref _audioLogRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current crash telemetry runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterCrashTelemetryRuntime(CrashTelemetryBuffer instance)
++        {
++            UnregisterService(ref _crashTelemetryRuntime, instance);
++        }
++
++        /// <summary>
++        /// Unregisters the current player critical procedural audio owner if the owner matches.
++        /// </summary>
++        public static void UnregisterPlayerCriticalAudioRuntime(PlayerCriticalProceduralAudioRenderer instance)
++        {
++            UnregisterService(ref _playerCriticalAudioRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current acoustic-zone runtime owner if the owner matches.
+         /// </summary>
+@@ -2302,6 +2458,14 @@ namespace Hecton8.Core
+             UnregisterService(ref _atmosphereRuntime, instance);
+         }
+ 
++        /// <summary>
++        /// Unregisters the current MapMagic bridge runtime owner if the owner matches.
++        /// </summary>
++        public static void UnregisterMapMagicRuntime(MapMagicBridge instance)
++        {
++            UnregisterService(ref _mapMagicRuntime, instance);
++        }
++
+         /// <summary>
+         /// Unregisters the current beacon-network runtime owner if the owner matches.
+         /// </summary>
+@@ -3401,12 +3565,16 @@ namespace Hecton8.Core
+             if (serviceType == typeof(IFluidSim)) return GlobalRegistryServiceSlot.FluidSimulation;
+             if (serviceType == typeof(ILogisticsService)) return GlobalRegistryServiceSlot.Logistics;
+             if (serviceType == typeof(IWorldGenService)) return GlobalRegistryServiceSlot.WorldGen;
++            if (serviceType == typeof(WorldProceduralFieldSampler)) return GlobalRegistryServiceSlot.ProceduralFieldSamplerRuntime;
++            if (serviceType == typeof(ResourceDistributionDirector)) return GlobalRegistryServiceSlot.ResourceDistributionRuntime;
+             if (serviceType == typeof(IEncounterDirectorService)) return GlobalRegistryServiceSlot.EncounterDirector;
+             if (serviceType == typeof(IQuestSystem)) return GlobalRegistryServiceSlot.QuestSystem;
+             if (serviceType == typeof(PersistentWorldRegistry)) return GlobalRegistryServiceSlot.PersistentWorldRegistry;
+             if (serviceType == typeof(WorldStateManager)) return GlobalRegistryServiceSlot.WorldStateRuntime;
+             if (serviceType == typeof(IPDALogbookService)) return GlobalRegistryServiceSlot.PDALogbook;
+             if (serviceType == typeof(IProfileService)) return GlobalRegistryServiceSlot.Profile;
++            if (serviceType == typeof(EclipseGameplaySystem)) return GlobalRegistryServiceSlot.EclipseGameplayRuntime;
++            if (serviceType == typeof(RandomEventSystem)) return GlobalRegistryServiceSlot.RandomEventRuntime;
+             if (serviceType == typeof(HectonFluidEngine)) return GlobalRegistryServiceSlot.FluidRuntime;
+             if (serviceType == typeof(AbyssalThermalManager)) return GlobalRegistryServiceSlot.ThermodynamicsRuntime;
+             if (serviceType == typeof(HectonNarrativeDirector)) return GlobalRegistryServiceSlot.NarrativeDirectorRuntime;
+@@ -3419,12 +3587,15 @@ namespace Hecton8.Core
+             if (serviceType == typeof(HectonBiolumManager)) return GlobalRegistryServiceSlot.BiolumManagerRuntime;
+             if (serviceType == typeof(LocalizationManager)) return GlobalRegistryServiceSlot.LocalizationRuntime;
+             if (serviceType == typeof(AudioLogSystem)) return GlobalRegistryServiceSlot.AudioLogRuntime;
++            if (serviceType == typeof(CrashTelemetryBuffer)) return GlobalRegistryServiceSlot.CrashTelemetryRuntime;
++            if (serviceType == typeof(PlayerCriticalProceduralAudioRenderer)) return GlobalRegistryServiceSlot.PlayerCriticalAudioRuntime;
+             if (serviceType == typeof(AcousticZoneController)) return GlobalRegistryServiceSlot.AcousticZoneRuntime;
+             if (serviceType == typeof(HectonSurfaceWeatherDirector)) return GlobalRegistryServiceSlot.SurfaceWeatherRuntime;
+             if (serviceType == typeof(AtlasSignalSystem)) return GlobalRegistryServiceSlot.AtlasSignalRuntime;
+             if (serviceType == typeof(FirstHourDirector)) return GlobalRegistryServiceSlot.FirstHourRuntime;
+             if (serviceType == typeof(EmergencyServiceRelayDirector)) return GlobalRegistryServiceSlot.EmergencyRelayRuntime;
+             if (serviceType == typeof(HectonAtmosphereManager)) return GlobalRegistryServiceSlot.AtmosphereRuntime;
++            if (serviceType == typeof(MapMagicBridge)) return GlobalRegistryServiceSlot.MapMagicRuntime;
+             if (serviceType == typeof(BeaconNetworkSystem)) return GlobalRegistryServiceSlot.BeaconNetworkRuntime;
+             if (serviceType == typeof(ScanLogSystem)) return GlobalRegistryServiceSlot.ScanLogRuntime;
+             if (serviceType == typeof(ToolDurabilitySystem)) return GlobalRegistryServiceSlot.ToolDurabilityRuntime;
+diff --git a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+index 092fc372..6258e4ad 100644
+--- a/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
++++ b/Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs
+@@ -1407,6 +1407,13 @@ namespace Hecton8.Core
+         UIRTRuntime = 97,
+         SettingsRuntime = 98,
+         RuntimeWatchdogRuntime = 99,
++        CrashTelemetryRuntime = 100,
++        PlayerCriticalAudioRuntime = 101,
++        MapMagicRuntime = 102,
++        ProceduralFieldSamplerRuntime = 103,
++        ResourceDistributionRuntime = 104,
++        RandomEventRuntime = 105,
++        EclipseGameplayRuntime = 106,
+         Unknown = 255
+     }
+ 
+diff --git a/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs b/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
+index 3a0f3a71..8913ad7a 100644
+--- a/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
++++ b/Assets/_Project/Scripts/World/ResourceDistributionDirector.cs
+@@ -27,6 +27,8 @@ namespace Hecton8.World
+         private const int InitialMetamorphismCapacity = 128;
+         private const int GhostProxySnapBatchCapacity = 32;
+         private const int GhostProxySnapMinCommandsPerJob = 4;
++        private const string NativeMemoryOwner = nameof(ResourceDistributionDirector);
++        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+         private const float GameSecondsPerDay = 86400f;
+         private const float DefaultSlopeSampleDistanceMeters = 4f;
+         private const float DefaultVoxelSolidThreshold = 0.08f;
+@@ -66,7 +68,7 @@ namespace Hecton8.World
+         private const int MeteorImpactSeedSalt = unchecked((int)0x4D45544F);
+         private const int MeteorRadiationHazardIdSalt = unchecked((int)0x524144);
+ 
+-        internal static ResourceDistributionDirector ActiveRuntimeInstance { get; private set; }
++        internal static ResourceDistributionDirector ActiveRuntimeInstance => GlobalRegistry.ResourceDistribution;
+ 
+         private struct BrinePoolState
+         {
+@@ -425,7 +427,7 @@ namespace Hecton8.World
+             if (!Application.isPlaying)
+                 return;
+ 
+-            ActiveRuntimeInstance = this;
++            GlobalRegistry.RegisterResourceDistribution(this);
+             EnsureGhostProxySnapBuffers();
+ 
+             if (!_slowTickRegistered && GlobalRegistry.Dispatcher != null)
+@@ -474,7 +476,8 @@ namespace Hecton8.World
+             _pendingSpawns?.Clear();
+             _pendingGhostProxySnaps?.Clear();
+             _runtimePoolReady = false;
+-            ActiveRuntimeInstance = ReferenceEquals(ActiveRuntimeInstance, this) ? null : ActiveRuntimeInstance;
++            if (ReferenceEquals(ActiveRuntimeInstance, this))
++                GlobalRegistry.UnregisterResourceDistribution(this);
+             UpdateDiagnostics(default);
+         }
+ 
+@@ -484,6 +487,8 @@ namespace Hecton8.World
+             CancelGhostProxySnapJobForTeardown();
+             DisposeMetamorphismBuffers();
+             DisposeGhostProxySnapBuffers();
++            if (ReferenceEquals(ActiveRuntimeInstance, this))
++                GlobalRegistry.UnregisterResourceDistribution(this);
+         }
+ 
+         /// <summary>
+@@ -1393,15 +1398,23 @@ namespace Hecton8.World
+             DisposeMetamorphismBuffers();
+             _metamorphismInputs = new NativeArray<PressureMetamorphismInput>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PressureMetamorphismInput>[capacity] — pressure metamorphism Burst input lane — owner: ResourceDistributionDirector
+             _metamorphismResults = new NativeArray<PressureMetamorphismResult>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<PressureMetamorphismResult>[capacity] — pressure metamorphism Burst result lane — owner: ResourceDistributionDirector
++            RegisterTrackedNativeArray(_metamorphismInputs, nameof(_metamorphismInputs));
++            RegisterTrackedNativeArray(_metamorphismResults, nameof(_metamorphismResults));
+         }
+ 
+         private void DisposeMetamorphismBuffers()
+         {
+             if (_metamorphismInputs.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_metamorphismInputs);
+                 _metamorphismInputs.Dispose();
++            }
+ 
+             if (_metamorphismResults.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_metamorphismResults);
+                 _metamorphismResults.Dispose();
++            }
+ 
+             _metamorphismInputs = default;
+             _metamorphismResults = default;
+@@ -1413,6 +1426,7 @@ namespace Hecton8.World
+             JobHandle disposeHandle = dependency;
+             if (_metamorphismInputs.IsCreated)
+             {
++                NativeMemorySentinel.UnregisterNativeArray(_metamorphismInputs);
+                 disposeHandle = _metamorphismInputs.Dispose(disposeHandle);
+                 _metamorphismInputs = default;
+                 scheduledDisposal = true;
+@@ -1420,6 +1434,7 @@ namespace Hecton8.World
+ 
+             if (_metamorphismResults.IsCreated)
+             {
++                NativeMemorySentinel.UnregisterNativeArray(_metamorphismResults);
+                 disposeHandle = _metamorphismResults.Dispose(disposeHandle);
+                 _metamorphismResults = default;
+                 scheduledDisposal = true;
+@@ -1443,6 +1458,7 @@ namespace Hecton8.World
+                     GhostProxySnapBatchCapacity,
+                     Allocator.Persistent,
+                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastCommand>[32] — meshless proxy down-snap batch — owner: ResourceDistributionDirector
++                RegisterTrackedNativeArray(_ghostProxySnapCommands, nameof(_ghostProxySnapCommands));
+             }
+ 
+             if (!_ghostProxySnapHits.IsCreated)
+@@ -1451,6 +1467,7 @@ namespace Hecton8.World
+                     GhostProxySnapBatchCapacity,
+                     Allocator.Persistent,
+                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[32] — meshless proxy down-snap results — owner: ResourceDistributionDirector
++                RegisterTrackedNativeArray(_ghostProxySnapHits, nameof(_ghostProxySnapHits));
+             }
+         }
+ 
+@@ -1470,10 +1487,16 @@ namespace Hecton8.World
+         private void DisposeGhostProxySnapBuffers()
+         {
+             if (_ghostProxySnapCommands.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_ghostProxySnapCommands);
+                 _ghostProxySnapCommands.Dispose();
++            }
+ 
+             if (_ghostProxySnapHits.IsCreated)
++            {
++                NativeMemorySentinel.UnregisterNativeArray(_ghostProxySnapHits);
+                 _ghostProxySnapHits.Dispose();
++            }
+ 
+             _ghostProxySnapCommands = default;
+             _ghostProxySnapHits = default;
+@@ -1485,6 +1508,7 @@ namespace Hecton8.World
+             JobHandle disposeHandle = dependency;
+             if (_ghostProxySnapCommands.IsCreated)
+             {
++                NativeMemorySentinel.UnregisterNativeArray(_ghostProxySnapCommands);
+                 disposeHandle = _ghostProxySnapCommands.Dispose(disposeHandle);
+                 _ghostProxySnapCommands = default;
+                 scheduledDisposal = true;
+@@ -1492,6 +1516,7 @@ namespace Hecton8.World
+ 
+             if (_ghostProxySnapHits.IsCreated)
+             {
++                NativeMemorySentinel.UnregisterNativeArray(_ghostProxySnapHits);
+                 disposeHandle = _ghostProxySnapHits.Dispose(disposeHandle);
+                 _ghostProxySnapHits = default;
+                 scheduledDisposal = true;
+@@ -1512,6 +1537,18 @@ namespace Hecton8.World
+                 : fallback;
+         }
+ 
++        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.RegisterNativeArray(
++                array,
++                NativeMemoryOwner,
++                label,
++                NativeMemoryLifetime);
++        }
++
+         private bool TryResolvePressureCarbonTemplate(out ResourceNodeTemplate template)
+         {
+             template = pressureCarbonTemplate;
+diff --git a/Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs b/Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs
+index bbbee337..bf9d7b73 100644
+--- a/Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs
++++ b/Assets/_Project/Scripts/World/VolumetricBiomeSmokeTester.cs
+@@ -1,3 +1,4 @@
++using Hecton8.Core;
+ using Unity.Collections;
+ using Unity.Jobs;
+ using Unity.Mathematics;
+@@ -15,6 +16,24 @@ namespace Hecton8.World
+     [AddComponentMenu("Hecton/World/Volumetric Biome Smoke Tester")]
+     public sealed class VolumetricBiomeSmokeTester : MonoBehaviour
+     {
++        private const string NativeMemoryOwner = nameof(VolumetricBiomeSmokeTester);
++        private const string MatricesLabel = "volumetricBiomeMatrices";
++        private const string InputsLabel = "volumetricBiomeInputs";
++        private const string ResultsLabel = "volumetricBiomeResults";
++        private const string ExpectedBiomeIdsLabel = "volumetricBiomeExpectedIds";
++        private const string ExpectedFlagMasksLabel = "volumetricBiomeExpectedFlags";
++        private const string AuditResultsLabel = "volumetricBiomeAuditResults";
++        private const string BlockSummariesLabel = "volumetricBiomeBlockSummaries";
++        private const string SummaryLabel = "volumetricBiomeStressSummary";
++        private const int StressSampleCount = 256;
++        private const int StressSamplesPerBlock = 16;
++        private const int StressBlockCount = (StressSampleCount + StressSamplesPerBlock - 1) / StressSamplesPerBlock;
++        private const int ShallowBiomeId = 11;
++        private const int TwilightBiomeId = 12;
++        private const int HadalBiomeId = 13;
++        private const byte VolumetricDepthFlag =
++            (byte)WorldProceduralFieldSampler.BiomeInfluenceFlags.VolumetricDepth;
++
+         [SerializeField] private bool runOnStart;
+         [SerializeField] private bool logResult = true;
+         [SerializeField] private bool _debugPassed;
+@@ -22,12 +41,62 @@ namespace Hecton8.World
+         [SerializeField] private int _debugTwilightBiomeId;
+         [SerializeField] private int _debugHadalBiomeId;
+         [SerializeField] private int _debugTwilightFlags;
++        [SerializeField] private int _debugStressSampleCount;
++        [SerializeField] private int _debugStressFailureCount;
++        [SerializeField] private uint _debugPackedChecksum;
++        [SerializeField] private int _debugSentinelBefore;
++        [SerializeField] private int _debugSentinelAfter;
++        [SerializeField] private int _debugSentinelDelta;
+ 
+         /// <summary>
+         /// True when the most recent smoke run passed.
+         /// </summary>
+         public bool LastRunPassed => _debugPassed;
+ 
++        /// <summary>
++        /// Immutable headless volumetric biome smoke report.
++        /// </summary>
++        public readonly struct VolumetricBiomeSmokeReport
++        {
++            public VolumetricBiomeSmokeReport(
++                bool passed,
++                int shallowBiomeId,
++                int twilightBiomeId,
++                int hadalBiomeId,
++                int twilightFlags,
++                int stressSampleCount,
++                int stressFailureCount,
++                uint packedChecksum,
++                int sentinelBefore,
++                int sentinelAfter,
++                int sentinelDelta)
++            {
++                Passed = passed;
++                ShallowBiomeId = shallowBiomeId;
++                TwilightBiomeId = twilightBiomeId;
++                HadalBiomeId = hadalBiomeId;
++                TwilightFlags = twilightFlags;
++                StressSampleCount = stressSampleCount;
++                StressFailureCount = stressFailureCount;
++                PackedChecksum = packedChecksum;
++                SentinelBefore = sentinelBefore;
++                SentinelAfter = sentinelAfter;
++                SentinelDelta = sentinelDelta;
++            }
++
++            public bool Passed { get; }
++            public int ShallowBiomeId { get; }
++            public int TwilightBiomeId { get; }
++            public int HadalBiomeId { get; }
++            public int TwilightFlags { get; }
++            public int StressSampleCount { get; }
++            public int StressFailureCount { get; }
++            public uint PackedChecksum { get; }
++            public int SentinelBefore { get; }
++            public int SentinelAfter { get; }
++            public int SentinelDelta { get; }
++        }
++
+         private void Start()
+         {
+             if (runOnStart)
+@@ -40,18 +109,24 @@ namespace Hecton8.World
+         [ContextMenu("Run Volumetric Biome Smoke Test")]
+         public bool RunSmokeTest()
+         {
+-            _debugPassed = RunHeadlessSmokeTest(
+-                out _debugShallowBiomeId,
+-                out _debugTwilightBiomeId,
+-                out _debugHadalBiomeId,
+-                out _debugTwilightFlags);
++            _debugPassed = RunHeadlessSmokeTest(out VolumetricBiomeSmokeReport report);
++            _debugShallowBiomeId = report.ShallowBiomeId;
++            _debugTwilightBiomeId = report.TwilightBiomeId;
++            _debugHadalBiomeId = report.HadalBiomeId;
++            _debugTwilightFlags = report.TwilightFlags;
++            _debugStressSampleCount = report.StressSampleCount;
++            _debugStressFailureCount = report.StressFailureCount;
++            _debugPackedChecksum = report.PackedChecksum;
++            _debugSentinelBefore = report.SentinelBefore;
++            _debugSentinelAfter = report.SentinelAfter;
++            _debugSentinelDelta = report.SentinelDelta;
+ 
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+             if (logResult)
+             {
+                 Debug.Log(
+                     _debugPassed
+-                        ? "[VolumetricBiomeSmokeTester] PASS"
++                        ? "[VolumetricBiomeSmokeTester] PASS stress=256"
+                         : "[VolumetricBiomeSmokeTester] FAIL",
+                     this);
+             }
+@@ -68,31 +143,71 @@ namespace Hecton8.World
+             out int hadalBiomeId,
+             out int twilightFlags)
+         {
+-            shallowBiomeId = 0;
+-            twilightBiomeId = 0;
+-            hadalBiomeId = 0;
+-            twilightFlags = 0;
++            bool passed = RunHeadlessSmokeTest(out VolumetricBiomeSmokeReport report);
++            shallowBiomeId = report.ShallowBiomeId;
++            twilightBiomeId = report.TwilightBiomeId;
++            hadalBiomeId = report.HadalBiomeId;
++            twilightFlags = report.TwilightFlags;
++            return passed;
++        }
+ 
++        /// <summary>
++        /// Runs the stress variant and returns a complete deterministic report.
++        /// </summary>
++        public static bool RunHeadlessSmokeTest(out VolumetricBiomeSmokeReport report)
++        {
+             NativeArray<WorldProceduralFieldSampler.BiomeMatrixData> matrices = default;
+             NativeArray<VolumetricBiomeClassificationInput> inputs = default;
+             NativeArray<VolumetricBiomeClassificationResult> results = default;
++            NativeArray<int> expectedBiomeIds = default;
++            NativeArray<byte> expectedFlagMasks = default;
++            NativeArray<VolumetricBiomeStressAuditResult> auditResults = default;
++            NativeArray<VolumetricBiomeStressBlockSummary> blockSummaries = default;
++            NativeArray<VolumetricBiomeStressSummaryResult> summary = default;
++            int sentinelBefore = NativeMemorySentinel.ActiveAllocationCount;
++            int sentinelAfter = sentinelBefore;
++            int shallowBiomeId = 0;
++            int twilightBiomeId = 0;
++            int hadalBiomeId = 0;
++            int twilightFlags = 0;
++            int stressFailureCount = int.MaxValue;
++            uint packedChecksum = 2166136261u;
++            bool classificationPassed = false;
+ 
+             try
+             {
+                 // COLD ALLOC: NativeArray<BiomeMatrixData>[3] - volumetric biome smoke fixture - owner: VolumetricBiomeSmokeTester
+-                matrices = new NativeArray<WorldProceduralFieldSampler.BiomeMatrixData>(3, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+-                // COLD ALLOC: NativeArray<VolumetricBiomeClassificationInput>[3] - smoke job input - owner: VolumetricBiomeSmokeTester
+-                inputs = new NativeArray<VolumetricBiomeClassificationInput>(3, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+-                // COLD ALLOC: NativeArray<VolumetricBiomeClassificationResult>[3] - smoke job output - owner: VolumetricBiomeSmokeTester
+-                results = new NativeArray<VolumetricBiomeClassificationResult>(3, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++                matrices = AllocateSmokeArray<WorldProceduralFieldSampler.BiomeMatrixData>(3, MatricesLabel);
++                // COLD ALLOC: NativeArray<VolumetricBiomeClassificationInput>[256] - stress job input - owner: VolumetricBiomeSmokeTester
++                inputs = AllocateSmokeArray<VolumetricBiomeClassificationInput>(StressSampleCount, InputsLabel);
++                // COLD ALLOC: NativeArray<VolumetricBiomeClassificationResult>[256] - stress job output - owner: VolumetricBiomeSmokeTester
++                results = AllocateSmokeArray<VolumetricBiomeClassificationResult>(StressSampleCount, ResultsLabel);
++                // COLD ALLOC: NativeArray<int>[256] - expected biome ids for stress audit - owner: VolumetricBiomeSmokeTester
++                expectedBiomeIds = AllocateSmokeArray<int>(StressSampleCount, ExpectedBiomeIdsLabel);
++                // COLD ALLOC: NativeArray<byte>[256] - expected flag masks for stress audit - owner: VolumetricBiomeSmokeTester
++                expectedFlagMasks = AllocateSmokeArray<byte>(StressSampleCount, ExpectedFlagMasksLabel);
++                // COLD ALLOC: NativeArray<VolumetricBiomeStressAuditResult>[256] - stress audit output - owner: VolumetricBiomeSmokeTester
++                auditResults = AllocateSmokeArray<VolumetricBiomeStressAuditResult>(StressSampleCount, AuditResultsLabel);
++                // COLD ALLOC: NativeArray<VolumetricBiomeStressBlockSummary>[16] - Burst block reduction output - owner: VolumetricBiomeSmokeTester
++                blockSummaries = AllocateSmokeArray<VolumetricBiomeStressBlockSummary>(StressBlockCount, BlockSummariesLabel);
++                // COLD ALLOC: NativeArray<VolumetricBiomeStressSummaryResult>[1] - Burst final reduction output - owner: VolumetricBiomeSmokeTester
++                summary = AllocateSmokeArray<VolumetricBiomeStressSummaryResult>(1, SummaryLabel);
+ 
+-                matrices[0] = BuildMatrix(11, 7, 0f, 500f);
+-                matrices[1] = BuildMatrix(12, 7, 500f, 2000f);
+-                matrices[2] = BuildMatrix(13, 7, 2000f, 5000f);
++                matrices[0] = BuildMatrix(ShallowBiomeId, 7, 0f, 500f);
++                matrices[1] = BuildMatrix(TwilightBiomeId, 7, 500f, 2000f);
++                matrices[2] = BuildMatrix(HadalBiomeId, 7, 2000f, 5000f);
+ 
+-                inputs[0] = BuildInput(100f, 0, 7);
+-                inputs[1] = BuildInput(1000f, 0, 7);
+-                inputs[2] = BuildInput(3500f, 0, 7);
++                VolumetricBiomeStressInputBuildJob inputBuildJob = new VolumetricBiomeStressInputBuildJob
++                {
++                    Inputs = inputs,
++                    ExpectedBiomeIds = expectedBiomeIds,
++                    ExpectedFlagMasks = expectedFlagMasks,
++                    ShallowBiomeId = ShallowBiomeId,
++                    TwilightBiomeId = TwilightBiomeId,
++                    HadalBiomeId = HadalBiomeId,
++                    PreferredFamilyDataIndex = 7,
++                    VolumetricDepthFlag = VolumetricDepthFlag
++                };
+ 
+                 VolumetricBiomeClassificationJob job = new VolumetricBiomeClassificationJob
+                 {
+@@ -102,37 +217,90 @@ namespace Hecton8.World
+                     BiomeMatrixCount = matrices.Length
+                 };
+ 
+-                job.Schedule(inputs.Length, 1).Complete();
++                VolumetricBiomeStressAuditJob auditJob = new VolumetricBiomeStressAuditJob
++                {
++                    Results = results,
++                    ExpectedBiomeIds = expectedBiomeIds,
++                    ExpectedFlagMasks = expectedFlagMasks,
++                    AuditResults = auditResults
++                };
++
++                VolumetricBiomeStressBlockReduceJob blockReduceJob = new VolumetricBiomeStressBlockReduceJob
++                {
++                    AuditResults = auditResults,
++                    BlockSummaries = blockSummaries,
++                    SampleCount = inputs.Length,
++                    SamplesPerBlock = StressSamplesPerBlock
++                };
++
++                VolumetricBiomeStressFinalReduceJob finalReduceJob = new VolumetricBiomeStressFinalReduceJob
++                {
++                    BlockSummaries = blockSummaries,
++                    Summary = summary,
++                    BlockCount = StressBlockCount
++                };
++
++                JobHandle inputBuildHandle = inputBuildJob.Schedule(inputs.Length, 16);
++                JobHandle classificationHandle = job.Schedule(inputs.Length, 16, inputBuildHandle);
++                JobHandle auditHandle = auditJob.Schedule(inputs.Length, 16, classificationHandle);
++                JobHandle blockReduceHandle = blockReduceJob.Schedule(StressBlockCount, 1, auditHandle);
++                JobHandle finalReduceHandle = finalReduceJob.Schedule(blockReduceHandle);
++                // COLD SYNC JOB: headless smoke tester synchronizes once after the scheduled Burst stress chain; no runtime Tick/Update path calls this method.
++                DispatcherJobSwap.TryComplete(ref finalReduceHandle, forceComplete: true);
+ 
+                 shallowBiomeId = results[0].InfluenceCell.PrimaryBiomeId;
+                 twilightBiomeId = results[1].InfluenceCell.PrimaryBiomeId;
+                 hadalBiomeId = results[2].InfluenceCell.PrimaryBiomeId;
+                 twilightFlags = results[1].InfluenceCell.Flags;
++                VolumetricBiomeStressSummaryResult stressSummary = summary[0];
++                stressFailureCount = stressSummary.FailureCount;
++                packedChecksum = stressSummary.PackedChecksum;
+ 
+-                return shallowBiomeId == 11 &&
+-                       twilightBiomeId == 12 &&
+-                       hadalBiomeId == 13 &&
+-                       (twilightFlags & (byte)WorldProceduralFieldSampler.BiomeInfluenceFlags.VolumetricDepth) != 0;
++                classificationPassed = shallowBiomeId == ShallowBiomeId &&
++                                       twilightBiomeId == TwilightBiomeId &&
++                                       hadalBiomeId == HadalBiomeId &&
++                                       (twilightFlags & VolumetricDepthFlag) != 0 &&
++                                       stressFailureCount == 0;
+             }
+             finally
+             {
+-                if (matrices.IsCreated) matrices.Dispose();
+-                if (inputs.IsCreated) inputs.Dispose();
+-                if (results.IsCreated) results.Dispose();
++                DisposeSmokeArray(ref matrices);
++                DisposeSmokeArray(ref inputs);
++                DisposeSmokeArray(ref results);
++                DisposeSmokeArray(ref expectedBiomeIds);
++                DisposeSmokeArray(ref expectedFlagMasks);
++                DisposeSmokeArray(ref auditResults);
++                DisposeSmokeArray(ref blockSummaries);
++                DisposeSmokeArray(ref summary);
++                sentinelAfter = NativeMemorySentinel.ActiveAllocationCount;
+             }
++
++            int sentinelDelta = sentinelAfter - sentinelBefore;
++            bool passed = classificationPassed && sentinelDelta == 0;
++            report = new VolumetricBiomeSmokeReport(
++                passed,
++                shallowBiomeId,
++                twilightBiomeId,
++                hadalBiomeId,
++                twilightFlags,
++                StressSampleCount,
++                stressFailureCount,
++                packedChecksum,
++                sentinelBefore,
++                sentinelAfter,
++                sentinelDelta);
++            return passed;
+         }
+ 
+         public static void RunBatchmode()
+         {
+-            bool passed = RunHeadlessSmokeTest(
+-                out int shallowBiomeId,
+-                out int twilightBiomeId,
+-                out int hadalBiomeId,
+-                out int twilightFlags);
++            bool passed = RunHeadlessSmokeTest(out VolumetricBiomeSmokeReport report);
+ 
+             Debug.Log(
+                 $"[VolumetricBiomeSmokeTester] {(passed ? "PASS" : "FAIL")} " +
+-                $"shallow={shallowBiomeId} twilight={twilightBiomeId} hadal={hadalBiomeId} flags={twilightFlags}");
++                $"shallow={report.ShallowBiomeId} twilight={report.TwilightBiomeId} hadal={report.HadalBiomeId} " +
++                $"flags={report.TwilightFlags} stressSamples={report.StressSampleCount} stressFailures={report.StressFailureCount} " +
++                $"sentinelDelta={report.SentinelDelta} packedChecksum={report.PackedChecksum}");
+ 
+ #if UNITY_EDITOR
+             if (Application.isBatchMode)
+@@ -140,6 +308,25 @@ namespace Hecton8.World
+ #endif
+         }
+ 
++        private static NativeArray<T> AllocateSmokeArray<T>(int length, string label)
++            where T : struct
++        {
++            NativeArray<T> array = new NativeArray<T>(length, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
++            return array;
++        }
++
++        private static void DisposeSmokeArray<T>(ref NativeArray<T> array)
++            where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
++        }
++
+         private static WorldProceduralFieldSampler.BiomeMatrixData BuildMatrix(
+             int matrixIndex,
+             int familyDataIndex,
+@@ -155,21 +342,5 @@ namespace Hecton8.World
+                 IsPlaceholder = 0
+             };
+         }
+-
+-        private static VolumetricBiomeClassificationInput BuildInput(
+-            float depthMeters,
+-            int primaryBiomeMatrixDataIndex,
+-            int preferredFamilyDataIndex)
+-        {
+-            return new VolumetricBiomeClassificationInput
+-            {
+-                DepthMeters = depthMeters,
+-                PrimaryBiomeMatrixDataIndex = primaryBiomeMatrixDataIndex,
+-                PreferredFamilyDataIndex = preferredFamilyDataIndex,
+-                SecondaryBiomeMatrixDataIndex = -1,
+-                Blend255 = 0,
+-                Flags = 0
+-            };
+-        }
+     }
+ }
+diff --git a/Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs b/Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs
+index e18993ce..b76f76c0 100644
+--- a/Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs
++++ b/Assets/_Project/Scripts/World/WorldVolumetricBiomeClassificationJobs.cs
+@@ -22,6 +22,80 @@ namespace Hecton8.World
+         public WorldProceduralFieldSampler.BiomeInfluenceCell InfluenceCell;
+     }
+ 
++    public struct VolumetricBiomeStressAuditResult
++    {
++        public int FailureMask;
++        public int PrimaryBiomeId;
++        public int ExpectedBiomeId;
++        public byte Flags;
++        public uint PackedCell;
++    }
++
++    public struct VolumetricBiomeStressBlockSummary
++    {
++        public int FailureCount;
++        public uint PackedChecksum;
++    }
++
++    public struct VolumetricBiomeStressSummaryResult
++    {
++        public int FailureCount;
++        public uint PackedChecksum;
++    }
++
++    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++    public struct VolumetricBiomeStressInputBuildJob : IJobParallelFor
++    {
++        [WriteOnly] public NativeArray<VolumetricBiomeClassificationInput> Inputs;
++        [WriteOnly] public NativeArray<int> ExpectedBiomeIds;
++        [WriteOnly] public NativeArray<byte> ExpectedFlagMasks;
++
++        public int ShallowBiomeId;
++        public int TwilightBiomeId;
++        public int HadalBiomeId;
++        public int PreferredFamilyDataIndex;
++        public byte VolumetricDepthFlag;
++
++        public void Execute(int index)
++        {
++            int lane = index % 3;
++            float depthMeters;
++            int expectedBiomeId;
++            byte expectedFlags;
++
++            if (lane == 0)
++            {
++                depthMeters = 32f + (index % 127);
++                expectedBiomeId = ShallowBiomeId;
++                expectedFlags = 0;
++            }
++            else if (lane == 1)
++            {
++                depthMeters = 650f + (index % 900);
++                expectedBiomeId = TwilightBiomeId;
++                expectedFlags = VolumetricDepthFlag;
++            }
++            else
++            {
++                depthMeters = 2200f + (index % 1800);
++                expectedBiomeId = HadalBiomeId;
++                expectedFlags = VolumetricDepthFlag;
++            }
++
++            Inputs[index] = new VolumetricBiomeClassificationInput
++            {
++                DepthMeters = depthMeters,
++                PrimaryBiomeMatrixDataIndex = 0,
++                PreferredFamilyDataIndex = PreferredFamilyDataIndex,
++                SecondaryBiomeMatrixDataIndex = -1,
++                Blend255 = 0,
++                Flags = 0
++            };
++            ExpectedBiomeIds[index] = expectedBiomeId;
++            ExpectedFlagMasks[index] = expectedFlags;
++        }
++    }
++
+     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+     public struct VolumetricBiomeClassificationJob : IJobParallelFor
+     {
+@@ -126,4 +200,113 @@ namespace Hecton8.World
+             return data.MatrixIndex > 0 && data.MatrixIndex <= 255 ? (byte)data.MatrixIndex : (byte)0;
+         }
+     }
++
++    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++    public struct VolumetricBiomeStressAuditJob : IJobParallelFor
++    {
++        [ReadOnly] public NativeArray<VolumetricBiomeClassificationResult> Results;
++        [ReadOnly] public NativeArray<int> ExpectedBiomeIds;
++        [ReadOnly] public NativeArray<byte> ExpectedFlagMasks;
++        [WriteOnly] public NativeArray<VolumetricBiomeStressAuditResult> AuditResults;
++
++        public void Execute(int index)
++        {
++            VolumetricBiomeClassificationResult result = Results[index];
++            WorldProceduralFieldSampler.BiomeInfluenceCell cell = result.InfluenceCell;
++            int expectedBiomeId = ExpectedBiomeIds[index];
++            byte expectedFlags = ExpectedFlagMasks[index];
++            int failureMask = 0;
++
++            if (cell.PrimaryBiomeId != expectedBiomeId)
++                failureMask |= 1;
++
++            if ((cell.Flags & expectedFlags) != expectedFlags)
++                failureMask |= 2;
++
++            uint expectedPack = (uint)(
++                cell.PrimaryBiomeId |
++                (cell.SecondaryBiomeId << 8) |
++                (cell.Blend255 << 16) |
++                (cell.Flags << 24));
++
++            if (cell.Packed != expectedPack)
++                failureMask |= 4;
++
++            AuditResults[index] = new VolumetricBiomeStressAuditResult
++            {
++                FailureMask = failureMask,
++                PrimaryBiomeId = cell.PrimaryBiomeId,
++                ExpectedBiomeId = expectedBiomeId,
++                Flags = cell.Flags,
++                PackedCell = cell.Packed
++            };
++        }
++    }
++
++    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++    public struct VolumetricBiomeStressBlockReduceJob : IJobParallelFor
++    {
++        [ReadOnly] public NativeArray<VolumetricBiomeStressAuditResult> AuditResults;
++        [WriteOnly] public NativeArray<VolumetricBiomeStressBlockSummary> BlockSummaries;
++
++        public int SampleCount;
++        public int SamplesPerBlock;
++
++        public void Execute(int blockIndex)
++        {
++            int start = blockIndex * SamplesPerBlock;
++            if ((uint)start >= (uint)SampleCount)
++            {
++                BlockSummaries[blockIndex] = default;
++                return;
++            }
++
++            int end = math.min(start + SamplesPerBlock, SampleCount);
++            int failureCount = 0;
++            uint checksum = 2166136261u ^ (uint)blockIndex;
++
++            for (int i = start; i < end; i++)
++            {
++                VolumetricBiomeStressAuditResult audit = AuditResults[i];
++                if (audit.FailureMask != 0)
++                    failureCount++;
++
++                checksum = (checksum ^ audit.PackedCell) * 16777619u;
++            }
++
++            BlockSummaries[blockIndex] = new VolumetricBiomeStressBlockSummary
++            {
++                FailureCount = failureCount,
++                PackedChecksum = checksum
++            };
++        }
++    }
++
++    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++    public struct VolumetricBiomeStressFinalReduceJob : IJob
++    {
++        [ReadOnly] public NativeArray<VolumetricBiomeStressBlockSummary> BlockSummaries;
++        [WriteOnly] public NativeArray<VolumetricBiomeStressSummaryResult> Summary;
++
++        public int BlockCount;
++
++        public void Execute()
++        {
++            int failureCount = 0;
++            uint checksum = 2166136261u;
++
++            for (int i = 0; i < BlockCount; i++)
++            {
++                VolumetricBiomeStressBlockSummary block = BlockSummaries[i];
++                failureCount += block.FailureCount;
++                checksum = (checksum ^ block.PackedChecksum) * 16777619u;
++            }
++
++            Summary[0] = new VolumetricBiomeStressSummaryResult
++            {
++                FailureCount = failureCount,
++                PackedChecksum = checksum
++            };
++        }
++    }
+ }
+diff --git a/Assets/_Project/Scripts/WorldProceduralFieldSampler.cs b/Assets/_Project/Scripts/WorldProceduralFieldSampler.cs
+index e3f9d6ba..98749c3a 100644
+--- a/Assets/_Project/Scripts/WorldProceduralFieldSampler.cs
++++ b/Assets/_Project/Scripts/WorldProceduralFieldSampler.cs
+@@ -1,4 +1,5 @@
+ using System.Collections.Generic;
++using Hecton.Localization;
+ using Hecton8.Core;
+ using Hecton8.Environment;
+ using Unity.Burst;
+@@ -34,7 +35,15 @@ namespace Hecton8.World
+         private const int MaxSeafloorHeightCacheEntries = 4096;
+         private const int NoiseLookupResolution = 512;
+         private const int NoiseLookupMask = NoiseLookupResolution - 1;
++        private const int MaxBiomeInfluenceGridCellsMx350 = 4096;
++        private const string NativeMemoryOwner = nameof(WorldProceduralFieldSampler);
++        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
++        private const NativeAllocationLifetime NativeMemoryTempJobLifetime = NativeAllocationLifetime.TempJob;
+         private const float NoiseLookupValueScale = 1f / ushort.MaxValue;
++        private static readonly uint _biomeInfluenceGridCapacityWarningHash =
++            unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler.BiomeInfluenceGridCapacity"));
++        private static readonly uint _fieldSamplerTelemetryContextHash =
++            unchecked((uint)LocHash.Compute("WorldProceduralFieldSampler"));
+         private GraphicsBuffer _biomeInfluenceGraphicsBuffer;
+         private int _biomeInfluenceGraphicsBufferCapacity;
+ #if UNITY_EDITOR
+@@ -412,7 +421,7 @@ namespace Hecton8.World
+         private JobHandle _lastSamplingJobHandle;
+         private bool _hasPendingSamplingJob;
+ 
+-        internal static WorldProceduralFieldSampler ActiveRuntimeInstance { get; private set; }
++        internal static WorldProceduralFieldSampler ActiveRuntimeInstance => GlobalRegistry.ProceduralFieldSampler;
+ 
+         private struct CachedHeightSample
+         {
+@@ -1852,7 +1861,6 @@ namespace Hecton8.World
+ 
+         private void Awake()
+         {
+-            ActiveRuntimeInstance = this;
+ #if UNITY_EDITOR
+             EnsureAssemblyReloadHook();
+ #endif
+@@ -1860,6 +1868,7 @@ namespace Hecton8.World
+ 
+         private void OnEnable()
+         {
++            GlobalRegistry.RegisterProceduralFieldSampler(this);
+             BiomeMatrixEvents.Register(this);
+             _isDataDirty = true;
+ #if UNITY_EDITOR
+@@ -1870,6 +1879,8 @@ namespace Hecton8.World
+         private void OnDisable()
+         {
+             BiomeMatrixEvents.Unregister(this);
++            if (ReferenceEquals(ActiveRuntimeInstance, this))
++                GlobalRegistry.UnregisterProceduralFieldSampler(this);
+             CompletePendingSamplingJob();
+             DisposeBurstData();
+             ReleaseBiomeInfluenceGraphicsBuffer();
+@@ -1887,9 +1898,8 @@ namespace Hecton8.World
+             DisposeBurstData();
+             ReleaseBiomeInfluenceGraphicsBuffer();
+             _isDataDirty = true;
+-
+             if (ReferenceEquals(ActiveRuntimeInstance, this))
+-                ActiveRuntimeInstance = null;
++                GlobalRegistry.UnregisterProceduralFieldSampler(this);
+ #if UNITY_EDITOR
+             ReleaseAssemblyReloadHook();
+ #endif
+@@ -1928,11 +1938,12 @@ namespace Hecton8.World
+ 
+         private static void TeardownActiveRuntimeInstanceForEditorReload()
+         {
+-            if (ActiveRuntimeInstance == null)
++            WorldProceduralFieldSampler activeInstance = ActiveRuntimeInstance;
++            if (activeInstance == null)
+                 return;
+ 
+-            ActiveRuntimeInstance.PrepareForEditorReload();
+-            ActiveRuntimeInstance = null;
++            activeInstance.PrepareForEditorReload();
++            GlobalRegistry.UnregisterProceduralFieldSampler(activeInstance);
+         }
+ #endif
+ 
+@@ -2112,6 +2123,14 @@ namespace Hecton8.World
+ 
+             ReleaseBiomeInfluenceGraphicsBuffer();
+             _biomeInfluenceGraphicsBufferCapacity = Mathf.NextPowerOfTwo(requiredCapacity);
++            if (Application.isPlaying && _biomeInfluenceGraphicsBufferCapacity > MaxBiomeInfluenceGridCellsMx350)
++            {
++                GlobalTelemetryBus.PublishPerformanceWarning(
++                    _biomeInfluenceGridCapacityWarningHash,
++                    _fieldSamplerTelemetryContextHash,
++                    _biomeInfluenceGraphicsBufferCapacity);
++            }
++
+             // COLD ALLOC: GraphicsBuffer[_biomeInfluenceGraphicsBufferCapacity] - packed biome influence grid upload owned by WorldProceduralFieldSampler.
+             _biomeInfluenceGraphicsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(_biomeInfluenceGraphicsBufferCapacity);
+             return _biomeInfluenceGraphicsBuffer != null && _biomeInfluenceGraphicsBuffer.IsValid();
+@@ -2133,9 +2152,12 @@ namespace Hecton8.World
+             PrepareBurstData();
+ 
+             // COLD SYNC JOB: prewarm Burst compilation and worker setup before player activation so the first runtime scatter pass does not absorb one-time compilation debt.
+-            NativeArray<CellInputData> warmupInputs = new NativeArray<CellInputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+-            NativeArray<CellOutputData> warmupOutputs = new NativeArray<CellOutputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+-            NativeArray<BiomeInfluenceCell> warmupInfluences = new NativeArray<BiomeInfluenceCell>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++            NativeArray<CellInputData> warmupInputs = new NativeArray<CellInputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CellInputData>[1] - Burst prewarm input lane - owner: WorldProceduralFieldSampler
++            NativeArray<CellOutputData> warmupOutputs = new NativeArray<CellOutputData>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CellOutputData>[1] - Burst prewarm output lane - owner: WorldProceduralFieldSampler
++            NativeArray<BiomeInfluenceCell> warmupInfluences = new NativeArray<BiomeInfluenceCell>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<BiomeInfluenceCell>[1] - Burst prewarm biome influence lane - owner: WorldProceduralFieldSampler
++            RegisterTrackedNativeArray(warmupInputs, nameof(warmupInputs), NativeMemoryTempJobLifetime);
++            RegisterTrackedNativeArray(warmupOutputs, nameof(warmupOutputs), NativeMemoryTempJobLifetime);
++            RegisterTrackedNativeArray(warmupInfluences, nameof(warmupInfluences), NativeMemoryTempJobLifetime);
+ 
+             try
+             {
+@@ -2166,12 +2188,9 @@ namespace Hecton8.World
+             finally
+             {
+                 EndScatterSamplingFrame();
+-                if (warmupInputs.IsCreated)
+-                    warmupInputs.Dispose();
+-                if (warmupOutputs.IsCreated)
+-                    warmupOutputs.Dispose();
+-                if (warmupInfluences.IsCreated)
+-                    warmupInfluences.Dispose();
++                DisposeTrackedNativeArray(ref warmupInputs);
++                DisposeTrackedNativeArray(ref warmupOutputs);
++                DisposeTrackedNativeArray(ref warmupInfluences);
+             }
+         }
+ 
+@@ -2349,10 +2368,11 @@ namespace Hecton8.World
+                 return;
+ 
+             if (_noiseLookupTable.IsCreated)
+-                _noiseLookupTable.Dispose();
++                DisposeTrackedNativeArray(ref _noiseLookupTable);
+ 
+             // COLD ALLOC: NativeArray<ushort>[262144] - persistent tileable noise LUT replacing runtime analytical noise in dense field sampling - owner: WorldProceduralFieldSampler
+             _noiseLookupTable = new NativeArray<ushort>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            RegisterTrackedNativeArray(_noiseLookupTable, nameof(_noiseLookupTable));
+             for (int z = 0; z < NoiseLookupResolution; z++)
+             {
+                 float v = z / (float)NoiseLookupResolution;
+@@ -2456,7 +2476,7 @@ namespace Hecton8.World
+             if (_worldCaveDirector != null)
+                 _worldCaveDirector.CollectEntranceHints(_caveEntranceHintBakeList);
+ 
+-            EnsureNativeArrayCapacity(ref _burstBiomeFamilyData, _biomeFamilyBakeList.Count);
++            EnsureNativeArrayCapacity(ref _burstBiomeFamilyData, _biomeFamilyBakeList.Count, nameof(_burstBiomeFamilyData));
+             _burstBiomeFamilyDataCount = _biomeFamilyBakeList.Count;
+             for (int i = 0; i < _biomeFamilyBakeList.Count; i++)
+             {
+@@ -2468,8 +2488,8 @@ namespace Hecton8.World
+                 };
+             }
+ 
+-            EnsureNativeArrayCapacity(ref _burstBiomeMatrixData, _biomeMatrixBakeList.Count);
+-            EnsureNativeArrayCapacity(ref _burstBiomeMatrixIdToDataIndex, 256);
++            EnsureNativeArrayCapacity(ref _burstBiomeMatrixData, _biomeMatrixBakeList.Count, nameof(_burstBiomeMatrixData));
++            EnsureNativeArrayCapacity(ref _burstBiomeMatrixIdToDataIndex, 256, nameof(_burstBiomeMatrixIdToDataIndex));
+             for (int i = 0; i < _burstBiomeMatrixIdToDataIndex.Length; i++)
+                 _burstBiomeMatrixIdToDataIndex[i] = -1;
+ 
+@@ -2502,7 +2522,7 @@ namespace Hecton8.World
+                     _burstBiomeMatrixIdToDataIndex[matrixIndex] = i;
+             }
+ 
+-            EnsureNativeArrayCapacity(ref _burstZoneData, _anchors.Count);
++            EnsureNativeArrayCapacity(ref _burstZoneData, _anchors.Count, nameof(_burstZoneData));
+             _burstZoneDataCount = 0;
+             for (int i = 0; i < _anchors.Count; i++)
+             {
+@@ -2531,7 +2551,7 @@ namespace Hecton8.World
+                 };
+             }
+ 
+-            EnsureNativeArrayCapacity(ref _burstCaveEntranceHints, _caveEntranceHintBakeList.Count);
++            EnsureNativeArrayCapacity(ref _burstCaveEntranceHints, _caveEntranceHintBakeList.Count, nameof(_burstCaveEntranceHints));
+             _burstCaveEntranceHintCount = _caveEntranceHintBakeList.Count;
+             for (int i = 0; i < _caveEntranceHintBakeList.Count; i++)
+             {
+@@ -4443,12 +4463,16 @@ namespace Hecton8.World
+             _biomeFamilyBakeList.Add(family);
+         }
+ 
+-        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredCapacity) where T : struct
++        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredCapacity, string label) where T : struct
+         {
+             if (requiredCapacity <= 0)
+             {
+                 if (!array.IsCreated)
++                {
+                     array = new NativeArray<T>(0, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++                    RegisterTrackedNativeArray(array, label);
++                }
++
+                 return;
+             }
+ 
+@@ -4456,9 +4480,40 @@ namespace Hecton8.World
+                 return;
+ 
+             if (array.IsCreated)
+-                array.Dispose();
++                DisposeTrackedNativeArray(ref array);
+ 
+             array = new NativeArray<T>(Mathf.NextPowerOfTwo(requiredCapacity), Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
++            RegisterTrackedNativeArray(array, label);
++        }
++
++        private static void RegisterTrackedNativeArray<T>(NativeArray<T> array, string label) where T : struct
++        {
++            RegisterTrackedNativeArray(array, label, NativeMemoryLifetime);
++        }
++
++        private static void RegisterTrackedNativeArray<T>(
++            NativeArray<T> array,
++            string label,
++            NativeAllocationLifetime lifetime) where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.RegisterNativeArray(
++                array,
++                NativeMemoryOwner,
++                label,
++                lifetime);
++        }
++
++        private static void DisposeTrackedNativeArray<T>(ref NativeArray<T> array) where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
+         }
+ 
+         private void DisposeBurstData()
+@@ -4466,17 +4521,17 @@ namespace Hecton8.World
+             CompletePendingSamplingJob();
+ 
+             if (_burstZoneData.IsCreated)
+-                _burstZoneData.Dispose();
++                DisposeTrackedNativeArray(ref _burstZoneData);
+             if (_burstBiomeMatrixData.IsCreated)
+-                _burstBiomeMatrixData.Dispose();
++                DisposeTrackedNativeArray(ref _burstBiomeMatrixData);
+             if (_burstBiomeMatrixIdToDataIndex.IsCreated)
+-                _burstBiomeMatrixIdToDataIndex.Dispose();
++                DisposeTrackedNativeArray(ref _burstBiomeMatrixIdToDataIndex);
+             if (_burstBiomeFamilyData.IsCreated)
+-                _burstBiomeFamilyData.Dispose();
++                DisposeTrackedNativeArray(ref _burstBiomeFamilyData);
+             if (_burstCaveEntranceHints.IsCreated)
+-                _burstCaveEntranceHints.Dispose();
++                DisposeTrackedNativeArray(ref _burstCaveEntranceHints);
+             if (_noiseLookupTable.IsCreated)
+-                _noiseLookupTable.Dispose();
++                DisposeTrackedNativeArray(ref _noiseLookupTable);
+ 
+             _burstZoneDataCount = 0;
+             _burstBiomeMatrixDataCount = 0;
+diff --git a/Assets/_Project/Scripts/WorldProceduralScatterDirector.cs b/Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
+index a06e6933..086968b5 100644
+--- a/Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
++++ b/Assets/_Project/Scripts/WorldProceduralScatterDirector.cs
+@@ -25,7 +25,7 @@ namespace Hecton8.World
+         private const float StartupScatterStabilizationDelaySeconds = 2f;
+         private const int MaxRegisteredScatterDirectors = 4;
+ 
+-        internal static WorldProceduralScatterDirector ActiveRuntimeInstance { get; private set; }
++        internal static WorldProceduralScatterDirector ActiveRuntimeInstance => GlobalRegistry.ProceduralScatter;
+         // COLD ALLOC: RegistryBucket<WorldProceduralScatterDirector>[4] - active scatter directors for bootstrap lookup without scene scans - owner: WorldProceduralScatterDirector
+         private static readonly RegistryBucket<WorldProceduralScatterDirector> _registeredScatterDirectors = new RegistryBucket<WorldProceduralScatterDirector>(MaxRegisteredScatterDirectors);
+         /// <summary>
+@@ -479,7 +479,6 @@ namespace Hecton8.World
+             _emergencyCanopyGeologyProfile = null;
+             _emergencyLandmarkGeologyProfile = null;
+             _emergencyCaveGeologyProfile = null;
+-            ActiveRuntimeInstance = null;
+             _registeredScatterDirectors.Clear();
+         }
+         private Transform _scatterRootTransform;
+@@ -650,7 +649,6 @@ namespace Hecton8.World
+ 
+         private void Awake()
+         {
+-            ActiveRuntimeInstance = this;
+             _scatterState = ScatterState.Idle;
+             _isSamplingJobRunning = false;
+             EnsureWorkingMemory();
+@@ -738,10 +736,9 @@ namespace Hecton8.World
+ 
+         private void OnDestroy()
+         {
+-            GlobalRegistry.UnregisterWorldGenService(this);
++            if (ReferenceEquals(ActiveRuntimeInstance, this))
++                GlobalRegistry.UnregisterWorldGenService(this);
+             TryUnregisterRuntimeDirector();
+-            if (ActiveRuntimeInstance == this)
+-                ActiveRuntimeInstance = null;
+             UnregisterOriginShiftListener();
+             CompleteSamplingJobIfNeeded();
+             DisposeMigratorySargassumLane();
+@@ -819,11 +816,12 @@ namespace Hecton8.World
+ 
+         private static void TeardownActiveRuntimeInstanceForEditorReload()
+         {
+-            if (ActiveRuntimeInstance == null)
++            WorldProceduralScatterDirector activeInstance = ActiveRuntimeInstance;
++            if (activeInstance == null)
+                 return;
+ 
+-            ActiveRuntimeInstance.PrepareForEditorReload();
+-            ActiveRuntimeInstance = null;
++            activeInstance.PrepareForEditorReload();
++            GlobalRegistry.UnregisterWorldGenService(activeInstance);
+         }
+ #endif
+ 
+diff --git a/Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md b/Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md
+index 1f75b32a..4e093914 100644
+--- a/Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md
++++ b/Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md
+@@ -176,3 +176,103 @@ Smoke tester:
+ - Memory: one owner for the biome influence GPU buffer is `WorldProceduralFieldSampler`; duplicate scatter working-memory ownership was removed.
+ - GPU: upload is a packed `uint` GraphicsBuffer stream; MX350 risk is bounded by single uint per scatter cell plus existing flora 4096 cap.
+ - Correctness risk: full playmode traversal through an authored biome border is still required before any production verification claim.
++
++## 2026-05-05 OMEGA-AUTONOMY HARDENING PASS
++
++Status: `PENDING VERIFICATION`. `OMEGA VERIFIED` is not claimed because `AGENTS.md` requires user-provided logs for final fix confirmation; local Unity smoke evidence is recorded below.
++
++### Mandates Re-Checked
++
++- `AGENTS.md`: no fake verification; status remains `PENDING VERIFICATION` without user-provided production/runtime confirmation.
++- `OPT_Native_Memory_Collections_JobSystem_Protocol`: persistent NativeCollections require single owner and Sentinel tracking.
++- `OPT_Zero_GC_Policy_AllocFree_Mandate`: no new hot-path string allocation, LINQ, coroutine, or managed container allocation in the touched biome sampling path.
++- `MATH_Coordinate_Precision_AUP_FloatingOrigin`: no transform-space authority added; sampling remains fed by existing AUP/runtime position bridge.
++- `ARCH_Global_Registry_ServiceLocator_DI_Init`: removed the stale bootstrap fallback to the deleted `SaveManager.ActiveRuntimeInstance` API; active save authority is `GlobalRegistry.SaveRuntime`.
++
++### Surgery Log
++
++- `WorldProceduralFieldSampler`: registered persistent `_burstZoneData`, `_burstBiomeMatrixData`, `_burstBiomeMatrixIdToDataIndex`, `_burstBiomeFamilyData`, `_burstCaveEntranceHints`, and `_noiseLookupTable` with `NativeMemorySentinel`; unregisters now happen before disposal.
++- `WorldProceduralFieldSampler`: added `GlobalTelemetryBus.PublishPerformanceWarning` when biome influence GPU grid capacity grows past the MX350 soft cell budget of 4096.
++- `ResourceDistributionDirector`: registered pressure metamorphism and ghost proxy snap persistent NativeArrays with `NativeMemorySentinel`; immediate and deferred disposal paths both unregister first.
++- `VolumetricBiomeSmokeTester`: upgraded the cold smoke from 3 samples to a 256-sample Burst stress chain and registered all TempJob smoke arrays with `NativeMemorySentinel`.
++- `WorldVolumetricBiomeClassificationJobs`: added `VolumetricBiomeStressAuditJob`, a Burst `IJobParallelFor` that validates primary biome ID, required flag masks, and packed `uint` layout.
++- `GameBootstrapper`: removed a compile-breaking reference to `SaveManager.ActiveRuntimeInstance`, which no longer exists after the registry migration.
++- `AutomationOmegaSmokeTester`: added `using Hecton8.World;` so its cold smoke can resolve `DispatcherJobSwap`.
++
++### Burst Packing Logic
++
++The stress audit validates the same packed ABI used by the scatter GPU grid:
++
++```csharp
++uint expectedPack = (uint)(
++    cell.PrimaryBiomeId |
++    (cell.SecondaryBiomeId << 8) |
++    (cell.Blend255 << 16) |
++    (cell.Flags << 24));
++```
++
++### Verification
++
++- Direct Core compile: `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp` returned exit code 0 after the final sequential rerun.
++- Direct Editor compile: `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.rsp` returned exit code 0 after the final sequential rerun.
++- `git diff --check` on the biome/resource touched files returned no whitespace errors; only Git CRLF normalization warnings were emitted.
++- `rg` barrier sweep found no raw `.Complete()`, `.Run()`, or `JobHandle.CompleteAll` in the scoped biome/resource files. Remaining synchronization points are `DispatcherJobSwap.TryComplete` windows, including one cold forced smoke-test sync outside runtime `Tick`/`Update`.
++- Unity batchmode attempts for `Hecton8.World.VolumetricBiomeSmokeTester.RunBatchmode` initially wrote:
++  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run2.log`
++  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run3.log`
++- Both Unity batchmode attempts exited with code 1 before script execution; logs stop immediately after project path selection and contain no `VolumetricBiomeSmokeTester` PASS/FAIL line.
++- External Unity batch processes repeatedly occupied the project during this window:
++  - `Hecton8.EditorTools.DocumentationAuthoritySmokeTester.RunMenuItem`
++  - `Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu` (`final`, `final2`, `final3`)
++- After the external Unity processes exited, `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run4.log` reached `VolumetricBiomeSmokeTester.RunBatchmode` and emitted:
++  - `[VolumetricBiomeSmokeTester] PASS shallow=11 twilight=12 hadal=13 flags=16 stressSamples=256 stressFailures=0 packedChecksum=2952397042`
++- The same Unity log also contains non-domain service/runtime noise that prevents a "0 console errors" claim:
++  - Licensing handshake/access-token errors at lines 71, 74, and 88, followed by successful license resolution.
++  - UnityConnect CDN timeout / Curl callback abort at lines 424 and 426.
++  - Unity test protocol memory-leak marker and temp allocator warning at lines 456 and 457.
++
++### Residual Risk
++
++- Runtime GC proof is absent. Code review only: no new hot-path managed allocation was introduced in the modified biome sampling path.
++- Unity domain smoke proof exists for `VolumetricBiomeSmokeTester`; whole-console proof is not clean because the batch log contains Unity service errors and a temp allocator leak marker outside the smoke assertion line.
++
++## 2026-05-05 OMEGA-AUTONOMY HARDENING PASS 2
++
++Status: `PENDING VERIFICATION`. `OMEGA VERIFIED` is not claimed because `AGENTS.md` requires user-provided logs before a verified status, and pass-2 Unity smoke attempts did not reach a fresh PASS/FAIL assertion after the new code changes.
++
++### Mandates Re-Checked
++
++- `OPT_Native_Memory_Collections_JobSystem_Protocol`: scoped TempJob and Persistent NativeArrays must be Sentinel-owned.
++- `OPT_Zero_GC_Policy_AllocFree_Mandate`: no hot-path `.ToString()`, string interpolation, or `string.Format` introduced in scoped `Tick`/`Update` surfaces.
++- `MATH_Coordinate_Precision_AUP_FloatingOrigin`: no transform-space authority added; registry migration only changes lookup ownership.
++- `ARCH_Global_Registry_ServiceLocator_DI_Init`: procedural field sampler and resource distribution active ownership moved to `GlobalRegistry`; scatter active lookup now resolves through `GlobalRegistry.WorldGen`.
++
++### Surgery Log
++
++- `GlobalRegistry`: added concrete slots for `ProceduralFieldSampler` and `ResourceDistribution`, with register/unregister APIs and service-slot enum entries.
++- `WorldProceduralScatterDirector`: removed private static active-state ownership; `ActiveRuntimeInstance` now resolves from `GlobalRegistry.ProceduralScatter`.
++- `WorldProceduralFieldSampler`: removed private static active-state ownership; lifecycle now registers/unregisters through `GlobalRegistry`; TempJob prewarm arrays now register with `NativeMemorySentinel` using `TempJob` lifetime before disposal.
++- `ResourceDistributionDirector`: removed private static active-state ownership; runtime lifecycle now registers/unregisters through `GlobalRegistry`.
++- `VolumetricBiomeSmokeTester`: moved the 256-sample managed audit reduction into Burst jobs: `VolumetricBiomeStressBlockReduceJob` (`IJobParallelFor`) plus `VolumetricBiomeStressFinalReduceJob`.
++
++### Verification
++
++- Direct Core compile: `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp` returned exit code 0.
++- Direct Editor compile: `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.rsp` returned exit code 0.
++- `git diff --check` on scoped pass-2 files returned no whitespace errors; only Git CRLF normalization warnings were emitted.
++- Static sweeps on scoped pass-2 files:
++  - Raw `.Complete()`, `.Run()`, `JobHandle.CompleteAll`: 0 matches.
++  - Hot-path string purge regex for `.ToString()`, `string.Format`, `$"` in scoped `Tick`/`Update` surfaces: 0 matches.
++  - Static active assignment / private `_instance` / `DontDestroyOnLoad` residue in the three migrated world-gen classes: 0 owner assignments remaining.
++  - NativeArray allocation sites scanned: 10; untracked allocation sites after patch: 0 by code review against Sentinel registration calls.
++- Pass-2 Unity smoke attempts for `Hecton8.World.VolumetricBiomeSmokeTester.RunBatchmode`:
++  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run5.log`: reached Unity script compilation, no smoke assertion.
++  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run6.log`: exited with return code 1 before `executeMethod`.
++  - `CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run7.log`: no smoke assertion before external Unity batch contention resumed.
++- Evidence JSON: `CodexArtifacts/omega-biome-autonomy-pass2-verification-2026-05-05.json`.
++
++### Residual Risk
++
++- Pass-2 smoke execution is blocked by repeated external Unity batch processes occupying the project. Compile proof is clean; fresh post-change Unity smoke proof is absent.
++- Whole-console clean status is not claimed.
++- The larger worktree contains many unrelated modified and untracked files. They were not reverted or normalized.
+
+--- UNTRACKED FILE DIFF: CodexArtifacts/omega-biome-autonomy-pass2-verification-2026-05-05.json ---
+
+diff --git a/CodexArtifacts/omega-biome-autonomy-pass2-verification-2026-05-05.json b/CodexArtifacts/omega-biome-autonomy-pass2-verification-2026-05-05.json
+new file mode 100644
+index 00000000..512302d1
+--- /dev/null
++++ b/CodexArtifacts/omega-biome-autonomy-pass2-verification-2026-05-05.json
+@@ -0,0 +1,44 @@
++{
++  "status": "PENDING VERIFICATION",
++  "authority": "AGENTS.md requires user-provided logs before verified status",
++  "domain": "world-gen biome influence / scatter / resource distribution",
++  "date": "2026-05-05",
++  "mandates": [
++    "OPT_Native_Memory_Collections_JobSystem_Protocol",
++    "OPT_Zero_GC_Policy_AllocFree_Mandate",
++    "MATH_Coordinate_Precision_AUP_FloatingOrigin",
++    "ARCH_Global_Registry_ServiceLocator_DI_Init"
++  ],
++  "compile": {
++    "core_csc_exit_code": 0,
++    "editor_csc_exit_code": 0
++  },
++  "static_audit": {
++    "raw_jobhandle_complete_run_matches": 0,
++    "scoped_hot_path_string_matches": 0,
++    "scoped_static_owner_assignments_remaining": 0,
++    "nativearray_allocations_scanned": 10,
++    "nativearray_allocations_untracked_after_patch": 0
++  },
++  "smoke": {
++    "method": "Hecton8.World.VolumetricBiomeSmokeTester.RunBatchmode",
++    "latest_successful_local_log_before_pass2": "CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run4.log",
++    "pass2_attempt_logs": [
++      "CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run5.log",
++      "CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run6.log",
++      "CodexArtifacts/omega-volumetric-biome-smoke-2026-05-05-run7.log"
++    ],
++    "pass2_result": "blocked_before_execute_method",
++    "observed_external_unity_batches": [
++      "Hecton8.Editor.HydraulicErosionSmokeTester.RunMenu",
++      "Hecton8.Editor.FaunaRuntimeSmokeTesterRunner.RunOmegaHeadlessSmoke",
++      "Hecton8.Editor.OmegaAutonomySmokeTestRunner.Run",
++      "Hecton8.Editor.AutomationSmokeTestRunner.RunBatchOmegaAutomationSmokePass"
++    ]
++  },
++  "notes": [
++    "Volumetric smoke now contains Burst input build, classification, audit, block reduce, and final reduce jobs.",
++    "Pass2 Unity batch attempts did not produce a PASS/FAIL smoke assertion after the code changes.",
++    "Whole-console clean status is not claimed."
++  ]
++}
+
+--- UNTRACKED FILE DIFF: Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs ---
+
+diff --git a/Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs b/Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs
+new file mode 100644
+index 00000000..60644b28
+--- /dev/null
++++ b/Assets/_Project/Scripts/AutomationOmegaSmokeTester.cs
+@@ -0,0 +1,146 @@
++using Hecton8.Construction;
++using Hecton8.Core;
++using Hecton8.World;
++using Unity.Collections;
++using Unity.Jobs;
++using UnityEngine;
++
++namespace Hecton8.Debugging
++{
++    public struct AutomationOmegaSmokeResult
++    {
++        public bool Passed;
++        public int NodeCount;
++        public int EdgeCount;
++        public int RoutedNode;
++        public int NoStorageRouteNode;
++        public int InvalidStartRouteNode;
++        public int ExpectedStorageNode;
++    }
++
++    [DisallowMultipleComponent]
++    [AddComponentMenu("Hecton8/Debug/Automation Omega Smoke Tester")]
++    public sealed class AutomationOmegaSmokeTester : MonoBehaviour
++    {
++        private const string NativeMemoryOwner = nameof(AutomationOmegaSmokeTester);
++        private const int StressNodeCount = 64;
++
++        [ContextMenu("Run Omega Logistics Route Stress Smoke")]
++        public void RunSmokePass()
++        {
++            RunLogisticsRouteStressSmoke();
++        }
++
++        public static AutomationOmegaSmokeResult RunLogisticsRouteStressSmoke()
++        {
++            int nodeCount = StressNodeCount;
++            int edgeCount = nodeCount - 1;
++            int storageNodeIndex = nodeCount - 1;
++
++            AutomationOmegaSmokeResult smokeResult = new AutomationOmegaSmokeResult
++            {
++                Passed = false,
++                NodeCount = nodeCount,
++                EdgeCount = edgeCount,
++                RoutedNode = -1,
++                NoStorageRouteNode = -1,
++                InvalidStartRouteNode = -1,
++                ExpectedStorageNode = storageNodeIndex
++            };
++
++            NativeArray<int> edgeOffsets = new NativeArray<int>(nodeCount + 1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[65] - omega smoke CSR offsets - owner: AutomationOmegaSmokeTester
++            NativeArray<int> edgeDestinations = new NativeArray<int>(edgeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[63] - omega smoke CSR destinations - owner: AutomationOmegaSmokeTester
++            NativeArray<byte> storageCapacityByNode = new NativeArray<byte>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke storage flags - owner: AutomationOmegaSmokeTester
++            NativeArray<byte> visited = new NativeArray<byte>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[64] - omega smoke BFS visited set - owner: AutomationOmegaSmokeTester
++            NativeArray<int> queue = new NativeArray<int>(nodeCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[64] - omega smoke BFS queue - owner: AutomationOmegaSmokeTester
++            NativeArray<int> routeResult = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[1] - omega smoke BFS result cell - owner: AutomationOmegaSmokeTester
++            RegisterTempJobArray(edgeOffsets, nameof(edgeOffsets));
++            RegisterTempJobArray(edgeDestinations, nameof(edgeDestinations));
++            RegisterTempJobArray(storageCapacityByNode, nameof(storageCapacityByNode));
++            RegisterTempJobArray(visited, nameof(visited));
++            RegisterTempJobArray(queue, nameof(queue));
++            RegisterTempJobArray(routeResult, nameof(routeResult));
++
++            try
++            {
++                JobHandle buildHandle = new LogisticsPipeRoutingKernel.BuildLinearStressGraphJob
++                {
++                    NodeCount = nodeCount,
++                    EdgeCount = edgeCount,
++                    StorageNodeIndex = storageNodeIndex,
++                    EdgeOffsets = edgeOffsets,
++                    EdgeDestinations = edgeDestinations,
++                    StorageCapacityByNode = storageCapacityByNode
++                }.Schedule(nodeCount + 1, 16);
++
++                // COLD SYNC JOB: batch smoke must inspect the generated deterministic CSR before process exit.
++                Hecton8.World.DispatcherJobSwap.TryComplete(ref buildHandle, forceComplete: true);
++
++                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                    nodeCount,
++                    0,
++                    edgeOffsets,
++                    edgeDestinations,
++                    storageCapacityByNode,
++                    visited,
++                    queue,
++                    routeResult);
++                smokeResult.RoutedNode = routeResult[0];
++
++                storageCapacityByNode[storageNodeIndex] = 0;
++                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                    nodeCount,
++                    0,
++                    edgeOffsets,
++                    edgeDestinations,
++                    storageCapacityByNode,
++                    visited,
++                    queue,
++                    routeResult);
++                smokeResult.NoStorageRouteNode = routeResult[0];
++
++                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
++                    nodeCount,
++                    -1,
++                    edgeOffsets,
++                    edgeDestinations,
++                    storageCapacityByNode,
++                    visited,
++                    queue,
++                    routeResult);
++                smokeResult.InvalidStartRouteNode = routeResult[0];
++
++                smokeResult.Passed =
++                    smokeResult.RoutedNode == storageNodeIndex &&
++                    smokeResult.NoStorageRouteNode == -1 &&
++                    smokeResult.InvalidStartRouteNode == -1;
++
++                return smokeResult;
++            }
++            finally
++            {
++                DisposeTempJobArray(ref edgeOffsets);
++                DisposeTempJobArray(ref edgeDestinations);
++                DisposeTempJobArray(ref storageCapacityByNode);
++                DisposeTempJobArray(ref visited);
++                DisposeTempJobArray(ref queue);
++                DisposeTempJobArray(ref routeResult);
++            }
++        }
++
++        private static void RegisterTempJobArray<T>(NativeArray<T> array, string label) where T : struct
++        {
++            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.TempJob);
++        }
++
++        private static void DisposeTempJobArray<T>(ref NativeArray<T> array) where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
++        }
++    }
++}
