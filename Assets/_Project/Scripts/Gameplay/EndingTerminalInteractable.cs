@@ -17,6 +17,7 @@ using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Interaction;
+using Hecton8.Quest;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -32,6 +33,14 @@ namespace Hecton8.Gameplay
         [Header("── Visual ───────────────────────────────────")]
         [SerializeField] private GameObject highlightObject;
         [SerializeField] private GameObject activeIndicator;
+
+        [Header("Quest DAG Gate")]
+        [SerializeField] private string[] requiredAtlasKeyQuestIds =
+        {
+            "quest_atlas_signal_detected",
+            "quest_atlas_signal_decoded",
+            "quest_atlas_core_reached"
+        };
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -98,11 +107,14 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            if (!ending.IsConditionMet)
+            if (!HasAllAtlasKeys())
             {
                 NarrativeEvents.RaiseDiscoveryMade("atlas6_terminal_inactive");
                 return;
             }
+
+            if (!ending.IsConditionMet)
+                ending.ForceConditionMetFromQuestDAG();
 
             if (_choiceOpen) return;
 
@@ -114,7 +126,7 @@ namespace Hecton8.Gameplay
             EndingSystem ending = GlobalRegistry.Ending;
             if (ending == null) return _cachedInactiveText;
             if (ending.IsEndingComplete) return _cachedCompleteText;
-            if (!ending.IsConditionMet) return _cachedInactiveText;
+            if (!HasAllAtlasKeys()) return _cachedInactiveText;
             return _cachedActiveText;
         }
 
@@ -176,8 +188,29 @@ namespace Hecton8.Gameplay
             if (activeIndicator == null) return;
 
             EndingSystem ending = GlobalRegistry.Ending;
-            bool active = ending != null && ending.IsConditionMet && !ending.IsEndingComplete;
+            bool active = ending != null && HasAllAtlasKeys() && !ending.IsEndingComplete;
             SetObjectActive(activeIndicator, active);
+        }
+
+        private bool HasAllAtlasKeys()
+        {
+            QuestManager questManager = GlobalRegistry.Quest;
+            if (questManager == null || requiredAtlasKeyQuestIds == null || requiredAtlasKeyQuestIds.Length == 0)
+                return false;
+
+            for (int i = 0; i < requiredAtlasKeyQuestIds.Length; i++)
+            {
+                string questId = requiredAtlasKeyQuestIds[i];
+                if (string.IsNullOrWhiteSpace(questId))
+                    continue;
+
+                bool completed = questManager.IsCompleted(questId);
+                bool finalCoreReachedGate = i == requiredAtlasKeyQuestIds.Length - 1;
+                if (!completed && !(finalCoreReachedGate && questManager.IsActive(questId)))
+                    return false;
+            }
+
+            return true;
         }
 
         private void RebuildLocalizedTextCache()

@@ -75,6 +75,40 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
                 return output;
             }
 
+            float Bayer4x4(float2 pixelPosition)
+            {
+                float2 cell = floor(frac(pixelPosition * 0.25) * 4.0);
+
+                if (cell.y < 0.5)
+                {
+                    if (cell.x < 0.5) return 0.0 / 16.0;
+                    if (cell.x < 1.5) return 8.0 / 16.0;
+                    if (cell.x < 2.5) return 2.0 / 16.0;
+                    return 10.0 / 16.0;
+                }
+
+                if (cell.y < 1.5)
+                {
+                    if (cell.x < 0.5) return 12.0 / 16.0;
+                    if (cell.x < 1.5) return 4.0 / 16.0;
+                    if (cell.x < 2.5) return 14.0 / 16.0;
+                    return 6.0 / 16.0;
+                }
+
+                if (cell.y < 2.5)
+                {
+                    if (cell.x < 0.5) return 3.0 / 16.0;
+                    if (cell.x < 1.5) return 11.0 / 16.0;
+                    if (cell.x < 2.5) return 1.0 / 16.0;
+                    return 9.0 / 16.0;
+                }
+
+                if (cell.x < 0.5) return 15.0 / 16.0;
+                if (cell.x < 1.5) return 7.0 / 16.0;
+                if (cell.x < 2.5) return 13.0 / 16.0;
+                return 5.0 / 16.0;
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
@@ -91,6 +125,17 @@ Shader "Hecton8/UI/HUDDiegeticProjectionUnlit"
                 float3 color = hudSample.rgb * _Color.rgb * _Intensity * lerp(0.45, 1.0, saturate(_PanelPowerLevel));
                 color += _Color.rgb * frameMask * _FrameAlpha;
                 alpha = max(alpha, frameMask * _FrameAlpha);
+
+                if (_PanelPowerLevel < 0.1)
+                {
+                    float dither = Bayer4x4(floor(input.positionCS.xy));
+                    float luminance = dot(hudSample.rgb, float3(0.2126, 0.7152, 0.0722)) * max(_Intensity, 0.001);
+                    float phosphorBit = step(0.13 + dither * 0.58, luminance);
+                    float frameBit = frameMask * 0.42;
+                    float phosphorJitter = lerp(0.72, 1.0, dither);
+                    color = float3(0.02, 0.92, 0.24) * (phosphorBit * phosphorJitter + frameBit);
+                    alpha = max(alpha, saturate((phosphorBit * max(rgbAlpha, hudSample.a) + frameBit) * edgeFade * _Color.a));
+                }
 
                 return half4(color, alpha);
             }

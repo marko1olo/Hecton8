@@ -1,4 +1,7 @@
 # ASSET-TO-CODE DEPENDENCY MAP
+Date: 2026-04-28
+Status: REFERENCE
+
 
 ## Current-State Addendum (2026-04-29)
 

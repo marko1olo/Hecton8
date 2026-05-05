@@ -1,5 +1,7 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using Den.Tools.Matrices;
+using Hecton8.Core;
 using Hecton8.World;
 using MapMagic.Nodes;
 using MapMagic.Products;
@@ -20,6 +22,20 @@ namespace MapMagic.Nodes.MatrixGenerators
     [UnityEngine.Scripting.Preserve]
     public sealed class HectonHydraulicErosionMapMagicNode : Generator, IMultiInlet, IMultiOutlet, ICustomComplexity
     {
+        private const string NativeMemoryOwner = nameof(HectonHydraulicErosionMapMagicNode);
+        private const string HeightALabel = "heightA";
+        private const string HeightBLabel = "heightB";
+        private const string SedimentLabel = "sediment";
+        private const string WearLabel = "wear";
+        private const int FullDropletTelemetryThreshold = 1000000;
+        private const int DraftDropletTelemetryThreshold = 250000;
+        private const int CellCountTelemetryThreshold = 1048576;
+        private const float BarrierStallTelemetryThresholdMs = 25f;
+        private const uint DropletBudgetWarningHash = 0x48594544u;
+        private const uint CellBudgetWarningHash = 0x48594543u;
+        private const uint BarrierStallWarningHash = 0x48594542u;
+        private const uint HydraulicErosionNodeContextHash = 0x4859454Eu;
+
         /// <summary>Input heightmap matrix.</summary>
         [Den.Tools.GUI.ValAttribute("Heightmap", "Inlet")]
         public readonly Inlet<MatrixWorld> heightIn = new Inlet<MatrixWorld>();
@@ -177,6 +193,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 heightB = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 sediment = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 wear = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                RegisterTempJobBuffers(heightA, heightB, sediment, wear);
 
                 for (int i = 0; i < cellCount; i++)
                     heightA[i] = math.saturate(src.arr[i]);
@@ -185,6 +202,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                 int coreWidth = math.max(1, width - safeMargin * 2);
                 int coreHeight = math.max(1, height - safeMargin * 2);
                 int resolvedDroplets = data.isDraft ? math.max(1, dropletCount / 4) : math.max(1, dropletCount);
+                PublishColdPathBudgetWarnings(cellCount, resolvedDroplets, data.isDraft);
 
                 var erosionJob = new HydraulicErosionJob
                 {
@@ -251,7 +269,9 @@ namespace MapMagic.Nodes.MatrixGenerators
                 }
 
                 // COLD SYNC JOB: MapMagic Generate must publish concrete matrix products before returning to the graph.
+                long barrierStartTicks = Stopwatch.GetTimestamp();
                 handle.Complete();
+                PublishBarrierWarning(ElapsedMilliseconds(barrierStartTicks, Stopwatch.GetTimestamp()));
 
                 if (stop != null && stop.stop)
                     return;
@@ -267,15 +287,71 @@ namespace MapMagic.Nodes.MatrixGenerators
             }
             finally
             {
-                if (heightA.IsCreated)
-                    heightA.Dispose();
-                if (heightB.IsCreated)
-                    heightB.Dispose();
-                if (sediment.IsCreated)
-                    sediment.Dispose();
-                if (wear.IsCreated)
-                    wear.Dispose();
+                DisposeTracked(ref heightA);
+                DisposeTracked(ref heightB);
+                DisposeTracked(ref sediment);
+                DisposeTracked(ref wear);
             }
+        }
+
+        private static float ElapsedMilliseconds(long startTicks, long endTicks)
+        {
+            long rawDeltaTicks = endTicks - startTicks;
+            long deltaTicks = rawDeltaTicks > 0L ? rawDeltaTicks : 0L;
+            return (float)((deltaTicks * 1000.0) / Stopwatch.Frequency);
+        }
+
+        private static void RegisterTempJobBuffers(
+            NativeArray<float> heightA,
+            NativeArray<float> heightB,
+            NativeArray<float> sediment,
+            NativeArray<float> wear)
+        {
+            NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
+        }
+
+        private static void PublishColdPathBudgetWarnings(int cellCount, int resolvedDroplets, bool isDraft)
+        {
+            int dropletThreshold = isDraft ? DraftDropletTelemetryThreshold : FullDropletTelemetryThreshold;
+            if (resolvedDroplets >= dropletThreshold)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    DropletBudgetWarningHash,
+                    HydraulicErosionNodeContextHash,
+                    resolvedDroplets);
+            }
+
+            if (cellCount >= CellCountTelemetryThreshold)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    CellBudgetWarningHash,
+                    HydraulicErosionNodeContextHash,
+                    cellCount);
+            }
+        }
+
+        private static void PublishBarrierWarning(float barrierMilliseconds)
+        {
+            if (barrierMilliseconds < BarrierStallTelemetryThresholdMs)
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                BarrierStallWarningHash,
+                HydraulicErosionNodeContextHash,
+                barrierMilliseconds);
+        }
+
+        private static void DisposeTracked(ref NativeArray<float> array)
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private static float ResolveCellSizeMeters(MatrixWorld matrix)

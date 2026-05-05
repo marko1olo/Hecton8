@@ -1,6 +1,6 @@
 # Reports
 
-Date: `2026-05-04`
+Date: `2026-05-05`
 Status: `PENDING VERIFICATION`
 
 Purpose: canonical drop zone for new reports, audits, and validation writeups that are still active.
@@ -19,6 +19,7 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 ## Current High-Authority Reports
 
 - `2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md`
+- `2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
 - `2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md`
 - `2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `2026-05-04_WARNING_CLEANUP.md`
@@ -26,6 +27,7 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 - `2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
 - `2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md`
 - `2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md`
+- `2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md`
 - `TERRAIN_AND_BIOME_REALITY_MAP.md`
 - `2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`
 - `2026-05-03_FOUNDATION_GUARD_SIGNAL_CLEANUP.md`
@@ -48,8 +50,11 @@ Purpose: canonical drop zone for new reports, audits, and validation writeups th
 `2026-05-04_DOCUMENTATION_SORTING_AUTHORITY_MAP.md` is the latest documentation sorting and authority classification map.
 It records root text handling, active `Docs/` bundle classes, first-read reports, historical/evidence-only reports, the original dirty-worktree boundary, and the follow-up relocation of repository-root logs into a deprecated evidence bundle.
 
+`2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md` is the current bounded Omega-autonomy hardening evidence report.
+It records the PowerGrid native-sentinel and job-barrier telemetry changes, BaseLogisticsNetwork route BFS `.Run()` removal, procedural audio overflow telemetry, Omega smoke harness, scoped no-`.Run()`/`.Complete()` scan, scoped native-memory registration scan, the earlier local Core compile result `0 Warning(s)` / `0 Error(s)`, external Unity compile/import evidence, and `OmegaAutonomySmokeTester` JSON `PASS`. Status is `OMEGA VERIFIED (SCOPED)` for that edited domain only; project-wide `OMEGA VERIFIED` is not claimed.
+
 `2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` is the current structural cleanup queue.
-It records `123` active markdown files still missing `Date:` or `Status:`, notes that repository-root `.log` evidence artifacts have been moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`, and keeps the remaining archive/deprecated move candidates queued for a separate pass.
+It records `41` active markdown files still missing `Date:` or `Status:`, notes that repository-root `.log` evidence artifacts have been moved to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`, records that active root `Docs/*.md` contract files, `Docs/ARCHITECTURE/*.md`, `Docs/ARCHIVARIUS REPORTS/*.md`, and `Docs/SPACE_ENGINE_RESEARCH/*.md` are no longer in the missing-header set, and keeps the remaining archive/deprecated move candidates queued for a separate pass. It also records the editor-only documentation authority smoke guard.
 
 `2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md` is the latest broad documentation and local evidence addendum.
 It records the current source/doc counts, fresh `Hecton8.Core` and `Hecton8.Editor` compile results `0 Warning(s)` / `0 Error(s)`, historical `Hecton8.World.Dots` restore build `1 Warning(s)` / `0 Error(s)`, `Hecton8.PlayModeTests` restore build `0 Warning(s)` / `0 Error(s)`, and the pre-repair foundation guard failure. Read `2026-05-04_WARNING_CLEANUP.md` and `2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md` next for the current warning-clean and guard-clean source/build addenda.
@@ -68,6 +73,9 @@ It records source/build/controlled-console evidence, but `CelestialSyncSmokeTest
 
 `2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md` and `2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md` are May 4 celestial source/build reports.
 They are source-build evidence only and do not prove runtime predator migration, tidal cache motion, biolum response, meteor visuals, audio booms, or GC.
+
+`2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md` is the current hydraulic erosion implementation/surgery report.
+It records added Burst/job/editor harness files and explicitly leaves Unity import/compile, MapMagic graph execution, PNG harness output, GCMonitor, and profiler capture as pending.
 
 `TERRAIN_AND_BIOME_REALITY_MAP.md` is the canonical terrain/biome report.
 The root `TERRAIN_AND_BIOME_REALITY_MAP.md` path is not active authority.
@@ -123,6 +131,7 @@ Patch files are evidence artifacts, not narrative authority:
 
 - `2026-04-29_Habitat_Logistics_Graph_Diff.patch`
 - `NAVGRID_LEAK_PURGE_DIFF.patch`
+- `2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING_DIFF.patch`
 
 For full doc importance sorting, read:
 

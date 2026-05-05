@@ -1,4 +1,7 @@
 # HECTON-8 EVENT BUS MAP
+Date: 2026-05-04
+Status: REFERENCE
+
 
 **Date:** 2026-04-29  
 **Status:** PENDING VERIFICATION  

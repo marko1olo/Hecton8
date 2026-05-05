@@ -782,6 +782,7 @@ namespace Hecton8.Gameplay
             TryTriggerGlitch(depth);
             TryTriggerCaveCollapse(depth);
             TryTriggerMeteorShower();
+            TryTriggerSolarFlare();
         }
 
         private void TryRegister()
@@ -921,6 +922,15 @@ namespace Hecton8.Gameplay
                 "METEOR SHOWER - SKY FLASHES DETECTED. LOW-FREQUENCY ACOUSTIC BOOMS EXPECTED."));
         }
 
+        private void TryTriggerSolarFlare()
+        {
+            if (IsEventActive(RandomEventType.SolarFlare)) return;
+            if (UnityEngine.Random.value > solarFlareChance) return;
+
+            StartEvent(RandomEventType.SolarFlare, solarFlareDuration, solarFlareIntensity);
+            NotificationEvents.PushWarning("SOLAR FLARE - ELECTROMAGNETIC PULSE DETECTED. BASE POWER COLLAPSE EXPECTED.");
+        }
+
         private void StartEvent(RandomEventType type, float duration, float intensity)
         {
             _eventTimers[(int)type] = duration;
@@ -955,14 +965,14 @@ namespace Hecton8.Gameplay
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogEventStarted(RandomEventType type, float duration, float intensity)
         {
-            Debug.Log($"[RandomEvent] Started: {type} (duration: {duration}s, intensity: {intensity:F2})");
+            Debug.Log("[RandomEvent] Started");
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR")]
         [System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogEventEnded(RandomEventType type)
         {
-            Debug.Log($"[RandomEvent] Ended: {type}");
+            Debug.Log("[RandomEvent] Ended");
         }
 
         private bool ResolveSurvivalSystem()

@@ -41,6 +41,7 @@ Purpose: active documentation entry point after the `2026-04-29` forensic audit,
 - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
 - `Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md`
 - `Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md`
+- `Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md` - hydraulic erosion implementation/surgery report; import/compile, MapMagic graph, harness output, GCMonitor, and profiler proof pending.
 - `Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
 - `Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`
 - `Reports/2026-05-03_SETTINGS_PERSISTENCE_REGISTRY_REBIND.md`

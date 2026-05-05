@@ -296,6 +296,9 @@ namespace Hecton8.Environment
         [Header("Transition VFX")]
         [SerializeField, Range(1f, 30f)] private float seismicDustCooldownSeconds = 8f;
 
+        [Header("Transition Hysteresis")]
+        [SerializeField, Min(0f)] private float biomeTransitionHysteresisMeters = 15f;
+
         [Header("Diagnostics")]
         [SerializeField] private int _debugTier = 1;
         [SerializeField] private string _debugRegion = "North";
@@ -389,6 +392,9 @@ namespace Hecton8.Environment
         private Vector3 _editorLastEvaluationPosition;
         private float _editorLastSurfaceLevelY = float.NaN;
         private float _lastSeismicDustTime = -999f;
+        private HectonBiomeMatrixProfile _pendingHysteresisProfile;
+        private AbsoluteUniversePosition _pendingHysteresisAup;
+        private bool _hasPendingHysteresisProfile;
 
         internal static BiomeMatrixDirector ActiveRuntimeInstance { get; private set; }
 
@@ -567,6 +573,7 @@ namespace Hecton8.Environment
                 _currentProfile = null;
                 _currentDepthMeters = 0f;
                 _currentDepthTier = 1;
+                ClearPendingBiomeHysteresis();
                 _debugResolutionMode = evaluationTransform == null ? "Missing evaluation transform" : "Missing catalog";
                 if (hadProfile && Application.isPlaying)
                     BiomeMatrixEvents.RaiseMatrixBiomeChanged(null);
@@ -590,6 +597,13 @@ namespace Hecton8.Environment
             if (depthTierChanged && Application.isPlaying)
                 BiomeMatrixEvents.RaiseDepthTierChanged(_currentDepthTier, _currentDepthMeters);
 
+            if (!ShouldCommitBiomeProfile(next, evaluationTransform.position, forcePublish))
+            {
+                _debugResolutionMode = next == null ? MissingProfileLabel : "HysteresisPending";
+                UpdateDiagnostics(_currentProfile, tier, region);
+                return;
+            }
+
             if (forcePublish || next != _currentProfile)
             {
                 bool changedProfile = next != _currentProfile;
@@ -605,6 +619,41 @@ namespace Hecton8.Environment
             }
 
             UpdateDiagnostics(_currentProfile, tier, region);
+        }
+
+        private bool ShouldCommitBiomeProfile(HectonBiomeMatrixProfile next, Vector3 evaluationPosition, bool forcePublish)
+        {
+            if (forcePublish ||
+                next == _currentProfile ||
+                _currentProfile == null ||
+                biomeTransitionHysteresisMeters <= 0f)
+            {
+                ClearPendingBiomeHysteresis();
+                return true;
+            }
+
+            AbsoluteUniversePosition currentAup = AbsoluteUniversePosition.FromRuntimePosition(evaluationPosition);
+            if (!_hasPendingHysteresisProfile || _pendingHysteresisProfile != next)
+            {
+                _pendingHysteresisProfile = next;
+                _pendingHysteresisAup = currentAup;
+                _hasPendingHysteresisProfile = true;
+                return false;
+            }
+
+            double requiredDistanceSq = (double)biomeTransitionHysteresisMeters * biomeTransitionHysteresisMeters;
+            if (AbsoluteUniversePosition.DistanceSq(in currentAup, in _pendingHysteresisAup) < requiredDistanceSq)
+                return false;
+
+            ClearPendingBiomeHysteresis();
+            return true;
+        }
+
+        private void ClearPendingBiomeHysteresis()
+        {
+            _pendingHysteresisProfile = null;
+            _pendingHysteresisAup = default;
+            _hasPendingHysteresisProfile = false;
         }
 
         private void TryEmitSeismicDustForBiome(HectonBiomeMatrixProfile profile, Vector3 evaluationPosition)

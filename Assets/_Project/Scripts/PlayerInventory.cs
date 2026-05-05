@@ -813,6 +813,15 @@ namespace Hecton8.Inventory
 
                 if (runtimeDescriptor.IntegrityRestore > 0f)
                     survival.Repair(runtimeDescriptor.IntegrityRestore);
+
+                if (runtimeDescriptor.HungerRestore > 0f)
+                    survival.AddHunger(runtimeDescriptor.HungerRestore);
+
+                if (runtimeDescriptor.ThirstRestore > 0f)
+                    survival.AddThirst(runtimeDescriptor.ThirstRestore);
+
+                if (HectonSurvivalSystem.ShouldApplyNutritionalToxicityOnConsume(descriptor.HashId))
+                    survival.ApplyNutritionalToxicity();
             }
 
             RemoveOneItem(anchorX, anchorY);

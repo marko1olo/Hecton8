@@ -297,6 +297,10 @@ namespace Hecton8.World
         [Tooltip("Включает подробную строковую диагностику sampling/rebuild. Держи выключенной в обычном runtime, чтобы не тратить CPU на hot path.")]
         [SerializeField] private bool enableScatterDetailedDiagnostics = false;
 
+        [Header("Biome Volume Overrides")]
+        [SerializeField] private bool enableAbyssalSiltFalseCeiling = true;
+        [SerializeField] private float abyssalSiltFalseCeilingY = -200f;
+
         // Inspector-only scatter diagnostics are intentionally serialized for live tuning.
 #pragma warning disable CS0414
         [Header("Diagnostics")]
@@ -2085,13 +2089,50 @@ namespace Hecton8.World
             int heightLayerIndex = ResolveHeightLayerIndex(fieldSample, runtimeRule);
             int stableHash = ComputePlacementStableHash(runtimeRule.RuleIdHash, cellXIndex, cellZIndex, heightLayerIndex);
             Vector3 position = ResolvePlacementPosition(fieldSample.position, family, rule, stableHash, size);
-            position.y = fieldSample.seafloorHeight + surfaceYOffset;
+            position.y = ShouldProjectToAbyssalSiltFalseCeiling(fieldSample, family)
+                ? abyssalSiltFalseCeilingY
+                : fieldSample.seafloorHeight + surfaceYOffset;
             return new ScatterCandidatePreview(
                 stableHash,
                 ToAbsoluteScatterPosition(position),
                 heightLayerIndex,
                 cellXIndex,
                 cellZIndex);
+        }
+
+        private bool ShouldProjectToAbyssalSiltFalseCeiling(in WorldProceduralFieldSampler.FieldSample fieldSample, WorldPrefabFamilyProfile family)
+        {
+            if (!enableAbyssalSiltFalseCeiling || family == null)
+                return false;
+
+            if (family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Kelp &&
+                family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Plant &&
+                family.proceduralDomain != WorldPrefabFamilyProfile.ProceduralDomain.Coral)
+            {
+                return false;
+            }
+
+            if ((fieldSample.biomeInfluence.Flags & (byte)WorldProceduralFieldSampler.BiomeInfluenceFlags.SargassumCanopy) != 0)
+                return true;
+
+            return IsAbyssalSiltProfile(fieldSample.biomeProfile) || IsAbyssalSiltFamily(fieldSample.biomeFamily);
+        }
+
+        private static bool IsAbyssalSiltProfile(HectonBiomeMatrixProfile profile)
+        {
+            if (profile == null)
+                return false;
+
+            if (string.Equals(profile.familyId, "biome.family.abyssal_silt", System.StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            return IsAbyssalSiltFamily(profile.familyProfile);
+        }
+
+        private static bool IsAbyssalSiltFamily(HectonBiomeFamilyProfile family)
+        {
+            return family != null &&
+                   string.Equals(family.familyId, "biome.family.abyssal_silt", System.StringComparison.OrdinalIgnoreCase);
         }
 
         private ScatterCandidate BuildCandidate(

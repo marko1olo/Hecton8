@@ -1,4 +1,7 @@
 # EVENT FLOW MAP — HECTON-8 Static Audit
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Generated:** 2026-04-27 | **Auditor:** Static Compliance Officer  
 **Mandates Followed:** ARCH_Global_Registry_ServiceLocator_DI_Init, OPT_Zero_GC_Policy_AllocFree_Mandate

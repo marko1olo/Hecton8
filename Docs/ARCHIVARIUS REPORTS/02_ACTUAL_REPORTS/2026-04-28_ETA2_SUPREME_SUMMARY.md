@@ -1,4 +1,7 @@
 # ETA2_SUPREME_SUMMARY — Deep Core Archaeology Final Report
+Date: 2026-04-28
+Status: REFERENCE
+
 
 ## Current-State Addendum (2026-05-04)
 

@@ -8,6 +8,10 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
         _Smoothness("Smoothness", Range(0.0, 1.0)) = 0.5
         _Metallic("Metallic", Range(0.0, 1.0)) = 0.0
         _OcclusionStrength("Occlusion Strength", Range(0.0, 1.0)) = 1.0
+        _InteriorCondensationStrength("Interior Condensation Strength", Range(0.0, 1.0)) = 0.26
+        _InteriorCondensationScale("Interior Condensation Scale", Range(0.05, 2.0)) = 0.42
+        _InteriorCondensationRunoff("Interior Condensation Runoff", Range(0.0, 1.0)) = 0.34
+        _InteriorCondensationTint("Interior Condensation Tint", Color) = (0.64, 0.76, 0.70, 1)
         [HDR] _EmissionColor("Emission", Color) = (0, 0, 0, 1)
         _EmissionMap("Emission Map", 2D) = "white" {}
         _ParasiteOverlayMap("Parasite Overlay", 2D) = "white" {}
@@ -104,11 +108,15 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 float4 _EmissionColor;
                 float4 _ParasiteOverlayColor;
                 float4 _ParasiteOverlayEmissionColor;
+                float4 _InteriorCondensationTint;
                 float4 _BaseMap_ST;
                 float _Cutoff;
                 float _Smoothness;
                 float _Metallic;
                 float _OcclusionStrength;
+                float _InteriorCondensationStrength;
+                float _InteriorCondensationScale;
+                float _InteriorCondensationRunoff;
                 float _ParasiteOverlayScale;
                 float _ParasiteOverlayStrength;
                 float _ParasiteOverlayNormalStrength;
@@ -165,6 +173,28 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     tangentWS * parasiteNormalTS.x +
                     bitangentWS * parasiteNormalTS.y +
                     baseNormal * parasiteNormalTS.z);
+            }
+
+            void ApplyInteriorCondensation(float3 positionWS, half3 normalWS, inout half3 albedo, inout half smoothness)
+            {
+                half strength = saturate((half)_InteriorCondensationStrength);
+                if (strength <= 0.0001h)
+                    return;
+
+                half wallMask = pow(saturate(1.0h - abs(normalWS.y)), 1.35h);
+                if (wallMask <= 0.0001h)
+                    return;
+
+                float scale = max(_InteriorCondensationScale, 0.05);
+                float2 wallUv = float2(dot(positionWS.xz, float2(0.73, 0.41)), positionWS.y) * scale;
+                float slowTime = _Time.y * lerp(0.03, 0.16, _InteriorCondensationRunoff);
+                half filmNoise = (half)HectonCoreLitValueNoise2(wallUv * 3.1 + slowTime);
+                half dripNoise = (half)HectonCoreLitValueNoise2(float2(wallUv.x * 8.7, wallUv.y * 0.52 - slowTime * 3.4));
+                half dripLines = smoothstep(0.76h, 0.98h, dripNoise) * smoothstep(0.18h, 0.92h, filmNoise);
+                half condensation = saturate((filmNoise * 0.34h + dripLines * _InteriorCondensationRunoff) * wallMask * strength);
+
+                albedo = lerp(albedo, _InteriorCondensationTint.rgb, condensation * 0.16h);
+                smoothness = lerp(smoothness, 0.94h, condensation);
             }
 
             Varyings Vert(Attributes input)
@@ -228,6 +258,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half3 normalWS = SafeNormalize3(input.normalWS);
                 half3 albedo = albedoSample.rgb;
                 HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
+                ApplyInteriorCondensation(input.positionWS, normalWS, albedo, smoothness);
                 float parasitePulse = 1.0;
                 float thermalGrowthMask = 0.0;
                 float parasiteMask = HectonCoreLitEvaluateParasiteField(input.positionWS, parasitePulse, thermalGrowthMask);

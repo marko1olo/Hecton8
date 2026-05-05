@@ -44,6 +44,8 @@ Shader "NASAPunk/SuitVisor"
 
         [Header(Frost)]
         _ScreenFrostStrength ("Screen Frost Strength", Range(0, 1)) = 0
+        _FrostBlueNoiseDither ("Frost Blue Noise Dither", Range(0, 1)) = 0.35
+        _BlueNoiseTex ("Blue Noise", 2D) = "gray" {}
 
         [Header(Refraction Distortion)]
         _DistortionStrength ("Edge Distortion", Range(0, 0.1)) = 0.02
@@ -136,6 +138,7 @@ Shader "NASAPunk/SuitVisor"
                 float  _CondensationEdgeExponent;
                 float  _CondensationDriftSpeed;
                 float  _ScreenFrostStrength;
+                float  _FrostBlueNoiseDither;
 
                 float  _DistortionStrength;
                 float  _DistortionFalloff;
@@ -164,6 +167,8 @@ Shader "NASAPunk/SuitVisor"
             TEXTURE2D(_FingerprintTex); SAMPLER(sampler_FingerprintTex);
             TEXTURE2D(_WaterRunoffNormalTex); SAMPLER(sampler_WaterRunoffNormalTex);
             TEXTURE2D(_WaterDropletMaskTex); SAMPLER(sampler_WaterDropletMaskTex);
+            TEXTURE2D(_BlueNoiseTex); SAMPLER(sampler_BlueNoiseTex);
+            float4 _BlueNoiseTex_TexelSize;
             float4 _HectonHudFogPerturbation;
             TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
             float4 _SonarRevealOriginWS;
@@ -280,6 +285,18 @@ Shader "NASAPunk/SuitVisor"
                 return frac(p.x * p.y);
             }
 
+            float ResolveFrostBlueNoise(float2 uv, float timeValue)
+            {
+                float2 pixel = floor(uv * _ScreenParams.xy);
+                float fallback = Hash21(pixel + floor(timeValue * 19.0));
+                float hasBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
+                float2 texelScale = lerp(float2(1.0 / 64.0, 1.0 / 64.0), _BlueNoiseTex_TexelSize.xy, hasBlueNoise);
+                float2 temporalR2 = frac(float2(0.754877666, 0.569840291) * floor(timeValue * 12.0));
+                float2 blueNoiseUV = frac(pixel * texelScale + temporalR2);
+                float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
+                return lerp(fallback, sampled, hasBlueNoise);
+            }
+
             float SampleRgbMask(float3 rgb)
             {
                 return saturate(dot(rgb, float3(0.2126, 0.7152, 0.0722)));
@@ -335,6 +352,8 @@ Shader "NASAPunk/SuitVisor"
                 float shardRibs = step(0.74, frac(baseUv.x * 2.1 - baseUv.y * 5.3 + crystalSeed * 2.7));
                 float lobe = 1.0 - smoothstep(0.18, 0.46, length((frac(baseUv) - 0.5) * float2(1.0, 1.7)));
                 float crystalMask = saturate(shardBands * 0.55 + shardRibs * 0.45 + lobe * 0.3 + crystalSeed * 0.35 - 0.62);
+                float blueNoise = ResolveFrostBlueNoise(uv, timeValue);
+                crystalMask = saturate(crystalMask + (blueNoise - 0.5) * _FrostBlueNoiseDither);
                 float topBias = smoothstep(0.06, 0.94, uv.y);
                 return saturate(crystalMask * frostEdge * topBias);
             }

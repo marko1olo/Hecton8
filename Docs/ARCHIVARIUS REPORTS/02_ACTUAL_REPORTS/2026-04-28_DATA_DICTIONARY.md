@@ -1,4 +1,7 @@
 # HECTON-8 DATA DICTIONARY — DOD Struct Reference
+Date: 2026-04-28
+Status: REFERENCE
+
 
 ## Current-State Addendum (2026-04-29)
 

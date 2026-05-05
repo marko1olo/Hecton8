@@ -21,9 +21,10 @@ namespace NASAPunk.Visor
     /// </summary>
     [DisallowMultipleComponent]
     [ExecuteAlways]
-    public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable
+    public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable, ISubmarineOsEventListener
     {
         private const float BiosRecoveryClarityThreshold = 0.1f;
+        private const float LowPowerBiosThreshold = 0.1f;
         private const float RadiationFatigueMinimumScale = 0.65f;
         private const float RadiationFatigueScalePerSecond = 0.005f;
         private const float RadiationFatigueCriticalExposureSeconds = (1f - RadiationFatigueMinimumScale) / RadiationFatigueScalePerSecond;
@@ -199,6 +200,8 @@ namespace NASAPunk.Visor
         private float _hazardGlitchLevel;
         private float _biosRecoveryModeBlend;
         private float _thermalShockBiosRecoveryTimer;
+        private float _submarinePowerNormalized = 1f;
+        private bool _hasSubmarinePowerSnapshot;
 
         private uint _glitchRngState = 1u;
 
@@ -277,6 +280,7 @@ namespace NASAPunk.Visor
             SyncProjectionPose();
             RebuildProjection();
             TryRegisterRuntimeTick();
+            HectonSubmarineOsEvents.Register(this);
 #if UNITY_EDITOR
             if (!Application.isPlaying)
                 UnregisterEditorTick();
@@ -336,6 +340,9 @@ namespace NASAPunk.Visor
             _hazardGlitchLevel = 0f;
             _biosRecoveryModeBlend = 0f;
             _thermalShockBiosRecoveryTimer = 0f;
+            _submarinePowerNormalized = 1f;
+            _hasSubmarinePowerSnapshot = false;
+            HectonSubmarineOsEvents.Unregister(this);
             UnregisterRuntimeTick();
             ReleaseRT();
             InvalidatePoseCache();
@@ -346,8 +353,18 @@ namespace NASAPunk.Visor
 
         private void OnDestroy()
         {
+            HectonSubmarineOsEvents.Unregister(this);
             // Ensure RT is released on component destruction
             ReleaseRT();
+        }
+
+        public void OnSubmarineOsEvent(in SubmarineOsEventPayload payload)
+        {
+            if (!HectonSubmarineOsEvents.TryBuildSnapshot(in payload, out HectonSubmarineOsSnapshot snapshot))
+                return;
+
+            _submarinePowerNormalized = Mathf.Clamp01(snapshot.PowerNormalized);
+            _hasSubmarinePowerSnapshot = true;
         }
 
 #if UNITY_EDITOR
@@ -900,6 +917,10 @@ namespace NASAPunk.Visor
                 target *= _screenFrostMaximum;
             }
 
+            float hypothermiaFrost = UIStateStore.ReadValueOrDefault(UIValueSlotId.FrostIntensity01, 0f);
+            if (hypothermiaFrost > 0f)
+                target = Mathf.Max(target, Mathf.Clamp01(hypothermiaFrost) * _screenFrostMaximum);
+
             if (!Mathf.Approximately(target, _screenFrostTarget))
                 _screenFrostTarget = target;
 
@@ -993,6 +1014,9 @@ namespace NASAPunk.Visor
                 targetThermal = 1f;
                 targetBiosRecovery = 1f;
             }
+
+            if (_hasSubmarinePowerSnapshot && _submarinePowerNormalized < LowPowerBiosThreshold)
+                targetBiosRecovery = 1f;
 
             float targetGlitch = Mathf.Clamp01(Mathf.Max(
                 targetRadiation,

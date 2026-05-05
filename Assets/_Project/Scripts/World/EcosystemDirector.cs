@@ -779,6 +779,7 @@ namespace Hecton8.World
         }
 
         internal float HerbivoreGrazeHungerThreshold => herbivoreGrazeHungerThreshold;
+        internal float HerbivoreGrazeSearchRadiusMeters => herbivoreGrazeSearchRadiusMeters;
         internal float HerbivoreConsumeDistanceMeters => herbivoreConsumeDistanceMeters;
         internal float CleanerHostSearchRadiusMeters => cleanerHostSearchRadiusMeters;
         internal float CleanerSymbiosisDistanceMeters => cleanerSymbiosisDistanceMeters;
@@ -816,7 +817,7 @@ namespace Hecton8.World
         {
             target = default;
             heat01 = 0f;
-            AbyssalThermalManager thermalManager = AbyssalThermalManager.Instance;
+            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
             return thermalManager != null &&
                    thermalManager.TryResolveNearestActiveVentAttractor(in queryAup, searchRadiusMeters, out target, out heat01);
         }

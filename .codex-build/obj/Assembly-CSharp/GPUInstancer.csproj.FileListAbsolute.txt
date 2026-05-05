@@ -1,0 +1,9 @@
+C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\GPUInstancer.dll
+C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\GPUInstancer.pdb
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\GPUInstancer.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\GPUInstancer.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\GPUInstancer.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\GPUInstancer.sourcelink.json
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\GPUInsta.C5028AAD.Up2Date
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\GPUInstancer.dll
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\GPUInstancer.pdb

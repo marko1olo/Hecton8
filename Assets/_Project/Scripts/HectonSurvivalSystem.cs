@@ -333,6 +333,22 @@ namespace Hecton8.Gameplay
         private const float NitrogenRecoveryPerSecond = 2f;
         private const float NitrogenNarcosisFullRange = 50f;
         private const float NitrogenStaminaPenaltyMultiplier = 0.8f;
+        private const float NitrogenAirPocketPauseSeconds = 2f;
+        private const float NitrogenAirPocketRecoveryMultiplier = 2.5f;
+        private const float DecompressionVomitThreshold = 150f;
+        private const float DecompressionVomitToolDropCooldownSeconds = 5f;
+        private const float DecompressionVomitConvulsionDurationSeconds = 0.65f;
+        private const float ThermalShockBoilingThresholdCelsius = 90f;
+        private const float ThermalShockFreezingThresholdCelsius = -2f;
+        private const float ThermalShockFullSeverityRangeCelsius = 40f;
+        private const float ThermalFlowHeatToCelsiusScale = 18f;
+        private const float ThermalShieldDamageMultiplier = 0.35f;
+        private const float NutritionalToxicityDefaultSeverity01 = 0.65f;
+        private const float NutritionalToxicityDefaultDurationSeconds = 45f;
+        private const float NutritionalToxicityDamageScale = 0.45f;
+        private const float SuitPunctureBleedDamageFraction = 0.30f;
+        private const float HypothermiaFrostStartCelsius = 35f;
+        private const float HypothermiaFrostFullCelsius = 28f;
         private const float DefaultInternalTemperatureCelsius = 20f;
         private const float OxygenMovementScaleCeiling = 1.55f;
         private const float OxygenStressScaleCeilingBonus = 0.50f;
@@ -347,6 +363,7 @@ namespace Hecton8.Gameplay
         private const int SurvivalDatabaseColumnCapacity = 16;
         private const string NativeMemoryOwner = nameof(HectonSurvivalSystem);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
+        private static readonly int _MembraneTissueHashId = LocHash.Compute("Data_MembraneTissue");
 
         private const float Epsilon       = 0.1f;
         private const float DirtySentinel = -9999f;
@@ -499,7 +516,7 @@ namespace Hecton8.Gameplay
             UnregisterBloodScentSignal();
             GlobalRegistry.Save?.Unregister(this);
             ResetOxygenGraceState();
-            ResetNitrogenNarcosisState();
+            ResetThermalState();
         }
 
         private void OnDestroy()
@@ -523,6 +540,8 @@ namespace Hecton8.Gameplay
             _playerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
             _traumaDispatcher = runtimeContext.TraumaDispatcher;
             _playerRigidbody = runtimeContext.PlayerRigidbody;
+            if (_playerHealth == null)
+                TryGetComponent(out _playerHealth);
         }
 
         private void TryRegisterTickOwners()
@@ -624,17 +643,31 @@ namespace Hecton8.Gameplay
                 carryCapacityKg,
                 math.saturate(weight / carryCapacityKg),
                 Time.unscaledTime);
+            UIStateStore.WriteFrostIntensity(
+                ResolveHypothermiaFrostIntensity01(_internalTemperature),
+                Time.unscaledTime);
         }
 
         // ═════════════════════════════════════════════════════════
         //  TICK SYSTEMS
         // ═════════════════════════════════════════════════════════
 
+        internal static float ResolveHypothermiaFrostIntensity01(float internalTemperatureCelsius)
+        {
+            if (!math.isfinite(internalTemperatureCelsius) || internalTemperatureCelsius >= HypothermiaFrostStartCelsius)
+                return 0f;
+
+            return math.saturate(
+                (HypothermiaFrostStartCelsius - internalTemperatureCelsius) /
+                math.max(0.01f, HypothermiaFrostStartCelsius - HypothermiaFrostFullCelsius));
+        }
+
         public void Tick(float deltaTime)
         {
             if (!alive) return;
 
             ComputeDepthAndPressure();
+            TryApplyLocalizedOxygenPocket();
             TrackRapidAscentRisk(deltaTime);
             RefreshBloodScentSignal();
             TrackCurrentLifeTelemetry(deltaTime);
@@ -660,8 +693,11 @@ namespace Hecton8.Gameplay
             HandleTemperature(dt);
             HandleRadiation(dt);
             HandleToxicity(dt);
+            HandleNutritionalToxicity(dt);
+            HandleDecompressionSicknessVomit(dt);
             UpdateHungerAndThirst(dt);
             HandleInjuries(dt);
+            HandleCriticalStaminaFailure();
             ApplyInjuryMovementPenalty();
             PublishRuntimeContextState();
             PublishHeadlessUIState();
@@ -748,7 +784,10 @@ namespace Hecton8.Gameplay
             float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
             float localHeat = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
             float abyssalColdPenalty = ResolveAbyssalColdPenaltyCelsius();
-            _environmentTemperature = baseTemp + localHeat - abyssalColdPenalty;
+            float hazardTemperature = baseTemp + localHeat - abyssalColdPenalty;
+            _environmentTemperature = ResolveExternalThermalShockTemperature(
+                hazardTemperature,
+                ResolveAbyssalThermalExternalTemperature(transform.position));
             float floodedThermalInsulationFactor = ResolveFloodedThermalInsulationFactor();
             float floodedExternalTemperature = ResolveFloodedExternalTemperature(_environmentTemperature);
             float thermalExposureScale = ResolveTransportThermalExposureScale();
@@ -758,6 +797,7 @@ namespace Hecton8.Gameplay
                 _internalTemperature,
                 dt,
                 tauEff);
+            ApplyThermalShockDamage(_environmentTemperature, dt);
 
             float coldExcess = 0f;
             float heatExcess = 0f;
@@ -813,6 +853,93 @@ namespace Hecton8.Gameplay
                 integrity = math.max(0f, integrity - heatDamage);
                 MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.ThermalFailure);
             }
+        }
+
+        private float ResolveAbyssalThermalExternalTemperature(Vector3 worldPosition)
+        {
+            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
+            if (thermalManager == null ||
+                !thermalManager.SampleThermalFlow(worldPosition, 1.1f, out AbyssalThermalManager.ThermalFlowSample sample) ||
+                sample.Heat01 <= 0f)
+            {
+                return float.NegativeInfinity;
+            }
+
+            return sample.Heat01 * ThermalFlowHeatToCelsiusScale;
+        }
+
+        internal static float ResolveExternalThermalShockTemperature(float fallbackTemperatureCelsius, float sampledThermalTemperatureCelsius)
+        {
+            if (!math.isfinite(sampledThermalTemperatureCelsius))
+                return fallbackTemperatureCelsius;
+
+            if (!math.isfinite(fallbackTemperatureCelsius))
+                return sampledThermalTemperatureCelsius;
+
+            return math.max(fallbackTemperatureCelsius, sampledThermalTemperatureCelsius);
+        }
+
+        internal static float ResolveThermalShockSeverity01(float externalTemperatureCelsius)
+        {
+            if (!math.isfinite(externalTemperatureCelsius))
+                return 0f;
+
+            float hotSeverity = math.saturate(
+                (externalTemperatureCelsius - ThermalShockBoilingThresholdCelsius) /
+                math.max(0.01f, ThermalShockFullSeverityRangeCelsius));
+            float coldSeverity = math.saturate(
+                (ThermalShockFreezingThresholdCelsius - externalTemperatureCelsius) /
+                math.max(0.01f, ThermalShockFullSeverityRangeCelsius));
+            return math.max(hotSeverity, coldSeverity);
+        }
+
+        internal static float ResolveThermalShockDamagePerSecond(
+            float externalTemperatureCelsius,
+            float baseTemperatureDamageRate,
+            float damageMultiplier)
+        {
+            float severity01 = ResolveThermalShockSeverity01(externalTemperatureCelsius);
+            if (severity01 <= 0f)
+                return 0f;
+
+            return math.max(0f, baseTemperatureDamageRate) *
+                   math.lerp(3f, 8f, severity01) *
+                   math.max(0f, damageMultiplier);
+        }
+
+        private void ApplyThermalShockDamage(float externalTemperatureCelsius, float dt)
+        {
+            float damagePerSecond = ResolveThermalShockDamagePerSecond(
+                externalTemperatureCelsius,
+                stats != null ? stats.TempDamageRate : 0f,
+                ResolveThermalShockDamageMultiplier());
+            if (damagePerSecond <= 0f)
+                return;
+
+            integrity = math.max(0f, integrity - damagePerSecond * math.max(0f, dt));
+            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.ThermalFailure);
+        }
+
+        private float ResolveThermalShockDamageMultiplier()
+        {
+            float multiplier = ResolveTransportThermalExposureScale();
+            if (_runtimeContext == null ||
+                _runtimeContext.ToolManager == null ||
+                _runtimeContext.ToolManager.CurrentTool == null)
+            {
+                return multiplier;
+            }
+
+            PlayerTool currentTool = _runtimeContext.ToolManager.CurrentTool;
+            IModularEquipmentService equipmentService = GlobalRegistry.ModularEquipment;
+            if (equipmentService == null ||
+                currentTool.RuntimeToolId == 0u ||
+                !equipmentService.HasUpgrade(currentTool.RuntimeToolId, ToolUpgradeBits.ThermalShield))
+            {
+                return multiplier;
+            }
+
+            return multiplier * ThermalShieldDamageMultiplier;
         }
 
         private float ResolveAbyssalColdPenaltyCelsius()
@@ -899,6 +1026,16 @@ namespace Hecton8.Gameplay
 
         private void TrackNitrogenBuildUp(float deltaTime, float ascentOriginDepthMeters, float ascentMetersPerSecond)
         {
+            if (_airPocketNitrogenPauseTimer > 0f)
+            {
+                _airPocketNitrogenPauseTimer = math.max(0f, _airPocketNitrogenPauseTimer - math.max(0f, deltaTime));
+                float recovery = NitrogenRecoveryPerSecond * NitrogenAirPocketRecoveryMultiplier * math.max(0f, deltaTime);
+                _nitrogenBuildUp = math.max(0f, _nitrogenBuildUp - recovery);
+                _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+                ApplyNitrogenMovementPenalty();
+                return;
+            }
+
             float buildUpDelta = ResolveNitrogenBuildUpDelta(
                 ascentMetersPerSecond,
                 ascentOriginDepthMeters,
@@ -949,12 +1086,90 @@ namespace Hecton8.Gameplay
             return nitrogenBuildUp > NitrogenCriticalBuildUp ? NitrogenStaminaPenaltyMultiplier : 1f;
         }
 
+        internal static float ResolveDecompressionVomitSeverity01(float nitrogenBuildUp)
+        {
+            if (!math.isfinite(nitrogenBuildUp) || nitrogenBuildUp <= DecompressionVomitThreshold)
+                return 0f;
+
+            return math.saturate(
+                (nitrogenBuildUp - DecompressionVomitThreshold) /
+                math.max(0.01f, NitrogenBuildUpHardCap - DecompressionVomitThreshold));
+        }
+
         private void ApplyNitrogenMovementPenalty()
         {
             if (_playerMovement == null)
                 return;
 
             _playerMovement.SetRuntimeStaminaMultiplier(ResolveNitrogenStaminaMultiplier(_nitrogenBuildUp));
+        }
+
+        private void TryApplyLocalizedOxygenPocket()
+        {
+            if (!TrySamplePlayerAupAirPocket(out float oxygenRefillFraction))
+                return;
+
+            oxygen = math.max(
+                oxygen,
+                ResolveRuntimeMaxOxygenCapacity() * math.max(0.01f, oxygenRefillFraction));
+            _airPocketNitrogenPauseTimer = math.max(_airPocketNitrogenPauseTimer, NitrogenAirPocketPauseSeconds);
+            _nitrogenBuildUp = math.max(
+                0f,
+                _nitrogenBuildUp - NitrogenRecoveryPerSecond * NitrogenAirPocketRecoveryMultiplier * _slowTickDt);
+            _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+            ApplyNitrogenMovementPenalty();
+            ForceDirty(ref lastPubOxygen);
+        }
+
+        private bool TrySamplePlayerAupAirPocket(out float oxygenRefillFraction)
+        {
+            Vector3 center = transform.position;
+            if (HectonVoxelEngine.TrySampleAirPocket(center, out oxygenRefillFraction))
+                return true;
+
+            Vector3 up = transform.up;
+            float halfHeight = 0.9f;
+            if (HectonVoxelEngine.TrySampleAirPocket(center + up * halfHeight, out oxygenRefillFraction))
+                return true;
+
+            return HectonVoxelEngine.TrySampleAirPocket(center - up * halfHeight, out oxygenRefillFraction);
+        }
+
+        private void HandleDecompressionSicknessVomit(float dt)
+        {
+            if (_decompressionVomitToolDropCooldown > 0f)
+                _decompressionVomitToolDropCooldown = math.max(0f, _decompressionVomitToolDropCooldown - math.max(0f, dt));
+
+            float severity01 = ResolveDecompressionVomitSeverity01(_nitrogenBuildUp);
+            if (severity01 <= 0f)
+                return;
+
+            if (_playerMovement != null)
+                _playerMovement.ApplyRuntimeNarcosisConvulsion(severity01, DecompressionVomitConvulsionDurationSeconds);
+
+            if (_decompressionVomitToolDropCooldown > 0f ||
+                _runtimeContext == null ||
+                _runtimeContext.ToolManager == null)
+            {
+                return;
+            }
+
+            if (_traumaRandom.NextFloat() > math.lerp(0.35f, 0.85f, severity01))
+                return;
+
+            Vector3 impulse = (transform.forward * math.lerp(1.2f, 2.8f, severity01)) + (Vector3.up * 0.35f);
+            if (_runtimeContext.ToolManager.TryForceDropCurrentToolFromHands(impulse))
+                _decompressionVomitToolDropCooldown = DecompressionVomitToolDropCooldownSeconds;
+        }
+
+        private void HandleCriticalStaminaFailure()
+        {
+            if (_playerMovement == null || stats == null)
+                return;
+
+            float encumbranceRatio = weight / math.max(0.01f, stats.CarryCapacityKg);
+            if (HectonPlayerMovement.ShouldTriggerCriticalStaminaFailure(encumbranceRatio, EnergyNormalized))
+                _playerMovement.TriggerCriticalStaminaFailure();
         }
 
         private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
@@ -1031,6 +1246,31 @@ namespace Hecton8.Gameplay
             float damage = stats.RadiationDamageRate * 0.65f * toxicity * toxicityExposureScale * damageMultiplier * dt;
             integrity = math.max(0f, integrity - damage);
             MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
+        }
+
+        private void HandleNutritionalToxicity(float dt)
+        {
+            if (_nutritionalToxicitySecondsRemaining <= 0f)
+                return;
+
+            float clampedDt = math.max(0f, dt);
+            float damagePerSecond = ResolveNutritionalToxicityDamagePerSecond(
+                _nutritionalToxicitySeverity01,
+                stats != null ? stats.RadiationDamageRate : 0f);
+            if (damagePerSecond > 0f)
+            {
+                integrity = math.max(0f, integrity - damagePerSecond * clampedDt);
+                MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
+            }
+
+            _nutritionalToxicitySecondsRemaining = math.max(0f, _nutritionalToxicitySecondsRemaining - clampedDt);
+            if (_nutritionalToxicitySecondsRemaining <= 0f)
+                _nutritionalToxicitySeverity01 = 0f;
+        }
+
+        internal static float ResolveNutritionalToxicityDamagePerSecond(float severity01, float baseDamageRate)
+        {
+            return math.max(0f, baseDamageRate) * NutritionalToxicityDamageScale * math.saturate(severity01);
         }
 
         internal float ResolveEnvironmentalResistance(HazardType hazardType)
@@ -1593,6 +1833,43 @@ namespace Hecton8.Gameplay
             ForceDirty(ref lastPubThirst);
         }
 
+        public void ApplyNutritionalToxicity(
+            float severity01 = NutritionalToxicityDefaultSeverity01,
+            float durationSeconds = NutritionalToxicityDefaultDurationSeconds)
+        {
+            float clampedSeverity = math.saturate(severity01);
+            float clampedDuration = math.max(0f, durationSeconds);
+            if (clampedSeverity <= 0f || clampedDuration <= 0f)
+                return;
+
+            _nutritionalToxicitySeverity01 = math.max(_nutritionalToxicitySeverity01, clampedSeverity);
+            _nutritionalToxicitySecondsRemaining = math.max(_nutritionalToxicitySecondsRemaining, clampedDuration);
+
+            if (_playerHealth == null)
+                TryGetComponent(out _playerHealth);
+
+            if (_playerHealth != null)
+                _playerHealth.ApplyNutritionalToxicity(clampedSeverity, clampedDuration);
+        }
+
+        internal static bool ShouldApplyNutritionalToxicityOnConsume(int itemHashId)
+        {
+            return itemHashId == _MembraneTissueHashId;
+        }
+
+        internal static bool ShouldApplyNutritionalToxicityOnConsume(ItemData item)
+        {
+            if (item == null)
+                return false;
+
+            if (ShouldApplyNutritionalToxicityOnConsume(LocHash.Compute(item.PersistentId)))
+                return true;
+
+            return item.isRawResource &&
+                   item.resourceFamily == ResourceFamily.Organic &&
+                   (item.category == ItemCategory.Material || item.category == ItemCategory.Organic);
+        }
+
         public void SetWeight(float kg)
         {
             weight = math.max(0f, kg);
@@ -2137,6 +2414,10 @@ namespace Hecton8.Gameplay
             _decompressionRisk01 = 0f;
             _rapidAscentMetersPerSecond = 0f;
             _lastTrackedDepthMeters = 0f;
+            _airPocketNitrogenPauseTimer = 0f;
+            _nutritionalToxicitySecondsRemaining = 0f;
+            _nutritionalToxicitySeverity01 = 0f;
+            _decompressionVomitToolDropCooldown = 0f;
             ResetNitrogenNarcosisState();
             _oxygenGraceVisionBlur01 = 0f;
         }
@@ -2759,6 +3040,10 @@ namespace Hecton8.Gameplay
 
         private void TryApplyDamageTrauma(float damageAmount)
         {
+            float maxIntegrity = stats != null ? math.max(0.01f, stats.MaxIntegrity) : 100f;
+            if (ShouldForceSuitPunctureBleeding(damageAmount, maxIntegrity))
+                ApplyBleeding(1f, damageAmount);
+
             if (damageAmount < MajorPhysicalDamageThreshold)
                 return;
 
@@ -2766,6 +3051,14 @@ namespace Hecton8.Gameplay
                 ? 1f
                 : Mathf.InverseLerp(MajorPhysicalDamageThreshold, SeverePhysicalDamageThreshold, damageAmount);
             TryApplyTraumaStates(damageAmount, severity);
+        }
+
+        internal static bool ShouldForceSuitPunctureBleeding(float damageAmount, float maxIntegrity)
+        {
+            if (!math.isfinite(damageAmount) || !math.isfinite(maxIntegrity) || maxIntegrity <= 0f)
+                return false;
+
+            return damageAmount >= maxIntegrity * SuitPunctureBleedDamageFraction;
         }
 
         private void TryApplyTraumaStates(float damageMagnitude, float severity01)

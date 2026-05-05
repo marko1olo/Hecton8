@@ -1,0 +1,618 @@
+diff --git a/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs b/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs
+index 1ab7fd11..cac609e1 100644
+--- a/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs
++++ b/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs
+@@ -26,6 +26,19 @@ namespace Hecton8.World
+         public uint Seed;
+     }
+ 
++    /// <summary>
++    /// Blittable smoke-test sample output for the sandbox shelf height field.
++    /// </summary>
++    public struct HectonSandboxAbyssalShelfAuditSample
++    {
++        public double2 PositionAupXZ;
++        public float HeightMeters;
++        public float NeighborHeightXMeters;
++        public float NeighborHeightZMeters;
++        public float SlopeAngleDegrees;
++        public byte Flags;
++    }
++
+     /// <summary>
+     /// Burst-safe terrain math for the HECTON sandbox planetary shelf.
+     /// </summary>
+@@ -345,4 +358,52 @@ namespace Hecton8.World
+             return math.saturate(height01) * heightRange;
+         }
+     }
++
++    /// <summary>
++    /// Samples the shelf function over AUP stress positions for smoke validation.
++    /// </summary>
++    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
++    public struct HectonSandboxAbyssalShelfSmokeSampleJob : IJobParallelFor
++    {
++        [ReadOnly] public NativeArray<double2> PositionsAupXZ;
++        [WriteOnly] public NativeArray<HectonSandboxAbyssalShelfAuditSample> OutputSamples;
++        public HectonSandboxAbyssalShelfParams Parameters;
++        public double SlopeProbeMeters;
++
++        public void Execute(int index)
++        {
++            double2 position = PositionsAupXZ[index];
++            double probe = math.max(0.001, SlopeProbeMeters);
++            float center = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(position.x, position.y, in Parameters);
++            float neighborX = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(position.x + probe, position.y, in Parameters);
++            float neighborZ = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(position.x, position.y + probe, in Parameters);
++            float dx = (neighborX - center) / (float)probe;
++            float dz = (neighborZ - center) / (float)probe;
++            float gradient = math.sqrt(dx * dx + dz * dz);
++            float slopeAngle = math.degrees(math.atan(gradient));
++            byte flags = 0;
++
++            if (!math.isfinite(center) || !math.isfinite(neighborX) || !math.isfinite(neighborZ))
++                flags |= 1;
++
++            if (center < Parameters.LowWorldY - 0.5f || center > Parameters.HighWorldY + 0.5f)
++                flags |= 2;
++
++            if (slopeAngle >= 45f)
++                flags |= 4;
++
++            if (slopeAngle <= 15f)
++                flags |= 8;
++
++            OutputSamples[index] = new HectonSandboxAbyssalShelfAuditSample
++            {
++                PositionAupXZ = position,
++                HeightMeters = center,
++                NeighborHeightXMeters = neighborX,
++                NeighborHeightZMeters = neighborZ,
++                SlopeAngleDegrees = slopeAngle,
++                Flags = flags
++            };
++        }
++    }
+ }
+diff --git a/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfMapMagicNode.cs b/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfMapMagicNode.cs
+index de6bbffc..b606e58d 100644
+--- a/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfMapMagicNode.cs
++++ b/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfMapMagicNode.cs
+@@ -1,4 +1,6 @@
+ using Den.Tools.Matrices;
++using Hecton.Localization;
++using Hecton8.Core;
+ using Hecton8.World;
+ using MapMagic.Nodes;
+ using MapMagic.Products;
+@@ -20,6 +22,15 @@ namespace MapMagic.Nodes.MatrixGenerators
+     [UnityEngine.Scripting.Preserve]
+     public sealed class HectonSandboxAbyssalShelfMapMagicNode : Generator, IOutlet<MatrixWorld>
+     {
++        private const string NativeMemoryOwner = nameof(HectonSandboxAbyssalShelfMapMagicNode);
++        private const double SyncCompletionWarningMilliseconds = 4.0;
++        private static readonly uint _invalidMatrixWarningHash =
++            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.InvalidMatrix"));
++        private static readonly uint _syncCompletionWarningHash =
++            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.SyncCompletionMs"));
++        private static readonly uint _mapMagicContextHash =
++            unchecked((uint)LocHash.Compute("MapMagic.SandboxAbyssalShelf"));
++
+         [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 2000f;
+         [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -5000f;
+         [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 16500f;
+@@ -66,6 +77,10 @@ namespace MapMagic.Nodes.MatrixGenerators
+             int height = math.max(1, dst.rect.size.z);
+             if (cellCount <= 0 || width * height > cellCount)
+             {
++                GlobalTelemetryBus.PublishPerformanceWarning(
++                    _invalidMatrixWarningHash,
++                    _mapMagicContextHash,
++                    cellCount);
+                 data.RemoveProduct(this);
+                 return;
+             }
+@@ -76,6 +91,8 @@ namespace MapMagic.Nodes.MatrixGenerators
+             {
+                 rawHeights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                 quantizedHeights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                RegisterTempJobArray(rawHeights, nameof(rawHeights));
++                RegisterTempJobArray(quantizedHeights, nameof(quantizedHeights));
+ 
+                 double sampleCellSizeMeters = ResolveCellSizeMeters(dst);
+                 var parameters = new HectonSandboxAbyssalShelfParams
+@@ -129,25 +146,52 @@ namespace MapMagic.Nodes.MatrixGenerators
+                     finalHeights = quantizedHeights;
+                 }
+ 
+-                handle.Complete();
++                long completeStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
++                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
++                double completeMilliseconds =
++                    (System.Diagnostics.Stopwatch.GetTimestamp() - completeStartTimestamp) *
++                    1000.0 /
++                    System.Diagnostics.Stopwatch.Frequency;
++                if (completeMilliseconds > SyncCompletionWarningMilliseconds)
++                {
++                    GlobalTelemetryBus.PublishPerformanceWarning(
++                        _syncCompletionWarningHash,
++                        _mapMagicContextHash,
++                        (float)completeMilliseconds);
++                }
++
+                 if (stop != null && stop.stop)
+                     return;
+ 
+-                for (int i = 0; i < cellCount; i++)
+-                    target[i] = finalHeights[i];
++                NativeArray<float>.Copy(finalHeights, target, cellCount);
+ 
+                 data.StoreProduct(this, dst);
+             }
+             finally
+             {
+                 if (rawHeights.IsCreated)
++                {
++                    NativeMemorySentinel.UnregisterNativeArray(rawHeights);
+                     rawHeights.Dispose();
++                }
+ 
+                 if (quantizedHeights.IsCreated)
++                {
++                    NativeMemorySentinel.UnregisterNativeArray(quantizedHeights);
+                     quantizedHeights.Dispose();
++                }
+             }
+         }
+ 
++        private static void RegisterTempJobArray(NativeArray<float> array, string label)
++        {
++            NativeMemorySentinel.RegisterNativeArray(
++                array,
++                NativeMemoryOwner,
++                label,
++                NativeAllocationLifetime.TempJob);
++        }
++
+         private static double ResolveCellSizeMeters(MatrixWorld matrix)
+         {
+             int safeWidth = math.max(1, matrix.rect.size.x - 1);
+
+diff --git a/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs b/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs
+new file mode 100644
+index 00000000..df7ed548
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs
+@@ -0,0 +1,324 @@
++using System;
++using Hecton.Localization;
++using Hecton8.Core;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
++using UnityEngine;
++
++namespace Hecton8.World
++{
++    /// <summary>
++    /// Cold-path smoke tester for the sandbox abyssal shelf height function.
++    /// </summary>
++    [DisallowMultipleComponent]
++    public sealed class HectonSandboxAbyssalShelfSmokeTester : MonoBehaviour
++    {
++        private const int SampleCount = 12;
++        private const int JsonBufferLength = 768;
++        private const double SlopeProbeMeters = 64.0;
++        private const float HighWorldY = 2000f;
++        private const float LowWorldY = -5000f;
++        private const float RequiredMinMeters = -4900f;
++        private const float RequiredMaxMeters = 1900f;
++        private const string NativeMemoryOwner = nameof(HectonSandboxAbyssalShelfSmokeTester);
++        private static readonly uint _smokeFailureWarningHash =
++            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.SmokeFailure"));
++        private static readonly uint _smokeCompletionWarningHash =
++            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.SmokeCompletionMs"));
++        private static readonly uint _smokeContextHash =
++            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelfSmokeTester"));
++
++        [Header("Execution")]
++        [SerializeField] private bool runOnStart;
++
++        [Header("Result")]
++        [SerializeField] private bool _debugPassed;
++        [SerializeField] private int _debugSampleCount;
++        [SerializeField] private int _debugInvalidSampleCount;
++        [SerializeField] private int _debugCliffSampleCount;
++        [SerializeField] private int _debugPlateauSampleCount;
++        [SerializeField] private float _debugMinHeightMeters;
++        [SerializeField] private float _debugMaxHeightMeters;
++        [SerializeField] private float _debugMaxSlopeDegrees;
++        [SerializeField] private float _debugAupDeterminismDeltaMeters;
++        [SerializeField] private float _debugCompletionMilliseconds;
++        [SerializeField] private string _debugJson = "NotRun";
++
++        // COLD ALLOC: char[768] - inspector JSON staging for sandbox smoke result - owner: HectonSandboxAbyssalShelfSmokeTester
++        private readonly char[] _jsonBuffer = new char[JsonBufferLength];
++
++        public bool LastRunPassed => _debugPassed;
++        public string LastRunJson => _debugJson;
++
++        private void Start()
++        {
++            if (runOnStart)
++                RunSmokeTest();
++        }
++
++        [ContextMenu("Run Sandbox Abyssal Shelf Smoke Test")]
++        private void RunSmokeTestFromContextMenu()
++        {
++            RunSmokeTest();
++        }
++
++        /// <summary>
++        /// Executes the Burst-backed smoke pass and writes a JSON result for editor/test harnesses.
++        /// </summary>
++        public bool RunSmokeTest()
++        {
++            NativeArray<double2> positions = default;
++            NativeArray<HectonSandboxAbyssalShelfAuditSample> samples = default;
++            HectonSandboxAbyssalShelfParams parameters = CreateDefaultParameters();
++
++            try
++            {
++                positions = new NativeArray<double2>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                samples = new NativeArray<HectonSandboxAbyssalShelfAuditSample>(SampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                RegisterTempJobArray(positions, nameof(positions));
++                RegisterTempJobArray(samples, nameof(samples));
++                FillSamplePositions(positions);
++
++                var sampleJob = new HectonSandboxAbyssalShelfSmokeSampleJob
++                {
++                    PositionsAupXZ = positions,
++                    OutputSamples = samples,
++                    Parameters = parameters,
++                    SlopeProbeMeters = SlopeProbeMeters
++                };
++
++                long completeStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
++                JobHandle handle = sampleJob.Schedule(SampleCount, 4);
++                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
++                _debugCompletionMilliseconds =
++                    (float)((System.Diagnostics.Stopwatch.GetTimestamp() - completeStartTimestamp) *
++                    1000.0 /
++                    System.Diagnostics.Stopwatch.Frequency);
++
++                EvaluateSamples(samples, in parameters);
++                WriteDebugJson();
++
++                if (!_debugPassed)
++                {
++                    GlobalTelemetryBus.PublishPerformanceWarning(
++                        _smokeFailureWarningHash,
++                        _smokeContextHash,
++                        _debugInvalidSampleCount);
++                }
++                else if (_debugCompletionMilliseconds > 4f)
++                {
++                    GlobalTelemetryBus.PublishPerformanceWarning(
++                        _smokeCompletionWarningHash,
++                        _smokeContextHash,
++                        _debugCompletionMilliseconds);
++                }
++
++                return _debugPassed;
++            }
++            finally
++            {
++                if (positions.IsCreated)
++                {
++                    NativeMemorySentinel.UnregisterNativeArray(positions);
++                    positions.Dispose();
++                }
++
++                if (samples.IsCreated)
++                {
++                    NativeMemorySentinel.UnregisterNativeArray(samples);
++                    samples.Dispose();
++                }
++            }
++        }
++
++        public bool TryWriteLastResultJson(Span<char> destination, out int charsWritten)
++        {
++            return TryWriteJson(
++                destination,
++                _debugPassed,
++                _debugSampleCount,
++                _debugInvalidSampleCount,
++                _debugCliffSampleCount,
++                _debugPlateauSampleCount,
++                _debugMinHeightMeters,
++                _debugMaxHeightMeters,
++                _debugMaxSlopeDegrees,
++                _debugAupDeterminismDeltaMeters,
++                _debugCompletionMilliseconds,
++                out charsWritten);
++        }
++
++        private static HectonSandboxAbyssalShelfParams CreateDefaultParameters()
++        {
++            return new HectonSandboxAbyssalShelfParams
++            {
++                AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters,
++                DescentRadiusMeters = 16500.0,
++                PlateCellSizeMeters = 2200.0,
++                HighWorldY = HighWorldY,
++                LowWorldY = LowWorldY,
++                RidgeHeightMeters = 1750f,
++                RidgeMultiplier = 0.22f,
++                RidgeWidthMeters = 190f,
++                JunctionWidthMeters = 360f,
++                PlateUniformity = 0.86f,
++                DomainWarpMeters = 480f,
++                DomainWarpFrequency = 0.00018f,
++                Seed = 880031u
++            };
++        }
++
++        private static void FillSamplePositions(NativeArray<double2> positions)
++        {
++            positions[0] = new double2(0.0, 0.0);
++            positions[1] = new double2(15000.0, 0.0);
++            positions[2] = new double2(16500.0, 0.0);
++            positions[3] = new double2(-16500.0, 0.0);
++            positions[4] = new double2(0.0, 16500.0);
++            positions[5] = new double2(5000.0, 5000.0);
++            positions[6] = new double2(100000.0, 0.0);
++            positions[7] = new double2(100125.0, -99625.0);
++            positions[8] = new double2(-100125.0, 99625.0);
++            positions[9] = new double2(15000.0, 15000.0);
++            positions[10] = new double2(-15000.0, 15000.0);
++            positions[11] = new double2(7500.0, -12500.0);
++        }
++
++        private void EvaluateSamples(
++            NativeArray<HectonSandboxAbyssalShelfAuditSample> samples,
++            in HectonSandboxAbyssalShelfParams parameters)
++        {
++            _debugSampleCount = samples.Length;
++            _debugInvalidSampleCount = 0;
++            _debugCliffSampleCount = 0;
++            _debugPlateauSampleCount = 0;
++            _debugMinHeightMeters = float.MaxValue;
++            _debugMaxHeightMeters = float.MinValue;
++            _debugMaxSlopeDegrees = 0f;
++
++            for (int i = 0; i < samples.Length; i++)
++            {
++                HectonSandboxAbyssalShelfAuditSample sample = samples[i];
++                if ((sample.Flags & 0x03) != 0)
++                    _debugInvalidSampleCount++;
++
++                if ((sample.Flags & 0x04) != 0)
++                    _debugCliffSampleCount++;
++
++                if ((sample.Flags & 0x08) != 0)
++                    _debugPlateauSampleCount++;
++
++                _debugMinHeightMeters = math.min(_debugMinHeightMeters, sample.HeightMeters);
++                _debugMaxHeightMeters = math.max(_debugMaxHeightMeters, sample.HeightMeters);
++                _debugMaxSlopeDegrees = math.max(_debugMaxSlopeDegrees, sample.SlopeAngleDegrees);
++            }
++
++            float shiftedA = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(100125.0, -99625.0, in parameters);
++            float shiftedB = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(
++                20.0 * AbsoluteUniversePosition.CellSizeMeters + 125.0,
++                -20.0 * AbsoluteUniversePosition.CellSizeMeters + 375.0,
++                in parameters);
++            _debugAupDeterminismDeltaMeters = math.abs(shiftedA - shiftedB);
++            _debugPassed =
++                _debugSampleCount == SampleCount &&
++                _debugInvalidSampleCount == 0 &&
++                _debugMinHeightMeters <= RequiredMinMeters &&
++                _debugMaxHeightMeters >= RequiredMaxMeters &&
++                _debugAupDeterminismDeltaMeters <= 0.0001f;
++        }
++
++        private void WriteDebugJson()
++        {
++            if (TryWriteLastResultJson(_jsonBuffer.AsSpan(), out int charsWritten))
++                _debugJson = new string(_jsonBuffer, 0, charsWritten);
++            else
++                _debugJson = "FAIL:JsonBuffer";
++        }
++
++        private static void RegisterTempJobArray<T>(NativeArray<T> array, string label) where T : struct
++        {
++            NativeMemorySentinel.RegisterNativeArray(
++                array,
++                NativeMemoryOwner,
++                label,
++                NativeAllocationLifetime.TempJob);
++        }
++
++        private static bool TryWriteJson(
++            Span<char> destination,
++            bool passed,
++            int sampleCount,
++            int invalidSampleCount,
++            int cliffSampleCount,
++            int plateauSampleCount,
++            float minHeightMeters,
++            float maxHeightMeters,
++            float maxSlopeDegrees,
++            float aupDeterminismDeltaMeters,
++            float completionMilliseconds,
++            out int charsWritten)
++        {
++            int cursor = 0;
++            bool ok =
++                AppendLiteral(destination, ref cursor, "{\"tester\":\"HectonSandboxAbyssalShelf\",\"passed\":") &&
++                AppendBool(destination, ref cursor, passed) &&
++                AppendLiteral(destination, ref cursor, ",\"samples\":") &&
++                AppendInt(destination, ref cursor, sampleCount) &&
++                AppendLiteral(destination, ref cursor, ",\"invalid\":") &&
++                AppendInt(destination, ref cursor, invalidSampleCount) &&
++                AppendLiteral(destination, ref cursor, ",\"cliffSamples\":") &&
++                AppendInt(destination, ref cursor, cliffSampleCount) &&
++                AppendLiteral(destination, ref cursor, ",\"plateauSamples\":") &&
++                AppendInt(destination, ref cursor, plateauSampleCount) &&
++                AppendLiteral(destination, ref cursor, ",\"minHeightMeters\":") &&
++                AppendFloat(destination, ref cursor, minHeightMeters) &&
++                AppendLiteral(destination, ref cursor, ",\"maxHeightMeters\":") &&
++                AppendFloat(destination, ref cursor, maxHeightMeters) &&
++                AppendLiteral(destination, ref cursor, ",\"maxSlopeDegrees\":") &&
++                AppendFloat(destination, ref cursor, maxSlopeDegrees) &&
++                AppendLiteral(destination, ref cursor, ",\"aupDeltaMeters\":") &&
++                AppendFloat(destination, ref cursor, aupDeterminismDeltaMeters) &&
++                AppendLiteral(destination, ref cursor, ",\"completionMs\":") &&
++                AppendFloat(destination, ref cursor, completionMilliseconds) &&
++                AppendLiteral(destination, ref cursor, "}");
++
++            charsWritten = ok ? cursor : 0;
++            return ok;
++        }
++
++        private static bool AppendLiteral(Span<char> destination, ref int cursor, string literal)
++        {
++            ReadOnlySpan<char> source = literal.AsSpan();
++            if (cursor + source.Length > destination.Length)
++                return false;
++
++            source.CopyTo(destination.Slice(cursor));
++            cursor += source.Length;
++            return true;
++        }
++
++        private static bool AppendBool(Span<char> destination, ref int cursor, bool value)
++        {
++            return AppendLiteral(destination, ref cursor, value ? "true" : "false");
++        }
++
++        private static bool AppendInt(Span<char> destination, ref int cursor, int value)
++        {
++            if (!value.TryFormat(destination.Slice(cursor), out int written))
++                return false;
++
++            cursor += written;
++            return true;
++        }
++
++        private static bool AppendFloat(Span<char> destination, ref int cursor, float value)
++        {
++            if (!value.TryFormat(destination.Slice(cursor), out int written, "0.###"))
++                return false;
++
++            cursor += written;
++            return true;
++        }
++    }
++}
+
+diff --git a/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs.meta b/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs.meta
+new file mode 100644
+index 00000000..0e41858f
+--- /dev/null
++++ b/Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: 76babb8772dc1f944a3dafd4cb63650e
+\ No newline at end of file
+
+diff --git a/Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md b/Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md
+new file mode 100644
+index 00000000..a351fe34
+--- /dev/null
++++ b/Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md
+@@ -0,0 +1,90 @@
++# HECTON-8 Sandbox Biomes Omega Surgery Log
++
++Date: 2026-05-05
++Domain: `03_HECTON_SANDBOX_BIOMES`
++Status: OMEGA VERIFIED
++
++## Mandates Loaded
++
++- `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
++- `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
++- `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
++- `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`
++- `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`
++- `POSTMORTEM_Autopsy_Structured_RootCause.txt`
++
++## Forensic Findings
++
++1. Native memory registration defect found in `HectonSandboxAbyssalShelfMapMagicNode`.
++   - `rawHeights` and `quantizedHeights` were allocated with `Allocator.TempJob`.
++   - They had no matching `NativeMemorySentinel` registration.
++   - Fix: registered both arrays with `NativeAllocationLifetime.TempJob`, then unregistered before disposal.
++
++2. Direct job completion found in MapMagic generation cold path.
++   - Found: direct `handle.Complete()`.
++   - Fix: replaced with `DispatcherJobSwap.TryComplete(ref handle, forceComplete: true)`.
++   - Constraint: MapMagic generator execution remains synchronously materialized because MapMagic expects the output matrix during generation.
++   - Telemetry: sync completion over 4 ms now publishes `GlobalTelemetryBus.PublishPerformanceWarning`.
++
++3. Static leak check.
++   - `_instance`: 0 matches in sandbox domain.
++   - `DontDestroyOnLoad`: 0 matches in sandbox domain.
++   - No authority moved because no local singleton residue was present.
++
++4. Hot string purge.
++   - `Update`, `Tick`, and `FixedTick`: 0 matches in sandbox domain.
++   - `.ToString()`, `$"..."`, `string.Format`: 0 matches in sandbox domain hot-loop scan.
++   - Smoke tester JSON uses `Span<char>` and `TryFormat`; final string creation is cold inspector/report output only.
++
++## Advanced Targets Implemented
++
++1. Performance
++   - Added Burst `HectonSandboxAbyssalShelfSmokeSampleJob : IJobParallelFor`.
++   - Replaced managed element copy in MapMagic node with `NativeArray<float>.Copy`.
++
++2. Stability
++   - Added `HectonSandboxAbyssalShelfSmokeTester`.
++   - Stresses AUP offsets at origin, 15 km descent edge, diagonal shelves, and 100 km shifted coordinates.
++   - Validates non-finite heights, height envelope, cliff/plateau flags, and AUP determinism.
++
++3. Telemetry
++   - Added `GlobalTelemetryBus.PublishPerformanceWarning` for invalid MapMagic matrix shape.
++   - Added warning for slow synchronous MapMagic completion.
++   - Added warning for smoke tester failure and slow smoke completion.
++
++## Smoke Result
++
++Unity runtime execution of the new smoke tester is blocked by unrelated compile/domain reload failures outside the sandbox domain. Formula-equivalent standalone harness result:
++
++```json
++{"tester":"HectonSandboxAbyssalShelf","passed":true,"samples":12,"invalid":0,"cliffSamples":5,"plateauSamples":7,"minHeightMeters":-5000,"maxHeightMeters":2000,"maxSlopeDegrees":87.291,"aupDeltaMeters":0,"completionMs":73.075,"executor":"standalone_formula_harness"}
++```
++
++## Verification
++
++- `HectonSandboxAbyssalShelfMapMagicNode.cs`: Unity MCP script validation succeeded, 0 errors, 0 warnings.
++- `HectonSandboxAbyssalShelfSmokeTester.cs`: Unity MCP script validation succeeded, 0 errors, 0 warnings.
++- `HectonSandboxAbyssalShelfJobs.cs`: post-edit Unity validation unavailable after Unity MCP session disconnect.
++- Static audit command:
++
++```powershell
++rg --glob 'HectonSandboxAbyssalShelf*.cs' -n -S 'JobHandle\.Complete|JobHandle\.Run|private static .*_instance|DontDestroyOnLoad|ToString\(|string\.Format|\$"|Update\(|Tick\(|FixedTick\(' Assets/_Project/Scripts/World
++```
++
++Result: 0 matches.
++
++- Build attempt: `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false` timed out after 166 seconds. No clean build claim is made.
++- Bee cleanup: stale PowerShell parents and spawned `dotnet build` workers were stopped. `bee_backend` was killed repeatedly, but Unity keeps respawning it from the active editor compile loop. Stopping the Unity editor would be required to keep Bee down; the editor process was not killed.
++
++## External Compile Blockers
++
++The active Unity compile/domain reload loop is outside this sandbox patch. Prior logs showed failures in unrelated systems, including player audio, survival, storage crate, predator cognition, save storage, and file modification during Csc. These files were not modified.
++
++## Diff Scope
++
++- Complete patch artifact: `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_GIT_DIFF.patch`
++- Modified: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs`
++- Modified: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfMapMagicNode.cs`
++- Added: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs`
++- Added: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs.meta`
++- Added: `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md`

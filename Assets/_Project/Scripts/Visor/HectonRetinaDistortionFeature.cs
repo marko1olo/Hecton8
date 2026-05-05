@@ -49,6 +49,18 @@ namespace Hecton8.Visor
             [Range(0f, 0.6f)] public float maxVignetteStrength = 0.28f;
         }
 
+        internal readonly struct RetinaOffsetBudget
+        {
+            internal RetinaOffsetBudget(float chromaticOffset, float distortionOffset)
+            {
+                ChromaticOffset = chromaticOffset;
+                DistortionOffset = distortionOffset;
+            }
+
+            internal float ChromaticOffset { get; }
+            internal float DistortionOffset { get; }
+        }
+
         private readonly struct RuntimeState
         {
             public RuntimeState(float health01, float critical01, float heartbeatBpm)
@@ -161,8 +173,18 @@ namespace Hecton8.Visor
                 material.SetFloat(ShaderConstants.HealthId, Mathf.Clamp01(runtimeState.Health01));
                 material.SetFloat(ShaderConstants.CriticalId, critical01);
                 material.SetFloat(ShaderConstants.HeartbeatBpmId, Mathf.Max(1f, runtimeState.HeartbeatBpm));
-                material.SetFloat(ShaderConstants.ChromaticOffsetId, Mathf.Max(0f, settings.maxChromaticOffset) * critical01);
-                material.SetFloat(ShaderConstants.DistortionOffsetId, Mathf.Max(0f, settings.maxDistortionOffset) * critical01);
+                RetinaOffsetBudget offsetBudget = ResolveRetinaOffsetBudget(
+                    Mathf.Max(0f, settings.maxChromaticOffset),
+                    Mathf.Max(0f, settings.maxDistortionOffset),
+                    critical01,
+                    SystemInfo.graphicsMemorySize);
+                bool mx350Tier = SystemInfo.graphicsMemorySize > 0 && SystemInfo.graphicsMemorySize <= 2048;
+                if (mx350Tier)
+                    material.EnableKeyword(ShaderConstants.Mx350Keyword);
+                else
+                    material.DisableKeyword(ShaderConstants.Mx350Keyword);
+                material.SetFloat(ShaderConstants.ChromaticOffsetId, offsetBudget.ChromaticOffset);
+                material.SetFloat(ShaderConstants.DistortionOffsetId, offsetBudget.DistortionOffset);
                 material.SetFloat(ShaderConstants.VignetteStrengthId, Mathf.Clamp01(settings.maxVignetteStrength) * critical01);
             }
         }
@@ -175,6 +197,7 @@ namespace Hecton8.Visor
             internal static readonly int ChromaticOffsetId = Shader.PropertyToID("_HectonRetinaChromaticOffset");
             internal static readonly int DistortionOffsetId = Shader.PropertyToID("_HectonRetinaDistortionOffset");
             internal static readonly int VignetteStrengthId = Shader.PropertyToID("_HectonRetinaVignetteStrength");
+            internal const string Mx350Keyword = "_QUALITY_MX350";
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -251,6 +274,26 @@ namespace Hecton8.Visor
             float criticalBpm = Mathf.Max(baseBpm, settings.criticalHeartbeatBpm);
             runtimeState = new RuntimeState(health01, drive01, Mathf.Lerp(baseBpm, criticalBpm, drive01));
             return true;
+        }
+
+        internal static RetinaOffsetBudget ResolveRetinaOffsetBudget(
+            float maxChromaticOffset,
+            float maxDistortionOffset,
+            float critical01,
+            int graphicsMemoryMb)
+        {
+            float clampedCritical = Mathf.Clamp01(critical01);
+            bool mx350Tier = graphicsMemoryMb > 0 && graphicsMemoryMb <= 2048;
+            if (mx350Tier)
+            {
+                return new RetinaOffsetBudget(
+                    Mathf.Max(0f, maxChromaticOffset) * clampedCritical,
+                    0f);
+            }
+
+            return new RetinaOffsetBudget(
+                0f,
+                Mathf.Max(0f, maxDistortionOffset) * clampedCritical);
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

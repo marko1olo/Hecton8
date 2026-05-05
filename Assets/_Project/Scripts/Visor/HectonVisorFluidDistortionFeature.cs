@@ -20,6 +20,7 @@ namespace Hecton8.Visor
     {
 #if UNITY_EDITOR
         private const string ShaderAssetPath = "Assets/_Project/Art/Shaders/Hecton_VisorFluidDistortion.shader";
+        private const string BlueNoiseAssetPath = "Assets/_Project/Art/TEXTURES/Utility/TX_BlueNoise_256_R8.png";
 #endif
 
         [Serializable]
@@ -54,21 +55,35 @@ namespace Hecton8.Visor
 
             [Tooltip("Viewport edge fade used to keep the center readable while droplets accumulate on the visor rim.")]
             [Range(0.1f, 4f)] public float edgeFadeExponent = 1.35f;
+
+            [Tooltip("Single low-resolution blue-noise mask used to distribute visor dust and condensation breakup.")]
+            public Texture2D blueNoiseTexture = null;
+
+            [Tooltip("Dust visibility added by ambient light on the visor layer.")]
+            [Range(0f, 1f)] public float dustStrength = 0.28f;
+
+            [Tooltip("How aggressively ambient light exposes visor dust.")]
+            [Range(0f, 4f)] public float ambientDustResponse = 1.45f;
+
+            [Tooltip("Pixel size of the repeating blue-noise source. Kept explicit so the shader can tile without a second lookup.")]
+            [Range(16f, 512f)] public float blueNoiseTilePixels = 256f;
         }
 
         private readonly struct RuntimeState
         {
-            public RuntimeState(float wetness, float hullStress, Vector3 localVelocity, float effectIntensity)
+            public RuntimeState(float wetness, float hullStress, Vector3 localVelocity, float ambientLight01, float effectIntensity)
             {
                 Wetness = wetness;
                 HullStress = hullStress;
                 LocalVelocity = localVelocity;
+                AmbientLight01 = ambientLight01;
                 EffectIntensity = effectIntensity;
             }
 
             public float Wetness { get; }
             public float HullStress { get; }
             public Vector3 LocalVelocity { get; }
+            public float AmbientLight01 { get; }
             public float EffectIntensity { get; }
         }
 
@@ -181,6 +196,13 @@ namespace Hecton8.Visor
                 material.SetFloat(ShaderConstants.EdgeFadeExponentId, Mathf.Max(0.1f, settings.edgeFadeExponent));
                 material.SetFloat(ShaderConstants.SpeedId, Mathf.Clamp01(localVelocity.magnitude * 0.04f));
                 material.SetVector(ShaderConstants.LocalVelocityId, new Vector4(lateralVelocity, verticalVelocity, forwardVelocity, 0f));
+                material.SetFloat(ShaderConstants.AmbientLightId, runtimeState.AmbientLight01);
+                material.SetFloat(ShaderConstants.DustStrengthId, Mathf.Clamp01(settings.dustStrength));
+                material.SetFloat(ShaderConstants.AmbientDustResponseId, Mathf.Max(0f, settings.ambientDustResponse));
+                material.SetFloat(ShaderConstants.BlueNoiseTilePixelsId, Mathf.Max(16f, settings.blueNoiseTilePixels));
+                material.SetFloat(ShaderConstants.HasBlueNoiseId, settings.blueNoiseTexture != null ? 1f : 0f);
+                if (settings.blueNoiseTexture != null)
+                    material.SetTexture(ShaderConstants.BlueNoiseTexId, settings.blueNoiseTexture);
             }
         }
 
@@ -198,6 +220,12 @@ namespace Hecton8.Visor
             internal static readonly int EdgeFadeExponentId = Shader.PropertyToID("_HectonVisorFluidEdgeFadeExponent");
             internal static readonly int SpeedId = Shader.PropertyToID("_HectonVisorFluidSpeed");
             internal static readonly int LocalVelocityId = Shader.PropertyToID("_HectonVisorFluidLocalVelocity");
+            internal static readonly int AmbientLightId = Shader.PropertyToID("_HectonVisorFluidAmbientLight");
+            internal static readonly int DustStrengthId = Shader.PropertyToID("_HectonVisorFluidDustStrength");
+            internal static readonly int AmbientDustResponseId = Shader.PropertyToID("_HectonVisorFluidAmbientDustResponse");
+            internal static readonly int BlueNoiseTilePixelsId = Shader.PropertyToID("_HectonVisorFluidBlueNoiseTilePixels");
+            internal static readonly int HasBlueNoiseId = Shader.PropertyToID("_HectonVisorFluidHasBlueNoise");
+            internal static readonly int BlueNoiseTexId = Shader.PropertyToID("_HectonVisorFluidBlueNoiseTex");
         }
 
         [SerializeField] private FeatureSettings settings = new FeatureSettings();
@@ -211,6 +239,8 @@ namespace Hecton8.Visor
 #if UNITY_EDITOR
             if (settings != null && settings.shader == null)
                 settings.shader = AssetDatabase.LoadAssetAtPath<Shader>(ShaderAssetPath);
+            if (settings != null && settings.blueNoiseTexture == null)
+                settings.blueNoiseTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(BlueNoiseAssetPath);
 #endif
 
             _pass ??= new VisorFluidPass();
@@ -266,15 +296,24 @@ namespace Hecton8.Visor
 
             float wetness = Mathf.Clamp01(playerMovement.CurrentWetLensIntensity01);
             float hullStress = Mathf.Clamp01(playerMovement.CurrentHullStress01);
+            float ambientLight01 = ResolveAmbientLight01();
             float hullContribution = Mathf.Clamp01(
                 Mathf.InverseLerp(0.65f, 1f, hullStress) * Mathf.Clamp01(settings.hullStressContribution));
-            float effectIntensity = Mathf.Clamp01(Mathf.Max(wetness, hullContribution));
+            float dustContribution = Mathf.Clamp01(ambientLight01 * Mathf.Clamp01(settings.dustStrength) * Mathf.Max(0f, settings.ambientDustResponse));
+            float effectIntensity = Mathf.Clamp01(Mathf.Max(Mathf.Max(wetness, hullContribution), dustContribution));
             if (effectIntensity <= 0.001f)
                 return false;
 
             Vector3 localVelocity = playerCamera.transform.InverseTransformDirection(playerMovement.InterpolatedLinearVelocity);
-            runtimeState = new RuntimeState(wetness, hullStress, localVelocity, effectIntensity);
+            runtimeState = new RuntimeState(wetness, hullStress, localVelocity, ambientLight01, effectIntensity);
             return true;
+        }
+
+        private static float ResolveAmbientLight01()
+        {
+            Color ambientColor = RenderSettings.ambientLight.linear;
+            float colorIntensity = Mathf.Max(ambientColor.r, Mathf.Max(ambientColor.g, ambientColor.b));
+            return Mathf.Clamp01(Mathf.Max(RenderSettings.ambientIntensity, colorIntensity));
         }
 
         private static void RecreateMaterial(ref Material material, Shader shader)

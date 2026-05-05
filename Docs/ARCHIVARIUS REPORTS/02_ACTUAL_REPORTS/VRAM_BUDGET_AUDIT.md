@@ -1,4 +1,7 @@
 # VRAM BUDGET AUDIT — First-Party Texture Accounting
+Date: 2026-05-04
+Status: REFERENCE
+
 
 > **Status:** ETA SANITIZED  
 > **Mandates Followed:** AGENTS.md § Textures · § VRAM HARD CEILING  

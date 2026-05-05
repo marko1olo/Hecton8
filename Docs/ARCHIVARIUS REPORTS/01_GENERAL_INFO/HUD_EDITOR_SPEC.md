@@ -1,4 +1,7 @@
 # HUD EDITOR VISIBILITY SPEC — SuitHUDV4CanvasOverlay
+Date: 2026-05-04
+Status: REFERENCE
+
 
 **Status:** PENDING VERIFICATION  
 **Target:** `Assets/_Project/Scripts/UI/SuitHUDV4CanvasOverlay.cs`  

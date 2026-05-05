@@ -77,6 +77,22 @@ namespace Hecton8.World
                 : Vector3.up;
         }
 
+        public static bool ResolveTerrainSplatColorAtSeam(Vector3 absoluteUniversePosition, out Color terrainColor, out float blend)
+        {
+            terrainColor = Color.clear;
+            blend = 0f;
+
+            MapMagicBridge mapMagicBridge = MapMagicBridge.Instance;
+            if (mapMagicBridge == null)
+                return false;
+
+            if (!mapMagicBridge.TryGetTerrainSplatColorAUP(absoluteUniversePosition, out terrainColor, out float confidence))
+                return false;
+
+            blend = Mathf.Clamp01(confidence);
+            return blend > 0.0001f;
+        }
+
         public static float ComputeCaveMouthDensityPerturbation(
             float3 samplePosition,
             float3 surfacePosition,
@@ -144,7 +160,8 @@ namespace Hecton8.World
             float blendWeight,
             float seamBlendRadius,
             float suggestedTerrainCut,
-            Vector3 terrainNormal = default)
+            Vector3 terrainNormal = default,
+            Vector3 absoluteTerrainContactPosition = default)
         {
             Vector3 inward = runtimeVolumeCenter - runtimeSurfacePosition;
             if (inward.sqrMagnitude <= 0.0001f)
@@ -161,6 +178,14 @@ namespace Hecton8.World
             float innerRadius = Mathf.Clamp(radius * 0.62f, 1.5f, radius * 0.92f);
             Vector3 safeTerrainNormal = terrainNormal.sqrMagnitude > 0.0001f ? terrainNormal.normalized : Vector3.up;
             float terrainNormalBlend = terrainNormal.sqrMagnitude > 0.0001f ? Mathf.Clamp01(blendWeight) : 0f;
+            Color terrainSplatColor = Color.clear;
+            float terrainSplatBlend = 0f;
+            if (absoluteTerrainContactPosition.sqrMagnitude > 0.0001f &&
+                ResolveTerrainSplatColorAtSeam(absoluteTerrainContactPosition, out Color sampledSplatColor, out float sampledBlend))
+            {
+                terrainSplatColor = sampledSplatColor;
+                terrainSplatBlend = sampledBlend;
+            }
 
             return new CaveEntrance
             {
@@ -170,7 +195,13 @@ namespace Hecton8.World
                 funnelLength = funnelLength,
                 innerRadius = innerRadius,
                 terrainNormal = safeTerrainNormal,
-                terrainNormalBlend = terrainNormalBlend
+                terrainNormalBlend = terrainNormalBlend,
+                terrainSplatColor = new float4(
+                    terrainSplatColor.r,
+                    terrainSplatColor.g,
+                    terrainSplatColor.b,
+                    terrainSplatColor.a),
+                terrainSplatBlend = terrainSplatBlend
             };
         }
     }

@@ -1,4 +1,7 @@
 # SCENE OBJECT HYGIENE — HECTON-8 Static Audit
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Generated:** 2026-04-27 | **Auditor:** Static Compliance Officer  
 **DOD Principle:** Data-Oriented Design — high component density = architectural smell

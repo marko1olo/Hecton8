@@ -1,0 +1,689 @@
+﻿diff --git a/Assets/_Project/Scripts/BaseModule.cs b/Assets/_Project/Scripts/BaseModule.cs
+index 89daec76..8d6e0daf 100644
+--- a/Assets/_Project/Scripts/BaseModule.cs
++++ b/Assets/_Project/Scripts/BaseModule.cs
+@@ -93,7 +93,7 @@ namespace Hecton8.Gameplay
+     }
+ 
+     [DisallowMultipleComponent]
+-    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, IFixedTickable, ICuttable, IPhysicsImpactMaterialProvider
++    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, IFixedTickable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener
+     {
+         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
+         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
+@@ -563,6 +563,8 @@ namespace Hecton8.Gameplay
+ 
+         // COLD ALLOC: Collider[32] — resync interior occupants on enable/load/spawn — owner: BaseModule
+         private readonly Collider[] _interiorOverlapBuffer = new Collider[INTERIOR_OVERLAP_CAPACITY];
++        [SerializeField] private float _debugSolarEmpBlackoutSeconds;
++        private float _solarEmpBlackoutRemainingSeconds;
+ 
+         // ══════════════════════════════════════════════════════════
+         //  PUBLIC PROPERTIES — для ConstructionManager save/load
+@@ -813,6 +815,8 @@ namespace Hecton8.Gameplay
+             _parasiteThermalInsulation01 = 0f;
+             _parasiteBioReactorOverheatMultiplier = 1f;
+             _floodedReefFloodSeconds = Mathf.Max(0f, _floodedReefFloodSeconds);
++            _solarEmpBlackoutRemainingSeconds = 0f;
++            _debugSolarEmpBlackoutSeconds = 0f;
+             ClearQueuedHydroStructuralLoad();
+             ApplyDeepSeaCompressionState(true);
+ 
+@@ -861,6 +865,8 @@ namespace Hecton8.Gameplay
+             _trackedPlayerMovement = null;
+             _parasitePowerDrainWatts = 0f;
+             _parasiteRootPowerDrainWatts = 0f;
++            _solarEmpBlackoutRemainingSeconds = 0f;
++            _debugSolarEmpBlackoutSeconds = 0f;
+             _parasiteAddedMassKilograms = 0f;
+             _parasiteThermalInsulation01 = 0f;
+             _parasiteBioReactorOverheatMultiplier = 1f;
+@@ -914,6 +920,7 @@ namespace Hecton8.Gameplay
+             UpdateFloodedReefGrowth(SLOW_TICK_DT);
+             ApplyLocalGravityAnomalyRequest();
+             EvaluateCatastrophicImplosion();
++            AdvanceSolarEmpBlackout(SLOW_TICK_DT);
+             if (!HasOperationalPower)
+                 return;
+ 
+@@ -1018,6 +1025,7 @@ namespace Hecton8.Gameplay
+             if (!s_activeModules.Contains(this))
+                 s_activeModules.Add(this);
+ 
++            PhysicsEventBus.Register(this);
+             TryRegister();
+             ResyncInteriorOccupants(true);
+             BaseDegradationSystem.SynchronizeIntegrityState(this);
+@@ -1035,6 +1043,7 @@ namespace Hecton8.Gameplay
+         private void OnDisable()
+         {
+             s_activeModules.Remove(this);
++            PhysicsEventBus.Unregister(this);
+             TryUnregister();
+             TryUnregisterFixedTick();
+             BaseDegradationSystem.ClearIntegrityState(this);
+@@ -1051,6 +1060,7 @@ namespace Hecton8.Gameplay
+         private void OnDestroy()
+         {
+             s_activeModules.Remove(this);
++            PhysicsEventBus.Unregister(this);
+             TryUnregister();
+             TryUnregisterFixedTick();
+             BaseDegradationSystem.ClearIntegrityState(this);
+@@ -2121,9 +2131,57 @@ namespace Hecton8.Gameplay
+             SetLightsEnabled(ShouldLightsBeEnabled());
+         }
+ 
+-        private bool HasOperationalPower => _integrityComponent.HasOperationalPower(_hasPower);
++        private bool HasOperationalPower => _solarEmpBlackoutRemainingSeconds <= 0.0001f &&
++                                            _integrityComponent.HasOperationalPower(_hasPower);
+         private bool ShouldLightsBeEnabled() => HasOperationalPower && !_ambientLightsBrownedOut;
+ 
++        public void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
++        {
++            if ((pulseEvent.DamageType & (uint)DamageTypeMask.Emp) == 0u ||
++                pulseEvent.DurationSeconds <= 0f ||
++                pulseEvent.RadiusMeters <= 0f)
++            {
++                return;
++            }
++
++            float radius = pulseEvent.RadiusMeters;
++            if (radius < 250000f)
++            {
++                Vector3 delta = transform.position - pulseEvent.RuntimePosition;
++                if (delta.sqrMagnitude > radius * radius)
++                    return;
++            }
++
++            _solarEmpBlackoutRemainingSeconds = Mathf.Max(
++                _solarEmpBlackoutRemainingSeconds,
++                pulseEvent.DurationSeconds);
++            _debugSolarEmpBlackoutSeconds = _solarEmpBlackoutRemainingSeconds;
++            _integrityComponent.StopDrain();
++            SetLightsEnabled(false);
++            UpdateDrainDiagnostics();
++            SyncSpatialRole();
++        }
++
++        private void AdvanceSolarEmpBlackout(float deltaTime)
++        {
++            if (_solarEmpBlackoutRemainingSeconds <= 0f)
++            {
++                _debugSolarEmpBlackoutSeconds = 0f;
++                return;
++            }
++
++            _solarEmpBlackoutRemainingSeconds = Mathf.Max(0f, _solarEmpBlackoutRemainingSeconds - Mathf.Max(0f, deltaTime));
++            _debugSolarEmpBlackoutSeconds = _solarEmpBlackoutRemainingSeconds;
++            if (_solarEmpBlackoutRemainingSeconds > 0f)
++                return;
++
++            SetLightsEnabled(ShouldLightsBeEnabled());
++            if (HasOperationalPower)
++                _integrityComponent.TryStartDrain(_hasPower);
++            UpdateDrainDiagnostics();
++            SyncSpatialRole();
++        }
++
+         private void TriggerCascadeFailure()
+         {
+             _integrityComponent.TriggerCascadeFailure(ResolveCascadeFailureMode());
+diff --git a/Assets/_Project/Scripts/Gameplay/StorageCrate.cs b/Assets/_Project/Scripts/Gameplay/StorageCrate.cs
+index 81892ff6..cc3dff7b 100644
+--- a/Assets/_Project/Scripts/Gameplay/StorageCrate.cs
++++ b/Assets/_Project/Scripts/Gameplay/StorageCrate.cs
+@@ -861,6 +861,11 @@ namespace Hecton8.Gameplay
+             }
+         }
+ 
++        private void EnsureContainedItemHashCache()
++        {
++            EnsureReservationCapacity();
++        }
++
+         private bool IsReservedSlot(int index)
+         {
+             return _reservedSlotIds != null &&
+diff --git a/Assets/_Project/Scripts/HectonWorldGenerator.cs b/Assets/_Project/Scripts/HectonWorldGenerator.cs
+index 6eeef77c..d57fa9da 100644
+--- a/Assets/_Project/Scripts/HectonWorldGenerator.cs
++++ b/Assets/_Project/Scripts/HectonWorldGenerator.cs
+@@ -451,6 +451,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
+     private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.WorldGenerator.Tick");
+     private static readonly ProfilerMarker _physicsBakeBatchProfilerMarker = new ProfilerMarker("H8.WorldGenerator.PhysicsBakeBatch");
+     public static HectonWorldGenerator ActiveRuntimeInstance { get; private set; }
++    public int RuntimeWorldSeed => ComputeRuntimeWorldSeed();
+ 
+     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+     private static void ResetStaticState()
+@@ -460,6 +461,34 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
+         _deferredPhysicsBakeTeardownRegistered = false;
+     }
+ 
++    private int ComputeRuntimeWorldSeed()
++    {
++        unchecked
++        {
++            uint hash = 2166136261u;
++            hash = MixRuntimeSeed(hash, spine != null && spine.warpNoise != null ? spine.warpNoise.seed : 0);
++            hash = MixRuntimeSeed(hash, spine != null && spine.islandNoise != null ? spine.islandNoise.seed : 0);
++            hash = MixRuntimeSeed(hash, biomes != null && biomes.biomeNoise != null ? biomes.biomeNoise.seed : 0);
++            hash = MixRuntimeSeed(hash, biomes != null && biomes.flatSurfaceNoise != null ? biomes.flatSurfaceNoise.seed : 0);
++            hash = MixRuntimeSeed(hash, biomes != null && biomes.aggressiveSurfaceNoise != null ? biomes.aggressiveSurfaceNoise.seed : 0);
++            hash = MixRuntimeSeed(hash, displacement != null && displacement.noise != null ? displacement.noise.seed : 0);
++            hash = MixRuntimeSeed(hash, caves != null && caves.noise != null ? caves.noise.seed : 0);
++            hash = MixRuntimeSeed(hash, Mathf.RoundToInt(chunkSize));
++            return hash == 0u ? 1 : (int)hash;
++        }
++    }
++
++    private static uint MixRuntimeSeed(uint hash, int value)
++    {
++        unchecked
++        {
++            hash ^= (uint)value;
++            hash *= 16777619u;
++            hash ^= hash >> 13;
++            return hash;
++        }
++    }
++
+     // COLD ALLOC: Comparison<HectonChunkRequest>[1] - cached request sort delegate, prevents per-refresh lambda allocation - owner: HectonWorldGenerator
+     private static readonly System.Comparison<HectonChunkRequest> _chunkRequestDistanceComparison = CompareChunkRequestsByDistance;
+     // COLD ALLOC: Comparison<VoxelClusterAccumulator>[1] - cached POI cluster sort delegate, prevents per-finalize lambda allocation - owner: HectonWorldGenerator
+diff --git a/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs b/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+index cac437ff..72681d97 100644
+--- a/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
++++ b/Assets/_Project/Scripts/SaveBinaryPayloadCodec.cs
+@@ -300,14 +300,15 @@ namespace Hecton8.SaveSystem
+ 
+         private static bool WriteInventory(ref BufferWriter writer, InventoryDTO value)
+         {
+-            return writer.WriteInt(value.cellCount)
+-                && writer.WriteStructArray(value.itemHashIds)
+-                && writer.WriteStructArray(value.packedCellCoordinates)
+-                && writer.WriteStructArray(value.stackCounts)
+-                && writer.WriteStructArray(value.itemStateFlags)
+-                && writer.WriteStructArray(value.itemGeneticsWords)
+-                && writer.WriteStructArray(value.qualityMilli)
+-                && writer.WriteStructArray(value.lastUpdateUnixSeconds)
++            int logicalCellCount = Math.Clamp(value.cellCount, 0, InventoryDTO.MaxCells);
++            return writer.WriteInt(logicalCellCount)
++                && writer.WriteStructArraySlice(value.itemHashIds, logicalCellCount)
++                && writer.WriteStructArraySlice(value.packedCellCoordinates, logicalCellCount)
++                && writer.WriteStructArraySlice(value.stackCounts, logicalCellCount)
++                && writer.WriteStructArraySlice(value.itemStateFlags, logicalCellCount)
++                && writer.WriteStructArraySlice(value.itemGeneticsWords, logicalCellCount)
++                && writer.WriteStructArraySlice(value.qualityMilli, logicalCellCount)
++                && writer.WriteStructArraySlice(value.lastUpdateUnixSeconds, logicalCellCount)
+                 && writer.WriteFloat(value.totalWeight)
+                 && writer.WriteInt(value.gridColumns)
+                 && writer.WriteInt(value.gridRows);
+diff --git a/Assets/_Project/Scripts/SaveBinaryStorage.cs b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+index b78a5068..a33593ab 100644
+--- a/Assets/_Project/Scripts/SaveBinaryStorage.cs
++++ b/Assets/_Project/Scripts/SaveBinaryStorage.cs
+@@ -2095,7 +2095,7 @@ namespace Hecton8.SaveSystem
+                 }
+             }
+ 
+-            List<PersistentWorldDeltaRecord> aggregatedWorldDeltas = new List<PersistentWorldDeltaRecord>(math.max(16, checked((int)header.EntityCount)));
++            List<PersistentWorldDeltaRecord> aggregatedWorldDeltas = new List<PersistentWorldDeltaRecord>(256);
+             if (sectorEntries != null)
+             {
+                 for (int i = 0; i < sectorEntries.Length; i++)
+@@ -2355,7 +2355,8 @@ namespace Hecton8.SaveSystem
+ 
+                         if (!backupRecovered)
+                         {
+-                            error = $"Indexed sector 0x{desiredSectorHash:X16} skipped after primary and backup recovery failed. Primary: {sectorError} Backup: {backupError}";
++                            ReportIndexedSectorQuarantine(desiredSectorHash, sectorError, backupError);
++                            error = $"QUARANTINED indexed sector 0x{desiredSectorHash:X16}; pristine reset sector will be generated by runtime streaming. Primary: {sectorError} Backup: {backupError}";
+                             continue;
+                         }
+                     }
+@@ -2918,12 +2919,36 @@ namespace Hecton8.SaveSystem
+         }
+ 
+         internal static long ComputePersistentWorldPagedSectorHash(in AbsoluteUniversePosition position)
++        {
++            return PackSectorHash(QuantizePersistentWorldPagedSector(in position));
++        }
++
++        private static int2 QuantizePersistentWorldPagedSector(in AbsoluteUniversePosition position)
+         {
+             double3 absolute = position.ToAbsoluteDouble3();
+-            int2 sectorCoord = new int2(
++            return new int2(
+                 (int)math.floor(absolute.x / PersistentWorldSectorEdgeLengthMeters),
+                 (int)math.floor(absolute.z / PersistentWorldSectorEdgeLengthMeters));
+-            return PackSectorHash(sectorCoord);
++        }
++
++        private static int2 UnpackSectorHash(long sectorHash)
++        {
++            return new int2((int)(sectorHash >> 32), unchecked((int)(uint)sectorHash));
++        }
++
++        private static bool IsPersistentWorldPagedSectorWithinLoadWindow(long sectorHash, in AbsoluteUniversePosition centerPosition)
++        {
++            int2 center = QuantizePersistentWorldPagedSector(in centerPosition);
++            int2 sector = UnpackSectorHash(sectorHash);
++            return math.abs(sector.x - center.x) <= 1 && math.abs(sector.y - center.y) <= 1;
++        }
++
++        private static void ReportIndexedSectorQuarantine(long sectorHash, string primaryError, string backupError)
++        {
++            CrashTelemetryBuffer.ReportSaveSystemCriticalFault();
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            Debug.LogWarning($"[SaveBinaryStorage] QUARANTINED indexed sector 0x{sectorHash:X16}. Primary: {primaryError} Backup: {backupError}");
++#endif
+         }
+ 
+         internal static long ComputeModPayloadSectorHash(uint modHash, long pagedSectorHash)
+@@ -5790,7 +5815,7 @@ namespace Hecton8.SaveSystem
+             }
+ 
+             int charCount = byteLength / sizeof(char);
+-            value = new string((char*)AddByteOffset(source, cursor), 0, charCount);
++            value = string.Intern(new string((char*)AddByteOffset(source, cursor), 0, charCount));
+             cursor += byteLength;
+             return true;
+         }
+diff --git a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+index e8ca4210..a6f60da9 100644
+--- a/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
++++ b/Assets/_Project/Scripts/World/PersistentWorldRegistry.cs
+@@ -21,7 +21,7 @@ using UnityEngine;
+ namespace Hecton8.World
+ {
+     [StructLayout(LayoutKind.Explicit, Size = 48)]
+-    internal struct AbsoluteUniversePosition
++    public struct AbsoluteUniversePosition
+     {
+         internal const int CellSizeMeters = 5000;
+ 
+@@ -460,7 +460,7 @@ namespace Hecton8.World
+         private const double HydrationRescanDistanceSq = HydrationRescanDistanceMeters * HydrationRescanDistanceMeters;
+         private const int MaxHydrationsPerFrame = 30;
+         private const int MaxDehydrationsPerTick = 8;
+-        private const int MaxPendingEntityStateTempWrites = 64;
++        private const int MaxPendingEntityStateTempWrites = 4;
+         private const int MaxEntityStateTempWriteCompletionsPerTick = 4;
+         private const int PagedSectorWindowWidth = 3;
+         private const int PagedSectorHashCount = PagedSectorWindowWidth * PagedSectorWindowWidth;
+@@ -471,6 +471,7 @@ namespace Hecton8.World
+         private const float FloraStateQuantizationScale = 255f;
+         private const uint FaunaHibernationStateTypeMask = 0xF9000000u;
+         private const uint WhaleFallStateTypeMask = 0xF8000000u;
++        private const uint FaunaEggStateTypeMask = 0xF7000000u;
+         private const int FaunaHibernationStateValueMask = 0x00FFFFFF;
+         private const int FaunaStateFlagLargeThreat = 1 << 0;
+         private const int FaunaStateFlagPredator = 1 << 1;
+@@ -1929,10 +1930,22 @@ namespace Hecton8.World
+                 await Awaitable.BackgroundThreadAsync();
+                 if (!SaveBinaryStorage.TryLoadIndexedPersistentWorldSectors(_indexedSectorSavePath, desiredSectorHashes, loadedSectorRecords, out string error))
+                 {
++                    await Awaitable.MainThreadAsync();
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                     Debug.LogError($"[PersistentWorldRegistry] Indexed sector paging failed: {error}");
++#endif
+                     return;
+                 }
+ 
++                if (!string.IsNullOrEmpty(error))
++                {
++                    await Awaitable.MainThreadAsync();
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++                    Debug.LogWarning($"[PersistentWorldRegistry] Indexed sector paging recovered with quarantine: {error}");
++#endif
++                    await Awaitable.BackgroundThreadAsync();
++                }
++
+                 if (!ApplySectorOverrides(desiredSectorHashes, loadedSectorRecords, out string overrideError))
+                 {
+                     Debug.LogError($"[PersistentWorldRegistry] Sector override merge failed: {overrideError}");
+@@ -2607,6 +2620,7 @@ namespace Hecton8.World
+             {
+                 await Awaitable.BackgroundThreadAsync();
+                 Dictionary<long, List<PersistentWorldDeltaRecord>>.Enumerator sectorEnumerator = sectors.GetEnumerator();
++                int pendingEntityStateWrites = 0;
+                 try
+                 {
+                     while (sectorEnumerator.MoveNext())
+@@ -2631,6 +2645,22 @@ namespace Hecton8.World
+                                 entityStateBucket != null &&
+                                 entityStateBucket.Count > 0)
+                             {
++                                while (pendingEntityStateWrites >= MaxPendingEntityStateTempWrites && string.IsNullOrEmpty(failureMessage))
++                                {
++                                    if (!TryDrainCompletedSectorEntityStateWriteWork(entityStateWriteWork, ref pendingEntityStateWrites, out failureMessage))
++                                        break;
++
++                                    if (pendingEntityStateWrites >= MaxPendingEntityStateTempWrites)
++                                    {
++                                        await Awaitable.MainThreadAsync();
++                                        await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
++                                        await Awaitable.BackgroundThreadAsync();
++                                    }
++                                }
++
++                                if (!string.IsNullOrEmpty(failureMessage))
++                                    break;
++
+                                 NativeArray<EntityDataRecord> sectorStates = new NativeArray<EntityDataRecord>(entityStateBucket.Count, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                                 try
+                                 {
+@@ -2656,6 +2686,7 @@ namespace Hecton8.World
+                                         TempPath = entityStateTempPath,
+                                         WriteHandle = writeHandle
+                                     });
++                                    pendingEntityStateWrites++;
+                                 }
+                                 finally
+                                 {
+@@ -2679,24 +2710,9 @@ namespace Hecton8.World
+                     sectorEnumerator.Dispose();
+                 }
+ 
+-                int pendingEntityStateWrites = entityStateWriteWork.Count;
+                 while (pendingEntityStateWrites > 0 && string.IsNullOrEmpty(failureMessage))
+                 {
+-                    for (int i = 0; i < entityStateWriteWork.Count; i++)
+-                    {
+-                        SectorEntityStateWriteWork work = entityStateWriteWork[i];
+-                        if (work.IsCompleted || !work.WriteHandle.IsCreated || !work.WriteHandle.IsCompleted)
+-                            continue;
+-
+-                        if (!SaveBinaryStorage.TryCompleteIndexedSectorEntityStateOverrideWrite(ref work.WriteHandle, out string entityStateError))
+-                        {
+-                            failureMessage = $"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{work.SectorHash:X16}: {entityStateError}";
+-                            break;
+-                        }
+-
+-                        work.IsCompleted = true;
+-                        pendingEntityStateWrites--;
+-                    }
++                    TryDrainCompletedSectorEntityStateWriteWork(entityStateWriteWork, ref pendingEntityStateWrites, out failureMessage);
+ 
+                     if (pendingEntityStateWrites > 0 && string.IsNullOrEmpty(failureMessage))
+                     {
+@@ -3127,6 +3143,14 @@ namespace Hecton8.World
+             return TryCacheSpecialEntityState(in faunaState);
+         }
+ 
++        internal bool TryCacheFaunaEggState(in EntityDataRecord eggState)
++        {
++            if (!IsFaunaEggState(in eggState))
++                return false;
++
++            return TryCacheSpecialEntityState(in eggState);
++        }
++
+         internal bool TryCacheWhaleFallPoiState(uint instanceUid, int speciesId, in AbsoluteUniversePosition position, float currentTimeSeconds)
+         {
+             EntityDataRecord whaleFallState = CreateWhaleFallPoiState(instanceUid, speciesId, in position, currentTimeSeconds);
+@@ -3168,7 +3192,7 @@ namespace Hecton8.World
+ 
+         private bool TryCacheSpecialEntityState(in EntityDataRecord entityState)
+         {
+-            if (!IsFaunaHibernationState(in entityState) && !IsWhaleFallPoiState(in entityState))
++            if (!IsFaunaHibernationState(in entityState) && !IsWhaleFallPoiState(in entityState) && !IsFaunaEggState(in entityState))
+                 return false;
+ 
+             RegisterSpecialEntityStateInMemory(in entityState);
+@@ -3243,6 +3267,31 @@ namespace Hecton8.World
+                     for (int i = 0; i < entityStates.Length; i++)
+                     {
+                         EntityDataRecord entityState = entityStates[i];
++                        if (IsFaunaEggState(in entityState))
++                        {
++                            AbsoluteUniversePosition eggAup = AbsoluteUniversePosition.FromAlignedBlit(in entityState.Position);
++                            if (AbsoluteUniversePosition.DistanceSq(in eggAup, in playerAup) > restoreRadiusSq ||
++                                GetFaunaEggHatchTimeSeconds(in entityState) > Time.time)
++                            {
++                                _entityStateScratch.Add(entityState);
++                                continue;
++                            }
++
++                            destination.Add(CreateFaunaHibernationState(
++                                entityState.InstanceUid,
++                                GetFaunaEggSpeciesId(in entityState),
++                                1f,
++                                in eggAup,
++                                false,
++                                false,
++                                Time.time,
++                                0.15f));
++                            _entityStateByInstanceUid.Remove(entityState.InstanceUid);
++                            restoredCount++;
++                            consumedAnyFauna = true;
++                            continue;
++                        }
++
+                         if (!IsFaunaHibernationState(in entityState))
+                         {
+                             _entityStateScratch.Add(entityState);
+@@ -3683,7 +3732,7 @@ namespace Hecton8.World
+             if (_pendingEntityStateTempWrites.Count >= MaxPendingEntityStateTempWrites)
+             {
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+-                Debug.LogError("[PersistentWorldRegistry] Async entity-state temp write queue is full.");
++                Debug.LogWarning("[PersistentWorldRegistry] Async entity-state temp write queue is full; dropped non-critical terrain/flora state.");
+ #endif
+                 return false;
+             }
+@@ -3788,6 +3837,34 @@ namespace Hecton8.World
+             JobHandle.ScheduleBatchedJobs();
+         }
+ 
++        private static bool TryDrainCompletedSectorEntityStateWriteWork(
++            List<SectorEntityStateWriteWork> writeWork,
++            ref int pendingEntityStateWrites,
++            out string failureMessage)
++        {
++            failureMessage = string.Empty;
++            if (writeWork == null || writeWork.Count <= 0)
++                return true;
++
++            for (int i = 0; i < writeWork.Count; i++)
++            {
++                SectorEntityStateWriteWork work = writeWork[i];
++                if (work == null || work.IsCompleted || !work.WriteHandle.IsCreated || !work.WriteHandle.IsCompleted)
++                    continue;
++
++                if (!SaveBinaryStorage.TryCompleteIndexedSectorEntityStateOverrideWrite(ref work.WriteHandle, out string error))
++                {
++                    failureMessage = $"[PersistentWorldRegistry] Sector entity-state snapshot failed for 0x{work.SectorHash:X16}: {error}";
++                    return false;
++                }
++
++                work.IsCompleted = true;
++                pendingEntityStateWrites = math.max(0, pendingEntityStateWrites - 1);
++            }
++
++            return true;
++        }
++
+         private static void DisposeEntityStateWriteWorkDeferred(List<SectorEntityStateWriteWork> writeWork)
+         {
+             if (writeWork == null || writeWork.Count <= 0)
+@@ -3893,7 +3970,7 @@ namespace Hecton8.World
+ 
+         private static bool IsSpecialEntityState(in EntityDataRecord state)
+         {
+-            return IsFaunaHibernationState(in state) || IsFloraSpawnTimestampState(in state) || IsWhaleFallPoiState(in state);
++            return IsFaunaHibernationState(in state) || IsFaunaEggState(in state) || IsFloraSpawnTimestampState(in state) || IsWhaleFallPoiState(in state);
+         }
+ 
+         private static ulong ResolveItemGeneticsMask(in EntityDataRecord state)
+@@ -3959,6 +4036,31 @@ namespace Hecton8.World
+                    (((uint)state.InventoryHash & 0xFF000000u) == FaunaHibernationStateTypeMask);
+         }
+ 
++        internal static EntityDataRecord CreateFaunaEggState(
++            uint instanceUid,
++            int speciesId,
++            in AbsoluteUniversePosition position,
++            float laidTimeSeconds,
++            float incubationSeconds)
++        {
++            float hatchTimeSeconds = math.max(0f, laidTimeSeconds) + math.max(1f, incubationSeconds);
++            return new EntityDataRecord
++            {
++                Position = position.ToAlignedBlit(),
++                Quantity = math.max(1, speciesId),
++                Integrity01 = hatchTimeSeconds,
++                InventoryHash = unchecked((int)FaunaEggStateTypeMask),
++                InstanceUid = instanceUid
++            };
++        }
++
++        internal static bool IsFaunaEggState(in EntityDataRecord state)
++        {
++            return state.InstanceUid != 0u &&
++                   state.Quantity > 0 &&
++                   (((uint)state.InventoryHash & 0xFF000000u) == FaunaEggStateTypeMask);
++        }
++
+         internal static EntityDataRecord CreateWhaleFallPoiState(
+             uint instanceUid,
+             int speciesId,
+@@ -4014,6 +4116,18 @@ namespace Hecton8.World
+             return state.Quantity;
+         }
+ 
++        internal static int GetFaunaEggSpeciesId(in EntityDataRecord state)
++        {
++            return state.Quantity;
++        }
++
++        internal static float GetFaunaEggHatchTimeSeconds(in EntityDataRecord state)
++        {
++            return IsFaunaEggState(in state) && math.isfinite(state.Integrity01)
++                ? math.max(0f, state.Integrity01)
++                : 0f;
++        }
++
+         internal static float GetFaunaHibernationHealth(in EntityDataRecord state)
+         {
+             return TryUnpackFaunaVitals(state.Position.Reserved, out float health, out _)
+diff --git a/Assets/_Project/Scripts/PredictivePagingSmokeTester.cs b/Assets/_Project/Scripts/PredictivePagingSmokeTester.cs
+new file mode 100644
+index 00000000..408f58cb
+--- /dev/null
++++ b/Assets/_Project/Scripts/PredictivePagingSmokeTester.cs
+@@ -0,0 +1,103 @@
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++// ============================================================================
++// HECTON-8 - PredictivePagingSmokeTester.cs
++// Dev-only smoke for 20s velocity-projected indexed-sector paging math.
++// ============================================================================
++
++using Hecton8.SaveSystem;
++using Unity.Mathematics;
++using UnityEngine;
++
++namespace Hecton8.Dev
++{
++    [DisallowMultipleComponent]
++    [AddComponentMenu("Hecton8/Dev/Predictive Paging Smoke Tester")]
++    public sealed class PredictivePagingSmokeTester : MonoBehaviour
++    {
++        [Header("Execution")]
++        [SerializeField]
++        private bool runOnStart;
++
++        [Header("Math Inputs")]
++        [SerializeField]
++        private Vector3 currentRuntimePosition = new Vector3(990f, -25f, 0f);
++
++        [SerializeField]
++        private Vector3 currentWorldVelocity = new Vector3(2f, 0f, 0f);
++
++        [SerializeField, Min(0.01f)]
++        private float lookaheadSeconds = 20f;
++
++        [SerializeField, Min(1)]
++        private int chunkSizeMeters = 64;
++
++#pragma warning disable CS0414
++        [Header("Debug")]
++        [SerializeField] private bool _debugLastPass;
++        [SerializeField] private long _debugCurrentSectorHash;
++        [SerializeField] private long _debugProjectedSectorHash;
++        [SerializeField] private int3 _debugCurrentChunkId;
++        [SerializeField] private int3 _debugProjectedChunkId;
++#pragma warning restore CS0414
++
++        private void Start()
++        {
++            if (runOnStart)
++                RunPredictivePagingSmokePass();
++        }
++
++        [ContextMenu("Run Predictive Paging Smoke Pass")]
++        public void RunPredictivePagingSmokePass()
++        {
++            _debugLastPass = false;
++            if (!SaveManager.TryComputePredictiveIndexedPagingSectorHash(
++                    currentRuntimePosition,
++                    currentWorldVelocity,
++                    lookaheadSeconds,
++                    chunkSizeMeters,
++                    out long currentSectorHash,
++                    out long projectedSectorHash,
++                    out int3 currentChunkId,
++                    out int3 projectedChunkId))
++            {
++                Debug.LogError("[PredictivePagingSmokeTester] Predictive paging math rejected valid finite inputs.");
++                return;
++            }
++
++            _debugCurrentSectorHash = currentSectorHash;
++            _debugProjectedSectorHash = projectedSectorHash;
++            _debugCurrentChunkId = currentChunkId;
++            _debugProjectedChunkId = projectedChunkId;
++
++            if (currentSectorHash == projectedSectorHash)
++            {
++                Debug.LogError("[PredictivePagingSmokeTester] 20s projection did not cross the expected paged sector boundary.");
++                return;
++            }
++
++            if (math.all(currentChunkId == projectedChunkId))
++            {
++                Debug.LogError("[PredictivePagingSmokeTester] 20s projection did not cross the expected chunk boundary.");
++                return;
++            }
++
++            if (SaveManager.TryComputePredictiveIndexedPagingSectorHash(
++                    new Vector3(float.NaN, 0f, 0f),
++                    currentWorldVelocity,
++                    lookaheadSeconds,
++                    chunkSizeMeters,
++                    out _,
++                    out _,
++                    out _,
++                    out _))
++            {
++                Debug.LogError("[PredictivePagingSmokeTester] Predictive paging math accepted NaN input.");
++                return;
++            }
++
++            _debugLastPass = true;
++            Debug.Log("[PredictivePagingSmokeTester] PASS: 20s velocity projection resolves next indexed sector and rejects NaN input.");
++        }
++    }
++}
++#endif
+diff --git a/Assets/_Project/Scripts/PredictivePagingSmokeTester.cs.meta b/Assets/_Project/Scripts/PredictivePagingSmokeTester.cs.meta
+new file mode 100644
+index 00000000..a3434c0f
+--- /dev/null
++++ b/Assets/_Project/Scripts/PredictivePagingSmokeTester.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: 92b397e4da9c9b34cb9b12c500fc38cd
+\ No newline at end of file

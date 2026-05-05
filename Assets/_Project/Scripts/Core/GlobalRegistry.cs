@@ -196,6 +196,7 @@ namespace Hecton8.Core
         private static PostFXRTManager _postFXRTRuntime;
         private static UIRTManager _uiRTRuntime;
         private static SettingsManager _settingsRuntime;
+        private static RuntimeWatchdog _runtimeWatchdogRuntime;
         private static GameTickManager _tickManager;
         private static SystemDispatcher _dispatcher;
         private static RenderDispatcher _renderDispatcher;
@@ -786,6 +787,11 @@ namespace Hecton8.Core
         public static SettingsManager Settings => _settingsRuntime;
 
         /// <summary>
+        /// Registered runtime liveness watchdog owner.
+        /// </summary>
+        public static RuntimeWatchdog RuntimeWatchdog => _runtimeWatchdogRuntime;
+
+        /// <summary>
         /// Registered tick-manager owner.
         /// </summary>
         public static GameTickManager TickManager => _tickManager;
@@ -959,6 +965,7 @@ namespace Hecton8.Core
             _postFXRTRuntime = null;
             _uiRTRuntime = null;
             _settingsRuntime = null;
+            _runtimeWatchdogRuntime = null;
             _tickManager = null;
             _dispatcher = null;
             _renderDispatcher = null;
@@ -1847,6 +1854,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative runtime liveness watchdog owner.
+        /// </summary>
+        public static void RegisterRuntimeWatchdogRuntime(RuntimeWatchdog instance)
+        {
+            RegisterServiceAllowSameInstance(ref _runtimeWatchdogRuntime, instance);
+        }
+
+        /// <summary>
         /// Unregisters the current input service if the owner matches.
         /// </summary>
         /// <param name="instance">Service owner requesting unregistration.</param>
@@ -2637,6 +2652,14 @@ namespace Hecton8.Core
         public static void UnregisterSettingsRuntime(SettingsManager instance)
         {
             UnregisterService(ref _settingsRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current runtime liveness watchdog owner if the owner matches.
+        /// </summary>
+        public static void UnregisterRuntimeWatchdogRuntime(RuntimeWatchdog instance)
+        {
+            UnregisterService(ref _runtimeWatchdogRuntime, instance);
         }
 
         /// <summary>
@@ -3446,6 +3469,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(PostFXRTManager)) return GlobalRegistryServiceSlot.PostFXRTRuntime;
             if (serviceType == typeof(UIRTManager)) return GlobalRegistryServiceSlot.UIRTRuntime;
             if (serviceType == typeof(SettingsManager)) return GlobalRegistryServiceSlot.SettingsRuntime;
+            if (serviceType == typeof(RuntimeWatchdog)) return GlobalRegistryServiceSlot.RuntimeWatchdogRuntime;
             if (serviceType == typeof(GameTickManager)) return GlobalRegistryServiceSlot.TickManager;
             if (serviceType == typeof(SystemDispatcher)) return GlobalRegistryServiceSlot.Dispatcher;
             if (serviceType == typeof(RenderDispatcher)) return GlobalRegistryServiceSlot.RenderDispatcher;

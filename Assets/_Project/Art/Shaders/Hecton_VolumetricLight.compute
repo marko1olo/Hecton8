@@ -29,6 +29,9 @@ CBUFFER_START(HectonVolumetricLightParams)
     float4x4 _HectonVolumetricViewProjection;
 CBUFFER_END
 
+float4 _MeteorFogShadowPositions[4];
+float4 _MeteorFogShadowParams;
+
 float SafeRcp(float value)
 {
     return abs(value) > 1e-5 ? rcp(value) : 0.0;
@@ -205,6 +208,30 @@ float ResolveVolumetricShadowRaymarch(float3 samplePositionWS, float3 lightDirec
     return saturate(transmittance);
 }
 
+float ResolveMeteorFogShadow(float3 samplePositionWS)
+{
+    int shadowCount = clamp((int)round(_MeteorFogShadowParams.x), 0, 4);
+    float strength = saturate(_MeteorFogShadowParams.y);
+    if (shadowCount <= 0 || strength <= 0.0001)
+        return 1.0;
+
+    float occlusion = 0.0;
+    [unroll]
+    for (int index = 0; index < 4; index++)
+    {
+        if (index >= shadowCount)
+            break;
+
+        float4 payload = _MeteorFogShadowPositions[index];
+        float radius = max(payload.w, 1.0);
+        float distanceToMeteor = distance(samplePositionWS, payload.xyz);
+        float localShadow = saturate(1.0 - distanceToMeteor * SafeRcp(radius));
+        occlusion = max(occlusion, localShadow * localShadow);
+    }
+
+    return saturate(1.0 - occlusion * strength);
+}
+
 [numthreads(8, 8, 1)]
 void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -278,6 +305,7 @@ void RaymarchVolumetricLight(uint3 dispatchThreadId : SV_DispatchThreadID)
         float phase = PhaseHG(cosTheta, anisotropy);
         float shadowTerm = ResolveMainLightShadow(samplePositionWS);
         shadowTerm *= ResolveVolumetricShadowRaymarch(samplePositionWS, lightDirectionWS, density);
+        shadowTerm *= ResolveMeteorFogShadow(samplePositionWS);
         transmittance *= exp(-extinction * stepSize);
         accumulatedLight += density * localScatterCoeff * phase * shadowTerm * transmittance * stepSize;
 

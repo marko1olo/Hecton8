@@ -1,0 +1,9 @@
+C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\MapMagic.Editor.dll
+C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\MapMagic.Editor.pdb
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MapMagic.Editor.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MapMagic.Editor.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MapMagic.Editor.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MapMagic.Editor.sourcelink.json
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MapMagic.3C7A2F7F.Up2Date
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MapMagic.Editor.dll
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\MapMagic.Editor.pdb

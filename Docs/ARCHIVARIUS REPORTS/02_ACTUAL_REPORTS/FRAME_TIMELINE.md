@@ -1,4 +1,7 @@
 # FRAME TIMELINE — HECTON-8 Runtime Execution Order
+Date: 2026-05-04
+Status: REFERENCE
+
 
 > **Status:** ETA SANITIZED  
 > **Mandates Followed:** AGENTS.md § Tick System · § Jobs/Burst · § Init Order Safety  

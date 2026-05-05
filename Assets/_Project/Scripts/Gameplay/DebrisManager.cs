@@ -1,4 +1,5 @@
 using Hecton8.Core;
+using Hecton8.Caves;
 using Hecton8.World;
 using Unity.Burst;
 using Unity.Collections;
@@ -29,11 +30,13 @@ namespace Hecton8.Gameplay
         private const float MinimumPower = 0.05f;
         private const float WorldCullY = -5000f;
         private const float MaximumChunkLifetime = 60f;
+        private const float ThermalPetrificationStillSeconds = 60f;
+        private const float ThermalPetrificationVelocitySq = 0.0025f;
+        private const float ThermalPetrificationProbeRadius = 2.5f;
+        private const float ThermalPetrificationSdfRadius = 0.75f;
         private const int DebrisPoolTelemetryId = unchecked((int)0x00DEB815u);
         private const uint PendingBurstQueueFullReason = 0x44504251u;
         private const uint ActiveSlotPoolExhaustedReason = 0x4450534Cu;
-
-        private static DebrisManager _instance;
 
         // COLD ALLOC: Mesh[192] - active chunk mesh slots - owner: DebrisManager
         private readonly Mesh[] _slotMeshes = new Mesh[MaxActiveChunks];
@@ -65,6 +68,8 @@ namespace Hecton8.Gameplay
         private readonly DebrisInstanceData[] _batchInstanceData = new DebrisInstanceData[MaxActiveChunks];
         // COLD ALLOC: PendingBurstRequest[24] - deferred burst queue for post-job insertion - owner: DebrisManager
         private readonly PendingBurstRequest[] _pendingBursts = new PendingBurstRequest[MaxPendingBursts];
+        // COLD ALLOC: float[192] - per-slot stillness timer for thermal petrification - owner: DebrisManager
+        private readonly float[] _thermalPetrificationTimers = new float[MaxActiveChunks];
 
         private NativeArray<DebrisChunkState> _frontStates;
         private NativeArray<DebrisChunkState> _backStates;
@@ -88,18 +93,12 @@ namespace Hecton8.Gameplay
         /// <returns>Runtime debris owner.</returns>
         public static DebrisManager EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            if (GlobalRegistry.Debris is DebrisManager registeredManager)
+                return registeredManager;
 
             GameObject runtimeRoot = new GameObject("[DebrisManager]");
             DebrisManager manager = runtimeRoot.AddComponent<DebrisManager>();
             return manager;
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
         }
 
         /// <summary>
@@ -116,13 +115,11 @@ namespace Hecton8.Gameplay
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            if (GlobalRegistry.Debris is DebrisManager registeredManager && registeredManager != this)
             {
                 Destroy(gameObject);
                 return;
             }
-
-            _instance = this;
 
             if (!_frontStates.IsCreated)
             {
@@ -152,6 +149,7 @@ namespace Hecton8.Gameplay
                 _matrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxActiveChunks, MatrixStrideBytes);
             }
 
+            InitializeService();
         }
 
         private void OnEnable()
@@ -236,9 +234,6 @@ namespace Hecton8.Gameplay
 
             ReleaseNativeState();
             ReleaseBuffer(ref _matrixBuffer);
-
-            if (_instance == this)
-                _instance = null;
         }
 
         /// <inheritdoc />
@@ -333,6 +328,7 @@ namespace Hecton8.Gameplay
 
             _simulationScheduled = false;
             SwapStateBuffers();
+            ProcessThermalPetrification();
         }
 
         /// <inheritdoc />
@@ -641,6 +637,57 @@ namespace Hecton8.Gameplay
             System.Array.Clear(_slotShadowModes, 0, _slotShadowModes.Length);
             System.Array.Clear(_slotReceiveShadows, 0, _slotReceiveShadows.Length);
             System.Array.Clear(_slotLayerMasks, 0, _slotLayerMasks.Length);
+            System.Array.Clear(_thermalPetrificationTimers, 0, _thermalPetrificationTimers.Length);
+        }
+
+        private void ProcessThermalPetrification()
+        {
+            if (!_frontStates.IsCreated)
+                return;
+
+            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
+            if (thermalManager == null)
+                return;
+
+            float deltaTime = Mathf.Max(0f, Time.deltaTime);
+            for (int slotIndex = 0; slotIndex < _frontStates.Length; slotIndex++)
+            {
+                DebrisChunkState state = _frontStates[slotIndex];
+                if (state.Active == 0)
+                {
+                    _thermalPetrificationTimers[slotIndex] = 0f;
+                    continue;
+                }
+
+                Vector3 runtimePosition = new Vector3(state.Position.x, state.Position.y, state.Position.z);
+                if (math.lengthsq(state.Velocity) > ThermalPetrificationVelocitySq ||
+                    !thermalManager.SampleThermalFlow(runtimePosition, ThermalPetrificationProbeRadius, out AbyssalThermalManager.ThermalFlowSample sample) ||
+                    sample.Heat01 <= 0.1f)
+                {
+                    _thermalPetrificationTimers[slotIndex] = 0f;
+                    continue;
+                }
+
+                _thermalPetrificationTimers[slotIndex] += deltaTime;
+                if (_thermalPetrificationTimers[slotIndex] < ThermalPetrificationStillSeconds)
+                {
+                    state.Age = math.min(state.Age, PoolReturnDelay - 0.05f);
+                    _frontStates[slotIndex] = state;
+                    continue;
+                }
+
+                Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+                if (HectonVoxelVolume.TryDepositAdditiveSdfSphere(
+                        absolutePosition,
+                        ThermalPetrificationSdfRadius * math.max(0.5f, state.MassScale),
+                        ThermalPetrificationSdfRadius))
+                {
+                    _frontStates[slotIndex] = default;
+                    _slotMeshes[slotIndex] = null;
+                    _slotMaterials[slotIndex] = null;
+                    _thermalPetrificationTimers[slotIndex] = 0f;
+                }
+            }
         }
 
         private void SwapStateBuffers()

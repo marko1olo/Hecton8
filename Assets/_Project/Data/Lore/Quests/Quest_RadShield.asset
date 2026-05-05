@@ -1,0 +1,40 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8726360dc0d2a8c48a29a476077f0abc, type: 3}
+  m_Name: Quest_RadShield
+  m_EditorClassIdentifier: Hecton8.Core::Hecton8.Quest.QuestData
+  questId: quest_rad_shield
+  displayTitle: RAD-SHIELD
+  description: Treat the suit as compromised until radiation shielding is installed.
+  localizedDisplayTitle:
+    tableKey: QUEST_QUEST_RAD_SHIELD_TITLE
+    fallbackText: RAD-SHIELD
+    variants: []
+  localizedDescription:
+    tableKey: QUEST_QUEST_RAD_SHIELD_DESCRIPTION
+    fallbackText: Treat the suit as compromised until radiation shielding is installed.
+    variants: []
+  triggerType: 3
+  triggerId: radiation_critical_advisory
+  triggerValue: 0
+  completionType: 99
+  completionId: 
+  completionValue: 0
+  prerequisiteQuestIds: []
+  criticalItemId: 
+  respawnEventId: 
+  phaseGate: 0
+  markerTargetId: 
+  markerWorldPosition: {x: 0, y: 0, z: 0}
+  markerHeightOffset: 6
+  autoActivateOnStart: 0
+  oneTimeOnly: 1

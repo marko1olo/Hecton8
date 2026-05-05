@@ -608,6 +608,16 @@ namespace Hecton8.AI
             AbsoluteUniversePositionBlit128 playerTargetAup = default;
             if (hasAnyPlayerTarget)
                 playerTargetAup = AbsoluteUniversePosition.FromRuntimePosition(resolvedPlayerPosition).ToAlignedBlit();
+            bool hasPackTarget = _archetype != null && _archetype.usePackHunt && (hasAnyPlayerTarget || context.HasPreyTarget);
+            Vector3 resolvedPackTargetPosition = hasAnyPlayerTarget
+                ? resolvedPlayerPosition
+                : context.PreyPosition;
+            Vector3 resolvedPackTargetVelocity = hasAnyPlayerTarget
+                ? context.PlayerVelocity
+                : Vector3.zero;
+            AbsoluteUniversePositionBlit128 packTargetAup = hasPackTarget
+                ? AbsoluteUniversePosition.FromRuntimePosition(resolvedPackTargetPosition).ToAlignedBlit()
+                : default;
 
             float chemicalSignal01 = 0f;
             if (context.HasScavengeTarget)
@@ -641,11 +651,14 @@ namespace Hecton8.AI
             input.PlayerPosition = resolvedPlayerPosition;
             input.FloatingOriginOffset = floatingOriginOffset;
             input.PlayerTargetAup = playerTargetAup;
+            input.PackTargetAup = packTargetAup;
             input.ThreatPosition = context.ThreatPosition;
             input.RivalApexPosition = context.ApexRivalPosition;
             input.PlayerForward = context.PlayerForward;
             input.PreyPosition = context.PreyPosition;
             input.ScavengePosition = context.ScavengePosition;
+            input.PackTargetPosition = resolvedPackTargetPosition;
+            input.PackTargetVelocity = resolvedPackTargetVelocity;
             input.FlockCenter = context.FlockCenter;
             input.FlockDirection = context.FlockDirection;
             input.FlockAvoidance = context.FlockAvoidance;
@@ -726,6 +739,8 @@ namespace Hecton8.AI
             {
                 input.Flags |= (int)CognitionInputFlags.IsAmbusher;
             }
+            if (hasPackTarget)
+                input.Flags |= (int)CognitionInputFlags.HasPackTarget;
 
             if (hasAnyPlayerTarget && context.HasVisualContact)
             {

@@ -451,6 +451,7 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
     private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.WorldGenerator.Tick");
     private static readonly ProfilerMarker _physicsBakeBatchProfilerMarker = new ProfilerMarker("H8.WorldGenerator.PhysicsBakeBatch");
     public static HectonWorldGenerator ActiveRuntimeInstance { get; private set; }
+    public int RuntimeWorldSeed => ComputeRuntimeWorldSeed();
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStaticState()
@@ -458,6 +459,34 @@ public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateF
         ActiveRuntimeInstance = null;
         _deferredPhysicsBakeTeardowns.Clear();
         _deferredPhysicsBakeTeardownRegistered = false;
+    }
+
+    private int ComputeRuntimeWorldSeed()
+    {
+        unchecked
+        {
+            uint hash = 2166136261u;
+            hash = MixRuntimeSeed(hash, spine != null && spine.warpNoise != null ? spine.warpNoise.seed : 0);
+            hash = MixRuntimeSeed(hash, spine != null && spine.islandNoise != null ? spine.islandNoise.seed : 0);
+            hash = MixRuntimeSeed(hash, biomes != null && biomes.biomeNoise != null ? biomes.biomeNoise.seed : 0);
+            hash = MixRuntimeSeed(hash, biomes != null && biomes.flatSurfaceNoise != null ? biomes.flatSurfaceNoise.seed : 0);
+            hash = MixRuntimeSeed(hash, biomes != null && biomes.aggressiveSurfaceNoise != null ? biomes.aggressiveSurfaceNoise.seed : 0);
+            hash = MixRuntimeSeed(hash, displacement != null && displacement.noise != null ? displacement.noise.seed : 0);
+            hash = MixRuntimeSeed(hash, caves != null && caves.noise != null ? caves.noise.seed : 0);
+            hash = MixRuntimeSeed(hash, Mathf.RoundToInt(chunkSize));
+            return hash == 0u ? 1 : (int)hash;
+        }
+    }
+
+    private static uint MixRuntimeSeed(uint hash, int value)
+    {
+        unchecked
+        {
+            hash ^= (uint)value;
+            hash *= 16777619u;
+            hash ^= hash >> 13;
+            return hash;
+        }
     }
 
     // COLD ALLOC: Comparison<HectonChunkRequest>[1] - cached request sort delegate, prevents per-refresh lambda allocation - owner: HectonWorldGenerator

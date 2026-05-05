@@ -1406,6 +1406,7 @@ namespace Hecton8.Core
         PostFXRTRuntime = 96,
         UIRTRuntime = 97,
         SettingsRuntime = 98,
+        RuntimeWatchdogRuntime = 99,
         Unknown = 255
     }
 

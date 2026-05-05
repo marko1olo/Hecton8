@@ -937,7 +937,7 @@ namespace Hecton8.Core
             if (objectPool != null)
                 objectPool.FlushInactivePoolsForMemoryPressure();
 
-            System.GC.Collect(0, System.GCCollectionMode.Optimized, blocking: false);
+            System.GC.Collect(0, System.GCCollectionMode.Optimized, false);
         }
 
         internal static void MarkLateFrameEventDispatchDeferred()

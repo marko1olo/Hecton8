@@ -507,6 +507,16 @@ namespace Hecton8.Gameplay
         /// <summary>
         /// Игрок выбрал концовку. Вызывается из UI терминала ядра.
         /// </summary>
+        public void ForceConditionMetFromQuestDAG()
+        {
+            if (_conditionMet || _endingComplete)
+                return;
+
+            _conditionMet = true;
+            EndingEvents.RaiseConditionMet();
+            NarrativeEvents.RaiseDiscoveryMade("atlas6_core_data_accessed");
+        }
+
         public void ChooseEnding(EndingChoice choice)
         {
             if (!CanChooseEnding)

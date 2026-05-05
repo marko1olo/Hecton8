@@ -12,12 +12,15 @@ namespace Hecton8.Editor
         private const double BeeLockTimeoutSeconds = 30.0;
         private const double BeePollIntervalSeconds = 2.0;
         private const double KillCooldownSeconds = 10.0;
+        private const double BeeCpuProgressEpsilonSeconds = 0.05;
 
         private static bool _reloadOrCompileObserved;
         private static bool _killAttemptedThisCycle;
         private static double _observationStartTime;
         private static double _nextPollTime;
         private static double _lastKillTime = -KillCooldownSeconds;
+        private static double _lastBeeCpuSeconds = -1.0;
+        private static double _lastBeeProgressTime;
 
         static HectonBuildDaemon()
         {
@@ -61,7 +64,7 @@ namespace Hecton8.Editor
 
             _nextPollTime = now + BeePollIntervalSeconds;
             bool editorBusy = EditorApplication.isCompiling || EditorApplication.isUpdating;
-            bool beePresent = HasBeeBackendProcess();
+            bool beePresent = TryGetBeeBackendCpuSeconds(out double beeCpuSeconds);
             if (!editorBusy && !beePresent && !_reloadOrCompileObserved)
                 return;
 
@@ -70,8 +73,12 @@ namespace Hecton8.Editor
 
             if (editorBusy || beePresent)
             {
+                if (beePresent)
+                    UpdateBeeProgress(now, beeCpuSeconds);
+
                 if (_killAttemptedThisCycle ||
-                    now - _observationStartTime < BeeLockTimeoutSeconds ||
+                    !beePresent ||
+                    now - _lastBeeProgressTime < BeeLockTimeoutSeconds ||
                     now - _lastKillTime < KillCooldownSeconds)
                 {
                     return;
@@ -97,6 +104,8 @@ namespace Hecton8.Editor
             _reloadOrCompileObserved = true;
             _killAttemptedThisCycle = false;
             _observationStartTime = EditorApplication.timeSinceStartup;
+            _lastBeeCpuSeconds = -1.0;
+            _lastBeeProgressTime = _observationStartTime;
         }
 
         private static void EndObservation()
@@ -104,16 +113,38 @@ namespace Hecton8.Editor
             _reloadOrCompileObserved = false;
             _killAttemptedThisCycle = false;
             _observationStartTime = 0d;
+            _lastBeeCpuSeconds = -1.0;
+            _lastBeeProgressTime = 0d;
         }
 
-        private static bool HasBeeBackendProcess()
+        private static void UpdateBeeProgress(double now, double beeCpuSeconds)
         {
+            if (_lastBeeCpuSeconds < 0.0 ||
+                beeCpuSeconds - _lastBeeCpuSeconds > BeeCpuProgressEpsilonSeconds)
+            {
+                _lastBeeCpuSeconds = beeCpuSeconds;
+                _lastBeeProgressTime = now;
+            }
+        }
+
+        private static bool TryGetBeeBackendCpuSeconds(out double cpuSeconds)
+        {
+            cpuSeconds = 0.0;
             try
             {
                 Process[] processes = Process.GetProcessesByName("bee_backend");
-                bool found = processes.Length > 0;
+                bool found = false;
                 for (int i = 0; i < processes.Length; i++)
-                    processes[i].Dispose();
+                {
+                    using (Process process = processes[i])
+                    {
+                        if (process.HasExited)
+                            continue;
+
+                        found = true;
+                        cpuSeconds += process.TotalProcessorTime.TotalSeconds;
+                    }
+                }
 
                 return found;
             }

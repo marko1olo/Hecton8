@@ -1,0 +1,462 @@
+using System;
+using System.Globalization;
+using System.IO;
+using System.Text;
+using Hecton8.Core;
+using Hecton8.World;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Mathematics;
+using UnityEditor;
+using UnityEngine;
+
+namespace Hecton8.Editor
+{
+    /// <summary>
+    /// Editor-only smoke tester for hydraulic erosion native lifetime, deterministic bounds, and edge-case terrain inputs.
+    /// </summary>
+    public static class HydraulicErosionSmokeTester
+    {
+        private const int BlockSize = 256;
+        private const int ScenarioCount = 4;
+        private const string OutputFolder = "CodexArtifacts";
+        private const string OutputFile = "HydraulicErosionSmokeTester.json";
+        private const string NativeMemoryOwner = nameof(HydraulicErosionSmokeTester);
+        private const string BeforeLabel = "before";
+        private const string HeightALabel = "heightA";
+        private const string HeightBLabel = "heightB";
+        private const string SedimentLabel = "sediment";
+        private const string WearLabel = "wear";
+        private const string MetricBlocksLabel = "metricBlocks";
+        private const uint SmokeFailureWarningHash = 0x48594553u;
+        private const uint NativeLeakContextHash = 0x48594E4Cu;
+
+        private struct ScenarioConfig
+        {
+            public string Name;
+            public int Resolution;
+            public int Droplets;
+            public int Lifetime;
+            public int Margin;
+            public int SlumpIterations;
+            public float SlumpStrength;
+            public float TalusAngle;
+            public uint Seed;
+        }
+
+        private struct ScenarioResult
+        {
+            public string Name;
+            public bool Passed;
+            public int Resolution;
+            public int Droplets;
+            public int Lifetime;
+            public int SlumpIterations;
+            public int NanCount;
+            public int SentinelDelta;
+            public long TrackedByteDelta;
+            public float MinHeight;
+            public float MaxHeight;
+            public float MeanHeight;
+            public float SumSediment;
+            public float SumWear;
+            public float MaxSediment;
+            public float MaxWear;
+            public float Milliseconds;
+        }
+
+        /// <summary>
+        /// Runs all smoke scenarios and writes a JSON artifact under CodexArtifacts.
+        /// </summary>
+        [MenuItem("Tools/Hecton/Dev/Terrain/Run Hydraulic Erosion Smoke Tester")]
+        public static void RunMenu()
+        {
+            string path = RunAndWriteJson();
+            Debug.Log("[HydraulicErosionSmokeTester] Wrote JSON artifact to " + path);
+        }
+
+        /// <summary>
+        /// Executes smoke scenarios and returns the JSON artifact path.
+        /// </summary>
+        public static string RunAndWriteJson()
+        {
+            // COLD ALLOC: ScenarioResult[4] - editor smoke result staging - owner: HydraulicErosionSmokeTester
+            ScenarioResult[] results = new ScenarioResult[ScenarioCount];
+            int passCount = 0;
+
+            for (int i = 0; i < ScenarioCount; i++)
+            {
+                results[i] = RunScenario(GetScenarioConfig(i));
+                if (results[i].Passed)
+                    passCount++;
+            }
+
+            string folder = Path.Combine(Directory.GetParent(Application.dataPath).FullName, OutputFolder);
+            Directory.CreateDirectory(folder);
+            string path = Path.Combine(folder, OutputFile);
+            File.WriteAllText(path, BuildJson(results, passCount));
+            AssetDatabase.Refresh();
+            return path;
+        }
+
+        private static ScenarioConfig GetScenarioConfig(int index)
+        {
+            switch (index)
+            {
+                case 0:
+                    return new ScenarioConfig
+                    {
+                        Name = "dry_zero_power",
+                        Resolution = 8,
+                        Droplets = 0,
+                        Lifetime = 1,
+                        Margin = 1,
+                        SlumpIterations = 0,
+                        SlumpStrength = 0f,
+                        TalusAngle = 45f,
+                        Seed = 0xA110CA7Eu
+                    };
+                case 1:
+                    return new ScenarioConfig
+                    {
+                        Name = "tiny_margin_clamp",
+                        Resolution = 16,
+                        Droplets = 128,
+                        Lifetime = 16,
+                        Margin = 4,
+                        SlumpIterations = 1,
+                        SlumpStrength = 0.32f,
+                        TalusAngle = 45f,
+                        Seed = 0xBADC0DEu
+                    };
+                case 2:
+                    return new ScenarioConfig
+                    {
+                        Name = "draft_tile",
+                        Resolution = 64,
+                        Droplets = 4096,
+                        Lifetime = 32,
+                        Margin = 4,
+                        SlumpIterations = 2,
+                        SlumpStrength = 0.32f,
+                        TalusAngle = 45f,
+                        Seed = 0xC001CAFEu
+                    };
+                default:
+                    return new ScenarioConfig
+                    {
+                        Name = "thermal_stress",
+                        Resolution = 96,
+                        Droplets = 2048,
+                        Lifetime = 24,
+                        Margin = 4,
+                        SlumpIterations = 4,
+                        SlumpStrength = 0.75f,
+                        TalusAngle = 25f,
+                        Seed = 0xE80510A5u
+                    };
+            }
+        }
+
+        private static ScenarioResult RunScenario(in ScenarioConfig config)
+        {
+            int pixelCount = config.Resolution * config.Resolution;
+            int blockCount = (pixelCount + BlockSize - 1) / BlockSize;
+            int sentinelBefore = NativeMemorySentinel.ActiveAllocationCount;
+            long trackedBytesBefore = NativeMemorySentinel.TrackedBytes;
+            long startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
+
+            NativeArray<float> before = default;
+            NativeArray<float> heightA = default;
+            NativeArray<float> heightB = default;
+            NativeArray<float> sediment = default;
+            NativeArray<float> wear = default;
+            NativeArray<HydraulicErosionMetricBlock> metricBlocks = default;
+            var result = new ScenarioResult
+            {
+                Name = config.Name,
+                Resolution = config.Resolution,
+                Droplets = config.Droplets,
+                Lifetime = config.Lifetime,
+                SlumpIterations = config.SlumpIterations,
+                MinHeight = 1f
+            };
+
+            try
+            {
+                before = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                heightA = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                heightB = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                sediment = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                wear = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                metricBlocks = new NativeArray<HydraulicErosionMetricBlock>(blockCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                RegisterTempJobBuffers(before, heightA, heightB, sediment, wear, metricBlocks);
+
+                JobHandle handle = new ErosionFractalHeightmapJob
+                {
+                    Before = before,
+                    Height = heightA,
+                    Resolution = config.Resolution,
+                    PrimarySeed = config.Seed,
+                    RidgeSeed = config.Seed ^ 0x9E3779B9u
+                }.Schedule(pixelCount, 64);
+
+                handle = ScheduleErosion(config, heightA, heightB, sediment, wear, handle, out NativeArray<float> current);
+                handle = new HydraulicErosionMetricsJob
+                {
+                    Heightmap = current,
+                    SedimentMask = sediment,
+                    WearMask = wear,
+                    Blocks = metricBlocks,
+                    SampleCount = pixelCount,
+                    BlockSize = BlockSize
+                }.Schedule(blockCount, 1, handle);
+
+                // COLD SYNC JOB: editor smoke tester must block to inspect deterministic result bounds.
+                handle.Complete();
+
+                ReduceMetrics(metricBlocks, ref result);
+                result.SentinelDelta = NativeMemorySentinel.ActiveAllocationCount - sentinelBefore;
+                result.TrackedByteDelta = NativeMemorySentinel.TrackedBytes - trackedBytesBefore;
+                result.Passed =
+                    result.NanCount == 0 &&
+                    result.SentinelDelta == 6 &&
+                    result.MinHeight >= -0.0001f &&
+                    result.MaxHeight <= 1.0001f;
+            }
+            finally
+            {
+                DisposeTracked(ref metricBlocks);
+                DisposeTracked(ref before);
+                DisposeTracked(ref heightA);
+                DisposeTracked(ref heightB);
+                DisposeTracked(ref sediment);
+                DisposeTracked(ref wear);
+            }
+
+            result.SentinelDelta = NativeMemorySentinel.ActiveAllocationCount - sentinelBefore;
+            result.TrackedByteDelta = NativeMemorySentinel.TrackedBytes - trackedBytesBefore;
+            result.Passed &= result.SentinelDelta == 0 && result.TrackedByteDelta == 0L;
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
+            result.Milliseconds = (float)(elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency);
+
+            if (!result.Passed && Application.isPlaying)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    SmokeFailureWarningHash,
+                    NativeLeakContextHash,
+                    result.SentinelDelta);
+            }
+
+            return result;
+        }
+
+        private static JobHandle ScheduleErosion(
+            in ScenarioConfig config,
+            NativeArray<float> heightA,
+            NativeArray<float> heightB,
+            NativeArray<float> sediment,
+            NativeArray<float> wear,
+            JobHandle dependency,
+            out NativeArray<float> current)
+        {
+            int safeMargin = math.clamp(config.Margin, 0, math.max(0, config.Resolution / 4));
+            var erosionJob = new HydraulicErosionJob
+            {
+                Heightmap = heightA,
+                SedimentMask = sediment,
+                WearMask = wear,
+                Width = config.Resolution,
+                Height = config.Resolution,
+                CoreOffsetX = safeMargin,
+                CoreOffsetZ = safeMargin,
+                CoreWidth = math.max(1, config.Resolution - safeMargin * 2),
+                CoreHeight = math.max(1, config.Resolution - safeMargin * 2),
+                DropletCount = math.max(0, config.Droplets),
+                MaxLifetime = math.max(1, config.Lifetime),
+                Seed = config.Seed,
+                Inertia = 0.05f,
+                CapacityFactor = 4f,
+                MinCapacity = 0.0001f,
+                ErosionRate = 0.35f,
+                DepositRate = 0.18f,
+                EvaporationRate = 0.015f,
+                Gravity = 4f,
+                InitialWater = config.Droplets <= 0 ? 0f : 1f,
+                InitialSpeed = 1f,
+                DepressionFillStrength = 0.85f,
+                DepressionSpawnBias = 12f,
+                ChannelSpawnBias = 4f,
+                SpawnCandidateCount = 8,
+                MinWater = 0.01f
+            };
+
+            JobHandle handle = erosionJob.Schedule(dependency);
+            current = heightA;
+            NativeArray<float> next = heightB;
+
+            for (int i = 0; i < config.SlumpIterations; i++)
+            {
+                var slumpJob = new ThermalSlumpingJob
+                {
+                    InputHeights01 = current,
+                    OutputHeights01 = next,
+                    WearMask = wear,
+                    Width = config.Resolution,
+                    Height = config.Resolution,
+                    CellSizeMeters = 1f,
+                    HeightScaleMeters = 160f,
+                    TalusAngleDegrees = config.TalusAngle,
+                    Strength = config.SlumpStrength,
+                    WriteWearMask = true
+                };
+
+                handle = slumpJob.Schedule(config.Resolution * config.Resolution, 64, handle);
+                Swap(ref current, ref next);
+            }
+
+            return handle;
+        }
+
+        private static void ReduceMetrics(NativeArray<HydraulicErosionMetricBlock> blocks, ref ScenarioResult result)
+        {
+            float minHeight = 1f;
+            float maxHeight = 0f;
+            float sumHeight = 0f;
+            float sumSediment = 0f;
+            float sumWear = 0f;
+            float maxSediment = 0f;
+            float maxWear = 0f;
+            int sampleCount = 0;
+            int nanCount = 0;
+
+            for (int i = 0; i < blocks.Length; i++)
+            {
+                HydraulicErosionMetricBlock block = blocks[i];
+                if (block.SampleCount > 0)
+                {
+                    minHeight = math.min(minHeight, block.MinHeight);
+                    maxHeight = math.max(maxHeight, block.MaxHeight);
+                    sumHeight += block.SumHeight;
+                    sumSediment += block.SumSediment;
+                    sumWear += block.SumWear;
+                    maxSediment = math.max(maxSediment, block.MaxSediment);
+                    maxWear = math.max(maxWear, block.MaxWear);
+                    sampleCount += block.SampleCount;
+                }
+
+                nanCount += block.NanCount;
+            }
+
+            result.MinHeight = minHeight;
+            result.MaxHeight = maxHeight;
+            result.MeanHeight = sampleCount > 0 ? sumHeight / sampleCount : 0f;
+            result.SumSediment = sumSediment;
+            result.SumWear = sumWear;
+            result.MaxSediment = maxSediment;
+            result.MaxWear = maxWear;
+            result.NanCount = nanCount;
+        }
+
+        private static string BuildJson(ScenarioResult[] results, int passCount)
+        {
+            // COLD ALLOC: StringBuilder[2048] - editor smoke JSON report - owner: HydraulicErosionSmokeTester
+            var builder = new StringBuilder(2048);
+            builder.Append("{\n");
+            builder.Append("  \"status\":\"PENDING VERIFICATION\",\n");
+            builder.Append("  \"tester\":\"HydraulicErosionSmokeTester\",\n");
+            builder.Append("  \"scenarioCount\":").Append(results.Length).Append(",\n");
+            builder.Append("  \"passCount\":").Append(passCount).Append(",\n");
+            builder.Append("  \"scenarios\":[\n");
+
+            for (int i = 0; i < results.Length; i++)
+            {
+                AppendScenarioJson(builder, results[i]);
+                builder.Append(i == results.Length - 1 ? "\n" : ",\n");
+            }
+
+            builder.Append("  ]\n");
+            builder.Append("}\n");
+            return builder.ToString();
+        }
+
+        private static void AppendScenarioJson(StringBuilder builder, in ScenarioResult result)
+        {
+            builder.Append("    {");
+            builder.Append("\"name\":\"").Append(result.Name).Append("\",");
+            builder.Append("\"passed\":").Append(result.Passed ? "true" : "false").Append(',');
+            builder.Append("\"resolution\":").Append(result.Resolution).Append(',');
+            builder.Append("\"droplets\":").Append(result.Droplets).Append(',');
+            builder.Append("\"lifetime\":").Append(result.Lifetime).Append(',');
+            builder.Append("\"slumpIterations\":").Append(result.SlumpIterations).Append(',');
+            builder.Append("\"nanCount\":").Append(result.NanCount).Append(',');
+            builder.Append("\"sentinelDelta\":").Append(result.SentinelDelta).Append(',');
+            builder.Append("\"trackedByteDelta\":").Append(result.TrackedByteDelta).Append(',');
+            builder.Append("\"minHeight\":");
+            AppendFloat(builder, result.MinHeight);
+            builder.Append(",\"maxHeight\":");
+            AppendFloat(builder, result.MaxHeight);
+            builder.Append(",\"meanHeight\":");
+            AppendFloat(builder, result.MeanHeight);
+            builder.Append(",\"sumSediment\":");
+            AppendFloat(builder, result.SumSediment);
+            builder.Append(",\"sumWear\":");
+            AppendFloat(builder, result.SumWear);
+            builder.Append(",\"maxSediment\":");
+            AppendFloat(builder, result.MaxSediment);
+            builder.Append(",\"maxWear\":");
+            AppendFloat(builder, result.MaxWear);
+            builder.Append(",\"milliseconds\":");
+            AppendFloat(builder, result.Milliseconds);
+            builder.Append('}');
+        }
+
+        private static void AppendFloat(StringBuilder builder, float value)
+        {
+            builder.Append(value.ToString("0.######", CultureInfo.InvariantCulture));
+        }
+
+        private static void RegisterTempJobBuffers(
+            NativeArray<float> before,
+            NativeArray<float> heightA,
+            NativeArray<float> heightB,
+            NativeArray<float> sediment,
+            NativeArray<float> wear,
+            NativeArray<HydraulicErosionMetricBlock> metricBlocks)
+        {
+            NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(metricBlocks, NativeMemoryOwner, MetricBlocksLabel, NativeAllocationLifetime.TempJob);
+        }
+
+        private static void DisposeTracked(ref NativeArray<float> array)
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
+        }
+
+        private static void DisposeTracked(ref NativeArray<HydraulicErosionMetricBlock> array)
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
+        }
+
+        private static void Swap(ref NativeArray<float> current, ref NativeArray<float> next)
+        {
+            NativeArray<float> swap = current;
+            current = next;
+            next = swap;
+        }
+    }
+}

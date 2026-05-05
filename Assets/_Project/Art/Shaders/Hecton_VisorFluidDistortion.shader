@@ -1,5 +1,10 @@
 Shader "Hidden/Hecton8/VisorFluidDistortion"
 {
+    Properties
+    {
+        [NoScaleOffset] _HectonVisorFluidBlueNoiseTex ("Blue Noise", 2D) = "gray" {}
+    }
+
     SubShader
     {
         Tags
@@ -37,9 +42,16 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 float _HectonVisorFluidEdgeFadeExponent;
                 float _HectonVisorFluidSpeed;
                 float4 _HectonVisorFluidLocalVelocity;
+                float _HectonVisorFluidAmbientLight;
+                float _HectonVisorFluidDustStrength;
+                float _HectonVisorFluidAmbientDustResponse;
+                float _HectonVisorFluidBlueNoiseTilePixels;
+                float _HectonVisorFluidHasBlueNoise;
             CBUFFER_END
 
             TEXTURE2D_X(_BlitTexture);
+            TEXTURE2D(_HectonVisorFluidBlueNoiseTex);
+            SAMPLER(sampler_HectonVisorFluidBlueNoiseTex);
             float4 _BlitTexture_TexelSize;
 
             struct Attributes
@@ -69,6 +81,17 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 p = frac(p * float2(123.34, 456.21));
                 p += dot(p, p + 34.45);
                 return frac(p.x * p.y);
+            }
+
+            float ResolveBlueNoise(float2 uv, float2 offset)
+            {
+                float hashNoise = Hash21(floor(uv * _ScreenParams.xy) + offset);
+                if (_HectonVisorFluidHasBlueNoise < 0.5)
+                    return hashNoise;
+
+                float2 blueNoiseUv = frac((uv * _ScreenParams.xy + offset) / max(_HectonVisorFluidBlueNoiseTilePixels, 16.0));
+                float sampledNoise = SAMPLE_TEXTURE2D_LOD(_HectonVisorFluidBlueNoiseTex, sampler_HectonVisorFluidBlueNoiseTex, blueNoiseUv, 0).r;
+                return sampledNoise;
             }
 
             float ValueNoise(float2 p)
@@ -114,12 +137,16 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             {
                 float lateralStreak = _HectonVisorFluidLocalVelocity.x * _HectonVisorFluidLateralStreakStrength;
                 float forwardStretch = abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength;
-                float2 scaledUV = uv * float2(
+                float2 cellScale = float2(
                     max(2.0, _HectonVisorFluidDropletScale * (1.0 + wetness * 1.6 + forwardStretch * 0.45)),
                     max(4.0, _HectonVisorFluidDropletScale * (2.35 + wetness * 1.25 + hullStress * 0.9 + forwardStretch)));
+                float2 scaledUV = uv * cellScale;
                 float2 cellId = floor(scaledUV);
                 float2 cellUV = frac(scaledUV) - 0.5;
-                float seed = Hash21(cellId + 0.13);
+                float seed = lerp(
+                    Hash21(cellId + 0.13),
+                    ResolveBlueNoise((cellId + 0.5) / max(cellScale, float2(1.0, 1.0)), float2(31.0, 17.0)),
+                    saturate(_HectonVisorFluidHasBlueNoise));
                 float activeCell = step(0.34 - wetness * 0.12 - hullStress * 0.08, seed);
 
                 float travel = frac(_Time.y * _HectonVisorFluidRunoffSpeed * (0.22 + seed * 0.48) + seed + scaledUV.x * 0.015);
@@ -140,6 +167,20 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     (0.72 - hullStress * 0.18));
                 float topBias = smoothstep(0.08, 1.0, uv.y);
                 return saturate((droplet * 0.86 + streak * 0.74 + hullFilm + condensationMask * hullStress * 0.55) * topBias);
+            }
+
+            float ComputeDustMask(float2 uv, float edgeMask)
+            {
+                float ambientReveal = saturate(_HectonVisorFluidAmbientLight * _HectonVisorFluidDustStrength * _HectonVisorFluidAmbientDustResponse);
+                if (ambientReveal <= 0.0001)
+                    return 0.0;
+
+                float blueNoise = ResolveBlueNoise(uv, float2(0.0, 0.0));
+                float specks = smoothstep(1.0 - ambientReveal * 0.62, 1.0 - ambientReveal * 0.18, blueNoise);
+                float scratchNoise = Fbm(uv * float2(47.0, 83.0) + float2(7.3, 19.1));
+                float scratch = smoothstep(0.72, 0.97, scratchNoise) * ambientReveal;
+                float centerProtection = smoothstep(0.0, 0.22, abs(uv.x - 0.5) + abs(uv.y - 0.5));
+                return saturate((specks * (0.32 + edgeMask * 0.68) + scratch * 0.35) * centerProtection);
             }
 
             float2 ComputeRefractionOffset(float2 uv, float mask, float wetness, float hullStress)
@@ -170,6 +211,7 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                     -1.0 - abs(_HectonVisorFluidLocalVelocity.z) * _HectonVisorFluidForwardStretchStrength);
                 float dropletMask = ComputeDropletMask(input.screenUV, flowDirection, wetness, hullStress);
                 float edgeMask = ComputeVisorEdgeMask(input.screenUV);
+                float dustMask = ComputeDustMask(input.screenUV, edgeMask);
                 float combinedMask = saturate(dropletMask * edgeMask * intensity);
 
                 float2 refractedUV = saturate(input.screenUV + ComputeRefractionOffset(input.screenUV, combinedMask, wetness, hullStress));
@@ -189,6 +231,9 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 }
                 half sheen = (half)saturate(combinedMask * (0.08 + wetness * 0.06 + hullStress * 0.05));
                 color.rgb = max(color.rgb, color.rgb + sheen * half3(0.018, 0.025, 0.03));
+                half3 dustTint = lerp(half3(0.018, 0.022, 0.018), half3(0.11, 0.13, 0.10), saturate(_HectonVisorFluidAmbientLight));
+                color.rgb = lerp(color.rgb, max(color.rgb - dustTint * 0.55h, half3(0.0h, 0.0h, 0.0h)), (half)(dustMask * 0.55));
+                color.rgb += dustTint * (half)(dustMask * 0.18);
                 return color;
             }
             ENDHLSL

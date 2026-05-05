@@ -1,4 +1,7 @@
 # HECTON-8 — AUP SURGERY BYTE MAP
+Date: 2026-05-04
+Status: REFERENCE
+
 **Status:** ETA SURGERY_PREPPED  
 **Target:** `AbsoluteUniversePosition` layout mutation (int64×3 + float3 → TBD)  
 **Risk:** CRITICAL — breaks binary save compatibility, native container layouts, and payload prefix offsets.  

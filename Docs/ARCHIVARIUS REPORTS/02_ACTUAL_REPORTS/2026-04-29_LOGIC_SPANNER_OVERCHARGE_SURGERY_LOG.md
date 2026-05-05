@@ -1,4 +1,7 @@
 # 2026-04-29 Logic Spanner / Overcharge Surgery Log
+Date: 2026-04-29
+Status: REFERENCE
+
 
 Mandates followed:
 - `CORE_Tools_Equipment_Interaction_Raycast_Heat.txt`

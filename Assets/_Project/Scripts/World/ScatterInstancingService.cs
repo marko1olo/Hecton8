@@ -109,6 +109,9 @@ namespace Hecton8.World
                 return;
             }
 
+            Bounds aggregateBounds = default;
+            bool hasAggregateBounds = false;
+
             for (int i = 0; i < knownPrototypes.Count; i++)
             {
                 GPUInstancerPrefabPrototype prototype = knownPrototypes[i];
@@ -154,6 +157,14 @@ namespace Hecton8.World
                     0,
                     0,
                     count);
+
+                AccumulateInstancingBounds(matrices, count, ref aggregateBounds, ref hasAggregateBounds);
+            }
+
+            if (hasAggregateBounds)
+            {
+                aggregateBounds.Expand(8f);
+                manager.instancingBounds = aggregateBounds;
             }
         }
 
@@ -213,6 +224,46 @@ namespace Hecton8.World
 
             prototype = gpuiPrefab.prefabPrototype;
             return prototype != null;
+        }
+
+        private static void AccumulateInstancingBounds(
+            Matrix4x4[] matrices,
+            int count,
+            ref Bounds aggregateBounds,
+            ref bool hasAggregateBounds)
+        {
+            if (matrices == null || count <= 0)
+                return;
+
+            int safeCount = Mathf.Min(count, matrices.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                Matrix4x4 matrix = matrices[i];
+                Vector3 position = new Vector3(matrix.m03, matrix.m13, matrix.m23);
+                if (!IsFinite(position))
+                    continue;
+
+                float scaleX = new Vector3(matrix.m00, matrix.m10, matrix.m20).magnitude;
+                float scaleY = new Vector3(matrix.m01, matrix.m11, matrix.m21).magnitude;
+                float scaleZ = new Vector3(matrix.m02, matrix.m12, matrix.m22).magnitude;
+                float radius = Mathf.Max(2f, Mathf.Max(scaleX, Mathf.Max(scaleY, scaleZ)) * 4f);
+                Bounds instanceBounds = new Bounds(position, Vector3.one * radius);
+                if (!hasAggregateBounds)
+                {
+                    aggregateBounds = instanceBounds;
+                    hasAggregateBounds = true;
+                    continue;
+                }
+
+                aggregateBounds.Encapsulate(instanceBounds);
+            }
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
         }
     }
 }

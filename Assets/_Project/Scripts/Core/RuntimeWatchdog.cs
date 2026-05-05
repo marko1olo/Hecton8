@@ -45,14 +45,12 @@ namespace Hecton8.Core
         // COLD ALLOC: bool[32] - active liveness lane mask - owner: RuntimeWatchdog
         private static readonly bool[] _activeLanes = new bool[LaneCapacity];
 
-        private static RuntimeWatchdog _instance;
         private bool _registeredUpdatable;
         private int _nextSampleFrame;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
-            _instance = null;
             System.Array.Clear(_heartbeatCounters, 0, _heartbeatCounters.Length);
             System.Array.Clear(_lastObservedCounters, 0, _lastObservedCounters.Length);
             System.Array.Clear(_lastChangeTimes, 0, _lastChangeTimes.Length);
@@ -61,11 +59,14 @@ namespace Hecton8.Core
 
         public static RuntimeWatchdog EnsureRuntimeInstance()
         {
-            if (_instance != null)
-                return _instance;
+            RuntimeWatchdog watchdog = GlobalRegistry.RuntimeWatchdog;
+            if (watchdog != null)
+                return watchdog;
 
             GameObject runtimeRoot = new GameObject("[RuntimeWatchdog]"); // COLD ALLOC: GameObject[1] - bootstrap-owned liveness watchdog root - owner: RuntimeWatchdog
-            return runtimeRoot.AddComponent<RuntimeWatchdog>();
+            watchdog = runtimeRoot.AddComponent<RuntimeWatchdog>();
+            watchdog.InitializeService();
+            return watchdog;
         }
 
         public static void Signal(RuntimeWatchdogLane lane)
@@ -80,21 +81,23 @@ namespace Hecton8.Core
 
         public void InitializeService()
         {
+            GlobalRegistry.RegisterRuntimeWatchdogRuntime(this);
             TryRegisterUpdatable();
         }
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            RuntimeWatchdog registeredWatchdog = GlobalRegistry.RuntimeWatchdog;
+            if (registeredWatchdog != null && registeredWatchdog != this)
             {
-                Destroy(gameObject);
+                if (Application.isPlaying)
+                    Destroy(gameObject);
+                else
+                    DestroyImmediate(gameObject);
                 return;
             }
 
-            _instance = this;
             _nextSampleFrame = Time.frameCount + SampleIntervalFrames;
-            if (Application.isPlaying)
-                DontDestroyOnLoad(gameObject);
         }
 
         private void OnEnable()
@@ -119,8 +122,8 @@ namespace Hecton8.Core
         private void OnDestroy()
         {
             OnDisable();
-            if (_instance == this)
-                _instance = null;
+            if (ReferenceEquals(GlobalRegistry.RuntimeWatchdog, this))
+                GlobalRegistry.UnregisterRuntimeWatchdogRuntime(this);
         }
 
         public void Tick(float deltaTime)
@@ -173,7 +176,7 @@ namespace Hecton8.Core
                                   DateTime.UtcNow.ToString("yyyyMMdd_HHmmss_fff", CultureInfo.InvariantCulture) +
                                   DeadlockTraceFileExtension;
                 string path = Path.Combine(directory, fileName);
-                string stackTrace = new StackTrace(skipFrames: 0, fNeedFileInfo: true).ToString();
+                string stackTrace = new StackTrace(0, true).ToString();
 
                 if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
                 {

@@ -1,4 +1,7 @@
 # HECTON-8 TECH DEBT REGISTRY
+Date: 2026-05-04
+Status: DEPRECATED
+
 ## Scribe-Compliance Audit | Status: CONTINUOUS
 
 ---

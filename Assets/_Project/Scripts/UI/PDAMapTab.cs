@@ -40,6 +40,10 @@ namespace Hecton8.UI
         private const int MarkerUpdateQueueCapacity = 128;
         private const int MaxMarkerUiUpdatesPerLateFrame = 10;
         private const float MarkerVisualSize = 7f;
+        private const float GhostSignalMinimumDepthMeters = 450f;
+        private const float GhostSignalCycleSeconds = 137f;
+        private const float GhostSignalWindowSeconds = 7f;
+        private const uint GhostSignalSalt = 0x47535431u;
 
         private static readonly int SdfVolumeId = Shader.PropertyToID("_SdfVolume");
         private static readonly int SdfRangeId = Shader.PropertyToID("_SdfRange");
@@ -1129,12 +1133,16 @@ namespace Hecton8.UI
             if (WorldSpatialHashGrid.TryGetAcousticDensityMap(out NativeArray<float> densityMap, out Vector3Int densityDimensions))
             {
                 RefreshThreatPingsFromSpatialDensity(densityMap, densityDimensions);
+                TryAppendGhostSignalPing();
+                RecountThreatPings();
                 return;
             }
 
             Hecton8.Core.IAudioService audio = Hecton8.Core.GlobalRegistry.Audio;
             if (audio == null)
             {
+                TryAppendGhostSignalPing();
+                RecountThreatPings();
                 return;
             }
 
@@ -1148,6 +1156,8 @@ namespace Hecton8.UI
                     out elevationBins,
                     out radarGridBuffer))
             {
+                TryAppendGhostSignalPing();
+                RecountThreatPings();
                 return;
             }
 
@@ -1190,11 +1200,8 @@ namespace Hecton8.UI
                     Mathf.Clamp01(intensity));
             }
 
-            for (int i = 0; i < MaxThreatPings; i++)
-            {
-                if (_threatPings[i].w > 0f)
-                    _activeThreatPingCount++;
-            }
+            TryAppendGhostSignalPing();
+            RecountThreatPings();
         }
 
         private void RefreshThreatPingsFromSpatialDensity(NativeArray<float> densityMap, Vector3Int dimensions)
@@ -1238,10 +1245,79 @@ namespace Hecton8.UI
                     Mathf.Clamp01(intensity));
             }
 
+            RecountThreatPings();
+        }
+
+        private void TryAppendGhostSignalPing()
+        {
+            Vector3 playerPosition = ResolvePlayerPosition();
+            float depthMeters = Mathf.Max(0f, -playerPosition.y);
+            if (depthMeters < GhostSignalMinimumDepthMeters)
+                return;
+
+            float cyclePosition = Time.unscaledTime % GhostSignalCycleSeconds;
+            if (cyclePosition > GhostSignalWindowSeconds)
+                return;
+
+            int cycleIndex = Mathf.FloorToInt(Time.unscaledTime / GhostSignalCycleSeconds);
+            int seed = global::HectonWorldGenerator.ActiveRuntimeInstance != null
+                ? global::HectonWorldGenerator.ActiveRuntimeInstance.RuntimeWorldSeed
+                : 1;
+            uint hash = HashGhostSignal((uint)seed, (uint)cycleIndex, (uint)Mathf.FloorToInt(depthMeters));
+            if ((hash & 0xFFu) > 8u)
+                return;
+
+            int weakestIndex = -1;
+            float weakestIntensity = float.PositiveInfinity;
+            for (int existingIndex = 0; existingIndex < MaxThreatPings; existingIndex++)
+            {
+                float existingIntensity = _threatPings[existingIndex].w;
+                if (existingIntensity < weakestIntensity)
+                {
+                    weakestIntensity = existingIntensity;
+                    weakestIndex = existingIndex;
+                }
+            }
+
+            if (weakestIndex < 0)
+                return;
+
+            float intensity = 0.52f + (((hash >> 8) & 0xFFu) / 255f) * 0.24f;
+            if (intensity <= weakestIntensity)
+                return;
+
+            float angleRadians = (((hash >> 16) & 0xFFFFu) / 65535f) * Mathf.PI * 2f;
+            float radius = 0.18f + (((hash >> 4) & 0x0Fu) / 15f) * 0.24f;
+            float vertical = -0.18f + (((hash >> 12) & 0x0Fu) / 15f) * 0.36f;
+            _threatPings[weakestIndex] = new Vector4(
+                Mathf.Sin(angleRadians) * radius,
+                vertical,
+                Mathf.Cos(angleRadians) * radius,
+                intensity);
+        }
+
+        private void RecountThreatPings()
+        {
+            _activeThreatPingCount = 0;
             for (int i = 0; i < MaxThreatPings; i++)
             {
                 if (_threatPings[i].w > 0f)
                     _activeThreatPingCount++;
+            }
+        }
+
+        private static uint HashGhostSignal(uint seed, uint cycleIndex, uint depthMeters)
+        {
+            unchecked
+            {
+                uint hash = 2166136261u ^ GhostSignalSalt;
+                hash = (hash ^ seed) * 16777619u;
+                hash = (hash ^ cycleIndex) * 16777619u;
+                hash = (hash ^ depthMeters) * 16777619u;
+                hash ^= hash >> 13;
+                hash *= 1274126177u;
+                hash ^= hash >> 16;
+                return hash;
             }
         }
 

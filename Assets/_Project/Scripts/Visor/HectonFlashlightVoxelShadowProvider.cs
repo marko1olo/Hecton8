@@ -14,6 +14,13 @@ namespace Hecton8.Visor
     public sealed class HectonFlashlightVoxelShadowProvider : MonoBehaviour, ITickable, IUpdatable
     {
         private const int MaxOverlapHits = 8;
+        private const int TelemetryScanTickOverrunSlack = 2;
+        private const float TelemetryWarningIntervalSeconds = 2f;
+        private const float DefaultSignalInstabilityStrength = 0.18f;
+        private const uint TelemetryWarningOverlapSaturatedHash = 0x8A7D5C21u;
+        private const uint TelemetryWarningLongScanHash = 0x6E4B13C2u;
+        private const uint TelemetryWarningDegenerateSdfHash = 0xC42A71D9u;
+        private const uint TelemetryContextFlashlightVoxelShadowHash = 0xF14C993Au;
         private const float DefaultShadowBias = 0.06f;
         private const float DefaultShadowFloor = 0.08f;
         private const float DefaultShadowMinStep = 0.12f;
@@ -65,11 +72,18 @@ namespace Hecton8.Visor
         [Tooltip("Signed-distance clamp expressed in cell diagonals before encoding to the voxel texture.")]
         [SerializeField, Range(2f, 6f)] private float sdfRangeInCellDiagonals = 4f;
 
+        [Header("Noir Signal Instability")]
+        [Tooltip("Adds deterministic low-cost flashlight shadow shimmer while voxel occlusion is stale or rebuilding.")]
+        [SerializeField] private bool enableNoirSignalInstability = true;
+
+        [SerializeField, Range(0f, 0.35f)] private float noirSignalInstabilityStrength = DefaultSignalInstabilityStrength;
+
         [Header("── Diagnostics ─────────────────")]
         [SerializeField] private bool _debugHasValidVolume;
         [SerializeField] private int _debugSliceCursor;
         [SerializeField] private Vector3 _debugPublishedHalfExtents;
         [SerializeField] private float _debugPublishedSdfRange;
+        [SerializeField] private float _debugSignalInstability01;
 
         private bool _registered;
         private bool _restartQueued;

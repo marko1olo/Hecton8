@@ -1,4 +1,6 @@
 using Den.Tools.Matrices;
+using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.World;
 using MapMagic.Nodes;
 using MapMagic.Products;
@@ -20,6 +22,15 @@ namespace MapMagic.Nodes.MatrixGenerators
     [UnityEngine.Scripting.Preserve]
     public sealed class HectonSandboxAbyssalShelfMapMagicNode : Generator, IOutlet<MatrixWorld>
     {
+        private const string NativeMemoryOwner = nameof(HectonSandboxAbyssalShelfMapMagicNode);
+        private const double SyncCompletionWarningMilliseconds = 4.0;
+        private static readonly uint _invalidMatrixWarningHash =
+            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.InvalidMatrix"));
+        private static readonly uint _syncCompletionWarningHash =
+            unchecked((uint)LocHash.Compute("HectonSandboxAbyssalShelf.SyncCompletionMs"));
+        private static readonly uint _mapMagicContextHash =
+            unchecked((uint)LocHash.Compute("MapMagic.SandboxAbyssalShelf"));
+
         [Den.Tools.GUI.ValAttribute("High Y m")] public float highWorldY = 2000f;
         [Den.Tools.GUI.ValAttribute("Low Y m")] public float lowWorldY = -5000f;
         [Den.Tools.GUI.ValAttribute("Descent Radius m")] public float descentRadiusMeters = 16500f;
@@ -66,16 +77,24 @@ namespace MapMagic.Nodes.MatrixGenerators
             int height = math.max(1, dst.rect.size.z);
             if (cellCount <= 0 || width * height > cellCount)
             {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    _invalidMatrixWarningHash,
+                    _mapMagicContextHash,
+                    cellCount);
                 data.RemoveProduct(this);
                 return;
             }
 
             NativeArray<float> rawHeights = default;
             NativeArray<float> quantizedHeights = default;
+            JobHandle generationHandle = default;
+            bool generationHandleScheduled = false;
             try
             {
                 rawHeights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 quantizedHeights = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                RegisterTempJobArray(rawHeights, nameof(rawHeights));
+                RegisterTempJobArray(quantizedHeights, nameof(quantizedHeights));
 
                 double sampleCellSizeMeters = ResolveCellSizeMeters(dst);
                 var parameters = new HectonSandboxAbyssalShelfParams
@@ -104,7 +123,8 @@ namespace MapMagic.Nodes.MatrixGenerators
                     CellSizeMeters = sampleCellSizeMeters
                 };
 
-                JobHandle handle = baseJob.Schedule(cellCount, ResolveBatchCount(cellCount));
+                generationHandle = baseJob.Schedule(cellCount, ResolveBatchCount(cellCount));
+                generationHandleScheduled = true;
                 NativeArray<float> finalHeights = rawHeights;
 
                 if (enableSlopeQuantization && width > 2 && height > 2)
@@ -125,27 +145,58 @@ namespace MapMagic.Nodes.MatrixGenerators
                         Strength = slopeQuantizationStrength
                     };
 
-                    handle = quantizeJob.Schedule(cellCount, ResolveBatchCount(cellCount), handle);
+                    generationHandle = quantizeJob.Schedule(cellCount, ResolveBatchCount(cellCount), generationHandle);
                     finalHeights = quantizedHeights;
                 }
 
-                handle.Complete();
+                long completeStartTimestamp = System.Diagnostics.Stopwatch.GetTimestamp();
+                DispatcherJobSwap.TryComplete(ref generationHandle, forceComplete: true);
+                generationHandleScheduled = false;
+                double completeMilliseconds =
+                    (System.Diagnostics.Stopwatch.GetTimestamp() - completeStartTimestamp) *
+                    1000.0 /
+                    System.Diagnostics.Stopwatch.Frequency;
+                if (completeMilliseconds > SyncCompletionWarningMilliseconds)
+                {
+                    GlobalTelemetryBus.PublishPerformanceWarning(
+                        _syncCompletionWarningHash,
+                        _mapMagicContextHash,
+                        (float)completeMilliseconds);
+                }
+
                 if (stop != null && stop.stop)
                     return;
 
-                for (int i = 0; i < cellCount; i++)
-                    target[i] = finalHeights[i];
+                NativeArray<float>.Copy(finalHeights, target, cellCount);
 
                 data.StoreProduct(this, dst);
             }
             finally
             {
+                if (generationHandleScheduled)
+                    DispatcherJobSwap.TryComplete(ref generationHandle, forceComplete: true);
+
                 if (rawHeights.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(rawHeights);
                     rawHeights.Dispose();
+                }
 
                 if (quantizedHeights.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(quantizedHeights);
                     quantizedHeights.Dispose();
+                }
             }
+        }
+
+        private static void RegisterTempJobArray(NativeArray<float> array, string label)
+        {
+            NativeMemorySentinel.RegisterNativeArray(
+                array,
+                NativeMemoryOwner,
+                label,
+                NativeAllocationLifetime.TempJob);
         }
 
         private static double ResolveCellSizeMeters(MatrixWorld matrix)

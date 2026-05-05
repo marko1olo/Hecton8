@@ -184,6 +184,55 @@ namespace Hecton8.PDA
         }
 
         /// <summary>
+        /// Creates or updates a system-authored marker with a stable persisted identifier.
+        /// </summary>
+        public bool TryCreateOrUpdateMarker(string markerId, Vector3 position, MarkerIconType iconType, string title, out PDAMarkerSnapshot marker)
+        {
+            marker = default;
+            if (string.IsNullOrWhiteSpace(markerId))
+                return false;
+
+            string trimmedTitle = string.IsNullOrWhiteSpace(title) ? BuildDefaultTitle(iconType) : title.Trim();
+            if (_markerIndexById.TryGetValue(markerId, out int markerIndex))
+            {
+                MarkerRecord existing = _markers[markerIndex];
+                existing.title = trimmedTitle;
+                existing.positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+                existing.runtimePosition = position;
+                existing.iconType = iconType;
+                existing.visibleOnHud = true;
+                _markers[markerIndex] = existing;
+                marker = ToSnapshot(existing);
+                Hecton8.UI.PDAEvents.RaiseMarkerChanged(existing.markerHashId, _markers.Count);
+                MarkersChanged?.Invoke();
+                return true;
+            }
+
+            if (_markers.Count >= PDAMarkerRegistryDTO.MaxEntries)
+                return false;
+
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            MarkerRecord record = new MarkerRecord
+            {
+                markerHashId = ComputeMarkerHash(markerId),
+                markerId = markerId,
+                title = trimmedTitle,
+                positionAup = positionAup,
+                runtimePosition = position,
+                iconType = iconType,
+                visibleOnHud = true
+            };
+
+            _markerIndexById[markerId] = _markers.Count;
+            _markerIndexByHash[record.markerHashId] = _markers.Count;
+            _markers.Add(record);
+            marker = ToSnapshot(record);
+            Hecton8.UI.PDAEvents.RaiseMarkerChanged(record.markerHashId, _markers.Count);
+            MarkersChanged?.Invoke();
+            return true;
+        }
+
+        /// <summary>
         /// Removes an existing PDA marker by stable identifier.
         /// </summary>
         public bool RemoveMarker(string markerId)

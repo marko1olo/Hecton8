@@ -1,4 +1,7 @@
 # HARD LINK DEBT — Asset-to-Code Violation Map
+Date: 2026-05-04
+Status: REFERENCE
+
 
 > **Status:** ETA SANITIZED  
 > **Mandates Followed:** AGENTS.md § Addressables · § Resources.Load [FORBID] · § AssetDatabase [Editor-only]  

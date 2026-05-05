@@ -39,6 +39,15 @@ namespace Hecton8.World
             public uint Seed;
         }
 
+        private sealed class ChunkFadeState
+        {
+            public GameObject Volume;
+            public Renderer Renderer;
+            public Material OriginalMaterial;
+            public Material RuntimeMaterial;
+            public float Elapsed;
+        }
+
         [Header("References")]
         [SerializeField] private HectonMapMagicVegetationBridge vegetationBridge;
         [SerializeField] private HectonVoxelEngine voxelEngine;
@@ -53,11 +62,19 @@ namespace Hecton8.World
         [SerializeField, Min(1f)] private float caveVerticalOffset = 22f;
         [SerializeField, Min(4f)] private float fallbackCaveHeight = 80f;
 
+        [Header("Presentation")]
+        [SerializeField, Min(0.05f)] private float chunkFadeInDuration = 0.5f;
+
         private readonly Dictionary<long, GameObject> _activeVolumes = new Dictionary<long, GameObject>(16);
         private readonly Dictionary<long, CaveEntranceRequest> _desiredRequests = new Dictionary<long, CaveEntranceRequest>(32);
         private readonly Dictionary<long, PendingRequestState> _pendingRequests = new Dictionary<long, PendingRequestState>(16);
+        // COLD ALLOC: Dictionary<long, ChunkFadeState>[16] - temporary streamed voxel chunk dissolve states - owner: HectonVoxelStreamingBridge
+        private readonly Dictionary<long, ChunkFadeState> _chunkFadeStates = new Dictionary<long, ChunkFadeState>(16);
         private readonly List<CaveEntranceRequest> _launchQueue = new List<CaveEntranceRequest>(16);
         private readonly List<long> _keyScratch = new List<long>(16);
+        private static readonly int ChunkDissolveFadeId = Shader.PropertyToID("_ChunkDissolveFade");
+        private const uint ChunkFadeRendererMissingWarningHash = 0xD0B2923Bu;
+        private const uint ChunkFadeMaterialMissingWarningHash = 0xBBEEF2CDu;
         private bool _registeredTick;
         private bool _registeredSlowTick;
         private CancellationTokenSource _lifetimeCancellation;
@@ -70,6 +87,7 @@ namespace Hecton8.World
             retentionDistance = Mathf.Max(requestDistance, retentionDistance);
             caveVerticalOffset = Mathf.Max(1f, caveVerticalOffset);
             fallbackCaveHeight = Mathf.Max(4f, fallbackCaveHeight);
+            chunkFadeInDuration = Mathf.Max(0.05f, chunkFadeInDuration);
             ResolveReferences();
         }
 
@@ -111,6 +129,8 @@ namespace Hecton8.World
         public void Tick(float dt)
         {
             ResolveReferences();
+            TickChunkFade(dt);
+
             if (voxelEngine == null || _launchQueue.Count <= 0 || _activeVolumes.Count >= maxRuntimeVolumes)
                 return;
 
@@ -170,6 +190,7 @@ namespace Hecton8.World
 
                 volume.name = $"VoxelCave_{request.Key}";
                 _activeVolumes[request.Key] = volume;
+                RegisterChunkFade(request.Key, volume);
                 if (vegetationBridge != null)
                     vegetationBridge.RegisterArtificialStructure(ResolveVolumeBounds(volume, caveCenter, request.Radius), StructureType.VoxelCave);
             }
@@ -278,6 +299,8 @@ namespace Hecton8.World
                 if (!_activeVolumes.TryGetValue(key, out GameObject volume))
                     continue;
 
+                ClearChunkFadeState(key, clearRenderer: true);
+
                 if (voxelEngine != null && volume != null)
                     voxelEngine.DespawnVolume(volume);
 
@@ -315,6 +338,7 @@ namespace Hecton8.World
         {
             if (voxelEngine == null || _activeVolumes.Count <= 0)
             {
+                ClearAllChunkFadeStates(clearRenderers: true);
                 _activeVolumes.Clear();
                 return;
             }
@@ -327,11 +351,114 @@ namespace Hecton8.World
             for (int i = 0; i < _keyScratch.Count; i++)
             {
                 long key = _keyScratch[i];
+                ClearChunkFadeState(key, clearRenderer: true);
                 if (_activeVolumes.TryGetValue(key, out GameObject volume) && volume != null)
                     voxelEngine.DespawnVolume(volume);
 
                 _activeVolumes.Remove(key);
             }
+        }
+
+        private void RegisterChunkFade(long key, GameObject volume)
+        {
+            if (volume == null || chunkFadeInDuration <= 0.0001f)
+                return;
+
+            if (!volume.TryGetComponent(out Renderer renderer) || renderer == null)
+            {
+                PublishChunkFadeWarning(ChunkFadeRendererMissingWarningHash, key, 1f);
+                return;
+            }
+
+            Material material = renderer.sharedMaterial;
+            if (material == null || !material.HasProperty(ChunkDissolveFadeId))
+            {
+                PublishChunkFadeWarning(ChunkFadeMaterialMissingWarningHash, key, 1f);
+                return;
+            }
+
+            ClearChunkFadeState(key, clearRenderer: true);
+
+            Material runtimeMaterial = new Material(material); // COLD ALLOC: Material[1] - temporary first-party voxel dissolve material restored after fade - owner: HectonVoxelStreamingBridge
+            runtimeMaterial.SetFloat(ChunkDissolveFadeId, 0f);
+            renderer.sharedMaterial = runtimeMaterial;
+
+            _chunkFadeStates[key] = new ChunkFadeState // COLD ALLOC: ChunkFadeState[1] - per-active streamed voxel chunk dissolve state - owner: HectonVoxelStreamingBridge
+            {
+                Volume = volume,
+                Renderer = renderer,
+                OriginalMaterial = material,
+                RuntimeMaterial = runtimeMaterial,
+                Elapsed = 0f
+            };
+        }
+
+        private void TickChunkFade(float dt)
+        {
+            if (_chunkFadeStates.Count <= 0)
+                return;
+
+            float safeDt = Mathf.Max(0f, dt);
+            float duration = Mathf.Max(0.05f, chunkFadeInDuration);
+            _keyScratch.Clear();
+
+            Dictionary<long, ChunkFadeState>.Enumerator enumerator = _chunkFadeStates.GetEnumerator();
+            while (enumerator.MoveNext())
+            {
+                long key = enumerator.Current.Key;
+                ChunkFadeState state = enumerator.Current.Value;
+                if (state == null || state.Renderer == null || state.RuntimeMaterial == null)
+                {
+                    _keyScratch.Add(key);
+                    continue;
+                }
+
+                state.Elapsed += safeDt;
+                float fade01 = Mathf.Clamp01(state.Elapsed / duration);
+                state.RuntimeMaterial.SetFloat(ChunkDissolveFadeId, fade01);
+
+                if (fade01 >= 0.999f)
+                    _keyScratch.Add(key);
+            }
+
+            for (int i = 0; i < _keyScratch.Count; i++)
+                ClearChunkFadeState(_keyScratch[i], clearRenderer: true);
+        }
+
+        private void ClearChunkFadeState(long key, bool clearRenderer)
+        {
+            if (!_chunkFadeStates.TryGetValue(key, out ChunkFadeState state))
+                return;
+
+            if (clearRenderer && state != null && state.Renderer != null)
+                state.Renderer.sharedMaterial = state.OriginalMaterial;
+
+            if (state != null && state.RuntimeMaterial != null)
+                Destroy(state.RuntimeMaterial);
+
+            _chunkFadeStates.Remove(key);
+        }
+
+        private static void PublishChunkFadeWarning(uint warningHash, long key, float scalar)
+        {
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                warningHash,
+                unchecked((uint)key),
+                Mathf.Max(0f, scalar));
+        }
+
+        private void ClearAllChunkFadeStates(bool clearRenderers)
+        {
+            if (_chunkFadeStates.Count <= 0)
+                return;
+
+            _keyScratch.Clear();
+            Dictionary<long, ChunkFadeState>.Enumerator enumerator = _chunkFadeStates.GetEnumerator();
+            while (enumerator.MoveNext())
+                _keyScratch.Add(enumerator.Current.Key);
+
+            for (int i = 0; i < _keyScratch.Count; i++)
+                ClearChunkFadeState(_keyScratch[i], clearRenderers);
         }
 
         private void ResolveReferences()

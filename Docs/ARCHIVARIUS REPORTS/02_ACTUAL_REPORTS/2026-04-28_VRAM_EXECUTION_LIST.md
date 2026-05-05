@@ -1,4 +1,7 @@
 # VRAM_EXECUTION_LIST.md — Top 20 VRAM Offenders
+Date: 2026-04-28
+Status: REFERENCE
+
 
 ## Current-State Addendum (2026-04-29)
 

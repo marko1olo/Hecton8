@@ -1,0 +1,472 @@
+using System.Collections.Generic;
+using Hecton.Localization;
+using Hecton8.Bootstrap;
+using Hecton8.Caves;
+using Hecton8.Celestial;
+using Hecton8.Core;
+using Hecton8.Items;
+using Hecton8.Physics;
+using Hecton8.SaveSystem;
+using Hecton8.World;
+using NASAPunk.Visor;
+using UnityEngine;
+
+namespace Hecton8.Gameplay
+{
+    [DisallowMultipleComponent]
+    public sealed class CelestialCataclysmSystem : MonoBehaviour, ISlowTickable, IRandomEventListener
+    {
+        private const string TitaniumScrapPersistentId = "Data_TitaniumScrap";
+        private const ushort SolarFlareSourceId = 0xA811;
+        private const int MaxMeteorFogShadowCount = 4;
+
+        [Header("Meteor SDF Impact")]
+        [SerializeField] private global::HectonVoxelEngine voxelEngine;
+        [SerializeField] private ItemData titaniumScrapItem;
+        [SerializeField, Min(1f)] private float meteorCraterRadiusMeters = 50f;
+        [SerializeField, Range(1, 256)] private int meteorTitaniumScrapCount = 100;
+        [SerializeField, Min(1f)] private float meteorScrapScatterRadiusMeters = 70f;
+        [SerializeField, Min(8f)] private float meteorImpactRayHeightMeters = 1200f;
+        [SerializeField] private LayerMask meteorImpactLayerMask = ~0;
+
+        [Header("Solar EMP Flare")]
+        [SerializeField, Min(1f)] private float solarEmpRadiusMeters = 250000f;
+        [SerializeField, Min(0.1f)] private float solarEmpDurationSeconds = 30f;
+        [SerializeField, Range(0f, 1f)] private float solarEmpClaritySuppression01 = 1f;
+        [SerializeField, Range(0f, 2f)] private float solarEmpVisorGlitchDurationSeconds = 1.2f;
+
+        [Header("Lunar Resonance")]
+        [SerializeField] private FloraRegrowthDirector floraRegrowthDirector;
+        [SerializeField, Range(1f, 5f)] private float lunarResonanceGrowthMultiplier = 3f;
+        [SerializeField, Min(0.5f)] private float lunarResonanceHoldSeconds = 12f;
+
+        [Header("Physical Tides")]
+        [SerializeField] private bool enableFluidWaterLevelTides = true;
+        [SerializeField, Min(0f)] private float physicalTideAmplitudeMeters = 4f;
+
+        [Header("Meteor Fog Shadows")]
+        [SerializeField, Min(1f)] private float meteorFogShadowRadiusMeters = 90f;
+        [SerializeField, Range(0f, 1f)] private float meteorFogShadowStrength = 0.42f;
+        [SerializeField, Min(1f)] private float meteorFogShadowDurationSeconds = 45f;
+
+        // COLD ALLOC: RaycastHit[1] - nonalloc terrain hit probe for one meteor impact solve - owner: CelestialCataclysmSystem
+        private readonly RaycastHit[] _impactHitBuffer = new RaycastHit[1];
+        // COLD ALLOC: Vector4[4] - global meteor fog shadow upload payload - owner: CelestialCataclysmSystem
+        private readonly Vector4[] _meteorFogShadowPayload = new Vector4[MaxMeteorFogShadowCount];
+        // COLD ALLOC: List<VisorHUDController>[4] - EMP visor pulse dispatch scratch - owner: CelestialCataclysmSystem
+        private static readonly List<VisorHUDController> s_visorControllers = new List<VisorHUDController>(4);
+
+        private bool _registered;
+        private bool _hasBaseFluidWaterLevel;
+        private bool _reportedMissingVoxelEngine;
+        private bool _reportedMissingMeteorVolume;
+        private bool _reportedMeteorCraterRejected;
+        private bool _reportedMissingScrapSink;
+        private bool _reportedMissingFloraDirector;
+        private bool _reportedMissingFluidRuntime;
+        private bool _reportedMissingCelestialRuntime;
+        private bool _reportedMissingAegirTideDirection;
+        private float _baseFluidWaterLevel;
+        private float _meteorFogShadowRemainingSeconds;
+        private float _solarEmpGlitchRemainingSeconds;
+        private float _solarEmpGlitchDurationSeconds;
+        private float _solarEmpGlitchIntensity01;
+        private uint _rngState = 0x91E10DA5u;
+
+        private static readonly int _MeteorFogShadowPositionsId = Shader.PropertyToID("_MeteorFogShadowPositions");
+        private static readonly int _MeteorFogShadowParamsId = Shader.PropertyToID("_MeteorFogShadowParams");
+        private static readonly int _SolarEmpGlitchParamsId = Shader.PropertyToID("_SolarEmpGlitchParams");
+        private static readonly uint _CataclysmContextHash = unchecked((uint)LocHash.Compute("CelestialCataclysmSystem"));
+        private static readonly uint _MeteorNoVoxelEngineWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorNoVoxelEngine"));
+        private static readonly uint _MeteorNoVolumeWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorNoVoxelVolume"));
+        private static readonly uint _MeteorCraterRejectedWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorCraterRejected"));
+        private static readonly uint _MeteorScrapSinkMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorScrapSinkMissing"));
+        private static readonly uint _MeteorScrapClampWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorScrapClamp"));
+        private static readonly uint _FloraDirectorMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.FloraDirectorMissing"));
+        private static readonly uint _TideFluidMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.TideFluidMissing"));
+        private static readonly uint _TideCelestialMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.TideCelestialMissing"));
+        private static readonly uint _TideAegirMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.TideAegirMissing"));
+
+        private void OnEnable()
+        {
+            TryRegister();
+            RandomEventEvents.Register(this);
+        }
+
+        private void OnDisable()
+        {
+            TryUnregister();
+            RandomEventEvents.Unregister(this);
+            _meteorFogShadowRemainingSeconds = 0f;
+            _solarEmpGlitchRemainingSeconds = 0f;
+            PublishMeteorFogShadows(0f);
+            PublishSolarEmpGlitchGlobals(0f);
+        }
+
+        private void OnDestroy()
+        {
+            TryUnregister();
+            RandomEventEvents.Unregister(this);
+        }
+
+        /// <summary>
+        /// Advances low-frequency tide, resonance, and meteor-fog shadow state.
+        /// </summary>
+        public void SlowTick()
+        {
+            ApplyPhysicalFluidTide();
+            ApplyLunarResonanceIfActive();
+            AdvanceMeteorFogShadows(0.5f);
+            AdvanceSolarEmpGlitch(0.5f);
+        }
+
+        /// <summary>
+        /// Applies cataclysm consequences for celestial random events.
+        /// </summary>
+        /// <param name="type">Random event type raised by the event system.</param>
+        /// <param name="intensity">Normalized event intensity.</param>
+        public void OnRandomEventStarted(RandomEventType type, float intensity)
+        {
+            switch (type)
+            {
+                case RandomEventType.MeteorShower:
+                    ExecuteMeteorSdfImpact(intensity);
+                    _meteorFogShadowRemainingSeconds = Mathf.Max(_meteorFogShadowRemainingSeconds, meteorFogShadowDurationSeconds);
+                    PublishMeteorFogShadows(Mathf.Clamp01(intensity));
+                    break;
+                case RandomEventType.SolarFlare:
+                    PublishSolarEmpFlare(intensity);
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Receives random-event completion notifications.
+        /// </summary>
+        /// <param name="type">Random event type that ended.</param>
+        public void OnRandomEventEnded(RandomEventType type)
+        {
+            if (type != RandomEventType.SolarFlare)
+                return;
+
+            _solarEmpGlitchRemainingSeconds = 0f;
+            _solarEmpGlitchDurationSeconds = 0f;
+            _solarEmpGlitchIntensity01 = 0f;
+            PublishSolarEmpGlitchGlobals(0f);
+        }
+
+        /// <summary>
+        /// Unused seismic listener slot required by the random-event listener contract.
+        /// </summary>
+        /// <param name="payload">Incoming seismic shockwave payload.</param>
+        public void OnSeismicShockwave(in SeismicShockwaveEvent payload)
+        {
+        }
+
+        private void TryRegister()
+        {
+            if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Environment);
+            _registered = GlobalRegistry.SlowTickables.Contains(this);
+        }
+
+        private void TryUnregister()
+        {
+            if (!_registered)
+                return;
+
+            GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
+            _registered = false;
+        }
+
+        private void ExecuteMeteorSdfImpact(float intensity)
+        {
+            if (voxelEngine == null)
+                voxelEngine = global::HectonVoxelEngine.ActiveRuntimeInstance;
+            if (voxelEngine == null)
+            {
+                PublishOnce(ref _reportedMissingVoxelEngine, _MeteorNoVoxelEngineWarningHash, Mathf.Max(1f, meteorCraterRadiusMeters));
+                return;
+            }
+
+            _reportedMissingVoxelEngine = false;
+
+            Vector3 playerPosition = ResolvePlayerPosition();
+            if (!voxelEngine.TryGetNearestActiveVolume(playerPosition, out HectonVoxelVolume targetVolume) || targetVolume == null)
+            {
+                PublishOnce(ref _reportedMissingMeteorVolume, _MeteorNoVolumeWarningHash, Mathf.Max(1f, meteorCraterRadiusMeters));
+                return;
+            }
+
+            _reportedMissingMeteorVolume = false;
+
+            Vector3 impactPosition = ResolveMeteorImpactPosition(playerPosition, targetVolume);
+            if (!targetVolume.TryApplyExtraterrestrialImpactCrater(impactPosition, Mathf.Max(1f, meteorCraterRadiusMeters)))
+            {
+                PublishOnce(ref _reportedMeteorCraterRejected, _MeteorCraterRejectedWarningHash, Mathf.Max(1f, meteorCraterRadiusMeters));
+                return;
+            }
+
+            _reportedMeteorCraterRejected = false;
+            SpawnMeteorScrap(impactPosition, Mathf.Clamp01(intensity));
+        }
+
+        private Vector3 ResolveMeteorImpactPosition(Vector3 playerPosition, HectonVoxelVolume targetVolume)
+        {
+            float angle = NextUnit() * Mathf.PI * 2f;
+            float radius = Mathf.Sqrt(NextUnit()) * Mathf.Max(1f, meteorScrapScatterRadiusMeters);
+            Vector3 lateral = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+            Vector3 origin = playerPosition + lateral + Vector3.up * Mathf.Max(8f, meteorImpactRayHeightMeters);
+            Ray ray = new Ray(origin, Vector3.down);
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                ray,
+                _impactHitBuffer,
+                Mathf.Max(16f, meteorImpactRayHeightMeters * 2f),
+                meteorImpactLayerMask,
+                QueryTriggerInteraction.Ignore);
+
+            if (hitCount > 0)
+                return _impactHitBuffer[0].point;
+
+            return targetVolume.generationPosition + lateral;
+        }
+
+        private void SpawnMeteorScrap(Vector3 impactPosition, float intensity01)
+        {
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            ItemData scrapItem = ResolveTitaniumScrapItem();
+            if (registry == null || scrapItem == null)
+            {
+                PublishOnce(ref _reportedMissingScrapSink, _MeteorScrapSinkMissingWarningHash, registry == null ? 0f : 1f);
+                return;
+            }
+
+            _reportedMissingScrapSink = false;
+
+            int count = Mathf.Clamp(meteorTitaniumScrapCount, 1, 256);
+            if (count != meteorTitaniumScrapCount)
+                PublishPerformanceWarning(_MeteorScrapClampWarningHash, meteorTitaniumScrapCount);
+
+            float scatterRadius = Mathf.Max(1f, meteorScrapScatterRadiusMeters);
+            for (int i = 0; i < count; i++)
+            {
+                float angle = NextUnit() * Mathf.PI * 2f;
+                float radius = Mathf.Sqrt(NextUnit()) * scatterRadius;
+                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
+                Vector3 spawnPosition = impactPosition + offset + Vector3.up * Mathf.Lerp(0.35f, 4f, NextUnit());
+                Vector3 impulse = offset.sqrMagnitude > 0.001f
+                    ? offset.normalized * Mathf.Lerp(0.6f, 3.2f, NextUnit()) * Mathf.Max(0.25f, intensity01)
+                    : Vector3.up * Mathf.Max(0.25f, intensity01);
+                registry.TryRegisterDroppedItem(scrapItem, 1, spawnPosition, impulse);
+            }
+        }
+
+        private ItemData ResolveTitaniumScrapItem()
+        {
+            if (titaniumScrapItem != null)
+                return titaniumScrapItem;
+
+            ItemCatalog catalog = GlobalRegistry.PlayerInventoryRuntime != null
+                ? GlobalRegistry.PlayerInventoryRuntime.ItemCatalog
+                : null;
+            if (catalog == null)
+                return null;
+
+            titaniumScrapItem = catalog.FindById(TitaniumScrapPersistentId);
+            return titaniumScrapItem;
+        }
+
+        private void PublishSolarEmpFlare(float intensity)
+        {
+            Vector3 origin = ResolvePlayerPosition();
+            PhysicsEventBus.NotifyElectromagneticPulse(new ElectromagneticPulseEvent(
+                origin,
+                Mathf.Max(1f, solarEmpRadiusMeters),
+                Mathf.Max(0.1f, solarEmpDurationSeconds),
+                Mathf.Clamp01(solarEmpClaritySuppression01 * Mathf.Max(0.1f, intensity)),
+                (uint)DamageTypeMask.Emp,
+                SolarFlareSourceId));
+            TriggerSolarEmpVisualGlitch(intensity);
+        }
+
+        private void ApplyLunarResonanceIfActive()
+        {
+            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            if (celestialEngine == null || !celestialEngine.IsLunarResonanceActive)
+                return;
+
+            FloraRegrowthDirector director = floraRegrowthDirector;
+            if (director != null)
+            {
+                _reportedMissingFloraDirector = false;
+                director.ApplyLunarResonance(Mathf.Max(1f, lunarResonanceGrowthMultiplier), lunarResonanceHoldSeconds);
+                return;
+            }
+
+            PublishOnce(ref _reportedMissingFloraDirector, _FloraDirectorMissingWarningHash, lunarResonanceGrowthMultiplier);
+        }
+
+        private void ApplyPhysicalFluidTide()
+        {
+            if (!enableFluidWaterLevelTides || physicalTideAmplitudeMeters <= 0f)
+                return;
+
+            HectonFluidEngine fluidEngine = GlobalRegistry.Fluid;
+            HectonCelestialEngine celestialEngine = HectonCelestialEngine.ActiveRuntimeInstance;
+            if (fluidEngine == null)
+            {
+                PublishOnce(ref _reportedMissingFluidRuntime, _TideFluidMissingWarningHash, physicalTideAmplitudeMeters);
+                return;
+            }
+
+            _reportedMissingFluidRuntime = false;
+            if (celestialEngine == null)
+            {
+                PublishOnce(ref _reportedMissingCelestialRuntime, _TideCelestialMissingWarningHash, physicalTideAmplitudeMeters);
+                return;
+            }
+
+            _reportedMissingCelestialRuntime = false;
+            if (!celestialEngine.TryGetAegirSkyDirection(out Vector3 aegirDirection))
+            {
+                PublishOnce(ref _reportedMissingAegirTideDirection, _TideAegirMissingWarningHash, physicalTideAmplitudeMeters);
+                return;
+            }
+
+            _reportedMissingAegirTideDirection = false;
+
+            if (!_hasBaseFluidWaterLevel)
+            {
+                _baseFluidWaterLevel = fluidEngine.WaterLevel;
+                _hasBaseFluidWaterLevel = true;
+            }
+
+            float sqrMagnitude = aegirDirection.sqrMagnitude;
+            if (sqrMagnitude <= 0.0001f)
+                return;
+
+            float verticalDot = Mathf.Clamp(Vector3.Dot(aegirDirection / Mathf.Sqrt(sqrMagnitude), Vector3.up), -1f, 1f);
+            fluidEngine.WaterLevel = _baseFluidWaterLevel + verticalDot * Mathf.Max(0f, physicalTideAmplitudeMeters);
+        }
+
+        private void AdvanceMeteorFogShadows(float deltaTime)
+        {
+            if (_meteorFogShadowRemainingSeconds <= 0f)
+                return;
+
+            _meteorFogShadowRemainingSeconds = Mathf.Max(0f, _meteorFogShadowRemainingSeconds - Mathf.Max(0f, deltaTime));
+            PublishMeteorFogShadows(Mathf.Clamp01(_meteorFogShadowRemainingSeconds / Mathf.Max(0.1f, meteorFogShadowDurationSeconds)));
+        }
+
+        private void PublishMeteorFogShadows(float intensity01)
+        {
+            Vector3 playerPosition = ResolvePlayerPosition();
+            float eventAge = Mathf.Max(0f, meteorFogShadowDurationSeconds - _meteorFogShadowRemainingSeconds);
+            for (int i = 0; i < MaxMeteorFogShadowCount; i++)
+            {
+                float seed = (i + 1) * 37.13f;
+                float angle = seed + eventAge * (0.19f + i * 0.041f);
+                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * (120f + i * 55f);
+                offset += Vector3.up * (70f + i * 18f);
+                _meteorFogShadowPayload[i] = new Vector4(
+                    playerPosition.x + offset.x,
+                    playerPosition.y + offset.y,
+                    playerPosition.z + offset.z,
+                    Mathf.Max(1f, meteorFogShadowRadiusMeters));
+            }
+
+            Shader.SetGlobalVectorArray(_MeteorFogShadowPositionsId, _meteorFogShadowPayload);
+            Shader.SetGlobalVector(
+                _MeteorFogShadowParamsId,
+                new Vector4(
+                    intensity01 > 0.001f ? MaxMeteorFogShadowCount : 0,
+                    Mathf.Clamp01(meteorFogShadowStrength * intensity01),
+                    Mathf.Max(0f, eventAge),
+                    0f));
+        }
+
+        private void TriggerSolarEmpVisualGlitch(float intensity)
+        {
+            float clampedIntensity = Mathf.Clamp01(intensity);
+            if (clampedIntensity <= 0f || solarEmpVisorGlitchDurationSeconds <= 0f)
+            {
+                PublishSolarEmpGlitchGlobals(0f);
+                return;
+            }
+
+            float duration = Mathf.Max(0.05f, solarEmpVisorGlitchDurationSeconds);
+            _solarEmpGlitchDurationSeconds = duration;
+            _solarEmpGlitchRemainingSeconds = duration;
+            _solarEmpGlitchIntensity01 = clampedIntensity;
+            PublishSolarEmpGlitchGlobals(clampedIntensity);
+
+            VisorHUDController.CopyActiveControllersTo(s_visorControllers);
+            for (int i = 0; i < s_visorControllers.Count; i++)
+            {
+                VisorHUDController controller = s_visorControllers[i];
+                if (controller != null)
+                    controller.GlitchPulse(duration);
+            }
+        }
+
+        private void AdvanceSolarEmpGlitch(float deltaTime)
+        {
+            if (_solarEmpGlitchRemainingSeconds <= 0f)
+                return;
+
+            _solarEmpGlitchRemainingSeconds = Mathf.Max(0f, _solarEmpGlitchRemainingSeconds - Mathf.Max(0f, deltaTime));
+            if (_solarEmpGlitchRemainingSeconds <= 0f)
+            {
+                _solarEmpGlitchDurationSeconds = 0f;
+                _solarEmpGlitchIntensity01 = 0f;
+                PublishSolarEmpGlitchGlobals(0f);
+                return;
+            }
+
+            float remaining01 = Mathf.Clamp01(_solarEmpGlitchRemainingSeconds / Mathf.Max(0.05f, _solarEmpGlitchDurationSeconds));
+            PublishSolarEmpGlitchGlobals(_solarEmpGlitchIntensity01 * remaining01);
+        }
+
+        private void PublishSolarEmpGlitchGlobals(float intensity01)
+        {
+            Shader.SetGlobalVector(
+                _SolarEmpGlitchParamsId,
+                new Vector4(
+                    Mathf.Clamp01(intensity01),
+                    Mathf.Max(0f, _solarEmpGlitchRemainingSeconds),
+                    Time.unscaledTime,
+                    Mathf.Clamp01(solarEmpClaritySuppression01)));
+        }
+
+        private static void PublishPerformanceWarning(uint warningHash, float scalarValue)
+        {
+            GlobalTelemetryBus.PublishPerformanceWarning(warningHash, _CataclysmContextHash, scalarValue);
+        }
+
+        private static void PublishOnce(ref bool latch, uint warningHash, float scalarValue)
+        {
+            if (latch)
+                return;
+
+            latch = true;
+            PublishPerformanceWarning(warningHash, scalarValue);
+        }
+
+        private Vector3 ResolvePlayerPosition()
+        {
+            return SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null
+                ? playerTransform.position
+                : transform.position;
+        }
+
+        private float NextUnit()
+        {
+            _rngState ^= _rngState << 13;
+            _rngState ^= _rngState >> 17;
+            _rngState ^= _rngState << 5;
+            return (_rngState & 0x00FFFFFFu) / 16777215f;
+        }
+    }
+}

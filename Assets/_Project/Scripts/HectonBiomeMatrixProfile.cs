@@ -62,9 +62,15 @@ namespace Hecton8.Environment
         public Vector3 ambientFlowOverride = Vector3.zero;
         [Range(0f, 1f)] public float ambientFlowOverrideWeight = 1f;
 
-        [Header("Physics Medium")]
+        [Header("Gravity / Buoyancy")]
+        [Tooltip("Multiplier applied to upward ForceMode.Acceleration buoyancy while this matrix biome is the active medium.")]
+        [Range(0.05f, 3f)] public float gravityMultiplier = 1f;
+
         [Tooltip("Multiplier applied to upward buoyancy force while this matrix biome is the active volumetric medium.")]
         [Range(0.05f, 3f)] public float buoyancyMultiplier = 1f;
+
+        public float GravityMultiplier => Mathf.Clamp(gravityMultiplier * buoyancyMultiplier, 0.05f, 3f);
+        public float BuoyancyMultiplier => Mathf.Clamp(buoyancyMultiplier, 0.05f, 3f);
 
         [Header("Transition VFX")]
         public bool emitsSeismicDustOnEntry;

@@ -27,6 +27,19 @@ namespace Hecton8.World
     }
 
     /// <summary>
+    /// Blittable smoke-test sample output for the sandbox shelf height field.
+    /// </summary>
+    public struct HectonSandboxAbyssalShelfAuditSample
+    {
+        public double2 PositionAupXZ;
+        public float HeightMeters;
+        public float NeighborHeightXMeters;
+        public float NeighborHeightZMeters;
+        public float SlopeAngleDegrees;
+        public byte Flags;
+    }
+
+    /// <summary>
     /// Burst-safe terrain math for the HECTON sandbox planetary shelf.
     /// </summary>
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -343,6 +356,54 @@ namespace Hecton8.World
         private static float ToMeters(float height01, float heightRange)
         {
             return math.saturate(height01) * heightRange;
+        }
+    }
+
+    /// <summary>
+    /// Samples the shelf function over AUP stress positions for smoke validation.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct HectonSandboxAbyssalShelfSmokeSampleJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<double2> PositionsAupXZ;
+        [WriteOnly] public NativeArray<HectonSandboxAbyssalShelfAuditSample> OutputSamples;
+        public HectonSandboxAbyssalShelfParams Parameters;
+        public double SlopeProbeMeters;
+
+        public void Execute(int index)
+        {
+            double2 position = PositionsAupXZ[index];
+            double probe = math.max(0.001, SlopeProbeMeters);
+            float center = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(position.x, position.y, in Parameters);
+            float neighborX = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(position.x + probe, position.y, in Parameters);
+            float neighborZ = HectonSandboxAbyssalShelfMath.EvaluateHeightMeters(position.x, position.y + probe, in Parameters);
+            float dx = (neighborX - center) / (float)probe;
+            float dz = (neighborZ - center) / (float)probe;
+            float gradient = math.sqrt(dx * dx + dz * dz);
+            float slopeAngle = math.degrees(math.atan(gradient));
+            byte flags = 0;
+
+            if (!math.isfinite(center) || !math.isfinite(neighborX) || !math.isfinite(neighborZ))
+                flags |= 1;
+
+            if (center < Parameters.LowWorldY - 0.5f || center > Parameters.HighWorldY + 0.5f)
+                flags |= 2;
+
+            if (slopeAngle >= 45f)
+                flags |= 4;
+
+            if (slopeAngle <= 15f)
+                flags |= 8;
+
+            OutputSamples[index] = new HectonSandboxAbyssalShelfAuditSample
+            {
+                PositionAupXZ = position,
+                HeightMeters = center,
+                NeighborHeightXMeters = neighborX,
+                NeighborHeightZMeters = neighborZ,
+                SlopeAngleDegrees = slopeAngle,
+                Flags = flags
+            };
         }
     }
 }

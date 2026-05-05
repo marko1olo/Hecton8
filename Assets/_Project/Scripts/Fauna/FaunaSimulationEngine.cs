@@ -23,6 +23,25 @@ namespace Hecton8.AI
         public byte StateFlags;
     }
 
+    internal struct FaunaParasiteAttachInput
+    {
+        public AbsoluteUniversePositionBlit128 HostAup;
+        public float3 HostLocalAttachOffset;
+        public float HostHealth;
+        public float ParasiteHunger01;
+        public float DrainPerSecond;
+        public float DeltaTimeSeconds;
+        public byte Attached;
+    }
+
+    internal struct FaunaParasiteAttachResult
+    {
+        public AbsoluteUniversePositionBlit128 ParasiteAup;
+        public float HostHealth;
+        public float ParasiteHunger01;
+        public byte Attached;
+    }
+
     /// <summary>
     /// Data-only fauna simulation service. Owns Burst job scheduling and keeps visual/GameObject logic out of LOD math.
     /// </summary>
@@ -101,6 +120,25 @@ namespace Hecton8.AI
                 CurrentTimeSeconds = currentTimeSeconds,
                 HungerRatePerSecond = math.max(0f, hungerRatePerSecond),
                 StarvationHealthDrainPerSecond = math.max(0f, starvationHealthDrainPerSecond)
+            };
+
+            for (int i = 0; i < safeCount; i++)
+                job.Execute(i);
+        }
+
+        internal void RunParasiteAttach(
+            NativeArray<FaunaParasiteAttachInput> inputs,
+            NativeArray<FaunaParasiteAttachResult> results,
+            int count)
+        {
+            int safeCount = math.min(math.max(0, count), math.min(inputs.Length, results.Length));
+            if (safeCount <= 0)
+                return;
+
+            ParasiteAttachJob job = new ParasiteAttachJob
+            {
+                Inputs = inputs,
+                Results = results
             };
 
             for (int i = 0; i < safeCount; i++)
@@ -205,6 +243,64 @@ namespace Hecton8.AI
                     return 0f;
 
                 return math.max(0f, currentTimeSeconds - sleepStartTimeSeconds);
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ParasiteAttachJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<FaunaParasiteAttachInput> Inputs;
+            public NativeArray<FaunaParasiteAttachResult> Results;
+
+            public void Execute(int index)
+            {
+                FaunaParasiteAttachInput input = Inputs[index];
+                FaunaParasiteAttachResult result = default;
+                result.Attached = input.Attached;
+                result.HostHealth = math.max(0f, input.HostHealth);
+                result.ParasiteHunger01 = math.saturate(input.ParasiteHunger01);
+                result.ParasiteAup = input.HostAup;
+                if (input.Attached == 0)
+                {
+                    Results[index] = result;
+                    return;
+                }
+
+                float drain = math.max(0f, input.DrainPerSecond) * math.max(0f, input.DeltaTimeSeconds);
+                float appliedDrain = math.min(result.HostHealth, drain);
+                result.HostHealth = math.max(0f, result.HostHealth - appliedDrain);
+                result.ParasiteHunger01 = math.saturate(result.ParasiteHunger01 - appliedDrain);
+                double3 parasiteAbsolute = ToAbsoluteDouble3(input.HostAup) + (double3)input.HostLocalAttachOffset;
+                result.ParasiteAup = ToAup(parasiteAbsolute);
+                Results[index] = result;
+            }
+
+            private static double3 ToAbsoluteDouble3(AbsoluteUniversePositionBlit128 position)
+            {
+                const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+                return new double3(
+                    (position.GridX * cellSize) + position.Local.x,
+                    (position.GridY * cellSize) + position.Local.y,
+                    (position.GridZ * cellSize) + position.Local.z);
+            }
+
+            private static AbsoluteUniversePositionBlit128 ToAup(double3 absolutePosition)
+            {
+                const double cellSize = AbsoluteUniversePosition.CellSizeMeters;
+                long gridX = (long)math.floor(absolutePosition.x / cellSize);
+                long gridY = (long)math.floor(absolutePosition.y / cellSize);
+                long gridZ = (long)math.floor(absolutePosition.z / cellSize);
+                return new AbsoluteUniversePositionBlit128
+                {
+                    GridX = gridX,
+                    GridY = gridY,
+                    GridZ = gridZ,
+                    Local = new float4(
+                        (float)(absolutePosition.x - (gridX * cellSize)),
+                        (float)(absolutePosition.y - (gridY * cellSize)),
+                        (float)(absolutePosition.z - (gridZ * cellSize)),
+                        0f)
+                };
             }
         }
     }

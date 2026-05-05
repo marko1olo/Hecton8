@@ -172,6 +172,7 @@ namespace Hecton8.Caves
         private const int MaxPlasmaCutSteps = 24;
         private const int MaxQueuedRebuildPassesPerKick = 4;
         private const int MaxMagmaVeinBurnSamplesPerSegment = 16;
+        private const string NativeMemoryOwner = nameof(HectonVoxelVolume);
         private const float ResourceCraterClusterRadiusMeters = 20f;
         private const float CollapseBoxHorizontalPaddingMeters = 4f;
         private const float CollapseImpulseVerticalBias = 0.45f;
@@ -366,6 +367,35 @@ namespace Hecton8.Caves
             }
 
             return resolved;
+        }
+
+        public static bool TryDepositAdditiveSdfSphere(Vector3 absoluteCenter, float radiusMeters, float strengthMeters)
+        {
+            float radius = Mathf.Max(0.05f, radiusMeters);
+            float strength = Mathf.Max(0.05f, strengthMeters);
+            for (int i = s_activePublishedVolumes.Count - 1; i >= 0; i--)
+            {
+                HectonVoxelVolume candidate = s_activePublishedVolumes[i];
+                if (candidate == null || !candidate._runtimeDataReady)
+                {
+                    s_activePublishedVolumes.RemoveAt(i);
+                    continue;
+                }
+
+                float halfExtent = candidate._gridDimension * candidate._voxelSize * 0.5f;
+                float acceptedRadius = halfExtent + radius;
+                if ((candidate._generationAbsoluteUniversePosition - absoluteCenter).sqrMagnitude > acceptedRadius * acceptedRadius ||
+                    candidate._deltaProcessor == null)
+                {
+                    continue;
+                }
+
+                candidate.SetBakeState(VoxelBakeState.Pending);
+                candidate._deltaProcessor.ApplyImmediateAbsoluteWeld(candidate, absoluteCenter, radius, strength, MagmaDeltaMaterialId);
+                return true;
+            }
+
+            return false;
         }
 
         private static void RegisterPublishedVolume(HectonVoxelVolume volume)
@@ -807,11 +837,10 @@ namespace Hecton8.Caves
             if (mesh != null)
                 return mesh;
 
-            mesh = new Mesh
-            {
-                name = $"VoxelColliderChunkBake_{index:D2}_{name}"
-            };
-            mesh.MarkDynamic();
+            mesh = global::HectonVoxelEngine.AcquireVoxelPhysicsBakeMesh(name, index);
+            if (mesh == null)
+                return null;
+
             _colliderChunkBakeMeshes[index] = mesh;
             return mesh;
         }
@@ -895,7 +924,11 @@ namespace Hecton8.Caves
                 Mesh bakeMesh = i < _colliderChunkBakeMeshes.Length ? _colliderChunkBakeMeshes[i] : null;
                 if (mesh != null)
                 {
-                    if (destroyMeshes)
+                    if (global::HectonVoxelEngine.ReleaseVoxelPhysicsBakeMesh(mesh))
+                    {
+                        _colliderChunkMeshes[i] = null;
+                    }
+                    else if (destroyMeshes)
                     {
                         DestroyOwnedObject(mesh);
                         _colliderChunkMeshes[i] = null;
@@ -908,7 +941,11 @@ namespace Hecton8.Caves
 
                 if (bakeMesh != null)
                 {
-                    if (destroyMeshes)
+                    if (global::HectonVoxelEngine.ReleaseVoxelPhysicsBakeMesh(bakeMesh))
+                    {
+                        _colliderChunkBakeMeshes[i] = null;
+                    }
+                    else if (destroyMeshes)
                     {
                         DestroyOwnedObject(bakeMesh);
                         _colliderChunkBakeMeshes[i] = null;
@@ -2001,7 +2038,17 @@ namespace Hecton8.Caves
                         return;
 
                     if (!await engine.RebuildVolumeAsync(this, expectedRuntimeStamp))
+                    {
+                        if (MatchesRuntimeStamp(expectedRuntimeStamp))
+                        {
+                            _rebuildQueued = true;
+                            SetBakeState(VoxelBakeState.Pending);
+                            await Awaitable.NextFrameAsync();
+                            rescheduleNextFrame = true;
+                        }
+
                         return;
+                    }
 
                     SetBakeState(_rebuildQueued ? VoxelBakeState.Pending : VoxelBakeState.Complete);
                 }
@@ -2069,18 +2116,29 @@ namespace Hecton8.Caves
                 return;
 
             if (_publishedSonarSdf.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_publishedSonarSdf);
                 _publishedSonarSdf.Dispose();
+            }
 
             _publishedSonarSdf = new NativeArray<byte>(
                 totalPointCount,
                 Allocator.Persistent,
                 NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<byte>[totalPointCount] - published PDA sonar SDF snapshot - owner: HectonVoxelVolume
+            NativeMemorySentinel.RegisterNativeArray(
+                _publishedSonarSdf,
+                NativeMemoryOwner,
+                nameof(_publishedSonarSdf),
+                NativeAllocationLifetime.Scene);
         }
 
         private void ClearPublishedSonarSdf()
         {
             if (_publishedSonarSdf.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_publishedSonarSdf);
                 _publishedSonarSdf.Dispose();
+            }
 
             _publishedSonarSdf = default;
             _publishedSonarGridDimensions = default;

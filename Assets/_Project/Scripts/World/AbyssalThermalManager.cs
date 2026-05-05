@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Caves;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Unity.Burst;
@@ -148,14 +149,6 @@ namespace Hecton8.World
             HectonLayerMasks.DefaultLayerMask |
             HectonLayerMasks.FirstPersonToolsLayerMask |
             HectonLayerMasks.TriggerZoneLayerMask;
-
-        private static AbyssalThermalManager _instance;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
-        }
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -578,7 +571,7 @@ namespace Hecton8.World
         private int _scheduledCrystallizationSampleCount;
         private float[] _ventCrystallizationCooldowns;
 
-        public static AbyssalThermalManager Instance => _instance;
+        public static AbyssalThermalManager Instance => GlobalRegistry.Thermodynamics;
 
         /// <summary>
         /// True once the thermodynamics owner is registered in the global registry.
@@ -727,14 +720,14 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            if (_instance != null && _instance != this)
+            AbyssalThermalManager registeredThermodynamics = GlobalRegistry.Thermodynamics;
+            if (registeredThermodynamics != null && registeredThermodynamics != this)
             {
                 Debug.LogError("[AbyssalThermalManager] Duplicate instance detected. Destroying the newer component.", this);
                 Destroy(this);
                 return;
             }
 
-            _instance = this;
             _instanceId = unchecked((int)EntityId.ToULong(GetEntityId()));
             _supportsGraphicsFence = SystemInfo.supportsGraphicsFence;
             SanitizeSettings();
@@ -787,8 +780,6 @@ namespace Hecton8.World
             ReleaseBuffers();
             DisposeCrystallizationBuffers();
 
-            if (_instance == this)
-                _instance = null;
         }
 
         public void OnOriginShift(in OriginShiftEventData shiftData)
@@ -1865,6 +1856,18 @@ namespace Hecton8.World
                 FieldTargetRole.Generic,
                 0,
                 heatIntensity * ventHeatToCelsiusScale);
+
+            HectonVoxelEngine engine = HectonVoxelEngine.ActiveRuntimeInstance;
+            VoxelDeltaProcessor deltaProcessor = engine != null ? engine.GetComponent<VoxelDeltaProcessor>() : null;
+            if (deltaProcessor != null)
+            {
+                deltaProcessor.AcceptThermalMeltEvent(new ThermalMeltEvent
+                {
+                    AbsoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(positionWS),
+                    RadiusMeters = Mathf.Max(1f, radiusWS * 0.35f),
+                    Heat01 = Mathf.Clamp01(heatIntensity / Mathf.Max(1f, ventHeatIntensity * seismicEruptionHeatMultiplier))
+                });
+            }
         }
 
         private void ClearHazardSources()

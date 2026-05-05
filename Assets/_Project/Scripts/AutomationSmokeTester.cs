@@ -1,6 +1,6 @@
 using Hecton8.Construction;
+using Hecton8.Core;
 using Unity.Collections;
-using Unity.Jobs;
 using UnityEngine;
 
 namespace Hecton8.Debugging
@@ -9,6 +9,8 @@ namespace Hecton8.Debugging
     [AddComponentMenu("Hecton8/Debug/Automation Smoke Tester")]
     public sealed class AutomationSmokeTester : MonoBehaviour
     {
+        private const string NativeMemoryOwner = nameof(AutomationSmokeTester);
+
         [SerializeField] private bool runOnStart;
 
 #pragma warning disable CS0414
@@ -40,6 +42,12 @@ namespace Hecton8.Debugging
             NativeArray<byte> visited = new NativeArray<byte>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
             NativeArray<int> queue = new NativeArray<int>(3, Allocator.Temp, NativeArrayOptions.ClearMemory);
             NativeArray<int> result = new NativeArray<int>(1, Allocator.Temp, NativeArrayOptions.ClearMemory);
+            RegisterTempArray(edgeOffsets, nameof(edgeOffsets));
+            RegisterTempArray(edgeDestinations, nameof(edgeDestinations));
+            RegisterTempArray(storageCapacityByNode, nameof(storageCapacityByNode));
+            RegisterTempArray(visited, nameof(visited));
+            RegisterTempArray(queue, nameof(queue));
+            RegisterTempArray(result, nameof(result));
 
             try
             {
@@ -52,17 +60,15 @@ namespace Hecton8.Debugging
                 storageCapacityByNode[2] = 1;
                 result[0] = -1;
 
-                new BaseLogisticsNetwork.LogisticsPipeRouteBfsJob
-                {
-                    NodeCount = 3,
-                    StartNodeIndex = 0,
-                    EdgeOffsets = edgeOffsets,
-                    EdgeDestinations = edgeDestinations,
-                    StorageCapacityByNode = storageCapacityByNode,
-                    Visited = visited,
-                    Queue = queue,
-                    ResultNodeIndex = result
-                }.Run();
+                LogisticsPipeRoutingKernel.ExecuteRouteBfs(
+                    3,
+                    0,
+                    edgeOffsets,
+                    edgeDestinations,
+                    storageCapacityByNode,
+                    visited,
+                    queue,
+                    result);
 
                 routedNode = result[0];
                 depositedUnits = routedNode == 2 ? 1 : 0;
@@ -70,13 +76,28 @@ namespace Hecton8.Debugging
             }
             finally
             {
-                edgeOffsets.Dispose();
-                edgeDestinations.Dispose();
-                storageCapacityByNode.Dispose();
-                visited.Dispose();
-                queue.Dispose();
-                result.Dispose();
+                DisposeTempArray(ref edgeOffsets);
+                DisposeTempArray(ref edgeDestinations);
+                DisposeTempArray(ref storageCapacityByNode);
+                DisposeTempArray(ref visited);
+                DisposeTempArray(ref queue);
+                DisposeTempArray(ref result);
             }
+        }
+
+        private static void RegisterTempArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Temp);
+        }
+
+        private static void DisposeTempArray<T>(ref NativeArray<T> array) where T : struct
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
     }
 }

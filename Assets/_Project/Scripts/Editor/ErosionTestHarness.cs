@@ -1,4 +1,6 @@
 using System.IO;
+using System.Text;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
@@ -16,6 +18,14 @@ namespace Hecton8.Editor
         private const int Resolution = 512;
         private const int PixelCount = Resolution * Resolution;
         private const string OutputFolder = "CodexArtifacts";
+        private const string NativeMemoryOwner = nameof(ErosionTestHarness);
+        private const string BeforeLabel = "before";
+        private const string HeightALabel = "heightA";
+        private const string HeightBLabel = "heightB";
+        private const string SedimentLabel = "sediment";
+        private const string WearLabel = "wear";
+        private const string MetricsLabel = "metrics";
+        private static readonly UTF8Encoding JsonEncoding = new UTF8Encoding(false); // COLD ALLOC: UTF8Encoding[1] - editor smoke JSON artifact writer - owner: ErosionTestHarness
 
         /// <summary>
         /// Generates fractal terrain, runs erosion and slumping, and writes PNG artifacts.
@@ -28,6 +38,7 @@ namespace Hecton8.Editor
             NativeArray<float> heightB = default;
             NativeArray<float> sediment = default;
             NativeArray<float> wear = default;
+            NativeArray<ErosionSmokeMetrics> metrics = default;
 
             try
             {
@@ -36,8 +47,17 @@ namespace Hecton8.Editor
                 heightB = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 sediment = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 wear = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                metrics = new NativeArray<ErosionSmokeMetrics>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                RegisterTempJobBuffers(before, heightA, heightB, sediment, wear, metrics);
 
-                GenerateFractalHeightmap(before, heightA);
+                JobHandle handle = new ErosionFractalHeightmapJob
+                {
+                    Before = before,
+                    Height = heightA,
+                    Resolution = Resolution,
+                    PrimarySeed = 0xC001CAFEu,
+                    RidgeSeed = 0x6C8E9CF5u
+                }.Schedule(PixelCount, 64);
 
                 var erosionJob = new HydraulicErosionJob
                 {
@@ -69,7 +89,7 @@ namespace Hecton8.Editor
                     MinWater = 0.01f
                 };
 
-                JobHandle handle = erosionJob.Schedule();
+                handle = erosionJob.Schedule(handle);
                 NativeArray<float> current = heightA;
                 NativeArray<float> next = heightB;
 
@@ -93,6 +113,15 @@ namespace Hecton8.Editor
                     Swap(ref current, ref next);
                 }
 
+                handle = new ErosionSmokeMetricsJob
+                {
+                    Before = before,
+                    After = current,
+                    Sediment = sediment,
+                    Wear = wear,
+                    Metrics = metrics
+                }.Schedule(handle);
+
                 // COLD SYNC JOB: editor harness must block to write deterministic PNG artifacts.
                 handle.Complete();
 
@@ -102,90 +131,46 @@ namespace Hecton8.Editor
                 WriteHeightPng(current, Path.Combine(folder, "ErosionTestHarness_After.png"));
                 WriteMaskPng(sediment, Path.Combine(folder, "ErosionTestHarness_SedimentMask.png"));
                 WriteMaskPng(wear, Path.Combine(folder, "ErosionTestHarness_WearMask.png"));
+                WriteMetricsJson(metrics[0], Path.Combine(folder, "ErosionTestHarness_Metrics.json"));
 
                 AssetDatabase.Refresh();
                 Debug.Log("[ErosionTestHarness] Wrote erosion PNG artifacts to " + folder);
             }
             finally
             {
-                if (before.IsCreated)
-                    before.Dispose();
-                if (heightA.IsCreated)
-                    heightA.Dispose();
-                if (heightB.IsCreated)
-                    heightB.Dispose();
-                if (sediment.IsCreated)
-                    sediment.Dispose();
-                if (wear.IsCreated)
-                    wear.Dispose();
+                DisposeTracked(ref before);
+                DisposeTracked(ref heightA);
+                DisposeTracked(ref heightB);
+                DisposeTracked(ref sediment);
+                DisposeTracked(ref wear);
+                DisposeTracked(ref metrics);
             }
         }
 
-        private static void GenerateFractalHeightmap(NativeArray<float> before, NativeArray<float> height)
+        private static void RegisterTempJobBuffers(
+            NativeArray<float> before,
+            NativeArray<float> heightA,
+            NativeArray<float> heightB,
+            NativeArray<float> sediment,
+            NativeArray<float> wear,
+            NativeArray<ErosionSmokeMetrics> metrics)
         {
-            for (int z = 0; z < Resolution; z++)
-            {
-                for (int x = 0; x < Resolution; x++)
-                {
-                    float2 uv = new float2(x, z) * (1f / Resolution);
-                    float n = FractalValueNoise(uv * 7.5f, 0xC001CAFEu);
-                    float ridge = 1f - math.abs(FractalValueNoise(uv * 3.25f + new float2(19.3f, -7.1f), 0x6C8E9CF5u) * 2f - 1f);
-                    float basin = math.smoothstep(0.2f, 0.95f, n);
-                    float h = math.saturate(basin * 0.72f + math.pow(ridge, 3.2f) * 0.28f);
-                    int index = z * Resolution + x;
-                    before[index] = h;
-                    height[index] = h;
-                }
-            }
+            NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(heightB, NativeMemoryOwner, HeightBLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(metrics, NativeMemoryOwner, MetricsLabel, NativeAllocationLifetime.TempJob);
         }
 
-        private static float FractalValueNoise(float2 sample, uint seed)
+        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
         {
-            float amplitude = 0.5f;
-            float frequency = 1f;
-            float total = 0f;
-            float normalization = 0f;
+            if (!array.IsCreated)
+                return;
 
-            for (int octave = 0; octave < 6; octave++)
-            {
-                total += ValueNoise(sample * frequency, seed + (uint)octave * 0x85EBCA6Bu) * amplitude;
-                normalization += amplitude;
-                amplitude *= 0.52f;
-                frequency *= 2.03f;
-            }
-
-            return total / math.max(0.0001f, normalization);
-        }
-
-        private static float ValueNoise(float2 sample, uint seed)
-        {
-            float2 floorSample = math.floor(sample);
-            int2 cell = (int2)floorSample;
-            float2 local = sample - floorSample;
-            float2 smooth = local * local * (3f - 2f * local);
-
-            float a = Hash01(cell.x, cell.y, seed);
-            float b = Hash01(cell.x + 1, cell.y, seed);
-            float c = Hash01(cell.x, cell.y + 1, seed);
-            float d = Hash01(cell.x + 1, cell.y + 1, seed);
-
-            return math.lerp(
-                math.lerp(a, b, smooth.x),
-                math.lerp(c, d, smooth.x),
-                smooth.y);
-        }
-
-        private static float Hash01(int x, int y, uint seed)
-        {
-            uint hash = (uint)x * 0x8DA6B343u;
-            hash ^= (uint)y * 0xD8163841u;
-            hash ^= seed + 0x9E3779B9u + (hash << 6) + (hash >> 2);
-            hash ^= hash >> 16;
-            hash *= 0x7FEB352Du;
-            hash ^= hash >> 15;
-            hash *= 0x846CA68Bu;
-            hash ^= hash >> 16;
-            return (hash & 0x00FFFFFFu) * (1f / 16777215f);
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private static void WriteHeightPng(NativeArray<float> heights, string path)
@@ -215,6 +200,63 @@ namespace Hecton8.Editor
             }
 
             WritePng(pixels, path);
+        }
+
+        private static void WriteMetricsJson(ErosionSmokeMetrics metrics, string path)
+        {
+            StringBuilder builder = new StringBuilder(512); // COLD ALLOC: StringBuilder[512] - editor smoke JSON artifact buffer - owner: ErosionTestHarness
+            builder.Append("{\n");
+            AppendJsonProperty(builder, "schema", "hecton8.erosion_smoke_metrics.v1", true);
+            AppendJsonProperty(builder, "resolution", Resolution, true);
+            AppendJsonProperty(builder, "dropletCount", 300000, true);
+            AppendJsonProperty(builder, "thermalIterations", 3, true);
+            AppendJsonProperty(builder, "minBefore", metrics.MinBefore, true);
+            AppendJsonProperty(builder, "maxBefore", metrics.MaxBefore, true);
+            AppendJsonProperty(builder, "minAfter", metrics.MinAfter, true);
+            AppendJsonProperty(builder, "maxAfter", metrics.MaxAfter, true);
+            AppendJsonProperty(builder, "maxSediment", metrics.MaxSediment, true);
+            AppendJsonProperty(builder, "maxWear", metrics.MaxWear, true);
+            AppendJsonProperty(builder, "meanAbsoluteDelta", metrics.MeanAbsoluteDelta, true);
+            AppendJsonProperty(builder, "changedCellCount", metrics.ChangedCellCount, true);
+            AppendJsonProperty(builder, "nonFiniteCellCount", metrics.NonFiniteCellCount, false);
+            builder.Append("\n}\n");
+            File.WriteAllText(path, builder.ToString(), JsonEncoding);
+        }
+
+        private static void AppendJsonProperty(StringBuilder builder, string name, string value, bool comma)
+        {
+            AppendJsonName(builder, name);
+            builder.Append('"');
+            builder.Append(value);
+            builder.Append('"');
+            if (comma)
+                builder.Append(',');
+            builder.Append('\n');
+        }
+
+        private static void AppendJsonProperty(StringBuilder builder, string name, int value, bool comma)
+        {
+            AppendJsonName(builder, name);
+            builder.Append(value);
+            if (comma)
+                builder.Append(',');
+            builder.Append('\n');
+        }
+
+        private static void AppendJsonProperty(StringBuilder builder, string name, float value, bool comma)
+        {
+            AppendJsonName(builder, name);
+            builder.Append(value.ToString("R", System.Globalization.CultureInfo.InvariantCulture));
+            if (comma)
+                builder.Append(',');
+            builder.Append('\n');
+        }
+
+        private static void AppendJsonName(StringBuilder builder, string name)
+        {
+            builder.Append("  \"");
+            builder.Append(name);
+            builder.Append("\": ");
         }
 
         private static void WritePng(Color32[] pixels, string path)

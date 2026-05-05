@@ -861,6 +861,11 @@ namespace Hecton8.Gameplay
             }
         }
 
+        private void EnsureContainedItemHashCache()
+        {
+            EnsureReservationCapacity();
+        }
+
         private bool IsReservedSlot(int index)
         {
             return _reservedSlotIds != null &&

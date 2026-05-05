@@ -26,8 +26,10 @@ using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Environment;
 using Hecton8.Gameplay;
+using Hecton8.Narrative;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
+using Hecton8.World;
 using Hecton.Localization;
 using Unity.Mathematics;
 using UnityEngine;
@@ -78,14 +80,14 @@ namespace Hecton8.AtlasSignal
         [Tooltip("Публиковать силу сигнала в шейдер для биолюминесцентного отклика.")]
         [SerializeField] private bool publishToShader = true;
 
-        // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        [Header("Encrypted Log Unlocks")]
+        [SerializeField] private string stage2EncryptedLogId = "captain_last_broadcast";
+        [SerializeField] private string stage3EncryptedLogId = "atlas6_terminal_sector3";
+        [SerializeField] private string stage4EncryptedLogId = "biologist_samples";
 
-        public static AtlasSignalSystem Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
+        // ══════════════════════════════════════════════════════════
+        //  SERVICE AUTHORITY
+        // ══════════════════════════════════════════════════════════
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -101,10 +103,17 @@ namespace Hecton8.AtlasSignal
         private bool _serviceRegistered;
         private bool _ghostManifestationAnnounced;
         private bool _identityDiscoverySynchronized;
+        private bool _stage2LogQueued;
+        private bool _stage3LogQueued;
+        private bool _stage4LogQueued;
 
         private const int FormalDetectionRevealStage = 2;
         private const int IdentityRevealStage = 3;
         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
+        private static readonly uint _AudioLogRuntimeMissingWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.AudioLogRuntimeMissing"));
+        private static readonly uint _EncryptedLogFallbackWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.EncryptedLogFallback"));
+        private static readonly uint _DuplicateRuntimeWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.DuplicateRuntime"));
+        private static readonly uint _AtlasSignalContextHash = unchecked((uint)LocHash.Compute("AtlasSignalSystem"));
 
         private static readonly int _ShaderSignalStrength =
             Shader.PropertyToID("_AtlasSignalStrength");
@@ -134,9 +143,7 @@ namespace Hecton8.AtlasSignal
             get
             {
                 if (_playerTransform == null) return Vector3.down;
-                Vector3 toCore = atlasCorePosWorld - _playerTransform.position;
-                float mag = toCore.magnitude;
-                return mag > 0.001f ? toCore / mag : Vector3.down;
+                return SignalStrengthSystem.CalculateDirectionToCore(_playerTransform.position, atlasCorePosWorld);
             }
         }
 
@@ -150,16 +157,6 @@ namespace Hecton8.AtlasSignal
         // ══════════════════════════════════════════════════════════
         //  LIFECYCLE
         // ══════════════════════════════════════════════════════════
-
-        private void Awake()
-        {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
-        }
 
         private void OnEnable()
         {
@@ -186,8 +183,6 @@ namespace Hecton8.AtlasSignal
             TryUnregister();
             TryUnregisterService();
 
-            if (Instance == this)
-                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -251,7 +246,7 @@ namespace Hecton8.AtlasSignal
             AtlasSignalEvents.RaisePulse(pulseIntensity);
 
             LogSignalPulse(pulseIntensity,
-                Vector3.Distance(_playerTransform.position, atlasCorePosWorld));
+                SignalStrengthSystem.CalculateDistanceMeters(_playerTransform.position, atlasCorePosWorld));
         }
 
         // ══════════════════════════════════════════════════════════
@@ -288,11 +283,7 @@ namespace Hecton8.AtlasSignal
 
         private float CalculateRawStrength()
         {
-            float dist = Vector3.Distance(_playerTransform.position, atlasCorePosWorld);
-            if (dist >= maxSignalRange)
-                return 0f;
-
-            return 1f - (dist / maxSignalRange);
+            return SignalStrengthSystem.CalculateStrength(_playerTransform.position, atlasCorePosWorld, maxSignalRange);
         }
 
         private int ResolveDesiredRevealStage(float currentDepthMeters)
@@ -355,6 +346,13 @@ namespace Hecton8.AtlasSignal
             if (_serviceRegistered || !Application.isPlaying)
                 return;
 
+            if (GlobalRegistry.AtlasSignal != null && !ReferenceEquals(GlobalRegistry.AtlasSignal, this))
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(_DuplicateRuntimeWarningHash, _AtlasSignalContextHash, 1f);
+                Destroy(gameObject);
+                return;
+            }
+
             GlobalRegistry.RegisterAtlasSignalRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AtlasSignal, this);
         }
@@ -415,6 +413,7 @@ namespace Hecton8.AtlasSignal
                         AtlasSignalEvents.RaiseDetected(atlasCorePosWorld);
                     }
 
+                    TryQueueEncryptedLog(2);
                     NotificationEvents.PushInfo(ResolveLocalized(
                         LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_2,
                         "WEAK RHYTHMIC PATTERN CONFIRMED. CONTACT STILL UNSTABLE."));
@@ -422,12 +421,14 @@ namespace Hecton8.AtlasSignal
 
                 case 3:
                     TryEnsureIdentityDiscoveryPublished();
+                    TryQueueEncryptedLog(3);
                     NotificationEvents.PushWarning(ResolveLocalized(
                         LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_3,
                         "THE SIGNAL IS STARTING TO RETURN CONTENT FRAGMENTS. DEPTH IS CLEANING THE BEARING."));
                     break;
 
                 case 4:
+                    TryQueueEncryptedLog(4);
                     NotificationEvents.PushWarning(ResolveLocalized(
                         LocalizationKeys.ATLAS_SIGNAL_REVEAL_STAGE_4,
                         "CARRIER STABLE. THE SIGNAL CAN NOW BE DRIVEN ALL THE WAY TO THE SOURCE."));
@@ -450,6 +451,50 @@ namespace Hecton8.AtlasSignal
                 NarrativeEvents.RaiseDiscoveryMade(SignalIdentityDiscoveryId);
 
             _identityDiscoverySynchronized = true;
+        }
+
+        private void TryQueueEncryptedLog(int revealStage)
+        {
+            string logId;
+            switch (revealStage)
+            {
+                case 2:
+                    if (_stage2LogQueued)
+                        return;
+                    _stage2LogQueued = true;
+                    logId = stage2EncryptedLogId;
+                    break;
+
+                case 3:
+                    if (_stage3LogQueued)
+                        return;
+                    _stage3LogQueued = true;
+                    logId = stage3EncryptedLogId;
+                    break;
+
+                case 4:
+                    if (_stage4LogQueued)
+                        return;
+                    _stage4LogQueued = true;
+                    logId = stage4EncryptedLogId;
+                    break;
+
+                default:
+                    return;
+            }
+
+            if (string.IsNullOrWhiteSpace(logId))
+                return;
+
+            AudioLogSystem audioLogs = GlobalRegistry.AudioLogs;
+            if (audioLogs != null && audioLogs.TryPlayLogById(logId))
+                return;
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                audioLogs == null ? _AudioLogRuntimeMissingWarningHash : _EncryptedLogFallbackWarningHash,
+                _AtlasSignalContextHash,
+                revealStage);
+            NarrativeEvents.RaiseDiscoveryMade(logId);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
@@ -511,6 +556,47 @@ namespace Hecton8.AtlasSignal
 
             if (_maxRevealStageUnlocked >= FormalDetectionRevealStage)
                 _signalEverDetected = true;
+
+            _stage2LogQueued = _maxRevealStageUnlocked >= 2;
+            _stage3LogQueued = _maxRevealStageUnlocked >= 3;
+            _stage4LogQueued = _maxRevealStageUnlocked >= 4;
+        }
+    }
+
+    internal static class SignalStrengthSystem
+    {
+        public static float CalculateStrength(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition, float maxRangeMeters)
+        {
+            float safeRange = math.max(0.001f, maxRangeMeters);
+            float distance = CalculateDistanceMeters(playerRuntimePosition, coreRuntimePosition);
+            if (distance >= safeRange)
+                return 0f;
+
+            return math.saturate(1f - (distance / safeRange));
+        }
+
+        public static float CalculateDistanceMeters(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition)
+        {
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerRuntimePosition);
+            AbsoluteUniversePosition coreAup = AbsoluteUniversePosition.FromRuntimePosition(coreRuntimePosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in playerAup, in coreAup);
+            return distanceSq > 0d ? (float)math.sqrt(distanceSq) : 0f;
+        }
+
+        public static Vector3 CalculateDirectionToCore(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition)
+        {
+            AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerRuntimePosition);
+            AbsoluteUniversePosition coreAup = AbsoluteUniversePosition.FromRuntimePosition(coreRuntimePosition);
+            double3 delta = coreAup.ToAbsoluteDouble3() - playerAup.ToAbsoluteDouble3();
+            double lengthSq = math.lengthsq(delta);
+            if (lengthSq <= 0.000001d)
+                return Vector3.down;
+
+            double invLength = math.rsqrt(lengthSq);
+            return new Vector3(
+                (float)(delta.x * invLength),
+                (float)(delta.y * invLength),
+                (float)(delta.z * invLength));
         }
     }
 }

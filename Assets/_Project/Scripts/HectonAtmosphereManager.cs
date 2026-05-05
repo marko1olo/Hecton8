@@ -423,11 +423,20 @@ namespace Hecton8.Atmosphere
         [SerializeField, ColorUsage(false, true)] private Color _giantAbyssBiolumeColor = new Color(0f, 0.38f, 0.55f, 1f);
         [Tooltip("Maximum biolume fill added to the final giant abyss light at depth.")]
         [SerializeField, Range(0f, 0.25f)] private float _giantAbyssBiolumeIntensity = 0.055f;
+        [Tooltip("Darkens Aegir planet-shine when sunlight intersects the gas-giant ring plane before reaching Hecton.")]
+        [SerializeField] private bool _enableAegirRingShadow = true;
+        [Tooltip("Maximum fractional darkening applied to _FinalGiantAbyssLight by Aegir ring shadows.")]
+        [SerializeField, Range(0f, 0.65f)] private float _aegirRingShadowStrength = 0.18f;
+        [Tooltip("Angular band width, in normalized dot units, used to detect sunlight crossing the ring plane.")]
+        [SerializeField, Range(0.01f, 0.5f)] private float _aegirRingShadowPlaneWidth = 0.16f;
+        [Tooltip("Soft penumbra width for Aegir ring shadow transitions.")]
+        [SerializeField, Range(0.01f, 0.5f)] private float _aegirRingShadowSoftness = 0.1f;
 
         [Header("═══ Vertical Runtime ═══")]
         [SerializeField] private BiomeMatrixDirector _biomeMatrixDirector;
         [SerializeField] private WorldProceduralFieldSampler _proceduralFieldSampler;
         [SerializeField, Min(0.05f)] private float _biomeInfluenceRefreshInterval = 0.35f;
+        [SerializeField, Min(0f)] private float _biomeInfluenceTransitionHysteresisMeters = 10f;
 
         [Header("═══ Biome Overrides ═══")]
         [SerializeField] private BiomeAtmosphereOverride[] _biomeOverrides;
@@ -465,6 +474,11 @@ namespace Hecton8.Atmosphere
         private HectonBiomeMatrixProfile _biomeInfluenceSecondaryProfile;
         private float _nextBiomeInfluenceRefreshTime = float.NegativeInfinity;
         private bool _hasBiomeInfluenceAtmosphere;
+        private bool _hasStableBiomeInfluencePrimary;
+        private bool _hasPendingBiomeInfluencePrimary;
+        private byte _stableBiomeInfluencePrimaryId;
+        private byte _pendingBiomeInfluencePrimaryId;
+        private AbsoluteUniversePosition _pendingBiomeInfluencePrimaryAup;
         private int _currentBiomeID = -1;
         private bool _editorInitialized;
         private bool _editorPreviewDirty;
@@ -1206,8 +1220,10 @@ namespace Hecton8.Atmosphere
             Color surfaceLinearColor = _giantAbyssSurfaceLightColor.linear;
             float3 giantSurfaceColor = new float3(surfaceLinearColor.r, surfaceLinearColor.g, surfaceLinearColor.b);
             float phase01 = math.saturate((planetPhase * 0.5f) + 0.5f);
+            float ringShadowMultiplier = ResolveAegirRingShadowMultiplier(celestial, aegirDirection);
             float planetShineIntensity = math.max(0f, _giantAbyssLightIntensity) *
-                                          math.saturate((phase01 * phase01) + (eclipseBacklit * 0.35f));
+                                          math.saturate((phase01 * phase01) + (eclipseBacklit * 0.35f)) *
+                                          ringShadowMultiplier;
 
             Color biolumeLinearColor = _giantAbyssBiolumeColor.linear;
             float3 biolumeColor = new float3(biolumeLinearColor.r, biolumeLinearColor.g, biolumeLinearColor.b);
@@ -1230,6 +1246,40 @@ namespace Hecton8.Atmosphere
                 _cachedAegirDirection = directionPayload;
                 Shader.SetGlobalVector(_shaderID_AegirDirection, new Vector4(directionPayload.x, directionPayload.y, directionPayload.z, directionPayload.w));
             }
+        }
+
+        private float ResolveAegirRingShadowMultiplier(HectonCelestialEngine celestial, float3 aegirDirection)
+        {
+            if (!_enableAegirRingShadow || celestial == null || _aegirRingShadowStrength <= 0f)
+                return 1f;
+
+            float3 toSun = math.normalizesafe(
+                new float3(
+                    celestial.ResolvedSunDirection.x,
+                    celestial.ResolvedSunDirection.y,
+                    celestial.ResolvedSunDirection.z),
+                new float3(0f, 1f, 0f));
+            float3 normalizedAegir = math.normalizesafe(aegirDirection, new float3(0f, 0f, 1f));
+            float sunAegirAlignment = math.saturate((math.dot(toSun, normalizedAegir) - 0.72f) / 0.28f);
+            sunAegirAlignment = sunAegirAlignment * sunAegirAlignment * (3f - 2f * sunAegirAlignment);
+
+            float3 ringPlaneNormal = math.normalizesafe(
+                math.cross(normalizedAegir, new float3(0f, 1f, 0f)),
+                new float3(1f, 0f, 0f));
+            float planeDistance = math.abs(math.dot(toSun, ringPlaneNormal));
+            float edge0 = math.max(0.001f, _aegirRingShadowPlaneWidth);
+            float edge1 = edge0 + math.max(0.001f, _aegirRingShadowSoftness);
+            float planeBand = 1f - SmoothStep(edge0, edge1, planeDistance);
+
+            float shadow = math.saturate(sunAegirAlignment * planeBand) * math.saturate(_aegirRingShadowStrength);
+            return math.saturate(1f - shadow);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static float SmoothStep(float edge0, float edge1, float value)
+        {
+            float t = math.saturate((value - edge0) / math.max(edge1 - edge0, 0.0001f));
+            return t * t * (3f - 2f * t);
         }
 
         #endregion
@@ -1319,6 +1369,9 @@ namespace Hecton8.Atmosphere
                     out HectonBiomeMatrixProfile primary,
                     out HectonBiomeMatrixProfile secondary))
             {
+                if (!ShouldCommitProceduralBiomeInfluence(in influence, sampleTransform.position))
+                    return;
+
                 _currentBiomeInfluence = influence;
                 _biomeInfluencePrimaryProfile = primary;
                 _biomeInfluenceSecondaryProfile = secondary;
@@ -1326,10 +1379,55 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
+            ClearProceduralBiomeInfluenceHysteresis();
             _hasBiomeInfluenceAtmosphere = false;
             _currentBiomeInfluence = default;
             _biomeInfluencePrimaryProfile = null;
             _biomeInfluenceSecondaryProfile = null;
+        }
+
+        private bool ShouldCommitProceduralBiomeInfluence(
+            in WorldProceduralFieldSampler.BiomeInfluenceCell influence,
+            Vector3 samplePosition)
+        {
+            byte nextPrimaryId = influence.PrimaryBiomeId;
+            if (!_hasStableBiomeInfluencePrimary ||
+                nextPrimaryId == _stableBiomeInfluencePrimaryId ||
+                _biomeInfluenceTransitionHysteresisMeters <= 0f)
+            {
+                _stableBiomeInfluencePrimaryId = nextPrimaryId;
+                _hasStableBiomeInfluencePrimary = true;
+                _hasPendingBiomeInfluencePrimary = false;
+                return true;
+            }
+
+            AbsoluteUniversePosition currentAup = AbsoluteUniversePosition.FromRuntimePosition(samplePosition);
+            if (!_hasPendingBiomeInfluencePrimary ||
+                _pendingBiomeInfluencePrimaryId != nextPrimaryId)
+            {
+                _pendingBiomeInfluencePrimaryId = nextPrimaryId;
+                _pendingBiomeInfluencePrimaryAup = currentAup;
+                _hasPendingBiomeInfluencePrimary = true;
+                return false;
+            }
+
+            double requiredDistanceSq = (double)_biomeInfluenceTransitionHysteresisMeters *
+                                        _biomeInfluenceTransitionHysteresisMeters;
+            if (AbsoluteUniversePosition.DistanceSq(in currentAup, in _pendingBiomeInfluencePrimaryAup) < requiredDistanceSq)
+                return false;
+
+            _stableBiomeInfluencePrimaryId = nextPrimaryId;
+            _hasPendingBiomeInfluencePrimary = false;
+            return true;
+        }
+
+        private void ClearProceduralBiomeInfluenceHysteresis()
+        {
+            _hasStableBiomeInfluencePrimary = false;
+            _hasPendingBiomeInfluencePrimary = false;
+            _stableBiomeInfluencePrimaryId = 0;
+            _pendingBiomeInfluencePrimaryId = 0;
+            _pendingBiomeInfluencePrimaryAup = default;
         }
 
         private static AtmosphereProfile ResolveMatrixAtmosphereProfile(HectonBiomeMatrixProfile profile)

@@ -1316,7 +1316,8 @@ namespace Hecton8.World
                 request.weight,
                 request.seamBlendRadius,
                 request.suggestedTerrainCut,
-                terrainNormal);
+                terrainNormal,
+                request.absoluteTerrainContactPosition);
             return entrances;
         }
 
@@ -1360,6 +1361,16 @@ namespace Hecton8.World
                 heat,
                 smokeDensity,
                 cableRadius);
+
+            ResourceDistributionDirector resourceDirector = ResourceDistributionDirector.ActiveRuntimeInstance;
+            if (resourceDirector != null)
+            {
+                AbsoluteUniversePosition ventAup = AbsoluteUniversePosition.FromRuntimePosition(ventPosition);
+                resourceDirector.TrySpawnDeepMantleGeodeAtAup(
+                    ventAup,
+                    radius,
+                    unchecked((uint)request.runtimeKey));
+            }
         }
 
         private static bool ShouldRegisterHydrothermalVent(in WorldGenerativeGeologyVoxelBlendRequest request)

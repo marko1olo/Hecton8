@@ -1,4 +1,7 @@
 # BUILD DEPENDENCY GRAPH — HECTON-8 Bootstrapper Bloat Check
+Date: 2026-05-04
+Status: REFERENCE
+
 
 **Date:** 2026-04-29  
 **Target:** `GameBootstrapper.cs` + `Assets/_Project/Prefabs` hard-references  

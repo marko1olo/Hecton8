@@ -618,18 +618,23 @@ bool IsThreatVoxelSolid(uint voxelValue)
     return voxelValue >= (uint)max(_ThreatVoxelSolidThreshold, 1);
 }
 
-bool TryResolveThreatVoxelAvoidance(float3 positionWS, float3 velocityWS, out float3 avoidanceNormalWS, out float avoidanceGate)
+float3 RotateThreatVoxelRayYaw(float3 directionWS, float sinYaw, float cosYaw)
+{
+    float3 rotated = float3(
+        directionWS.x * cosYaw - directionWS.z * sinYaw,
+        directionWS.y,
+        directionWS.x * sinYaw + directionWS.z * cosYaw);
+    return SafeNormalize(rotated);
+}
+
+bool TryResolveThreatVoxelRay(float3 positionWS, float3 rayDirection, out float3 avoidanceNormalWS, out float avoidanceGate)
 {
     avoidanceNormalWS = float3(0.0, 0.0, 0.0);
     avoidanceGate = 0.0;
     if (!HasThreatVoxelData())
         return false;
 
-    float speedSq = dot(velocityWS, velocityWS);
-    if (!IsFiniteFloat(speedSq) || speedSq <= EPSILON)
-        return false;
-
-    float3 rayDirection = SafeNormalize(velocityWS);
+    rayDirection = SafeNormalize(rayDirection);
     if (dot(rayDirection, rayDirection) <= EPSILON)
         return false;
 
@@ -717,6 +722,53 @@ bool TryResolveThreatVoxelAvoidance(float3 positionWS, float3 velocityWS, out fl
     }
 
     return false;
+}
+
+bool TryResolveThreatVoxelAvoidance(float3 positionWS, float3 velocityWS, out float3 avoidanceNormalWS, out float avoidanceGate)
+{
+    avoidanceNormalWS = float3(0.0, 0.0, 0.0);
+    avoidanceGate = 0.0;
+    float speedSq = dot(velocityWS, velocityWS);
+    if (!IsFiniteFloat(speedSq) || speedSq <= EPSILON)
+        return false;
+
+    float3 forwardRay = SafeNormalize(velocityWS);
+    if (dot(forwardRay, forwardRay) <= EPSILON)
+        return false;
+
+    const float sideSin = 0.70710678118;
+    const float sideCos = 0.70710678118;
+    float3 leftRay = RotateThreatVoxelRayYaw(forwardRay, sideSin, sideCos);
+    float3 rightRay = RotateThreatVoxelRayYaw(forwardRay, -sideSin, sideCos);
+    float3 accumulatedNormal = float3(0.0, 0.0, 0.0);
+    float accumulatedGate = 0.0;
+
+    float3 rayNormal = float3(0.0, 0.0, 0.0);
+    float rayGate = 0.0;
+    if (TryResolveThreatVoxelRay(positionWS, forwardRay, rayNormal, rayGate))
+    {
+        accumulatedNormal += rayNormal * (rayGate * 1.35);
+        accumulatedGate = max(accumulatedGate, rayGate);
+    }
+
+    if (TryResolveThreatVoxelRay(positionWS, leftRay, rayNormal, rayGate))
+    {
+        accumulatedNormal += rayNormal * rayGate;
+        accumulatedGate = max(accumulatedGate, rayGate * 0.9);
+    }
+
+    if (TryResolveThreatVoxelRay(positionWS, rightRay, rayNormal, rayGate))
+    {
+        accumulatedNormal += rayNormal * rayGate;
+        accumulatedGate = max(accumulatedGate, rayGate * 0.9);
+    }
+
+    if (accumulatedGate <= 0.0 || dot(accumulatedNormal, accumulatedNormal) <= EPSILON)
+        return false;
+
+    avoidanceNormalWS = SafeNormalize(accumulatedNormal);
+    avoidanceGate = saturate(accumulatedGate);
+    return true;
 }
 
 bool TryResolveThreatVoxelSurfaceRepulsion(float3 positionWS, out float3 surfaceNormalWS, out float surfaceGate)

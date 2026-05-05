@@ -1,4 +1,7 @@
 # SYSTEM COUPLING WARNINGS (THE SPAGHETTI SCAN) — HECTON-8 Static Audit
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Generated:** 2026-04-27 | **Auditor:** Static Compliance Officer  
 **Mandate:** AGENTS.md — "GlobalRegistry (Service Locator Pattern)" · "FORBID: FindObjectOfType in hot paths" · "Systems must communicate via EventBus or GlobalRegistry"

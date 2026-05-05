@@ -1,4 +1,5 @@
 # Headless Ecosystem Simulation
+Date: `2026-05-04`
 
 Status: implementation contract for hibernated fauna sectors.
 Verification: PENDING VERIFICATION

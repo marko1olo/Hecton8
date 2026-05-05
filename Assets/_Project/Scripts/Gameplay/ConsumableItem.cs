@@ -165,6 +165,9 @@ namespace Hecton8.Gameplay
 
             if (item.thirstRestore > 0f)
                 survival.AddThirst(item.thirstRestore);
+
+            if (HectonSurvivalSystem.ShouldApplyNutritionalToxicityOnConsume(item))
+                survival.ApplyNutritionalToxicity();
         }
 
         private static HectonSurvivalSystem ResolveSurvivalSystem()

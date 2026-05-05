@@ -300,14 +300,15 @@ namespace Hecton8.SaveSystem
 
         private static bool WriteInventory(ref BufferWriter writer, InventoryDTO value)
         {
-            return writer.WriteInt(value.cellCount)
-                && writer.WriteStructArray(value.itemHashIds)
-                && writer.WriteStructArray(value.packedCellCoordinates)
-                && writer.WriteStructArray(value.stackCounts)
-                && writer.WriteStructArray(value.itemStateFlags)
-                && writer.WriteStructArray(value.itemGeneticsWords)
-                && writer.WriteStructArray(value.qualityMilli)
-                && writer.WriteStructArray(value.lastUpdateUnixSeconds)
+            int logicalCellCount = Math.Clamp(value.cellCount, 0, InventoryDTO.MaxCells);
+            return writer.WriteInt(logicalCellCount)
+                && writer.WriteStructArraySlice(value.itemHashIds, logicalCellCount)
+                && writer.WriteStructArraySlice(value.packedCellCoordinates, logicalCellCount)
+                && writer.WriteStructArraySlice(value.stackCounts, logicalCellCount)
+                && writer.WriteStructArraySlice(value.itemStateFlags, logicalCellCount)
+                && writer.WriteStructArraySlice(value.itemGeneticsWords, logicalCellCount)
+                && writer.WriteStructArraySlice(value.qualityMilli, logicalCellCount)
+                && writer.WriteStructArraySlice(value.lastUpdateUnixSeconds, logicalCellCount)
                 && writer.WriteFloat(value.totalWeight)
                 && writer.WriteInt(value.gridColumns)
                 && writer.WriteInt(value.gridRows);

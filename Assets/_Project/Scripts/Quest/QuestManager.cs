@@ -566,15 +566,22 @@ namespace Hecton8.Quest
 #if UNITY_EDITOR
         private void TryAutoPopulateQuestRegistry()
         {
-            if (allQuests != null && allQuests.Length > 0)
-                return;
-
             string[] guids = AssetDatabase.FindAssets("t:QuestData", new[] { QuestFolder });
             if (guids == null || guids.Length == 0)
                 return;
 
-            QuestData[] loadedQuests = new QuestData[guids.Length]; // COLD ALLOC: QuestData[guids.Length] - editor-time quest registry bootstrap - owner: QuestManager
-            int loadedCount = 0;
+            List<QuestData> loadedQuests = new List<QuestData>(guids.Length); // COLD ALLOC: List<QuestData>[guids.Length] - editor-time quest registry bootstrap - owner: QuestManager
+            if (allQuests != null)
+            {
+                for (int i = 0; i < allQuests.Length; i++)
+                {
+                    QuestData existing = allQuests[i];
+                    if (existing != null && !loadedQuests.Contains(existing))
+                        loadedQuests.Add(existing);
+                }
+            }
+
+            int previousCount = loadedQuests.Count;
             for (int i = 0; i < guids.Length; i++)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guids[i]);
@@ -582,16 +589,14 @@ namespace Hecton8.Quest
                 if (questData == null)
                     continue;
 
-                loadedQuests[loadedCount++] = questData;
+                if (!loadedQuests.Contains(questData))
+                    loadedQuests.Add(questData);
             }
 
-            if (loadedCount <= 0)
+            if (loadedQuests.Count <= 0 || loadedQuests.Count == previousCount)
                 return;
 
-            if (loadedCount != loadedQuests.Length)
-                Array.Resize(ref loadedQuests, loadedCount);
-
-            allQuests = loadedQuests;
+            allQuests = loadedQuests.ToArray();
             EditorUtility.SetDirty(this);
         }
 #endif

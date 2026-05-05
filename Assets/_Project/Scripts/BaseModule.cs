@@ -93,7 +93,7 @@ namespace Hecton8.Gameplay
     }
 
     [DisallowMultipleComponent]
-    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, IFixedTickable, ICuttable, IPhysicsImpactMaterialProvider
+    public sealed class BaseModule : MonoBehaviour, IPowerComponent, IPoolable, ISlowTickable, IFixedTickable, ICuttable, IPhysicsImpactMaterialProvider, IElectromagneticPulseEventListener
     {
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
@@ -345,6 +345,9 @@ namespace Hecton8.Gameplay
                  "пока модуль не затоплен. Назначь вручную или создай автоматически.")]
         [SerializeField] private BoxCollider interiorTrigger;
 
+        [Tooltip("Authored interior wall surfaces that swap to a dedicated condensation material when hot air meets cold hull.")]
+        [SerializeField] private BaseModuleCondensationSurface[] condensationSurfaces = Array.Empty<BaseModuleCondensationSurface>();
+
         [Header("Flooded Reef")]
         [SerializeField, Min(0f)]
         [Tooltip("Continuous flooded in-game days before the room latches interior reef growth.")]
@@ -563,6 +566,8 @@ namespace Hecton8.Gameplay
 
         // COLD ALLOC: Collider[32] — resync interior occupants on enable/load/spawn — owner: BaseModule
         private readonly Collider[] _interiorOverlapBuffer = new Collider[INTERIOR_OVERLAP_CAPACITY];
+        [SerializeField] private float _debugSolarEmpBlackoutSeconds;
+        private float _solarEmpBlackoutRemainingSeconds;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES — для ConstructionManager save/load
@@ -813,11 +818,14 @@ namespace Hecton8.Gameplay
             _parasiteThermalInsulation01 = 0f;
             _parasiteBioReactorOverheatMultiplier = 1f;
             _floodedReefFloodSeconds = Mathf.Max(0f, _floodedReefFloodSeconds);
+            _solarEmpBlackoutRemainingSeconds = 0f;
+            _debugSolarEmpBlackoutSeconds = 0f;
             ClearQueuedHydroStructuralLoad();
             ApplyDeepSeaCompressionState(true);
 
             RefreshVisualStateImmediate();
             SetInteriorReefVisualActive(_interiorReefInfestationActive);
+            ApplyCondensationVisualState(_condensationActive);
             if (_interiorReefInfestationActive)
                 RegisterFloodedReefFaunaAnchor();
             ResyncInteriorOccupants(true);
@@ -861,6 +869,8 @@ namespace Hecton8.Gameplay
             _trackedPlayerMovement = null;
             _parasitePowerDrainWatts = 0f;
             _parasiteRootPowerDrainWatts = 0f;
+            _solarEmpBlackoutRemainingSeconds = 0f;
+            _debugSolarEmpBlackoutSeconds = 0f;
             _parasiteAddedMassKilograms = 0f;
             _parasiteThermalInsulation01 = 0f;
             _parasiteBioReactorOverheatMultiplier = 1f;
@@ -878,6 +888,7 @@ namespace Hecton8.Gameplay
             _carbonFilterAvailable = true;
             _carbonFilterTimerSeconds = 0f;
             _condensationActive = false;
+            ApplyCondensationVisualState(false);
             SetInteriorReefVisualActive(false);
             ResetPressureCompressionVisualState();
             _integrityComponent.ResetForDespawn();
@@ -914,6 +925,7 @@ namespace Hecton8.Gameplay
             UpdateFloodedReefGrowth(SLOW_TICK_DT);
             ApplyLocalGravityAnomalyRequest();
             EvaluateCatastrophicImplosion();
+            AdvanceSolarEmpBlackout(SLOW_TICK_DT);
             if (!HasOperationalPower)
                 return;
 
@@ -1011,6 +1023,7 @@ namespace Hecton8.Gameplay
             CaptureModuleRigidbodyDefaults();
             CaptureFloodSurfaceDefaults();
             CapturePressureCompressionDefaults();
+            ApplyCondensationVisualState(_condensationActive);
         }
 
         private void OnEnable()
@@ -1018,6 +1031,7 @@ namespace Hecton8.Gameplay
             if (!s_activeModules.Contains(this))
                 s_activeModules.Add(this);
 
+            PhysicsEventBus.Register(this);
             TryRegister();
             ResyncInteriorOccupants(true);
             BaseDegradationSystem.SynchronizeIntegrityState(this);
@@ -1030,11 +1044,13 @@ namespace Hecton8.Gameplay
             ApplyDeepSeaCompressionState(true);
             UpdateFloodVisualStateImmediate();
             SetInteriorReefVisualActive(_interiorReefInfestationActive);
+            ApplyCondensationVisualState(_condensationActive);
         }
 
         private void OnDisable()
         {
             s_activeModules.Remove(this);
+            PhysicsEventBus.Unregister(this);
             TryUnregister();
             TryUnregisterFixedTick();
             BaseDegradationSystem.ClearIntegrityState(this);
@@ -1051,6 +1067,7 @@ namespace Hecton8.Gameplay
         private void OnDestroy()
         {
             s_activeModules.Remove(this);
+            PhysicsEventBus.Unregister(this);
             TryUnregister();
             TryUnregisterFixedTick();
             BaseDegradationSystem.ClearIntegrityState(this);
@@ -1406,7 +1423,22 @@ namespace Hecton8.Gameplay
                 return;
 
             _condensationActive = active;
+            ApplyCondensationVisualState(active);
             BaseDegradationSystem.SynchronizeIntegrityState(this);
+        }
+
+        private void ApplyCondensationVisualState(bool active)
+        {
+            if (condensationSurfaces == null)
+                return;
+
+            int count = condensationSurfaces.Length;
+            for (int i = 0; i < count; i++)
+            {
+                BaseModuleCondensationSurface surface = condensationSurfaces[i];
+                if (surface != null)
+                    surface.ApplyCondensation(active);
+            }
         }
 
         internal float ResolveParasiteAddedMassKilograms()
@@ -2121,8 +2153,56 @@ namespace Hecton8.Gameplay
             SetLightsEnabled(ShouldLightsBeEnabled());
         }
 
-        private bool HasOperationalPower => _integrityComponent.HasOperationalPower(_hasPower);
+        private bool HasOperationalPower => _solarEmpBlackoutRemainingSeconds <= 0.0001f &&
+                                            _integrityComponent.HasOperationalPower(_hasPower);
         private bool ShouldLightsBeEnabled() => HasOperationalPower && !_ambientLightsBrownedOut;
+
+        public void OnElectromagneticPulse(in ElectromagneticPulseEvent pulseEvent)
+        {
+            if ((pulseEvent.DamageType & (uint)DamageTypeMask.Emp) == 0u ||
+                pulseEvent.DurationSeconds <= 0f ||
+                pulseEvent.RadiusMeters <= 0f)
+            {
+                return;
+            }
+
+            float radius = pulseEvent.RadiusMeters;
+            if (radius < 250000f)
+            {
+                Vector3 delta = transform.position - pulseEvent.RuntimePosition;
+                if (delta.sqrMagnitude > radius * radius)
+                    return;
+            }
+
+            _solarEmpBlackoutRemainingSeconds = Mathf.Max(
+                _solarEmpBlackoutRemainingSeconds,
+                pulseEvent.DurationSeconds);
+            _debugSolarEmpBlackoutSeconds = _solarEmpBlackoutRemainingSeconds;
+            _integrityComponent.StopDrain();
+            SetLightsEnabled(false);
+            UpdateDrainDiagnostics();
+            SyncSpatialRole();
+        }
+
+        private void AdvanceSolarEmpBlackout(float deltaTime)
+        {
+            if (_solarEmpBlackoutRemainingSeconds <= 0f)
+            {
+                _debugSolarEmpBlackoutSeconds = 0f;
+                return;
+            }
+
+            _solarEmpBlackoutRemainingSeconds = Mathf.Max(0f, _solarEmpBlackoutRemainingSeconds - Mathf.Max(0f, deltaTime));
+            _debugSolarEmpBlackoutSeconds = _solarEmpBlackoutRemainingSeconds;
+            if (_solarEmpBlackoutRemainingSeconds > 0f)
+                return;
+
+            SetLightsEnabled(ShouldLightsBeEnabled());
+            if (HasOperationalPower)
+                _integrityComponent.TryStartDrain(_hasPower);
+            UpdateDrainDiagnostics();
+            SyncSpatialRole();
+        }
 
         private void TriggerCascadeFailure()
         {

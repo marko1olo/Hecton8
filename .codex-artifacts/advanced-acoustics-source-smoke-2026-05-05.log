@@ -1,0 +1,11 @@
+﻿PASS Assets/_Project/Scripts/SpatialAudioManager.cs :: 1440f + (4.6f * temperatureCelsius) - (0.05f * temperatureCelsius * temperatureCelsius)
+PASS Assets/_Project/Scripts/World/AcousticOcclusionUtility.cs :: TryTraceVoxelDensityOcclusion
+PASS Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs :: ResolveDirectionalDopplerRatio
+PASS Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs :: RenderLeviathanGranularRoarSample
+PASS Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs :: RenderInteriorFdnReverbSample
+PASS Assets/_Project/Scripts/Audio/PlayerCriticalProceduralAudioRenderer.cs :: TinnitusCarrierHertz = 8000f
+PASS Assets/_Project/Scripts/Audio/NativeAudioFrameRingBuffer.cs :: CrashTelemetryBuffer.ReportAudioOverflowDropWarning
+PASS Assets/_Project/Scripts/CrashTelemetryBuffer.cs :: WriteAudioOverflowDropTelemetry
+PASS Assets/_Project/Scripts/Audio/ProceduralAudioEvents.cs :: LeviathanRoar
+PASS OnAudioFilterRead bridge purity
+STATUS: PASS

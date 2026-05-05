@@ -1,4 +1,7 @@
 # MEMORY_ALIGNMENT_FIX.md — DOD Struct Layout Surgery
+Date: 2026-04-28
+Status: REFERENCE
+
 
 ## Current-State Addendum (2026-04-29)
 

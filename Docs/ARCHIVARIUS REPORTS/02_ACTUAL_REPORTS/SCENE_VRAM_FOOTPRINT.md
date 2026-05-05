@@ -1,4 +1,7 @@
 # LIVE SCENE VRAM SURVEILLANCE — `02_HECTON_WORLD.unity`
+Date: 2026-05-04
+Status: REFERENCE
+
 
 **Status:** PENDING VERIFICATION (requires Unity Editor Frame Debugger)  
 **Scan Date:** 2026-04-29  

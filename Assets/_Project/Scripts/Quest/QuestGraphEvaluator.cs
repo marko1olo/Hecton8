@@ -4,6 +4,8 @@ using Hecton.Localization;
 using Hecton8.AtlasSignal;
 using Hecton8.Celestial;
 using Hecton8.Core;
+using Hecton8.Crafting;
+using Hecton8.Items;
 using Hecton8.Modding;
 using Hecton8.Narrative;
 using Unity.Collections;
@@ -11,7 +13,7 @@ using UnityEngine;
 
 namespace Hecton8.Quest
 {
-    internal sealed class QuestGraphEvaluator : IDisposable, INarrativeEventListener, IAtlasSignalEventListener, ICelestialEventListener
+    internal sealed class QuestGraphEvaluator : IDisposable, INarrativeEventListener, IAtlasSignalEventListener, ICelestialEventListener, ICraftingEventListener
     {
         private const string EventSubscriberId = "quest.graph.evaluator";
         private const float DepthTierTwoMeters = 100f;
@@ -71,6 +73,7 @@ namespace Hecton8.Quest
             _biomeDiscoveredSubscription = HectonEventBus.Subscribe<BiomeDiscoveredEvent>(HandleBiomeDiscovered, EventSubscriberId);
             _loreAcquiredSubscription = HectonEventBus.Subscribe<LoreAcquiredEvent>(HandleLoreAcquired, EventSubscriberId);
             NarrativeEvents.Register(this);
+            CraftingEvents.Register(this);
             CelestialEvents.Register(this);
             AtlasSignalEvents.Register(this);
             _activeEvaluators.Register(this);
@@ -91,6 +94,7 @@ namespace Hecton8.Quest
             _loreAcquiredSubscription?.Dispose();
             _loreAcquiredSubscription = null;
             NarrativeEvents.Unregister(this);
+            CraftingEvents.Unregister(this);
             CelestialEvents.Unregister(this);
             AtlasSignalEvents.Unregister(this);
             _activeEvaluators.Unregister(this);
@@ -199,10 +203,43 @@ namespace Hecton8.Quest
 
         public void OnNarrativeEvent(in NarrativeEventPayload payload)
         {
-            if ((NarrativeEventType)payload.EventType != NarrativeEventType.DepthTierReached)
+            switch ((NarrativeEventType)payload.EventType)
+            {
+                case NarrativeEventType.DiscoveryMade:
+                    EnqueueSignal(new QuestSignalPayload
+                    {
+                        EntityHash = payload.DiscoveryHash,
+                        EventType = (ushort)QuestSignalKind.DiscoveryMade,
+                        Timestamp = Time.timeAsDouble
+                    });
+                    return;
+
+                case NarrativeEventType.DepthTierReached:
+                    UpdateDepth(MapDepthTierToMeters(payload.DepthTier));
+                    return;
+            }
+        }
+
+        public void OnCraftingEvent(in CraftingEventPayload payload)
+        {
+            if ((CraftingEventType)payload.EventType != CraftingEventType.CraftCompleted)
                 return;
 
-            UpdateDepth(MapDepthTierToMeters(payload.DepthTier));
+            if (!CraftingEvents.TryResolveItem(in payload, out ItemData resultItem) || resultItem == null)
+                return;
+
+            uint itemHash = QuestFlagHashKernel.ComputeStableHash(resultItem.PersistentId);
+            if (itemHash == 0u)
+                return;
+
+            EnqueueSignal(new QuestSignalPayload
+            {
+                EntityHash = itemHash,
+                EventType = (ushort)QuestSignalKind.ItemCollected,
+                ItemId = itemHash,
+                Timestamp = Time.timeAsDouble,
+                NumericValue = 1f
+            });
         }
 
         private void HandleEclipseStart()

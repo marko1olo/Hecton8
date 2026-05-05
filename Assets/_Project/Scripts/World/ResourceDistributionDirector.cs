@@ -59,6 +59,7 @@ namespace Hecton8.World
         private const string PressureDiamondStableId = "resource.node.pressure_diamond";
         private const string ThermalDiamondStableId = "resource.node.thermal_diamond";
         private const string VoidGlassMeteoriteStableId = "resource.node.void_glass_meteorite";
+        private const string DeepMantleGeodeStableId = "resource.node.deep_mantle_geode";
         private const int BrinePoolSeedSalt = unchecked((int)0x4252494E);
         private const int BrinePoolHazardIdSalt = unchecked((int)0x52494E45);
         private const int MagmaVentSeedSalt = unchecked((int)0x56454E54);
@@ -565,6 +566,63 @@ namespace Hecton8.World
 
             uint yawSeed = SeedSectorCandidate(sector, template.StableHashId, (int)(sourceId & 0x7FFFFFFFu));
             yawSeed = Mix(yawSeed, (uint)math.asint(deltaTemperatureCelsius));
+            float yawDegrees = Next01(ref yawSeed) * 360f;
+            Quaternion rotation = ResolveSurfaceRotation(Vector3.up, yawDegrees);
+            GameObject instance = pool.Spawn(_runtimePrefab, spawnPosition, rotation);
+            if (instance == null)
+                return false;
+
+            if (!instance.TryGetComponent(out ResourceNode node))
+            {
+                pool.Despawn(instance);
+                return false;
+            }
+
+            node.ApplyRuntimeTemplate(template, _ghostCubeMesh, _ghostMaterial);
+            node.RefreshRuntimeSpatialRegistration();
+            sectorState.ActiveNodes.Add(node);
+            _debugLastAcceptedTemplateHash = template.StableHashId;
+            return true;
+        }
+
+        internal bool TrySpawnDeepMantleGeodeAtAup(
+            AbsoluteUniversePosition positionAup,
+            float sourceRadiusMeters,
+            uint sourceId)
+        {
+            EnsureRuntimePool();
+
+            if (!Application.isPlaying ||
+                _residentSectors == null ||
+                !_runtimePoolReady ||
+                _runtimePrefab == null ||
+                !TryResolveDeepMantleGeodeTemplate(out ResourceNodeTemplate template))
+            {
+                return false;
+            }
+
+            Vector3 runtimePosition = positionAup.ToRuntimeFloat3();
+            Vector3 spawnPosition = ResolveThermalDiamondVoxelFacePosition(
+                runtimePosition,
+                math.max(0.25f, sourceRadiusMeters),
+                template);
+            ulong tombstoneId = PersistentWorldRegistry.ComputeResourceNodeTombstoneId(spawnPosition);
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            if (registry != null && registry.IsResourceNodeTombstoned(tombstoneId))
+                return false;
+
+            AbsoluteUniversePosition spawnAup = AbsoluteUniversePosition.FromRuntimePosition(spawnPosition);
+            int2 sector = QuantizeSector(in spawnAup);
+            long sectorKey = ComposeSectorKey(sector);
+            SectorState sectorState = ResolveOrCreateRuntimeSectorState(sector, sectorKey);
+            if (sectorState == null || ContainsActiveNodeWithTombstone(sectorState, tombstoneId))
+                return false;
+
+            ObjectPoolManager pool = GlobalRegistry.ObjectPool;
+            if (pool == null)
+                return false;
+
+            uint yawSeed = SeedSectorCandidate(sector, template.StableHashId, (int)(sourceId & 0x7FFFFFFFu));
             float yawDegrees = Next01(ref yawSeed) * 360f;
             Quaternion rotation = ResolveSurfaceRotation(Vector3.up, yawDegrees);
             GameObject instance = pool.Spawn(_runtimePrefab, spawnPosition, rotation);
@@ -1491,6 +1549,11 @@ namespace Hecton8.World
                 return true;
 
             return TryResolveTemplateByStableId(VoidGlassMeteoriteStableId, out template);
+        }
+
+        private bool TryResolveDeepMantleGeodeTemplate(out ResourceNodeTemplate template)
+        {
+            return TryResolveTemplateByStableId(DeepMantleGeodeStableId, out template);
         }
 
         private bool TryResolveTemplateByStableId(string stableId, out ResourceNodeTemplate template)

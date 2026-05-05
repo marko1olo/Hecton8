@@ -1,4 +1,7 @@
 # AUP DRIFT WARNINGS — HECTON-8 Static Audit
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Generated:** 2026-04-27 | **Auditor:** Static Compliance Officer  
 **Mandate:** MATH_Coordinate_Precision_AUP_FloatingOrigin.txt

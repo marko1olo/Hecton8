@@ -1,4 +1,7 @@
 # HECTON-8 NAMING CONVENTION INQUISITION
+Date: 2026-05-04
+Status: DEPRECATED
+
 ## Scribe-Compliance Audit | Status: CONTINUOUS
 
 ---

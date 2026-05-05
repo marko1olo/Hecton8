@@ -21,6 +21,7 @@ Shader "Hidden/Hecton8/RetinaDistortion"
             #pragma target 4.5
             #pragma vertex Vert
             #pragma fragment Frag
+            #pragma shader_feature_local _QUALITY_MX350
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
@@ -106,6 +107,11 @@ Shader "Hidden/Hecton8/RetinaDistortion"
                 float pulseDrive = critical01 * (0.62 + pulse01 * 0.58);
                 float distortion = _HectonRetinaDistortionOffset * edge01 * pulseDrive * (1.0 + noise * 0.34);
                 float chroma = _HectonRetinaChromaticOffset * edge01 * pulseDrive;
+            #if defined(_QUALITY_MX350)
+                distortion = 0.0;
+            #else
+                chroma *= 1.0 - step(0.000001, abs(distortion));
+            #endif
                 float2 refractedUV = saturate(input.screenUV + radialDir * distortion);
                 float2 chromaOffset = radialDir * chroma;
 

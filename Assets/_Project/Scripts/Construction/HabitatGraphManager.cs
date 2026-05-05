@@ -280,7 +280,8 @@ namespace Hecton8.Construction
             for (int pumpIndex = 0; pumpIndex < pumpCount; pumpIndex++)
             {
                 WaterPumpModule pump = WaterPumpModule.GetActivePump(pumpIndex);
-                if (pump == null || !pump.CanPump || !TryResolveModuleNodeIndex(pump.HostModule, out int startNodeIndex))
+                int startNodeIndex;
+                if (pump == null || !pump.CanPump || !TryResolveModuleNodeIndex(pump.HostModule, out startNodeIndex))
                     continue;
 
                 float remainingDrainM3 = pump.ResolveDrainBudgetM3(deltaTime);

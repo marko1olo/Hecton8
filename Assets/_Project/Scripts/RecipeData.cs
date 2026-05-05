@@ -68,6 +68,14 @@ namespace Hecton8.Crafting
         [Tooltip("Optional scan-log unlock dependency. Empty means always available.")]
         public string requiredScanEntryId = string.Empty;
 
+        [Header("Biome Lock")]
+        [Tooltip("When true, this recipe can only run from an anchored base module inside the required matrix biome/family.")]
+        public bool requiresAnchoredBaseBiome;
+        [Tooltip("Optional required matrix biome id. 0 disables exact matrix id gating.")]
+        public int requiredAnchoredBiomeMatrixId;
+        [Tooltip("Optional required biome family id, for example biome.family.crystal_growth.")]
+        public string requiredAnchoredBiomeFamilyId = string.Empty;
+
         [Header("Fabricator Group")]
         [Tooltip("Optional explicit fabricator group override.")]
         public FabricationGroup fabricationGroup = FabricationGroup.Unspecified;
@@ -140,6 +148,9 @@ namespace Hecton8.Crafting
             : (resultItem != null ? resultItem.icon : null);
 
         public bool RequiresScanUnlock => !string.IsNullOrWhiteSpace(requiredScanEntryId);
+        public bool RequiresAnchoredBiomeLock => requiresAnchoredBaseBiome &&
+                                                 (requiredAnchoredBiomeMatrixId > 0 ||
+                                                  !string.IsNullOrWhiteSpace(requiredAnchoredBiomeFamilyId));
 
         public string RequiredScanEntryId => string.IsNullOrWhiteSpace(requiredScanEntryId)
             ? string.Empty

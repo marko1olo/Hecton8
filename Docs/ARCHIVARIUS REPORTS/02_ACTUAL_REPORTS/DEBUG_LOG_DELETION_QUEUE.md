@@ -1,4 +1,7 @@
 # DEBUG.LOG DELETION QUEUE — Unsanitized First-Party Runtime Logs
+Date: 2026-05-04
+Status: REFERENCE
+
 
 > **Status:** ETA SANITIZED  
 > **Mandates Followed:** AGENTS.md § Debug Log Hygiene — "Guard: #if UNITY_EDITOR || DEVELOPMENT_BUILD OR [System.Diagnostics.Conditional]"  

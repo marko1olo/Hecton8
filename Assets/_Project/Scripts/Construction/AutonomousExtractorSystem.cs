@@ -24,6 +24,12 @@ namespace Hecton8.Construction
     {
         private const int InitialModuleCapacity = 16;
         private const float SlowTickDeltaSeconds = 0.5f;
+        private const string NativeMemoryOwner = nameof(AutonomousExtractorSystem);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const uint ExtractorCapacityGrowthWarningHash = 0xA8754B21u;
+        private const uint ExtractorCapacityGrowthContextHash = 0xE71C92D4u;
+        private const uint DuplicateRuntimeWarningHash = 0xB44D12E9u;
+        private const uint DuplicateRuntimeContextHash = 0xAD50966Cu;
 
         private struct ExtractorJobInput
         {
@@ -95,8 +101,6 @@ namespace Hecton8.Construction
             }
         }
 
-        private static AutonomousExtractorSystem _instance;
-
         // COLD ALLOC: List<AutonomousExtractorModule>[InitialModuleCapacity] — managed runtime extractor registry — owner: AutonomousExtractorSystem
         private readonly List<AutonomousExtractorModule> _modules = new List<AutonomousExtractorModule>(InitialModuleCapacity);
         private NativeArray<ExtractorJobInput> _jobInputs;
@@ -113,18 +117,12 @@ namespace Hecton8.Construction
         private int _scheduledModuleCount;
 
         /// <summary>Returns the current runtime owner when one exists.</summary>
-        public static AutonomousExtractorSystem Instance => _instance;
+        public static AutonomousExtractorSystem Instance => GlobalRegistry.AutonomousExtractors;
 
         internal static bool TryGetActiveRuntime(out AutonomousExtractorSystem runtime)
         {
-            runtime = _instance;
+            runtime = GlobalRegistry.AutonomousExtractors;
             return runtime != null;
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            _instance = null;
         }
 
         /// <summary>
@@ -136,22 +134,8 @@ namespace Hecton8.Construction
             if (registryRuntime != null)
                 return registryRuntime;
 
-            if (_instance != null)
-                return _instance;
-
             GameObject runtimeRoot = new GameObject("[AutonomousExtractorSystem]"); // COLD ALLOC: GameObject[1] — runtime extractor SOA owner root — owner: AutonomousExtractorSystem
             return runtimeRoot.AddComponent<AutonomousExtractorSystem>();
-        }
-
-        private void Awake()
-        {
-            if (_instance != null && _instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-
-            _instance = this;
         }
 
         private void OnEnable()
@@ -205,15 +189,23 @@ namespace Hecton8.Construction
             JobHandle teardownDependency = CancelScheduledJobForTeardown();
             DisposeNativeBuffers(teardownDependency);
             JobHandle.ScheduleBatchedJobs();
-
-            if (_instance == this)
-                _instance = null;
         }
 
         private void TryRegisterToGlobalRegistry()
         {
-            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+            if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            AutonomousExtractorSystem existingRuntime = GlobalRegistry.AutonomousExtractors;
+            if (existingRuntime != null && !ReferenceEquals(existingRuntime, this))
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(
+                    DuplicateRuntimeWarningHash,
+                    DuplicateRuntimeContextHash,
+                    1f);
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterAutonomousExtractorRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AutonomousExtractors, this);
@@ -318,6 +310,9 @@ namespace Hecton8.Construction
                 ResourceNode hostNode = module.BoundNode;
                 ResourceNodeTemplate template = hostNode != null ? hostNode.ResourceTemplate : null;
                 ItemData routedItem = template != null ? template.ExtractorYieldItem : null;
+                if (result.CompletedCycleDelta > 0)
+                    module.ConsumeExtractionPower(result.CompletedCycleDelta, SlowTickDeltaSeconds);
+
                 if (bufferedUnitCount > 0 &&
                     routedItem != null &&
                     module.TryRouteBufferedOutput(routedItem, bufferedUnitCount, out int routedCount))
@@ -489,6 +484,11 @@ namespace Hecton8.Construction
             _bufferedItemHashIds = nextItemHashIds;
             _bufferedUnitCounts = nextBufferedCounts;
             _completedCycleCounts = nextCompletedCounts;
+            RegisterNativeBuffers();
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                ExtractorCapacityGrowthWarningHash,
+                ExtractorCapacityGrowthContextHash,
+                nextCapacity);
         }
 
         private JobHandle CancelScheduledJobForTeardown()
@@ -512,42 +512,39 @@ namespace Hecton8.Construction
         {
             JobHandle disposeHandle = dependency;
 
-            if (_jobInputs.IsCreated)
-            {
-                disposeHandle = _jobInputs.Dispose(disposeHandle);
-                _jobInputs = default;
-            }
+            disposeHandle = DisposeNativeArray(ref _jobInputs, disposeHandle);
+            disposeHandle = DisposeNativeArray(ref _jobResults, disposeHandle);
+            disposeHandle = DisposeNativeArray(ref _cycleTimers, disposeHandle);
+            disposeHandle = DisposeNativeArray(ref _bufferedItemHashIds, disposeHandle);
+            disposeHandle = DisposeNativeArray(ref _bufferedUnitCounts, disposeHandle);
+            disposeHandle = DisposeNativeArray(ref _completedCycleCounts, disposeHandle);
 
-            if (_jobResults.IsCreated)
-            {
-                disposeHandle = _jobResults.Dispose(disposeHandle);
-                _jobResults = default;
-            }
+            return disposeHandle;
+        }
 
-            if (_cycleTimers.IsCreated)
-            {
-                disposeHandle = _cycleTimers.Dispose(disposeHandle);
-                _cycleTimers = default;
-            }
+        private void RegisterNativeBuffers()
+        {
+            RegisterNativeArray(_jobInputs, nameof(_jobInputs));
+            RegisterNativeArray(_jobResults, nameof(_jobResults));
+            RegisterNativeArray(_cycleTimers, nameof(_cycleTimers));
+            RegisterNativeArray(_bufferedItemHashIds, nameof(_bufferedItemHashIds));
+            RegisterNativeArray(_bufferedUnitCounts, nameof(_bufferedUnitCounts));
+            RegisterNativeArray(_completedCycleCounts, nameof(_completedCycleCounts));
+        }
 
-            if (_bufferedItemHashIds.IsCreated)
-            {
-                disposeHandle = _bufferedItemHashIds.Dispose(disposeHandle);
-                _bufferedItemHashIds = default;
-            }
+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
+        }
 
-            if (_bufferedUnitCounts.IsCreated)
-            {
-                disposeHandle = _bufferedUnitCounts.Dispose(disposeHandle);
-                _bufferedUnitCounts = default;
-            }
+        private static JobHandle DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency) where T : struct
+        {
+            if (!array.IsCreated)
+                return dependency;
 
-            if (_completedCycleCounts.IsCreated)
-            {
-                disposeHandle = _completedCycleCounts.Dispose(disposeHandle);
-                _completedCycleCounts = default;
-            }
-
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            JobHandle disposeHandle = array.Dispose(dependency);
+            array = default;
             return disposeHandle;
         }
     }
@@ -751,6 +748,16 @@ namespace Hecton8.Construction
         internal void SetRuntimeIndex(int runtimeIndex)
         {
             _runtimeIndex = runtimeIndex;
+        }
+
+        internal void ConsumeExtractionPower(int completedCycleDelta, float tickSeconds)
+        {
+            if (completedCycleDelta <= 0 || _powerNode == null || _powerNode.Grid == null)
+                return;
+
+            float wattSeconds = activePowerDraw * Mathf.Max(0.001f, tickSeconds) * completedCycleDelta;
+            if (wattSeconds > 0f)
+                _powerNode.Grid.ConsumePower(wattSeconds);
         }
 
         internal bool TryRouteBufferedOutput(ItemData item, int bufferedUnitCount, out int routedCount)

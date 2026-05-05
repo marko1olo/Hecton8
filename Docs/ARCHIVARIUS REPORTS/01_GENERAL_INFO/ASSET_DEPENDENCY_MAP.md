@@ -1,4 +1,7 @@
 # ASSET DEPENDENCY MAP — HECTON-8 Hard-Referenced / Addressables Migration
+Date: 2026-05-04
+Status: REFERENCE
+
 
 **Date:** 2026-04-29  
 **Scope:** first-party world prefabs, ambient audio beds, wreck modules, and first-wave hero prop textures  

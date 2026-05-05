@@ -763,7 +763,8 @@ namespace Hecton8.Building
                 ? _hit.point
                 : ray.origin + ray.direction * buildDistance;
 
-            float3 snappedFreePosition = _habitatConstructionManager.SnapWorldPosition(rawTargetPoint, constructionGridSize);
+            float activeGridSize = ResolveActiveGridSize();
+            float3 snappedFreePosition = _habitatConstructionManager.SnapWorldPosition(rawTargetPoint, activeGridSize);
             Vector3 freePlacementPosition = new Vector3(snappedFreePosition.x, snappedFreePosition.y, snappedFreePosition.z);
 
             // ═══════════════════════════════════════════════════
@@ -921,7 +922,7 @@ namespace Hecton8.Building
                 // ── FALLBACK: призрак висит перед камерой ──
                 if (buildAnchor != null)
                 {
-                    float3 snappedAnchorPosition = _habitatConstructionManager.SnapWorldPosition(buildAnchor.position, constructionGridSize);
+                    float3 snappedAnchorPosition = _habitatConstructionManager.SnapWorldPosition(buildAnchor.position, activeGridSize);
                     targetPos = new Vector3(snappedAnchorPosition.x, snappedAnchorPosition.y, snappedAnchorPosition.z);
                     targetRot = buildAnchor.rotation * Quaternion.Euler(0f, _ghostYawOffset, 0f);
                 }
@@ -941,6 +942,12 @@ namespace Hecton8.Building
             //
             //  Exp smoothing: 1 - exp(-speed * dt) = frame-rate independent.
             // ═══════════════════════════════════════════════════
+
+            if (IsStructuralBuildable(activeBuildable))
+            {
+                targetPos = QuantizePosition(targetPos, StructuralPlacementGridMeters);
+                targetRot = QuantizeRotation(targetRot, StructuralRotationStepDegrees);
+            }
 
             Transform t = _currentGhostObj.transform;
             Vector3 previousPosition = t.position;
@@ -1013,6 +1020,7 @@ namespace Hecton8.Building
             Vector3 placePos = _currentGhostObj.transform.position;
             Quaternion placeRot = _currentGhostObj.transform.rotation;
             TryResolveExactSnappedPlacementPose(ref placePos, ref placeRot);
+            ApplyStructuralPlacementQuantization(ref placePos, ref placeRot);
 
             if (!TryGetObjectPool(out ObjectPoolManager pool))
             {
@@ -1288,11 +1296,54 @@ namespace Hecton8.Building
                 : HectonLayerMasks.ConstructionSurfaceLayerMask;
         }
 
+        private float ResolveActiveGridSize()
+        {
+            return IsStructuralBuildable(activeBuildable)
+                ? StructuralPlacementGridMeters
+                : constructionGridSize;
+        }
+
         private int ResolveSocketMask()
         {
             return socketLayerMask.value != 0
                 ? socketLayerMask.value
                 : HectonLayerMasks.SocketsLayerMask;
+        }
+
+        private void ApplyStructuralPlacementQuantization(ref Vector3 position, ref Quaternion rotation)
+        {
+            if (!IsStructuralBuildable(activeBuildable))
+                return;
+
+            position = QuantizePosition(position, StructuralPlacementGridMeters);
+            rotation = QuantizeRotation(rotation, StructuralRotationStepDegrees);
+        }
+
+        private static Vector3 QuantizePosition(Vector3 position, float gridSize)
+        {
+            float safeGrid = Mathf.Max(0.001f, gridSize);
+            return new Vector3(
+                Mathf.Round(position.x / safeGrid) * safeGrid,
+                Mathf.Round(position.y / safeGrid) * safeGrid,
+                Mathf.Round(position.z / safeGrid) * safeGrid);
+        }
+
+        private static Quaternion QuantizeRotation(Quaternion rotation, float stepDegrees)
+        {
+            float safeStep = Mathf.Max(1f, stepDegrees);
+            Vector3 euler = rotation.eulerAngles;
+            return Quaternion.Euler(
+                Mathf.Round(euler.x / safeStep) * safeStep,
+                Mathf.Round(euler.y / safeStep) * safeStep,
+                Mathf.Round(euler.z / safeStep) * safeStep);
+        }
+
+        private static bool IsStructuralBuildable(BuildableData data)
+        {
+            return data != null &&
+                   (data.ModuleTemplate != null ||
+                    data.family == BuildableFamily.Structure ||
+                    data.family == BuildableFamily.Habitat);
         }
 
         private bool TryResolveExactSnappedPlacementPose(ref Vector3 placePos, ref Quaternion placeRot)
@@ -1446,12 +1497,48 @@ namespace Hecton8.Building
         private bool UpdatePlacementValidityState()
         {
             bool semanticValid = UpdateSemanticPlacementState();
-            bool finalValid = semanticValid && _integrityPlacementValid;
+            bool terrainValid = UpdateTerrainSdfPlacementState();
+            bool finalValid = semanticValid && terrainValid && _integrityPlacementValid;
 
             if (_currentGhost != null)
                 _currentGhost.SetExternalValidity(finalValid);
 
             return finalValid;
+        }
+
+        private bool UpdateTerrainSdfPlacementState()
+        {
+            _terrainSdfPlacementValid = true;
+            _terrainSdfPlacementBlockReason = string.Empty;
+            if (!IsStructuralBuildable(activeBuildable) || _currentGhostObj == null || activeBuildable.ModuleTemplate == null)
+                return true;
+
+            BaseModuleTemplate template = activeBuildable.ModuleTemplate;
+            Vector3 proxyBoundsSize = template.ProxyBoundsSize;
+            if (proxyBoundsSize.x <= 0.01f || proxyBoundsSize.y <= 0.01f || proxyBoundsSize.z <= 0.01f)
+                return true;
+
+            Transform ghostTransform = _currentGhostObj.transform;
+            Vector3 center = ghostTransform.TransformPoint(template.ProxyBoundsCenter);
+            Vector3 halfExtents = proxyBoundsSize * 0.5f;
+            int terrainMask = HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask;
+            int overlapCount = UnityEngine.Physics.OverlapBoxNonAlloc(
+                center,
+                halfExtents,
+                _terrainSdfOverlapBuffer,
+                ghostTransform.rotation,
+                terrainMask,
+                QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < overlapCount; i++)
+                _terrainSdfOverlapBuffer[i] = null;
+
+            if (overlapCount <= 0)
+                return true;
+
+            _terrainSdfPlacementValid = false;
+            _terrainSdfPlacementBlockReason = "TERRAIN SDF OVERLAP";
+            return false;
         }
 
         private void DrawBuildGhostProjection()
@@ -1475,6 +1562,7 @@ namespace Hecton8.Building
                 _currentGhost != null &&
                 _currentGhost.CanBuild &&
                 _semanticPlacementValid &&
+                _terrainSdfPlacementValid &&
                 _integrityPlacementValid;
             Material projectionMaterial = placementAllowed
                 ? _buildGhostValidProjectionMaterial
@@ -1571,7 +1659,7 @@ namespace Hecton8.Building
                         constructionManager,
                         _currentGhostObj,
                         activeBuildable,
-                        constructionGridSize,
+                        ResolveActiveGridSize(),
                         structuralIntegrityBudget,
                         structuralDepthPenalty))
                 {
@@ -1621,6 +1709,9 @@ namespace Hecton8.Building
         {
             if (!string.IsNullOrEmpty(_semanticPlacementBlockReason))
                 return _semanticPlacementBlockReason;
+
+            if (!_terrainSdfPlacementValid && !string.IsNullOrEmpty(_terrainSdfPlacementBlockReason))
+                return _terrainSdfPlacementBlockReason;
 
             if (!_integrityPlacementValid && !string.IsNullOrEmpty(_integrityPlacementBlockReason))
                 return _integrityPlacementBlockReason;

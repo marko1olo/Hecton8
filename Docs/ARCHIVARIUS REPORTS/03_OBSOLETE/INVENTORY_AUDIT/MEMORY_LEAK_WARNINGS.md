@@ -1,4 +1,7 @@
 # MEMORY LEAK WARNINGS — BURST JOB AUDIT
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Audit Date:** 2026-01-XX  
 **Scope:** `Assets/_Project/Scripts/` — All `struct : IJob*`  

@@ -1,4 +1,7 @@
 # HECTON-8 — ITEM ASSET GUID AUDIT
+Date: 2026-05-04
+Status: REFERENCE
+
 **Status:** ETA SURGERY_PREPPED  
 **Purpose:** Hardcoded fallback table for Agent Gamma Addressables pre-warm queue.  
 **Scope:** `Assets/_Project/Prefabs/Items/Tools/*.prefab`  

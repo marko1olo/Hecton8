@@ -1,4 +1,5 @@
 using System;
+using Hecton.Localization;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Inventory;
@@ -58,6 +59,24 @@ namespace Hecton8.Progression
         private const string StaleAirMessage = "Shelter occupancy is outrunning breathable reserve recovery. A powered room is not automatically a safe room once scrubber margin collapses.";
         private const string ColdStressMessage = "Cold stress is repeating. The suit is burning reserve just to stay operational. Shorten the exposure window or push with more power margin before entering that water column.";
         private const string HeatStressMessage = "Thermal overload is repeating. Local heat is converting time into hydration debt. Re-route through cooler water or carry reserve fluids before re-entering the vent field.";
+        private const string AdvisoryLogTitleKey = "PDA_ADVISORY_LOG_TITLE";
+        private const string OxygenDeathsMessageKey = "PDA_ADVISORY_OXYGEN_DEATHS";
+        private const string InventoryFullMessageKey = "PDA_ADVISORY_INVENTORY_FULL";
+        private const string PressureExposureMessageKey = "PDA_ADVISORY_PRESSURE_EXPOSURE";
+        private const string PressureDeathsMessageKey = "PDA_ADVISORY_PRESSURE_DEATHS";
+        private const string BaseEmergencyMessageKey = "PDA_ADVISORY_BASE_EMERGENCY";
+        private const string StaleAirMessageKey = "PDA_ADVISORY_STALE_AIR";
+        private const string ColdStressMessageKey = "PDA_ADVISORY_COLD_STRESS";
+        private const string HeatStressMessageKey = "PDA_ADVISORY_HEAT_STRESS";
+        private static readonly int _advisoryLogTitleKeyHash = LocHash.Compute(AdvisoryLogTitleKey);
+        private static readonly int _oxygenDeathsMessageKeyHash = LocHash.Compute(OxygenDeathsMessageKey);
+        private static readonly int _inventoryFullMessageKeyHash = LocHash.Compute(InventoryFullMessageKey);
+        private static readonly int _pressureExposureMessageKeyHash = LocHash.Compute(PressureExposureMessageKey);
+        private static readonly int _pressureDeathsMessageKeyHash = LocHash.Compute(PressureDeathsMessageKey);
+        private static readonly int _baseEmergencyMessageKeyHash = LocHash.Compute(BaseEmergencyMessageKey);
+        private static readonly int _staleAirMessageKeyHash = LocHash.Compute(StaleAirMessageKey);
+        private static readonly int _coldStressMessageKeyHash = LocHash.Compute(ColdStressMessageKey);
+        private static readonly int _heatStressMessageKeyHash = LocHash.Compute(HeatStressMessageKey);
 
         private HectonSurvivalSystem _survivalSystem;
         private bool _registeredToTick;
@@ -140,13 +159,15 @@ namespace Hecton8.Progression
             if (!TryMarkIssued(id))
                 return;
 
-            NotificationEvents.PushWarning(message);
+            string localizedMessage = ResolveAdvisoryMessage(id, message);
+            string localizedTitle = ResolveLocalized(AdvisoryLogTitleKey, AdvisoryLogTitle);
+            NotificationEvents.PushWarning(localizedMessage);
             IPDALogbookService logbookManager = GlobalRegistry.PDALogbook;
             if (logbookManager != null)
-                logbookManager.TryAppendEntry("pda.context." + id, AdvisoryLogTitle, message);
+                logbookManager.TryAppendEntry("pda.context." + id, localizedTitle, localizedMessage);
 
-            HectonEventBus.Publish(new PlayerAdvisoryIssuedEvent(id, message));
-            AdvisoryPushed?.Invoke(id, message);
+            HectonEventBus.Publish(new PlayerAdvisoryIssuedEvent(id, localizedMessage));
+            AdvisoryPushed?.Invoke(id, localizedMessage);
         }
 
         /// <inheritdoc />
@@ -394,6 +415,72 @@ namespace Hecton8.Progression
                 return AdvisoryFlags.HeatStress;
 
             return AdvisoryFlags.None;
+        }
+
+        private static string ResolveAdvisoryMessage(string advisoryId, string fallback)
+        {
+            string key = ResolveAdvisoryMessageKey(advisoryId, out int keyHash);
+            return keyHash != 0 ? ResolveLocalized(key, fallback) : fallback;
+        }
+
+        private static string ResolveAdvisoryMessageKey(string advisoryId, out int keyHash)
+        {
+            if (string.Equals(advisoryId, OxygenDeathsAdvisoryId, StringComparison.Ordinal))
+            {
+                keyHash = _oxygenDeathsMessageKeyHash;
+                return OxygenDeathsMessageKey;
+            }
+
+            if (string.Equals(advisoryId, InventoryFullAdvisoryId, StringComparison.Ordinal))
+            {
+                keyHash = _inventoryFullMessageKeyHash;
+                return InventoryFullMessageKey;
+            }
+
+            if (string.Equals(advisoryId, PressureExposureAdvisoryId, StringComparison.Ordinal))
+            {
+                keyHash = _pressureExposureMessageKeyHash;
+                return PressureExposureMessageKey;
+            }
+
+            if (string.Equals(advisoryId, PressureDeathsAdvisoryId, StringComparison.Ordinal))
+            {
+                keyHash = _pressureDeathsMessageKeyHash;
+                return PressureDeathsMessageKey;
+            }
+
+            if (string.Equals(advisoryId, BaseEmergencyAdvisoryId, StringComparison.Ordinal))
+            {
+                keyHash = _baseEmergencyMessageKeyHash;
+                return BaseEmergencyMessageKey;
+            }
+
+            if (string.Equals(advisoryId, StaleAirAdvisoryId, StringComparison.Ordinal))
+            {
+                keyHash = _staleAirMessageKeyHash;
+                return StaleAirMessageKey;
+            }
+
+            if (string.Equals(advisoryId, ColdStressAdvisoryId, StringComparison.Ordinal))
+            {
+                keyHash = _coldStressMessageKeyHash;
+                return ColdStressMessageKey;
+            }
+
+            if (string.Equals(advisoryId, HeatStressAdvisoryId, StringComparison.Ordinal))
+            {
+                keyHash = _heatStressMessageKeyHash;
+                return HeatStressMessageKey;
+            }
+
+            keyHash = 0;
+            return string.Empty;
+        }
+
+        private static string ResolveLocalized(string key, string fallback)
+        {
+            LocalizationManager manager = GlobalRegistry.Localization;
+            return manager != null ? manager.GetOrFallback(manager.CurrentLanguage, key, fallback) : fallback;
         }
 
         private void EvaluatePressureExposureAdvisory()

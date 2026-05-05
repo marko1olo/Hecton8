@@ -1963,7 +1963,7 @@ namespace Hecton8.Bootstrap
             if (GlobalRegistry.ThermodynamicsService != null)
                 return;
 
-            AbyssalThermalManager manager = AbyssalThermalManager.Instance;
+            AbyssalThermalManager manager = GlobalRegistry.Thermodynamics;
             if (manager != null)
                 GlobalRegistry.RegisterThermodynamicsRuntime(manager);
         }

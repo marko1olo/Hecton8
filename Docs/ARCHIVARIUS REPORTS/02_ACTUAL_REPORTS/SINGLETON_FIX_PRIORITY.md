@@ -1,4 +1,7 @@
 # SINGLETON ELIMINATION ROADMAP — HECTON-8
+Date: 2026-05-04
+Status: REFERENCE
+
 
 ## Current-State Addendum (2026-04-29)
 

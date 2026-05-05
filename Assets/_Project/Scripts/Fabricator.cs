@@ -36,6 +36,7 @@ using Hecton8.Audio;
 using Hecton8.Building;
 using Hecton8.Construction;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.Economy;
 using Hecton8.SaveSystem;
@@ -438,6 +439,7 @@ namespace Hecton8.Crafting
             if (recipe.ingredients == null || recipe.ingredients.Count == 0) return false;
             if (recipe.resultItem == null || recipe.resultQuantity <= 0) return false;
             if (!IsRecipeUnlocked(recipe)) return false;
+            if (!PassesBiomeLock(recipe)) return false;
 
             if (!HasIngredients(recipe))
                 return false;
@@ -845,6 +847,61 @@ namespace Hecton8.Crafting
                 return;
 
             thermalHostModule = GetComponentInParent<BaseModule>();
+        }
+
+        private bool PassesBiomeLock(RecipeData recipe)
+        {
+            if (recipe == null || !recipe.RequiresAnchoredBiomeLock)
+                return true;
+
+            if (thermalHostModule == null)
+                CacheThermalHostModule();
+
+            if (thermalHostModule == null || thermalHostModule.IsUnmoored || thermalHostModule.IsDetachedDebris)
+                return false;
+
+            Vector3 samplePosition = thermalHostModule.transform.position;
+            WorldProceduralFieldSampler sampler = WorldProceduralFieldSampler.ActiveRuntimeInstance;
+            if (sampler != null &&
+                sampler.TrySampleBiomeInfluence(
+                    samplePosition,
+                    out WorldProceduralFieldSampler.BiomeInfluenceCell influence,
+                    out HectonBiomeMatrixProfile primaryProfile,
+                    out HectonBiomeMatrixProfile secondaryProfile))
+            {
+                return MatchesRecipeBiomeLock(recipe, primaryProfile, influence.PrimaryBiomeId) ||
+                       MatchesRecipeBiomeLock(recipe, secondaryProfile, influence.SecondaryBiomeId);
+            }
+
+            BiomeMatrixDirector matrixDirector = BiomeMatrixDirector.ActiveRuntimeInstance;
+            return matrixDirector != null && MatchesRecipeBiomeLock(
+                recipe,
+                matrixDirector.CurrentProfile,
+                matrixDirector.CurrentProfile != null ? matrixDirector.CurrentProfile.matrixIndex : 0);
+        }
+
+        private static bool MatchesRecipeBiomeLock(RecipeData recipe, HectonBiomeMatrixProfile profile, int biomeId)
+        {
+            if (recipe == null || profile == null)
+                return false;
+
+            if (recipe.requiredAnchoredBiomeMatrixId > 0 && biomeId == recipe.requiredAnchoredBiomeMatrixId)
+                return true;
+
+            string requiredFamilyId = recipe.requiredAnchoredBiomeFamilyId;
+            if (string.IsNullOrWhiteSpace(requiredFamilyId))
+                return false;
+
+            if (!string.IsNullOrEmpty(profile.familyId) &&
+                string.Equals(profile.familyId, requiredFamilyId, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            HectonBiomeFamilyProfile family = profile.familyProfile;
+            return family != null &&
+                   !string.IsNullOrEmpty(family.familyId) &&
+                   string.Equals(family.familyId, requiredFamilyId, System.StringComparison.OrdinalIgnoreCase);
         }
 
         private float ResolveCraftTemperatureDeltaCelsius()

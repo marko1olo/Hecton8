@@ -42,9 +42,9 @@ Captured before this report file was added:
 | active root `Docs/*.md` files | `9` |
 
 This report intentionally increases active report and active documentation counts by one after it is written.
-Post-write quick count after this report: `Docs/**/*.md` total `403`, active `Docs/**/*.md` `192`, `Docs/Reports/*.md` `38`, root `.md` files `4`, root `.txt` / `.log` files `7`.
-After `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` was added, counts are `Docs/**/*.md` total `404`, active `Docs/**/*.md` `193`, and `Docs/Reports/*.md` `39`.
-After the root-log relocation addendum and current dirty-worktree report set, root `.txt` / `.log` files are `0`; total `Docs/**/*.md` is now `406`, active `Docs/**/*.md` is now `194`, and `Docs/Reports/*.md` is now `40`.
+Historical post-write quick count after this report, before root-log relocation: `Docs/**/*.md` total `403`, active `Docs/**/*.md` `192`, `Docs/Reports/*.md` `38`, root `.md` files `4`, root `.txt` / `.log` files `7`.
+After `Docs/Reports/2026-05-04_DOCUMENTATION_HEADER_ARCHIVE_QUEUE.md` was added, counts were `Docs/**/*.md` total `404`, active `Docs/**/*.md` `193`, and `Docs/Reports/*.md` `39`.
+After the root-log relocation addendum, Archivarius header normalization, SpaceEngine research header normalization, and documentation authority smoke-guard addendum, root `.txt` / `.log` files are `0`; total `Docs/**/*.md` is now `410`, active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports`, and `ARCHIVARIUS REPORTS/03_OBSOLETE` is now `156`, and `Docs/Reports/*.md` is now `42`.
 
 ## Current Authority Stack
 
@@ -143,11 +143,12 @@ Current first-read reports:
 - `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
 - `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`
 
-Current source-build evidence reports, not runtime proof:
+Current source/build or implementation reports, not runtime proof:
 
 - `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_METEOR_REPORT.md`
 - `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md`
 - `Docs/Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md`
+- `Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md`
 - `Docs/Reports/2026-05-03_FOUNDATION_HARDENING_CONTINUATION.md`
 - `Docs/Reports/2026-05-03_REGISTRY_RENDERABLE_AND_JOB_BARRIER_GUARD.md`
 - `Docs/Reports/2026-05-03_HABITAT_GRAPH_ANCHOR_STATE_HARDENING.md`
@@ -178,8 +179,12 @@ Historical but still useful evidence reports:
 - Updated active reference-bundle boundary headers/read-first lines that still pointed at `2026-05-02` as the current-state boundary, and updated current Archivarius `01_GENERAL_INFO` read-first lines to include this sorting map.
 - Moved seven repository-root `.log` files to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`.
 - Added a local README for that raw-evidence bundle and updated active root/docs references.
+- Completed header normalization for active root `Docs/*.md` contract files and `Docs/ARCHITECTURE/*.md`.
+- Completed header normalization for `60` files under `Docs/ARCHIVARIUS REPORTS/`.
+- Completed header normalization for current `Docs/SPACE_ENGINE_RESEARCH/*.md` files.
+- Added an editor-only documentation authority smoke guard at `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs`.
 
-No runtime files, scenes, prefabs, project settings, packages, assets, or source code were changed by this sorting pass.
+No gameplay/runtime files, scenes, prefabs, project settings, packages, or assets were changed by this sorting pass. The only source addition is the editor-only smoke guard.
 
 ## Do Not Claim
 

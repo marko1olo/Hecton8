@@ -146,6 +146,7 @@ namespace Hecton8.AI
         private bool _hasScavengeToolSnapshot;
         private Vector3 _cachedScavengeToolPosition;
         private Component _cachedScavengeToolOwner;
+        private float _flashBlindUntilTimeSeconds;
         
         /// <summary>
         /// True if the creature has been failing to move forward due to obstacles.
@@ -204,6 +205,7 @@ namespace Hecton8.AI
             _hasScavengeToolSnapshot = false;
             _cachedScavengeToolPosition = default;
             _cachedScavengeToolOwner = null;
+            _flashBlindUntilTimeSeconds = float.NegativeInfinity;
             ClearSpatialTargets();
         }
 
@@ -309,6 +311,12 @@ namespace Hecton8.AI
                                  distSqrToPlayer < aggroDistance * aggroDistance &&
                                  HasPlayerLineOfSightThroughCaveSdf(_cachedSelfPosition, _cachedPlayerPosition);
             bool reportedContact = HasFreshReportedPlayerNoise();
+            if (IsFlashBlinded())
+            {
+                visualContact = false;
+                reportedContact = false;
+            }
+
             hasVisualPlayerContact = visualContact;
             hasNoisePlayerContact = reportedContact;
             canSeePlayer = visualContact || reportedContact;
@@ -355,6 +363,12 @@ namespace Hecton8.AI
 
         public bool TryGetPerceivedPlayerPosition(out Vector3 playerPosition)
         {
+            if (IsFlashBlinded())
+            {
+                playerPosition = default;
+                return false;
+            }
+
             if (hasVisualPlayerContact && _hasPlayerSnapshot)
             {
                 playerPosition = _cachedPlayerPosition;
@@ -374,6 +388,12 @@ namespace Hecton8.AI
 
         public bool TryGetPerceivedPlayerVelocity(out Vector3 playerVelocity)
         {
+            if (IsFlashBlinded())
+            {
+                playerVelocity = default;
+                return false;
+            }
+
             if (hasVisualPlayerContact && _hasPlayerVelocitySnapshot)
             {
                 playerVelocity = _cachedPlayerVelocity;
@@ -386,6 +406,12 @@ namespace Hecton8.AI
 
         public bool TryGetPerceivedPlayerForward(out Vector3 playerForward)
         {
+            if (IsFlashBlinded())
+            {
+                playerForward = default;
+                return false;
+            }
+
             if (hasVisualPlayerContact && _hasPlayerForwardSnapshot)
             {
                 playerForward = _cachedPlayerForward;
@@ -394,6 +420,22 @@ namespace Hecton8.AI
 
             playerForward = default;
             return false;
+        }
+
+        public void ApplyFlashBlind(float currentTimeSeconds, float durationSeconds)
+        {
+            _flashBlindUntilTimeSeconds = Mathf.Max(_flashBlindUntilTimeSeconds, currentTimeSeconds + Mathf.Max(0f, durationSeconds));
+            canSeePlayer = false;
+            hasVisualPlayerContact = false;
+            hasNoisePlayerContact = false;
+            _hasLastKnownPlayerPosition = false;
+            _cachedPlayerAup = default;
+            distSqrToPlayer = float.MaxValue;
+        }
+
+        private bool IsFlashBlinded()
+        {
+            return _authoredTimeSeconds < _flashBlindUntilTimeSeconds;
         }
 
         private void RememberPlayerPosition(Vector3 playerPosition)

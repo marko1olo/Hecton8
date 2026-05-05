@@ -34,6 +34,7 @@ namespace Hecton8.Gameplay
     using Hecton8.Input;
     using Hecton8.Physics;
     using Hecton8.Tools;
+    using Hecton8.World;
     using Unity.Mathematics;
     using UnityEngine;
 #if UNITY_EDITOR
@@ -394,6 +395,72 @@ namespace Hecton8.Gameplay
 
         /// <summary>Текущий активный инструмент (может быть null).</summary>
         public PlayerTool CurrentTool => _currentTool;
+
+        public bool TryForceDropCurrentToolFromHands(Vector3 inheritedVelocityChange)
+        {
+            if (_currentTool == null)
+                return false;
+
+            ItemData toolData = _currentTool.ToolData;
+            if (toolData == null)
+            {
+                DespawnCurrentTool();
+                return true;
+            }
+
+            int toolHashId = LocHash.Compute(toolData.PersistentId);
+            if (toolHashId == 0)
+            {
+                DespawnCurrentTool();
+                return true;
+            }
+
+            PersistentWorldRegistry worldRegistry = GlobalRegistry.PersistentWorldRegistry;
+            if (worldRegistry == null || playerInventory == null)
+            {
+                DespawnCurrentTool();
+                return true;
+            }
+
+            bool removedFromInventory = false;
+            _suppressInventoryChangedHandling = true;
+            try
+            {
+                removedFromInventory = playerInventory.TryRemoveFirstMatchingItemByHash(toolHashId);
+            }
+            finally
+            {
+                _suppressInventoryChangedHandling = false;
+            }
+
+            if (!removedFromInventory)
+            {
+                DespawnCurrentTool();
+                return true;
+            }
+
+            Vector3 dropPosition = handAnchor != null
+                ? handAnchor.position
+                : transform.position + transform.forward * 0.65f;
+            if (worldRegistry.TryRegisterDroppedItem(toolData, 1, dropPosition, inheritedVelocityChange))
+            {
+                DespawnCurrentTool();
+                return true;
+            }
+
+            _suppressInventoryChangedHandling = true;
+            try
+            {
+                playerInventory.TryAddItem(toolHashId, 1);
+            }
+            finally
+            {
+                _suppressInventoryChangedHandling = false;
+            }
+
+            DespawnCurrentTool();
+            return true;
+        }
 
         /// <summary>Optional swim-presentation contract of the current tool.</summary>
         public PlayerToolSwimContract CurrentToolSwimContract => _currentTool != null ? _currentTool.SwimContract : null;

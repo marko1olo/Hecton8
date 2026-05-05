@@ -266,7 +266,7 @@ namespace Hecton8.Caves
     /// Implemented as a conic capsule from surface point inward.
     /// The terrain mesh should have a hole at this location.
     ///
-    /// Size: 68 bytes.
+    /// Size: 76 bytes.
     /// </summary>
     public struct CaveEntrance
     {
@@ -296,6 +296,9 @@ namespace Hecton8.Caves
 
         /// <summary>Terrain splat-derived RGB color at the mouth, A = valid/blend weight.</summary>
         public float4 terrainSplatColor;
+
+        /// <summary>0..1 confidence for terrainSplatColor.</summary>
+        public float terrainSplatBlend;
     }
 
     /// <summary>

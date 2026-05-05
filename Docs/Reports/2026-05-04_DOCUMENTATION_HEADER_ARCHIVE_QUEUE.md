@@ -25,13 +25,13 @@ Read first:
 
 ## Inventory Snapshot
 
-Current scan after the root-log relocation addendum:
+Current scan after the root-log relocation, Archivarius header normalization, and documentation authority smoke-guard addendum:
 
 | Surface | Count |
 |---|---:|
-| `Docs/**/*.md`, total | `406` |
-| active `Docs/**/*.md`, excluding archive/deprecated/obsolete | `194` |
-| `Docs/Reports/*.md` | `40` |
+| `Docs/**/*.md`, total | `410` |
+| active `Docs/**/*.md`, excluding archive/deprecated/reports/obsolete | `156` |
+| `Docs/Reports/*.md` | `42` |
 | root `.md` files | `4` |
 | root `.txt` / `.log` files | `0` |
 | relocated former root `.log` files in deprecated bundle | `7` |
@@ -39,16 +39,16 @@ Current scan after the root-log relocation addendum:
 Header scan rule:
 
 - inspected first `30` lines of active markdown files
-- ignored `Docs/_Archive`, `Docs/DEPRECATED`, `Docs/Reports/DEPRECATED`, and `Docs/ARCHIVARIUS REPORTS/03_OBSOLETE`
+- ignored `Docs/_Archive`, `Docs/DEPRECATED`, `Docs/Reports`, and `Docs/ARCHIVARIUS REPORTS/03_OBSOLETE`
 - checked for literal `Date:` and `Status:` lines
 
 Result:
 
 | Finding | Count |
 |---|---:|
-| active markdown files missing `Date:` or `Status:` | `123` |
-| active markdown files missing `Date:` | `122` |
-| active markdown files missing `Status:` | `41` |
+| active markdown files missing `Date:` or `Status:` | `41` |
+| active markdown files missing `Date:` | `41` |
+| active markdown files missing `Status:` | `0` |
 
 ## Missing Header Breakdown
 
@@ -56,23 +56,19 @@ Result:
 |---|---:|
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/` | `28` |
 | `Docs/AI_Fauna/` | `2` |
-| `Docs/ARCHITECTURE/` | `23` |
-| `Docs/ARCHIVARIUS REPORTS/` | `37` |
+| `Docs/ARCHITECTURE/` | `0` |
+| `Docs/ARCHIVARIUS REPORTS/` | `0` |
 | `Docs/Flora_Pipeline/` | `4` |
 | `Docs/Legacy_Backlog/` | `2` |
 | `Docs/Legacy_World_Reference/` | `1` |
-| `Docs/Reports/` | `18` |
 | `Docs/Scatter_Runtime/` | `4` |
-| root active `Docs/*.md` contract files | `4` |
+| `Docs/SPACE_ENGINE_RESEARCH/` | `0` |
+| root active `Docs/*.md` contract files | `0` |
 
-Root active `Docs/*.md` contract files needing a `Date:` line:
-
-- `Docs/PROCEDURAL_ASSET_PIPELINE.md`
-- `Docs/PROCEDURAL_WORLD_VERTICAL_ARCHITECTURE.md`
-- `Docs/QUALITY_GATES.md`
-- `Docs/SYSTEMS_CONTRACTS.md`
-
-These are active anchors. Normalize them before low-value historical reports.
+Root active `Docs/*.md` contract file header normalization is complete for the four files previously missing `Date:`.
+`Docs/ARCHITECTURE/*.md` header normalization is also complete for the `23` files previously missing `Date:` or `Status:`.
+`Docs/ARCHIVARIUS REPORTS/` header normalization is complete for the `60` files previously missing strict headers in `01_GENERAL_INFO`, `02_ACTUAL_REPORTS`, and `03_OBSOLETE`.
+`Docs/SPACE_ENGINE_RESEARCH/` header normalization is complete for the two research artifacts currently present.
 
 ## Relocated Root Evidence Logs
 
@@ -114,11 +110,11 @@ It is historical, but it has current supersession notes and is still a coherent 
 
 ## Header Normalization Order
 
-1. Add `Date:` to active root `Docs/*.md` contract files.
-2. Add `Date:` / `Status:` to current `Docs/ARCHITECTURE/` reference files that lack one.
-3. Normalize current `Docs/Reports/*.md` files still missing headers.
+1. Normalize current `Docs/Reports/*.md` files still missing headers.
+2. Normalize `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/` files that are still linked by current indexes.
+3. Normalize `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/` only where a current index still keeps the file active.
 4. Normalize active bundle READMEs before inner bundle files.
-5. Normalize `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/` files that are still linked by current indexes.
+5. Normalize the `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/` bundle only after current report and authority surfaces are clean.
 6. Do not mass-edit deprecated/raw logs.
 
 ## What Was Changed In This Pass
@@ -126,6 +122,9 @@ It is historical, but it has current supersession notes and is still a coherent 
 - Created this queue report.
 - Updated active indexes to link this report as the current header/archive cleanup queue.
 - Follow-up relocation moved the seven tracked repository-root logs to `Docs/DEPRECATED/External_And_Log_Bundles/Root_Logs_2026-05-04/`.
+- Follow-up header rescan shows active root `Docs/*.md` contract files, `Docs/ARCHITECTURE/*.md`, and `Docs/ARCHIVARIUS REPORTS/*.md` are no longer in the missing-header set.
+- Added `Assets/_Project/Scripts/Editor/DocumentationAuthoritySmokeTester.cs` as an editor-only smoke guard for root loose text/log files, direct `Docs/` headers, `Docs/ARCHITECTURE/` headers, and active-header debt regression.
+- Normalized `Docs/SPACE_ENGINE_RESEARCH/*.md` headers after those research artifacts appeared during the pass.
 - Did not move old reports because the worktree is already dirty and includes unrelated source, asset, artifact, report, and deprecated raw-log changes.
 
 ## Verification
@@ -134,12 +133,18 @@ Searches now return no active hits for stale May 2 current-state boundary header
 
 Root text scan now reports `4` root `.md` files and `0` root `.txt` / `.log` files. The deprecated root-log bundle contains the `7` former repository-root logs plus its local README.
 
+Documentation authority smoke result:
+
+```json
+{"status":"PASS","totalMarkdown":410,"activeMarkdown":156,"activeHeaderDebt":41,"activeMissingDate":41,"activeMissingStatus":0,"directDocsHeaderMissing":0,"architectureHeaderMissing":0,"rootLooseTextLogCount":0,"relocatedRootLogCount":7,"maxAllowedActiveHeaderDebt":96}
+```
+
 Scoped `git diff --check` excluding deprecated files passed.
-Full `Docs` diff-check still reports pre-existing trailing whitespace in `Docs/DEPRECATED/External_And_Log_Bundles/2026-04-20_Deepseek_Ideas_Reality_Audit/логи.txt`; this pass did not modify or normalize that raw log.
+Full `git diff --check -- Docs` also passes in the current scan. Git still prints LF-to-CRLF working-copy warnings on touched markdown files; those are line-ending normalization warnings, not diff-check errors.
 
 ## Do Not Claim
 
-- Do not claim documentation is fully normalized. `123` active markdown files still need header cleanup.
+- Do not claim documentation is fully normalized. `41` active markdown files still need header cleanup.
 - Do not claim archived/deprecated raw logs are clean.
 - Do not claim relocated root logs are current proof.
 - Do not claim Play Mode, GC, profiler, memory retention, player build, or scene/prefab proof from this documentation queue.

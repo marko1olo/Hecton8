@@ -47,6 +47,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
         _StarIntensity ("Star Brightness", Range(0, 10)) = 2.0
         _StarTwinkleSpeed ("Twinkle Speed", Range(0.5, 8.0)) = 2.5
         _StarSeed ("Star Seed", Float) = 99173
+        _AtmosphereDensity ("Atmosphere Density", Range(0, 1)) = 0.0
 
         [Header(Sky Colors HDR)]
         [HDR] _SkyColorZenith ("Zenith Color", Color) = (0.05, 0.08, 0.25, 1)
@@ -176,6 +177,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 half   _StarIntensity;
                 half   _StarTwinkleSpeed;
                 float  _StarSeed;
+                half   _AtmosphereDensity;
 
                 half4  _SkyColorZenith;
                 half4  _SkyColorHorizon;
@@ -569,8 +571,17 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                     half starVisibility = max(nightFactor * starDayFade,
                                               (half)_EclipseOcclusion);
 
-                    half flicker = 0.8h + 0.2h * (half)sin(
-                        _GameTime * (float)_StarTwinkleSpeed + starPhase);
+                    half horizonTwinkle = saturate(1.0h - abs(Vf.y));
+                    half atmosphereTwinkle = saturate(_AtmosphereDensity);
+                    float twinkleSpeed = (float)_StarTwinkleSpeed *
+                        (1.0 + (float)horizonTwinkle * 2.4 + (float)atmosphereTwinkle * 3.1);
+                    float quantizedTwinkleTime = floor(_GameTime * twinkleSpeed * lerp(3.0, 8.0, (float)horizonTwinkle));
+                    float noiseTwinkle = hash(starCell + float2(quantizedTwinkleTime, quantizedTwinkleTime * 1.37) + 211.0);
+                    half flicker = 0.72h
+                        + (0.18h + 0.26h * horizonTwinkle * atmosphereTwinkle)
+                            * (half)sin(_GameTime * twinkleSpeed + starPhase)
+                        + (half)((noiseTwinkle - 0.5) * (float)atmosphereTwinkle * (0.18 + (float)horizonTwinkle * 0.24));
+                    flicker = saturate(flicker);
 
                     starContrib = proceduralStarColor
                                 * _StarColor.rgb

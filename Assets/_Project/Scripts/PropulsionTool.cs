@@ -1,5 +1,6 @@
 using UnityEngine;
 using Hecton.Localization;
+using Hecton8.Core;
 using Hecton8.Physics;
 
 namespace Hecton8.Gameplay
@@ -44,6 +45,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float holdSpringForce = 92f;
         [SerializeField] private float holdDamping = 9f;
         [SerializeField] private float maxHoldBreakDistance = 16f;
+        [SerializeField] private float towAngleBreakBacklashImpulse = 4f;
         [SerializeField] private float launchImpulse = 22f;
 
         private Transform _cachedTransform;
@@ -276,6 +278,14 @@ namespace Hecton8.Gameplay
             _nextFeedbackAt = Time.time + feedbackInterval;
         }
 
+        internal static bool ShouldBreakTractorTetherByTowAngle(Vector3 playerForward, Vector3 towVector)
+        {
+            if (playerForward.sqrMagnitude <= 0.0001f || towVector.sqrMagnitude <= 0.0001f)
+                return false;
+
+            return Vector3.Dot(playerForward.normalized, towVector.normalized) < 0f;
+        }
+
         private void MaintainLock(float deltaTime)
         {
             if (_lockedBody == null)
@@ -291,6 +301,22 @@ namespace Hecton8.Gameplay
             }
 
             Vector3 holdPoint = _cachedTransform.position + _cachedTransform.forward * holdDistance;
+            Vector3 towVector = _lockedBody.worldCenterOfMass - _cachedTransform.position;
+            if (ShouldBreakTractorTetherByTowAngle(_cachedTransform.forward, towVector))
+            {
+                Vector3 towDirection = towVector.sqrMagnitude > 0.0001f
+                    ? towVector.normalized
+                    : -_cachedTransform.forward;
+                ToolHitUtility.TryApplyRelativeCarrierImpulse(
+                    towDirection,
+                    towAngleBreakBacklashImpulse * Mathf.Max(0.5f, GetEfficiency()));
+                ReleaseLockedTarget(
+                    ResolveLocalized(LocalizationKeys.PROPULSION_HUD_LOCK_LOST, "TRACTOR LOCK LOST"),
+                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LOCK_INVALID, "Tow vector crossed the carrier stern plane and snapped the tractor tether."),
+                    "WARN");
+                return;
+            }
+
             Vector3 toHold = holdPoint - _lockedBody.worldCenterOfMass;
             float distance = toHold.magnitude;
 
@@ -303,12 +329,18 @@ namespace Hecton8.Gameplay
                 return;
             }
 
-            Vector3 desiredVelocity = toHold * holdSpringForce * Mathf.Max(0.25f, GetEfficiency());
-            Vector3 correctiveVelocity = desiredVelocity - _lockedBody.linearVelocity;
-            PhysicsForceRouter.QueueForce(
+            HectonPlayerMotor playerMotor = GlobalRegistry.PlayerMotor;
+            Rigidbody anchorBody = playerMotor != null ? playerMotor.Body : null;
+            PhysicsForceRouter.QueueTractorBeamPd(
+                anchorBody,
                 _lockedBody,
-                correctiveVelocity * holdDamping * deltaTime,
-                ForceMode.VelocityChange);
+                holdPoint,
+                _lockedBody.worldCenterOfMass,
+                holdSpringForce * Mathf.Max(0.25f, GetEfficiency()),
+                Mathf.Max(1f, holdDamping),
+                Mathf.Max(1f, holdSpringForce * Mathf.Max(1f, _lockedBody.mass)),
+                true,
+                true);
 
             if (Time.time >= _nextFeedbackAt)
             {

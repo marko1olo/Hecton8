@@ -2255,6 +2255,7 @@ namespace Hecton8.Gameplay
     public sealed class ScannerPulseDrawer : MonoBehaviour, ITickable, IUpdatable
     {
         private const int PulseInstanceCapacity = 2;
+        private const string NativeMemoryOwner = nameof(ScannerPulseDrawer);
 
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int RingThicknessId = Shader.PropertyToID("_RingThickness");
@@ -2296,6 +2297,7 @@ namespace Hecton8.Gameplay
 
             if (_pulseMatrices.IsCreated)
             {
+                NativeMemorySentinel.UnregisterNativeArray(_pulseMatrices);
                 _pulseMatrices.Dispose(default(JobHandle));
                 _pulseMatrices = default;
             }
@@ -2371,7 +2373,14 @@ namespace Hecton8.Gameplay
         private void EnsurePulseResources()
         {
             if (!_pulseMatrices.IsCreated)
+            {
                 _pulseMatrices = new NativeArray<Matrix4x4>(PulseInstanceCapacity, Allocator.Persistent);
+                NativeMemorySentinel.RegisterNativeArray(
+                    _pulseMatrices,
+                    NativeMemoryOwner,
+                    nameof(_pulseMatrices),
+                    NativeAllocationLifetime.Scene);
+            }
 
             if (_runtimePulseMesh == null)
                 _runtimePulseMesh = CreatePulseQuadMesh();

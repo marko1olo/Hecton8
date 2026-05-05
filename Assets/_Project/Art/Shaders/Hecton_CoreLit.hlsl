@@ -162,6 +162,55 @@ void HectonCoreLitApplySedimentOverlay(
     smoothness = lerp(smoothness, (half)_HectonSedimentOverlayParamsB.z, (half)strength);
 }
 
+float HectonCoreLitValueNoise2(float2 value)
+{
+    float2 cell = floor(value);
+    float2 fracValue = frac(value);
+    float2 smoothValue = fracValue * fracValue * (3.0 - 2.0 * fracValue);
+
+    float a = HectonCoreLitHash22(cell).x;
+    float b = HectonCoreLitHash22(cell + float2(1.0, 0.0)).x;
+    float c = HectonCoreLitHash22(cell + float2(0.0, 1.0)).x;
+    float d = HectonCoreLitHash22(cell + float2(1.0, 1.0)).x;
+    return lerp(lerp(a, b, smoothValue.x), lerp(c, d, smoothValue.x), smoothValue.y);
+}
+
+void HectonCoreLitApplyProceduralRustSilt(
+    float3 positionWS,
+    half3 normalWS,
+    half3 normalDetailWS,
+    half edgeWearMask,
+    half dirtAge01,
+    half siltStrength,
+    half rustStrength,
+    half3 siltTint,
+    half3 rustTint,
+    inout half3 albedo,
+    inout half metallic,
+    inout half smoothness)
+{
+    half age = saturate(dirtAge01);
+    half totalStrength = saturate(max(siltStrength, rustStrength) * age);
+    if (totalStrength <= 0.0001h)
+        return;
+
+    float2 siltUv = positionWS.xz * 0.085;
+    float2 rustUv = positionWS.xz * 0.173 + positionWS.y * 0.037;
+    half broadNoise = (half)HectonCoreLitValueNoise2(siltUv);
+    half fineNoise = (half)HectonCoreLitValueNoise2(rustUv * 2.7 + 13.7);
+    half normalMicroCavity = saturate(1.0h - abs(normalDetailWS.y));
+    half topDown = pow(saturate(normalWS.y * 0.92h + 0.08h), 1.75h);
+    half siltMask = saturate(topDown * siltStrength * age * lerp(0.42h, 1.0h, broadNoise));
+    half edgeRust = saturate(edgeWearMask * rustStrength * age);
+    half rustBreakup = saturate((fineNoise - 0.38h) * 2.35h);
+    half rustMask = saturate(edgeRust * rustBreakup * (0.55h + normalMicroCavity * 0.45h));
+
+    albedo = lerp(albedo, siltTint, siltMask * 0.58h);
+    albedo = lerp(albedo, rustTint, rustMask * 0.72h);
+    metallic = lerp(metallic, 0.0h, saturate(siltMask + rustMask));
+    smoothness = lerp(smoothness, smoothness * 0.45h, saturate(siltMask * 0.6h + rustMask));
+}
+
 float HectonCoreLitEvaluateParasiteField(float3 positionWS, out float pulseMultiplier, out float thermalGrowthMask)
 {
     pulseMultiplier = 1.0;

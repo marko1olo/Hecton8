@@ -9,6 +9,7 @@ namespace Hecton8.Dev
     public sealed class FaunaRuntimeSmokeTester : MonoBehaviour
     {
         private const float RuntimeToleranceMeters = 0.01f;
+        private const double PredatorPreyDistanceToleranceMeters = 0.0001d;
         private const double DistanceToleranceSqr = 0.05;
 
         [SerializeField] private bool runOnStart;
@@ -18,6 +19,8 @@ namespace Hecton8.Dev
         [SerializeField] private double _lastMaxDistanceErrorSqr;
         [SerializeField] private float _lastCorpseRuntimeDeltaError;
         [SerializeField] private double _lastCorpseDistanceErrorSqr;
+        [SerializeField] private bool _lastPredatorPreyAupShiftMathPassed;
+        [SerializeField] private double _lastPredatorPreyDistanceErrorMeters;
 
         private void Start()
         {
@@ -78,16 +81,20 @@ namespace Hecton8.Dev
                 math.abs(corpseAupDistanceSq - corpseRuntimeDistance0),
                 math.abs(corpseAupDistanceSq - corpseRuntimeDistance1));
             maxDistanceErrorSqr = math.max(maxDistanceErrorSqr, corpseDistanceErrorSqr);
+            bool predatorPreyPassed = RunHeadlessAupDriftAssertion(out double predatorPreyDistanceErrorMeters);
 
             _lastMaxRuntimeDeltaError = maxRuntimeDeltaError;
             _lastMaxDistanceErrorSqr = maxDistanceErrorSqr;
             _lastCorpseRuntimeDeltaError = corpseRuntimeDeltaError;
             _lastCorpseDistanceErrorSqr = corpseDistanceErrorSqr;
+            _lastPredatorPreyAupShiftMathPassed = predatorPreyPassed;
+            _lastPredatorPreyDistanceErrorMeters = predatorPreyDistanceErrorMeters;
             _lastCorpseAttractorShiftMathPassed = corpseRuntimeDeltaError <= RuntimeToleranceMeters &&
                                                   corpseDistanceErrorSqr <= DistanceToleranceSqr;
             _lastAupShiftMathPassed = maxRuntimeDeltaError <= RuntimeToleranceMeters &&
                                       maxDistanceErrorSqr <= DistanceToleranceSqr &&
-                                      _lastCorpseAttractorShiftMathPassed;
+                                      _lastCorpseAttractorShiftMathPassed &&
+                                      _lastPredatorPreyAupShiftMathPassed;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (_lastAupShiftMathPassed)
@@ -103,6 +110,45 @@ namespace Hecton8.Dev
             double dy = (double)a.y - b.y;
             double dz = (double)a.z - b.z;
             return dx * dx + dy * dy + dz * dz;
+        }
+
+        public static bool RunHeadlessAupDriftAssertion(out double distanceErrorMeters)
+        {
+            AbsoluteUniversePosition predatorAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(50000.0, -120.0, -50000.0));
+            AbsoluteUniversePosition preyAup = AbsoluteUniversePosition.FromAbsolutePosition(new double3(50012.5, -116.75, -49993.5));
+            EntityDataRecord predatorRecord = PersistentWorldRegistry.CreateFaunaHibernationState(
+                0xA11CE001u,
+                101,
+                100f,
+                in predatorAup,
+                true,
+                true,
+                0f,
+                0.5f);
+            EntityDataRecord preyRecord = PersistentWorldRegistry.CreateFaunaHibernationState(
+                0xA11CE002u,
+                201,
+                20f,
+                in preyAup,
+                false,
+                false,
+                0f,
+                0.1f);
+
+            float3 origin0 = float3.zero;
+            float3 origin1 = new float3(50000f, 0f, -50000f);
+            AbsoluteUniversePosition predatorRecordAup = AbsoluteUniversePosition.FromAlignedBlit(in predatorRecord.Position);
+            AbsoluteUniversePosition preyRecordAup = AbsoluteUniversePosition.FromAlignedBlit(in preyRecord.Position);
+            double aupDistance0 = math.sqrt(AUPMath.AUPDistanceSq(in predatorRecordAup, in preyRecordAup));
+            float3 predatorRuntime0 = AUPMath.ToRuntimeFloat3(in predatorRecordAup, origin0);
+            float3 preyRuntime0 = AUPMath.ToRuntimeFloat3(in preyRecordAup, origin0);
+            float3 predatorRuntime1 = AUPMath.ToRuntimeFloat3(in predatorRecordAup, origin1);
+            float3 preyRuntime1 = AUPMath.ToRuntimeFloat3(in preyRecordAup, origin1);
+            double runtimeDistance0 = math.sqrt(RuntimeDistanceSq(predatorRuntime0, preyRuntime0));
+            double runtimeDistance1 = math.sqrt(RuntimeDistanceSq(predatorRuntime1, preyRuntime1));
+            distanceErrorMeters = math.max(math.abs(aupDistance0 - runtimeDistance0), math.abs(aupDistance0 - runtimeDistance1));
+            distanceErrorMeters = math.max(distanceErrorMeters, math.abs(runtimeDistance0 - runtimeDistance1));
+            return distanceErrorMeters <= PredatorPreyDistanceToleranceMeters;
         }
     }
 }

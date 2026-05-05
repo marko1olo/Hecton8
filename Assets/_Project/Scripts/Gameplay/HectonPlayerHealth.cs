@@ -4,6 +4,8 @@
 // ============================================================================
 
 using Hecton8.Core;
+using Hecton8.Narrative;
+using Hecton8.Quest;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Sirenix.OdinInspector;
@@ -28,6 +30,15 @@ namespace Hecton8.Gameplay
         private const float GillsOxygenCapacityMultiplier = 1.25f;
         private const float BioluminescentPredatorVisibilityScale = 2f;
         private const float NutritionalToxicityRegenFloor = 0.35f;
+        private const float CriticalRadiationAdvisoryThresholdSeconds = 90f;
+        private const string RadiationCriticalDiscoveryId = "radiation_critical_advisory";
+        private const string RadShieldQuestId = "quest_rad_shield";
+        private static readonly char[] s_radiationCriticalMessage =
+        {
+            'C','R','I','T','I','C','A','L',' ','A','D','V','I','S','O','R','Y',' ','/','/',' ',
+            'R','A','D','I','A','T','I','O','N',' ','L','O','A','D',' ','E','X','C','E','E','D','S',' ',
+            'S','A','F','E',' ','E','N','V','E','L','O','P','E'
+        };
         // COLD ALLOC: MutationThreshold[2] — fallback mutation thresholds when no authored profile is assigned — owner: HectonPlayerHealth
         private static readonly HazardMutationProfile.MutationThreshold[] s_fallbackMutationThresholds =
         {
@@ -113,6 +124,7 @@ namespace Hecton8.Gameplay
             float fatigueScale = ResolveRadiationFatigueScale(_radiationExposureSeconds);
             SetRuntimeMaxHealthScaleInternal(fatigueScale);
             EvaluateMutationThresholds();
+            TryIssueRadiationCriticalAdvisory();
         }
 
         internal static float ResolveRadiationFatigueScale(float exposureSeconds)
@@ -142,6 +154,55 @@ namespace Hecton8.Gameplay
         {
             _radiationExposureSeconds = 0f;
             SetRuntimeMaxHealthScaleInternal(1f);
+        }
+
+        private void TryIssueRadiationCriticalAdvisory()
+        {
+            if (_radiationCriticalAdvisoryIssued ||
+                _radiationExposureSeconds < CriticalRadiationAdvisoryThresholdSeconds)
+            {
+                return;
+            }
+
+            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
+            if (narrativeDirector != null && narrativeDirector.HasDiscovery(RadiationCriticalDiscoveryId))
+            {
+                _radiationCriticalAdvisoryIssued = true;
+                return;
+            }
+
+            _radiationCriticalAdvisoryIssued = true;
+            NarrativeEvents.RaiseDiscoveryMade(RadiationCriticalDiscoveryId);
+
+            QuestManager questManager = GlobalRegistry.Quest;
+            if (questManager != null)
+                questManager.ActivateQuest(RadShieldQuestId);
+
+            PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.3f, 1f, Mathf.Clamp01(HealthPercent), true));
+            ShowRadiationCriticalAdvisory();
+        }
+
+        private static void ShowRadiationCriticalAdvisory()
+        {
+            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+            {
+                NotificationEvents.PushCritical("CRITICAL ADVISORY // RADIATION LOAD EXCEEDS SAFE ENVELOPE");
+                return;
+            }
+
+            try
+            {
+                FixedCharBuffer buffer = new FixedCharBuffer(lease.Buffer);
+                buffer.Append(s_radiationCriticalMessage);
+                if (HUDNotification.TryGetActive(out HUDNotification notification))
+                    notification.ShowCritical(in buffer);
+                else
+                    NotificationEvents.PushCritical("CRITICAL ADVISORY // RADIATION LOAD EXCEEDS SAFE ENVELOPE");
+            }
+            finally
+            {
+                CharBufferPool.Release(in lease);
+            }
         }
 
         internal void ApplyNutritionalToxicity(float severity01, float durationSeconds)
@@ -194,6 +255,7 @@ namespace Hecton8.Gameplay
         private float _nutritionalToxicityTimer;
         private float _nutritionalToxicitySeverity01;
         private uint _mutationFlags;
+        private bool _radiationCriticalAdvisoryIssued;
         private HectonSurvivalSystem _survivalSystem;
 
         /// <summary>Initializes the health system.</summary>

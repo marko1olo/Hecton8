@@ -2252,6 +2252,7 @@ public struct VoxelColorJob : IJobParallelFor
     [ReadOnly] public NativeArray<float> terrainHeights;
     [ReadOnly] public NativeArray<float> curvatureValues;
     [ReadOnly] public NativeArray<float> biomeValues;
+    [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
 
     [WriteOnly] public NativeArray<Color> colors;
 
@@ -2290,7 +2291,41 @@ public struct VoxelColorJob : IJobParallelFor
         }
 
         float skirtAlpha = math.saturate(math.max(terrainSkirt, lodEdgeSkirt));
-        colors[idx] = new Color(slope, depth, skirtAlpha, curvature);
+        float4 colorPayload = new float4(slope, depth, skirtAlpha, curvature);
+        if (TryResolveCaveMouthTerrainColor(p, out float4 terrainSplatColor, out float splatWeight))
+        {
+            colorPayload.xyz = math.lerp(colorPayload.xyz, terrainSplatColor.xyz, splatWeight);
+            colorPayload.w = math.max(colorPayload.w, splatWeight);
+        }
+
+        colors[idx] = new Color(colorPayload.x, colorPayload.y, colorPayload.z, colorPayload.w);
+    }
+
+    bool TryResolveCaveMouthTerrainColor(float3 position, out float4 terrainColor, out float weight)
+    {
+        terrainColor = float4.zero;
+        weight = 0f;
+        if (!caveEntrances.IsCreated || caveEntrances.Length <= 0)
+            return false;
+
+        for (int i = 0; i < caveEntrances.Length; i++)
+        {
+            CaveEntrance entrance = caveEntrances[i];
+            float blend = math.saturate(math.max(entrance.terrainSplatBlend, entrance.terrainSplatColor.w));
+            if (blend <= 0.0001f)
+                continue;
+
+            float radius = math.max(entrance.radius, voxelStep);
+            float distance = math.length(position - entrance.surfacePosition);
+            float localWeight = (1f - math.smoothstep(radius * 0.35f, math.max(radius * 1.85f, voxelStep), distance)) * blend;
+            if (localWeight <= weight)
+                continue;
+
+            weight = localWeight;
+            terrainColor = math.saturate(entrance.terrainSplatColor);
+        }
+
+        return weight > 0.0001f;
     }
 
     float SampleTerrainHeight(float2 worldXZ)
@@ -2468,6 +2503,7 @@ public class HectonVoxelEngine : MonoBehaviour
     private const int DeferredVoxelPhysicsBakeTeardownCapacity = 2048;
     private const byte DeferredVoxelBakeDestroyOwner = 1 << 0;
     private const float VoxelLodColliderDisableDistanceMeters = 200f;
+    private const int VoxelPhysicsBakeMeshPoolSize = 32;
     private const byte DeltaModeAdditive = 1 << 0;
     private const byte DeltaModeReplace = 1 << 1;
     private const string NativeMemoryOwner = nameof(HectonVoxelEngine);
@@ -2550,6 +2586,10 @@ public class HectonVoxelEngine : MonoBehaviour
     }
     // COLD ALLOC: List<DeferredVoxelPhysicsBakeTeardown>[2048] - deferred voxel collider PhysX bake teardown queue - owner: HectonVoxelEngine
     private static readonly List<DeferredVoxelPhysicsBakeTeardown> _deferredVoxelPhysicsBakeTeardowns = new List<DeferredVoxelPhysicsBakeTeardown>(DeferredVoxelPhysicsBakeTeardownCapacity);
+    // COLD ALLOC: Mesh[32] - global PhysX voxel bake mesh pool - owner: HectonVoxelEngine
+    private static readonly Mesh[] _voxelPhysicsBakeMeshPool = new Mesh[VoxelPhysicsBakeMeshPoolSize];
+    // COLD ALLOC: bool[32] - occupancy flags for global PhysX voxel bake mesh pool - owner: HectonVoxelEngine
+    private static readonly bool[] _voxelPhysicsBakeMeshPoolInUse = new bool[VoxelPhysicsBakeMeshPoolSize];
     // COLD ALLOC: DeferredVoxelPhysicsBakeTeardownDriver[1] - dispatcher late-frame adapter for voxel bake teardown - owner: HectonVoxelEngine
     private static readonly DeferredVoxelPhysicsBakeTeardownDriver _deferredVoxelPhysicsBakeTeardownDriver = new DeferredVoxelPhysicsBakeTeardownDriver();
     private static bool _deferredVoxelPhysicsBakeTeardownRegistered;
@@ -2644,6 +2684,23 @@ public class HectonVoxelEngine : MonoBehaviour
         }
 
         return false;
+    }
+
+    internal static bool TryFlagAirPocketFromCeilingConcavity(
+        Vector3 centerWS,
+        Vector3 halfExtentsWS,
+        float ceilingNormalY,
+        float sealedVolume01,
+        float waterlineClearanceMeters,
+        float oxygenRefillFraction,
+        out int handle)
+    {
+        handle = 0;
+        if (!IsCeilingConcavityAirPocketCandidate(ceilingNormalY, sealedVolume01, waterlineClearanceMeters))
+            return false;
+
+        handle = RegisterAirPocket(centerWS, halfExtentsWS, oxygenRefillFraction);
+        return handle != 0;
     }
 
     internal static bool IsCeilingConcavityAirPocketCandidate(float ceilingNormalY, float sealedVolume01, float waterlineClearanceMeters)
@@ -2859,6 +2916,7 @@ public class HectonVoxelEngine : MonoBehaviour
         _teardownStreamingScratchRequested = false;
         ActiveRuntimeInstance = this;
         EnsureVoxelBakeGhostMaterial();
+        EnsureVoxelPhysicsBakeMeshPool();
         _deltaProcessor = GetComponent<VoxelDeltaProcessor>();
         if (_deltaProcessor == null)
             _deltaProcessor = gameObject.AddComponent<VoxelDeltaProcessor>();
@@ -3041,7 +3099,12 @@ public class HectonVoxelEngine : MonoBehaviour
             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
 
-            await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct);
+            if (!await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct))
+            {
+                DespawnVolume(targetGO);
+                return null;
+            }
+
             OriginShiftEventData postMeshShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             ConfigureVolumeRuntimeData(targetGO, seed, worldCenter, absoluteUniverseOffsetAtStart, preset, gridDim, voxelStep, clampedLodLevel, caveParams,
                 caveNodes, caveTunnels, caveEntrances, caveStructures,
@@ -3051,7 +3114,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 pipelineData.PtsZ,
                 (Vector3)pipelineData.VolumeOrigin,
                 pipelineData.VoxelStep,
-                true);
+                pipelineData.BuildCollider);
             RegisterEntranceTerrainHoles(targetGO, caveEntrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
             RegisterActiveVolume(targetGO);
             RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
@@ -3260,7 +3323,12 @@ public class HectonVoxelEngine : MonoBehaviour
             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
 
-            await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct);
+            if (!await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct))
+            {
+                DespawnVolume(targetGO);
+                return null;
+            }
+
             OriginShiftEventData postMeshShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
             ConfigureVolumeRuntimeData(targetGO, caveParams.seed, worldCenter, absoluteUniverseOffsetAtStart, null, gridDim, voxelStep, clampedLodLevel, caveParams,
                 nodes, tunnels, entrances, structures,
@@ -3270,7 +3338,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 pipelineData.PtsZ,
                 (Vector3)pipelineData.VolumeOrigin,
                 pipelineData.VoxelStep,
-                buildCollider);
+                pipelineData.BuildCollider);
             RegisterEntranceTerrainHoles(targetGO, entrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
             RegisterActiveVolume(targetGO);
             RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
@@ -3451,8 +3519,9 @@ public class HectonVoxelEngine : MonoBehaviour
                 return false;
 
             OriginShiftEventData finalizeShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
-            await ApplyVolumeMeshAsync(volume.gameObject, pipelineData, finalizeShift, ct);
-            return volume != null && volume.MatchesRuntimeStamp(expectedRuntimeStamp);
+            return volume != null &&
+                   volume.MatchesRuntimeStamp(expectedRuntimeStamp) &&
+                   await ApplyVolumeMeshAsync(volume.gameObject, pipelineData, finalizeShift, ct);
         }
         finally
         {
@@ -3899,7 +3968,8 @@ public class HectonVoxelEngine : MonoBehaviour
             if (pending.Mesh != null)
             {
                 pending.Mesh.Clear(false);
-                DestroyDeferredVoxelObject(pending.Mesh);
+                if (!ReleaseVoxelPhysicsBakeMesh(pending.Mesh))
+                    DestroyDeferredVoxelObject(pending.Mesh);
             }
 
             if ((pending.Flags & DeferredVoxelBakeDestroyOwner) != 0 && pending.Owner != null)
@@ -4018,6 +4088,61 @@ public class HectonVoxelEngine : MonoBehaviour
 #else
         Destroy(obj);
 #endif
+    }
+
+    private static void EnsureVoxelPhysicsBakeMeshPool()
+    {
+        for (int i = 0; i < _voxelPhysicsBakeMeshPool.Length; i++)
+        {
+            if (_voxelPhysicsBakeMeshPool[i] != null)
+                continue;
+
+            Mesh mesh = new Mesh
+            {
+                name = $"VoxelPhysicsBakePool_{i:D2}"
+            };
+            mesh.MarkDynamic();
+            _voxelPhysicsBakeMeshPool[i] = mesh;
+        }
+    }
+
+    internal static Mesh AcquireVoxelPhysicsBakeMesh(string ownerName, int chunkIndex)
+    {
+        EnsureVoxelPhysicsBakeMeshPool();
+        for (int i = 0; i < _voxelPhysicsBakeMeshPool.Length; i++)
+        {
+            if (_voxelPhysicsBakeMeshPoolInUse[i])
+                continue;
+
+            Mesh mesh = _voxelPhysicsBakeMeshPool[i];
+            if (mesh == null)
+                continue;
+
+            _voxelPhysicsBakeMeshPoolInUse[i] = true;
+            mesh.name = $"VoxelPhysicsBake_{chunkIndex:D2}_{ownerName}";
+            mesh.Clear(false);
+            return mesh;
+        }
+
+        return null;
+    }
+
+    internal static bool ReleaseVoxelPhysicsBakeMesh(Mesh mesh)
+    {
+        if (mesh == null)
+            return false;
+
+        for (int i = 0; i < _voxelPhysicsBakeMeshPool.Length; i++)
+        {
+            if (!ReferenceEquals(_voxelPhysicsBakeMeshPool[i], mesh))
+                continue;
+
+            mesh.Clear(false);
+            _voxelPhysicsBakeMeshPoolInUse[i] = false;
+            return true;
+        }
+
+        return false;
     }
 
     static void LogVoxelJobWaitWatchdog(string context, int waitFrames)
@@ -4395,19 +4520,25 @@ public class HectonVoxelEngine : MonoBehaviour
             terrainHeights = terrainHeights,
             curvatureValues = data.CurvatureValues,
             biomeValues = data.BiomeValues,
+            caveEntrances = data.Entrances,
             colors = data.Colors
         }.Schedule(data.WeldedCount, JOB_BATCH, colorDeps);
 
-        JobHandle dirtyBlendHandle = new VoxelDirtyBlendJob
+        JobHandle phase5Handle = colorHandle;
+        if (data.ModifiedCells.IsCreated)
         {
-            positions = data.WeldedPositions,
-            modifiedCells = data.ModifiedCells,
-            voxelStep = data.VoxelStep,
-            absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
-            dirtyBlendValues = data.DirtyBlendValues
-        }.Schedule(data.WeldedCount, JOB_BATCH, seamSnapHandle);
+            JobHandle dirtyBlendHandle = new VoxelDirtyBlendJob
+            {
+                positions = data.WeldedPositions,
+                modifiedCells = data.ModifiedCells,
+                voxelStep = data.VoxelStep,
+                absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
+                dirtyBlendValues = data.DirtyBlendValues
+            }.Schedule(data.WeldedCount, JOB_BATCH, seamSnapHandle);
 
-        JobHandle phase5Handle = JobHandle.CombineDependencies(colorHandle, dirtyBlendHandle);
+            phase5Handle = JobHandle.CombineDependencies(phase5Handle, dirtyBlendHandle);
+        }
+
         if (data.ExtractSpawnPoints)
         {
             JobHandle spawnHandle = new VoxelSpawnPointJob
@@ -5124,11 +5255,11 @@ public class HectonVoxelEngine : MonoBehaviour
         return mesh;
     }
 
-    Awaitable ApplyVolumeMeshAsync(GameObject go, VoxelPipelineData data, OriginShiftEventData stableShift, CancellationToken ct)
+    Awaitable<bool> ApplyVolumeMeshAsync(GameObject go, VoxelPipelineData data, OriginShiftEventData stableShift, CancellationToken ct)
     {
         return ApplyVolumeMeshInternalAsync();
 
-        async Awaitable ApplyVolumeMeshInternalAsync()
+        async Awaitable<bool> ApplyVolumeMeshInternalAsync()
         {
             NativeArray<float3> projectedLocalPositions = default;
             try
@@ -5167,7 +5298,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
                     mcol.sharedMesh = null;
                     mcol.enabled = false;
-                    return;
+                    return true;
                 }
 
                 if (volume == null)
@@ -5188,16 +5319,16 @@ public class HectonVoxelEngine : MonoBehaviour
                             mcol,
                             DeferredVoxelBakeDestroyOwner))
                     {
-                        return;
+                        return false;
                     }
 
                     ct.ThrowIfCancellationRequested();
                     mcol.sharedMesh = mesh;
                     mcol.enabled = true;
-                    return;
+                    return true;
                 }
 
-                await ApplyChunkedColliderMeshesAsync(volume, data, meshLocalPositions, localVolumeOrigin, ct);
+                return await ApplyChunkedColliderMeshesAsync(volume, data, meshLocalPositions, localVolumeOrigin, ct);
             }
             finally
             {
@@ -5218,7 +5349,7 @@ public class HectonVoxelEngine : MonoBehaviour
         return 2;
     }
 
-    async Awaitable ApplyChunkedColliderMeshesAsync(
+    async Awaitable<bool> ApplyChunkedColliderMeshesAsync(
         HectonVoxelVolume volume,
         VoxelPipelineData data,
         NativeArray<float3> meshLocalPositions,
@@ -5230,7 +5361,7 @@ public class HectonVoxelEngine : MonoBehaviour
         if (triangleCount <= 0)
         {
             volume.ResetColliderChunks(false);
-            return;
+            return true;
         }
 
         int colliderChunkCount = ResolveColliderChunkCount(triangleCount);
@@ -5298,20 +5429,26 @@ public class HectonVoxelEngine : MonoBehaviour
             {
                 ct.ThrowIfCancellationRequested();
 
-                MeshCollider chunkCollider = volume.GetColliderChunkCollider(chunkIndex);
-                Mesh chunkMesh = volume.GetOrCreateColliderChunkBakeMesh(chunkIndex);
-                if (chunkCollider == null || chunkMesh == null)
-                    continue;
-
                 int chunkIndexCount = bucketCounts[chunkIndex];
+                MeshCollider chunkCollider = volume.GetColliderChunkCollider(chunkIndex);
+                if (chunkCollider == null)
+                    return false;
 
                 if (chunkIndexCount <= 0)
                 {
                     chunkCollider.sharedMesh = null;
                     chunkCollider.enabled = false;
                     chunkCollider.gameObject.SetActive(false);
-                    chunkMesh.Clear(false);
                     continue;
+                }
+
+                Mesh chunkMesh = volume.GetOrCreateColliderChunkBakeMesh(chunkIndex);
+                if (chunkMesh == null)
+                {
+                    chunkCollider.sharedMesh = null;
+                    chunkCollider.enabled = false;
+                    chunkCollider.gameObject.SetActive(false);
+                    return false;
                 }
 
                 chunkCollider.gameObject.SetActive(true);
@@ -5366,7 +5503,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 {
                     volume.DetachColliderChunkBakeMesh(chunkIndex);
                     deferredBakeTeardown = true;
-                    return;
+                    return false;
                 }
 
                 ct.ThrowIfCancellationRequested();
@@ -5378,6 +5515,7 @@ public class HectonVoxelEngine : MonoBehaviour
 
             volume.SetActiveColliderChunkCount(colliderChunkCount);
             completed = true;
+            return true;
         }
         finally
         {

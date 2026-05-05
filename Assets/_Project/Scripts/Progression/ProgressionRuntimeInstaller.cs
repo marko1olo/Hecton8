@@ -23,6 +23,9 @@ namespace Hecton8.Progression
             if (playerObject.GetComponent<PlayerAchievementRegistry>() == null)
                 playerObject.AddComponent<PlayerAchievementRegistry>();
 
+            if (playerObject.GetComponent<NarrativeProgressionBridge>() == null)
+                playerObject.AddComponent<NarrativeProgressionBridge>();
+
             if (playerObject.GetComponent<HectonOSBootManager>() == null)
                 playerObject.AddComponent<HectonOSBootManager>();
 

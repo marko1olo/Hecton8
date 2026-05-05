@@ -189,6 +189,8 @@ Shader "Hecton8/Vegetation/IndirectStrip"
             float4 _HectonFloraPredatorThreatParams;
             float4 _HectonFloraPredatorThreatPositionRadius;
             float4 _PredatorAUPParams;
+            float4 _BiolumFlashBangAUP;
+            float4 _BiolumFlashBangParams;
             float4 _HectonFloraLifecycleParams;
             float4 _HectonFloraCascadeParams;
             float4 _HectonSubmarineWashSphere;
@@ -978,6 +980,20 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 return min(legacyDim, bufferDim);
             }
 
+            half ResolveBiolumFlashBangBoost(float3 positionWS)
+            {
+                half duration = max(0.001h, (half)_BiolumFlashBangParams.y);
+                half age = (half)(_Time.y - _BiolumFlashBangParams.x);
+                if (age < 0.0h || age > duration)
+                    return 1.0h;
+
+                half radius = max(0.1h, (half)_BiolumFlashBangAUP.w);
+                half distanceGate = 1.0h - smoothstep(radius * 0.65h, radius, (half)distance(positionWS, _BiolumFlashBangAUP.xyz));
+                half timeGate = 1.0h - smoothstep(duration * 0.45h, duration, age);
+                half flashStrength = max(0.0h, (half)_BiolumFlashBangParams.z);
+                return 1.0h + distanceGate * timeGate * flashStrength;
+            }
+
             half ResolveSeasonalBloomEmissionScale()
             {
                 half bloomWeight = saturate(_HectonFloraLifecycleParams.x);
@@ -1459,8 +1475,9 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half decaySeasonWeight = saturate(_HectonFloraLifecycleParams.y) * lerp(0.55h, 1.0h, decaySeasonPulse);
                 half seasonalDecaySuppression = lerp(1.0h, 0.78h, saturate(decaySeasonWeight * _HectonFloraLifecycleParams.w));
                 half cascadeEmissionScale = 1.0h + ResolveCascadeEmissionScale(input.cascadeSeed);
+                half flashBangScale = ResolveBiolumFlashBangBoost(input.positionWS);
                 half3 biolumEmission = input.biolumColor.rgb *
-                    (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * distanceBiolumDimming * distanceBiolumPixelGate * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale);
+                    (input.biolumColor.a * pulseStrength * stateEmissionScale * predatorDim * parasiteBiolumBoost * biolumVisibility * flowReactiveBoost * distanceBiolumDimming * distanceBiolumPixelGate * seasonalBloomScale * seasonalDecaySuppression * cascadeEmissionScale * flashBangScale);
                 biolumEmission *= saturate(input.growth01) * saturate(input.health01);
                 half3 decayTint = lerp(half3(1.0h, 1.0h, 1.0h), half3(0.92h, 0.84h, 0.68h), decaySeasonWeight * 0.22h);
                 finalColor *= decayTint;

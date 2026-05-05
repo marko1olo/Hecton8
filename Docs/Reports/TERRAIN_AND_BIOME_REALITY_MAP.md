@@ -4,6 +4,71 @@ Status: PENDING VERIFICATION
 Date: 2026-05-04
 Scope: MapMagic terrain bridge, 108 biome matrix, scatter influence grid, biome transition runtime hooks.
 
+## 2026-05-05 Volumetric Biome Continuation
+
+Status: PENDING VERIFICATION
+
+This section supersedes older verification text below for the current volumetric biome pass.
+
+### Implemented
+
+- `WorldProceduralFieldSampler` now treats biome influence as a 3D sample, not only a 2D MapMagic read. The sampled Y/depth selects volumetric roles before packing the influence cell.
+- `BiomeInfluenceCell` remains a packed uint lane:
+  `primary | (secondary << 8) | (blend << 16) | (flags << 24)`.
+- Depth override preserves the previous 2D MapMagic biome as transition secondary data when a volumetric biome wins.
+- `HectonBiomeMatrixProfile` exposes `GravityMultiplier` through authoring fields `gravityMultiplier` and `buoyancyMultiplier`.
+- `PhysicsApplySystem` applies the active biome gravity multiplier only to upward `ForceMode.Acceleration` buoyancy packets marked with `BiomeBuoyancy`.
+- `MapMagicBridge.TryGetTerrainSplatColorAUP` samples terrain alphamaps and terrain-layer color approximations at an AUP.
+- `VoxelSeamDirector.BuildCaveEntrance` stores terrain splat color and blend weight in `CaveEntrance`.
+- `HectonVoxelEngine.VoxelColorJob` blends cave-mouth voxel vertex color toward sampled terrain splat color near entrance radius.
+- `BiomeMatrixDirector` now has 15 m transition hysteresis before publishing biome/fog/audio changes.
+- `WorldProceduralScatterDirector` projects abyssal-silt plant/kelp/coral candidates to the `Y=-200m` false ceiling when the sampled influence flags/family match.
+- `ResourceDistributionDirector.TrySpawnDeepMantleGeodeAtAup` provides the volcanic-hadal forced geode spawn endpoint used by the geology bridge.
+- `Fabricator` rejects biome-locked recipes unless the host base module is anchored in the requested matrix ID or biome family.
+- `VolumetricBiomeSmokeTester` and `WorldVolumetricBiomeClassificationJobs` provide a Burst-backed headless smoke path for depth-band biome override.
+
+### Cave-Mouth Color Blending Surgery Log
+
+```csharp
+if (absoluteTerrainContactPosition.sqrMagnitude > 0.0001f &&
+    MapMagicBridge.ActiveRuntimeInstance != null &&
+    MapMagicBridge.ActiveRuntimeInstance.TryGetTerrainSplatColorAUP(
+        absoluteTerrainContactPosition,
+        out Color sampledColor,
+        out float sampledBlend))
+{
+    entrance.terrainSplatColor = new float4(
+        sampledColor.r,
+        sampledColor.g,
+        sampledColor.b,
+        sampledColor.a);
+    entrance.terrainSplatBlend = math.saturate(sampledBlend);
+}
+```
+
+```csharp
+float blend = math.saturate(math.max(entrance.terrainSplatBlend, entrance.terrainSplatColor.w));
+float localWeight = (1f - math.smoothstep(radius * 0.35f, radius * 1.85f, distance)) * blend;
+colorPayload.xyz = math.lerp(colorPayload.xyz, terrainSplatColor.xyz, localWeight);
+colorPayload.w = math.max(colorPayload.w, localWeight);
+```
+
+### Verification Evidence
+
+- Direct Unity Bee C# compile passed for `Hecton8.Core`:
+  `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Core.rsp`.
+- Direct Unity Bee C# compile passed for `Hecton8.Editor`:
+  `dotnet exec ... csc.dll @Library/Bee/artifacts/1900b0aEDbg.dag/Hecton8.Editor.rsp`.
+- Unity batchmode compile reached `*** Tundra build success` in `CodexArtifacts/unity-volumetric-biome-smoke-2026-05-05.log`.
+- `VolumetricBiomeSmokeTester.RunBatchmode` was added, but repeated external batchmode automation took the Unity project lock before a stable executeMethod run could be completed.
+- MCP console proof is unavailable in this pass: MCP HTTP transport on `127.0.0.1:8088` returned connection failure/no Unity session.
+
+### Current Blockers
+
+- Batchmode Unity is being repeatedly occupied by other automation smoke processes. This blocks a clean MCP/executeMethod console proof for this specific smoke tester.
+- Licensing log lines contain transient Unity access-token errors, but licensing later resolves entitlement and compile continues.
+- No production status beyond `PENDING VERIFICATION` is claimed for this pass.
+
 ## Mandates Followed
 
 - AGENTS.md: zero fake verification; Unity/MCP proof must be reported separately from code/build proof.

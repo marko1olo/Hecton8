@@ -1,4 +1,7 @@
 # HECTON-8 — GLOSSARY OF TERMS
+Date: 2026-05-04
+Status: REFERENCE
+
 
 **Версия:** 1.0.0 | **Дата:** 2026-04-28 | **Автор:** Supreme Compliance Auditor
 

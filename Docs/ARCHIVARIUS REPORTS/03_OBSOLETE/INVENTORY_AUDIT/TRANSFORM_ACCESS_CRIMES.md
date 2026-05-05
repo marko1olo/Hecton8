@@ -1,4 +1,7 @@
 # TRANSFORM ACCESS CRIMES — SMART HOT-PATH AUDIT
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Audit Date:** 2026-04-28  
 **Scope:** `Assets/_Project/Scripts/`  

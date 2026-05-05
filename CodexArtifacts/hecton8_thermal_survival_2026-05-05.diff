@@ -1,0 +1,1643 @@
+﻿diff --git a/Assets/_Project/Art/Shaders/SuitVisor.shader b/Assets/_Project/Art/Shaders/SuitVisor.shader
+index e03e8fa6..dd451cb4 100644
+--- a/Assets/_Project/Art/Shaders/SuitVisor.shader
++++ b/Assets/_Project/Art/Shaders/SuitVisor.shader
+@@ -44,6 +44,8 @@ Shader "NASAPunk/SuitVisor"
+ 
+         [Header(Frost)]
+         _ScreenFrostStrength ("Screen Frost Strength", Range(0, 1)) = 0
++        _FrostBlueNoiseDither ("Frost Blue Noise Dither", Range(0, 1)) = 0.35
++        _BlueNoiseTex ("Blue Noise", 2D) = "gray" {}
+ 
+         [Header(Refraction Distortion)]
+         _DistortionStrength ("Edge Distortion", Range(0, 0.1)) = 0.02
+@@ -136,6 +138,7 @@ Shader "NASAPunk/SuitVisor"
+                 float  _CondensationEdgeExponent;
+                 float  _CondensationDriftSpeed;
+                 float  _ScreenFrostStrength;
++                float  _FrostBlueNoiseDither;
+ 
+                 float  _DistortionStrength;
+                 float  _DistortionFalloff;
+@@ -164,6 +167,8 @@ Shader "NASAPunk/SuitVisor"
+             TEXTURE2D(_FingerprintTex); SAMPLER(sampler_FingerprintTex);
+             TEXTURE2D(_WaterRunoffNormalTex); SAMPLER(sampler_WaterRunoffNormalTex);
+             TEXTURE2D(_WaterDropletMaskTex); SAMPLER(sampler_WaterDropletMaskTex);
++            TEXTURE2D(_BlueNoiseTex); SAMPLER(sampler_BlueNoiseTex);
++            float4 _BlueNoiseTex_TexelSize;
+             float4 _HectonHudFogPerturbation;
+             TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
+             float4 _SonarRevealOriginWS;
+@@ -280,6 +285,18 @@ Shader "NASAPunk/SuitVisor"
+                 return frac(p.x * p.y);
+             }
+ 
++            float ResolveFrostBlueNoise(float2 uv, float timeValue)
++            {
++                float2 pixel = floor(uv * _ScreenParams.xy);
++                float fallback = Hash21(pixel + floor(timeValue * 19.0));
++                float hasBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
++                float2 texelScale = lerp(float2(1.0 / 64.0, 1.0 / 64.0), _BlueNoiseTex_TexelSize.xy, hasBlueNoise);
++                float2 temporalR2 = frac(float2(0.754877666, 0.569840291) * floor(timeValue * 12.0));
++                float2 blueNoiseUV = frac(pixel * texelScale + temporalR2);
++                float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
++                return lerp(fallback, sampled, hasBlueNoise);
++            }
++
+             float SampleRgbMask(float3 rgb)
+             {
+                 return saturate(dot(rgb, float3(0.2126, 0.7152, 0.0722)));
+@@ -335,6 +352,8 @@ Shader "NASAPunk/SuitVisor"
+                 float shardRibs = step(0.74, frac(baseUv.x * 2.1 - baseUv.y * 5.3 + crystalSeed * 2.7));
+                 float lobe = 1.0 - smoothstep(0.18, 0.46, length((frac(baseUv) - 0.5) * float2(1.0, 1.7)));
+                 float crystalMask = saturate(shardBands * 0.55 + shardRibs * 0.45 + lobe * 0.3 + crystalSeed * 0.35 - 0.62);
++                float blueNoise = ResolveFrostBlueNoise(uv, timeValue);
++                crystalMask = saturate(crystalMask + (blueNoise - 0.5) * _FrostBlueNoiseDither);
+                 float topBias = smoothstep(0.06, 0.94, uv.y);
+                 return saturate(crystalMask * frostEdge * topBias);
+             }
+diff --git a/Assets/_Project/Data/Items/Resources/Raw/Data_MembraneTissue.asset b/Assets/_Project/Data/Items/Resources/Raw/Data_MembraneTissue.asset
+index 38a5c7e2..285ce874 100644
+--- a/Assets/_Project/Data/Items/Resources/Raw/Data_MembraneTissue.asset
++++ b/Assets/_Project/Data/Items/Resources/Raw/Data_MembraneTissue.asset
+@@ -37,12 +37,12 @@ MonoBehaviour:
+   maxDepth: 0
+   width: 1
+   height: 1
+-  isConsumable: 0
+-  useDuration: 0
++  isConsumable: 1
++  useDuration: 1
+   oxygenRestore: 0
+   energyRestore: 0
+   integrityRestore: 0
+-  hungerRestore: 0
++  hungerRestore: 12
+   thirstRestore: 0
+   useSound: {fileID: 0}
+   legacyInteractVerb: Harvest
+diff --git a/Assets/_Project/Scripts/Gameplay/ConsumableItem.cs b/Assets/_Project/Scripts/Gameplay/ConsumableItem.cs
+index 5abbd4e6..1e8d0a6c 100644
+--- a/Assets/_Project/Scripts/Gameplay/ConsumableItem.cs
++++ b/Assets/_Project/Scripts/Gameplay/ConsumableItem.cs
+@@ -165,6 +165,9 @@ namespace Hecton8.Gameplay
+ 
+             if (item.thirstRestore > 0f)
+                 survival.AddThirst(item.thirstRestore);
++
++            if (HectonSurvivalSystem.ShouldApplyNutritionalToxicityOnConsume(item))
++                survival.ApplyNutritionalToxicity();
+         }
+ 
+         private static HectonSurvivalSystem ResolveSurvivalSystem()
+diff --git a/Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs b/Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs
+index fcaf92d2..dcafdd6a 100644
+--- a/Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs
++++ b/Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs
+@@ -4,6 +4,8 @@
+ // ============================================================================
+ 
+ using Hecton8.Core;
++using Hecton8.Narrative;
++using Hecton8.Quest;
+ using Hecton8.SaveSystem;
+ using Hecton8.UI;
+ using Sirenix.OdinInspector;
+@@ -28,6 +30,15 @@ namespace Hecton8.Gameplay
+         private const float GillsOxygenCapacityMultiplier = 1.25f;
+         private const float BioluminescentPredatorVisibilityScale = 2f;
+         private const float NutritionalToxicityRegenFloor = 0.35f;
++        private const float CriticalRadiationAdvisoryThresholdSeconds = 90f;
++        private const string RadiationCriticalDiscoveryId = "radiation_critical_advisory";
++        private const string RadShieldQuestId = "quest_rad_shield";
++        private static readonly char[] s_radiationCriticalMessage =
++        {
++            'C','R','I','T','I','C','A','L',' ','A','D','V','I','S','O','R','Y',' ','/','/',' ',
++            'R','A','D','I','A','T','I','O','N',' ','L','O','A','D',' ','E','X','C','E','E','D','S',' ',
++            'S','A','F','E',' ','E','N','V','E','L','O','P','E'
++        };
+         // COLD ALLOC: MutationThreshold[2] — fallback mutation thresholds when no authored profile is assigned — owner: HectonPlayerHealth
+         private static readonly HazardMutationProfile.MutationThreshold[] s_fallbackMutationThresholds =
+         {
+@@ -113,6 +124,7 @@ namespace Hecton8.Gameplay
+             float fatigueScale = ResolveRadiationFatigueScale(_radiationExposureSeconds);
+             SetRuntimeMaxHealthScaleInternal(fatigueScale);
+             EvaluateMutationThresholds();
++            TryIssueRadiationCriticalAdvisory();
+         }
+ 
+         internal static float ResolveRadiationFatigueScale(float exposureSeconds)
+@@ -144,6 +156,55 @@ namespace Hecton8.Gameplay
+             SetRuntimeMaxHealthScaleInternal(1f);
+         }
+ 
++        private void TryIssueRadiationCriticalAdvisory()
++        {
++            if (_radiationCriticalAdvisoryIssued ||
++                _radiationExposureSeconds < CriticalRadiationAdvisoryThresholdSeconds)
++            {
++                return;
++            }
++
++            HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
++            if (narrativeDirector != null && narrativeDirector.HasDiscovery(RadiationCriticalDiscoveryId))
++            {
++                _radiationCriticalAdvisoryIssued = true;
++                return;
++            }
++
++            _radiationCriticalAdvisoryIssued = true;
++            NarrativeEvents.RaiseDiscoveryMade(RadiationCriticalDiscoveryId);
++
++            QuestManager questManager = GlobalRegistry.Quest;
++            if (questManager != null)
++                questManager.ActivateQuest(RadShieldQuestId);
++
++            PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.3f, 1f, Mathf.Clamp01(HealthPercent), true));
++            ShowRadiationCriticalAdvisory();
++        }
++
++        private static void ShowRadiationCriticalAdvisory()
++        {
++            if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
++            {
++                NotificationEvents.PushCritical("CRITICAL ADVISORY // RADIATION LOAD EXCEEDS SAFE ENVELOPE");
++                return;
++            }
++
++            try
++            {
++                FixedCharBuffer buffer = new FixedCharBuffer(lease.Buffer);
++                buffer.Append(s_radiationCriticalMessage);
++                if (HUDNotification.TryGetActive(out HUDNotification notification))
++                    notification.ShowCritical(in buffer);
++                else
++                    NotificationEvents.PushCritical("CRITICAL ADVISORY // RADIATION LOAD EXCEEDS SAFE ENVELOPE");
++            }
++            finally
++            {
++                CharBufferPool.Release(in lease);
++            }
++        }
++
+         internal void ApplyNutritionalToxicity(float severity01, float durationSeconds)
+         {
+             float clampedSeverity = Mathf.Clamp01(severity01);
+@@ -194,6 +255,7 @@ namespace Hecton8.Gameplay
+         private float _nutritionalToxicityTimer;
+         private float _nutritionalToxicitySeverity01;
+         private uint _mutationFlags;
++        private bool _radiationCriticalAdvisoryIssued;
+         private HectonSurvivalSystem _survivalSystem;
+ 
+         /// <summary>Initializes the health system.</summary>
+diff --git a/Assets/_Project/Scripts/HectonSurvivalSystem.cs b/Assets/_Project/Scripts/HectonSurvivalSystem.cs
+index 25d7c13e..62f08651 100644
+--- a/Assets/_Project/Scripts/HectonSurvivalSystem.cs
++++ b/Assets/_Project/Scripts/HectonSurvivalSystem.cs
+@@ -333,6 +333,22 @@ namespace Hecton8.Gameplay
+         private const float NitrogenRecoveryPerSecond = 2f;
+         private const float NitrogenNarcosisFullRange = 50f;
+         private const float NitrogenStaminaPenaltyMultiplier = 0.8f;
++        private const float NitrogenAirPocketPauseSeconds = 2f;
++        private const float NitrogenAirPocketRecoveryMultiplier = 2.5f;
++        private const float DecompressionVomitThreshold = 150f;
++        private const float DecompressionVomitToolDropCooldownSeconds = 5f;
++        private const float DecompressionVomitConvulsionDurationSeconds = 0.65f;
++        private const float ThermalShockBoilingThresholdCelsius = 90f;
++        private const float ThermalShockFreezingThresholdCelsius = -2f;
++        private const float ThermalShockFullSeverityRangeCelsius = 40f;
++        private const float ThermalFlowHeatToCelsiusScale = 18f;
++        private const float ThermalShieldDamageMultiplier = 0.35f;
++        private const float NutritionalToxicityDefaultSeverity01 = 0.65f;
++        private const float NutritionalToxicityDefaultDurationSeconds = 45f;
++        private const float NutritionalToxicityDamageScale = 0.45f;
++        private const float SuitPunctureBleedDamageFraction = 0.30f;
++        private const float HypothermiaFrostStartCelsius = 35f;
++        private const float HypothermiaFrostFullCelsius = 28f;
+         private const float DefaultInternalTemperatureCelsius = 20f;
+         private const float OxygenMovementScaleCeiling = 1.55f;
+         private const float OxygenStressScaleCeilingBonus = 0.50f;
+@@ -347,6 +363,7 @@ namespace Hecton8.Gameplay
+         private const int SurvivalDatabaseColumnCapacity = 16;
+         private const string NativeMemoryOwner = nameof(HectonSurvivalSystem);
+         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
++        private static readonly int _MembraneTissueHashId = LocHash.Compute("Data_MembraneTissue");
+ 
+         private const float Epsilon       = 0.1f;
+         private const float DirtySentinel = -9999f;
+@@ -499,7 +516,7 @@ namespace Hecton8.Gameplay
+             UnregisterBloodScentSignal();
+             GlobalRegistry.Save?.Unregister(this);
+             ResetOxygenGraceState();
+-            ResetNitrogenNarcosisState();
++            ResetThermalState();
+         }
+ 
+         private void OnDestroy()
+@@ -523,6 +540,8 @@ namespace Hecton8.Gameplay
+             _playerTransportCoordinator = runtimeContext.PlayerTransportCoordinator;
+             _traumaDispatcher = runtimeContext.TraumaDispatcher;
+             _playerRigidbody = runtimeContext.PlayerRigidbody;
++            if (_playerHealth == null)
++                TryGetComponent(out _playerHealth);
+         }
+ 
+         private void TryRegisterTickOwners()
+@@ -624,17 +643,31 @@ namespace Hecton8.Gameplay
+                 carryCapacityKg,
+                 math.saturate(weight / carryCapacityKg),
+                 Time.unscaledTime);
++            UIStateStore.WriteFrostIntensity(
++                ResolveHypothermiaFrostIntensity01(_internalTemperature),
++                Time.unscaledTime);
+         }
+ 
+         // ═════════════════════════════════════════════════════════
+         //  TICK SYSTEMS
+         // ═════════════════════════════════════════════════════════
+ 
++        internal static float ResolveHypothermiaFrostIntensity01(float internalTemperatureCelsius)
++        {
++            if (!math.isfinite(internalTemperatureCelsius) || internalTemperatureCelsius >= HypothermiaFrostStartCelsius)
++                return 0f;
++
++            return math.saturate(
++                (HypothermiaFrostStartCelsius - internalTemperatureCelsius) /
++                math.max(0.01f, HypothermiaFrostStartCelsius - HypothermiaFrostFullCelsius));
++        }
++
+         public void Tick(float deltaTime)
+         {
+             if (!alive) return;
+ 
+             ComputeDepthAndPressure();
++            TryApplyLocalizedOxygenPocket();
+             TrackRapidAscentRisk(deltaTime);
+             RefreshBloodScentSignal();
+             TrackCurrentLifeTelemetry(deltaTime);
+@@ -660,8 +693,11 @@ namespace Hecton8.Gameplay
+             HandleTemperature(dt);
+             HandleRadiation(dt);
+             HandleToxicity(dt);
++            HandleNutritionalToxicity(dt);
++            HandleDecompressionSicknessVomit(dt);
+             UpdateHungerAndThirst(dt);
+             HandleInjuries(dt);
++            HandleCriticalStaminaFailure();
+             ApplyInjuryMovementPenalty();
+             PublishRuntimeContextState();
+             PublishHeadlessUIState();
+@@ -748,7 +784,10 @@ namespace Hecton8.Gameplay
+             float baseTemp = atmosphere != null ? atmosphere.CurrentTemperature : 20f;
+             float localHeat = HectonHazardManager.GetHazardIntensity(transform.position, HazardType.Heat);
+             float abyssalColdPenalty = ResolveAbyssalColdPenaltyCelsius();
+-            _environmentTemperature = baseTemp + localHeat - abyssalColdPenalty;
++            float hazardTemperature = baseTemp + localHeat - abyssalColdPenalty;
++            _environmentTemperature = ResolveExternalThermalShockTemperature(
++                hazardTemperature,
++                ResolveAbyssalThermalExternalTemperature(transform.position));
+             float floodedThermalInsulationFactor = ResolveFloodedThermalInsulationFactor();
+             float floodedExternalTemperature = ResolveFloodedExternalTemperature(_environmentTemperature);
+             float thermalExposureScale = ResolveTransportThermalExposureScale();
+@@ -758,6 +797,7 @@ namespace Hecton8.Gameplay
+                 _internalTemperature,
+                 dt,
+                 tauEff);
++            ApplyThermalShockDamage(_environmentTemperature, dt);
+ 
+             float coldExcess = 0f;
+             float heatExcess = 0f;
+@@ -815,6 +855,93 @@ namespace Hecton8.Gameplay
+             }
+         }
+ 
++        private float ResolveAbyssalThermalExternalTemperature(Vector3 worldPosition)
++        {
++            AbyssalThermalManager thermalManager = GlobalRegistry.Thermodynamics;
++            if (thermalManager == null ||
++                !thermalManager.SampleThermalFlow(worldPosition, 1.1f, out AbyssalThermalManager.ThermalFlowSample sample) ||
++                sample.Heat01 <= 0f)
++            {
++                return float.NegativeInfinity;
++            }
++
++            return sample.Heat01 * ThermalFlowHeatToCelsiusScale;
++        }
++
++        internal static float ResolveExternalThermalShockTemperature(float fallbackTemperatureCelsius, float sampledThermalTemperatureCelsius)
++        {
++            if (!math.isfinite(sampledThermalTemperatureCelsius))
++                return fallbackTemperatureCelsius;
++
++            if (!math.isfinite(fallbackTemperatureCelsius))
++                return sampledThermalTemperatureCelsius;
++
++            return math.max(fallbackTemperatureCelsius, sampledThermalTemperatureCelsius);
++        }
++
++        internal static float ResolveThermalShockSeverity01(float externalTemperatureCelsius)
++        {
++            if (!math.isfinite(externalTemperatureCelsius))
++                return 0f;
++
++            float hotSeverity = math.saturate(
++                (externalTemperatureCelsius - ThermalShockBoilingThresholdCelsius) /
++                math.max(0.01f, ThermalShockFullSeverityRangeCelsius));
++            float coldSeverity = math.saturate(
++                (ThermalShockFreezingThresholdCelsius - externalTemperatureCelsius) /
++                math.max(0.01f, ThermalShockFullSeverityRangeCelsius));
++            return math.max(hotSeverity, coldSeverity);
++        }
++
++        internal static float ResolveThermalShockDamagePerSecond(
++            float externalTemperatureCelsius,
++            float baseTemperatureDamageRate,
++            float damageMultiplier)
++        {
++            float severity01 = ResolveThermalShockSeverity01(externalTemperatureCelsius);
++            if (severity01 <= 0f)
++                return 0f;
++
++            return math.max(0f, baseTemperatureDamageRate) *
++                   math.lerp(3f, 8f, severity01) *
++                   math.max(0f, damageMultiplier);
++        }
++
++        private void ApplyThermalShockDamage(float externalTemperatureCelsius, float dt)
++        {
++            float damagePerSecond = ResolveThermalShockDamagePerSecond(
++                externalTemperatureCelsius,
++                stats != null ? stats.TempDamageRate : 0f,
++                ResolveThermalShockDamageMultiplier());
++            if (damagePerSecond <= 0f)
++                return;
++
++            integrity = math.max(0f, integrity - damagePerSecond * math.max(0f, dt));
++            MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.ThermalFailure);
++        }
++
++        private float ResolveThermalShockDamageMultiplier()
++        {
++            float multiplier = ResolveTransportThermalExposureScale();
++            if (_runtimeContext == null ||
++                _runtimeContext.ToolManager == null ||
++                _runtimeContext.ToolManager.CurrentTool == null)
++            {
++                return multiplier;
++            }
++
++            PlayerTool currentTool = _runtimeContext.ToolManager.CurrentTool;
++            IModularEquipmentService equipmentService = GlobalRegistry.ModularEquipment;
++            if (equipmentService == null ||
++                currentTool.RuntimeToolId == 0u ||
++                !equipmentService.HasUpgrade(currentTool.RuntimeToolId, ToolUpgradeBits.ThermalShield))
++            {
++                return multiplier;
++            }
++
++            return multiplier * ThermalShieldDamageMultiplier;
++        }
++
+         private float ResolveAbyssalColdPenaltyCelsius()
+         {
+             if (_playerMovement == null)
+@@ -899,6 +1026,16 @@ namespace Hecton8.Gameplay
+ 
+         private void TrackNitrogenBuildUp(float deltaTime, float ascentOriginDepthMeters, float ascentMetersPerSecond)
+         {
++            if (_airPocketNitrogenPauseTimer > 0f)
++            {
++                _airPocketNitrogenPauseTimer = math.max(0f, _airPocketNitrogenPauseTimer - math.max(0f, deltaTime));
++                float recovery = NitrogenRecoveryPerSecond * NitrogenAirPocketRecoveryMultiplier * math.max(0f, deltaTime);
++                _nitrogenBuildUp = math.max(0f, _nitrogenBuildUp - recovery);
++                _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
++                ApplyNitrogenMovementPenalty();
++                return;
++            }
++
+             float buildUpDelta = ResolveNitrogenBuildUpDelta(
+                 ascentMetersPerSecond,
+                 ascentOriginDepthMeters,
+@@ -949,6 +1086,16 @@ namespace Hecton8.Gameplay
+             return nitrogenBuildUp > NitrogenCriticalBuildUp ? NitrogenStaminaPenaltyMultiplier : 1f;
+         }
+ 
++        internal static float ResolveDecompressionVomitSeverity01(float nitrogenBuildUp)
++        {
++            if (!math.isfinite(nitrogenBuildUp) || nitrogenBuildUp <= DecompressionVomitThreshold)
++                return 0f;
++
++            return math.saturate(
++                (nitrogenBuildUp - DecompressionVomitThreshold) /
++                math.max(0.01f, NitrogenBuildUpHardCap - DecompressionVomitThreshold));
++        }
++
+         private void ApplyNitrogenMovementPenalty()
+         {
+             if (_playerMovement == null)
+@@ -957,6 +1104,74 @@ namespace Hecton8.Gameplay
+             _playerMovement.SetRuntimeStaminaMultiplier(ResolveNitrogenStaminaMultiplier(_nitrogenBuildUp));
+         }
+ 
++        private void TryApplyLocalizedOxygenPocket()
++        {
++            if (!TrySamplePlayerAupAirPocket(out float oxygenRefillFraction))
++                return;
++
++            oxygen = math.max(
++                oxygen,
++                ResolveRuntimeMaxOxygenCapacity() * math.max(0.01f, oxygenRefillFraction));
++            _airPocketNitrogenPauseTimer = math.max(_airPocketNitrogenPauseTimer, NitrogenAirPocketPauseSeconds);
++            _nitrogenBuildUp = math.max(
++                0f,
++                _nitrogenBuildUp - NitrogenRecoveryPerSecond * NitrogenAirPocketRecoveryMultiplier * _slowTickDt);
++            _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
++            ApplyNitrogenMovementPenalty();
++            ForceDirty(ref lastPubOxygen);
++        }
++
++        private bool TrySamplePlayerAupAirPocket(out float oxygenRefillFraction)
++        {
++            Vector3 center = transform.position;
++            if (HectonVoxelEngine.TrySampleAirPocket(center, out oxygenRefillFraction))
++                return true;
++
++            Vector3 up = transform.up;
++            float halfHeight = 0.9f;
++            if (HectonVoxelEngine.TrySampleAirPocket(center + up * halfHeight, out oxygenRefillFraction))
++                return true;
++
++            return HectonVoxelEngine.TrySampleAirPocket(center - up * halfHeight, out oxygenRefillFraction);
++        }
++
++        private void HandleDecompressionSicknessVomit(float dt)
++        {
++            if (_decompressionVomitToolDropCooldown > 0f)
++                _decompressionVomitToolDropCooldown = math.max(0f, _decompressionVomitToolDropCooldown - math.max(0f, dt));
++
++            float severity01 = ResolveDecompressionVomitSeverity01(_nitrogenBuildUp);
++            if (severity01 <= 0f)
++                return;
++
++            if (_playerMovement != null)
++                _playerMovement.ApplyRuntimeNarcosisConvulsion(severity01, DecompressionVomitConvulsionDurationSeconds);
++
++            if (_decompressionVomitToolDropCooldown > 0f ||
++                _runtimeContext == null ||
++                _runtimeContext.ToolManager == null)
++            {
++                return;
++            }
++
++            if (_traumaRandom.NextFloat() > math.lerp(0.35f, 0.85f, severity01))
++                return;
++
++            Vector3 impulse = (transform.forward * math.lerp(1.2f, 2.8f, severity01)) + (Vector3.up * 0.35f);
++            if (_runtimeContext.ToolManager.TryForceDropCurrentToolFromHands(impulse))
++                _decompressionVomitToolDropCooldown = DecompressionVomitToolDropCooldownSeconds;
++        }
++
++        private void HandleCriticalStaminaFailure()
++        {
++            if (_playerMovement == null || stats == null)
++                return;
++
++            float encumbranceRatio = weight / math.max(0.01f, stats.CarryCapacityKg);
++            if (HectonPlayerMovement.ShouldTriggerCriticalStaminaFailure(encumbranceRatio, EnergyNormalized))
++                _playerMovement.TriggerCriticalStaminaFailure();
++        }
++
+         private static bool TryResolveSafeReciprocal(float value, out float reciprocal)
+         {
+             if (!float.IsFinite(value) || math.abs(value) <= 0.0001f)
+@@ -1033,6 +1248,31 @@ namespace Hecton8.Gameplay
+             MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
+         }
+ 
++        private void HandleNutritionalToxicity(float dt)
++        {
++            if (_nutritionalToxicitySecondsRemaining <= 0f)
++                return;
++
++            float clampedDt = math.max(0f, dt);
++            float damagePerSecond = ResolveNutritionalToxicityDamagePerSecond(
++                _nutritionalToxicitySeverity01,
++                stats != null ? stats.RadiationDamageRate : 0f);
++            if (damagePerSecond > 0f)
++            {
++                integrity = math.max(0f, integrity - damagePerSecond * clampedDt);
++                MarkIntegrityDeathCauseIfNeeded(SurvivalDeathCause.IntegrityFailure);
++            }
++
++            _nutritionalToxicitySecondsRemaining = math.max(0f, _nutritionalToxicitySecondsRemaining - clampedDt);
++            if (_nutritionalToxicitySecondsRemaining <= 0f)
++                _nutritionalToxicitySeverity01 = 0f;
++        }
++
++        internal static float ResolveNutritionalToxicityDamagePerSecond(float severity01, float baseDamageRate)
++        {
++            return math.max(0f, baseDamageRate) * NutritionalToxicityDamageScale * math.saturate(severity01);
++        }
++
+         internal float ResolveEnvironmentalResistance(HazardType hazardType)
+         {
+             float exposureScale = hazardType == HazardType.Heat
+@@ -1593,6 +1833,43 @@ namespace Hecton8.Gameplay
+             ForceDirty(ref lastPubThirst);
+         }
+ 
++        public void ApplyNutritionalToxicity(
++            float severity01 = NutritionalToxicityDefaultSeverity01,
++            float durationSeconds = NutritionalToxicityDefaultDurationSeconds)
++        {
++            float clampedSeverity = math.saturate(severity01);
++            float clampedDuration = math.max(0f, durationSeconds);
++            if (clampedSeverity <= 0f || clampedDuration <= 0f)
++                return;
++
++            _nutritionalToxicitySeverity01 = math.max(_nutritionalToxicitySeverity01, clampedSeverity);
++            _nutritionalToxicitySecondsRemaining = math.max(_nutritionalToxicitySecondsRemaining, clampedDuration);
++
++            if (_playerHealth == null)
++                TryGetComponent(out _playerHealth);
++
++            if (_playerHealth != null)
++                _playerHealth.ApplyNutritionalToxicity(clampedSeverity, clampedDuration);
++        }
++
++        internal static bool ShouldApplyNutritionalToxicityOnConsume(int itemHashId)
++        {
++            return itemHashId == _MembraneTissueHashId;
++        }
++
++        internal static bool ShouldApplyNutritionalToxicityOnConsume(ItemData item)
++        {
++            if (item == null)
++                return false;
++
++            if (ShouldApplyNutritionalToxicityOnConsume(LocHash.Compute(item.PersistentId)))
++                return true;
++
++            return item.isRawResource &&
++                   item.resourceFamily == ResourceFamily.Organic &&
++                   (item.category == ItemCategory.Material || item.category == ItemCategory.Organic);
++        }
++
+         public void SetWeight(float kg)
+         {
+             weight = math.max(0f, kg);
+@@ -2137,6 +2414,10 @@ namespace Hecton8.Gameplay
+             _decompressionRisk01 = 0f;
+             _rapidAscentMetersPerSecond = 0f;
+             _lastTrackedDepthMeters = 0f;
++            _airPocketNitrogenPauseTimer = 0f;
++            _nutritionalToxicitySecondsRemaining = 0f;
++            _nutritionalToxicitySeverity01 = 0f;
++            _decompressionVomitToolDropCooldown = 0f;
+             ResetNitrogenNarcosisState();
+             _oxygenGraceVisionBlur01 = 0f;
+         }
+@@ -2759,6 +3040,10 @@ namespace Hecton8.Gameplay
+ 
+         private void TryApplyDamageTrauma(float damageAmount)
+         {
++            float maxIntegrity = stats != null ? math.max(0.01f, stats.MaxIntegrity) : 100f;
++            if (ShouldForceSuitPunctureBleeding(damageAmount, maxIntegrity))
++                ApplyBleeding(1f, damageAmount);
++
+             if (damageAmount < MajorPhysicalDamageThreshold)
+                 return;
+ 
+@@ -2768,6 +3053,14 @@ namespace Hecton8.Gameplay
+             TryApplyTraumaStates(damageAmount, severity);
+         }
+ 
++        internal static bool ShouldForceSuitPunctureBleeding(float damageAmount, float maxIntegrity)
++        {
++            if (!math.isfinite(damageAmount) || !math.isfinite(maxIntegrity) || maxIntegrity <= 0f)
++                return false;
++
++            return damageAmount >= maxIntegrity * SuitPunctureBleedDamageFraction;
++        }
++
+         private void TryApplyTraumaStates(float damageMagnitude, float severity01)
+         {
+             float clampedSeverity = Mathf.Clamp01(severity01);
+diff --git a/Assets/_Project/Scripts/HectonVoxelEngine.cs b/Assets/_Project/Scripts/HectonVoxelEngine.cs
+index 773637fe..e1558dec 100644
+--- a/Assets/_Project/Scripts/HectonVoxelEngine.cs
++++ b/Assets/_Project/Scripts/HectonVoxelEngine.cs
+@@ -2252,6 +2252,7 @@ public struct VoxelColorJob : IJobParallelFor
+     [ReadOnly] public NativeArray<float> terrainHeights;
+     [ReadOnly] public NativeArray<float> curvatureValues;
+     [ReadOnly] public NativeArray<float> biomeValues;
++    [ReadOnly] public NativeArray<CaveEntrance> caveEntrances;
+ 
+     [WriteOnly] public NativeArray<Color> colors;
+ 
+@@ -2290,7 +2291,41 @@ public struct VoxelColorJob : IJobParallelFor
+         }
+ 
+         float skirtAlpha = math.saturate(math.max(terrainSkirt, lodEdgeSkirt));
+-        colors[idx] = new Color(slope, depth, skirtAlpha, curvature);
++        float4 colorPayload = new float4(slope, depth, skirtAlpha, curvature);
++        if (TryResolveCaveMouthTerrainColor(p, out float4 terrainSplatColor, out float splatWeight))
++        {
++            colorPayload.xyz = math.lerp(colorPayload.xyz, terrainSplatColor.xyz, splatWeight);
++            colorPayload.w = math.max(colorPayload.w, splatWeight);
++        }
++
++        colors[idx] = new Color(colorPayload.x, colorPayload.y, colorPayload.z, colorPayload.w);
++    }
++
++    bool TryResolveCaveMouthTerrainColor(float3 position, out float4 terrainColor, out float weight)
++    {
++        terrainColor = float4.zero;
++        weight = 0f;
++        if (!caveEntrances.IsCreated || caveEntrances.Length <= 0)
++            return false;
++
++        for (int i = 0; i < caveEntrances.Length; i++)
++        {
++            CaveEntrance entrance = caveEntrances[i];
++            float blend = math.saturate(math.max(entrance.terrainSplatBlend, entrance.terrainSplatColor.w));
++            if (blend <= 0.0001f)
++                continue;
++
++            float radius = math.max(entrance.radius, voxelStep);
++            float distance = math.length(position - entrance.surfacePosition);
++            float localWeight = (1f - math.smoothstep(radius * 0.35f, math.max(radius * 1.85f, voxelStep), distance)) * blend;
++            if (localWeight <= weight)
++                continue;
++
++            weight = localWeight;
++            terrainColor = math.saturate(entrance.terrainSplatColor);
++        }
++
++        return weight > 0.0001f;
+     }
+ 
+     float SampleTerrainHeight(float2 worldXZ)
+@@ -2468,6 +2503,7 @@ public class HectonVoxelEngine : MonoBehaviour
+     private const int DeferredVoxelPhysicsBakeTeardownCapacity = 2048;
+     private const byte DeferredVoxelBakeDestroyOwner = 1 << 0;
+     private const float VoxelLodColliderDisableDistanceMeters = 200f;
++    private const int VoxelPhysicsBakeMeshPoolSize = 32;
+     private const byte DeltaModeAdditive = 1 << 0;
+     private const byte DeltaModeReplace = 1 << 1;
+     private const string NativeMemoryOwner = nameof(HectonVoxelEngine);
+@@ -2550,6 +2586,10 @@ public class HectonVoxelEngine : MonoBehaviour
+     }
+     // COLD ALLOC: List<DeferredVoxelPhysicsBakeTeardown>[2048] - deferred voxel collider PhysX bake teardown queue - owner: HectonVoxelEngine
+     private static readonly List<DeferredVoxelPhysicsBakeTeardown> _deferredVoxelPhysicsBakeTeardowns = new List<DeferredVoxelPhysicsBakeTeardown>(DeferredVoxelPhysicsBakeTeardownCapacity);
++    // COLD ALLOC: Mesh[32] - global PhysX voxel bake mesh pool - owner: HectonVoxelEngine
++    private static readonly Mesh[] _voxelPhysicsBakeMeshPool = new Mesh[VoxelPhysicsBakeMeshPoolSize];
++    // COLD ALLOC: bool[32] - occupancy flags for global PhysX voxel bake mesh pool - owner: HectonVoxelEngine
++    private static readonly bool[] _voxelPhysicsBakeMeshPoolInUse = new bool[VoxelPhysicsBakeMeshPoolSize];
+     // COLD ALLOC: DeferredVoxelPhysicsBakeTeardownDriver[1] - dispatcher late-frame adapter for voxel bake teardown - owner: HectonVoxelEngine
+     private static readonly DeferredVoxelPhysicsBakeTeardownDriver _deferredVoxelPhysicsBakeTeardownDriver = new DeferredVoxelPhysicsBakeTeardownDriver();
+     private static bool _deferredVoxelPhysicsBakeTeardownRegistered;
+@@ -2646,6 +2686,23 @@ public class HectonVoxelEngine : MonoBehaviour
+         return false;
+     }
+ 
++    internal static bool TryFlagAirPocketFromCeilingConcavity(
++        Vector3 centerWS,
++        Vector3 halfExtentsWS,
++        float ceilingNormalY,
++        float sealedVolume01,
++        float waterlineClearanceMeters,
++        float oxygenRefillFraction,
++        out int handle)
++    {
++        handle = 0;
++        if (!IsCeilingConcavityAirPocketCandidate(ceilingNormalY, sealedVolume01, waterlineClearanceMeters))
++            return false;
++
++        handle = RegisterAirPocket(centerWS, halfExtentsWS, oxygenRefillFraction);
++        return handle != 0;
++    }
++
+     internal static bool IsCeilingConcavityAirPocketCandidate(float ceilingNormalY, float sealedVolume01, float waterlineClearanceMeters)
+     {
+         return math.isfinite(ceilingNormalY) &&
+@@ -2859,6 +2916,7 @@ public class HectonVoxelEngine : MonoBehaviour
+         _teardownStreamingScratchRequested = false;
+         ActiveRuntimeInstance = this;
+         EnsureVoxelBakeGhostMaterial();
++        EnsureVoxelPhysicsBakeMeshPool();
+         _deltaProcessor = GetComponent<VoxelDeltaProcessor>();
+         if (_deltaProcessor == null)
+             _deltaProcessor = gameObject.AddComponent<VoxelDeltaProcessor>();
+@@ -3041,7 +3099,12 @@ public class HectonVoxelEngine : MonoBehaviour
+             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
+             targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
+ 
+-            await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct);
++            if (!await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct))
++            {
++                DespawnVolume(targetGO);
++                return null;
++            }
++
+             OriginShiftEventData postMeshShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
+             ConfigureVolumeRuntimeData(targetGO, seed, worldCenter, absoluteUniverseOffsetAtStart, preset, gridDim, voxelStep, clampedLodLevel, caveParams,
+                 caveNodes, caveTunnels, caveEntrances, caveStructures,
+@@ -3051,7 +3114,7 @@ public class HectonVoxelEngine : MonoBehaviour
+                 pipelineData.PtsZ,
+                 (Vector3)pipelineData.VolumeOrigin,
+                 pipelineData.VoxelStep,
+-                true);
++                pipelineData.BuildCollider);
+             RegisterEntranceTerrainHoles(targetGO, caveEntrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
+             RegisterActiveVolume(targetGO);
+             RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
+@@ -3260,7 +3323,12 @@ public class HectonVoxelEngine : MonoBehaviour
+             OriginShiftEventData stableShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
+             targetGO.transform.position = stableShift.RebaseCapturedRuntimePosition(Vector3.zero, absoluteUniverseOffsetAtStart);
+ 
+-            await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct);
++            if (!await ApplyVolumeMeshAsync(targetGO, pipelineData, stableShift, ct))
++            {
++                DespawnVolume(targetGO);
++                return null;
++            }
++
+             OriginShiftEventData postMeshShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
+             ConfigureVolumeRuntimeData(targetGO, caveParams.seed, worldCenter, absoluteUniverseOffsetAtStart, null, gridDim, voxelStep, clampedLodLevel, caveParams,
+                 nodes, tunnels, entrances, structures,
+@@ -3270,7 +3338,7 @@ public class HectonVoxelEngine : MonoBehaviour
+                 pipelineData.PtsZ,
+                 (Vector3)pipelineData.VolumeOrigin,
+                 pipelineData.VoxelStep,
+-                buildCollider);
++                pipelineData.BuildCollider);
+             RegisterEntranceTerrainHoles(targetGO, entrances, voxelStep, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
+             RegisterActiveVolume(targetGO);
+             RegisterPipelineSpawnPoints(worldCenter, caveParams.spawnContext, pipelineData.SpawnPointList, absoluteUniverseOffsetAtStart, postMeshShift.NewTotalOffset);
+@@ -3451,8 +3519,9 @@ public class HectonVoxelEngine : MonoBehaviour
+                 return false;
+ 
+             OriginShiftEventData finalizeShift = await HectonFloatingOrigin.WaitForShiftStabilityAsync(ct);
+-            await ApplyVolumeMeshAsync(volume.gameObject, pipelineData, finalizeShift, ct);
+-            return volume != null && volume.MatchesRuntimeStamp(expectedRuntimeStamp);
++            return volume != null &&
++                   volume.MatchesRuntimeStamp(expectedRuntimeStamp) &&
++                   await ApplyVolumeMeshAsync(volume.gameObject, pipelineData, finalizeShift, ct);
+         }
+         finally
+         {
+@@ -3899,7 +3968,8 @@ public class HectonVoxelEngine : MonoBehaviour
+             if (pending.Mesh != null)
+             {
+                 pending.Mesh.Clear(false);
+-                DestroyDeferredVoxelObject(pending.Mesh);
++                if (!ReleaseVoxelPhysicsBakeMesh(pending.Mesh))
++                    DestroyDeferredVoxelObject(pending.Mesh);
+             }
+ 
+             if ((pending.Flags & DeferredVoxelBakeDestroyOwner) != 0 && pending.Owner != null)
+@@ -4020,6 +4090,61 @@ public class HectonVoxelEngine : MonoBehaviour
+ #endif
+     }
+ 
++    private static void EnsureVoxelPhysicsBakeMeshPool()
++    {
++        for (int i = 0; i < _voxelPhysicsBakeMeshPool.Length; i++)
++        {
++            if (_voxelPhysicsBakeMeshPool[i] != null)
++                continue;
++
++            Mesh mesh = new Mesh
++            {
++                name = $"VoxelPhysicsBakePool_{i:D2}"
++            };
++            mesh.MarkDynamic();
++            _voxelPhysicsBakeMeshPool[i] = mesh;
++        }
++    }
++
++    internal static Mesh AcquireVoxelPhysicsBakeMesh(string ownerName, int chunkIndex)
++    {
++        EnsureVoxelPhysicsBakeMeshPool();
++        for (int i = 0; i < _voxelPhysicsBakeMeshPool.Length; i++)
++        {
++            if (_voxelPhysicsBakeMeshPoolInUse[i])
++                continue;
++
++            Mesh mesh = _voxelPhysicsBakeMeshPool[i];
++            if (mesh == null)
++                continue;
++
++            _voxelPhysicsBakeMeshPoolInUse[i] = true;
++            mesh.name = $"VoxelPhysicsBake_{chunkIndex:D2}_{ownerName}";
++            mesh.Clear(false);
++            return mesh;
++        }
++
++        return null;
++    }
++
++    internal static bool ReleaseVoxelPhysicsBakeMesh(Mesh mesh)
++    {
++        if (mesh == null)
++            return false;
++
++        for (int i = 0; i < _voxelPhysicsBakeMeshPool.Length; i++)
++        {
++            if (!ReferenceEquals(_voxelPhysicsBakeMeshPool[i], mesh))
++                continue;
++
++            mesh.Clear(false);
++            _voxelPhysicsBakeMeshPoolInUse[i] = false;
++            return true;
++        }
++
++        return false;
++    }
++
+     static void LogVoxelJobWaitWatchdog(string context, int waitFrames)
+     {
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+@@ -4395,19 +4520,25 @@ public class HectonVoxelEngine : MonoBehaviour
+             terrainHeights = terrainHeights,
+             curvatureValues = data.CurvatureValues,
+             biomeValues = data.BiomeValues,
++            caveEntrances = data.Entrances,
+             colors = data.Colors
+         }.Schedule(data.WeldedCount, JOB_BATCH, colorDeps);
+ 
+-        JobHandle dirtyBlendHandle = new VoxelDirtyBlendJob
++        JobHandle phase5Handle = colorHandle;
++        if (data.ModifiedCells.IsCreated)
+         {
+-            positions = data.WeldedPositions,
+-            modifiedCells = data.ModifiedCells,
+-            voxelStep = data.VoxelStep,
+-            absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
+-            dirtyBlendValues = data.DirtyBlendValues
+-        }.Schedule(data.WeldedCount, JOB_BATCH, seamSnapHandle);
++            JobHandle dirtyBlendHandle = new VoxelDirtyBlendJob
++            {
++                positions = data.WeldedPositions,
++                modifiedCells = data.ModifiedCells,
++                voxelStep = data.VoxelStep,
++                absoluteUniverseOffset = (float3)data.AbsoluteUniverseOffsetAtStart,
++                dirtyBlendValues = data.DirtyBlendValues
++            }.Schedule(data.WeldedCount, JOB_BATCH, seamSnapHandle);
++
++            phase5Handle = JobHandle.CombineDependencies(phase5Handle, dirtyBlendHandle);
++        }
+ 
+-        JobHandle phase5Handle = JobHandle.CombineDependencies(colorHandle, dirtyBlendHandle);
+         if (data.ExtractSpawnPoints)
+         {
+             JobHandle spawnHandle = new VoxelSpawnPointJob
+@@ -5124,11 +5255,11 @@ public class HectonVoxelEngine : MonoBehaviour
+         return mesh;
+     }
+ 
+-    Awaitable ApplyVolumeMeshAsync(GameObject go, VoxelPipelineData data, OriginShiftEventData stableShift, CancellationToken ct)
++    Awaitable<bool> ApplyVolumeMeshAsync(GameObject go, VoxelPipelineData data, OriginShiftEventData stableShift, CancellationToken ct)
+     {
+         return ApplyVolumeMeshInternalAsync();
+ 
+-        async Awaitable ApplyVolumeMeshInternalAsync()
++        async Awaitable<bool> ApplyVolumeMeshInternalAsync()
+         {
+             NativeArray<float3> projectedLocalPositions = default;
+             try
+@@ -5167,7 +5298,7 @@ public class HectonVoxelEngine : MonoBehaviour
+ 
+                     mcol.sharedMesh = null;
+                     mcol.enabled = false;
+-                    return;
++                    return true;
+                 }
+ 
+                 if (volume == null)
+@@ -5188,16 +5319,16 @@ public class HectonVoxelEngine : MonoBehaviour
+                             mcol,
+                             DeferredVoxelBakeDestroyOwner))
+                     {
+-                        return;
++                        return false;
+                     }
+ 
+                     ct.ThrowIfCancellationRequested();
+                     mcol.sharedMesh = mesh;
+                     mcol.enabled = true;
+-                    return;
++                    return true;
+                 }
+ 
+-                await ApplyChunkedColliderMeshesAsync(volume, data, meshLocalPositions, localVolumeOrigin, ct);
++                return await ApplyChunkedColliderMeshesAsync(volume, data, meshLocalPositions, localVolumeOrigin, ct);
+             }
+             finally
+             {
+@@ -5218,7 +5349,7 @@ public class HectonVoxelEngine : MonoBehaviour
+         return 2;
+     }
+ 
+-    async Awaitable ApplyChunkedColliderMeshesAsync(
++    async Awaitable<bool> ApplyChunkedColliderMeshesAsync(
+         HectonVoxelVolume volume,
+         VoxelPipelineData data,
+         NativeArray<float3> meshLocalPositions,
+@@ -5230,7 +5361,7 @@ public class HectonVoxelEngine : MonoBehaviour
+         if (triangleCount <= 0)
+         {
+             volume.ResetColliderChunks(false);
+-            return;
++            return true;
+         }
+ 
+         int colliderChunkCount = ResolveColliderChunkCount(triangleCount);
+@@ -5298,22 +5429,28 @@ public class HectonVoxelEngine : MonoBehaviour
+             {
+                 ct.ThrowIfCancellationRequested();
+ 
+-                MeshCollider chunkCollider = volume.GetColliderChunkCollider(chunkIndex);
+-                Mesh chunkMesh = volume.GetOrCreateColliderChunkBakeMesh(chunkIndex);
+-                if (chunkCollider == null || chunkMesh == null)
+-                    continue;
+-
+                 int chunkIndexCount = bucketCounts[chunkIndex];
++                MeshCollider chunkCollider = volume.GetColliderChunkCollider(chunkIndex);
++                if (chunkCollider == null)
++                    return false;
+ 
+                 if (chunkIndexCount <= 0)
+                 {
+                     chunkCollider.sharedMesh = null;
+                     chunkCollider.enabled = false;
+                     chunkCollider.gameObject.SetActive(false);
+-                    chunkMesh.Clear(false);
+                     continue;
+                 }
+ 
++                Mesh chunkMesh = volume.GetOrCreateColliderChunkBakeMesh(chunkIndex);
++                if (chunkMesh == null)
++                {
++                    chunkCollider.sharedMesh = null;
++                    chunkCollider.enabled = false;
++                    chunkCollider.gameObject.SetActive(false);
++                    return false;
++                }
++
+                 chunkCollider.gameObject.SetActive(true);
+                 chunkMesh.Clear();
+                 NativeParallelHashMap<int, int> localVertexMap = default;
+@@ -5366,7 +5503,7 @@ public class HectonVoxelEngine : MonoBehaviour
+                 {
+                     volume.DetachColliderChunkBakeMesh(chunkIndex);
+                     deferredBakeTeardown = true;
+-                    return;
++                    return false;
+                 }
+ 
+                 ct.ThrowIfCancellationRequested();
+@@ -5378,6 +5515,7 @@ public class HectonVoxelEngine : MonoBehaviour
+ 
+             volume.SetActiveColliderChunkCount(colliderChunkCount);
+             completed = true;
++            return true;
+         }
+         finally
+         {
+diff --git a/Assets/_Project/Scripts/PlayerInventory.cs b/Assets/_Project/Scripts/PlayerInventory.cs
+index cacbfbb8..011b1362 100644
+--- a/Assets/_Project/Scripts/PlayerInventory.cs
++++ b/Assets/_Project/Scripts/PlayerInventory.cs
+@@ -813,6 +813,15 @@ namespace Hecton8.Inventory
+ 
+                 if (runtimeDescriptor.IntegrityRestore > 0f)
+                     survival.Repair(runtimeDescriptor.IntegrityRestore);
++
++                if (runtimeDescriptor.HungerRestore > 0f)
++                    survival.AddHunger(runtimeDescriptor.HungerRestore);
++
++                if (runtimeDescriptor.ThirstRestore > 0f)
++                    survival.AddThirst(runtimeDescriptor.ThirstRestore);
++
++                if (HectonSurvivalSystem.ShouldApplyNutritionalToxicityOnConsume(descriptor.HashId))
++                    survival.ApplyNutritionalToxicity();
+             }
+ 
+             RemoveOneItem(anchorX, anchorY);
+diff --git a/Assets/_Project/Scripts/PlayerToolManager.cs b/Assets/_Project/Scripts/PlayerToolManager.cs
+index fb8ef247..7456301d 100644
+--- a/Assets/_Project/Scripts/PlayerToolManager.cs
++++ b/Assets/_Project/Scripts/PlayerToolManager.cs
+@@ -34,6 +34,7 @@ namespace Hecton8.Gameplay
+     using Hecton8.Input;
+     using Hecton8.Physics;
+     using Hecton8.Tools;
++    using Hecton8.World;
+     using Unity.Mathematics;
+     using UnityEngine;
+ #if UNITY_EDITOR
+@@ -395,6 +396,72 @@ namespace Hecton8.Gameplay
+         /// <summary>Текущий активный инструмент (может быть null).</summary>
+         public PlayerTool CurrentTool => _currentTool;
+ 
++        public bool TryForceDropCurrentToolFromHands(Vector3 inheritedVelocityChange)
++        {
++            if (_currentTool == null)
++                return false;
++
++            ItemData toolData = _currentTool.ToolData;
++            if (toolData == null)
++            {
++                DespawnCurrentTool();
++                return true;
++            }
++
++            int toolHashId = LocHash.Compute(toolData.PersistentId);
++            if (toolHashId == 0)
++            {
++                DespawnCurrentTool();
++                return true;
++            }
++
++            PersistentWorldRegistry worldRegistry = GlobalRegistry.PersistentWorldRegistry;
++            if (worldRegistry == null || playerInventory == null)
++            {
++                DespawnCurrentTool();
++                return true;
++            }
++
++            bool removedFromInventory = false;
++            _suppressInventoryChangedHandling = true;
++            try
++            {
++                removedFromInventory = playerInventory.TryRemoveFirstMatchingItemByHash(toolHashId);
++            }
++            finally
++            {
++                _suppressInventoryChangedHandling = false;
++            }
++
++            if (!removedFromInventory)
++            {
++                DespawnCurrentTool();
++                return true;
++            }
++
++            Vector3 dropPosition = handAnchor != null
++                ? handAnchor.position
++                : transform.position + transform.forward * 0.65f;
++            if (worldRegistry.TryRegisterDroppedItem(toolData, 1, dropPosition, inheritedVelocityChange))
++            {
++                DespawnCurrentTool();
++                return true;
++            }
++
++            _suppressInventoryChangedHandling = true;
++            try
++            {
++                playerInventory.TryAddItem(toolHashId, 1);
++            }
++            finally
++            {
++                _suppressInventoryChangedHandling = false;
++            }
++
++            DespawnCurrentTool();
++            return true;
++        }
++
+         /// <summary>Optional swim-presentation contract of the current tool.</summary>
+         public PlayerToolSwimContract CurrentToolSwimContract => _currentTool != null ? _currentTool.SwimContract : null;
+ 
+diff --git a/Assets/_Project/Scripts/PropulsionTool.cs b/Assets/_Project/Scripts/PropulsionTool.cs
+index 6b5449bf..546be423 100644
+--- a/Assets/_Project/Scripts/PropulsionTool.cs
++++ b/Assets/_Project/Scripts/PropulsionTool.cs
+@@ -1,5 +1,6 @@
+ using UnityEngine;
+ using Hecton.Localization;
++using Hecton8.Core;
+ using Hecton8.Physics;
+ 
+ namespace Hecton8.Gameplay
+@@ -44,6 +45,7 @@ namespace Hecton8.Gameplay
+         [SerializeField] private float holdSpringForce = 92f;
+         [SerializeField] private float holdDamping = 9f;
+         [SerializeField] private float maxHoldBreakDistance = 16f;
++        [SerializeField] private float towAngleBreakBacklashImpulse = 4f;
+         [SerializeField] private float launchImpulse = 22f;
+ 
+         private Transform _cachedTransform;
+@@ -276,6 +278,14 @@ namespace Hecton8.Gameplay
+             _nextFeedbackAt = Time.time + feedbackInterval;
+         }
+ 
++        internal static bool ShouldBreakTractorTetherByTowAngle(Vector3 playerForward, Vector3 towVector)
++        {
++            if (playerForward.sqrMagnitude <= 0.0001f || towVector.sqrMagnitude <= 0.0001f)
++                return false;
++
++            return Vector3.Dot(playerForward.normalized, towVector.normalized) < 0f;
++        }
++
+         private void MaintainLock(float deltaTime)
+         {
+             if (_lockedBody == null)
+@@ -291,6 +301,22 @@ namespace Hecton8.Gameplay
+             }
+ 
+             Vector3 holdPoint = _cachedTransform.position + _cachedTransform.forward * holdDistance;
++            Vector3 towVector = _lockedBody.worldCenterOfMass - _cachedTransform.position;
++            if (ShouldBreakTractorTetherByTowAngle(_cachedTransform.forward, towVector))
++            {
++                Vector3 towDirection = towVector.sqrMagnitude > 0.0001f
++                    ? towVector.normalized
++                    : -_cachedTransform.forward;
++                ToolHitUtility.TryApplyRelativeCarrierImpulse(
++                    towDirection,
++                    towAngleBreakBacklashImpulse * Mathf.Max(0.5f, GetEfficiency()));
++                ReleaseLockedTarget(
++                    ResolveLocalized(LocalizationKeys.PROPULSION_HUD_LOCK_LOST, "TRACTOR LOCK LOST"),
++                    ResolveLocalized(LocalizationKeys.PROPULSION_SUMMARY_LOCK_INVALID, "Tow vector crossed the carrier stern plane and snapped the tractor tether."),
++                    "WARN");
++                return;
++            }
++
+             Vector3 toHold = holdPoint - _lockedBody.worldCenterOfMass;
+             float distance = toHold.magnitude;
+ 
+@@ -303,12 +329,18 @@ namespace Hecton8.Gameplay
+                 return;
+             }
+ 
+-            Vector3 desiredVelocity = toHold * holdSpringForce * Mathf.Max(0.25f, GetEfficiency());
+-            Vector3 correctiveVelocity = desiredVelocity - _lockedBody.linearVelocity;
+-            PhysicsForceRouter.QueueForce(
++            HectonPlayerMotor playerMotor = GlobalRegistry.PlayerMotor;
++            Rigidbody anchorBody = playerMotor != null ? playerMotor.Body : null;
++            PhysicsForceRouter.QueueTractorBeamPd(
++                anchorBody,
+                 _lockedBody,
+-                correctiveVelocity * holdDamping * deltaTime,
+-                ForceMode.VelocityChange);
++                holdPoint,
++                _lockedBody.worldCenterOfMass,
++                holdSpringForce * Mathf.Max(0.25f, GetEfficiency()),
++                Mathf.Max(1f, holdDamping),
++                Mathf.Max(1f, holdSpringForce * Mathf.Max(1f, _lockedBody.mass)),
++                true,
++                true);
+ 
+             if (Time.time >= _nextFeedbackAt)
+             {
+diff --git a/Assets/_Project/Scripts/Visor/VisorHUDController.cs b/Assets/_Project/Scripts/Visor/VisorHUDController.cs
+index 903e6eaf..6f955331 100644
+--- a/Assets/_Project/Scripts/Visor/VisorHUDController.cs
++++ b/Assets/_Project/Scripts/Visor/VisorHUDController.cs
+@@ -21,9 +21,10 @@ namespace NASAPunk.Visor
+     /// </summary>
+     [DisallowMultipleComponent]
+     [ExecuteAlways]
+-    public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable
++    public class VisorHUDController : MonoBehaviour, ITickable, IUpdatable, ISubmarineOsEventListener
+     {
+         private const float BiosRecoveryClarityThreshold = 0.1f;
++        private const float LowPowerBiosThreshold = 0.1f;
+         private const float RadiationFatigueMinimumScale = 0.65f;
+         private const float RadiationFatigueScalePerSecond = 0.005f;
+         private const float RadiationFatigueCriticalExposureSeconds = (1f - RadiationFatigueMinimumScale) / RadiationFatigueScalePerSecond;
+@@ -199,6 +200,8 @@ namespace NASAPunk.Visor
+         private float _hazardGlitchLevel;
+         private float _biosRecoveryModeBlend;
+         private float _thermalShockBiosRecoveryTimer;
++        private float _submarinePowerNormalized = 1f;
++        private bool _hasSubmarinePowerSnapshot;
+ 
+         private uint _glitchRngState = 1u;
+ 
+@@ -277,6 +280,7 @@ namespace NASAPunk.Visor
+             SyncProjectionPose();
+             RebuildProjection();
+             TryRegisterRuntimeTick();
++            HectonSubmarineOsEvents.Register(this);
+ #if UNITY_EDITOR
+             if (!Application.isPlaying)
+                 UnregisterEditorTick();
+@@ -336,6 +340,9 @@ namespace NASAPunk.Visor
+             _hazardGlitchLevel = 0f;
+             _biosRecoveryModeBlend = 0f;
+             _thermalShockBiosRecoveryTimer = 0f;
++            _submarinePowerNormalized = 1f;
++            _hasSubmarinePowerSnapshot = false;
++            HectonSubmarineOsEvents.Unregister(this);
+             UnregisterRuntimeTick();
+             ReleaseRT();
+             InvalidatePoseCache();
+@@ -346,10 +353,20 @@ namespace NASAPunk.Visor
+ 
+         private void OnDestroy()
+         {
++            HectonSubmarineOsEvents.Unregister(this);
+             // Ensure RT is released on component destruction
+             ReleaseRT();
+         }
+ 
++        public void OnSubmarineOsEvent(in SubmarineOsEventPayload payload)
++        {
++            if (!HectonSubmarineOsEvents.TryBuildSnapshot(in payload, out HectonSubmarineOsSnapshot snapshot))
++                return;
++
++            _submarinePowerNormalized = Mathf.Clamp01(snapshot.PowerNormalized);
++            _hasSubmarinePowerSnapshot = true;
++        }
++
+ #if UNITY_EDITOR
+         private void EditorTick()
+         {
+@@ -900,6 +917,10 @@ namespace NASAPunk.Visor
+                 target *= _screenFrostMaximum;
+             }
+ 
++            float hypothermiaFrost = UIStateStore.ReadValueOrDefault(UIValueSlotId.FrostIntensity01, 0f);
++            if (hypothermiaFrost > 0f)
++                target = Mathf.Max(target, Mathf.Clamp01(hypothermiaFrost) * _screenFrostMaximum);
++
+             if (!Mathf.Approximately(target, _screenFrostTarget))
+                 _screenFrostTarget = target;
+ 
+@@ -994,6 +1015,9 @@ namespace NASAPunk.Visor
+                 targetBiosRecovery = 1f;
+             }
+ 
++            if (_hasSubmarinePowerSnapshot && _submarinePowerNormalized < LowPowerBiosThreshold)
++                targetBiosRecovery = 1f;
++
+             float targetGlitch = Mathf.Clamp01(Mathf.Max(
+                 targetRadiation,
+                 Mathf.Max(targetThermal * 0.82f, targetToxic * 0.91f)));
+diff --git "a/C:\\hades\\Hecton8\\CodexArtifacts\\empty-file-for-no-index.diffbase" b/Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs
+index e69de29b..49f41a51 100644
+--- "a/C:\\hades\\Hecton8\\CodexArtifacts\\empty-file-for-no-index.diffbase"
++++ b/Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs
+@@ -0,0 +1,162 @@
++using Hecton8.Core;
++using Hecton8.World;
++using Unity.Collections;
++using Unity.Jobs;
++using Unity.Mathematics;
++using UnityEditor;
++using UnityEngine;
++using UnityEngine.Assertions;
++
++namespace Hecton8.Editor
++{
++    /// <summary>
++    /// Editor-only deterministic harness for the isolated anomaly basin jobs.
++    /// </summary>
++    public static class AnomalyTestHarness
++    {
++        private const int Resolution = 17;
++        private const int PixelCount = Resolution * Resolution;
++        private const int Center = Resolution / 2;
++        private const float ExpectedLipHeight = 8f;
++        private const string NativeMemoryOwner = nameof(AnomalyTestHarness);
++        private const string HeightmapLabel = "heightmap";
++        private const string BasinMaskLabel = "basinMask";
++        private const string CandidateMaskLabel = "candidateMask";
++        private const string BasinRecordsLabel = "basinRecords";
++        private const string FloodHeapLabel = "floodHeap";
++        private const string VisitedStampLabel = "visitedStamp";
++        private const string AcceptedCellsLabel = "acceptedCells";
++
++        /// <summary>
++        /// Generates a mathematically exact Chebyshev bowl and validates basin lip and center.
++        /// </summary>
++        [MenuItem("Tools/Hecton/Dev/Terrain/Run Anomaly Test Harness")]
++        public static void Run()
++        {
++            RunPerfectBowlAssertion();
++            Debug.Log("ANOMALY_TEST_HARNESS_PASS");
++        }
++
++        /// <summary>
++        /// Runs the deterministic bowl assertion without writing assets.
++        /// </summary>
++        public static void RunPerfectBowlAssertion()
++        {
++            NativeArray<float> heightmap = default;
++            NativeArray<byte> basinMask = default;
++            NativeArray<byte> candidateMask = default;
++            NativeArray<AnomalyBasinRecord> basinRecords = default;
++            NativeArray<int> floodHeap = default;
++            NativeArray<int> visitedStamp = default;
++            NativeArray<int> acceptedCells = default;
++
++            try
++            {
++                // COLD ALLOC: Editor harness TempJob buffers for deterministic anomaly validation.
++                heightmap = new NativeArray<float>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                basinMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++                candidateMask = new NativeArray<byte>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++                basinRecords = new NativeArray<AnomalyBasinRecord>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++                floodHeap = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                visitedStamp = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
++                acceptedCells = new NativeArray<int>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
++                RegisterTempJobBuffers(heightmap, basinMask, candidateMask, basinRecords, floodHeap, visitedStamp, acceptedCells);
++
++                FillPerfectBowl(heightmap);
++                var settings = new AnomalyBasinDetectionSettings
++                {
++                    Width = Resolution,
++                    Height = Resolution,
++                    CellSizeMeters = 1f,
++                    MinimumDepthMeters = 1f,
++                    MaxFloodCells = PixelCount,
++                    EqualHeightEpsilon = 0.000001f
++                };
++
++                JobHandle handle = HectonAnomalyEngine.ScheduleClosedBasinDetection(
++                    heightmap,
++                    basinMask,
++                    basinRecords,
++                    candidateMask,
++                    floodHeap,
++                    visitedStamp,
++                    acceptedCells,
++                    settings);
++
++                // COLD SYNC JOB: Editor test harness must inspect deterministic results immediately.
++                handle.Complete();
++
++                AnomalyBasinRecord record = FindFirstValidRecord(basinRecords);
++                Assert.IsTrue(record.Valid == 1, "Closed basin detector did not emit a valid bowl basin.");
++                Assert.AreEqual(Center, record.DeepestX, "Detected basin center X is not exact.");
++                Assert.AreEqual(Center, record.DeepestZ, "Detected basin center Z is not exact.");
++                Assert.AreEqual(0f, record.DeepestHeight, "Detected basin depth is not exact.");
++                Assert.AreEqual(ExpectedLipHeight, record.LipHeight, "Detected basin lip height is not exact.");
++                Assert.AreEqual(PixelCount, record.CellCount, "Detected basin mask cell count is not exact.");
++                Assert.IsTrue(basinMask[Center + Center * Resolution] == 1, "Detected basin mask does not include the exact center.");
++            }
++            finally
++            {
++                DisposeTracked(ref heightmap);
++                DisposeTracked(ref basinMask);
++                DisposeTracked(ref candidateMask);
++                DisposeTracked(ref basinRecords);
++                DisposeTracked(ref floodHeap);
++                DisposeTracked(ref visitedStamp);
++                DisposeTracked(ref acceptedCells);
++            }
++        }
++
++        private static void FillPerfectBowl(NativeArray<float> heightmap)
++        {
++            for (int z = 0; z < Resolution; z++)
++            {
++                for (int x = 0; x < Resolution; x++)
++                {
++                    int dx = math.abs(x - Center);
++                    int dz = math.abs(z - Center);
++                    heightmap[x + z * Resolution] = math.max(dx, dz);
++                }
++            }
++        }
++
++        private static AnomalyBasinRecord FindFirstValidRecord(NativeArray<AnomalyBasinRecord> records)
++        {
++            for (int i = 0; i < records.Length; i++)
++            {
++                if (records[i].Valid != 0)
++                    return records[i];
++            }
++
++            return default;
++        }
++
++        private static void RegisterTempJobBuffers(
++            NativeArray<float> heightmap,
++            NativeArray<byte> basinMask,
++            NativeArray<byte> candidateMask,
++            NativeArray<AnomalyBasinRecord> basinRecords,
++            NativeArray<int> floodHeap,
++            NativeArray<int> visitedStamp,
++            NativeArray<int> acceptedCells)
++        {
++            NativeMemorySentinel.RegisterNativeArray(heightmap, NativeMemoryOwner, HeightmapLabel, NativeAllocationLifetime.TempJob);
++            NativeMemorySentinel.RegisterNativeArray(basinMask, NativeMemoryOwner, BasinMaskLabel, NativeAllocationLifetime.TempJob);
++            NativeMemorySentinel.RegisterNativeArray(candidateMask, NativeMemoryOwner, CandidateMaskLabel, NativeAllocationLifetime.TempJob);
++            NativeMemorySentinel.RegisterNativeArray(basinRecords, NativeMemoryOwner, BasinRecordsLabel, NativeAllocationLifetime.TempJob);
++            NativeMemorySentinel.RegisterNativeArray(floodHeap, NativeMemoryOwner, FloodHeapLabel, NativeAllocationLifetime.TempJob);
++            NativeMemorySentinel.RegisterNativeArray(visitedStamp, NativeMemoryOwner, VisitedStampLabel, NativeAllocationLifetime.TempJob);
++            NativeMemorySentinel.RegisterNativeArray(acceptedCells, NativeMemoryOwner, AcceptedCellsLabel, NativeAllocationLifetime.TempJob);
++        }
++
++        private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct
++        {
++            if (!array.IsCreated)
++                return;
++
++            NativeMemorySentinel.UnregisterNativeArray(array);
++            array.Dispose();
++            array = default;
++        }
++    }
++}
+diff --git "a/C:\\hades\\Hecton8\\CodexArtifacts\\empty-file-for-no-index.diffbase" b/Assets/_Project/Scripts/ThermalSurvivalSmokeTester.cs
+index e69de29b..96f2f3a2 100644
+--- "a/C:\\hades\\Hecton8\\CodexArtifacts\\empty-file-for-no-index.diffbase"
++++ b/Assets/_Project/Scripts/ThermalSurvivalSmokeTester.cs
+@@ -0,0 +1,184 @@
++// ============================================================================
++// HECTON-8 - ThermalSurvivalSmokeTester.cs
++// Dev-only deterministic checks for thermal shock, nutrition toxicity, air
++// pockets, decompression sickness, brine inversion, and tractor snap gates.
++// ============================================================================
++
++using Hecton.Localization;
++using Hecton8.Gameplay;
++using Hecton8.Items;
++using Unity.Mathematics;
++using UnityEngine;
++
++namespace Hecton8.Dev
++{
++    [DisallowMultipleComponent]
++    [AddComponentMenu("Hecton8/Dev/Thermal Survival Smoke Tester")]
++    public sealed class ThermalSurvivalSmokeTester : MonoBehaviour
++    {
++        private const int FailureThermalShock = 1 << 0;
++        private const int FailureAirPocket = 1 << 1;
++        private const int FailureNutritionalToxicity = 1 << 2;
++        private const int FailureDecompressionVomit = 1 << 3;
++        private const int FailureSuitPuncture = 1 << 4;
++        private const int FailureBrineInversion = 1 << 5;
++        private const int FailureCriticalStamina = 1 << 6;
++        private const int FailureTractorSnap = 1 << 7;
++        private const int FailureHypothermiaFrost = 1 << 8;
++        private const int FailureHealthRegenToxicity = 1 << 9;
++
++        [Header("Execution")]
++        [SerializeField] private bool runOnStart;
++        [SerializeField] private bool verboseLogging;
++
++#pragma warning disable CS0414
++        [Header("Debug")]
++        [SerializeField] private bool _debugLastPass;
++        [SerializeField] private int _debugLastFailureMask;
++        [SerializeField] private float _debugThermalDamagePerSecond;
++        [SerializeField] private float _debugBrineSinkMultiplier;
++#pragma warning restore CS0414
++
++        public int LastFailureMask => _debugLastFailureMask;
++        public bool LastPass => _debugLastPass;
++
++        private void Start()
++        {
++            if (runOnStart)
++                RunSmokePass();
++        }
++
++        [ContextMenu("Run Thermal Survival Smoke Pass")]
++        public void RunSmokePass()
++        {
++            _debugLastFailureMask = RunDeterministicMathChecks(
++                out _debugThermalDamagePerSecond,
++                out _debugBrineSinkMultiplier);
++            _debugLastPass = _debugLastFailureMask == 0;
++
++#if UNITY_EDITOR || DEVELOPMENT_BUILD
++            if (verboseLogging)
++            {
++                if (_debugLastPass)
++                    Debug.Log("[ThermalSurvivalSmoke] PASS");
++                else
++                    Debug.LogError("[ThermalSurvivalSmoke] FAIL mask=" + _debugLastFailureMask);
++            }
++#endif
++        }
++
++        public static int RunDeterministicMathChecks()
++        {
++            return RunDeterministicMathChecks(out _, out _);
++        }
++
++#if UNITY_EDITOR
++        public static void RunBatchModeSmokeTest()
++        {
++            int failureMask = RunDeterministicMathChecks(
++                out float thermalDamagePerSecond,
++                out float brineSinkMultiplier);
++            if (failureMask != 0)
++            {
++                throw new System.InvalidOperationException(
++                    "Thermal survival smoke failed. FailureMask=" + failureMask);
++            }
++
++            Debug.Log(
++                "[ThermalSurvivalSmoke] PASS thermalDps=" + thermalDamagePerSecond +
++                " brineSinkMultiplier=" + brineSinkMultiplier);
++        }
++
++#endif
++
++        public static int RunDeterministicMathChecks(
++            out float thermalDamagePerSecond,
++            out float brineSinkMultiplier)
++        {
++            int failureMask = 0;
++
++            thermalDamagePerSecond = HectonSurvivalSystem.ResolveThermalShockDamagePerSecond(120f, 2f, 1f);
++            float shieldedThermalDamage = HectonSurvivalSystem.ResolveThermalShockDamagePerSecond(120f, 2f, 0.35f);
++            float freezingDamage = HectonSurvivalSystem.ResolveThermalShockDamagePerSecond(-12f, 2f, 1f);
++            float thermalSample = HectonSurvivalSystem.ResolveExternalThermalShockTemperature(20f, 120f);
++            if (thermalDamagePerSecond <= 0f ||
++                shieldedThermalDamage >= thermalDamagePerSecond ||
++                freezingDamage <= 0f ||
++                math.abs(thermalSample - 120f) > 0.0001f)
++            {
++                failureMask |= FailureThermalShock;
++            }
++
++            global::HectonVoxelEngine.ClearAirPocketRegistry();
++            bool flaggedAirPocket = global::HectonVoxelEngine.TryFlagAirPocketFromCeilingConcavity(
++                Vector3.zero,
++                Vector3.one,
++                -0.8f,
++                0.85f,
++                0.5f,
++                1f,
++                out int airPocketHandle);
++            bool sampledAirPocket = global::HectonVoxelEngine.TrySampleAirPocket(Vector3.zero, out float oxygenRefillFraction);
++            bool rejectedAirPocket = global::HectonVoxelEngine.IsCeilingConcavityAirPocketCandidate(0.2f, 0.85f, 0.5f);
++            global::HectonVoxelEngine.UnregisterAirPocket(airPocketHandle);
++            if (!flaggedAirPocket || !sampledAirPocket || oxygenRefillFraction < 0.999f || rejectedAirPocket)
++                failureMask |= FailureAirPocket;
++
++            int membraneHash = LocHash.Compute("Data_MembraneTissue");
++            bool membraneToxic = HectonSurvivalSystem.ShouldApplyNutritionalToxicityOnConsume(membraneHash);
++            float toxicityDamage = HectonSurvivalSystem.ResolveNutritionalToxicityDamagePerSecond(1f, 2f);
++            if (!membraneToxic || math.abs(toxicityDamage - 0.9f) > 0.0001f)
++                failureMask |= FailureNutritionalToxicity;
++
++            float vomitSeverity = HectonSurvivalSystem.ResolveDecompressionVomitSeverity01(155f);
++            float safeVomitSeverity = HectonSurvivalSystem.ResolveDecompressionVomitSeverity01(150f);
++            if (math.abs(vomitSeverity - 0.5f) > 0.0001f || safeVomitSeverity > 0.0001f)
++                failureMask |= FailureDecompressionVomit;
++
++            if (!HectonSurvivalSystem.ShouldForceSuitPunctureBleeding(31f, 100f) ||
++                HectonSurvivalSystem.ShouldForceSuitPunctureBleeding(29f, 100f))
++            {
++                failureMask |= FailureSuitPuncture;
++            }
++
++            brineSinkMultiplier = HectonPlayerMotor.ResolveHeavyBrineSinkMultiplier(1250f, 1025f);
++            Vector3 invertedVelocity = HectonPlayerMotor.ResolveBuoyancyInversionVelocity(
++                new Vector3(0f, -2f, 0f),
++                true,
++                false,
++                brineSinkMultiplier);
++            Vector3 thrusterVelocity = HectonPlayerMotor.ResolveBuoyancyInversionVelocity(
++                new Vector3(0f, -2f, 0f),
++                true,
++                true,
++                brineSinkMultiplier);
++            if (brineSinkMultiplier >= 0f || invertedVelocity.y <= 0f || math.abs(thrusterVelocity.y + 2f) > 0.0001f)
++                failureMask |= FailureBrineInversion;
++
++            if (!HectonPlayerMovement.ShouldTriggerCriticalStaminaFailure(1.5f, 0.09f) ||
++                HectonPlayerMovement.ShouldTriggerCriticalStaminaFailure(1.5f, 0.10f) ||
++                HectonPlayerMovement.ShouldTriggerCriticalStaminaFailure(1.49f, 0.09f))
++            {
++                failureMask |= FailureCriticalStamina;
++            }
++
++            if (!PropulsionTool.ShouldBreakTractorTetherByTowAngle(Vector3.forward, Vector3.back) ||
++                PropulsionTool.ShouldBreakTractorTetherByTowAngle(Vector3.forward, Vector3.forward))
++            {
++                failureMask |= FailureTractorSnap;
++            }
++
++            float frostMid = HectonSurvivalSystem.ResolveHypothermiaFrostIntensity01(31.5f);
++            float frostSafe = HectonSurvivalSystem.ResolveHypothermiaFrostIntensity01(36f);
++            float frostFull = HectonSurvivalSystem.ResolveHypothermiaFrostIntensity01(28f);
++            if (math.abs(frostMid - 0.5f) > 0.0001f || frostSafe > 0.0001f || math.abs(frostFull - 1f) > 0.0001f)
++                failureMask |= FailureHypothermiaFrost;
++
++            float regenMultiplier = HectonPlayerHealth.ResolveNaturalHealthRegenerationMultiplier(1f);
++            if (regenMultiplier >= 1f || math.abs(regenMultiplier - 0.35f) > 0.0001f)
++                failureMask |= FailureHealthRegenToxicity;
++
++            return failureMask;
++        }
++    }
++}
+diff --git "a/C:\\hades\\Hecton8\\CodexArtifacts\\empty-file-for-no-index.diffbase" b/Assets/_Project/Scripts/ThermalSurvivalSmokeTester.cs.meta
+index e69de29b..d0614901 100644
+--- "a/C:\\hades\\Hecton8\\CodexArtifacts\\empty-file-for-no-index.diffbase"
++++ b/Assets/_Project/Scripts/ThermalSurvivalSmokeTester.cs.meta
+@@ -0,0 +1,2 @@
++fileFormatVersion: 2
++guid: 227e969377424aaabc8d6b5cc15f42c1

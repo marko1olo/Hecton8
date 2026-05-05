@@ -8,9 +8,7 @@ using Hecton8.Gameplay;
 using Hecton8.Items;
 using Hecton8.Power;
 using Hecton8.SaveSystem;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -101,80 +99,6 @@ namespace Hecton8.Construction
             public PowerNode Node;
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        internal struct LogisticsPipeRouteBfsJob : IJob
-        {
-            public int NodeCount;
-            public int StartNodeIndex;
-
-            [ReadOnly] public NativeArray<int> EdgeOffsets;
-            [ReadOnly] public NativeArray<int> EdgeDestinations;
-            [ReadOnly] public NativeArray<byte> StorageCapacityByNode;
-
-            public NativeArray<byte> Visited;
-            public NativeArray<int> Queue;
-            public NativeArray<int> ResultNodeIndex;
-
-            public void Execute()
-            {
-                if (!ResultNodeIndex.IsCreated || ResultNodeIndex.Length <= 0)
-                    return;
-
-                ResultNodeIndex[0] = -1;
-
-                int safeNodeCount = math.min(NodeCount, math.min(StorageCapacityByNode.Length, math.min(Visited.Length, Queue.Length)));
-                if (safeNodeCount <= 0 ||
-                    StartNodeIndex < 0 ||
-                    StartNodeIndex >= safeNodeCount ||
-                    !EdgeOffsets.IsCreated ||
-                    EdgeOffsets.Length <= safeNodeCount ||
-                    !EdgeDestinations.IsCreated)
-                {
-                    return;
-                }
-
-                for (int nodeIndex = 0; nodeIndex < safeNodeCount; nodeIndex++)
-                    Visited[nodeIndex] = 0;
-
-                int head = 0;
-                int tail = 0;
-                Queue[tail++] = StartNodeIndex;
-                Visited[StartNodeIndex] = 1;
-
-                while (head < tail)
-                {
-                    int nodeIndex = Queue[head++];
-                    if (StorageCapacityByNode[nodeIndex] != 0)
-                    {
-                        ResultNodeIndex[0] = nodeIndex;
-                        return;
-                    }
-
-                    int edgeStart = EdgeOffsets[nodeIndex];
-                    int edgeEnd = EdgeOffsets[nodeIndex + 1];
-                    if (edgeStart < 0 || edgeEnd < edgeStart || edgeEnd > EdgeDestinations.Length)
-                        continue;
-
-                    for (int edgeIndex = edgeStart; edgeIndex < edgeEnd; edgeIndex++)
-                    {
-                        int destinationNodeIndex = EdgeDestinations[edgeIndex];
-                        if (destinationNodeIndex < 0 ||
-                            destinationNodeIndex >= safeNodeCount ||
-                            Visited[destinationNodeIndex] != 0)
-                        {
-                            continue;
-                        }
-
-                        Visited[destinationNodeIndex] = 1;
-                        if (tail >= safeNodeCount)
-                            return;
-
-                        Queue[tail++] = destinationNodeIndex;
-                    }
-                }
-            }
-        }
-
         // COLD ALLOC: List<StorageEndpoint>[16] — logistics storage registry — owner: BaseLogisticsNetwork
         private static readonly List<StorageEndpoint> s_StorageEndpoints = new List<StorageEndpoint>(16);
         // COLD ALLOC: List<FabricatorEndpoint>[8] — fabrication endpoint registry — owner: BaseLogisticsNetwork
@@ -186,8 +110,10 @@ namespace Hecton8.Construction
         private static readonly LogisticsReservation[] s_ReservationPool = CreateReservationPool();
         private static int s_ReservationPoolCount = ReservationPoolCapacity;
         private static int s_NextReservationId = 1;
-        private const int RouteScratchInitialNodeCapacity = 32;
-        private const int RouteScratchInitialEdgeCapacity = 64;
+        private const int RouteScratchInitialNodeCapacity = 4096;
+        private const int RouteScratchInitialEdgeCapacity = 8192;
+        private const string NativeMemoryOwner = nameof(BaseLogisticsNetwork);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static NativeArray<int> s_RouteEdgeOffsets;
         private static NativeArray<int> s_RouteEdgeDestinations;
         private static NativeArray<int> s_RouteEdgeWriteCursor;
@@ -413,17 +339,15 @@ namespace Hecton8.Construction
             BuildRouteCsr(grid, topologyNodes, nodeCount, edgeCount);
 
             s_RouteResultNodeIndex[0] = -1;
-            new LogisticsPipeRouteBfsJob
-            {
-                NodeCount = nodeCount,
-                StartNodeIndex = startNodeIndex,
-                EdgeOffsets = s_RouteEdgeOffsets,
-                EdgeDestinations = s_RouteEdgeDestinations,
-                StorageCapacityByNode = s_RouteStorageCapacityByNode,
-                Visited = s_RouteVisited,
-                Queue = s_RouteQueue,
-                ResultNodeIndex = s_RouteResultNodeIndex
-            }.Run();
+            LogisticsPipeRoutingKernel.ExecuteRouteBfs(
+                nodeCount,
+                startNodeIndex,
+                s_RouteEdgeOffsets,
+                s_RouteEdgeDestinations,
+                s_RouteStorageCapacityByNode,
+                s_RouteVisited,
+                s_RouteQueue,
+                s_RouteResultNodeIndex);
 
             int targetNodeIndex = s_RouteResultNodeIndex[0];
             if (targetNodeIndex < 0 || targetNodeIndex >= nodeCount)
@@ -970,16 +894,16 @@ namespace Hecton8.Construction
 
         private static void EnsureRouteScratchCapacity(int nodeCount, int edgeCount)
         {
-            EnsureNativeIntArray(ref s_RouteEdgeOffsets, math.max(RouteScratchInitialNodeCapacity + 1, nodeCount + 1));
-            EnsureNativeIntArray(ref s_RouteEdgeDestinations, math.max(RouteScratchInitialEdgeCapacity, edgeCount));
-            EnsureNativeIntArray(ref s_RouteEdgeWriteCursor, math.max(RouteScratchInitialNodeCapacity, nodeCount));
-            EnsureNativeByteArray(ref s_RouteStorageCapacityByNode, math.max(RouteScratchInitialNodeCapacity, nodeCount));
-            EnsureNativeByteArray(ref s_RouteVisited, math.max(RouteScratchInitialNodeCapacity, nodeCount));
-            EnsureNativeIntArray(ref s_RouteQueue, math.max(RouteScratchInitialNodeCapacity, nodeCount));
-            EnsureNativeIntArray(ref s_RouteResultNodeIndex, 1);
+            EnsureNativeIntArray(ref s_RouteEdgeOffsets, math.max(RouteScratchInitialNodeCapacity + 1, nodeCount + 1), nameof(s_RouteEdgeOffsets));
+            EnsureNativeIntArray(ref s_RouteEdgeDestinations, math.max(RouteScratchInitialEdgeCapacity, edgeCount), nameof(s_RouteEdgeDestinations));
+            EnsureNativeIntArray(ref s_RouteEdgeWriteCursor, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteEdgeWriteCursor));
+            EnsureNativeByteArray(ref s_RouteStorageCapacityByNode, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteStorageCapacityByNode));
+            EnsureNativeByteArray(ref s_RouteVisited, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteVisited));
+            EnsureNativeIntArray(ref s_RouteQueue, math.max(RouteScratchInitialNodeCapacity, nodeCount), nameof(s_RouteQueue));
+            EnsureNativeIntArray(ref s_RouteResultNodeIndex, 1, nameof(s_RouteResultNodeIndex));
         }
 
-        private static void EnsureNativeIntArray(ref NativeArray<int> array, int requiredLength)
+        private static void EnsureNativeIntArray(ref NativeArray<int> array, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (array.IsCreated && array.Length >= safeLength)
@@ -987,9 +911,10 @@ namespace Hecton8.Construction
 
             DisposeNativeArray(ref array);
             array = new NativeArray<int>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
 
-        private static void EnsureNativeByteArray(ref NativeArray<byte> array, int requiredLength)
+        private static void EnsureNativeByteArray(ref NativeArray<byte> array, int requiredLength, string label)
         {
             int safeLength = math.max(1, requiredLength);
             if (array.IsCreated && array.Length >= safeLength)
@@ -997,6 +922,7 @@ namespace Hecton8.Construction
 
             DisposeNativeArray(ref array);
             array = new NativeArray<byte>(safeLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            RegisterNativeArray(array, label);
         }
 
         private static void DisposeRouteScratch()
@@ -1015,8 +941,14 @@ namespace Hecton8.Construction
             if (!array.IsCreated)
                 return;
 
+            NativeMemorySentinel.UnregisterNativeArray(array);
             array.Dispose();
             array = default;
+        }
+
+        private static void RegisterNativeArray<T>(NativeArray<T> array, string label) where T : struct
+        {
+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeMemoryLifetime);
         }
 
         private static int GetNextReservationId()

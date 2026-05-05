@@ -1,4 +1,7 @@
 # CIRCULAR_DEPS.md
+Date: 2026-04-28
+Status: REFERENCE
+
 
 **Date:** 2026-04-29  
 **Status:** PENDING VERIFICATION  

@@ -1,4 +1,7 @@
 # THIRD-PARTY POISON (ANTI-CORRUPTION LAYER AUDIT) — HECTON-8 Static Audit
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Generated:** 2026-04-27 | **Auditor:** Static Compliance Officer  
 **Mandate:** AGENTS.md — "Third-Party Asset Integrity" · "MapMagic: only via MapMagicBridge" · "Crest (ocean, URP)"

@@ -1,4 +1,7 @@
 # GOD OBJECT DECOMPOSITION AUDIT
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Audit Date:** 2026-01-XX (Initial) | **2026-04-28** (Verification Pass) | **2026-04-28** (Supreme Auditor)  
 **Scope:** `Player.prefab`, `Submarine.prefab`  

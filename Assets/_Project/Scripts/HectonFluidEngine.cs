@@ -209,6 +209,12 @@ namespace Hecton8.Physics
         [SerializeField, Min(0f)] private float giantWakeDepthFadeStart = 120f;
         [Tooltip("Depth span used to fade the wake from zero to full strength.")]
         [SerializeField, Min(1f)] private float giantWakeDepthFadeRange = 480f;
+        [Tooltip("Adds chaotic torque where Aegir wake and local abyssal currents shear across each other.")]
+        [SerializeField] private bool enableTidalShearZones = true;
+        [Tooltip("Torque scalar applied inside wake/current shear zones.")]
+        [SerializeField, Min(0f)] private float tidalShearTorqueStrength = 18f;
+        [Tooltip("Temporal frequency for deterministic shear-zone tumble.")]
+        [SerializeField, Min(0.01f)] private float tidalShearFrequency = 1.7f;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — PERFORMANCE
@@ -227,6 +233,7 @@ namespace Hecton8.Physics
         [SerializeField, Range(1, 8)] private int mediumLodDivisor = 2;
         [SerializeField, Range(1, 16)] private int farLodDivisor = 4;
         [SerializeField, Range(1, 32)] private int cullLodDivisor = 8;
+        [SerializeField] private bool enableBiomeBuoyancyInfluence = true;
 
         [Header("── Diagnostics ───────────────────────────────")]
         [SerializeField] private int _debugObjectCount;
@@ -816,6 +823,9 @@ namespace Hecton8.Physics
                 giantWakeCurrent = _resolvedGiantWakeCurrent,
                 giantWakeDepthFadeStart = giantWakeDepthFadeStart,
                 giantWakeDepthFadeRange = giantWakeDepthFadeRange,
+                enableTidalShearZones = enableTidalShearZones ? (byte)1 : (byte)0,
+                tidalShearTorqueStrength = tidalShearTorqueStrength,
+                tidalShearFrequency = tidalShearFrequency,
                 time             = Time.unscaledTime,
                 weatherStateMask = (uint)weatherSnapshot.StateMask,
                 weatherCurrentDirection = weatherSnapshot.CurrentMeta.GlobalBaseVector,
@@ -882,6 +892,10 @@ namespace Hecton8.Physics
         {
             using (_gatherDataProfilerMarker.Auto())
             {
+            WorldProceduralFieldSampler biomeFieldSampler = enableBiomeBuoyancyInfluence
+                ? WorldProceduralFieldSampler.ActiveRuntimeInstance
+                : null;
+
             for (int i = _objects.Count - 1; i >= 0; i--)
             {
                 BuoyancyObject obj = _objects[i];
@@ -910,6 +924,7 @@ namespace Hecton8.Physics
                 byte simplifiedSubmersion = 0;
                 float currentWeight = 1f;
                 float stabilityWeight = 1f;
+                float biomeBuoyancyMultiplier = 1f;
 
                 if (enableDistanceLod && obj.AllowDistanceLod && lodObserver != null)
                 {
@@ -970,6 +985,12 @@ namespace Hecton8.Physics
                 if (simulationMode != 2)
                     localCurrent = CurrentVolume.SampleAt(com);
 
+                if (biomeFieldSampler != null &&
+                    biomeFieldSampler.TrySampleBiomePhysicsInfluence(com, out float sampledBuoyancyMultiplier))
+                {
+                    biomeBuoyancyMultiplier = Mathf.Max(0.05f, sampledBuoyancyMultiplier);
+                }
+
                 _positions[i]  = new float3(com.x, com.y, com.z);
                 _velocities[i] = new float3(vel.x, vel.y, vel.z);
                 _angularVelocities[i] = new float3(angVel.x, angVel.y, angVel.z);
@@ -988,6 +1009,7 @@ namespace Hecton8.Physics
                         ? obj.LocalFluidDensityOverride
                         : waterDensity,
                     localCurrent = new float3(localCurrent.x, localCurrent.y, localCurrent.z),
+                    buoyancyMultiplier = biomeBuoyancyMultiplier,
                     isInAir = obj.ShouldSuppressFluid(waterLevel) ? (byte)1 : (byte)0,
                     simulationMode = simulationMode,
                     simplifiedSubmersion = simplifiedSubmersion,
@@ -1900,6 +1922,8 @@ namespace Hecton8.Physics
             giantWakeVerticalBias = Mathf.Clamp(giantWakeVerticalBias, -1f, 1f);
             if (giantWakeDepthFadeStart < 0f) giantWakeDepthFadeStart = 0f;
             if (giantWakeDepthFadeRange < 1f) giantWakeDepthFadeRange = 1f;
+            if (tidalShearTorqueStrength < 0f) tidalShearTorqueStrength = 0f;
+            if (tidalShearFrequency < 0.01f) tidalShearFrequency = 0.01f;
             if (nearLodDistance < 1f) nearLodDistance = 1f;
             if (mediumLodDistance < nearLodDistance) mediumLodDistance = nearLodDistance;
             if (farLodDistance < mediumLodDistance) farLodDistance = mediumLodDistance;
@@ -2006,6 +2030,7 @@ namespace Hecton8.Physics
         public float surfaceStability;
         public float localFluidDensity;
         public float angularDragMultiplier;
+        public float buoyancyMultiplier;
         public float3 localCurrent;
 
         /// <summary>
@@ -2148,6 +2173,9 @@ namespace Hecton8.Physics
         public float3 giantWakeCurrent;
         public float  giantWakeDepthFadeStart;
         public float  giantWakeDepthFadeRange;
+        public byte   enableTidalShearZones;
+        public float  tidalShearTorqueStrength;
+        public float  tidalShearFrequency;
         public float  time;
         public uint   weatherStateMask;
         public float3 weatherCurrentDirection;
@@ -2228,6 +2256,8 @@ namespace Hecton8.Physics
                 buoyancyMagnitude = math.max(0f, gpuBuoyancyForcesY[i]);
             }
 
+            buoyancyMagnitude *= math.max(0.05f, p.buoyancyMultiplier);
+
             float3 buoyancyForce = new float3(0f, buoyancyMagnitude, 0f);
 
             // ══════════════════════════════════════════════
@@ -2239,11 +2269,14 @@ namespace Hecton8.Physics
             // ══════════════════════════════════════════════
             //  3. ПОДВОДНОЕ ТЕЧЕНИЕ (Current)
             // ══════════════════════════════════════════════
+            float3 standardCurrent = baseCurrentForce + p.localCurrent;
+            standardCurrent += weatherCurrentDirection * math.max(0f, weatherCurrentScale) * math.max(0f, weatherBlend);
             float3 sampledCurrent = baseCurrentForce + p.localCurrent;
             float giantWakeDepth01 = math.saturate(
                 (depthBelowSurface - math.max(0f, giantWakeDepthFadeStart)) /
                 math.max(0.001f, giantWakeDepthFadeRange));
-            sampledCurrent += giantWakeCurrent * giantWakeDepth01;
+            float3 resolvedGiantWakeCurrent = giantWakeCurrent * giantWakeDepth01;
+            sampledCurrent += resolvedGiantWakeCurrent;
 
             if (enablePhantomCurrent != 0 && p.currentResponse > 0.0001f)
             {
@@ -2317,9 +2350,30 @@ namespace Hecton8.Physics
                                            subRatio * math.max(0f, p.currentResponse) * 3.25f);
             float maxGyroscopicFlowTorque = JobGyroscopicFlowMaxTorquePerKg * math.max(0.01f, p.mass);
             gyroscopicFlowTorque = ClampVectorMagnitude(gyroscopicFlowTorque, maxGyroscopicFlowTorque);
+            float3 shearTorque = float3.zero;
+            if (enableTidalShearZones != 0 && tidalShearTorqueStrength > 0f && p.currentResponse > 0.0001f)
+            {
+                float standardSpeedSq = math.lengthsq(standardCurrent);
+                float wakeSpeedSq = math.lengthsq(resolvedGiantWakeCurrent);
+                if (standardSpeedSq > 0.0001f && wakeSpeedSq > 0.0001f)
+                {
+                    float3 standardAxis = standardCurrent * math.rsqrt(standardSpeedSq);
+                    float3 wakeAxis = resolvedGiantWakeCurrent * math.rsqrt(wakeSpeedSq);
+                    float crossMagnitude = math.length(math.cross(standardAxis, wakeAxis));
+                    float opposition = math.saturate(-math.dot(standardAxis, wakeAxis));
+                    float shear01 = math.saturate((crossMagnitude + opposition) * math.sqrt(math.min(standardSpeedSq, wakeSpeedSq)) * 0.85f);
+                    float phase = math.dot(pos, new float3(0.071f, 0.113f, 0.097f)) + time * math.max(0.01f, tidalShearFrequency);
+                    float turbulence = math.sin(phase) * math.cos(phase * 1.731f + 2.17f);
+                    float3 shearAxis = math.normalizesafe(math.cross(standardAxis, wakeAxis), up);
+                    shearTorque = shearAxis *
+                                  (turbulence * shear01 * math.max(0f, tidalShearTorqueStrength) *
+                                   volumeLever * subRatio * math.max(0f, p.currentResponse));
+                    shearTorque = ClampVectorMagnitude(shearTorque, maxGyroscopicFlowTorque);
+                }
+            }
 
             resultForces[i] = ResolveFiniteFloat3OrZero(buoyancyForce + dragForce + currentF + dampingVec);
-            resultTorques[i] = ResolveFiniteFloat3OrZero(angularDragTorque + stabilityTorque + gyroscopicFlowTorque);
+            resultTorques[i] = ResolveFiniteFloat3OrZero(angularDragTorque + stabilityTorque + gyroscopicFlowTorque + shearTorque);
         }
 
         private static float3 ClampVectorMagnitude(float3 value, float maxMagnitude)

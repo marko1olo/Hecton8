@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Hecton.Localization;
 using Hecton8.Core;
+using Hecton8.Environment;
 using Hecton8.Gameplay;
 using Hecton8.World;
 using Unity.Burst;
@@ -650,6 +651,7 @@ namespace Hecton8.Physics
         HasTorque = 1 << 1,
         WakeBody = 1 << 2,
         ApplyAtPosition = 1 << 3,
+        BiomeBuoyancy = 1 << 4,
     }
 
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -885,7 +887,7 @@ namespace Hecton8.Physics
             return QueueForce(body, force, mode, ForcePacketPriority.Critical, wake);
         }
 
-        internal bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, ForcePacketPriority priority, bool wake = true)
+        internal bool QueueForce(Rigidbody body, Vector3 force, ForceMode mode, ForcePacketPriority priority, bool wake = true, ForcePacketFlags extraFlags = ForcePacketFlags.None)
         {
             if (!TrySanitizeVector(force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
                 sanitizedForce.sqrMagnitude <= MinMagnitudeSq ||
@@ -906,7 +908,7 @@ namespace Hecton8.Physics
                 Torque = Vector3.zero,
                 PointOffset = Vector3.zero,
                 Mode = mode,
-                Flags = (byte)(ForcePacketFlags.HasForce | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                Flags = (byte)(ForcePacketFlags.HasForce | extraFlags | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
                 Priority = priority,
                 RigidbodyIndex = rigidbodyIndex
             };
@@ -925,7 +927,8 @@ namespace Hecton8.Physics
             Vector3 worldPosition,
             ForceMode mode,
             ForcePacketPriority priority,
-            bool wake = true)
+            bool wake = true,
+            ForcePacketFlags extraFlags = ForcePacketFlags.None)
         {
             if (!TrySanitizeVector(force, NonFiniteForceLog, out Vector3 sanitizedForce) ||
                 sanitizedForce.sqrMagnitude <= MinMagnitudeSq ||
@@ -954,7 +957,7 @@ namespace Hecton8.Physics
                 Torque = Vector3.zero,
                 PointOffset = pointOffset,
                 Mode = mode,
-                Flags = (byte)(ForcePacketFlags.HasForce | ForcePacketFlags.ApplyAtPosition | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
+                Flags = (byte)(ForcePacketFlags.HasForce | ForcePacketFlags.ApplyAtPosition | extraFlags | (wake ? ForcePacketFlags.WakeBody : ForcePacketFlags.None)),
                 Priority = priority,
                 RigidbodyIndex = rigidbodyIndex
             };
@@ -1343,6 +1346,7 @@ namespace Hecton8.Physics
                     {
                         if (!TrySanitizeVector(packet.Force, NonFiniteForceLog, out Vector3 sanitizedForce))
                             sanitizedForce = Vector3.zero;
+                        sanitizedForce = ApplyActiveBiomeBuoyancyGravityMultiplier(sanitizedForce, packet.Mode, flags);
 
                         if ((flags & ForcePacketFlags.ApplyAtPosition) != 0)
                         {
@@ -1385,6 +1389,31 @@ namespace Hecton8.Physics
 
             return VehicleMotor.TryResolveForBody(body, out VehicleMotor vehicleMotor) &&
                    vehicleMotor.WouldAmbientForceExtendEntanglement(packet.Force, packet.Mode, math.max(Time.fixedDeltaTime, 0.0001f));
+        }
+
+        internal static Vector3 ApplyActiveBiomeBuoyancyGravityMultiplier(Vector3 force, ForceMode mode, ForcePacketFlags flags)
+        {
+            if ((flags & ForcePacketFlags.BiomeBuoyancy) == 0 ||
+                mode != ForceMode.Acceleration ||
+                !(force.y > 0f))
+            {
+                return force;
+            }
+
+            float multiplier = ResolveActiveBiomeGravityMultiplier();
+            if (!(multiplier > 0f) || !float.IsFinite(multiplier) || Mathf.Abs(multiplier - 1f) <= 0.0001f)
+                return force;
+
+            return new Vector3(force.x, force.y * multiplier, force.z);
+        }
+
+        private static float ResolveActiveBiomeGravityMultiplier()
+        {
+            HectonBiomeMatrixProfile profile = BiomeMatrixDirector.ActiveRuntimeInstance != null
+                ? BiomeMatrixDirector.ActiveRuntimeInstance.CurrentProfile
+                : null;
+
+            return profile != null ? profile.GravityMultiplier : 1f;
         }
 
         private void ApplyDepressurizationVortices(float fixedDeltaTime)
@@ -2126,11 +2155,13 @@ namespace Hecton8.Physics
         public static bool QueueAmbientForce(Rigidbody body, Vector3 force, ForceMode mode, bool wake = true)
         {
             Vector3 safeForce = ClampUpwardAcceleration(force, mode);
-            if (TryRouteToPlayerMotor(body, safeForce, mode))
+            ForcePacketFlags extraFlags = ResolveBiomeBuoyancyFlags(safeForce, mode);
+            Vector3 routeForce = PhysicsApplySystem.ApplyActiveBiomeBuoyancyGravityMultiplier(safeForce, mode, extraFlags);
+            if (TryRouteToPlayerMotor(body, routeForce, mode))
                 return true;
 
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
-            return system.QueueForce(body, safeForce, mode, ForcePacketPriority.Ambient, wake);
+            return system.QueueForce(body, safeForce, mode, ForcePacketPriority.Ambient, wake, extraFlags);
         }
 
         /// <summary>
@@ -2158,11 +2189,13 @@ namespace Hecton8.Physics
         public static bool QueueAmbientForceAtPosition(Rigidbody body, Vector3 force, Vector3 worldPosition, ForceMode mode, bool wake = true)
         {
             Vector3 safeForce = ClampUpwardAcceleration(force, mode);
-            if (TryRouteToPlayerMotorAtPosition(body, safeForce, worldPosition))
+            ForcePacketFlags extraFlags = ResolveBiomeBuoyancyFlags(safeForce, mode);
+            Vector3 routeForce = PhysicsApplySystem.ApplyActiveBiomeBuoyancyGravityMultiplier(safeForce, mode, extraFlags);
+            if (TryRouteToPlayerMotorAtPosition(body, routeForce, worldPosition))
                 return true;
 
             PhysicsApplySystem system = PhysicsApplySystem.EnsureRuntimeInstance();
-            return system.QueueForceAtPosition(body, safeForce, worldPosition, mode, ForcePacketPriority.Ambient, wake);
+            return system.QueueForceAtPosition(body, safeForce, worldPosition, mode, ForcePacketPriority.Ambient, wake, extraFlags);
         }
 
         /// <summary>
@@ -2269,6 +2302,13 @@ namespace Hecton8.Physics
             }
 
             return false;
+        }
+
+        private static ForcePacketFlags ResolveBiomeBuoyancyFlags(Vector3 force, ForceMode mode)
+        {
+            return mode == ForceMode.Acceleration && force.y > 0f
+                ? ForcePacketFlags.BiomeBuoyancy
+                : ForcePacketFlags.None;
         }
 
         private static Vector3 ClampUpwardAcceleration(Vector3 force, ForceMode mode)

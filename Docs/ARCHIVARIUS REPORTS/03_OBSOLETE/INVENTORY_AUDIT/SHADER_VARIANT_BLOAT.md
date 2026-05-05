@@ -1,4 +1,7 @@
 # SHADER VARIANT BLOAT — HECTON-8 Static Audit
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Generated:** 2026-04-27 | **Auditor:** Static Compliance Officer  
 **Mandates:** REND_URP_Graphics_HotPath_Optimization_HLOD.txt (§3), AGENTS.md (Shader Variant rules)

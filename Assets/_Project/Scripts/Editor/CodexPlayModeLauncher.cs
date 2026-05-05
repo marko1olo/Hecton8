@@ -8,6 +8,9 @@ using UnityEditor;
 using UnityEditor.Compilation;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
 using Debug = UnityEngine.Debug;
@@ -54,6 +57,12 @@ namespace Hecton8.Editor
         private const string BeeKilledKey = "H8.CodexPlayModeLauncher.BeeKilled";
         private const string LoadedScenePathKey = "H8.CodexPlayModeLauncher.LoadedScenePath";
         private const string DirtySceneReloadedKey = "H8.CodexPlayModeLauncher.DirtySceneReloaded";
+        private const string UiEventSystemPresentKey = "H8.CodexPlayModeLauncher.UiEventSystemPresent";
+        private const string UiInputModulePresentKey = "H8.CodexPlayModeLauncher.UiInputModulePresent";
+        private const string UiInputModuleEnabledKey = "H8.CodexPlayModeLauncher.UiInputModuleEnabled";
+        private const string UiInputActionsBoundKey = "H8.CodexPlayModeLauncher.UiInputActionsBound";
+        private const string UiInputActionsEnabledKey = "H8.CodexPlayModeLauncher.UiInputActionsEnabled";
+        private const string UiSelectedGameObjectKey = "H8.CodexPlayModeLauncher.UiSelectedGameObject";
         private const string MetricsPathKey = "H8.CodexPlayModeLauncher.MetricsPath";
         private const string MainMenuSceneName = "01_MAIN_MENU";
         private const double RequestedPlaySeconds = 15.0;
@@ -220,6 +229,7 @@ namespace Hecton8.Editor
             SessionState.SetInt(EndGc0Key, GC.CollectionCount(0));
             SessionState.SetInt(EndFrameKey, Time.frameCount);
             SessionState.SetString(LoadedScenePathKey, ResolveObservedScenePath());
+            StoreUiInputMetrics();
             UpdatePeakAllocatedMemory();
             UpdateMaxGraphicsDriverMemory();
             StoreFrameMetrics();
@@ -285,6 +295,64 @@ namespace Hecton8.Editor
                 worstDeltaTotal += _frameDeltaSamples[i];
 
             return worstDeltaTotal > 0d ? worstCount / worstDeltaTotal : 0d;
+        }
+
+        private static void StoreUiInputMetrics()
+        {
+            bool eventSystemPresent = false;
+            bool inputModulePresent = false;
+            bool inputModuleEnabled = false;
+            bool inputActionsBound = false;
+            bool inputActionsEnabled = false;
+            string selectedGameObject = string.Empty;
+
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem != null)
+            {
+                eventSystemPresent = true;
+                GameObject selected = eventSystem.currentSelectedGameObject;
+                if (selected != null)
+                    selectedGameObject = selected.name;
+
+                InputSystemUIInputModule inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+                if (inputModule != null)
+                {
+                    inputModulePresent = true;
+                    inputModuleEnabled = inputModule.enabled;
+                    inputActionsBound = HasUsableUiActionReference(inputModule.point) &&
+                                        HasUsableUiActionReference(inputModule.leftClick) &&
+                                        HasUsableUiActionReference(inputModule.move) &&
+                                        HasUsableUiActionReference(inputModule.submit) &&
+                                        HasUsableUiActionReference(inputModule.cancel);
+                    inputActionsEnabled = inputActionsBound &&
+                                          IsUiActionReferenceEnabled(inputModule.point) &&
+                                          IsUiActionReferenceEnabled(inputModule.leftClick) &&
+                                          IsUiActionReferenceEnabled(inputModule.move) &&
+                                          IsUiActionReferenceEnabled(inputModule.submit) &&
+                                          IsUiActionReferenceEnabled(inputModule.cancel);
+                }
+            }
+
+            SessionState.SetBool(UiEventSystemPresentKey, eventSystemPresent);
+            SessionState.SetBool(UiInputModulePresentKey, inputModulePresent);
+            SessionState.SetBool(UiInputModuleEnabledKey, inputModuleEnabled);
+            SessionState.SetBool(UiInputActionsBoundKey, inputActionsBound);
+            SessionState.SetBool(UiInputActionsEnabledKey, inputActionsEnabled);
+            SessionState.SetString(UiSelectedGameObjectKey, selectedGameObject);
+        }
+
+        private static bool HasUsableUiActionReference(InputActionReference reference)
+        {
+            return reference != null &&
+                   reference.action != null &&
+                   reference.action.bindings.Count > 0;
+        }
+
+        private static bool IsUiActionReferenceEnabled(InputActionReference reference)
+        {
+            return reference != null &&
+                   reference.action != null &&
+                   reference.action.enabled;
         }
 
         private static void ResetFrameSamples()
@@ -500,6 +568,12 @@ namespace Hecton8.Editor
             AppendJsonProperty(builder, "observedPlaySeconds", observedPlaySeconds, comma: true);
             AppendJsonProperty(builder, "loadedScenePath", SessionState.GetString(LoadedScenePathKey, string.Empty), comma: true);
             AppendJsonProperty(builder, "dirtySceneReloadedFromDisk", SessionState.GetBool(DirtySceneReloadedKey, false), comma: true);
+            AppendJsonProperty(builder, "uiEventSystemPresent", SessionState.GetBool(UiEventSystemPresentKey, false), comma: true);
+            AppendJsonProperty(builder, "uiInputModulePresent", SessionState.GetBool(UiInputModulePresentKey, false), comma: true);
+            AppendJsonProperty(builder, "uiInputModuleEnabled", SessionState.GetBool(UiInputModuleEnabledKey, false), comma: true);
+            AppendJsonProperty(builder, "uiInputActionsBound", SessionState.GetBool(UiInputActionsBoundKey, false), comma: true);
+            AppendJsonProperty(builder, "uiInputActionsEnabled", SessionState.GetBool(UiInputActionsEnabledKey, false), comma: true);
+            AppendJsonProperty(builder, "uiSelectedGameObject", SessionState.GetString(UiSelectedGameObjectKey, string.Empty), comma: true);
             AppendJsonProperty(builder, "beeBackendsKilled", SessionState.GetInt(BeeKilledKey, 0), comma: true);
             AppendJsonProperty(builder, "compileErrorCount", SessionState.GetInt(CompileErrorsKey, 0), comma: true);
             AppendJsonProperty(builder, "compileWarningCount", SessionState.GetInt(CompileWarningsKey, 0), comma: true);
@@ -647,6 +721,12 @@ namespace Hecton8.Editor
             SessionState.SetInt(BeeKilledKey, 0);
             SessionState.SetString(LoadedScenePathKey, string.Empty);
             SessionState.SetBool(DirtySceneReloadedKey, false);
+            SessionState.SetBool(UiEventSystemPresentKey, false);
+            SessionState.SetBool(UiInputModulePresentKey, false);
+            SessionState.SetBool(UiInputModuleEnabledKey, false);
+            SessionState.SetBool(UiInputActionsBoundKey, false);
+            SessionState.SetBool(UiInputActionsEnabledKey, false);
+            SessionState.SetString(UiSelectedGameObjectKey, string.Empty);
             SessionState.SetString(MetricsPathKey, ResolveMetricsPath());
             ResetFrameSamples();
         }

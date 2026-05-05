@@ -1,4 +1,5 @@
 # HECTON-8 Audio DSP Pipeline
+Date: `2026-05-04`
 
 Status: REFERENCE
 Verification: PENDING VERIFICATION

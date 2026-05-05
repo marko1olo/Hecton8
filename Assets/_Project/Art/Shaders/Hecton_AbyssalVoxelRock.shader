@@ -9,6 +9,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
         _Instance_Color ("Instance Color", Color) = (1, 1, 1, 1)
         _Tiling ("Tiling", Range(0.01, 4)) = 0.2
+        _TriplanarBlendSharpness ("Triplanar Blend Sharpness", Range(1, 8)) = 4
         _Smoothness ("Smoothness", Range(0, 1)) = 0.15
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {}
         [NoScaleOffset] _NormalMap ("Normal Map", 2D) = "bump" {}
@@ -27,6 +28,14 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _CurvatureEdgeWearStrength ("Curvature Edge Wear Strength", Range(0, 1)) = 0.24
         _CurvatureCavityDarkenStrength ("Curvature Cavity Darken Strength", Range(0, 1)) = 0.28
         _CurvatureContrast ("Curvature Contrast", Range(0.5, 4)) = 1.35
+        _ProceduralDirtAge ("Procedural Dirt Age", Range(0, 1)) = 0.65
+        _SiltStrength ("Procedural Silt Strength", Range(0, 1)) = 0.42
+        _RustStrength ("Procedural Rust Strength", Range(0, 1)) = 0.26
+        _SiltTint ("Procedural Silt Tint", Color) = (0.31, 0.30, 0.25, 1)
+        _RustTint ("Procedural Rust Tint", Color) = (0.47, 0.16, 0.06, 1)
+        _ChunkDissolveFade ("Chunk Dissolve Fade", Range(0, 1)) = 1
+        _ChunkDissolveGlitchStrength ("Chunk Dissolve Glitch Strength", Range(0, 1)) = 0.18
+        _ChunkDissolvePhosphorTint ("Chunk Dissolve Phosphor Tint", Color) = (0.04, 0.82, 0.18, 1)
         _FreshCutColorBoost ("Fresh Cut Color Boost", Range(1, 2)) = 1.18
         _FreshCutNormalBoost ("Fresh Cut Normal Boost", Range(1, 3)) = 1.45
         _LocalCausticStrength ("Local Caustic Strength", Range(0, 1)) = 0.22
@@ -51,6 +60,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
         #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Shadows.hlsl"
+        #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/LODCrossFade.hlsl"
         #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 
         CBUFFER_START(UnityPerMaterial)
@@ -60,7 +70,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float4 _CutScarWarmColor;
             float4 _CutScarCharColor;
             float4 _CurvatureWearTint;
+            float4 _SiltTint;
+            float4 _RustTint;
+            float4 _ChunkDissolvePhosphorTint;
             float _Tiling;
+            float _TriplanarBlendSharpness;
             float _Smoothness;
             float _SkirtBlendContrast;
             float _CutScarEmission;
@@ -71,6 +85,11 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _CurvatureEdgeWearStrength;
             float _CurvatureCavityDarkenStrength;
             float _CurvatureContrast;
+            float _ProceduralDirtAge;
+            float _SiltStrength;
+            float _RustStrength;
+            float _ChunkDissolveFade;
+            float _ChunkDissolveGlitchStrength;
             float _FreshCutColorBoost;
             float _FreshCutNormalBoost;
             float _LocalCausticStrength;
@@ -222,8 +241,36 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         half3 ComputeTriplanarWeights(half3 normalWS)
         {
             half3 weights = saturate(abs(normalWS));
+            weights = pow(weights, max((half)_TriplanarBlendSharpness, 1.0h));
             half weightSum = max(weights.x + weights.y + weights.z, 0.0001h);
             return weights / weightSum;
+        }
+
+        void ApplyChunkDissolveFade(float4 positionCS)
+        {
+            half fade = saturate((half)_ChunkDissolveFade);
+            if (fade >= 0.999h)
+                return;
+
+            clip(fade - ResolveDitherNoise(positionCS.xy));
+        }
+
+        half ApplyChunkDissolveMalfunction(float4 positionCS, float3 positionWS, inout half3 albedo, inout half smoothness)
+        {
+            half reveal = saturate(1.0h - (half)_ChunkDissolveFade);
+            half strength = saturate((half)_ChunkDissolveGlitchStrength);
+            if (reveal <= 0.0001h || strength <= 0.0001h)
+                return 0.0h;
+
+            float scanline = frac(positionCS.y * 0.125 + _Time.y * 17.0);
+            half scanPulse = smoothstep(0.84h, 0.98h, (half)scanline);
+            half staticNoise = (half)Hash31(floor(positionWS * 5.0 + _Time.y * 3.0));
+            half edgeNoise = smoothstep(0.52h, 0.93h, staticNoise);
+            half malfunction = saturate((scanPulse * 0.55h + edgeNoise * 0.45h) * reveal * strength);
+
+            albedo = lerp(albedo, (half3)_ChunkDissolvePhosphorTint.rgb, malfunction * 0.18h);
+            smoothness = lerp(smoothness, 0.72h, malfunction * 0.5h);
+            return malfunction;
         }
 
         half4 SampleTriplanarColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 weights)
@@ -530,9 +577,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             #pragma multi_compile _ _ADDITIONAL_LIGHTS
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile _ _ADDITIONAL_LIGHT_SHADOWS
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
 
             half4 Frag(SurfaceVaryings input) : SV_Target
             {
+                LODFadeCrossFade(input.positionCS);
+                ApplyChunkDissolveFade(input.positionCS);
                 half skirtCoverage = ResolveSkirtCoverageMask(input.skirtAlpha);
                 half3 baseNormalWS = SafeNormalize3(input.normalWS);
                 half3 triplanarWeights = ComputeTriplanarWeights(baseNormalWS);
@@ -574,8 +624,23 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half ambientOcclusion = saturate(maskSample.g * input.bakedAmbientOcclusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
                 half localCausticMask = ResolveLocalLightCaustic(samplePositionWS, normalWS, input.positionCS);
                 HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
+                HectonCoreLitApplyProceduralRustSilt(
+                    samplePositionWS,
+                    normalWS,
+                    triplanarNormalWS,
+                    convexMask,
+                    (half)_ProceduralDirtAge,
+                    (half)_SiltStrength,
+                    (half)_RustStrength,
+                    (half3)_SiltTint.rgb,
+                    (half3)_RustTint.rgb,
+                    albedo,
+                    metallic,
+                    smoothness);
+                half dissolveMalfunction = ApplyChunkDissolveMalfunction(input.positionCS, samplePositionWS, albedo, smoothness);
 
                 half3 litColor = EvaluateLighting(input.positionWS, normalWS, SafeNormalize3(input.viewDirWS), albedo, metallic, smoothness, ambientOcclusion, localCausticMask);
+                litColor += (half3)_ChunkDissolvePhosphorTint.rgb * dissolveMalfunction * 0.16h;
                 half thermalEmission = _CutScarEmission * recentHeatMask * lerp(0.22h, 1.0h, saturate(1.0h - recentHeatAge01));
                 half3 emission = (_CutScarWarmColor.rgb * (_CutScarEmission * scarMask * 0.12h)) + (thermalColor * thermalEmission);
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
@@ -597,9 +662,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             HLSLPROGRAM
             #pragma vertex ShadowVert
             #pragma fragment ShadowFrag
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
 
             half4 ShadowFrag(ShadowVaryings input) : SV_Target
             {
+                LODFadeCrossFade(input.positionCS);
+                ApplyChunkDissolveFade(input.positionCS);
                 half scarMask = pow(saturate(max(EvaluateGlobalCutMask(input.positionWS), EvaluateDamageVolumeMask(input.positionWS))), max(_CutScarSharpness, 0.5h));
                 ResolveShadowCoverage(input.skirtAlpha, input.positionCS.xy, scarMask, input.positionWS);
                 return 0.0h;
@@ -626,9 +694,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             HLSLPROGRAM
             #pragma vertex DepthVert
             #pragma fragment DepthFrag
+            #pragma multi_compile _ LOD_FADE_CROSSFADE
 
             half4 DepthFrag(ClipVaryings input) : SV_Target
             {
+                LODFadeCrossFade(input.positionCS);
+                ApplyChunkDissolveFade(input.positionCS);
                 ResolveSkirtCoverage(input.skirtAlpha, input.positionCS.xy);
                 return 0.0h;
             }

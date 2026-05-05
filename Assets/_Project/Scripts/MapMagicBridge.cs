@@ -634,6 +634,68 @@ namespace Hecton8.Core
             return TryGetNormal(runtimePosition.x, runtimePosition.z, sampleDistance, out normal);
         }
 
+        public bool TryGetTerrainSplatColorAUP(Vector3 absoluteUniversePosition, out Color color, out float confidence)
+        {
+            Vector3 runtimePosition = HectonFloatingOrigin.ToRuntimePosition(absoluteUniversePosition);
+            return TryGetTerrainSplatColor(runtimePosition.x, runtimePosition.z, out color, out confidence);
+        }
+
+        public bool TryGetTerrainSplatColor(float x, float z, out Color color, out float confidence)
+        {
+            color = Color.clear;
+            confidence = 0f;
+
+            if (mapMagicObject == null)
+                return false;
+
+            Terrain terrain = FindTerrainAt(x, z);
+            if (terrain == null || terrain.terrainData == null)
+                return false;
+
+            TerrainData terrainData = terrain.terrainData;
+            int totalLayers = terrainData.alphamapLayers;
+            int textureCount = terrainData.alphamapTextureCount;
+            if (totalLayers <= 0 || textureCount <= 0)
+                return false;
+
+            if (!TryGetCachedBiomeAlphaTextures(terrainData, textureCount, out Texture2D[] alphaTextures))
+                return false;
+
+            Vector3 terrainPosition = terrain.transform.position;
+            Vector3 terrainSize = terrainData.size;
+            if (terrainSize.x <= 0f || terrainSize.z <= 0f)
+                return false;
+
+            float u = math.saturate((x - terrainPosition.x) / terrainSize.x);
+            float v = math.saturate((z - terrainPosition.z) / terrainSize.z);
+            TerrainLayer[] terrainLayers = terrainData.terrainLayers;
+            float3 accumulated = float3.zero;
+            float totalWeight = 0f;
+            float maxWeight = 0f;
+
+            for (int textureIndex = 0; textureIndex < textureCount; textureIndex++)
+            {
+                Texture2D alphaTexture = alphaTextures[textureIndex];
+                if (alphaTexture == null)
+                    continue;
+
+                float4 weights = SampleAlphaTextureBilinear01(alphaTexture, u, v);
+                int baseLayer = textureIndex * 4;
+                AccumulateLayerColor(baseLayer, weights.x, totalLayers, terrainLayers, ref accumulated, ref totalWeight, ref maxWeight);
+                AccumulateLayerColor(baseLayer + 1, weights.y, totalLayers, terrainLayers, ref accumulated, ref totalWeight, ref maxWeight);
+                AccumulateLayerColor(baseLayer + 2, weights.z, totalLayers, terrainLayers, ref accumulated, ref totalWeight, ref maxWeight);
+                AccumulateLayerColor(baseLayer + 3, weights.w, totalLayers, terrainLayers, ref accumulated, ref totalWeight, ref maxWeight);
+            }
+
+            if (totalWeight <= 0.0001f)
+                return false;
+
+            float3 resolved = math.saturate(accumulated / totalWeight);
+            color = new Color(resolved.x, resolved.y, resolved.z, math.saturate(maxWeight));
+            confidence = math.saturate(totalWeight);
+            return true;
+        }
+
         /// <summary>
         /// Returns MapMagic terrain height for an absolute-universe position.
         /// Fallback is returned when no terrain tile can be resolved.
@@ -954,6 +1016,62 @@ namespace Hecton8.Core
 
             // COLD ALLOC: Texture2D[safeCount] - cached terrain alpha texture handles for biome sampling - owner: MapMagicBridge
             _cachedBiomeAlphaTextures = new Texture2D[safeCount];
+        }
+
+        private static void AccumulateLayerColor(
+            int layerIndex,
+            float weight,
+            int totalLayers,
+            TerrainLayer[] terrainLayers,
+            ref float3 accumulated,
+            ref float totalWeight,
+            ref float maxWeight)
+        {
+            if (layerIndex < 0 || layerIndex >= totalLayers || weight <= 0.0001f)
+                return;
+
+            float3 layerColor = ResolveTerrainLayerColor(layerIndex, terrainLayers);
+            accumulated += layerColor * weight;
+            totalWeight += weight;
+            if (weight > maxWeight)
+                maxWeight = weight;
+        }
+
+        private static float3 ResolveTerrainLayerColor(int layerIndex, TerrainLayer[] terrainLayers)
+        {
+            if (terrainLayers != null && layerIndex >= 0 && layerIndex < terrainLayers.Length)
+            {
+                TerrainLayer layer = terrainLayers[layerIndex];
+                if (layer != null)
+                {
+                    Vector4 min = layer.diffuseRemapMin;
+                    Vector4 max = layer.diffuseRemapMax;
+                    float3 remapColor = math.saturate(new float3(
+                        (min.x + max.x) * 0.5f,
+                        (min.y + max.y) * 0.5f,
+                        (min.z + max.z) * 0.5f));
+
+                    if (math.lengthsq(remapColor) > 0.0001f)
+                        return remapColor;
+                }
+            }
+
+            return ResolveFallbackTerrainLayerColor(layerIndex);
+        }
+
+        private static float3 ResolveFallbackTerrainLayerColor(int layerIndex)
+        {
+            switch (math.abs(layerIndex) % 8)
+            {
+                case 0: return new float3(0.46f, 0.43f, 0.35f);
+                case 1: return new float3(0.28f, 0.34f, 0.30f);
+                case 2: return new float3(0.34f, 0.38f, 0.42f);
+                case 3: return new float3(0.18f, 0.22f, 0.24f);
+                case 4: return new float3(0.50f, 0.39f, 0.28f);
+                case 5: return new float3(0.24f, 0.30f, 0.36f);
+                case 6: return new float3(0.38f, 0.47f, 0.44f);
+                default: return new float3(0.32f, 0.30f, 0.27f);
+            }
         }
 
         private static float4 SampleAlphaTextureBilinear01(Texture2D texture, float u, float v)

@@ -1,4 +1,7 @@
 # MATH API WARNINGS — UNITY 6 MATH INQUISITION
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 **Audit Date:** 2026-01-XX (Initial) | **2026-04-28** (Exhaustive Verification Pass)  
 **Scope:** `Assets/_Project/Scripts/` (Non-Editor only)  

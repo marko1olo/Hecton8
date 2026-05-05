@@ -113,6 +113,15 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                 float3 emissive = screenSample.rgb * _Color.rgb * lerp(0.45, 1.0, powerLevel);
                 float alpha = max(screenSample.a, rgbAlpha) * _Color.a;
 
+                if (powerLevel < 0.1)
+                {
+                    float bayer = Bayer4x4(floor(input.positionCS.xy));
+                    float luminance = dot(screenSample.rgb, float3(0.2126, 0.7152, 0.0722));
+                    float phosphorBit = step(0.12 + bayer * 0.55, luminance * 2.2);
+                    emissive = float3(0.018, 0.84, 0.20) * phosphorBit * lerp(0.70, 1.0, bayer);
+                    alpha = max(alpha * 0.32, phosphorBit * max(screenSample.a, rgbAlpha) * _Color.a);
+                }
+
                 if (_OcclusionActive > 0.5 && alpha > 0.001)
                 {
                     float2 screenUV = input.positionCS.xy / _ScaledScreenParams.xy;

@@ -70,6 +70,9 @@ namespace Hecton8.Core
         private static readonly WaitCallback _backgroundLiveTelemetryCallback = ExecuteBackgroundLiveTelemetryWrite;
         private static CrashTelemetryBuffer _instance;
         private static int _runtimeFaultFlags;
+        private static int _pendingAudioOverflowDropCount;
+        private static int _pendingAudioOverflowBufferedFrames;
+        private static int _pendingAudioOverflowWritableFrames;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void RegisterBootstrapTelemetryReporter()
@@ -439,11 +442,9 @@ namespace Hecton8.Core
         public static void ReportAudioOverflowDropWarning(int overflowDropCount, int bufferedFrames, int writableFrames)
         {
             OrRuntimeFaultFlags((int)ErrorBits.AudioOverflowDropWarning);
-            CrashTelemetryBuffer instance = _instance;
-            if (instance == null || !instance._ringBuffer.IsCreated)
-                return;
-
-            instance.WriteAudioOverflowDropTelemetry(overflowDropCount, bufferedFrames, writableFrames);
+            Volatile.Write(ref _pendingAudioOverflowBufferedFrames, math.max(0, bufferedFrames));
+            Volatile.Write(ref _pendingAudioOverflowWritableFrames, math.max(0, writableFrames));
+            Interlocked.Exchange(ref _pendingAudioOverflowDropCount, math.max(1, overflowDropCount));
         }
 
         /// <summary>
@@ -666,6 +667,14 @@ namespace Hecton8.Core
                     errorFlags |= threadedFaultFlags;
                 if (runtimeFaultFlags != 0u)
                     errorFlags |= runtimeFaultFlags;
+                int audioOverflowDropCount = Interlocked.Exchange(ref _pendingAudioOverflowDropCount, 0);
+                if (audioOverflowDropCount > 0)
+                {
+                    WriteAudioOverflowDropTelemetry(
+                        audioOverflowDropCount,
+                        Volatile.Read(ref _pendingAudioOverflowBufferedFrames),
+                        Volatile.Read(ref _pendingAudioOverflowWritableFrames));
+                }
 
                 uint frameIndex = unchecked((uint)Time.frameCount);
                 int writeIndex = (int)(frameIndex % RingCapacity);
@@ -850,7 +859,7 @@ namespace Hecton8.Core
         private void WriteAudioOverflowDropTelemetry(int overflowDropCount, int bufferedFrames, int writableFrames)
         {
             uint frameIndex = unchecked((uint)Time.frameCount);
-            int writeIndex = (int)(frameIndex % RingCapacity);
+            int writeIndex = (int)((frameIndex + 1u) % RingCapacity);
             OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
 
             DebugLogEntry entry = default;

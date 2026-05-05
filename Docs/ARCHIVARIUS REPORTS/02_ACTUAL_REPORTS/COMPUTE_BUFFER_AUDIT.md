@@ -1,4 +1,7 @@
 # COMPUTE BUFFER LIFECYCLE AUDIT — HECTON-8 First-Party Code
+Date: 2026-05-04
+Status: REFERENCE
+
 
 **Date:** 2026-04-29  
 **Scope:** `new ComputeBuffer`, `new GraphicsBuffer`, `GraphicsBuffer.Target.*` in `Assets/_Project/Scripts/`  

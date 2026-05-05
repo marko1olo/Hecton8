@@ -7,7 +7,6 @@ using Hecton8.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -138,7 +137,7 @@ namespace Hecton.UI.MainMenu
             TryRegisterToTickManager();
             _lastUnscaledTickTime = Time.unscaledTime;
             BlockCancelInputBriefly();
-            EnsureInputSystemEventRouting();
+            MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
             BindMenuInput();
             LocalizationEvents.RegisterLanguageListener(this);
             
@@ -949,61 +948,6 @@ namespace Hecton.UI.MainMenu
         private void HandleMenuCancelPerformed()
         {
             _cancelRequested = true;
-        }
-
-        private static void EnsureInputSystemEventRouting()
-        {
-            EventSystem eventSystem = EventSystem.current;
-            if (eventSystem == null)
-            {
-                GameObject eventSystemRoot = new GameObject("EventSystem", typeof(EventSystem)); // COLD ALLOC: GameObject[1] - menu fallback event system root - owner: MainMenuController
-                eventSystemRoot.hideFlags = HideFlags.DontSave;
-                eventSystem = eventSystemRoot.GetComponent<EventSystem>();
-            }
-
-            if (eventSystem == null)
-                return;
-
-            StandaloneInputModule legacyInputModule = eventSystem.GetComponent<StandaloneInputModule>();
-            if (!eventSystem.TryGetComponent(out InputSystemUIInputModule inputSystemModule))
-            {
-                if (legacyInputModule != null)
-                {
-                    legacyInputModule.enabled = false;
-                    if (Application.isPlaying)
-                        Destroy(legacyInputModule);
-                    else
-                        DestroyImmediate(legacyInputModule);
-                }
-
-                inputSystemModule = eventSystem.gameObject.AddComponent<InputSystemUIInputModule>();
-            }
-
-            InputManager inputManager = GlobalRegistry.NativeInputManager;
-            if (inputManager != null)
-            {
-                if (inputManager.TryConfigureUiInputModule(inputSystemModule))
-                    return;
-            }
-
-            if (!HasUsableUiModuleActions(inputSystemModule))
-                inputSystemModule.AssignDefaultActions();
-        }
-
-        private static bool HasUsableUiModuleActions(InputSystemUIInputModule inputSystemModule)
-        {
-            return inputSystemModule != null &&
-                   inputSystemModule.actionsAsset != null &&
-                   inputSystemModule.point != null &&
-                   inputSystemModule.point.action != null &&
-                   inputSystemModule.leftClick != null &&
-                   inputSystemModule.leftClick.action != null &&
-                   inputSystemModule.move != null &&
-                   inputSystemModule.move.action != null &&
-                   inputSystemModule.submit != null &&
-                   inputSystemModule.submit.action != null &&
-                   inputSystemModule.cancel != null &&
-                   inputSystemModule.cancel.action != null;
         }
 
         private void RequestSelectionRefresh()

@@ -18,6 +18,7 @@
 //   • Сохраняет список обнаруженных logId в SaveData.
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton.Localization;
@@ -28,6 +29,10 @@ using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using UnityEngine;
+
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace Hecton8.Narrative
 {
@@ -46,14 +51,12 @@ namespace Hecton8.Narrative
         [Tooltip("Максимальное количество сохраняемых logId.")]
         [SerializeField] private int maxSavedLogs = 256;
 
-        // ══════════════════════════════════════════════════════════
-        //  SINGLETON
-        // ══════════════════════════════════════════════════════════
+        [Tooltip("Authored audio log catalog used by narrative systems that unlock logs without a pickup object.")]
+        [SerializeField] private AudioLogData[] allLogs = Array.Empty<AudioLogData>();
 
-        public static AudioLogSystem Instance { get; private set; }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState() => Instance = null;
+        // ══════════════════════════════════════════════════════════
+        //  SERVICE AUTHORITY
+        // ══════════════════════════════════════════════════════════
 
         // ══════════════════════════════════════════════════════════
         //  PRIVATE STATE
@@ -61,10 +64,21 @@ namespace Hecton8.Narrative
 
         // COLD ALLOC: 256 entries — max discovered logs per save
         private readonly HashSet<string> _discoveredLogs = new HashSet<string>(256);
+        // COLD ALLOC: Dictionary<string,AudioLogData>[32] - authored log lookup by stable logId - owner: AudioLogSystem
+        private readonly Dictionary<string, AudioLogData> _logLookup = new Dictionary<string, AudioLogData>(32);
+        private const int PlaybackQueueCapacity = 16;
+        private const string AudioLogFolder = "Assets/_Project/Data/Lore/AudioLogs";
+        private readonly AudioLogData[] _queuedLogs = new AudioLogData[PlaybackQueueCapacity]; // COLD ALLOC: AudioLogData[16] - non-overlap narrative playback queue - owner: AudioLogSystem
+        private static readonly uint _QueueFullWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.QueueFull"));
+        private static readonly uint _LookupMissWarningHash = unchecked((uint)LocHash.Compute("AudioLogSystem.LookupMiss"));
+        private static readonly uint _NarrativeQueueContextHash = unchecked((uint)LocHash.Compute("NarrativeQueue"));
 
         private AudioLogData _currentLog;
         private uint _currentLogHash;
         private float _playbackTimer;
+        private int _queueHead;
+        private int _queueTail;
+        private int _queueCount;
         private bool _isPlaying;
         private bool _registered;
         private bool _serviceRegistered;
@@ -90,13 +104,16 @@ namespace Hecton8.Narrative
 
         private void Awake()
         {
-            if (Instance != null && Instance != this)
-            {
-                Destroy(gameObject);
-                return;
-            }
-            Instance = this;
+            BuildLogLookup();
         }
+
+#if UNITY_EDITOR
+        private void OnValidate()
+        {
+            TryAutoPopulateAudioLogCatalog();
+            BuildLogLookup();
+        }
+#endif
 
         private void OnEnable()
         {
@@ -116,7 +133,11 @@ namespace Hecton8.Narrative
                 Hecton8.Core.GlobalRegistry.SaveRuntime.Unregister(this);
 
             if (_isPlaying)
+            {
                 StopPlayback();
+            }
+
+            ClearPlaybackQueue();
         }
 
         private void OnDestroy()
@@ -124,8 +145,6 @@ namespace Hecton8.Narrative
             TryUnregister();
             TryUnregisterService();
 
-            if (Instance == this)
-                Instance = null;
         }
 
         // ══════════════════════════════════════════════════════════
@@ -154,6 +173,7 @@ namespace Hecton8.Narrative
             AudioLogEvents.RaisePlaybackCompleted(completedHash, completedLog);
 
             LogPlaybackCompleted(completedId);
+            TryStartNextQueuedLog();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -200,9 +220,11 @@ namespace Hecton8.Narrative
             // Обнаруживаем если ещё не обнаружен
             DiscoverLog(data);
 
-            // Останавливаем текущее воспроизведение
             if (_isPlaying)
-                StopPlayback();
+            {
+                EnqueuePlayback(data);
+                return;
+            }
 
             // Воспроизводим через SpatialAudioManager
             AudioClip playbackClip = data.ResolvedAudioClip;
@@ -222,6 +244,24 @@ namespace Hecton8.Narrative
             AudioLogEvents.RaisePlaybackStarted(_currentLogHash, _playbackTimer, data);
 
             LogPlaying(data.logId, data.Duration);
+        }
+
+        public bool TryPlayLogById(string logId)
+        {
+            if (string.IsNullOrWhiteSpace(logId))
+                return false;
+
+            if (_logLookup.Count == 0 && allLogs != null && allLogs.Length > 0)
+                BuildLogLookup();
+
+            if (!_logLookup.TryGetValue(logId, out AudioLogData data) || data == null)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(_LookupMissWarningHash, _NarrativeQueueContextHash, 1f);
+                return false;
+            }
+
+            PlayLog(data);
+            return true;
         }
 
         /// <summary>
@@ -263,6 +303,115 @@ namespace Hecton8.Narrative
         //  PRIVATE
         // ══════════════════════════════════════════════════════════
 
+        private void BuildLogLookup()
+        {
+            _logLookup.Clear();
+            if (allLogs == null)
+                return;
+
+            for (int i = 0; i < allLogs.Length; i++)
+            {
+                AudioLogData data = allLogs[i];
+                if (data == null || string.IsNullOrWhiteSpace(data.logId))
+                    continue;
+
+                if (!_logLookup.ContainsKey(data.logId))
+                    _logLookup.Add(data.logId, data);
+            }
+        }
+
+        private void EnqueuePlayback(AudioLogData data)
+        {
+            if (data == null)
+                return;
+
+            if (ReferenceEquals(_currentLog, data) || IsPlaybackQueued(data))
+                return;
+
+            if (_queueCount >= PlaybackQueueCapacity)
+            {
+                GlobalTelemetryBus.PublishPerformanceWarning(_QueueFullWarningHash, _NarrativeQueueContextHash, _queueCount);
+                return;
+            }
+
+            _queuedLogs[_queueTail] = data;
+            _queueTail = (_queueTail + 1) % PlaybackQueueCapacity;
+            _queueCount++;
+        }
+
+        private bool IsPlaybackQueued(AudioLogData data)
+        {
+            int index = _queueHead;
+            for (int i = 0; i < _queueCount; i++)
+            {
+                if (ReferenceEquals(_queuedLogs[index], data))
+                    return true;
+
+                index = (index + 1) % PlaybackQueueCapacity;
+            }
+
+            return false;
+        }
+
+        private void TryStartNextQueuedLog()
+        {
+            if (_isPlaying || _queueCount <= 0)
+                return;
+
+            AudioLogData next = _queuedLogs[_queueHead];
+            _queuedLogs[_queueHead] = null;
+            _queueHead = (_queueHead + 1) % PlaybackQueueCapacity;
+            _queueCount--;
+
+            if (next != null)
+                PlayLog(next);
+        }
+
+        private void ClearPlaybackQueue()
+        {
+            for (int i = 0; i < _queuedLogs.Length; i++)
+                _queuedLogs[i] = null;
+
+            _queueHead = 0;
+            _queueTail = 0;
+            _queueCount = 0;
+        }
+
+#if UNITY_EDITOR
+        private void TryAutoPopulateAudioLogCatalog()
+        {
+            string[] guids = AssetDatabase.FindAssets("t:AudioLogData", new[] { AudioLogFolder });
+            if (guids == null || guids.Length == 0)
+                return;
+
+            List<AudioLogData> loadedLogs = new List<AudioLogData>(guids.Length); // COLD ALLOC: List<AudioLogData>[guids.Length] - editor-time log catalog bootstrap - owner: AudioLogSystem
+            if (allLogs != null)
+            {
+                for (int i = 0; i < allLogs.Length; i++)
+                {
+                    AudioLogData existing = allLogs[i];
+                    if (existing != null && !loadedLogs.Contains(existing))
+                        loadedLogs.Add(existing);
+                }
+            }
+
+            int previousCount = loadedLogs.Count;
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                AudioLogData data = AssetDatabase.LoadAssetAtPath<AudioLogData>(path);
+                if (data != null && !loadedLogs.Contains(data))
+                    loadedLogs.Add(data);
+            }
+
+            if (loadedLogs.Count <= 0 || loadedLogs.Count == previousCount)
+                return;
+
+            allLogs = loadedLogs.ToArray();
+            EditorUtility.SetDirty(this);
+        }
+#endif
+
         private void TryRegister()
         {
             if (_registered || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -285,6 +434,12 @@ namespace Hecton8.Narrative
         {
             if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            if (GlobalRegistry.AudioLogs != null && !ReferenceEquals(GlobalRegistry.AudioLogs, this))
+            {
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterAudioLogRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.AudioLogs, this);

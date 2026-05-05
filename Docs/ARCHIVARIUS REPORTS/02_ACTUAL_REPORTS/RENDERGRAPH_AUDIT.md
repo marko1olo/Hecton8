@@ -1,4 +1,7 @@
 # RENDERGRAPH AUDIT — HECTON-8 First-Party URP Features
+Date: 2026-05-04
+Status: REFERENCE
+
 
 **Date:** 2026-04-29  
 **Scope:** `Assets/_Project/Scripts/Visor/*Feature.cs` + owned `ScriptableRenderPass`  

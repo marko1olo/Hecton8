@@ -135,6 +135,18 @@ namespace Hecton8.Visor
             [Tooltip("How strongly lens ghosts bias toward the screen edge falloff.")]
             [Range(0f, 8f)] public float lensEdgeWeight = 4.2f;
 
+            [Tooltip("Procedural lens dirt visibility when bright light hits the visor glass.")]
+            [Range(0f, 1f)] public float lensDirtIntensity = 0.24f;
+
+            [Tooltip("Procedural water-drop condensation visibility when bright light hits the visor glass.")]
+            [Range(0f, 1f)] public float condensationIntensity = 0.18f;
+
+            [Tooltip("Screen-space thermal haze displacement driven by recent heat stamps.")]
+            [Range(0f, 0.006f)] public float thermalHazeIntensity = 0.0016f;
+
+            [Tooltip("Quarter-resolution cell scale for procedural thermal haze displacement.")]
+            [Range(0.25f, 8f)] public float thermalHazeScale = 2.25f;
+
             [Tooltip("Lower EV clamp used by the luminance histogram.")]
             [Range(-16f, 4f)] public float minEv = -10f;
 
@@ -631,6 +643,10 @@ namespace Hecton8.Visor
                 material.SetFloat(ShaderConstants.LensGhostScaleId, Mathf.Max(0.001f, settings.lensGhostScale));
                 material.SetFloat(ShaderConstants.LensChromaticAberrationId, Mathf.Max(0f, settings.lensChromaticAberration));
                 material.SetFloat(ShaderConstants.LensEdgeWeightId, Mathf.Max(0f, settings.lensEdgeWeight));
+                material.SetFloat(ShaderConstants.LensDirtIntensityId, Mathf.Clamp01(settings.lensDirtIntensity));
+                material.SetFloat(ShaderConstants.CondensationIntensityId, Mathf.Clamp01(settings.condensationIntensity));
+                material.SetFloat(ShaderConstants.ThermalHazeIntensityId, Mathf.Max(0f, settings.thermalHazeIntensity));
+                material.SetFloat(ShaderConstants.ThermalHazeScaleId, Mathf.Max(0.001f, settings.thermalHazeScale));
                 material.SetFloat(ShaderConstants.HasExposureStateId, exposureAvailable ? 1f : 0f);
                 material.SetFloat(ShaderConstants.HasBlueNoiseTextureId, settings.blueNoiseTexture != null ? 1f : 0f);
                 material.SetTexture(ShaderConstants.BlueNoiseTextureId, settings.blueNoiseTexture);
@@ -690,6 +706,10 @@ namespace Hecton8.Visor
             internal static readonly int LensGhostScaleId = Shader.PropertyToID("_HectonLensGhostScale");
             internal static readonly int LensChromaticAberrationId = Shader.PropertyToID("_HectonLensChromaticAberration");
             internal static readonly int LensEdgeWeightId = Shader.PropertyToID("_HectonLensEdgeWeight");
+            internal static readonly int LensDirtIntensityId = Shader.PropertyToID("_HectonLensDirtIntensity");
+            internal static readonly int CondensationIntensityId = Shader.PropertyToID("_HectonCondensationIntensity");
+            internal static readonly int ThermalHazeIntensityId = Shader.PropertyToID("_HectonThermalHazeIntensity");
+            internal static readonly int ThermalHazeScaleId = Shader.PropertyToID("_HectonThermalHazeScale");
             internal static readonly int FrameCountId = Shader.PropertyToID("_HectonFrameCount");
             internal static readonly int BlueNoiseTextureId = Shader.PropertyToID("_BlueNoiseTex");
             internal static readonly int HasBlueNoiseTextureId = Shader.PropertyToID("_HectonHasBlueNoiseTex");

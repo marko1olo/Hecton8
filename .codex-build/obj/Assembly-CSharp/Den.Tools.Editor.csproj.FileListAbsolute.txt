@@ -1,0 +1,9 @@
+C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\Den.Tools.Editor.dll
+C:\hades\Hecton8\.codex-build\bin\Assembly-CSharp\Den.Tools.Editor.pdb
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Den.Tools.Editor.csproj.AssemblyReference.cache
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Den.Tools.Editor.GeneratedMSBuildEditorConfig.editorconfig
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Den.Tools.Editor.csproj.CoreCompileInputs.cache
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Den.Tools.Editor.sourcelink.json
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Den.Tool.3B401E2D.Up2Date
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Den.Tools.Editor.dll
+C:\hades\Hecton8\.codex-build\obj\Assembly-CSharp\Den.Tools.Editor.pdb

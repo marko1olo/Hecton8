@@ -47,6 +47,31 @@ namespace Hecton8.AI
             Starving
         }
 
+        internal struct PackCoordinator
+        {
+            public AbsoluteUniversePosition TargetAup;
+            public float3 TargetVelocity;
+            public float InterceptTimeSeconds;
+            public float FlankDistanceMeters;
+
+            public float3 ResolveFlankRuntimePosition(float3 predatorPosition, int packOrdinal, float3 floatingOriginOffset)
+            {
+                float3 targetPosition = AUPMath.ToRuntimeFloat3(in TargetAup, floatingOriginOffset);
+                float3 projectedTarget = targetPosition + (TargetVelocity * math.max(0f, InterceptTimeSeconds));
+                if (packOrdinal <= 0 || FlankDistanceMeters <= 0f)
+                    return projectedTarget;
+
+                float3 approach = math.normalizesafe(projectedTarget - predatorPosition, new float3(0f, 0f, 1f));
+                float3 lateral = math.cross(new float3(0f, 1f, 0f), approach);
+                if (math.lengthsq(lateral) <= 0.0001f)
+                    lateral = new float3(1f, 0f, 0f);
+                lateral = math.normalizesafe(lateral, new float3(1f, 0f, 0f));
+                float side = (packOrdinal & 1) == 0 ? -1f : 1f;
+                float ring = 1f + math.floor((packOrdinal - 1) * 0.5f);
+                return projectedTarget + lateral * (side * FlankDistanceMeters * ring);
+            }
+        }
+
         [Header("── Core Identity ────────────────────────────────")]
         public bool isAggressive = false;
         public bool canFlee = true;
@@ -153,6 +178,12 @@ namespace Hecton8.AI
         private const float PredatorKillAudioRadiusMeters = 90f;
         private const float PredatorKillAudioRadiusMetersSqr = PredatorKillAudioRadiusMeters * PredatorKillAudioRadiusMeters;
         private const float PredatorKillAudioDurationSeconds = 0.18f;
+        private const float BiolumFlashBangBlindDurationSeconds = 0.35f;
+        private const float BiolumFlashBangShaderRadiusMeters = 42f;
+        private const float LeviathanBreachHeightDeltaMeters = 50f;
+        private const float LeviathanBreachVelocityMultiplier = 3.75f;
+        private const float LeviathanBreachAirDragBypassSeconds = 1.5f;
+        private const float MinimumEggClutchCooldownSeconds = 300f;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
         private static float _nextSlowTickWatchdogLogTime;
 #endif
@@ -223,6 +254,11 @@ namespace Hecton8.AI
         private bool _mimicSignalActive;
         private bool _mimicOcclusionRuntimeAcquired;
         private uint _cachedScanEntryHash;
+        private float _breachDragBypassUntilTime;
+        private float _baseLinearDamping;
+        private bool _baseLinearDampingCaptured;
+        private float _nextEggClutchTimeSeconds;
+        private uint _eggClutchSequence;
 
         // ══════════════════════════════════════════════════════════
         //  SERIALIZATION MIGRATION (Option B Data Preservation)
@@ -376,6 +412,7 @@ namespace Hecton8.AI
             _isDead = false;
             _tier2HibernationRecordWritten = false;
             _tier2HibernationHandoffInProgress = false;
+            _breachDragBypassUntilTime = 0f;
             SetLogicalLodTier(FaunaLogicalLodTier.FullSim);
             _runtimeAggressionScale = 1f;
             ClearGeneticTraits();
@@ -393,6 +430,7 @@ namespace Hecton8.AI
             ResetDispatcherCadence();
             ClearProceduralStrikeIntent();
             ClearHibernationStarvationHuntCommand();
+            ResetEggClutchCadence();
             RefreshMimicOcclusionRuntimeOwner();
         }
 
@@ -401,6 +439,8 @@ namespace Hecton8.AI
             _isDead = true;
             _playerNoiseEmitterTransform = null;
             _tier2HibernationHandoffInProgress = false;
+            _breachDragBypassUntilTime = 0f;
+            RestoreLeviathanBreachDragIfReady();
             SetLogicalLodTier(FaunaLogicalLodTier.Hibernating);
             _runtimeAggressionScale = 1f;
             ClearGeneticTraits();
@@ -419,6 +459,8 @@ namespace Hecton8.AI
             ClearProceduralStrikeIntent();
             ClearVoxelPathGuidance();
             ClearHibernationStarvationHuntCommand();
+            _nextEggClutchTimeSeconds = 0f;
+            _eggClutchSequence = 0u;
             ClearEcholocationMimicSignal();
             ReleaseMimicOcclusionRuntimeOwner();
         }
@@ -1400,6 +1442,18 @@ namespace Hecton8.AI
             }
 
             Vector3 selfWorldPosition = selfPosition;
+            if (IsThermophilicRuntime())
+            {
+                AbsoluteUniversePosition selfAup = AbsoluteUniversePosition.FromRuntimePosition(selfWorldPosition);
+                float thermalSearchRadius = math.max(ecosystemDirector.HerbivoreGrazeSearchRadiusMeters, 1000f);
+                if (ecosystemDirector.TryResolveNearestThermalVentAttractor(in selfAup, thermalSearchRadius, out Vector3 thermalTarget, out float heat01))
+                {
+                    _utilityBrain.ApplyExternalState(AIState.Return, _cognitionTimeSeconds);
+                    ApplyDirectedStateOverride(selfPosition, thermalTarget, AIState.Return);
+                    return heat01 > 0.001f;
+                }
+            }
+
             if (ecosystemDirector.TryResolveHerbivoreGrazeTarget(selfWorldPosition, out Vector3 floraPosition, out uint floraInstanceUid))
             {
                 float consumeDistanceMeters = ecosystemDirector.HerbivoreConsumeDistanceMeters;
@@ -1423,6 +1477,121 @@ namespace Hecton8.AI
             }
 
             return false;
+        }
+
+        private bool IsThermophilicRuntime()
+        {
+            if (_archetype != null && _archetype.thermophilic)
+                return true;
+
+            string creatureId = _archetype != null ? _archetype.creatureId : string.Empty;
+            if (!string.IsNullOrEmpty(creatureId) &&
+                creatureId.IndexOf("therm", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            return _faunaDataTemplate != null &&
+                   !string.IsNullOrEmpty(_faunaDataTemplate.name) &&
+                   _faunaDataTemplate.name.IndexOf("therm", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private bool IsBiolumFlashBangPreyRuntime()
+        {
+            string creatureId = _archetype != null ? _archetype.creatureId : string.Empty;
+            if (ContainsFlashSquidToken(creatureId))
+                return true;
+
+            string displayName = _archetype != null ? _archetype.displayName : string.Empty;
+            if (ContainsFlashSquidToken(displayName))
+                return true;
+
+            return _faunaDataTemplate != null && ContainsFlashSquidToken(_faunaDataTemplate.name);
+        }
+
+        private void TriggerBiolumFlashBang(Vector3 flashPosition)
+        {
+            if (IsLeviathan())
+                _sensorSuite.ApplyFlashBlind(_cognitionTimeSeconds, BiolumFlashBangBlindDurationSeconds);
+
+            if (GlobalRegistry.EcosystemDirector is EcosystemDirector ecosystemDirector)
+            {
+                AbsoluteUniversePosition flashAup = AbsoluteUniversePosition.FromRuntimePosition(flashPosition);
+                ecosystemDirector.PublishBiolumFlashBang(in flashAup, _cognitionTimeSeconds, BiolumFlashBangShaderRadiusMeters);
+            }
+        }
+
+        private static bool ContainsFlashSquidToken(string value)
+        {
+            return !string.IsNullOrEmpty(value) &&
+                   value.IndexOf("flash", StringComparison.OrdinalIgnoreCase) >= 0 &&
+                   value.IndexOf("squid", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        internal bool TryPersistEggClutch()
+        {
+            if (_archetype == null || !_archetype.laysEggClutches)
+                return false;
+
+            PersistentWorldRegistry registry = PersistentWorldRegistry.Instance;
+            if (registry == null)
+                return false;
+
+            AbsoluteUniversePosition eggAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+            uint sequence = ++_eggClutchSequence;
+            uint eggUid = _uniqueInstanceUid != 0u
+                ? unchecked(_uniqueInstanceUid ^ 0x0E66C7u ^ (sequence * 2246822519u))
+                : unchecked((uint)(PersistentWorldRegistry.ComputeResourceNodeTombstoneId(in eggAup) & uint.MaxValue) ^ (sequence * 2246822519u));
+            EntityDataRecord eggState = PersistentWorldRegistry.CreateFaunaEggState(
+                eggUid,
+                ComputeStableSpeciesId(),
+                in eggAup,
+                _cognitionTimeSeconds,
+                _archetype.eggIncubationSeconds);
+            return registry.TryCacheFaunaEggState(in eggState);
+        }
+
+        private void TryAdvanceEggClutchPersistence()
+        {
+            if (_isDead ||
+                _logicalLodTier != FaunaLogicalLodTier.FullSim ||
+                _archetype == null ||
+                !_archetype.laysEggClutches)
+            {
+                return;
+            }
+
+            if (_nextEggClutchTimeSeconds <= 0f)
+                ResetEggClutchCadence();
+
+            if (_cognitionTimeSeconds < _nextEggClutchTimeSeconds)
+                return;
+
+            TryPersistEggClutch();
+            ScheduleNextEggClutch();
+        }
+
+        private void ResetEggClutchCadence()
+        {
+            _eggClutchSequence = 0u;
+            ScheduleNextEggClutch();
+        }
+
+        private void ScheduleNextEggClutch()
+        {
+            float cooldown = ResolveEggClutchCooldownSeconds();
+            float jitter = _runtimeRandom.state != 0u ? _runtimeRandom.NextFloat(0.75f, 1.25f) : 1f;
+            _nextEggClutchTimeSeconds = _cognitionTimeSeconds + cooldown * jitter;
+        }
+
+        private float ResolveEggClutchCooldownSeconds()
+        {
+            if (_archetype == null)
+                return MinimumEggClutchCooldownSeconds;
+
+            return Mathf.Max(
+                MinimumEggClutchCooldownSeconds,
+                Mathf.Max(1f, _archetype.eggIncubationSeconds) * 0.5f);
         }
 
         private bool TryApplyCleanerHostOverride(EcosystemDirector ecosystemDirector, float3 selfPosition, float dt)
@@ -1512,6 +1681,11 @@ namespace Hecton8.AI
         {
             return (_speciesProfile != null && _speciesProfile.isLeviathan) ||
                    (_archetype != null && _archetype.roleType == CreatureRoleType.Leviathan);
+        }
+
+        private bool IsLeviathan()
+        {
+            return IsApexPredator();
         }
 
         private float ResolveApexTerritoryRadius()
@@ -1796,6 +1970,8 @@ namespace Hecton8.AI
                 speedMultiplier = Mathf.Max(speedMultiplier, SpatialDensityPenaltySpeedMultiplier);
                 turnMultiplier = Mathf.Max(turnMultiplier, SpatialDensityPenaltyTurnMultiplier);
             }
+
+            ApplyLeviathanBreachAttack(ref desiredDirection, ref forceMultiplier, ref speedMultiplier);
             
             _steeringEngine.FixedTick(
                 fdt, 
@@ -1808,11 +1984,74 @@ namespace Hecton8.AI
             );
 
             ApplyAmbientCurrentDrift(fdt);
+            RestoreLeviathanBreachDragIfReady();
+        }
+
+        private void ApplyLeviathanBreachAttack(ref Vector3 desiredDirection, ref float forceMultiplier, ref float speedMultiplier)
+        {
+            if (!IsLeviathan() || _rb == null)
+                return;
+
+            if (!TryResolveLeviathanBreachTarget(out Vector3 targetPosition))
+                return;
+
+            float verticalDelta = targetPosition.y - transform.position.y;
+            if (verticalDelta < LeviathanBreachHeightDeltaMeters)
+                return;
+
+            Vector3 breachDirection = (targetPosition - transform.position).normalized;
+            if (breachDirection.sqrMagnitude <= 0.0001f)
+                breachDirection = Vector3.up;
+
+            desiredDirection = (breachDirection + Vector3.up * 1.35f).normalized;
+            forceMultiplier = Mathf.Max(forceMultiplier, LeviathanBreachVelocityMultiplier);
+            speedMultiplier = Mathf.Max(speedMultiplier, LeviathanBreachVelocityMultiplier);
+            if (transform.position.y > 0f)
+                DisableLeviathanWaterDragTemporarily();
+        }
+
+        private bool TryResolveLeviathanBreachTarget(out Vector3 targetPosition)
+        {
+            if (_sensorSuite.hasCurrentPrey)
+            {
+                targetPosition = _sensorSuite.currentPreyPosition;
+                return true;
+            }
+
+            if (_sensorSuite.TryGetPerceivedPlayerPosition(out targetPosition))
+                return true;
+
+            targetPosition = default;
+            return false;
+        }
+
+        private void DisableLeviathanWaterDragTemporarily()
+        {
+            if (_rb == null)
+                return;
+
+            if (!_baseLinearDampingCaptured)
+            {
+                _baseLinearDamping = _rb.linearDamping;
+                _baseLinearDampingCaptured = true;
+            }
+
+            _breachDragBypassUntilTime = Mathf.Max(_breachDragBypassUntilTime, _cognitionTimeSeconds + LeviathanBreachAirDragBypassSeconds);
+            _rb.linearDamping = 0f;
+        }
+
+        private void RestoreLeviathanBreachDragIfReady()
+        {
+            if (!_baseLinearDampingCaptured || _rb == null || _cognitionTimeSeconds < _breachDragBypassUntilTime)
+                return;
+
+            _rb.linearDamping = _baseLinearDamping;
         }
 
         public void SlowTick()
         {
             RefreshRuntimeEcosystemState();
+            TryAdvanceEggClutchPersistence();
         }
 
         private void AdvanceSlowTickCadence(float dt)
@@ -2108,6 +2347,9 @@ namespace Hecton8.AI
                 // Despawn/Pool the prey
                 if (target.TryGetComponent<FaunaBrain>(out var preyBrain))
                 {
+                    if (preyBrain.IsBiolumFlashBangPreyRuntime())
+                        TriggerBiolumFlashBang(preyPosition);
+
                     bool preyWasAlive = !preyBrain.IsDead;
                     preyBrain.TakeDamageFromSource(damage * 10f, transform.position); // Massive damage to ensure kill
                     if (preyWasAlive && preyBrain.IsDead)

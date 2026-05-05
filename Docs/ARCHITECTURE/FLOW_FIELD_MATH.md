@@ -1,4 +1,6 @@
 # FLOW_FIELD_MATH.md
+Date: `2026-05-04`
+Status: REFERENCE
 # HECTON-8 | GPU Abyssal Flow Volume Math | 2026-04-29
 
 ## Scope

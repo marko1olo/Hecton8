@@ -37,12 +37,12 @@ MonoBehaviour:
   maxDepth: 0
   width: 1
   height: 1
-  isConsumable: 0
-  useDuration: 0
+  isConsumable: 1
+  useDuration: 1
   oxygenRestore: 0
   energyRestore: 0
   integrityRestore: 0
-  hungerRestore: 0
+  hungerRestore: 12
   thirstRestore: 0
   useSound: {fileID: 0}
   legacyInteractVerb: Harvest

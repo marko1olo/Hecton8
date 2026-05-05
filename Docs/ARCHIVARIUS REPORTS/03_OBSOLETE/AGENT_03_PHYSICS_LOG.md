@@ -1,4 +1,7 @@
 # AGENT_03 Physics Log
+Date: 2026-05-04
+Status: DEPRECATED
+
 
 ## Mandates Followed
 - `PHYS_Physics_Integrity_Determinism_ForceMode.txt`
