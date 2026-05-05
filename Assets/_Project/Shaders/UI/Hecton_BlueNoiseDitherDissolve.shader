@@ -10,6 +10,12 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
         _SignalPulseRate ("Signal Pulse Rate", Range(0, 12)) = 4
         _SignalTearStrength ("Signal Tear Strength", Range(0, 0.2)) = 0.05
         _SignalTearRate ("Signal Tear Rate", Range(0, 12)) = 5
+        _SignalEdgeFlickerStrength ("Signal Edge Flicker Strength", Range(0, 0.18)) = 0.04
+        _SignalEdgeFlickerRate ("Signal Edge Flicker Rate", Range(0, 16)) = 7
+        _SignalChromaAliasStrength ("Signal Chroma Alias Strength", Range(0, 0.14)) = 0.025
+        _SignalChromaAliasRate ("Signal Chroma Alias Rate", Range(0, 20)) = 9
+        _SignalPhosphorStutterStrength ("Signal Phosphor Stutter Strength", Range(0, 0.16)) = 0.035
+        _SignalPhosphorStutterRate ("Signal Phosphor Stutter Rate", Range(0, 18)) = 6
     }
 
     SubShader
@@ -60,6 +66,12 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
             float _SignalPulseRate;
             float _SignalTearStrength;
             float _SignalTearRate;
+            float _SignalEdgeFlickerStrength;
+            float _SignalEdgeFlickerRate;
+            float _SignalChromaAliasStrength;
+            float _SignalChromaAliasRate;
+            float _SignalPhosphorStutterStrength;
+            float _SignalPhosphorStutterRate;
 
             v2f vert(appdata_t v)
             {
@@ -91,6 +103,17 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
                 float tearShift = tearBand * tearGate * _SignalTearStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb * fixed3(1.18, 0.94, 0.72), tearShift);
                 color.a = saturate(color.a + (tearShift * 0.05));
+                float2 centeredUv = (screenUv * 2.0) - 1.0;
+                float edgeMask = smoothstep(0.52, 1.08, dot(centeredUv, centeredUv));
+                float edgeFlicker = (sin((_Time.y * _SignalEdgeFlickerRate) + (screenUv.x * 41.0) + (screenUv.y * 29.0)) * 0.5 + 0.5);
+                float edgeShift = edgeMask * edgeFlicker * _SignalEdgeFlickerStrength * progress;
+                color.rgb = lerp(color.rgb, color.rgb * fixed3(0.78, 1.06, 1.22), edgeShift);
+                float aliasHash = frac(sin(dot(screenUv * _ScreenParams.xy, float2(12.9898, 78.233)) + (_Time.y * _SignalChromaAliasRate)) * 43758.5453);
+                float aliasShift = step(0.88, aliasHash) * _SignalChromaAliasStrength * progress;
+                color.rgb = lerp(color.rgb, color.gbr, aliasShift);
+                float phosphorBand = smoothstep(0.91, 1.0, frac((screenUv.x * 7.0) + (screenUv.y * 3.0) + (_Time.y * _SignalPhosphorStutterRate)));
+                float phosphorShift = phosphorBand * _SignalPhosphorStutterStrength * progress;
+                color.rgb = lerp(color.rgb, color.rgb * fixed3(0.92, 1.14, 0.96), phosphorShift);
                 color.a *= ditherAlpha;
                 return color;
             }

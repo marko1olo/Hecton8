@@ -34,7 +34,7 @@ namespace Hecton8.World
         private const string RuntimeRootName = "[ChemicalInfluenceGrid]";
         private const string NativeMemoryOwner = nameof(ChemicalInfluenceGrid);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
-        private const int DefaultBreadcrumbCapacity = 256;
+        private const int DefaultBreadcrumbCapacity = 64;
         private const int MaxDefoliantDeadZones = 64;
         private const float DefaultMaximumChannelIntensity = 32f;
         private const float MinimumRadiusMeters = 0.25f;
@@ -48,7 +48,7 @@ namespace Hecton8.World
         private static ChemicalInfluenceGrid _activeRuntimeInstance;
 
         [Header("Breadcrumbs")]
-        [SerializeField, Range(32, 2048)] private int breadcrumbCapacity = DefaultBreadcrumbCapacity;
+        [SerializeField, Range(8, 64)] private int breadcrumbCapacity = DefaultBreadcrumbCapacity;
         [SerializeField, Min(0.25f)] private float breadcrumbDropIntervalSeconds = 5f;
         [SerializeField, Min(1f)] private float breadcrumbLifetimeSeconds = 90f;
         [SerializeField, Min(1f)] private float breadcrumbRadiusMeters = 28f;
@@ -304,7 +304,7 @@ namespace Hecton8.World
             if (Application.isPlaying)
                 GameBootstrapper.PersistRuntimeService(this);
 
-            breadcrumbCapacity = Mathf.Clamp(breadcrumbCapacity, 32, 2048);
+            breadcrumbCapacity = Mathf.Clamp(breadcrumbCapacity, 8, DefaultBreadcrumbCapacity);
             breadcrumbDropIntervalSeconds = Mathf.Max(0.25f, breadcrumbDropIntervalSeconds);
             breadcrumbLifetimeSeconds = Mathf.Max(1f, breadcrumbLifetimeSeconds);
             breadcrumbRadiusMeters = Mathf.Max(1f, breadcrumbRadiusMeters);
@@ -320,9 +320,9 @@ namespace Hecton8.World
                 return;
 
             _breadcrumbs = new NativeArray<ChemicalBreadcrumbWaypoint>(
-                math.max(32, breadcrumbCapacity),
+                math.max(8, math.min(DefaultBreadcrumbCapacity, breadcrumbCapacity)),
                 Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ChemicalBreadcrumbWaypoint>[capacity] - AUP scent breadcrumb ring - owner: ChemicalInfluenceGrid
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ChemicalBreadcrumbWaypoint>[<=64] - AUP scent breadcrumb ring with hard SlowTick loop cap - owner: ChemicalInfluenceGrid
             NativeMemorySentinel.RegisterNativeArray(_breadcrumbs, NativeMemoryOwner, nameof(_breadcrumbs), NativeMemoryLifetime);
         }
 

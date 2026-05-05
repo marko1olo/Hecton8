@@ -1,4 +1,5 @@
 using Hecton8.AI;
+using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.World;
 using UnityEngine;
@@ -14,6 +15,7 @@ namespace Hecton8.UI
     public sealed class FakeRadarBlipController : MonoBehaviour, IUpdatable
     {
         private const int MaxBlips = 20;
+        private const int MaxCanvasChildProbeCount = 64;
         private const float DefaultRadarRangeMeters = 100f;
         private const float DefaultRadarRadiusPixels = 74f;
         private const float RootSizePixels = 188f;
@@ -330,7 +332,8 @@ namespace Hecton8.UI
             if (parent == null)
                 return null;
 
-            for (int i = 0; i < parent.childCount; i++)
+            int childCount = Mathf.Min(parent.childCount, MaxCanvasChildProbeCount);
+            for (int i = 0; i < childCount; i++)
             {
                 Transform child = parent.GetChild(i);
                 if (child.name == name)
@@ -352,7 +355,8 @@ namespace Hecton8.UI
 
         private static void ClearChildren(Transform parent)
         {
-            for (int i = parent.childCount - 1; i >= 0; i--)
+            int childCount = Mathf.Min(parent.childCount, MaxCanvasChildProbeCount);
+            for (int i = childCount - 1; i >= 0; i--)
             {
                 Transform child = parent.GetChild(i);
                 if (Application.isPlaying)

@@ -13,7 +13,7 @@ namespace Hecton8.World
         private const string ScatterLayerSpawnLabel = "Spawn";
         private const string FieldSourceNoneLabel = "None";
         private const string FieldSourceMapMagicLabel = "MapMagicHeight";
-        private const string FieldSourceRaycastLabel = "SceneRaycast";
+        private const string FieldSourceSceneProbeLegacyLabel = "SceneProbeLegacy";
         private const string FieldSourceFallbackLabel = "FallbackSynthetic";
         private const string GeologyArchetypeArchLabel = "Arch";
         private const string GeologyArchetypeCanopyLabel = "Canopy";
@@ -145,7 +145,7 @@ namespace Hecton8.World
             return source switch
             {
                 WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight => FieldSourceMapMagicLabel,
-                WorldProceduralFieldSampler.SeafloorSource.SceneRaycast => FieldSourceRaycastLabel,
+                WorldProceduralFieldSampler.SeafloorSource.SceneProbeLegacy => FieldSourceSceneProbeLegacyLabel,
                 WorldProceduralFieldSampler.SeafloorSource.FallbackSynthetic => FieldSourceFallbackLabel,
                 _ => FieldSourceNoneLabel
             };

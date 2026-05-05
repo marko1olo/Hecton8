@@ -91,11 +91,11 @@ Shader "Hecton8/World/WreckIndirectLit"
             Varyings output;
             float4x4 instanceMatrix = ResolveWreckMatrix(input.instanceID);
             float4 positionWS = mul(instanceMatrix, float4(input.positionOS.xyz, 1.0));
-            output.positionWS = positionWS.xyz;
             output.normalWS = TransformWreckNormal(instanceMatrix, input.normalOS);
-            output.positionCS = TransformWorldToHClip(positionWS.xyz);
+            output.positionWS = HectonCoreLitApplySubmarineCrushDepth(positionWS.xyz, output.normalWS);
+            output.positionCS = TransformWorldToHClip(output.positionWS);
             output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(output.positionCS, _DepthBias, 1.0);
-            output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(positionWS.xyz));
+            output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(output.positionWS));
             output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
             output.fogFactor = ComputeFogFactor(output.positionCS.z);
             return output;

@@ -54,6 +54,13 @@ namespace Hecton8.VFX
         private HectonSurvivalSystem _survivalSystem;
         private HectonPlayerMovement _playerMovement;
         private Vector3 _cameraLocalRestPosition;
+        private ParticleSystem _speedLineParticles;
+        private ParticleSystemRenderer _speedLineRenderer;
+        private Transform _speedLineRoot;
+        private float _speedLineIntensity;
+        private float _cachedSpeedLineEmissionRate = -1f;
+        private float _cachedSpeedLineVelocityZ = float.MinValue;
+        private float _cachedSpeedLineStretch = -1f;
 
         [Header("References")]
         [SerializeField, Tooltip("Optional explicit camera reference. Falls back to local hierarchy lookup.")]
@@ -67,6 +74,25 @@ namespace Hecton8.VFX
 
         [SerializeField, Tooltip("Optional explicit player movement reference. Falls back to cold-path scene resolve.")]
         private HectonPlayerMovement _playerMovementReference;
+
+        [Header("Cinematic Speed Lines")]
+        [SerializeField, Tooltip("Optional shared material for camera-local GPU-instanced speed-line particles.")]
+        private Material _speedLineMaterial;
+
+        [SerializeField, Min(0f), Tooltip("Speed threshold where camera-local speed lines start emitting.")]
+        private float _speedLineStartMetersPerSecond = 10f;
+
+        [SerializeField, Min(0.1f), Tooltip("Speed where speed-line emission reaches full density.")]
+        private float _speedLineFullMetersPerSecond = 22f;
+
+        [SerializeField, Min(1f), Tooltip("Maximum camera-local speed-line emission rate.")]
+        private float _speedLineMaxEmissionRate = 180f;
+
+        [SerializeField, Min(1f), Tooltip("Maximum camera-local speed-line particle budget.")]
+        private int _speedLineMaxParticles = 256;
+
+        [SerializeField, Min(0.1f), Tooltip("Maximum renderer length scale for stretched speed-line particles.")]
+        private float _speedLineMaxStretch = 5f;
 
         // ═══ SHAKE STATE ═══
         private Vector3 _shakeOffset;
@@ -368,6 +394,7 @@ namespace Hecton8.VFX
             EnsureFocusRaycastBuffers();
             EnsureShakeJobBuffers();
             SanitizeInteractionFocusMask();
+            EnsureCameraSpeedLineParticles();
 
             // Performance mode degradation
             if (QualitySettings.GetQualityLevel() == 0)
@@ -393,6 +420,7 @@ namespace Hecton8.VFX
             TryResolveGameplayDependencies();
             SyncDependencySubscriptions();
             EnsureShakeJobBuffers();
+            EnsureCameraSpeedLineParticles();
 
             InteractionEvents.Register(this);
         }
@@ -421,6 +449,7 @@ namespace Hecton8.VFX
             _shakeJobApplyResult = false;
             ReleaseFocusRaycastBuffers();
             ReleaseShakeJobBuffers();
+            StopCameraSpeedLineParticles();
 
             if (_cameraTransform != null)
             {
@@ -549,6 +578,7 @@ namespace Hecton8.VFX
             try
             {
                 UpdateFOV(dt);
+                UpdateCameraSpeedLines(dt);
             }
             catch (Exception)
             {
@@ -1159,6 +1189,141 @@ namespace Hecton8.VFX
             return offset.sqrMagnitude > maxShakeDisplacement * maxShakeDisplacement
                 ? offset.normalized * maxShakeDisplacement
                 : offset;
+        }
+
+        private void EnsureCameraSpeedLineParticles()
+        {
+            if (_speedLineParticles != null || _cameraTransform == null)
+                return;
+
+            int maxParticles = Mathf.Max(1, _speedLineMaxParticles);
+            // COLD ALLOC: GameObject[1] + ParticleSystem[1] - camera-local cinematic speed-line emitter - owner: CameraJuiceSystem
+            GameObject speedLineObject = new GameObject("PFX_Camera_SpeedLines");
+            speedLineObject.layer = TransparentFxLayerIndex;
+            speedLineObject.transform.SetParent(_cameraTransform, false);
+            speedLineObject.transform.localPosition = new Vector3(0f, 0f, 1.35f);
+            speedLineObject.transform.localRotation = Quaternion.identity;
+            speedLineObject.transform.localScale = Vector3.one;
+            _speedLineRoot = speedLineObject.transform;
+            _speedLineParticles = speedLineObject.AddComponent<ParticleSystem>();
+
+            var main = _speedLineParticles.main;
+            main.loop = true;
+            main.playOnAwake = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.maxParticles = maxParticles;
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.18f, 0.34f);
+            main.startSpeed = 0f;
+            main.startSize = new ParticleSystem.MinMaxCurve(0.01f, 0.035f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(0.56f, 0.82f, 1f, 0.12f),
+                new Color(0.86f, 1f, 1f, 0.34f));
+
+            var emission = _speedLineParticles.emission;
+            emission.rateOverTime = 0f;
+
+            var shape = _speedLineParticles.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Box;
+            shape.position = new Vector3(0f, 0f, 5.5f);
+            shape.scale = new Vector3(7.5f, 4.2f, 8f);
+
+            var velocity = _speedLineParticles.velocityOverLifetime;
+            velocity.enabled = true;
+            velocity.space = ParticleSystemSimulationSpace.Local;
+            velocity.z = new ParticleSystem.MinMaxCurve(-18f, -28f);
+
+            _speedLineRenderer = _speedLineParticles.GetComponent<ParticleSystemRenderer>();
+            if (_speedLineRenderer != null)
+            {
+                _speedLineRenderer.renderMode = ParticleSystemRenderMode.Stretch;
+                _speedLineRenderer.lengthScale = 0.45f;
+                _speedLineRenderer.velocityScale = 0.08f;
+                _speedLineRenderer.cameraVelocityScale = 0f;
+                _speedLineRenderer.enableGPUInstancing = true;
+                _speedLineRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                _speedLineRenderer.receiveShadows = false;
+                if (_speedLineMaterial != null)
+                    _speedLineRenderer.sharedMaterial = _speedLineMaterial;
+            }
+        }
+
+        private void UpdateCameraSpeedLines(float dt)
+        {
+            if (_speedLineParticles == null)
+                EnsureCameraSpeedLineParticles();
+            if (_speedLineParticles == null)
+                return;
+
+            float currentSpeed = ResolveCurrentCameraSpeed();
+            float speed01 = Mathf.Clamp01(
+                (currentSpeed - Mathf.Max(0f, _speedLineStartMetersPerSecond)) /
+                Mathf.Max(0.01f, _speedLineFullMetersPerSecond - _speedLineStartMetersPerSecond));
+            speed01 = speed01 * speed01 * (3f - 2f * speed01);
+            float blend = Mathf.Clamp01(1f - Mathf.Exp(-8f * Mathf.Max(0f, dt)));
+            _speedLineIntensity = Mathf.Lerp(_speedLineIntensity, speed01, blend);
+
+            var emission = _speedLineParticles.emission;
+            float emissionRate = Mathf.Lerp(0f, Mathf.Max(1f, _speedLineMaxEmissionRate), _speedLineIntensity);
+            if (Mathf.Abs(_cachedSpeedLineEmissionRate - emissionRate) > 0.5f)
+            {
+                emission.rateOverTime = emissionRate;
+                _cachedSpeedLineEmissionRate = emissionRate;
+            }
+
+            var velocity = _speedLineParticles.velocityOverLifetime;
+            float velocityZ = -Mathf.Lerp(18f, 44f, _speedLineIntensity);
+            if (Mathf.Abs(_cachedSpeedLineVelocityZ - velocityZ) > 0.25f)
+            {
+                velocity.z = new ParticleSystem.MinMaxCurve(velocityZ * 0.64f, velocityZ);
+                _cachedSpeedLineVelocityZ = velocityZ;
+            }
+
+            if (_speedLineRenderer != null)
+            {
+                float stretch = Mathf.Lerp(0.45f, Mathf.Max(0.45f, _speedLineMaxStretch), _speedLineIntensity);
+                if (Mathf.Abs(_cachedSpeedLineStretch - stretch) > 0.02f)
+                {
+                    _speedLineRenderer.lengthScale = stretch;
+                    _cachedSpeedLineStretch = stretch;
+                }
+            }
+
+            if (_speedLineIntensity > 0.01f)
+            {
+                if (!_speedLineParticles.isPlaying)
+                    _speedLineParticles.Play(true);
+            }
+            else if (_speedLineParticles.isPlaying)
+            {
+                _speedLineParticles.Stop(true, ParticleSystemStopBehavior.StopEmitting);
+            }
+        }
+
+        private float ResolveCurrentCameraSpeed()
+        {
+            float speed = 0f;
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            if (playerBody != null)
+                speed = Mathf.Max(speed, playerBody.linearVelocity.magnitude);
+
+            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
+            Rigidbody submarineBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            if (submarineBody != null)
+                speed = Mathf.Max(speed, submarineBody.linearVelocity.magnitude);
+
+            return float.IsFinite(speed) ? speed : 0f;
+        }
+
+        private void StopCameraSpeedLineParticles()
+        {
+            _speedLineIntensity = 0f;
+            _cachedSpeedLineEmissionRate = -1f;
+            _cachedSpeedLineVelocityZ = float.MinValue;
+            _cachedSpeedLineStretch = -1f;
+            if (_speedLineParticles != null)
+                _speedLineParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
         private void UpdateFOV(float dt)

@@ -322,12 +322,14 @@ namespace Hecton8.Audio
         [SerializeField, Range(1024, 131072)] private int workerTargetLeadFrames = 16384;
 
         [Header("Spatial Reverb")]
-        [Tooltip("Legacy fallback layer mask retained for acoustic preset compatibility.")]
+        [Tooltip("Layer mask retained for acoustic occlusion and trigger-preset compatibility.")]
         [FormerlySerializedAs("ceilingProbeLayers")]
-        [SerializeField] private LayerMask enclosureProbeLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
+        [FormerlySerializedAs("enclosureProbeLayers")]
+        [SerializeField] private LayerMask acousticOcclusionLayers = Hecton8.Core.HectonLayerMasks.StrictInteractionLayerMask;
 
         [Tooltip("Legacy preset distance used only when open-water fallback needs a stable scale.")]
-        [SerializeField, Range(5f, 80f)] private float ceilingProbeDistance = 48f;
+        [FormerlySerializedAs("ceilingProbeDistance")]
+        [SerializeField, Range(5f, 80f)] private float openWaterPresetDistance = 48f;
 
         [Tooltip("Ceiling distance at or below which cave acoustics are considered fully engaged.")]
         [SerializeField, Range(1f, 20f)] private float caveCeilingThreshold = 10f;
@@ -894,7 +896,7 @@ namespace Hecton8.Audio
 
         private void Awake()
         {
-            RebuildEnclosureProbeLayerMask();
+            RebuildAcousticOcclusionLayerMask();
             ResetReverbModelState();
             RefreshAudioConfiguration();
             TryBindFromBootstrap();
@@ -1506,7 +1508,7 @@ namespace Hecton8.Audio
             if (!_reverbMixerBindingsValid && _listenerReverbFilter == null)
                 return;
 
-            float defaultDistance = math.clamp(math.max(ceilingProbeDistance, caveCeilingThreshold), 1f, MaximumProbeDistanceMeters);
+            float defaultDistance = math.clamp(math.max(openWaterPresetDistance, caveCeilingThreshold), 1f, MaximumProbeDistanceMeters);
             bool shouldUseWaterReverb = playerMovement != null && playerMovement.IsPlayerSubmerged;
             if (!shouldUseWaterReverb || _boundPlayerTransform == null || _resolvedAcousticOcclusionLayerMask == 0)
             {
@@ -3721,9 +3723,9 @@ namespace Hecton8.Audio
                 ClearScratchBuffer(_sonarEchoFilterOutput2, _sonarEchoFilterOutput2.Length);
         }
 
-        private void RebuildEnclosureProbeLayerMask()
+        private void RebuildAcousticOcclusionLayerMask()
         {
-            _resolvedAcousticOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask() & enclosureProbeLayers.value;
+            _resolvedAcousticOcclusionLayerMask = AcousticOcclusionUtility.BuildSensoryMask() & acousticOcclusionLayers.value;
         }
 
         private static float ResolveHullPressureDepth01(float depthMeters)
@@ -5480,7 +5482,7 @@ namespace Hecton8.Audio
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            RebuildEnclosureProbeLayerMask();
+            RebuildAcousticOcclusionLayerMask();
         }
 #endif
     }

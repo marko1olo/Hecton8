@@ -64,6 +64,7 @@ using Hecton8.Physics;
 using Hecton.Localization;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using Unity.Mathematics;
 using Unity.Collections;
 using Hecton8.Atmosphere;
@@ -394,6 +395,8 @@ namespace Hecton8.Celestial
 public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener
     {
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
+        private const int SurfaceCloudShadowCookieResolution = 64;
+        private const float SurfaceCloudShadowCookieEpsilon = 0.0001f;
         public static HectonCelestialEngine ActiveRuntimeInstance { get; private set; }
         private static AtmosphericLightingState _currentAtmosphericLightingState = AtmosphericLightingState.Default;
         private static bool _hasAtmosphericLightingState;
@@ -422,6 +425,12 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [Header("═══ SKY MATERIAL ═══")]
         [SerializeField] private Material _skyMaterial;
         [SerializeField] private float _cloudSpeed = 0.01f;
+
+        [Header("Surface Cloud Shadow Cookie")]
+        [Tooltip("Optional authored Perlin cloud-shadow cookie. If empty, a 64x64 procedural cookie is generated once at runtime.")]
+        [SerializeField] private Texture2D _surfaceCloudShadowCookie;
+        [SerializeField, Min(8f)] private float _surfaceCloudShadowCookieSize = 420f;
+        [SerializeField, Min(0f)] private float _surfaceCloudShadowCookieScrollSpeed = 8f;
 
         [Header("═══ SKY COLOR PROFILES ═══")]
         [HideInInspector]
@@ -667,6 +676,13 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private float _baseFlareIntensity;
         private float _baseFlareScale;
         private bool _baseFlareValuesCaptured;
+        private UniversalAdditionalLightData _sunAdditionalLightData;
+        private Texture _cachedSunCookie;
+        private Vector2 _cachedSunCookieSize = Vector2.one;
+        private Vector2 _cachedSunCookieOffset;
+        private bool _sunCookieDefaultsCaptured;
+        private Texture2D _generatedSurfaceCloudShadowCookie;
+        private Vector2 _surfaceCloudShadowCookieOffset;
 
         private float3 _resolvedSunDirection;
         private float _penumbraFactor;
@@ -1055,6 +1071,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             ReleaseCelestialAtmosphereLut();
             ReleaseFirmamentBakeResources();
             RestoreCelestialTextureDefaults();
+            RestoreSurfaceCloudShadowCookie();
             RestoreSunDefaults();
             CleanupPlanetShineLight();
             TryUnregisterFromTickManager();
@@ -1086,6 +1103,8 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
             ReleaseCelestialAtmosphereLut();
             ReleaseFirmamentBakeResources();
+            RestoreSurfaceCloudShadowCookie();
+            ReleaseGeneratedSurfaceCloudShadowCookie();
             TryUnregisterFromTickManager();
         }
 
@@ -1218,6 +1237,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             UpdateSunPosition(celestialDeltaTime);
             ResolveSunDirection();
             SyncCrestPrimaryLight();
+            ApplySurfaceCloudShadowCookie(celestialDeltaTime);
             UpdateSunVisualPosition();
 
             float sunElevation = CalculateSunElevation();
@@ -1349,6 +1369,173 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
                 return;
 
             oceanKinematics.TryAssignPrimaryLight(sunLight);
+        }
+
+        private void ApplySurfaceCloudShadowCookie(float deltaTime)
+        {
+            if (sunLight == null || sunLight.type != LightType.Directional)
+                return;
+
+            if (!TryResolveSunAdditionalLightData(out UniversalAdditionalLightData lightData))
+                return;
+
+            Texture cookie = ResolveSurfaceCloudShadowCookie();
+            if (cookie == null)
+                return;
+
+            CaptureSunCookieDefaults(lightData);
+
+            if (!ReferenceEquals(sunLight.cookie, cookie))
+                sunLight.cookie = cookie;
+
+            float cookieSize = Mathf.Max(8f, _surfaceCloudShadowCookieSize);
+            Vector2 targetCookieSize = new Vector2(cookieSize, cookieSize);
+            if ((lightData.lightCookieSize - targetCookieSize).sqrMagnitude > SurfaceCloudShadowCookieEpsilon)
+                lightData.lightCookieSize = targetCookieSize;
+
+            Vector2 scrollDirection = ResolveSurfaceCloudShadowScrollDirection();
+            _surfaceCloudShadowCookieOffset += scrollDirection * (Mathf.Max(0f, _surfaceCloudShadowCookieScrollSpeed) * Mathf.Max(0f, deltaTime));
+            _surfaceCloudShadowCookieOffset.x = RepeatCookieOffset(_surfaceCloudShadowCookieOffset.x, cookieSize);
+            _surfaceCloudShadowCookieOffset.y = RepeatCookieOffset(_surfaceCloudShadowCookieOffset.y, cookieSize);
+
+            if ((lightData.lightCookieOffset - _surfaceCloudShadowCookieOffset).sqrMagnitude > SurfaceCloudShadowCookieEpsilon)
+                lightData.lightCookieOffset = _surfaceCloudShadowCookieOffset;
+        }
+
+        private bool TryResolveSunAdditionalLightData(out UniversalAdditionalLightData lightData)
+        {
+            lightData = null;
+            if (sunLight == null)
+                return false;
+
+            if (_sunAdditionalLightData != null && _sunAdditionalLightData.transform == sunLight.transform)
+            {
+                lightData = _sunAdditionalLightData;
+                return true;
+            }
+
+            if (!sunLight.TryGetComponent(out _sunAdditionalLightData))
+                return false;
+
+            lightData = _sunAdditionalLightData;
+            return true;
+        }
+
+        private void CaptureSunCookieDefaults(UniversalAdditionalLightData lightData)
+        {
+            if (_sunCookieDefaultsCaptured || sunLight == null || lightData == null)
+                return;
+
+            _cachedSunCookie = sunLight.cookie;
+            _cachedSunCookieSize = lightData.lightCookieSize;
+            _cachedSunCookieOffset = lightData.lightCookieOffset;
+            _surfaceCloudShadowCookieOffset = _cachedSunCookieOffset;
+            _sunCookieDefaultsCaptured = true;
+        }
+
+        private Texture ResolveSurfaceCloudShadowCookie()
+        {
+            if (_surfaceCloudShadowCookie != null)
+                return _surfaceCloudShadowCookie;
+
+            if (_generatedSurfaceCloudShadowCookie != null)
+                return _generatedSurfaceCloudShadowCookie;
+
+            _generatedSurfaceCloudShadowCookie = BuildSurfaceCloudShadowCookie();
+            return _generatedSurfaceCloudShadowCookie;
+        }
+
+        private static Texture2D BuildSurfaceCloudShadowCookie()
+        {
+            // COLD ALLOC: Texture2D[64x64 Alpha8] - procedural Perlin light cookie fallback - owner: HectonCelestialEngine
+            Texture2D texture = new Texture2D(
+                SurfaceCloudShadowCookieResolution,
+                SurfaceCloudShadowCookieResolution,
+                TextureFormat.Alpha8,
+                false,
+                true)
+            {
+                name = "GEN_SurfaceCloudShadowCookie",
+                wrapMode = TextureWrapMode.Repeat,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.DontSave
+            };
+
+            // COLD ALLOC: Color32[4096] - one-shot cloud cookie staging pixels - owner: HectonCelestialEngine
+            Color32[] pixels = new Color32[SurfaceCloudShadowCookieResolution * SurfaceCloudShadowCookieResolution];
+            for (int y = 0; y < SurfaceCloudShadowCookieResolution; y++)
+            {
+                for (int x = 0; x < SurfaceCloudShadowCookieResolution; x++)
+                {
+                    float u = x / (float)SurfaceCloudShadowCookieResolution;
+                    float v = y / (float)SurfaceCloudShadowCookieResolution;
+                    float coarse = Mathf.PerlinNoise(u * 3.2f + 13.17f, v * 3.2f + 7.91f);
+                    float mid = Mathf.PerlinNoise(u * 7.4f + 41.31f, v * 7.4f + 19.07f);
+                    float detail = Mathf.PerlinNoise(u * 15.8f + 5.73f, v * 15.8f + 83.2f);
+                    float cloud = Mathf.SmoothStep(0.18f, 0.92f, coarse * 0.62f + mid * 0.28f + detail * 0.1f);
+                    byte value = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(108f, 255f, cloud)), 0, 255);
+                    pixels[x + y * SurfaceCloudShadowCookieResolution] = new Color32(value, value, value, value);
+                }
+            }
+
+            texture.SetPixels32(pixels);
+            texture.Apply(false, true);
+            return texture;
+        }
+
+        private Vector2 ResolveSurfaceCloudShadowScrollDirection()
+        {
+            Vector2 wind = new Vector2(_surfaceWeatherWindDirection.x, _surfaceWeatherWindDirection.y);
+            IWeatherService weatherService = GlobalRegistry.Weather;
+            if (weatherService != null && weatherService.IsInitialized)
+            {
+                Vector3 globalWind = weatherService.GlobalWindVector;
+                wind = new Vector2(globalWind.x, globalWind.z);
+            }
+
+            if (wind.sqrMagnitude <= 0.0001f)
+                wind = Vector2.right;
+
+            wind.Normalize();
+            return wind;
+        }
+
+        private static float RepeatCookieOffset(float value, float size)
+        {
+            if (size <= 0.0001f)
+                return value;
+
+            return Mathf.Repeat(value + size * 0.5f, size) - size * 0.5f;
+        }
+
+        private void RestoreSurfaceCloudShadowCookie()
+        {
+            if (!_sunCookieDefaultsCaptured)
+                return;
+
+            if (sunLight != null)
+                sunLight.cookie = _cachedSunCookie;
+
+            if (_sunAdditionalLightData != null)
+            {
+                _sunAdditionalLightData.lightCookieSize = _cachedSunCookieSize;
+                _sunAdditionalLightData.lightCookieOffset = _cachedSunCookieOffset;
+            }
+
+            _sunCookieDefaultsCaptured = false;
+        }
+
+        private void ReleaseGeneratedSurfaceCloudShadowCookie()
+        {
+            if (_generatedSurfaceCloudShadowCookie == null)
+                return;
+
+            if (Application.isPlaying)
+                Destroy(_generatedSurfaceCloudShadowCookie);
+            else
+                DestroyImmediate(_generatedSurfaceCloudShadowCookie);
+
+            _generatedSurfaceCloudShadowCookie = null;
         }
 
         private void EnsureCelestialAtmosphereLutReady()

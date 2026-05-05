@@ -71,10 +71,10 @@ namespace Hecton8.Gameplay
         [Tooltip("Legacy scalar folded into cinematic velocity bleed. Kept for serialized preset compatibility.")]
         [SerializeField, Min(0f)] private float hydrodynamicVerticalDragScale = 1.7f;
 
-        [Tooltip("Cinematic acceleration scalar replacing presentation velocity history. Lower values make the hull feel heavy without frame buffers.")]
+        [Tooltip("Cinematic acceleration scalar for heavy hull feel without frame buffers.")]
         [SerializeField, Range(0.1f, 1f)] private float cinematicAccelerationScale = 0.72f;
 
-        [Tooltip("Cinematic drag scalar replacing presentation velocity history. Higher values make the hull settle without inertial ghost buffers.")]
+        [Tooltip("Cinematic drag scalar for hull settle without frame buffers.")]
         [SerializeField, Range(1f, 4f)] private float cinematicDragScale = 1.35f;
 
         [Header("-- Headless Presentation -----------")]
@@ -784,12 +784,6 @@ namespace Hecton8.Gameplay
             float bleed = 1f - math.exp(-bleedSharpness * math.max(deltaTime, 0f));
             float3 bledVelocity = math.lerp(velocity3, float3.zero, math.saturate(bleed));
             return HectonPlayerMotor.SafeVelocity(new Vector3(bledVelocity.x, bledVelocity.y, bledVelocity.z), velocity);
-        }
-
-        internal static bool TrySampleAnyHydrodynamicWake(Vector3 worldPosition, out Vector3 acceleration)
-        {
-            acceleration = Vector3.zero;
-            return false;
         }
 
         private void TryEmitCinematicWakeSiltDecal(Quaternion bodyRotation, float deltaTime)

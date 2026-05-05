@@ -653,7 +653,7 @@ namespace Hecton8.Gameplay
 
         [Header("── Seismic Collapse ───────────────────────")]
         [SerializeField, Min(4f)] private float seismicTargetRadius = 72f;
-        [SerializeField, Range(16, 256)] private int seismicOverlapCapacity = 96;
+        [SerializeField, Range(16, 64)] private int seismicOverlapCapacity = 64;
         [SerializeField, Range(16, 128)] private int seismicUniqueBodyCapacity = 48;
 
         [Header("── Meteor Shower ─────────────────────────")]
@@ -682,8 +682,8 @@ namespace Hecton8.Gameplay
         // Таймеры активных событий (0 = неактивно)
         // COLD ALLOC: float[EventTypeCount] - active random-event timers - owner: RandomEventSystem
         private readonly float[] _eventTimers = new float[EventTypeCount];
-        // COLD ALLOC: Collider[96] - reusable shockwave overlap buffer for cave-collapse rigidbody routing - owner: RandomEventSystem
-        private readonly Collider[] _seismicOverlapBuffer = new Collider[96];
+        // COLD ALLOC: Collider[64] - reusable shockwave overlap buffer capped for SlowTick impulse routing - owner: RandomEventSystem
+        private readonly Collider[] _seismicOverlapBuffer = new Collider[64];
         // COLD ALLOC: Rigidbody[48] - reusable unique rigidbody buffer for cave-collapse impulse routing - owner: RandomEventSystem
         private readonly Rigidbody[] _seismicBodyBuffer = new Rigidbody[48];
         private bool _registered;

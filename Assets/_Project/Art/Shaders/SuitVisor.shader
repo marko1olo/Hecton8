@@ -28,6 +28,7 @@ Shader "NASAPunk/SuitVisor"
 
         [Header(Water Runoff)]
         _WaterRunoffStrength ("Water Runoff Strength", Range(0, 1)) = 0
+        _DropletAlpha ("Droplet Alpha", Range(0, 1)) = 0
         _WaterRunoffSpeed ("Water Runoff Speed", Range(0.5, 4)) = 1.35
         _WaterRunoffDistortion ("Water Runoff Distortion", Range(0, 0.05)) = 0.012
         _WaterDropletDensity ("Water Droplet Density", Range(0, 2)) = 1
@@ -129,6 +130,7 @@ Shader "NASAPunk/SuitVisor"
                 float  _LensGrimeIntensity;
 
                 float  _WaterRunoffStrength;
+                float  _DropletAlpha;
                 float  _WaterRunoffSpeed;
                 float  _WaterRunoffDistortion;
                 float  _WaterDropletDensity;
@@ -542,7 +544,8 @@ Shader "NASAPunk/SuitVisor"
                 distortionOffset += radialScreenOffset * (radialMagnitude * radialMagnitude) * _LensEdgeRefraction;
 
                 float runoffMask = 0.0;
-                if (_WaterRunoffStrength > 0.001)
+                float runoffStrength = saturate(max(_WaterRunoffStrength, _DropletAlpha));
+                if (runoffStrength > 0.001)
                 {
                     float runoffTime = _Time.y * _WaterRunoffSpeed;
                     float proceduralRunoffMask = ComputeWaterRunoffMask(IN.uv, runoffTime);
@@ -554,8 +557,8 @@ Shader "NASAPunk/SuitVisor"
                         max(proceduralRunoffMask, authoredDropletMask),
                         saturate(_WaterDropletMaskInfluence));
                     runoffMask = saturate(max(
-                        runoffMask * _WaterRunoffStrength * (1.0 + fingerprint * 0.5),
-                        blueNoiseMoistureMask * _WaterRunoffStrength * 0.62));
+                        runoffMask * runoffStrength * (1.0 + fingerprint * 0.5),
+                        blueNoiseMoistureMask * runoffStrength * 0.62));
 
                     float2 runoffNormalUV = TRANSFORM_TEX(IN.uv + float2(0.0, runoffTime * -0.08), _WaterRunoffNormalTex);
                     float4 runoffNormalPacked = SAMPLE_TEXTURE2D(_WaterRunoffNormalTex, sampler_WaterRunoffNormalTex, runoffNormalUV);

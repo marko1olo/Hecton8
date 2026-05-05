@@ -38,13 +38,13 @@ namespace Hecton8.Dev
         private void OnDisable()
         {
             TryUnregister();
-            ApplyResolvedTimeSettings();
+            ClearResolvedTimeSettings();
         }
 
         private void OnDestroy()
         {
             TryUnregister();
-            ApplyResolvedTimeSettings();
+            ClearResolvedTimeSettings();
         }
 
         [ContextMenu("Enable 1000x Celestial Time-Lapse")]
@@ -88,15 +88,20 @@ namespace Hecton8.Dev
         {
             if (!enableTimeLapse)
             {
-                ApplyCelestialTimeScale(1f);
-                _debugApplied = false;
-                _debugCelestialTimeScale = 1f;
+                ClearResolvedTimeSettings();
                 return;
             }
 
             _debugApplied = true;
             _debugCelestialTimeScale = Mathf.Max(1f, debugTimeScale);
             ApplyCelestialTimeScale(_debugCelestialTimeScale);
+        }
+
+        private void ClearResolvedTimeSettings()
+        {
+            ApplyCelestialTimeScale(1f);
+            _debugApplied = false;
+            _debugCelestialTimeScale = 1f;
         }
 
         private static void ApplyCelestialTimeScale(float scale)

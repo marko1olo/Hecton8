@@ -1688,7 +1688,7 @@ namespace Hecton8.World
             _debugStructurePlacements = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
             _debugSpawnPlacements = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
             _debugMapMagicSamples = mapMagicSamples;
-            _debugRaycastSamples = raycastSamples;
+            _debugSceneProbeLegacySamples = raycastSamples;
             _debugFallbackSamples = fallbackSamples;
             _debugMatchedScatterRules = matchedScatterRules;
             _debugHeatPassedRules = heatPassedRules;

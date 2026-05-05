@@ -83,25 +83,6 @@ namespace Hecton8.AI
             return job.Schedule(poolSlots.Length, 32);
         }
 
-        internal void RunParasiteAttach(
-            NativeArray<FaunaParasiteAttachInput> inputs,
-            NativeArray<FaunaParasiteAttachResult> results,
-            int count)
-        {
-            int safeCount = math.min(math.max(0, count), math.min(inputs.Length, results.Length));
-            if (safeCount <= 0)
-                return;
-
-            ParasiteAttachJob job = new ParasiteAttachJob
-            {
-                Inputs = inputs,
-                Results = results
-            };
-
-            for (int i = 0; i < safeCount; i++)
-                job.Execute(i);
-        }
-
         internal JobHandle ScheduleParasiteAttach(
             NativeArray<FaunaParasiteAttachInput> inputs,
             NativeArray<FaunaParasiteAttachResult> results,

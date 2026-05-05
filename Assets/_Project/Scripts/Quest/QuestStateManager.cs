@@ -48,6 +48,7 @@ namespace Hecton8.Quest
         private readonly List<QuestRuntimeResult> _runtimeResults = new List<QuestRuntimeResult>(32);
 
         private NativeArray<uint> _globalPrerequisites;
+        private NativeArray<uint> _checksumResult;
         private NativeArray<QuestNodeDescriptor> _nodes;
         private NativeArray<QuestPrerequisiteDescriptor> _prerequisites;
         private NativeList<int> _activatedQuestIndices;
@@ -131,6 +132,12 @@ namespace Hecton8.Quest
                 _globalPrerequisites.Dispose();
             }
 
+            if (_checksumResult.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_checksumResult);
+                _checksumResult.Dispose();
+            }
+
             _runtimeResults.Clear();
             _bitAddressByHash = null;
             _questIndexByHash = null;
@@ -163,7 +170,9 @@ namespace Hecton8.Quest
             _authoredQuestCount = allQuests != null ? allQuests.Length : 0;
             int questArrayLength = _authoredQuestCount + ProceduralQuestCapacity;
             _globalPrerequisites = new NativeArray<uint>(WordCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            _checksumResult = new NativeArray<uint>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<uint>[1] - Burst checksum result slot - owner: QuestStateManager
             RegisterTrackedNativeArray(_globalPrerequisites, nameof(_globalPrerequisites));
+            RegisterTrackedNativeArray(_checksumResult, nameof(_checksumResult));
             _bitAddressByHash = new Dictionary<uint, QuestBitAddress>(Math.Max(questArrayLength * 6, 16)); // COLD ALLOC: Dictionary<uint,QuestBitAddress>[questArrayLength*6] - compiled flag lookup - owner: QuestStateManager
             _questIndexByHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 16)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - quest hash to source index mapping - owner: QuestStateManager
             _revertDescriptorIndexByItemHash = new Dictionary<uint, int>(Math.Max(questArrayLength, 8)); // COLD ALLOC: Dictionary<uint,int>[questArrayLength] - critical item revert lookup - owner: QuestStateManager
@@ -1302,32 +1311,20 @@ namespace Hecton8.Quest
         private void RefreshStateMetadata(bool resetVersion)
         {
             _stateVersion = resetVersion ? 1u : _stateVersion + 1u;
-            _stateChecksum = ComputePackedStateChecksum();
-        }
-
-        private uint ComputePackedStateChecksum()
-        {
             if (!_globalPrerequisites.IsCreated)
-                return 0u;
-
-            unchecked
             {
-                uint hash = Hecton.Localization.LocHash.FnvOffsetBasis;
-                for (int i = 0; i < _globalPrerequisites.Length; i++)
-                {
-                    uint word = _globalPrerequisites[i];
-                    hash ^= word & 0xFFu;
-                    hash *= Hecton.Localization.LocHash.FnvPrime;
-                    hash ^= (word >> 8) & 0xFFu;
-                    hash *= Hecton.Localization.LocHash.FnvPrime;
-                    hash ^= (word >> 16) & 0xFFu;
-                    hash *= Hecton.Localization.LocHash.FnvPrime;
-                    hash ^= (word >> 24) & 0xFFu;
-                    hash *= Hecton.Localization.LocHash.FnvPrime;
-                }
-
-                return hash;
+                _stateChecksum = 0u;
+                return;
             }
+
+            ComputePackedStateChecksumJob checksumJob = new ComputePackedStateChecksumJob
+            {
+                GlobalPrerequisites = _globalPrerequisites,
+                Result = _checksumResult
+            };
+            JobHandle checksumHandle = checksumJob.Schedule();
+            checksumHandle.Complete();
+            _stateChecksum = _checksumResult[0];
         }
 
         private static uint ResolveCriticalItemHash(QuestData questData)
@@ -1581,6 +1578,35 @@ namespace Hecton8.Quest
                 SetWordIndex = completedAddress.WordIndex,
                 ClearWordIndex = activeAddress.WordIndex
             };
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ComputePackedStateChecksumJob : IJob
+        {
+            [ReadOnly] public NativeArray<uint> GlobalPrerequisites;
+            [WriteOnly] public NativeArray<uint> Result;
+
+            public void Execute()
+            {
+                unchecked
+                {
+                    uint hash = Hecton.Localization.LocHash.FnvOffsetBasis;
+                    for (int i = 0; i < GlobalPrerequisites.Length; i++)
+                    {
+                        uint word = GlobalPrerequisites[i];
+                        hash ^= word & 0xFFu;
+                        hash *= Hecton.Localization.LocHash.FnvPrime;
+                        hash ^= (word >> 8) & 0xFFu;
+                        hash *= Hecton.Localization.LocHash.FnvPrime;
+                        hash ^= (word >> 16) & 0xFFu;
+                        hash *= Hecton.Localization.LocHash.FnvPrime;
+                        hash ^= (word >> 24) & 0xFFu;
+                        hash *= Hecton.Localization.LocHash.FnvPrime;
+                    }
+
+                    Result[0] = hash;
+                }
+            }
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]

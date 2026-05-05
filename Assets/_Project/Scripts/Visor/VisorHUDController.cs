@@ -173,6 +173,8 @@ namespace NASAPunk.Visor
         private float _glitchTimer;
         private float _glitchDuration;
         private float _glitchOriginalIntensity;
+        private float _dropletAlpha;
+        private float _dropletFadeTimer;
         private float _waterRunoffIntensity;
         private float _waterRunoffHoldTimer;
         private float _waterRunoffRecoverySpeed;
@@ -230,6 +232,7 @@ namespace NASAPunk.Visor
         private static readonly int ID_ScratchBleed = Shader.PropertyToID("_HUD_ScratchBleed");
         private static readonly int ID_Distortion = Shader.PropertyToID("_DistortionStrength");
         private static readonly int ID_WaterRunoffStrength = Shader.PropertyToID("_WaterRunoffStrength");
+        private static readonly int ID_DropletAlpha = Shader.PropertyToID("_DropletAlpha");
         private static readonly int ID_WaterRunoffSpeed = Shader.PropertyToID("_WaterRunoffSpeed");
         private static readonly int ID_WaterRunoffDistortion = Shader.PropertyToID("_WaterRunoffDistortion");
         private static readonly int ID_WaterDropletDensity = Shader.PropertyToID("_WaterDropletDensity");
@@ -325,10 +328,12 @@ namespace NASAPunk.Visor
                 _glitchActive = false;
             }
 
-            if (_waterRunoffIntensity > 0f || _waterRunoffHoldTimer > 0f)
+            if (_waterRunoffIntensity > 0f || _waterRunoffHoldTimer > 0f || _dropletAlpha > 0f || _dropletFadeTimer > 0f)
             {
                 _waterRunoffIntensity = 0f;
                 _waterRunoffHoldTimer = 0f;
+                _dropletAlpha = 0f;
+                _dropletFadeTimer = 0f;
                 _materialPropertiesDirty = true;
                 ApplyMaterialProperties();
             }
@@ -654,6 +659,7 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
             _mpb.SetFloat(ID_Distortion, _distortion + environmentalDistortion);
             _mpb.SetFloat(ID_WaterRunoffStrength, _waterRunoffIntensity);
+            _mpb.SetFloat(ID_DropletAlpha, _dropletAlpha);
             _mpb.SetFloat(ID_WaterRunoffSpeed, _waterRunoffSpeed);
             _mpb.SetFloat(ID_WaterRunoffDistortion, _waterRunoffDistortion);
             _mpb.SetFloat(ID_WaterDropletDensity, _waterDropletDensity);
@@ -734,6 +740,23 @@ namespace NASAPunk.Visor
 
         private void UpdateWaterRunoffState(float deltaTime)
         {
+            if (_dropletFadeTimer > 0f)
+            {
+                float lifetime = Mathf.Max(0.1f, _surfaceBreakRunoffMinimumLifetime);
+                _dropletFadeTimer = Mathf.Max(0f, _dropletFadeTimer - Mathf.Max(0f, deltaTime));
+                float nextDropletAlpha = Mathf.Clamp01(_dropletFadeTimer / lifetime);
+                if (!Mathf.Approximately(nextDropletAlpha, _dropletAlpha))
+                {
+                    _dropletAlpha = nextDropletAlpha;
+                    _materialPropertiesDirty = true;
+                }
+            }
+            else if (_dropletAlpha != 0f)
+            {
+                _dropletAlpha = 0f;
+                _materialPropertiesDirty = true;
+            }
+
             if (_waterRunoffHoldTimer > 0f)
             {
                 _waterRunoffHoldTimer -= deltaTime;
@@ -1923,6 +1946,8 @@ namespace NASAPunk.Visor
             float holdDuration = _surfaceRunoffHoldDuration;
             float recoverySpeed = _surfaceRunoffRecoverySpeed;
             float desiredLifetime = Mathf.Max(0f, _surfaceBreakRunoffMinimumLifetime);
+            _dropletAlpha = 1f;
+            _dropletFadeTimer = Mathf.Max(0.1f, desiredLifetime);
             float remainingRecoveryWindow = desiredLifetime - holdDuration;
             if (remainingRecoveryWindow > 0.05f)
             {

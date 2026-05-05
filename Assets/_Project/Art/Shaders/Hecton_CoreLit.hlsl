@@ -69,6 +69,7 @@ TEXTURE2D(_HectonPhotophobiaFieldTex);
 SAMPLER(sampler_HectonPhotophobiaFieldTex);
 float4 _HectonNoirFogLutParams;
 float _HectonNoirFogLutBlend;
+float _HectonWeatherIntensity;
 float4 _HectonNoirFogStratification;
 float4 _HectonSedimentWorldRect;
 float4 _HectonSedimentOverlayParamsA;
@@ -78,6 +79,8 @@ float4 _HectonSedimentTintB;
 float4 _HectonParasiteAnchorData[HECTON_PARASITE_MAX_ANCHORS];
 float4 _HectonParasiteAnchorParams[HECTON_PARASITE_MAX_ANCHORS];
 float4 _HectonParasiteGlobals;
+float4 _HectonSubmarineCrushCenterRadius;
+float4 _HectonSubmarineCrushDepthParams;
 
 float3 HectonCoreLitSafeNormalize(float3 value)
 {
@@ -110,6 +113,41 @@ float2 HectonCoreLitHash22(float2 p)
     float3 p3 = frac(float3(p.xyx) * float3(0.1031, 0.1030, 0.0973));
     p3 += dot(p3, p3.yzx + 33.33);
     return frac((p3.xx + p3.yz) * p3.zy);
+}
+
+float HectonCoreLitSampleSubmarineCrushBuckling(float3 positionWS)
+{
+    float scale = max(_HectonSubmarineCrushDepthParams.w, 0.001);
+    float3 centeredPosition = (positionWS - _HectonSubmarineCrushCenterRadius.xyz) * scale;
+    float2 plateA = floor(centeredPosition.xz + centeredPosition.y * 0.17);
+    float2 plateB = floor(centeredPosition.xy * 1.73 + centeredPosition.z * 0.11 + 11.37);
+    float cellBreakup = abs(HectonCoreLitHash22(plateA).x - HectonCoreLitHash22(plateB).y);
+    float crease = 1.0 - abs(frac(dot(centeredPosition, float3(0.31, 0.47, 0.19))) * 2.0 - 1.0);
+    return saturate(cellBreakup * 1.85 + crease * 0.42);
+}
+
+float3 HectonCoreLitApplySubmarineCrushDepth(float3 positionWS, float3 normalWS)
+{
+    float currentDepth = max(_HectonSubmarineCrushDepthParams.x, 0.0);
+    float crushDepth = max(_HectonSubmarineCrushDepthParams.y, 0.001);
+    float depth01 = saturate(currentDepth / crushDepth);
+    float displacementMax = max(_HectonSubmarineCrushDepthParams.z, 0.0);
+    if (depth01 <= 0.0001 || displacementMax <= 0.0001)
+        return positionWS;
+
+    float radius = max(_HectonSubmarineCrushCenterRadius.w, 0.0);
+    float3 radiusDelta = positionWS - _HectonSubmarineCrushCenterRadius.xyz;
+    float radiusMask = radius > 0.001
+        ? 1.0 - saturate(dot(radiusDelta, radiusDelta) / max(radius * radius, 0.0001))
+        : 1.0;
+    if (radiusMask <= 0.0001)
+        return positionWS;
+
+    float buckling = HectonCoreLitSampleSubmarineCrushBuckling(positionWS);
+    float ridge = buckling * buckling;
+    float buckle = (buckling * 2.0 - 1.0) * 0.68 - ridge * 0.32;
+    float displacement = buckle * displacementMax * depth01 * radiusMask;
+    return positionWS + HectonCoreLitSafeNormalize(normalWS) * displacement;
 }
 
 float HectonCoreLitSedimentRippleHeight(float2 uv)
@@ -443,6 +481,16 @@ half3 HectonCoreLitApplyNoirFog(half3 color, half fogRaw, float3 positionWS)
     float lutSample = saturate(fogFactor * densityMultiplier);
 
     float3 fogColor = HectonCoreLitSampleNoirFogLut(lutSample);
+    float weatherStress = saturate((1.0 - _HectonWeatherIntensity) + _HectonNoirFogLutBlend * 0.25);
+    float fogPulse = 0.5 + 0.5 * sin(
+        _Time.y * (0.8 + weatherStress * 1.7) +
+        positionWS.y * 0.015 +
+        dot(positionWS.xz, float2(0.007, -0.009)));
+    float fogShimmer = HectonCoreLitValueNoise2(positionWS.xz * 0.043 + _Time.y * float2(0.031, -0.024));
+    float pressureSpark = saturate((fogShimmer - 0.58) * 3.3) * weatherStress * saturate(lutSample);
+    fogColor *= 1.0 + fogPulse * weatherStress * 0.055;
+    fogColor += _FinalGiantAbyssLight.rgb * (fogPulse * weatherStress * 0.06);
+    fogColor += (fogColor + _FinalGiantAbyssLight.rgb * 0.5) * pressureSpark * 0.045;
     float3 absorption = max(fogColor * float3(0.72, 0.52, 0.36), float3(0.0, 0.0, 0.0));
     float3 ambientTint = fogColor * 0.42;
     float3 attenuatedColor = color * exp(-absorption * lutSample);

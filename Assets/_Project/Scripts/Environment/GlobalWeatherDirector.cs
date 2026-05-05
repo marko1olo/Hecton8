@@ -20,6 +20,7 @@ namespace Hecton8.Environment
         private const float WeatherLutChangeEpsilon = 0.01f;
         private const float VectorNormalizeEpsilon = 0.0001f;
         private const int NoirFogLutRowCount = 1;
+        private const int MaxRuntimeNoirFogLutResolution = 64;
 #if UNITY_EDITOR
         private const string CalmWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_DeepStillness.asset";
         private const string StormWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_CyclonicSurge.asset";
@@ -82,6 +83,7 @@ namespace Hecton8.Environment
 
         private static readonly int _GlobalCurrentVectorId = Shader.PropertyToID("_HectonGlobalCurrentVector");
         private static readonly int _GlobalWindVectorId = Shader.PropertyToID("_HectonGlobalWindVector");
+        private static readonly int _GlobalWindId = Shader.PropertyToID("_GlobalWind");
         private static readonly int _WeatherIntensityId = Shader.PropertyToID("_HectonWeatherIntensity");
         private static readonly int _NoirFogLutId = Shader.PropertyToID("_NoirFogLUT");
         private static readonly int _NoirFogLutParamsId = Shader.PropertyToID("_HectonNoirFogLutParams");
@@ -189,8 +191,8 @@ namespace Hecton8.Environment
         };
 
         [Header("Noir Fog LUT")]
-        [Tooltip("Width of the runtime depth fog LUT. The texture is one 1-pixel-high row so shaders pay one sample.")]
-        [SerializeField, Min(8)] private int noirFogLutResolution = 32;
+        [Tooltip("Width of the runtime depth fog LUT. Hard-capped at 64 samples; weather drift is faked in shader ALU.")]
+        [SerializeField, Range(8, MaxRuntimeNoirFogLutResolution)] private int noirFogLutResolution = 32;
         [Tooltip("Seconds used to exponentially settle the biome LUT blend factor.")]
         [SerializeField, Min(0.25f)] private float biomeBlendDurationSeconds = 8f;
         [Tooltip("World-space Y depth for the thermocline band passed into noir fog shading.")]
@@ -300,6 +302,7 @@ namespace Hecton8.Environment
             _biolumeSurgeTimer = 0f;
             Shader.SetGlobalVector(_GlobalCurrentVectorId, Vector4.zero);
             Shader.SetGlobalVector(_GlobalWindVectorId, Vector4.zero);
+            Shader.SetGlobalVector(_GlobalWindId, Vector4.zero);
             Shader.SetGlobalFloat(_WeatherIntensityId, 0f);
             Shader.SetGlobalTexture(_NoirFogLutId, Texture2D.blackTexture);
             Shader.SetGlobalVector(_NoirFogLutParamsId, Vector4.zero);
@@ -551,6 +554,7 @@ namespace Hecton8.Environment
             Vector3 windVectorManaged = new Vector3(windVector.x, windVector.y, windVector.z);
             Shader.SetGlobalVector(_GlobalCurrentVectorId, new Vector4(currentVectorManaged.x, currentVectorManaged.y, currentVectorManaged.z, 0f));
             Shader.SetGlobalVector(_GlobalWindVectorId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, 0f));
+            Shader.SetGlobalVector(_GlobalWindId, new Vector4(windVectorManaged.x, windVectorManaged.y, windVectorManaged.z, math.length(windVector)));
             Shader.SetGlobalFloat(_WeatherIntensityId, _weatherIntensity);
             PublishNoirFogShaderState();
 
@@ -603,8 +607,7 @@ namespace Hecton8.Environment
             bool targetChanged = !ReferenceEquals(targetProfile, _activeBiomeLutTargetProfile);
             bool weatherSourceChanged = !ReferenceEquals(weatherSourceProfile, _activeWeatherLutSourceProfile);
             bool weatherTargetChanged = !ReferenceEquals(weatherTargetProfile, _activeWeatherLutTargetProfile);
-            bool weatherInfluenceChanged = math.abs(weatherInfluence - _activeWeatherLutInfluence) > WeatherLutChangeEpsilon;
-            if (sourceChanged || targetChanged || weatherSourceChanged || weatherTargetChanged || weatherInfluenceChanged)
+            if (sourceChanged || targetChanged || weatherSourceChanged || weatherTargetChanged)
             {
                 _activeBiomeLutSourceProfile = sourceProfile;
                 _activeBiomeLutTargetProfile = targetProfile;
@@ -612,6 +615,10 @@ namespace Hecton8.Environment
                 _activeWeatherLutTargetProfile = weatherTargetProfile;
                 _activeWeatherLutInfluence = weatherInfluence;
                 RebuildNoirFogLutTexture(sourceProfile, targetProfile, weatherSourceProfile, weatherTargetProfile, weatherInfluence);
+            }
+            else
+            {
+                _activeWeatherLutInfluence = weatherInfluence;
             }
 
             if (forceImmediate)
@@ -634,7 +641,7 @@ namespace Hecton8.Environment
 
         private void EnsureNoirFogLutResources()
         {
-            int resolution = math.max(8, noirFogLutResolution);
+            int resolution = math.clamp(noirFogLutResolution, 8, MaxRuntimeNoirFogLutResolution);
             if (_noirFogLutTexture != null &&
                 _noirFogLutTexture.width == resolution &&
                 _noirFogLutTexture.height == NoirFogLutRowCount &&
@@ -993,8 +1000,7 @@ namespace Hecton8.Environment
             if (biomeBlendDurationSeconds < 0.25f)
                 biomeBlendDurationSeconds = 0.25f;
 
-            if (noirFogLutResolution < 8)
-                noirFogLutResolution = 8;
+            noirFogLutResolution = Mathf.Clamp(noirFogLutResolution, 8, MaxRuntimeNoirFogLutResolution);
 
             if (randomSeed == 0u)
                 randomSeed = 1u;

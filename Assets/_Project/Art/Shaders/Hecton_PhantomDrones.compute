@@ -58,11 +58,13 @@ void CS_UpdatePhantomDrones(uint3 id : SV_DispatchThreadID)
     float cosTheta;
     sincos(theta, sinTheta, cosTheta);
 
+    float doubleTheta = frac(phase * 2.0 + seed) * HECTON_TWO_PI;
     float sinDoubleTheta;
     float cosDoubleTheta;
-    sincos(theta * 2.0 + seed * HECTON_TWO_PI, sinDoubleTheta, cosDoubleTheta);
+    sincos(doubleTheta, sinDoubleTheta, cosDoubleTheta);
 
-    float verticalBob = sin(theta * 1.5 + seed * HECTON_TWO_PI) * 0.35;
+    float verticalTheta = frac(phase * 1.5 + seed) * HECTON_TWO_PI;
+    float verticalBob = sin(verticalTheta) * 0.35;
     float3 offsetWS;
     offsetWS.x = sinTheta * radius;
     offsetWS.z = sinDoubleTheta * radius * 0.45;
@@ -74,6 +76,7 @@ void CS_UpdatePhantomDrones(uint3 id : SV_DispatchThreadID)
 
     _PhantomMatrices[index] = BuildMatrix(positionWS, tangentAngle, scaleMeters);
 
-    float pulse = 0.62 + 0.38 * sin(theta * 3.0 + seed * 11.0);
+    float pulseTheta = frac(phase * 3.0 + seed * 1.7507) * HECTON_TWO_PI;
+    float pulse = 0.62 + 0.38 * sin(pulseTheta);
     _PhantomColors[index] = float4(0.13 + pulse * 0.12, 0.78 + pulse * 0.16, 1.0, 0.72 + pulse * 0.28);
 }

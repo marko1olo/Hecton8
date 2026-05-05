@@ -210,8 +210,8 @@ namespace Hecton8.Dev
                 saveManager,
                 "TrySchedule" + "Predictive" + "IndexedSectorPrewarm",
                 "Run" + "Predictive" + "IndexedSectorPrewarmAsync",
-                "RunIndexedSaveDefragAsync",
-                "WaitForIndexedSaveMaintenanceIdleAsync") &&
+                "RunIndexedSave" + "DefragAsync",
+                "WaitForIndexedSave" + "MaintenanceIdleAsync") &&
                    ContainsNone(
                        saveBinaryStorage,
                        "TryDefragment" + "IndexedPersistentWorldSectors",

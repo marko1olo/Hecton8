@@ -9,6 +9,7 @@ using Unity.Jobs;
 using Unity.Mathematics;
 using Unity.Profiling;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 
 namespace Hecton8.Physics
@@ -41,6 +42,8 @@ namespace Hecton8.Physics
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.FixedTick");
         private static readonly ProfilerMarker _damageScheduleProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Schedule");
         private static readonly ProfilerMarker _damageConsumeProfilerMarker = new ProfilerMarker("H8.Submarine.StructuralGrid.Damage.Consume");
+        private static readonly int _ShaderCrushCenterRadiusId = Shader.PropertyToID("_HectonSubmarineCrushCenterRadius");
+        private static readonly int _ShaderCrushDepthParamsId = Shader.PropertyToID("_HectonSubmarineCrushDepthParams");
 
         private const int CompartmentCapacity = 8;
         private const int MaxQueuedImpacts = 16;
@@ -164,6 +167,103 @@ namespace Hecton8.Physics
             }
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct HullCompartmentMappingJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float3> CompartmentCentroids;
+            public NativeArray<byte> CellCompartmentIndices;
+
+            public int CompartmentCount;
+            public int GridWidth;
+            public int GridHeight;
+            public int GridDepth;
+            public float3 GridCenterLocal;
+            public float3 GridSizeLocal;
+
+            public void Execute(int cellIndex)
+            {
+                if (CompartmentCount <= 0)
+                {
+                    CellCompartmentIndices[cellIndex] = UnmappedCompartment;
+                    return;
+                }
+
+                int x = cellIndex % GridWidth;
+                int yz = cellIndex / GridWidth;
+                int y = yz % GridHeight;
+                int z = yz / GridHeight;
+                float3 gridMin = GridCenterLocal - (GridSizeLocal * 0.5f);
+                float3 cellSize = new float3(
+                    GridWidth > 0 ? GridSizeLocal.x / GridWidth : 0f,
+                    GridHeight > 0 ? GridSizeLocal.y / GridHeight : 0f,
+                    GridDepth > 0 ? GridSizeLocal.z / GridDepth : 0f);
+                float3 cellLocalPoint = gridMin + (new float3(x + 0.5f, y + 0.5f, z + 0.5f) * cellSize);
+                byte nearestIndex = UnmappedCompartment;
+                float nearestDistanceSq = float.MaxValue;
+
+                for (int compartmentIndex = 0; compartmentIndex < CompartmentCount; compartmentIndex++)
+                {
+                    float distanceSq = math.lengthsq(cellLocalPoint - CompartmentCentroids[compartmentIndex]);
+                    if (distanceSq < nearestDistanceSq)
+                    {
+                        nearestDistanceSq = distanceSq;
+                        nearestIndex = (byte)compartmentIndex;
+                    }
+                }
+
+                CellCompartmentIndices[cellIndex] = nearestIndex;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct HullFatigueCompartmentJob : IJob
+        {
+            [ReadOnly] public NativeArray<byte> CellCompartmentIndices;
+            public NativeArray<byte> CellIntegrityFront;
+            public NativeArray<byte> CellIntegrityBack;
+            public NativeArray<byte> CellFatigue;
+            public NativeArray<byte> FatigueCompartmentFlags;
+            public NativeArray<float> FatigueIntegrityLossPerCycle;
+            public NativeArray<float> PeakNormalized;
+
+            public int CellCount;
+
+            public void Execute()
+            {
+                float peak = PeakNormalized.Length > 0 ? PeakNormalized[0] : 0f;
+                for (int cellIndex = 0; cellIndex < CellCount; cellIndex++)
+                {
+                    byte compartmentIndex = CellCompartmentIndices[cellIndex];
+                    if (compartmentIndex >= FatigueCompartmentFlags.Length ||
+                        FatigueCompartmentFlags[compartmentIndex] == 0)
+                    {
+                        continue;
+                    }
+
+                    byte fatigue = CellFatigue[cellIndex];
+                    if (fatigue < byte.MaxValue)
+                        fatigue++;
+
+                    CellFatigue[cellIndex] = fatigue;
+                    peak = math.max(peak, fatigue / (float)byte.MaxValue);
+                    float scaledIntegrityLossPerCycle = math.max(0f, FatigueIntegrityLossPerCycle[compartmentIndex]);
+                    int integrityCap = math.max(0, (int)math.floor(FullIntegrity - (fatigue * scaledIntegrityLossPerCycle)));
+                    byte cappedIntegrity = (byte)integrityCap;
+                    if (CellIntegrityFront[cellIndex] > cappedIntegrity)
+                        CellIntegrityFront[cellIndex] = cappedIntegrity;
+
+                    if (CellIntegrityBack[cellIndex] > cappedIntegrity)
+                        CellIntegrityBack[cellIndex] = cappedIntegrity;
+                }
+
+                for (int i = 0; i < FatigueCompartmentFlags.Length; i++)
+                    FatigueCompartmentFlags[i] = 0;
+
+                if (PeakNormalized.Length > 0)
+                    PeakNormalized[0] = peak;
+            }
+        }
+
         private struct ImpactCommand
         {
             public float3 LocalPoint;
@@ -219,6 +319,14 @@ namespace Hecton8.Physics
         [SerializeField, Min(1f)] private float hullCollisionFullDentEnergyJoules = 65000f;
         [Tooltip("Maximum integrity delta contributed by a single heavy hull collision.")]
         [SerializeField, Range(1f, 255f)] private float hullCollisionMaxIntegrityDelta = 96f;
+        [Tooltip("Optional shared material for GPU-instanced visual-only hull impact sparks.")]
+        [SerializeField] private Material hullImpactSparkMaterial;
+        [Tooltip("Maximum pooled spark particles reserved for submarine hull impacts.")]
+        [SerializeField, Min(8)] private int hullImpactSparkMaxParticles = 192;
+        [Tooltip("Maximum visual spark burst emitted at full impact severity.")]
+        [SerializeField, Range(1, 64)] private int hullImpactSparkMaxBurstCount = 34;
+        [Tooltip("Optional glowing scratch decal prefab. Falls back to the dent decal prefab when unset.")]
+        [SerializeField] private DecalProjector hullImpactScratchDecalPrefab;
 
         [Header("â”€â”€ References â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€")]
         [Tooltip("Optional authored hull collider used for automatic local bounds fitting.")]
@@ -242,6 +350,16 @@ namespace Hecton8.Physics
         [Tooltip("Maximum normalized compartment-volume loss applied at full crush pressure.")]
         [SerializeField, Range(0f, 0.5f)] private float maximumVolumeCompressionNormalized = DefaultMaximumVolumeCompressionNormalized;
 
+        [Header("Fake Crush Depth")]
+        [Tooltip("Depth where visual-only hull buckling reaches full strength.")]
+        [SerializeField, Min(1f)] private float fakeCrushDepthMeters = 4000f;
+        [Tooltip("Maximum GPU vertex displacement in meters at full fake crush depth.")]
+        [SerializeField, Range(0f, 1f)] private float fakeCrushMaxVertexDisplacementMeters = 0.22f;
+        [Tooltip("World-space radius around the submarine center affected by fake crush shader globals.")]
+        [SerializeField, Min(0f)] private float fakeCrushEffectRadiusMeters = 18f;
+        [Tooltip("Voronoi noise scale used by the hull shader fake crush displacement.")]
+        [SerializeField, Min(0.001f)] private float fakeCrushVoronoiScale = 0.18f;
+
         private bool _registered;
         private bool _damageReceiverRegistered;
         private bool _damageJobRunning;
@@ -254,11 +372,18 @@ namespace Hecton8.Physics
         private float _fatiguePeakNormalized;
         private float _recentImpactSeverityNormalized;
         private float _debugCompressionScale = 1f;
+        private Vector4 _publishedCrushCenterRadius = new Vector4(float.NaN, 0f, 0f, 0f);
+        private Vector4 _publishedCrushDepthParams = new Vector4(float.NaN, 0f, 0f, 0f);
         private JobHandle _damageJobHandle;
+        private JobHandle _mappingJobHandle;
+        private JobHandle _fatigueJobHandle;
         private IDamageSignalEmitter _damageEmitter;
         private Transform _cachedTransform;
         private Rigidbody _cachedHullRigidbody;
         private SubmarineHullImpactRelay _hullImpactRelay;
+        private ParticleSystem _hullImpactSparkParticles;
+        private ParticleSystemRenderer _hullImpactSparkRenderer;
+        private ParticleSystem.EmitParams _hullImpactSparkEmitParams;
         private readonly List<MonoBehaviour> _componentSearchBuffer = new List<MonoBehaviour>(4); // COLD ALLOC: List<MonoBehaviour>(4) â€” local component search scratch for interface-only wiring â€” owner: SubmarineStructuralGrid
 
         private NativeArray<byte> _cellIntegrityFront;
@@ -271,6 +396,13 @@ namespace Hecton8.Physics
         private NativeArray<float> _compartmentBreachAreasBack;
         private NativeArray<ImpactCommand> _queuedImpacts;
         private NativeArray<ImpactCommand> _scheduledImpacts;
+        private NativeArray<float3> _compartmentCentroids;
+        private NativeArray<byte> _fatigueCompartmentFlags;
+        private NativeArray<float> _fatigueIntegrityLossPerCycle;
+        private NativeArray<float> _fatiguePeakResult;
+        private bool _mappingJobRunning;
+        private bool _fatigueJobRunning;
+        private int _pendingMappedCompartmentCount;
         // COLD ALLOC: float[8] Ã¢â‚¬â€ previous compartment pressures used to detect fatigue cycles Ã¢â‚¬â€ owner: SubmarineStructuralGrid
         private readonly float[] _previousCompartmentPressuresKPa = new float[CompartmentCapacity];
 
@@ -289,6 +421,7 @@ namespace Hecton8.Physics
             ResolveGridBounds();
             EnsureNativeState();
             SeedStructuralState();
+            EnsureHullImpactSparkParticles();
         }
 
         private void OnEnable()
@@ -301,25 +434,30 @@ namespace Hecton8.Physics
             TryRegister();
             TryRegisterDamageReceiver();
             EnsureHullCollisionRelay();
+            EnsureHullImpactSparkParticles();
         }
 
         private void OnDisable()
         {
+            StopHullImpactSparkParticles();
             ClearHullCollisionRelay();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
+            ResetFakeCrushDepthGlobals();
             DisposeNativeStateDeferred();
         }
 
         private void OnDestroy()
         {
+            StopHullImpactSparkParticles();
             ClearHullCollisionRelay();
             TryUnregisterDamageReceiver();
             TryUnregister();
             if (ReferenceEquals(GlobalRegistry.SubmarineHullBreach, this))
                 GlobalRegistry.UnregisterSubmarineHullBreach(this);
+            ResetFakeCrushDepthGlobals();
             DisposeNativeStateDeferred();
         }
 
@@ -334,17 +472,22 @@ namespace Hecton8.Physics
                 _recentImpactSeverityNormalized = math.max(
                     0f,
                     _recentImpactSeverityNormalized - math.max(0f, fixedDeltaTime) * RecentImpactSeverityDecayPerSecond);
-                RefreshCompartmentMapping();
-                ApplyAbyssalCompression();
-                ApplyPressureCycleFatigue();
+                if (!EnsureCompartmentMappingReady())
+                    return;
 
-                if (!_damageJobRunning && _queuedImpactCount > 0)
+                ApplyAbyssalCompression();
+                if (!_damageJobRunning)
+                    ApplyPressureCycleFatigue();
+
+                if (!_damageJobRunning && !_fatigueJobRunning && _queuedImpactCount > 0)
                     ScheduleDamageJob();
             }
         }
 
         public void PostFixedTick(float fixedDeltaTime)
         {
+            ConsumeCompletedMappingJob();
+            ConsumeCompletedFatigueJob();
             ConsumeCompletedDamageJob();
         }
 
@@ -436,16 +579,14 @@ namespace Hecton8.Physics
         /// </summary>
         public void QueueHullImpactDecalLocal(float3 localPoint, float3 localNormal, float impactSpeed, float severity01)
         {
-            if (hullImpactDentDecalPrefab == null)
-                return;
-
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
             Vector3 localPointVector = new Vector3(localPoint.x, localPoint.y, localPoint.z);
             Vector3 localNormalVector = new Vector3(localNormal.x, localNormal.y, localNormal.z);
             Vector3 worldPoint = cachedTransform.TransformPoint(localPointVector);
             Vector3 worldNormal = cachedTransform.TransformDirection(localNormalVector);
-            SpawnHullImpactDentDecal(worldPoint, worldNormal, impactSpeed, severity01);
+            SpawnHullImpactSparks(worldPoint, worldNormal, severity01);
+            SpawnHullImpactScratchDecal(worldPoint, worldNormal, impactSpeed, severity01);
         }
 
         internal static float DebugResolveHullImpactDentDecalSize(
@@ -459,9 +600,40 @@ namespace Hecton8.Physics
             return size + math.saturate(math.max(0f, impactSpeed) / 30f) * 0.2f;
         }
 
-        private void SpawnHullImpactDentDecal(Vector3 worldPoint, Vector3 outwardNormal, float impactSpeed, float severity01)
+        private void SpawnHullImpactSparks(Vector3 worldPoint, Vector3 outwardNormal, float severity01)
         {
-            if (hullImpactDentDecalPrefab == null)
+            EnsureHullImpactSparkParticles();
+            if (_hullImpactSparkParticles == null)
+                return;
+
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            Vector3 normal = outwardNormal.sqrMagnitude > Epsilon ? outwardNormal.normalized : cachedTransform.up;
+            Transform sparkTransform = _hullImpactSparkParticles.transform;
+            sparkTransform.SetPositionAndRotation(
+                worldPoint + normal * math.max(0f, dentDecalSurfaceOffsetMeters),
+                Quaternion.LookRotation(normal, ResolveStableDecalUp(normal)));
+
+            float safeSeverity = math.saturate(severity01);
+            int burstCount = Mathf.Clamp(
+                Mathf.CeilToInt(math.lerp(6f, math.max(1, hullImpactSparkMaxBurstCount), safeSeverity)),
+                1,
+                math.max(1, hullImpactSparkMaxBurstCount));
+
+            _hullImpactSparkEmitParams.position = sparkTransform.position;
+            _hullImpactSparkEmitParams.velocity = normal * math.lerp(1.5f, 4.5f, safeSeverity);
+            _hullImpactSparkEmitParams.startLifetime = math.lerp(0.16f, 0.42f, safeSeverity);
+            _hullImpactSparkEmitParams.startSize = math.lerp(0.025f, 0.08f, safeSeverity);
+            _hullImpactSparkEmitParams.startColor = Color.Lerp(new Color(1f, 0.45f, 0.08f, 0.85f), Color.white, safeSeverity);
+            _hullImpactSparkParticles.Emit(_hullImpactSparkEmitParams, burstCount);
+        }
+
+        private void SpawnHullImpactScratchDecal(Vector3 worldPoint, Vector3 outwardNormal, float impactSpeed, float severity01)
+        {
+            DecalProjector scratchPrefab = hullImpactScratchDecalPrefab != null
+                ? hullImpactScratchDecalPrefab
+                : hullImpactDentDecalPrefab;
+            if (scratchPrefab == null)
                 return;
 
             ObjectPoolManager pool = GlobalRegistry.ObjectPool;
@@ -473,7 +645,7 @@ namespace Hecton8.Physics
             Vector3 normal = outwardNormal.sqrMagnitude > Epsilon ? outwardNormal.normalized : cachedTransform.up;
             Quaternion rotation = Quaternion.LookRotation(-normal, ResolveStableDecalUp(normal));
             Vector3 position = worldPoint + normal * math.max(0f, dentDecalSurfaceOffsetMeters);
-            GameObject instance = pool.Spawn(hullImpactDentDecalPrefab, position, rotation);
+            GameObject instance = pool.Spawn(scratchPrefab, position, rotation);
             if (instance == null || !instance.TryGetComponent(out DecalProjector projector))
             {
                 if (instance != null)
@@ -491,6 +663,70 @@ namespace Hecton8.Physics
             projector.pivot = new Vector3(0f, 0f, projector.size.z * 0.5f);
             projector.fadeFactor = math.lerp(0.55f, 1f, math.saturate(severity01));
             pool.Despawn(projector, math.max(0.1f, dentDecalLifetimeSeconds));
+        }
+
+        private void EnsureHullImpactSparkParticles()
+        {
+            if (_hullImpactSparkParticles != null)
+                return;
+
+            Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
+            _cachedTransform = cachedTransform;
+            GameObject sparkObject = new GameObject("PFX_SubmarineHull_ImpactSparks"); // COLD ALLOC: visual-only hull impact particle owner - owner: SubmarineStructuralGrid
+            sparkObject.transform.SetParent(cachedTransform, false);
+            _hullImpactSparkParticles = sparkObject.AddComponent<ParticleSystem>(); // COLD ALLOC: ParticleSystem[1] - pooled hull impact sparks - owner: SubmarineStructuralGrid
+            _hullImpactSparkRenderer = sparkObject.GetComponent<ParticleSystemRenderer>();
+
+            ParticleSystem.MainModule main = _hullImpactSparkParticles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.simulationSpace = ParticleSystemSimulationSpace.World;
+            main.maxParticles = math.max(8, hullImpactSparkMaxParticles);
+            main.startLifetime = new ParticleSystem.MinMaxCurve(0.16f, 0.42f);
+            main.startSpeed = new ParticleSystem.MinMaxCurve(5f, 14f);
+            main.startSize = new ParticleSystem.MinMaxCurve(0.025f, 0.08f);
+            main.startColor = new ParticleSystem.MinMaxGradient(
+                new Color(1f, 0.38f, 0.06f, 0.9f),
+                new Color(1f, 0.92f, 0.66f, 1f));
+
+            ParticleSystem.EmissionModule emission = _hullImpactSparkParticles.emission;
+            emission.enabled = true;
+            emission.rateOverTime = 0f;
+
+            ParticleSystem.ShapeModule shape = _hullImpactSparkParticles.shape;
+            shape.enabled = true;
+            shape.shapeType = ParticleSystemShapeType.Cone;
+            shape.angle = 18f;
+            shape.radius = 0.035f;
+            shape.length = 0.08f;
+
+            ParticleSystem.LightsModule lights = _hullImpactSparkParticles.lights;
+            lights.enabled = false;
+            ParticleSystem.CollisionModule collision = _hullImpactSparkParticles.collision;
+            collision.enabled = false;
+            ParticleSystem.TrailModule trails = _hullImpactSparkParticles.trails;
+            trails.enabled = false;
+
+            if (_hullImpactSparkRenderer != null)
+            {
+                _hullImpactSparkRenderer.renderMode = ParticleSystemRenderMode.Stretch;
+                _hullImpactSparkRenderer.lengthScale = 2.4f;
+                _hullImpactSparkRenderer.velocityScale = 0.08f;
+                _hullImpactSparkRenderer.cameraVelocityScale = 0f;
+                _hullImpactSparkRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                _hullImpactSparkRenderer.receiveShadows = false;
+                _hullImpactSparkRenderer.enableGPUInstancing = true;
+                if (hullImpactSparkMaterial != null)
+                    _hullImpactSparkRenderer.sharedMaterial = hullImpactSparkMaterial;
+            }
+        }
+
+        private void StopHullImpactSparkParticles()
+        {
+            if (_hullImpactSparkParticles == null)
+                return;
+
+            _hullImpactSparkParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
         private Vector3 ResolveStableDecalUp(Vector3 normal)
@@ -626,9 +862,13 @@ namespace Hecton8.Physics
         private void ApplyAbyssalCompression()
         {
             if (fluidDynamics == null)
+            {
+                PublishFakeCrushDepthGlobals(0f);
                 return;
+            }
 
             float depthMeters = math.max(0f, fluidDynamics.ExternalDepthMeters);
+            PublishFakeCrushDepthGlobals(depthMeters);
             if (depthMeters <= math.max(0f, compressionDepthThresholdMeters))
             {
                 _debugCompressionScale = 1f;
@@ -645,6 +885,48 @@ namespace Hecton8.Physics
             float compressionScale = 1f - (compression01 * math.saturate(maximumVolumeCompressionNormalized));
             _debugCompressionScale = compressionScale;
             fluidDynamics.SetCompartmentCompressionScale(compressionScale);
+        }
+
+        private void PublishFakeCrushDepthGlobals(float depthMeters)
+        {
+            Vector3 center = transform.position;
+            Vector4 centerRadius = new Vector4(
+                center.x,
+                center.y,
+                center.z,
+                math.max(0f, fakeCrushEffectRadiusMeters));
+            Vector4 depthParams = new Vector4(
+                math.max(0f, depthMeters),
+                math.max(1f, fakeCrushDepthMeters),
+                math.max(0f, fakeCrushMaxVertexDisplacementMeters),
+                math.max(0.001f, fakeCrushVoronoiScale));
+
+            if (Approximately(_publishedCrushCenterRadius, centerRadius) &&
+                Approximately(_publishedCrushDepthParams, depthParams))
+            {
+                return;
+            }
+
+            Shader.SetGlobalVector(_ShaderCrushCenterRadiusId, centerRadius);
+            Shader.SetGlobalVector(_ShaderCrushDepthParamsId, depthParams);
+            _publishedCrushCenterRadius = centerRadius;
+            _publishedCrushDepthParams = depthParams;
+        }
+
+        private void ResetFakeCrushDepthGlobals()
+        {
+            Vector4 zero = Vector4.zero;
+            Shader.SetGlobalVector(_ShaderCrushCenterRadiusId, zero);
+            Shader.SetGlobalVector(_ShaderCrushDepthParamsId, zero);
+            _publishedCrushCenterRadius = new Vector4(float.NaN, 0f, 0f, 0f);
+            _publishedCrushDepthParams = new Vector4(float.NaN, 0f, 0f, 0f);
+        }
+
+        private static bool Approximately(Vector4 a, Vector4 b)
+        {
+            const float EpsilonSq = 0.0001f;
+            Vector4 delta = a - b;
+            return delta.sqrMagnitude <= EpsilonSq;
         }
 
         private void ResolveGridBounds()
@@ -689,12 +971,21 @@ namespace Hecton8.Physics
             _queuedImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<ImpactCommand>[16] â€” scheduled impact snapshot buffer â€” owner: SubmarineStructuralGrid
             _scheduledImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float3>[8] - compartment centroids staged for Burst hull mapping - owner: SubmarineStructuralGrid
+            _compartmentCentroids = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<byte>[8] - pressure-fatigue compartment flags consumed by Burst job - owner: SubmarineStructuralGrid
+            _fatigueCompartmentFlags = new NativeArray<byte>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[8] - pressure-fatigue per-compartment loss scalars consumed by Burst job - owner: SubmarineStructuralGrid
+            _fatigueIntegrityLossPerCycle = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
+            // COLD ALLOC: NativeArray<float>[1] - pressure-fatigue peak metric returned by Burst job - owner: SubmarineStructuralGrid
+            _fatiguePeakResult = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeStateMemorySentinel();
 
             _nativeStateReady = true;
             _queuedImpactCount = 0;
             _scheduledImpactCount = 0;
             _mappedCompartmentCount = 0;
+            _pendingMappedCompartmentCount = 0;
         }
 
         private void SeedStructuralState()
@@ -725,8 +1016,12 @@ namespace Hecton8.Physics
 
             _cellBreachAreaSquareMeters = ResolveCellBreachAreaSquareMeters();
             _fatiguePeakNormalized = 0f;
+            if (_fatiguePeakResult.IsCreated)
+                _fatiguePeakResult[0] = 0f;
+
             _recentImpactSeverityNormalized = 0f;
-            RefreshCompartmentMapping();
+            _mappedCompartmentCount = 0;
+            EnsureCompartmentMappingReady();
             for (int i = 0; i < CompartmentCapacity; i++)
                 _previousCompartmentPressuresKPa[i] = 0f;
         }
@@ -759,61 +1054,65 @@ namespace Hecton8.Physics
             _hullImpactRelay = null;
         }
 
-        private void RefreshCompartmentMapping()
+        private bool EnsureCompartmentMappingReady()
         {
             if (!_cellCompartmentIndices.IsCreated || fluidDynamics == null || fluidDynamics.CompartmentCount <= 0)
-                return;
+                return true;
 
-            int compartmentCount = fluidDynamics.CompartmentCount;
+            if (_mappingJobRunning)
+                return false;
+
+            int compartmentCount = math.min(fluidDynamics.CompartmentCount, CompartmentCapacity);
             if (_mappedCompartmentCount == compartmentCount)
+                return true;
+
+            for (int compartmentIndex = 0; compartmentIndex < compartmentCount; compartmentIndex++)
+                _compartmentCentroids[compartmentIndex] = fluidDynamics.GetCompartmentCentroid(compartmentIndex);
+
+            _pendingMappedCompartmentCount = compartmentCount;
+            _mappingJobHandle = new HullCompartmentMappingJob
+            {
+                CompartmentCentroids = _compartmentCentroids,
+                CellCompartmentIndices = _cellCompartmentIndices,
+                CompartmentCount = compartmentCount,
+                GridWidth = math.max(1, gridWidth),
+                GridHeight = math.max(1, gridHeight),
+                GridDepth = math.max(1, gridDepth),
+                GridCenterLocal = localGridCenter,
+                GridSizeLocal = localGridSize
+            }.Schedule(_cellCompartmentIndices.Length, 32);
+            _mappingJobRunning = true;
+            return false;
+        }
+
+        private void ConsumeCompletedMappingJob()
+        {
+            if (!_mappingJobRunning)
                 return;
 
-            float3 gridMin = (float3)localGridCenter - ((float3)localGridSize * 0.5f);
-            float3 cellSize = new float3(
-                localGridSize.x / math.max(gridWidth, 1),
-                localGridSize.y / math.max(gridHeight, 1),
-                localGridSize.z / math.max(gridDepth, 1));
+            if (!DispatcherJobSwap.TryComplete(ref _mappingJobHandle, false))
+                return;
 
-            int cellIndex = 0;
-            for (int z = 0; z < gridDepth; z++)
-            {
-                float localZ = gridMin.z + ((z + 0.5f) * cellSize.z);
-                for (int y = 0; y < gridHeight; y++)
-                {
-                    float localY = gridMin.y + ((y + 0.5f) * cellSize.y);
-                    for (int x = 0; x < gridWidth; x++, cellIndex++)
-                    {
-                        float localX = gridMin.x + ((x + 0.5f) * cellSize.x);
-                        float3 cellLocalPoint = new float3(localX, localY, localZ);
-                        byte nearestIndex = UnmappedCompartment;
-                        float nearestDistanceSq = float.MaxValue;
-
-                        for (int compartmentIndex = 0; compartmentIndex < compartmentCount; compartmentIndex++)
-                        {
-                            Vector3 centroid = fluidDynamics.GetCompartmentCentroid(compartmentIndex);
-                            float distanceSq = math.lengthsq(cellLocalPoint - (float3)centroid);
-                            if (distanceSq < nearestDistanceSq)
-                            {
-                                nearestDistanceSq = distanceSq;
-                                nearestIndex = (byte)compartmentIndex;
-                            }
-                        }
-
-                        _cellCompartmentIndices[cellIndex] = nearestIndex;
-                    }
-                }
-            }
-
-            _mappedCompartmentCount = compartmentCount;
+            _mappingJobRunning = false;
+            _mappedCompartmentCount = _pendingMappedCompartmentCount;
+            _pendingMappedCompartmentCount = 0;
         }
 
         private void ApplyPressureCycleFatigue()
         {
-            if (!_cellIntegrityFront.IsCreated || !_cellFatigue.IsCreated || atmosphereSystem == null || fluidDynamics == null)
+            if (!_cellIntegrityFront.IsCreated ||
+                !_cellFatigue.IsCreated ||
+                !_fatigueCompartmentFlags.IsCreated ||
+                _fatigueJobRunning ||
+                atmosphereSystem == null ||
+                fluidDynamics == null)
+            {
                 return;
+            }
 
             int compartmentCount = math.min(fluidDynamics.CompartmentCount, CompartmentCapacity);
             float thresholdKPa = math.max(0f, fatiguePressureThresholdKPa);
+            bool scheduledAny = false;
             for (int compartmentIndex = 0; compartmentIndex < compartmentCount; compartmentIndex++)
             {
                 float previousPressure = _previousCompartmentPressuresKPa[compartmentIndex];
@@ -823,39 +1122,54 @@ namespace Hecton8.Physics
                 if (previousPressure >= thresholdKPa || currentPressure < thresholdKPa)
                     continue;
 
-                ApplyFatigueToCompartment(compartmentIndex);
+                float thermalMultiplier = atmosphereSystem.ResolveThermalFatigueMultiplier(compartmentIndex);
+                _fatigueCompartmentFlags[compartmentIndex] = 1;
+                _fatigueIntegrityLossPerCycle[compartmentIndex] = math.max(0f, fatigueIntegrityLossPerCycle * thermalMultiplier);
+                scheduledAny = true;
             }
+
+            if (scheduledAny)
+                ScheduleFatigueJob();
         }
 
-        private void ApplyFatigueToCompartment(int compartmentIndex)
+        private void ScheduleFatigueJob()
         {
-            if (!_cellIntegrityFront.IsCreated || !_cellFatigue.IsCreated || !_cellCompartmentIndices.IsCreated)
+            if (_fatigueJobRunning ||
+                !_cellIntegrityFront.IsCreated ||
+                !_cellFatigue.IsCreated ||
+                !_cellCompartmentIndices.IsCreated ||
+                !_fatigueCompartmentFlags.IsCreated)
+            {
+                return;
+            }
+
+            _fatiguePeakResult[0] = _fatiguePeakNormalized;
+            _fatigueJobHandle = new HullFatigueCompartmentJob
+            {
+                CellCompartmentIndices = _cellCompartmentIndices,
+                CellIntegrityFront = _cellIntegrityFront,
+                CellIntegrityBack = _cellIntegrityBack,
+                CellFatigue = _cellFatigue,
+                FatigueCompartmentFlags = _fatigueCompartmentFlags,
+                FatigueIntegrityLossPerCycle = _fatigueIntegrityLossPerCycle,
+                PeakNormalized = _fatiguePeakResult,
+                CellCount = _cellIntegrityFront.Length
+            }.Schedule();
+            _fatigueJobRunning = true;
+        }
+
+        private void ConsumeCompletedFatigueJob()
+        {
+            if (!_fatigueJobRunning)
                 return;
 
-            float thermalMultiplier = atmosphereSystem != null
-                ? atmosphereSystem.ResolveThermalFatigueMultiplier(compartmentIndex)
-                : 1f;
-            float scaledIntegrityLossPerCycle = math.max(0f, fatigueIntegrityLossPerCycle * thermalMultiplier);
-            int cellCount = _cellIntegrityFront.Length;
-            for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
-            {
-                if (_cellCompartmentIndices[cellIndex] != compartmentIndex)
-                    continue;
+            if (!DispatcherJobSwap.TryComplete(ref _fatigueJobHandle, false))
+                return;
 
-                byte fatigue = _cellFatigue[cellIndex];
-                if (fatigue < byte.MaxValue)
-                    fatigue++;
-
-                _cellFatigue[cellIndex] = fatigue;
-                _fatiguePeakNormalized = math.max(_fatiguePeakNormalized, fatigue / (float)byte.MaxValue);
-                int integrityCap = math.max(0, (int)math.floor(FullIntegrity - (fatigue * scaledIntegrityLossPerCycle)));
-                byte cappedIntegrity = (byte)integrityCap;
-                if (_cellIntegrityFront[cellIndex] > cappedIntegrity)
-                    _cellIntegrityFront[cellIndex] = cappedIntegrity;
-
-                if (_cellIntegrityBack.IsCreated && _cellIntegrityBack[cellIndex] > cappedIntegrity)
-                    _cellIntegrityBack[cellIndex] = cappedIntegrity;
-            }
+            _fatigueJobRunning = false;
+            _fatiguePeakNormalized = _fatiguePeakResult.IsCreated
+                ? math.max(_fatiguePeakNormalized, _fatiguePeakResult[0])
+                : _fatiguePeakNormalized;
         }
 
         private void ScheduleDamageJob()
@@ -961,6 +1275,11 @@ namespace Hecton8.Physics
         private void DisposeNativeStateDeferred()
         {
             JobHandle dependency = _damageJobRunning ? _damageJobHandle : default;
+            if (_mappingJobRunning)
+                dependency = JobHandle.CombineDependencies(dependency, _mappingJobHandle);
+            if (_fatigueJobRunning)
+                dependency = JobHandle.CombineDependencies(dependency, _fatigueJobHandle);
+
             DisposeDeferred(ref _cellIntegrityFront, ref dependency);
             DisposeDeferred(ref _cellIntegrityBack, ref dependency);
             DisposeDeferred(ref _cellFatigue, ref dependency);
@@ -971,13 +1290,22 @@ namespace Hecton8.Physics
             DisposeDeferred(ref _compartmentBreachAreasBack, ref dependency);
             DisposeDeferred(ref _queuedImpacts, ref dependency);
             DisposeDeferred(ref _scheduledImpacts, ref dependency);
+            DisposeDeferred(ref _compartmentCentroids, ref dependency);
+            DisposeDeferred(ref _fatigueCompartmentFlags, ref dependency);
+            DisposeDeferred(ref _fatigueIntegrityLossPerCycle, ref dependency);
+            DisposeDeferred(ref _fatiguePeakResult, ref dependency);
             _damageJobHandle = default;
+            _mappingJobHandle = default;
+            _fatigueJobHandle = default;
             _damageJobRunning = false;
+            _mappingJobRunning = false;
+            _fatigueJobRunning = false;
             _nativeStateReady = false;
             _recentImpactSeverityNormalized = 0f;
             _queuedImpactCount = 0;
             _scheduledImpactCount = 0;
             _mappedCompartmentCount = 0;
+            _pendingMappedCompartmentCount = 0;
         }
 
         private int ResolveCellCount()
@@ -1024,6 +1352,10 @@ namespace Hecton8.Physics
             NativeMemorySentinel.RegisterNativeArray(_compartmentBreachAreasBack, NativeMemoryOwner, nameof(_compartmentBreachAreasBack), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_queuedImpacts, NativeMemoryOwner, nameof(_queuedImpacts), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_scheduledImpacts, NativeMemoryOwner, nameof(_scheduledImpacts), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_compartmentCentroids, NativeMemoryOwner, nameof(_compartmentCentroids), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_fatigueCompartmentFlags, NativeMemoryOwner, nameof(_fatigueCompartmentFlags), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_fatigueIntegrityLossPerCycle, NativeMemoryOwner, nameof(_fatigueIntegrityLossPerCycle), NativeMemoryLifetime);
+            NativeMemorySentinel.RegisterNativeArray(_fatiguePeakResult, NativeMemoryOwner, nameof(_fatiguePeakResult), NativeMemoryLifetime);
         }
 
         private sealed class SubmarineHullImpactRelay : MonoBehaviour

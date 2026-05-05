@@ -31,6 +31,8 @@ Shader "Hecton8/Flora/SargassumMaster"
         _BiolumPulseAmplitude ("Biolum Pulse Amplitude", Range(0, 1)) = 0.18
         _BiolumPulseFrequency ("Biolum Pulse Frequency", Range(0, 8)) = 0.92
         _BiolumNightResponse ("Biolum Night Response", Range(0, 2)) = 1.0
+        _NoirSignalFlickerStrength ("Noir Signal Flicker Strength", Range(0, 0.35)) = 0.08
+        _NoirSignalFlickerScale ("Noir Signal Flicker Scale", Range(0.01, 4)) = 0.42
         _InteractionPosition ("Interaction Position", Vector) = (0,0,0,0)
         _InteractionRadius ("Interaction Radius", Range(0.05, 6)) = 0.8
         _InteractionCutStrength ("Interaction Cut Strength", Range(0, 1)) = 0
@@ -100,6 +102,8 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half _BiolumPulseAmplitude;
                 half _BiolumPulseFrequency;
                 half _BiolumNightResponse;
+                half _NoirSignalFlickerStrength;
+                half _NoirSignalFlickerScale;
                 float3 _InteractionPosition;
                 half _InteractionRadius;
                 half _InteractionCutStrength;
@@ -296,6 +300,10 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half oceanBiolumInfluence = saturate(_HectonOceanBiolumStrength);
                 half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
                 half3 biolum = biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.7h) * bubbleBiolumMask * biolumPulse * timeBand * nightFactor);
+                half signalPhase = dot(input.positionWS.xz, half2(_NoirSignalFlickerScale, _NoirSignalFlickerScale * 1.37h)) + _Time.y * 2.1h + input.color.b * 3.3h;
+                half signalFlicker = (0.5h + 0.5h * sin(signalPhase)) * saturate(_NoirSignalFlickerStrength);
+                half signalMask = saturate((1.0h - ao) * input.uv.y * (1.0h - isBubble));
+                half3 noirSignal = biolumColor * (signalFlicker * signalMask);
                 half specular = pow(saturate(dot(normalize(lightDir + viewDirWS), normalWS)), lerp(8.0h, 36.0h, _Smoothness)) * _Smoothness * 0.22h;
                 half cutEdge = smoothstep(0.02h, 0.24h, cutMask) * (1.0h - smoothstep(0.24h, 0.8h, cutMask)) * _InteractionEdgeBoost;
 
@@ -303,6 +311,7 @@ Shader "Hecton8/Flora/SargassumMaster"
                 color += _RimColor.rgb * rim;
                 color += _SSSColor.rgb * (sss + bubbleGlow);
                 color += biolum;
+                color += noirSignal;
                 color += specular;
                 color += _CutEdgeColor.rgb * cutEdge;
                 color = MixFog(color, input.fogFactor);

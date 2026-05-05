@@ -38,6 +38,9 @@ Shader "HECTON/Terrain/TerrainMaster"
         [Header(Cave Glow)]
         _CaveGlowColor  ("Cave Glow Color", Color) = (0.2, 0.8, 1.0, 1)
         _CaveGlowPower  ("Cave Glow Intensity", Range(0,10)) = 3.0
+        _NoirSiltPulseColor ("Noir Silt Pulse Color", Color) = (0.0, 0.38, 0.55, 1)
+        _NoirSiltPulseStrength ("Noir Silt Pulse Strength", Range(0,1)) = 0.06
+        _NoirSiltPulseScale ("Noir Silt Pulse Scale", Float) = 0.045
 
         [Header(Surface)]
         _Metallic       ("Metallic", Range(0,1)) = 0.0
@@ -82,6 +85,8 @@ Shader "HECTON/Terrain/TerrainMaster"
             float  _DarkenPower;
             float  _CaveGlowPower;
             float  _FadeDistance;
+            float  _NoirSiltPulseStrength;
+            float  _NoirSiltPulseScale;
             half   _Metallic;
             half   _BaseSmooth;
             half4  _SandColor;
@@ -89,6 +94,7 @@ Shader "HECTON/Terrain/TerrainMaster"
             half4  _BiomeTint;
             half4  _DepthColor;
             half4  _CaveGlowColor;
+            half4  _NoirSiltPulseColor;
         CBUFFER_END
 
         // Textures declared outside CBUFFER (URP requirement)
@@ -332,6 +338,23 @@ Shader "HECTON/Terrain/TerrainMaster"
             return saturate(biome + bleed);
         }
 
+        half ApplyNoirSiltPulse(float3 positionWS, half depthFactor, half slopeBlend, inout half3 albedo, inout half3 emission)
+        {
+            half strength = saturate((half)_NoirSiltPulseStrength);
+            if (strength <= 0.0001h)
+                return 0.0h;
+
+            float scale = max(_NoirSiltPulseScale, 0.0001);
+            float2 pulseCoord = positionWS.xz * scale + positionWS.yy * 0.011;
+            half grainA = HectonInterleavedGradientNoise(pulseCoord * 173.31);
+            half grainB = HectonInterleavedGradientNoise(pulseCoord.yx * 91.70 + _Time.yy * 0.037);
+            half pulse = saturate(((grainA * 0.65h) + (grainB * 0.35h) - 0.52h) * 3.2h);
+            half mask = pulse * saturate(depthFactor * (1.0h - slopeBlend * 0.35h)) * strength;
+            albedo = lerp(albedo, albedo * _NoirSiltPulseColor.rgb, mask * 0.65h);
+            emission += _NoirSiltPulseColor.rgb * (mask * 0.025h);
+            return mask;
+        }
+
         ENDHLSL
 
         // ================================================================
@@ -464,6 +487,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
                 // ---- Cave emission ----
                 half3 emission = cave * _CaveGlowColor.rgb * _CaveGlowPower;
+                ApplyNoirSiltPulse(IN.positionWS, depthFactor, slopeBlend, albedo, emission);
                 half canopyShadow = EvaluateSargassumCanopyShadow(IN.positionWS);
                 if (canopyShadow > 0.0001h)
                 {

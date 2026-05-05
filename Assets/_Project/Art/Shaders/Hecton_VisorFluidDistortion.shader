@@ -53,6 +53,10 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
             TEXTURE2D(_HectonVisorFluidBlueNoiseTex);
             SAMPLER(sampler_HectonVisorFluidBlueNoiseTex);
             float4 _BlitTexture_TexelSize;
+            float _RainIntensity;
+            float4 _GlobalWind;
+            float4 _HectonScreenSpaceRainParams;
+            float _HectonLightningFlash;
 
             struct Attributes
             {
@@ -200,6 +204,34 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 return offset * (_HectonVisorFluidDistortionStrength * mask);
             }
 
+            float ComputeScreenSpaceRain(float2 uv, float rainIntensity)
+            {
+                float densityScale = max(0.25, _HectonScreenSpaceRainParams.y);
+                float areaScale = max(0.1, _HectonScreenSpaceRainParams.z);
+                float exposure = saturate(_HectonScreenSpaceRainParams.w);
+                float windSpeed = saturate(_GlobalWind.w * 0.08);
+                float2 windXZ = _GlobalWind.xz;
+                float windLenSq = max(dot(windXZ, windXZ), 0.0001);
+                float2 windDir = windXZ * rsqrt(windLenSq);
+                float slant = 0.16 + windDir.x * (0.22 + windSpeed * 0.28);
+                float fallSpeed = 18.0 + windSpeed * 12.0;
+                float2 scale = float2(96.0 * areaScale, 44.0);
+                float2 rainUV = uv * scale;
+                rainUV.x += uv.y * slant * 28.0 + windDir.x * _Time.y * 4.0;
+                rainUV.y -= _Time.y * fallSpeed;
+
+                float2 cell = floor(rainUV);
+                float seed = Hash21(cell);
+                float lane = abs(frac(rainUV.x + seed * 0.37) - 0.5);
+                float drop = frac(rainUV.y + seed);
+                float streak = smoothstep(0.5, 0.0, lane * (10.0 + rainIntensity * densityScale * 24.0));
+                streak *= smoothstep(0.98, 0.64, drop) * smoothstep(0.02, 0.18, drop);
+                streak *= step(1.0 - saturate(rainIntensity * densityScale * 0.85), seed);
+
+                float mistNoise = saturate(Fbm(uv * float2(18.0, 32.0) + float2(_Time.y * windDir.x, -_Time.y * 1.7)) - 0.54);
+                return saturate((streak + mistNoise * rainIntensity * 0.28) * rainIntensity * exposure);
+            }
+
             half4 Frag(Varyings input) : SV_Target
             {
                 float wetness = saturate(_HectonVisorFluidWetness);
@@ -234,6 +266,13 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 half3 dustTint = lerp(half3(0.018, 0.022, 0.018), half3(0.11, 0.13, 0.10), saturate(_HectonVisorFluidAmbientLight));
                 color.rgb = lerp(color.rgb, max(color.rgb - dustTint * 0.55h, half3(0.0h, 0.0h, 0.0h)), (half)(dustMask * 0.55));
                 color.rgb += dustTint * (half)(dustMask * 0.18);
+
+                float rainIntensity = saturate(_RainIntensity);
+                float rainMask = ComputeScreenSpaceRain(input.screenUV, rainIntensity);
+                half3 rainTint = half3(0.48h, 0.58h, 0.68h);
+                color.rgb = lerp(color.rgb, color.rgb * (1.0h - (half)(rainIntensity * 0.08)), (half)rainIntensity);
+                color.rgb += rainTint * (half)(rainMask * 0.22);
+                color.rgb += (half)saturate(_HectonLightningFlash) * half3(0.07h, 0.09h, 0.12h);
                 return color;
             }
             ENDHLSL

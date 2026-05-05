@@ -43,7 +43,6 @@ namespace Hecton8.SaveSystem
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const int SafeAupSnapHitCapacity = 8;
-        private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: SECTOR CORRUPTION DETECTED. TERRAIN RE-INITIALIZED.";
         private const string GeologicalAnomalyDetectedMessage = "Geological Anomaly Detected";
         private const int MaxRegisteredSaveables = 256;

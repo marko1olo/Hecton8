@@ -22,6 +22,7 @@ namespace Hecton8.Construction
         private const int MaxDiscoveredSupplyCrates = 12;
         private const int SupplyOverlapCapacity = 24;
         private const int SupplyCrateLookupCacheCapacity = SupplyOverlapCapacity;
+        private const int MaxMainThreadSupplyScanCount = 64;
         private const float SupplyRescanInterval = 5f;
         private static readonly List<RepairDroneHub> s_ActiveHubs = new List<RepairDroneHub>(8);
 
@@ -394,7 +395,8 @@ namespace Hecton8.Construction
 
             if (supplyCrates != null)
             {
-                for (int i = 0; i < supplyCrates.Length; i++)
+                int explicitCrateCount = Mathf.Min(supplyCrates.Length, MaxMainThreadSupplyScanCount);
+                for (int i = 0; i < explicitCrateCount; i++)
                 {
                     if (ReferenceEquals(supplyCrates[i], crate))
                         return true;
@@ -549,7 +551,7 @@ namespace Hecton8.Construction
                     return true;
             }
 
-            return TryResolveNearestSupplyEndpoint(supplyCrates, supplyCrates != null ? supplyCrates.Length : 0, requesterPosition, ref endpointPosition) ||
+            return TryResolveNearestSupplyEndpoint(supplyCrates, supplyCrates != null ? Mathf.Min(supplyCrates.Length, MaxMainThreadSupplyScanCount) : 0, requesterPosition, ref endpointPosition) ||
                    TryResolveNearestSupplyEndpoint(_discoveredSupplyCrates, _discoveredSupplyCount, requesterPosition, ref endpointPosition);
         }
 
@@ -600,7 +602,8 @@ namespace Hecton8.Construction
 
             bool found = false;
             float bestDistanceSq = float.MaxValue;
-            for (int i = 0; i < count; i++)
+            int crateCount = Mathf.Min(count, MaxMainThreadSupplyScanCount);
+            for (int i = 0; i < crateCount; i++)
             {
                 StorageCrate crate = crates[i];
                 if (crate == null || crate.CountItem(repairSupplyItem) <= 0)
@@ -621,7 +624,7 @@ namespace Hecton8.Construction
 
         private bool TryResolveRepairSupplySlot(int requiredUnits, bool consume)
         {
-            if (TryResolveRepairSupplySlot(supplyCrates, supplyCrates != null ? supplyCrates.Length : 0, requiredUnits, consume))
+            if (TryResolveRepairSupplySlot(supplyCrates, supplyCrates != null ? Mathf.Min(supplyCrates.Length, MaxMainThreadSupplyScanCount) : 0, requiredUnits, consume))
                 return true;
 
             return TryResolveRepairSupplySlot(_discoveredSupplyCrates, _discoveredSupplyCount, requiredUnits, consume);
@@ -636,7 +639,8 @@ namespace Hecton8.Construction
                 return false;
 
             int remaining = requiredUnits;
-            for (int crateIndex = 0; crateIndex < count; crateIndex++)
+            int crateCount = Mathf.Min(count, MaxMainThreadSupplyScanCount);
+            for (int crateIndex = 0; crateIndex < crateCount; crateIndex++)
             {
                 StorageCrate crate = crates[crateIndex];
                 if (crate == null)
@@ -646,7 +650,7 @@ namespace Hecton8.Construction
                 if (entries == null)
                     continue;
 
-                int entryCount = entries.Length;
+                int entryCount = Mathf.Min(entries.Length, MaxMainThreadSupplyScanCount);
                 for (int entryIndex = 0; entryIndex < entryCount; entryIndex++)
                 {
                     if (!ReferenceEquals(entries[entryIndex], repairSupplyItem))
@@ -854,14 +858,16 @@ namespace Hecton8.Construction
                 return 0;
 
             int availableUnits = 0;
-            for (int crateIndex = 0; crateIndex < count; crateIndex++)
+            int crateCount = Mathf.Min(count, MaxMainThreadSupplyScanCount);
+            for (int crateIndex = 0; crateIndex < crateCount; crateIndex++)
             {
                 StorageCrate crate = crates[crateIndex];
                 ItemData[] entries = crate != null ? crate.ContainedItems : null;
                 if (entries == null)
                     continue;
 
-                for (int entryIndex = 0; entryIndex < entries.Length; entryIndex++)
+                int entryCount = Mathf.Min(entries.Length, MaxMainThreadSupplyScanCount);
+                for (int entryIndex = 0; entryIndex < entryCount; entryIndex++)
                 {
                     if (ReferenceEquals(entries[entryIndex], repairSupplyItem))
                         availableUnits++;

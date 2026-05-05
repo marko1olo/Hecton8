@@ -376,8 +376,10 @@ namespace Hecton8.Construction
         private const int HeadlessDroneCapacity = 8;
         private const int PhantomDroneCount = 500;
         private const int PhantomDroneThreadGroupSize = 64;
-        private const int HeadlessTaskCapacity = 512;
+        private const int HeadlessTaskCapacity = 64;
         private const int HeadlessPendingLaunchCapacity = HeadlessDroneCapacity;
+        private const int MaxMainThreadTaskScanCount = 64;
+        private const int MaxMainThreadHubScanCount = 8;
         private const int DefaultMaxClaimsPerTarget = 2;
         private const int InvalidHubId = 0;
         private const int EmptyTaskIndex = -1;
@@ -471,9 +473,6 @@ namespace Hecton8.Construction
         private static readonly GraphicsBuffer.IndirectDrawIndexedArgs[] s_DroneArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
         // COLD ALLOC: IndirectDrawIndexedArgs[1] - indirect phantom drone draw argument upload cache - owner: DroneFleetManager
         private static readonly GraphicsBuffer.IndirectDrawIndexedArgs[] s_PhantomDroneArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
-        // COLD ALLOC: RepairTaskCandidate[64] - binary-heap backing store for rupture repair arbitration - owner: DroneFleetManager
-        private static RepairTaskCandidate[] s_TaskHeap = new RepairTaskCandidate[InitialTaskCapacity];
-
         private static NativeArray<int> s_TaskClaimCounts;
         private static NativeArray<HeadlessDroneState> s_DroneStates;
         private static NativeArray<HeadlessDroneState> s_DroneStateBackBuffer;
@@ -500,7 +499,6 @@ namespace Hecton8.Construction
         private static HectonVoxelVolume[] s_TaskVoxelVolumeRefs;
         private static DroneFleetTaskKind[] s_TaskKinds;
         private static PendingDroneLaunch[] s_PendingLaunches;
-        private static int s_TaskHeapCount;
         private static int s_PendingLaunchCount;
         private static int s_HeadlessTaskCount;
         private static int s_HeadlessDroneIdSequence;
@@ -589,8 +587,6 @@ namespace Hecton8.Construction
         private static readonly Vector4[] s_CullingPlaneVectors = new Vector4[6];
         // COLD ALLOC: SpatialQueryHit[16] - drone acoustic relay contact scratch buffer - owner: DroneFleetManager
         private static readonly SpatialQueryHit[] s_DroneRelayContacts = new SpatialQueryHit[MaxDroneRelayContacts];
-        // COLD ALLOC: RaycastHit[1] - drone acoustic relay LOS scratch buffer - owner: DroneFleetManager
-        private static readonly RaycastHit[] s_DroneRelayRaycastHits = new RaycastHit[1];
         // COLD ALLOC: SubmarineOsEventBridge[1] - static fleet bridge into deferred submarine OS payloads - owner: DroneFleetManager
         private static readonly SubmarineOsEventBridge s_SubmarineOsEventBridge = new SubmarineOsEventBridge();
         // COLD ALLOC: StorageReservationCommitResolvedBridge[1] - static fleet bridge into deferred command queue acknowledgements - owner: DroneFleetManager
@@ -631,7 +627,6 @@ namespace Hecton8.Construction
             ReleaseRenderBuffers();
             ReleasePhantomRenderResources();
 
-            s_TaskHeapCount = 0;
             s_PendingLaunchCount = 0;
             s_HeadlessTaskCount = 0;
             s_HeadlessDroneIdSequence = 0;
@@ -935,16 +930,18 @@ namespace Hecton8.Construction
             if (moduleCount == 0)
                 return false;
 
-            EnsureTaskCapacity(moduleCount * 2);
-            ClearClaimCounts(moduleCount);
-            RebuildActiveClaimCounts(manager, moduleCount);
-            ResetHeap();
+            int scanModuleCount = Mathf.Min(moduleCount, MaxMainThreadTaskScanCount);
+            EnsureTaskCapacity(scanModuleCount);
+            ClearClaimCounts(scanModuleCount);
+            RebuildActiveClaimCounts(manager, scanModuleCount);
 
             Vector3 hubPosition = hub.DockPosition;
             PowerGrid hubGrid = hub.CurrentGrid;
             FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            RepairTaskCandidate bestTask = default;
+            bool hasBestTask = false;
 
-            for (int moduleIndex = 0; moduleIndex < moduleCount; moduleIndex++)
+            for (int moduleIndex = 0; moduleIndex < scanModuleCount; moduleIndex++)
             {
                 BaseModule module = manager.GetSpawnedBaseModuleAt(moduleIndex);
                 if (module == null || !module.gameObject.activeInHierarchy)
@@ -957,7 +954,7 @@ namespace Hecton8.Construction
                     float distanceMeters = Vector3.Distance(hubPosition, module.transform.position);
                     float taskCriticality = ResolveCriticalityWeight(module);
                     float taskScore = ComputeTaskAssignmentScore(distanceMeters, taskCriticality);
-                    PushTask(new RepairTaskCandidate
+                    ConsiderTaskCandidate(new RepairTaskCandidate
                     {
                         Kind = DroneFleetTaskKind.RepairModule,
                         Module = module,
@@ -966,7 +963,7 @@ namespace Hecton8.Construction
                         Radius = 0f,
                         Score = taskScore,
                         CriticalityWeight = taskCriticality
-                    });
+                    }, ref bestTask, ref hasBestTask);
                 }
 
                 if (floraInteractionManager == null ||
@@ -980,7 +977,7 @@ namespace Hecton8.Construction
                 float parasiteDistanceMeters = Vector3.Distance(hubPosition, parasiteTarget.Position);
                 float parasiteCriticality = ResolveParasiteCriticalityWeight(module, in parasiteTarget);
                 float parasiteScore = ComputeTaskAssignmentScore(parasiteDistanceMeters, parasiteCriticality);
-                PushTask(new RepairTaskCandidate
+                ConsiderTaskCandidate(new RepairTaskCandidate
                 {
                     Kind = DroneFleetTaskKind.CutParasite,
                     Module = module,
@@ -989,17 +986,11 @@ namespace Hecton8.Construction
                     Radius = parasiteTarget.Radius,
                     Score = parasiteScore,
                     CriticalityWeight = parasiteCriticality
-                });
+                }, ref bestTask, ref hasBestTask);
             }
 
-            while (TryPopTask(out RepairTaskCandidate bestTask))
+            if (hasBestTask)
             {
-                if (bestTask.Module == null)
-                    continue;
-
-                if (s_TaskClaimCounts[bestTask.ModuleIndex] >= DefaultMaxClaimsPerTarget)
-                    continue;
-
                 s_TaskClaimCounts[bestTask.ModuleIndex] = s_TaskClaimCounts[bestTask.ModuleIndex] + 1;
                 task = new DroneFleetTask(
                     bestTask.Kind,
@@ -1046,9 +1037,9 @@ namespace Hecton8.Construction
             s_DroneRenderMatrices = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[8] - indirect real drone render front matrices consumed by renderer - owner: DroneFleetManager
             s_DroneRenderMatrixBackBuffer = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[8] - indirect real drone render back matrices written by Burst - owner: DroneFleetManager
             s_DroneRenderInstances = new NativeArray<DroneRenderInstance>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DroneRenderInstance>[8] - real drone matrix and transaction-progress upload staging - owner: DroneFleetManager
-            s_HeadlessTaskClaimOwners = new NativeArray<int>(HeadlessTaskCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[512] - atomic task claim owners for Burst arbitration - owner: DroneFleetManager
+            s_HeadlessTaskClaimOwners = new NativeArray<int>(HeadlessTaskCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[64] - atomic task claim owners for Burst arbitration - owner: DroneFleetManager
             s_FleetTelemetryAccumulator = new NativeArray<int>((int)DroneFleetTelemetryAccumulatorSlot.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[5] - Burst fleet telemetry accumulator - owner: DroneFleetManager
-            s_HeadlessTasksByHub = new NativeParallelMultiHashMap<int, HeadlessDroneTask>(HeadlessTaskCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,HeadlessDroneTask>[512] - hub-keyed drone task fanout - owner: DroneFleetManager
+            s_HeadlessTasksByHub = new NativeParallelMultiHashMap<int, HeadlessDroneTask>(HeadlessTaskCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,HeadlessDroneTask>[64] - hub-keyed drone task fanout - owner: DroneFleetManager
             s_HeadlessDroneSpatialHash = new NativeParallelMultiHashMap<int, int>(HeadlessDroneCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[8] - real drone boid spatial hash - owner: DroneFleetManager
             s_DroneHubs = new RepairDroneHub[HeadlessDroneCapacity]; // COLD ALLOC: RepairDroneHub[8] - managed hub owner lookup for late-frame service commits - owner: DroneFleetManager
             s_DroneSlotDroneIds = new int[HeadlessDroneCapacity]; // COLD ALLOC: int[8] - managed active drone id slots safe during job execution - owner: DroneFleetManager
@@ -1062,9 +1053,9 @@ namespace Hecton8.Construction
             s_TargetVoxelVolumesByDroneSlot = new HectonVoxelVolume[HeadlessDroneCapacity]; // COLD ALLOC: HectonVoxelVolume[8] - managed voxel target lookup for weld/carve commits - owner: DroneFleetManager
             s_DroneTaskKindsBySlot = new DroneFleetTaskKind[HeadlessDroneCapacity]; // COLD ALLOC: DroneFleetTaskKind[8] - managed task kind mirror for service application - owner: DroneFleetManager
             s_DronePositions = new Vector3[HeadlessDroneCapacity]; // COLD ALLOC: Vector3[8] - last completed drone positions for non-job contact queries - owner: DroneFleetManager
-            s_TaskModuleRefs = new BaseModule[HeadlessTaskCapacity]; // COLD ALLOC: BaseModule[512] - native task index to managed module lookup - owner: DroneFleetManager
-            s_TaskVoxelVolumeRefs = new HectonVoxelVolume[HeadlessTaskCapacity]; // COLD ALLOC: HectonVoxelVolume[512] - native task index to managed voxel lookup - owner: DroneFleetManager
-            s_TaskKinds = new DroneFleetTaskKind[HeadlessTaskCapacity]; // COLD ALLOC: DroneFleetTaskKind[512] - native task index to managed task kind lookup - owner: DroneFleetManager
+            s_TaskModuleRefs = new BaseModule[HeadlessTaskCapacity]; // COLD ALLOC: BaseModule[64] - native task index to managed module lookup - owner: DroneFleetManager
+            s_TaskVoxelVolumeRefs = new HectonVoxelVolume[HeadlessTaskCapacity]; // COLD ALLOC: HectonVoxelVolume[64] - native task index to managed voxel lookup - owner: DroneFleetManager
+            s_TaskKinds = new DroneFleetTaskKind[HeadlessTaskCapacity]; // COLD ALLOC: DroneFleetTaskKind[64] - native task index to managed task kind lookup - owner: DroneFleetManager
             s_PendingLaunches = new PendingDroneLaunch[HeadlessPendingLaunchCapacity]; // COLD ALLOC: PendingDroneLaunch[8] - slow-tick launch queue applied after job completion - owner: DroneFleetManager
         }
 
@@ -1504,7 +1495,8 @@ namespace Hecton8.Construction
             float bestDistanceSq = float.MaxValue;
             Vector3 dronePosition = ToVector3(drone.Position);
 
-            for (int i = 0; i < hubCount; i++)
+            int scanHubCount = Mathf.Min(hubCount, MaxMainThreadHubScanCount);
+            for (int i = 0; i < scanHubCount; i++)
             {
                 RepairDroneHub candidate = RepairDroneHub.GetActiveHubAt(i);
                 if (candidate == null || !candidate.isActiveAndEnabled || !candidate.HasOperationalPower)
@@ -1667,11 +1659,14 @@ namespace Hecton8.Construction
 
             drone.RepairAccumulator += workAmount;
             float safeUnitsPerSolder = Mathf.Max(1f, unitsPerSolder);
-            while (drone.SolderUnits > 0 && drone.RepairAccumulator >= safeUnitsPerSolder)
-            {
-                drone.RepairAccumulator -= safeUnitsPerSolder;
-                drone.SolderUnits--;
-            }
+            int consumedUnits = Mathf.Min(
+                drone.SolderUnits,
+                Mathf.FloorToInt(drone.RepairAccumulator / safeUnitsPerSolder));
+            if (consumedUnits <= 0)
+                return;
+
+            drone.RepairAccumulator -= safeUnitsPerSolder * consumedUnits;
+            drone.SolderUnits -= consumedUnits;
         }
 
         private static void RouteDroneToSupplyOrStasis(int slot, ref HeadlessDroneState drone)
@@ -1933,8 +1928,9 @@ namespace Hecton8.Construction
             if (moduleCount == 0)
                 return;
 
-            int hubCount = RepairDroneHub.ActiveHubCount;
+            int hubCount = Mathf.Min(RepairDroneHub.ActiveHubCount, MaxMainThreadHubScanCount);
             FloraInteractionManager floraInteractionManager = FloraInteractionManager.ActiveRuntimeInstance;
+            int remainingModuleScans = MaxMainThreadTaskScanCount;
             for (int hubIndex = 0; hubIndex < hubCount; hubIndex++)
             {
                 RepairDroneHub hub = RepairDroneHub.GetActiveHubAt(hubIndex);
@@ -1944,7 +1940,7 @@ namespace Hecton8.Construction
                 int hubKey = ResolveHubTaskKey(hub);
                 PowerGrid hubGrid = hub.CurrentGrid;
                 Vector3 hubPosition = hub.DockPosition;
-                for (int moduleIndex = 0; moduleIndex < moduleCount && s_HeadlessTaskCount < HeadlessTaskCapacity; moduleIndex++)
+                for (int moduleIndex = 0; moduleIndex < moduleCount && remainingModuleScans > 0 && s_HeadlessTaskCount < HeadlessTaskCapacity; moduleIndex++, remainingModuleScans--)
                 {
                     BaseModule module = manager.GetSpawnedBaseModuleAt(moduleIndex);
                     if (module == null || !module.gameObject.activeInHierarchy)
@@ -1979,6 +1975,9 @@ namespace Hecton8.Construction
                         parasiteTarget.Radius,
                         ResolveParasiteCriticalityWeight(module, in parasiteTarget));
                 }
+
+                if (remainingModuleScans <= 0)
+                    break;
             }
         }
 
@@ -2199,7 +2198,7 @@ namespace Hecton8.Construction
                 Vector3 targetPosition = candidate.Position;
                 Vector3 delta = targetPosition - dronePosition;
                 float distanceSq = delta.sqrMagnitude;
-                if (distanceSq >= bestDistanceSq || !HasRelayLineOfSight(dronePosition, targetPosition, Mathf.Sqrt(distanceSq)))
+                if (distanceSq >= bestDistanceSq)
                     continue;
 
                 bestDistanceSq = distanceSq;
@@ -2207,27 +2206,6 @@ namespace Hecton8.Construction
             }
 
             return bestDistanceSq < float.MaxValue;
-        }
-
-        private static bool HasRelayLineOfSight(Vector3 origin, Vector3 target, float distance)
-        {
-            Vector3 delta = target - origin;
-            if (delta.sqrMagnitude <= SeparationDistanceEpsilon)
-                return true;
-
-            Vector3 direction = delta.normalized;
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin,
-                direction,
-                s_DroneRelayRaycastHits,
-                Mathf.Max(0.01f, distance),
-                HectonLayerMasks.SeamProbeLayerMask,
-                QueryTriggerInteraction.Ignore);
-            if (hitCount <= 0)
-                return true;
-
-            RaycastHit hit = s_DroneRelayRaycastHits[0];
-            return hit.collider == null || hit.distance >= distance - 0.5f;
         }
 
         private static bool TryResolveAbyssalFlowVolumePayload(
@@ -2878,12 +2856,6 @@ namespace Hecton8.Construction
             if (requiredCount <= 0)
                 return;
 
-            if (s_TaskHeap == null || s_TaskHeap.Length < requiredCount)
-            {
-                int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(requiredCount, InitialTaskCapacity));
-                s_TaskHeap = new RepairTaskCandidate[nextCapacity]; // COLD ALLOC: RepairTaskCandidate[nextCapacity] - fleet repair-task max-heap storage - owner: DroneFleetManager
-            }
-
             if (!s_TaskClaimCounts.IsCreated || s_TaskClaimCounts.Length < requiredCount)
             {
                 if (s_TaskClaimCounts.IsCreated)
@@ -2892,6 +2864,27 @@ namespace Hecton8.Construction
                 int nextCapacity = Mathf.NextPowerOfTwo(Mathf.Max(requiredCount, InitialTaskCapacity));
                 s_TaskClaimCounts = new NativeArray<int>(nextCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[nextCapacity] - per-module active-claim locks for fleet dispatch - owner: DroneFleetManager
             }
+        }
+
+        private static void ConsiderTaskCandidate(
+            in RepairTaskCandidate candidate,
+            ref RepairTaskCandidate bestTask,
+            ref bool hasBestTask)
+        {
+            if (candidate.Module == null ||
+                candidate.ModuleIndex < 0 ||
+                !s_TaskClaimCounts.IsCreated ||
+                candidate.ModuleIndex >= s_TaskClaimCounts.Length ||
+                s_TaskClaimCounts[candidate.ModuleIndex] >= DefaultMaxClaimsPerTarget)
+            {
+                return;
+            }
+
+            if (hasBestTask && candidate.Score <= bestTask.Score)
+                return;
+
+            bestTask = candidate;
+            hasBestTask = true;
         }
 
         private static void ClearClaimCounts(int moduleCount)
@@ -2946,71 +2939,11 @@ namespace Hecton8.Construction
             }
         }
 
-        private static void ResetHeap()
-        {
-            s_TaskHeapCount = 0;
-        }
-
-        private static void PushTask(in RepairTaskCandidate candidate)
-        {
-            int index = s_TaskHeapCount++;
-            s_TaskHeap[index] = candidate;
-            while (index > 0)
-            {
-                int parent = (index - 1) >> 1;
-                if (s_TaskHeap[parent].Score >= s_TaskHeap[index].Score)
-                    break;
-
-                RepairTaskCandidate swap = s_TaskHeap[parent];
-                s_TaskHeap[parent] = s_TaskHeap[index];
-                s_TaskHeap[index] = swap;
-                index = parent;
-            }
-        }
-
-        private static bool TryPopTask(out RepairTaskCandidate candidate)
-        {
-            if (s_TaskHeapCount <= 0)
-            {
-                candidate = default;
-                return false;
-            }
-
-            candidate = s_TaskHeap[0];
-            s_TaskHeapCount--;
-            if (s_TaskHeapCount <= 0)
-                return true;
-
-            s_TaskHeap[0] = s_TaskHeap[s_TaskHeapCount];
-            int index = 0;
-            while (true)
-            {
-                int left = (index << 1) + 1;
-                if (left >= s_TaskHeapCount)
-                    break;
-
-                int right = left + 1;
-                int bestChild = right < s_TaskHeapCount && s_TaskHeap[right].Score > s_TaskHeap[left].Score
-                    ? right
-                    : left;
-
-                if (s_TaskHeap[index].Score >= s_TaskHeap[bestChild].Score)
-                    break;
-
-                RepairTaskCandidate swap = s_TaskHeap[index];
-                s_TaskHeap[index] = s_TaskHeap[bestChild];
-                s_TaskHeap[bestChild] = swap;
-                index = bestChild;
-            }
-
-            return true;
-        }
-
         private static void PublishSnapshot()
         {
             int activeHubCount = 0;
             int dockedStasisSlotCount = s_HeadlessStasisSlotCount;
-            int hubCount = RepairDroneHub.ActiveHubCount;
+            int hubCount = Mathf.Min(RepairDroneHub.ActiveHubCount, MaxMainThreadHubScanCount);
             for (int i = 0; i < hubCount; i++)
             {
                 RepairDroneHub hub = RepairDroneHub.GetActiveHubAt(i);

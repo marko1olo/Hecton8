@@ -699,7 +699,8 @@ namespace Hecton8.Physics
     public sealed class PhysicsApplySystem : MonoBehaviour, IPhysicsService, IFixedTickable, IPostFixedTickable, ILateFrameTickable
     {
         private const int MaxTrackedBodies = 64;
-        private const int MaxQueuedPackets = 512;
+        private const int MaxQueuedPackets = 64;
+        private const int MaxForcePacketsAppliedPerFixedTick = 64;
         private const int MaxQueuedSubmarineImpactSignals = 32;
         private const int MaxActiveDepressurizationVortices = 8;
         private const int DepressurizationVortexContactCapacity = 32;
@@ -711,6 +712,8 @@ namespace Hecton8.Physics
         private const string NonFiniteTorqueLog = "[PhysicsApplySystem] Non-finite torque packet detected. Zeroing vector.";
         private const string NonFinitePointOffsetLog = "[PhysicsApplySystem] Non-finite point-offset packet detected. Zeroing offset.";
         private const string InvalidForcePacketLog = "[PhysicsApplySystem] Burst packet validation rejected a non-finite or out-of-range packet.";
+        private static readonly uint ForcePacketClipWarningHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketClip"));
+        private static readonly uint ForcePacketQueueHash = unchecked((uint)LocHash.Compute("PhysicsApplySystem.ForcePacketQueue"));
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.FixedTick");
         private static readonly ProfilerMarker _packetValidationProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.ValidatePackets");
         private static readonly ProfilerMarker _flushFrontBufferProfilerMarker = new ProfilerMarker("H8.PhysicsApplySystem.FlushFrontBuffer");
@@ -1322,7 +1325,11 @@ namespace Hecton8.Physics
 
             using (_flushFrontBufferProfilerMarker.Auto())
             {
-                for (int i = 0; i < _frontCount; i++)
+                int applyCount = math.min(_frontCount, MaxForcePacketsAppliedPerFixedTick);
+                if (_frontCount > applyCount)
+                    GlobalTelemetryBus.PublishPerformanceWarning(ForcePacketClipWarningHash, ForcePacketQueueHash, _frontCount);
+
+                for (int i = 0; i < applyCount; i++)
                 {
                     if (_validationMask.IsCreated && _validationMask[i] == 0)
                     {

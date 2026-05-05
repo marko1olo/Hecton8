@@ -38,27 +38,6 @@ namespace Hecton8.Gameplay
         private const float ScientificDeepSalinityPpt = 35.8f;
         private const float ScientificSalinityDepthRangeMeters = 1800f;
         private const float ScientificAttractantTraceThreshold01 = 0.1f;
-        // COLD ALLOC: Vector3[4] - shared scanner pulse quad vertices - owner: ScannerTool
-        internal static readonly Vector3[] s_pulseQuadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f)
-        };
-
-        // COLD ALLOC: Vector2[4] - shared scanner pulse quad UVs - owner: ScannerTool
-        internal static readonly Vector2[] s_pulseQuadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(1f, 0f),
-            new Vector2(1f, 1f),
-            new Vector2(0f, 1f)
-        };
-
-        // COLD ALLOC: int[6] - shared scanner pulse quad indices - owner: ScannerTool
-        internal static readonly int[] s_pulseQuadTriangles = { 0, 2, 1, 0, 3, 2 };
-
         private enum ScanMode
         {
             Expedition = 0,
@@ -342,6 +321,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float pulseDuration = 1.5f;
         [SerializeField] private Color pulseColor = new Color(0f, 0.9f, 1f, 0.8f);
         [SerializeField] private float pulseThickness = 0.15f;
+        [SerializeField] private Mesh scannerPulseQuadMesh;
 
         [Header("Audio")]
         [SerializeField] private AudioClip pingClip;
@@ -425,6 +405,7 @@ namespace Hecton8.Gameplay
         internal float ScanRadius => scanRadius;
         internal Color PulseColor => pulseColor;
         internal float PulseThickness => pulseThickness;
+        internal Mesh ScannerPulseQuadMesh => scannerPulseQuadMesh;
         internal ScientificScanSnapshot ActiveScientificScanSnapshot => _scientificSnapshot;
 
         // ══════════════════════════════════════════════════════════
@@ -2175,6 +2156,7 @@ namespace Hecton8.Gameplay
         // COLD ALLOC: Matrix4x4[2] — scanner pulse instanced draw mirror — owner: ScannerPulseDrawer
         private readonly Matrix4x4[] _pulseMatrixMirror = new Matrix4x4[PulseInstanceCapacity];
         private bool _registered;
+        private bool _pulseMeshResolved;
 
         internal void Init(ScannerTool scanner)
         {
@@ -2216,11 +2198,7 @@ namespace Hecton8.Gameplay
                 _runtimePulseMaterial = null;
             }
 
-            if (_runtimePulseMesh != null)
-            {
-                Destroy(_runtimePulseMesh);
-                _runtimePulseMesh = null;
-            }
+            _runtimePulseMesh = null;
         }
 
         public void Tick(float deltaTime)
@@ -2290,8 +2268,11 @@ namespace Hecton8.Gameplay
                     NativeAllocationLifetime.Scene);
             }
 
-            if (_runtimePulseMesh == null)
-                _runtimePulseMesh = CreatePulseQuadMesh();
+            if (!_pulseMeshResolved)
+            {
+                _runtimePulseMesh = ResolvePulseMesh();
+                _pulseMeshResolved = true;
+            }
 
             if (_runtimePulseMaterial != null)
                 return;
@@ -2331,20 +2312,12 @@ namespace Hecton8.Gameplay
             _registered = false;
         }
 
-        private static Mesh CreatePulseQuadMesh()
+        private Mesh ResolvePulseMesh()
         {
-            Mesh mesh = new Mesh
-            {
-                name = "ScannerPulseQuad"
-            };
+            if (_scanner != null && _scanner.ScannerPulseQuadMesh != null)
+                return _scanner.ScannerPulseQuadMesh;
 
-            mesh.vertices = ScannerTool.s_pulseQuadVertices;
-            mesh.uv = ScannerTool.s_pulseQuadUvs;
-            mesh.triangles = ScannerTool.s_pulseQuadTriangles;
-            mesh.RecalculateNormals();
-            mesh.RecalculateBounds();
-            mesh.UploadMeshData(false);
-            return mesh;
+            return Resources.GetBuiltinResource<Mesh>("Quad.fbx");
         }
     }
 }

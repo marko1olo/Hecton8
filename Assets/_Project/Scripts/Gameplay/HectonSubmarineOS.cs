@@ -556,7 +556,7 @@ namespace Hecton8.Gameplay
                     submarineRoot.gameObject.AddComponent<HectonSubmarineOS>(); // COLD ALLOC: HectonSubmarineOS[1] — submarine-wide diagnostic owner — owner: HectonSubmarineOS
 
                 if (!submarineRoot.TryGetComponent(out SubmarineStationKeepingController _))
-                    submarineRoot.gameObject.AddComponent<SubmarineStationKeepingController>(); // COLD ALLOC: SubmarineStationKeepingController[1] — station-keeping PID owner — owner: HectonSubmarineOS
+                    submarineRoot.gameObject.AddComponent<SubmarineStationKeepingController>(); // COLD ALLOC: SubmarineStationKeepingController[1] - cinematic station-keeping owner - owner: HectonSubmarineOS
             }
         }
 

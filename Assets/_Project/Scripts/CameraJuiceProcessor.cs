@@ -98,6 +98,8 @@ namespace Hecton8.Gameplay
         private float _waterEntryFovDuration;
         private float _waterEntryFovExpandDegrees;
         private float _waterEntryFovCompressDegrees;
+        private float _speedFovOffset;
+        private float _abyssalNoirPulsePhase;
 
         // ── Action Bob (eating, healing) ──
         private float _actionBobY;
@@ -111,6 +113,7 @@ namespace Hecton8.Gameplay
         private float _rollVelocity;
         private float _targetRoll;
         private float _rollSign;
+        private float _cinematicShakeSign;
 
         // ── Momentum Pitch ──
         private float _momentumPitch;
@@ -164,8 +167,17 @@ namespace Hecton8.Gameplay
         private const float HEAVY_CARRY_MAX_SURFACE_BOB_SCALE = 0.78f;
         private const float HEAVY_CARRY_MAX_TURN_SWAY_SCALE = 1.18f;
         private const float TRANSPORT_PROPULSION_FLOOR = 0.62f;
-        private const float TRANSPORT_POSITION_KICK = 0.0038f;
-        private const float TRANSPORT_FOV_KICK = 0.22f;
+        private const float TRANSPORT_POSITION_KICK = 0.0065f;
+        private const float TRANSPORT_FOV_KICK = 0.55f;
+        private const float SPEED_FOV_START_METERS_PER_SECOND = 10f;
+        private const float SPEED_FOV_FULL_METERS_PER_SECOND = 22f;
+        private const float SPEED_FOV_MAX_DEGREES = 3.2f;
+        private const float SPEED_FOV_LERP_SHARPNESS = 4.2f;
+        private const float ABYSSAL_NOIR_PULSE_START_DEPTH_METERS = 38f;
+        private const float ABYSSAL_NOIR_PULSE_FULL_DEPTH_METERS = 180f;
+        private const float ABYSSAL_NOIR_PULSE_MAX_FOV_COMPRESS = 0.42f;
+        private const float ABYSSAL_NOIR_PULSE_ROLL_DEGREES = 0.065f;
+        private const float ABYSSAL_NOIR_PULSE_PITCH_DEGREES = 0.035f;
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC — EVENTS (polled, zero GC)
@@ -205,6 +217,8 @@ namespace Hecton8.Gameplay
             _waterEntryFovDuration = 0f;
             _waterEntryFovExpandDegrees = 0f;
             _waterEntryFovCompressDegrees = 0f;
+            _speedFovOffset = 0f;
+            _abyssalNoirPulsePhase = 0f;
             _currentRoll = 0f;
             _rollVelocity = 0f;
             _targetRoll = 0f;
@@ -225,6 +239,7 @@ namespace Hecton8.Gameplay
             _splashIntensityThisFrame = 0f;
             _exhaleThisFrame = false;
             _rollSign = leanIntoTurn ? -1f : 1f;
+            _cinematicShakeSign = 1f;
             _output = default;
         }
 
@@ -241,9 +256,8 @@ namespace Hecton8.Gameplay
                 (relativeSpeed - suit.collisionShakeThreshold) /
                 math.max(suit.collisionShakeMaxVelocity - suit.collisionShakeThreshold, 0.1f));
 
-            float hash = math.frac(Time.time * 17.31f);
-            float signX = hash > 0.5f ? 1f : -1f;
-            float signP = math.frac(Time.time * 7.13f) > 0.5f ? 1f : -1f;
+            float signX = NextCinematicShakeSign();
+            float signP = -signX;
 
             _collisionShakeY = -norm * suit.collisionShakeMaxAmplitude;
             _collisionShakeYVel = norm * suit.collisionShakeMaxAmplitude * 3f;
@@ -267,9 +281,8 @@ namespace Hecton8.Gameplay
             if (intensity <= 0.0001f)
                 return;
 
-            float hash = math.frac(Time.time * 23.17f);
-            float signX = hash > 0.5f ? 1f : -1f;
-            float signP = math.frac(Time.time * 11.43f) > 0.5f ? 1f : -1f;
+            float signX = NextCinematicShakeSign();
+            float signP = -signX;
             float amplitude = intensity * 0.0035f;
 
             _collisionShakeY = math.min(_collisionShakeY, -amplitude);
@@ -359,9 +372,7 @@ namespace Hecton8.Gameplay
 
             _actionBobIntensity = intensity;
 
-            // Randomized micro-bob to simulate hand movement
-            float hash = math.frac(Time.time * 13.17f);
-            float signX = hash > 0.5f ? 1f : -1f;
+            float signX = NextCinematicShakeSign();
 
             _actionBobY = intensity * 0.008f;
             _actionBobYVel = intensity * 0.015f;
@@ -417,6 +428,8 @@ namespace Hecton8.Gameplay
             // ── FOV compression ──
             ProcessDepthFovCompression(in input, suit);
             ProcessWaterEntryFovImpulse(dt);
+            ProcessSpeedFovCheat(in input, dt);
+            ProcessAbyssalNoirPulse(in input, dt);
 
             float heavyCarryAmplitudeScale = math.lerp(1f, HEAVY_CARRY_MAX_HEADBOB_AMPLITUDE_SCALE, input.heavyCarryLoad);
             float heavyCarryCadenceScale = math.lerp(1f, HEAVY_CARRY_MAX_HEADBOB_CADENCE_SCALE, input.heavyCarryLoad);
@@ -574,29 +587,25 @@ namespace Hecton8.Gameplay
 
             if (math.abs(_collisionShakeY) > 0.0001f || math.abs(_collisionShakeYVel) > 0.0001f)
             {
-                _collisionShakeY = SpringDamp(_collisionShakeY, 0f,
-                    ref _collisionShakeYVel, omega, dt);
+                RecoverCinematicImpulse(ref _collisionShakeY, ref _collisionShakeYVel, omega, dt, 0.0001f);
             }
             else { _collisionShakeY = 0f; _collisionShakeYVel = 0f; }
 
             if (math.abs(_collisionShakeX) > 0.0001f || math.abs(_collisionShakeXVel) > 0.0001f)
             {
-                _collisionShakeX = SpringDamp(_collisionShakeX, 0f,
-                    ref _collisionShakeXVel, omega, dt);
+                RecoverCinematicImpulse(ref _collisionShakeX, ref _collisionShakeXVel, omega, dt, 0.0001f);
             }
             else { _collisionShakeX = 0f; _collisionShakeXVel = 0f; }
 
             if (math.abs(_collisionShakePitch) > 0.001f || math.abs(_collisionShakePitchVel) > 0.001f)
             {
-                _collisionShakePitch = SpringDamp(_collisionShakePitch, 0f,
-                    ref _collisionShakePitchVel, omega, dt);
+                RecoverCinematicImpulse(ref _collisionShakePitch, ref _collisionShakePitchVel, omega, dt, 0.001f);
             }
             else { _collisionShakePitch = 0f; _collisionShakePitchVel = 0f; }
 
             if (math.abs(_externalRollImpulse) > 0.001f || math.abs(_externalRollImpulseVel) > 0.001f)
             {
-                _externalRollImpulse = SpringDamp(_externalRollImpulse, 0f,
-                    ref _externalRollImpulseVel, omega * 0.78f, dt);
+                RecoverCinematicImpulse(ref _externalRollImpulse, ref _externalRollImpulseVel, omega * 0.78f, dt, 0.001f);
             }
             else { _externalRollImpulse = 0f; _externalRollImpulseVel = 0f; }
         }
@@ -696,6 +705,46 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  SWIM BOB
         // ══════════════════════════════════════════════════════════
+
+        private void ProcessSpeedFovCheat(in CameraJuiceInput input, float dt)
+        {
+            float planarSpeed = math.max(0f, input.horizontalSpeed);
+            float verticalSpeed = math.abs(input.verticalVelocity);
+            float currentSpeed = math.max(
+                math.max(planarSpeed, input.swimSpeed),
+                math.sqrt(planarSpeed * planarSpeed + verticalSpeed * verticalSpeed));
+            float speed01 = math.saturate(
+                (currentSpeed - SPEED_FOV_START_METERS_PER_SECOND) /
+                math.max(0.01f, SPEED_FOV_FULL_METERS_PER_SECOND - SPEED_FOV_START_METERS_PER_SECOND));
+            speed01 = speed01 * speed01 * (3f - 2f * speed01);
+
+            float targetOffset = speed01 * SPEED_FOV_MAX_DEGREES;
+            float blend = math.saturate(1f - math.exp(-SPEED_FOV_LERP_SHARPNESS * math.max(0f, dt)));
+            _speedFovOffset = math.lerp(_speedFovOffset, targetOffset, blend);
+            _output.fovOffset += _speedFovOffset;
+        }
+
+        private void ProcessAbyssalNoirPulse(in CameraJuiceInput input, float dt)
+        {
+            float depth01 = math.saturate(
+                (input.depth - ABYSSAL_NOIR_PULSE_START_DEPTH_METERS) /
+                math.max(0.01f, ABYSSAL_NOIR_PULSE_FULL_DEPTH_METERS - ABYSSAL_NOIR_PULSE_START_DEPTH_METERS));
+            float immersion01 = math.saturate((input.immersionRatio - 0.6f) * 2.5f);
+            float intensity = depth01 * depth01 * immersion01;
+            if (intensity <= 0.0001f)
+                return;
+
+            _abyssalNoirPulsePhase += dt * math.lerp(0.17f, 0.42f, depth01);
+            if (_abyssalNoirPulsePhase > 1000f)
+                _abyssalNoirPulsePhase -= 1000f;
+
+            float phase = _abyssalNoirPulsePhase * TWO_PI;
+            float pressureWave = (math.sin(phase) * 0.72f) + (math.sin((phase * 2.73f) + 1.11f) * 0.28f);
+            float pulse = pressureWave * intensity;
+            _output.fovOffset -= pulse * ABYSSAL_NOIR_PULSE_MAX_FOV_COMPRESS;
+            _output.rollOffset += pulse * ABYSSAL_NOIR_PULSE_ROLL_DEGREES;
+            _output.pitchOffset += math.abs(pulse) * ABYSSAL_NOIR_PULSE_PITCH_DEGREES;
+        }
 
         private void ProcessSwimBob(in CameraJuiceInput input, SuitData suit, float dt)
         {
@@ -1116,6 +1165,26 @@ namespace Hecton8.Gameplay
         // ══════════════════════════════════════════════════════════
         //  SPRING
         // ══════════════════════════════════════════════════════════
+
+        private float NextCinematicShakeSign()
+        {
+            _cinematicShakeSign = _cinematicShakeSign >= 0f ? -1f : 1f;
+            return _cinematicShakeSign;
+        }
+
+        private static void RecoverCinematicImpulse(
+            ref float current,
+            ref float velocity,
+            float sharpness,
+            float dt,
+            float epsilon)
+        {
+            float blend = 1f - math.exp(-math.max(0.01f, sharpness) * math.max(0f, dt));
+            current = math.lerp(current, 0f, math.saturate(blend));
+            velocity = 0f;
+            if (math.abs(current) <= epsilon)
+                current = 0f;
+        }
 
         private static float SpringDamp(float current, float target, ref float velocity, float omega, float dt)
         {

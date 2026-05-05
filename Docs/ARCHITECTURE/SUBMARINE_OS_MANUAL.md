@@ -84,50 +84,34 @@ float pulse = 0.5f + (0.5f * Mathf.Sin(Time.time * 8f));
 Color pulsedEmission = Color.Lerp(baseEmissionColor, BrownoutEmissiveColor, pulse);
 ```
 
-## PID Station Keeping
+## Cinematic Station Keeping
 
 Control space:
 - Position target is stored in AUP (`double3`).
 - Runtime hull pose is converted from `worldCenterOfMass` into AUP every fixed step.
+- Hold mode is a deterministic cinematic lock, not a physical controller.
 
-Linear controller:
+Linear lock:
 
 ```csharp
 double3 currentAbsolutePosition = AbsoluteUniversePosition
     .FromRuntimePosition(_hullRigidbody.worldCenterOfMass)
     .ToAbsoluteDouble3();
 
-float3 positionError = (float3)(_targetAbsolutePosition - currentAbsolutePosition);
-_integralError += positionError * fixedDeltaTime;
-_integralError = math.clamp(_integralError, new float3(-integralClampMeters), new float3(integralClampMeters));
+float3 offsetToTarget = (float3)(_targetAbsolutePosition - currentAbsolutePosition);
+Vector3 targetRuntimePosition = _hullRigidbody.position + (Vector3)offsetToTarget;
 
-float3 proportionalTerm = positionError * proportionalGain;
-float3 integralTerm = _integralError * integralGain;
-float3 derivativeTerm = (-_hullRigidbody.linearVelocity) * derivativeGain;
-float3 feedForwardTerm = (-waterVelocity) * currentCompensationGain;
-
-float3 commandedAcceleration = proportionalTerm + integralTerm + derivativeTerm + feedForwardTerm;
+_hullRigidbody.linearVelocity = Vector3.zero;
+_hullRigidbody.angularVelocity = Vector3.zero;
+_hullRigidbody.MovePosition(Vector3.MoveTowards(
+    _hullRigidbody.position,
+    targetRuntimePosition,
+    positionLockSpeedMetersPerSecond * fixedDeltaTime));
 ```
 
-Term meanings:
-- `P`: moves the hull back to the authored AUP target.
-- `I`: cancels persistent bias and slow drift.
-- `D`: damps linear velocity so the sub does not overshoot.
-- `FF`: negates sampled abyssal flow before the current displaces the vessel.
-
-Angular controller:
-- Uses delta rotation from current hull orientation to target rotation.
-- Converts angle-axis error into angular acceleration.
-- Applies angular damping from rigidbody angular velocity.
-
-Final force routing:
-
-```csharp
-PhysicsForceRouter.QueueForce(_hullRigidbody, commandedAcceleration, ForceMode.Acceleration);
-PhysicsForceRouter.QueueTorque(_hullRigidbody, commandedAngularAcceleration, ForceMode.Acceleration);
-```
-
-This preserves the project rule that gameplay code does not call `Rigidbody.AddForce()` directly.
+Angular lock:
+- `Quaternion.RotateTowards` moves toward the stored hold rotation.
+- No integral, derivative, water-current feed-forward, or force routing is used.
 
 ## Zero-Alloc BIOS Terminal
 

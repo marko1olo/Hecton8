@@ -40,6 +40,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _FreshCutNormalBoost ("Fresh Cut Normal Boost", Range(1, 3)) = 1.45
         _CaveMouthDisplacementStrength ("Cave Mouth GPU Jag Strength", Range(0, 0.35)) = 0.08
         _CaveMouthDisplacementScale ("Cave Mouth GPU Jag Scale", Range(0.05, 4)) = 0.85
+        _CaveMouthPhosphorPulseStrength ("Cave Mouth Phosphor Pulse Strength", Range(0, 1)) = 0.18
+        _CaveMouthPhosphorPulseScale ("Cave Mouth Phosphor Pulse Scale", Range(0.05, 8)) = 1.6
         _LocalCausticStrength ("Local Caustic Strength", Range(0, 1)) = 0.22
         _LocalCausticScale ("Local Caustic Scale", Range(0.1, 4)) = 0.7
         _LocalCausticSpeed ("Local Caustic Speed", Range(0, 4)) = 0.36
@@ -96,6 +98,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _FreshCutNormalBoost;
             float _CaveMouthDisplacementStrength;
             float _CaveMouthDisplacementScale;
+            float _CaveMouthPhosphorPulseStrength;
+            float _CaveMouthPhosphorPulseScale;
             float _LocalCausticStrength;
             float _LocalCausticScale;
             float _LocalCausticSpeed;
@@ -321,6 +325,19 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return malfunction;
         }
 
+        half ResolveCaveMouthPhosphorPulse(float3 positionWS, half seamMask)
+        {
+            half gate = saturate(seamMask * (half)_CaveMouthPhosphorPulseStrength);
+            if (gate <= 0.0001h)
+                return 0.0h;
+
+            float scale = max(_CaveMouthPhosphorPulseScale, 0.05);
+            float phase = dot(positionWS, float3(0.37, 0.19, 0.41)) * scale + _Time.y * 3.7;
+            half sinePulse = smoothstep(0.78h, 1.0h, (half)(sin(phase) * 0.5 + 0.5));
+            half gridNoise = (half)Hash31(floor(positionWS * (scale * 2.0) + _Time.y));
+            return gate * saturate(sinePulse * lerp(0.65h, 1.0h, gridNoise));
+        }
+
         half4 SampleDominantAxisColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS)
         {
             float2 uv;
@@ -533,10 +550,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float3 displacedPositionOS = ResolveVoxelPositionOS(input);
             VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
-            output.positionCS = positionInputs.positionCS;
-            output.positionWS = positionInputs.positionWS;
             output.normalWS = SafeNormalize3(normalInputs.normalWS);
-            output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(positionInputs.positionWS));
+            output.positionWS = HectonCoreLitApplySubmarineCrushDepth(positionInputs.positionWS, output.normalWS);
+            output.positionCS = TransformWorldToHClip(output.positionWS);
+            output.viewDirWS = SafeNormalize3(GetWorldSpaceViewDir(output.positionWS));
             output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
             output.absolutePositionWS = input.absolutePositionWS;
             output.curvature = saturate(input.dirtyBlendUv2.z);
@@ -553,9 +570,12 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             ClipVaryings output;
             float3 displacedPositionOS = ResolveVoxelPositionOS(input);
             VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
+            VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
+            float3 normalWS = SafeNormalize3(normalInputs.normalWS);
+            float3 crushedPositionWS = HectonCoreLitApplySubmarineCrushDepth(positionInputs.positionWS, normalWS);
             output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
-            output.positionCS = ApplySkirtDepthBias(positionInputs.positionCS, output.skirtAlpha);
-            output.positionWS = positionInputs.positionWS;
+            output.positionCS = ApplySkirtDepthBias(TransformWorldToHClip(crushedPositionWS), output.skirtAlpha);
+            output.positionWS = crushedPositionWS;
             return output;
         }
 
@@ -565,10 +585,10 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float3 displacedPositionOS = ResolveVoxelPositionOS(input);
             VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
-            output.positionWS = positionInputs.positionWS;
             output.normalWS = SafeNormalize3(normalInputs.normalWS);
+            output.positionWS = HectonCoreLitApplySubmarineCrushDepth(positionInputs.positionWS, output.normalWS);
             output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
-            output.positionCS = TransformWorldToHClip(ApplyShadowBias(positionInputs.positionWS, output.normalWS, _LightDirection));
+            output.positionCS = TransformWorldToHClip(ApplyShadowBias(output.positionWS, output.normalWS, _LightDirection));
             output.positionCS = ApplySkirtDepthBias(output.positionCS, output.skirtAlpha);
 
             #if UNITY_REVERSED_Z
@@ -663,11 +683,16 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                     metallic,
                     smoothness);
                 half dissolveMalfunction = ApplyChunkDissolveMalfunction(input.positionCS, samplePositionWS, albedo, smoothness);
+                half caveMouthPulse = ResolveCaveMouthPhosphorPulse(samplePositionWS, saturate(max(input.terrainSplatColor.a, input.skirtAlpha)));
+                albedo = lerp(albedo, (half3)_ChunkDissolvePhosphorTint.rgb, caveMouthPulse * 0.08h);
 
                 half3 litColor = EvaluateLighting(input.positionWS, normalWS, SafeNormalize3(input.viewDirWS), albedo, metallic, smoothness, ambientOcclusion, localCausticMask);
                 litColor += (half3)_ChunkDissolvePhosphorTint.rgb * dissolveMalfunction * 0.16h;
+                litColor += (half3)_ChunkDissolvePhosphorTint.rgb * caveMouthPulse * 0.10h;
                 half thermalEmission = _CutScarEmission * recentHeatMask * lerp(0.22h, 1.0h, saturate(1.0h - recentHeatAge01));
-                half3 emission = (_CutScarWarmColor.rgb * (_CutScarEmission * scarMask * 0.12h)) + (thermalColor * thermalEmission);
+                half3 emission = (_CutScarWarmColor.rgb * (_CutScarEmission * scarMask * 0.12h)) +
+                    (thermalColor * thermalEmission) +
+                    ((half3)_ChunkDissolvePhosphorTint.rgb * caveMouthPulse * 0.18h);
                 half3 finalColor = MixFog(litColor + emission, input.fogFactor);
                 return half4(finalColor, skirtCoverage);
             }

@@ -2589,8 +2589,8 @@ public class HectonVoxelEngine : MonoBehaviour
     private const int VoxelJobWaitWatchdogFrames = 1200;
     private const int DeferredVoxelPhysicsBakeTeardownDrainBudget = 8;
     private const int DeferredVoxelPhysicsBakeTeardownBackpressureDrainBudget = 32;
-    private const int DeferredVoxelPhysicsBakeTeardownInspectionBudget = 128;
-    private const int DeferredVoxelPhysicsBakeTeardownBackpressureInspectionBudget = 512;
+    private const int DeferredVoxelPhysicsBakeTeardownInspectionBudget = 64;
+    private const int DeferredVoxelPhysicsBakeTeardownBackpressureInspectionBudget = 64;
     private const int DeferredVoxelPhysicsBakeBackpressureThreshold = 64;
     private const int DeferredVoxelPhysicsBakeBackpressureReleaseThreshold = 32;
     private const int DeferredVoxelPhysicsBakeTeardownCapacity = 2048;

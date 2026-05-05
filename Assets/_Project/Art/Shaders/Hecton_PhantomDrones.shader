@@ -4,6 +4,8 @@ Shader "Hecton8/VFX/PhantomDrones"
     {
         _BaseTint ("Base Tint", Color) = (0.10, 0.85, 1.00, 0.85)
         _EdgeBoost ("Edge Boost", Range(0, 4)) = 1.7
+        _SignalGlitch ("Signal Glitch", Range(0, 1)) = 0.28
+        _SignalBandStrength ("Signal Band Strength", Range(0, 1)) = 0.22
         _DistanceFadeStart ("Distance Fade Start", Float) = 45.0
         _DistanceFadeEnd ("Distance Fade End", Float) = 92.0
     }
@@ -34,12 +36,16 @@ Shader "Hecton8/VFX/PhantomDrones"
 
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
+            #define HECTON_TWO_PI 6.28318530718
+
             StructuredBuffer<float4x4> _PhantomMatrices;
             StructuredBuffer<float4> _PhantomColors;
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseTint;
                 float _EdgeBoost;
+                float _SignalGlitch;
+                float _SignalBandStrength;
                 float _DistanceFadeStart;
                 float _DistanceFadeEnd;
             CBUFFER_END
@@ -56,6 +62,7 @@ Shader "Hecton8/VFX/PhantomDrones"
                 float4 positionCS : SV_POSITION;
                 float3 normalWS : TEXCOORD0;
                 float3 viewDirWS : TEXCOORD1;
+                float signalBand : TEXCOORD2;
                 float4 color : COLOR0;
             };
 
@@ -67,19 +74,29 @@ Shader "Hecton8/VFX/PhantomDrones"
                 float3 normalWS = normalize(mul((float3x3)instanceMatrix, input.normalOS));
                 float distanceToCamera = distance(positionWS.xyz, _WorldSpaceCameraPos);
                 float distanceFade = 1.0 - smoothstep(_DistanceFadeStart, max(_DistanceFadeEnd, _DistanceFadeStart + 0.001), distanceToCamera);
+                float signalPhase = frac((float)input.instanceID * 0.01713 + _Time.y * 0.071);
+                float signalHash = frac(sin(signalPhase * HECTON_TWO_PI) * 43758.5453);
+                float signalGlitch = step(0.93, signalHash) * _SignalGlitch;
+                float bandPhase = frac(positionWS.y * 0.073 + _Time.y * 0.21 + (float)input.instanceID * 0.0031);
+                float signalBand = smoothstep(0.46, 0.50, bandPhase) * (1.0 - smoothstep(0.50, 0.56, bandPhase));
 
                 output.positionCS = TransformWorldToHClip(positionWS.xyz);
                 output.normalWS = normalWS;
                 output.viewDirWS = normalize(_WorldSpaceCameraPos.xyz - positionWS.xyz);
+                output.signalBand = signalBand;
                 output.color = _PhantomColors[input.instanceID] * _BaseTint;
+                output.color.rgb = lerp(output.color.rgb, output.color.brg, signalGlitch);
+                output.color.rgb += _BaseTint.rgb * signalBand * _SignalBandStrength;
                 output.color.a *= distanceFade;
+                output.color.a *= 1.0 + signalGlitch * 0.35;
+                output.color.a *= 1.0 + signalBand * _SignalBandStrength;
                 return output;
             }
 
             half4 Frag(Varyings input) : SV_Target
             {
                 half rim = (half)pow(saturate(1.0 - abs(dot(normalize(input.normalWS), normalize(input.viewDirWS)))), _EdgeBoost);
-                half emission = saturate(input.color.a + rim);
+                half emission = saturate(input.color.a + rim + (half)input.signalBand * 0.18h);
                 return half4(input.color.rgb * emission, emission);
             }
             ENDHLSL

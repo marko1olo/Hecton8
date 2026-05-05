@@ -328,7 +328,7 @@ namespace Hecton8.World
         [SerializeField] private int _debugStructurePlacements;
         [SerializeField] private int _debugSpawnPlacements;
         [SerializeField] private int _debugMapMagicSamples;
-        [SerializeField] private int _debugRaycastSamples;
+        [SerializeField] private int _debugSceneProbeLegacySamples;
         [SerializeField] private int _debugFallbackSamples;
         [SerializeField] private int _debugMatchedScatterRules;
         [SerializeField] private int _debugHeatPassedRules;
@@ -1987,7 +1987,7 @@ namespace Hecton8.World
             _debugStructurePlacements = 0;
             _debugSpawnPlacements = 0;
             _debugMapMagicSamples = 0;
-            _debugRaycastSamples = 0;
+            _debugSceneProbeLegacySamples = 0;
             _debugFallbackSamples = 0;
             _debugMatchedScatterRules = 0;
             _debugHeatPassedRules = 0;
@@ -4441,7 +4441,7 @@ namespace Hecton8.World
         private static void CountSeafloorSource(
             WorldProceduralFieldSampler.SeafloorSource source,
             ref int mapMagicCount,
-            ref int raycastCount,
+            ref int sceneProbeLegacyCount,
             ref int fallbackCount)
         {
             switch (source)
@@ -4449,8 +4449,8 @@ namespace Hecton8.World
                 case WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight:
                     mapMagicCount++;
                     break;
-                case WorldProceduralFieldSampler.SeafloorSource.SceneRaycast:
-                    raycastCount++;
+                case WorldProceduralFieldSampler.SeafloorSource.SceneProbeLegacy:
+                    sceneProbeLegacyCount++;
                     break;
                 case WorldProceduralFieldSampler.SeafloorSource.FallbackSynthetic:
                     fallbackCount++;

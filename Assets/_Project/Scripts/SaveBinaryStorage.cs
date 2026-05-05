@@ -258,7 +258,7 @@ namespace Hecton8.SaveSystem
         internal const uint ExplorationMortonBuildSalt32 = 0x48384D4Fu;
         internal const int ExplorationMortonMaskAlignmentBytes = 64;
         internal const ushort MinimumSupportedVersion = 0x0003;
-        internal const byte CurrentCompatMask = 0x0B;
+        internal const byte CurrentCompatMask = 0x07;
         internal const byte FlagLz4Blocks = 0x01;
         internal const byte FlagTokenSubstitution = 0x02;
         internal const byte FlagIndexedSectorBlocks = 0x04;

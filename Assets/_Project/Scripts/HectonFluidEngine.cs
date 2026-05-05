@@ -125,6 +125,7 @@ namespace Hecton8.Physics
         private static readonly int _AbyssalFlowWeatherParamsId = Shader.PropertyToID("_AbyssalFlowWeatherParams");
         private static readonly int _AbyssalFlowSurfaceYId = Shader.PropertyToID("_AbyssalFlowSurfaceY");
         private static readonly int _CurrentWaterLevelId = Shader.PropertyToID("_CurrentWaterLevel");
+        private static readonly int _CurrentWaterLevelYId = Shader.PropertyToID("_CurrentWaterLevelY");
         private static readonly int _AbyssalFlowThermoclineYId = Shader.PropertyToID("_AbyssalFlowThermoclineY");
         private static readonly int _AbyssalFlowHeatSourceCountId = Shader.PropertyToID("_AbyssalFlowHeatSourceCount");
         private static readonly int _AbyssalFlowWeatherStateMaskId = Shader.PropertyToID("_AbyssalFlowWeatherStateMask");
@@ -1449,6 +1450,7 @@ namespace Hecton8.Physics
         private void PublishCurrentWaterLevelUniform()
         {
             Shader.SetGlobalFloat(_CurrentWaterLevelId, waterLevel);
+            Shader.SetGlobalFloat(_CurrentWaterLevelYId, waterLevel);
         }
 
         private void EnsureGpuBuoyancyBuffers(int capacity)

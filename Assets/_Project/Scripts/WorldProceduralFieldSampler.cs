@@ -30,7 +30,7 @@ namespace Hecton8.World
         private const string PatternLabelNone = "None";
         private const string SeafloorSourceNoneLabel = "None";
         private const string SeafloorSourceMapMagicLabel = "MapMagicHeight";
-        private const string SeafloorSourceRaycastLabel = "SceneRaycast";
+        private const string SeafloorSourceSceneProbeLegacyLabel = "SceneProbeLegacy";
         private const string SeafloorSourceFallbackLabel = "FallbackSynthetic";
         private const int MaxSeafloorHeightCacheEntries = 4096;
         private const int NoiseLookupResolution = 512;
@@ -54,7 +54,7 @@ namespace Hecton8.World
         {
             None,
             MapMagicHeight,
-            SceneRaycast,
+            SceneProbeLegacy,
             FallbackSynthetic
         }
 
@@ -363,8 +363,8 @@ namespace Hecton8.World
         [SerializeField] private float slopeProbeMeters = 4f;
         [SerializeField] private float fieldNoiseScale = 0.0035f;
         [SerializeField] private float detailNoiseScale = 0.0125f;
-        [SerializeField, Min(0f)] private float steepSlopeRaycastCorrectionThresholdDegrees = 45f;
-        [SerializeField, Min(0f)] private float steepSlopeRaycastCorrectionMaxDropMeters = 1.25f;
+        [SerializeField, Min(0f)] private float steepSlopeGradientCheatThresholdDegrees = 45f;
+        [SerializeField, Min(0f)] private float steepSlopeGradientCheatMaxDropMeters = 1.25f;
 
         [Header("Preview Overrides")]
         [SerializeField] private bool forcePatternPreviewOverride;
@@ -407,7 +407,6 @@ namespace Hecton8.World
         private readonly Dictionary<HectonBiomeMatrixProfile, int> _biomeMatrixDataIndexLookup = new Dictionary<HectonBiomeMatrixProfile, int>(160);
         private readonly Dictionary<HectonBiomeFamilyProfile, int> _biomeFamilyDataIndexLookup = new Dictionary<HectonBiomeFamilyProfile, int>(48);
         private readonly Dictionary<Vector2Int, CachedHeightSample> _seafloorHeightCache = new Dictionary<Vector2Int, CachedHeightSample>(1536);
-        private readonly RaycastHit[] _seafloorRaycastHits = new RaycastHit[4]; // COLD ALLOC: reused non-alloc seafloor probes.
         private NativeArray<ZoneData> _burstZoneData;
         private NativeArray<BiomeMatrixData> _burstBiomeMatrixData;
         private NativeArray<int> _burstBiomeMatrixIdToDataIndex;
@@ -1841,7 +1840,7 @@ namespace Hecton8.World
             return source switch
             {
                 SeafloorSource.FallbackSynthetic => hasZone ? 0.66f : 0.78f,
-                SeafloorSource.SceneRaycast => hasZone ? 0.28f : 0.42f,
+                SeafloorSource.SceneProbeLegacy => hasZone ? 0.28f : 0.42f,
                 SeafloorSource.MapMagicHeight => hasZone ? 0.18f : 0.34f,
                 _ => 0.2f
             };
@@ -3340,7 +3339,7 @@ namespace Hecton8.World
             return source switch
             {
                 SeafloorSource.FallbackSynthetic => zone == null ? 0.78f : 0.66f,
-                SeafloorSource.SceneRaycast => zone == null ? 0.42f : 0.28f,
+                SeafloorSource.SceneProbeLegacy => zone == null ? 0.42f : 0.28f,
                 SeafloorSource.MapMagicHeight => zone == null ? 0.34f : 0.18f,
                 _ => 0.2f
             };
@@ -3461,56 +3460,10 @@ namespace Hecton8.World
                 return true;
             }
 
-            if (mapMagicBridge != null && mapMagicBridge.SandboxProceduralTerrainOnly)
-                return false;
-
-            float waterSurface = mapMagicBridge != null ? mapMagicBridge.WaterSurfaceLevel : Mathf.Max(position.y + 500f, 1000f);
-            float rayOriginY = Mathf.Max(waterSurface + 1000f, position.y + 1000f);
-            Vector3 origin = new Vector3(position.x, rayOriginY, position.z);
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                origin,
-                Vector3.down,
-                _seafloorRaycastHits,
-                40000f,
-                HectonLayerMasks.TerrainLayerMask | HectonLayerMasks.VoxelCaveLayerMask,
-                QueryTriggerInteraction.Ignore);
-            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
-            {
-                RaycastHit hit = _seafloorRaycastHits[hitIndex];
-                if (ShouldIgnoreSeafloorHit(hit))
-                    continue;
-
-                seafloorHeight = hit.point.y;
-                seafloorSource = SeafloorSource.SceneRaycast;
-                return true;
-            }
-
             float fallbackSurface = mapMagicBridge != null ? mapMagicBridge.WaterSurfaceLevel : Mathf.Max(position.y + 120f, 120f);
             seafloorHeight = fallbackSurface - EstimateFallbackDepth(position.x, position.z);
             seafloorSource = SeafloorSource.FallbackSynthetic;
             return true;
-        }
-
-        private bool ShouldIgnoreSeafloorHit(in RaycastHit hit)
-        {
-            Collider hitCollider = hit.collider;
-            if (hitCollider == null)
-                return true;
-
-            Transform hitTransform = hitCollider.transform;
-            if (playerTransform != null &&
-                (hitTransform == playerTransform || hitTransform.IsChildOf(playerTransform)))
-            {
-                return true;
-            }
-
-            Rigidbody hitBody = hit.rigidbody;
-            if (hitBody == null)
-                return false;
-
-            Transform hitBodyTransform = hitBody.transform;
-            return playerTransform != null &&
-                   (hitBodyTransform == playerTransform || hitBodyTransform.IsChildOf(playerTransform));
         }
 
         private bool TryGetLocalTerrainContext(Vector3 position, out LocalTerrainContext terrainContext)
@@ -3555,12 +3508,20 @@ namespace Hecton8.World
                 return false;
             }
 
+            float slopeDegrees = CalculateSlopeDegrees(centerHeight, northHeight, southHeight, eastHeight, westHeight, probe);
             if (centerSource == SeafloorSource.MapMagicHeight &&
-                steepSlopeRaycastCorrectionMaxDropMeters > 0f &&
-                CalculateSlopeDegrees(centerHeight, northHeight, southHeight, eastHeight, westHeight, probe) >= steepSlopeRaycastCorrectionThresholdDegrees &&
-                TryResolveSteepMapMagicContactCorrection(position, centerHeight, out float correctedHeight))
+                steepSlopeGradientCheatMaxDropMeters > 0f &&
+                slopeDegrees >= steepSlopeGradientCheatThresholdDegrees)
             {
-                centerHeight = correctedHeight;
+                centerHeight = ResolveSteepGradientContactCheat(
+                    centerHeight,
+                    northHeight,
+                    southHeight,
+                    eastHeight,
+                    westHeight,
+                    slopeDegrees,
+                    steepSlopeGradientCheatThresholdDegrees,
+                    steepSlopeGradientCheatMaxDropMeters);
             }
 
             terrainContext = new CellHeightContext
@@ -3583,45 +3544,24 @@ namespace Hecton8.World
             return Mathf.Atan(Mathf.Sqrt((dx * dx) + (dz * dz))) * Mathf.Rad2Deg;
         }
 
-        private bool TryResolveSteepMapMagicContactCorrection(Vector3 position, float mapMagicHeight, out float correctedHeight)
+        private static float ResolveSteepGradientContactCheat(
+            float centerHeight,
+            float northHeight,
+            float southHeight,
+            float eastHeight,
+            float westHeight,
+            float slopeDegrees,
+            float thresholdDegrees,
+            float maxDropMeters)
         {
-            correctedHeight = mapMagicHeight;
-            float maxDrop = Mathf.Max(0f, steepSlopeRaycastCorrectionMaxDropMeters);
-            if (maxDrop <= 0f)
-                return false;
+            float lowerNeighbor = Mathf.Min(Mathf.Min(northHeight, southHeight), Mathf.Min(eastHeight, westHeight));
+            float availableDrop = Mathf.Max(0f, centerHeight - lowerNeighbor);
+            if (availableDrop <= 0f)
+                return centerHeight;
 
-            float originY = mapMagicHeight + maxDrop + 1f;
-            float distance = (maxDrop * 2f) + 2f;
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                new Vector3(position.x, originY, position.z),
-                Vector3.down,
-                _seafloorRaycastHits,
-                distance,
-                HectonLayerMasks.TerrainLayerMask,
-                QueryTriggerInteraction.Ignore);
-
-            float bestHeight = mapMagicHeight;
-            float bestDrop = maxDrop + 0.001f;
-            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
-            {
-                RaycastHit hit = _seafloorRaycastHits[hitIndex];
-                if (ShouldIgnoreSeafloorHit(hit))
-                    continue;
-
-                float hitHeight = hit.point.y;
-                float drop = mapMagicHeight - hitHeight;
-                if (drop < 0f || drop > maxDrop || drop >= bestDrop)
-                    continue;
-
-                bestDrop = drop;
-                bestHeight = hitHeight;
-            }
-
-            if (bestDrop > maxDrop)
-                return false;
-
-            correctedHeight = bestHeight;
-            return true;
+            float slope01 = Mathf.InverseLerp(thresholdDegrees, 78f, slopeDegrees);
+            float drop = Mathf.Min(Mathf.Max(0f, maxDropMeters), availableDrop * Mathf.Lerp(0.35f, 0.75f, slope01));
+            return centerHeight - drop;
         }
 
         private float EstimateFallbackDepth(float x, float z)
@@ -4959,8 +4899,8 @@ namespace Hecton8.World
             {
                 case SeafloorSource.MapMagicHeight:
                     return SeafloorSourceMapMagicLabel;
-                case SeafloorSource.SceneRaycast:
-                    return SeafloorSourceRaycastLabel;
+                case SeafloorSource.SceneProbeLegacy:
+                    return SeafloorSourceSceneProbeLegacyLabel;
                 case SeafloorSource.FallbackSynthetic:
                     return SeafloorSourceFallbackLabel;
                 default:

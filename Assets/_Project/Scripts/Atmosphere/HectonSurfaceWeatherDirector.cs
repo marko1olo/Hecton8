@@ -26,7 +26,9 @@ namespace Hecton8.Atmosphere
     {
         private const float ExponentialBlendCompletion = 0.99f;
         private const float ResolveRetryInterval = 2f;
-        private const int ShelterSampleCount = 5;
+        private const float LightningFlashSeconds = 0.1f;
+        private const float ThunderDelayMinSeconds = 1f;
+        private const float ThunderDelayMaxSeconds = 3f;
 
         private enum SurfaceExecutionMode : byte
         {
@@ -152,17 +154,12 @@ namespace Hecton8.Atmosphere
             public float phaseB;
         }
 
-        // COLD ALLOC: Vector2[5] - local shelter probe offsets around player for fractional rain exposure - owner: HectonSurfaceWeatherDirector
-        private static readonly Vector2[] _shelterProbeOffsets =
-        {
-            Vector2.zero,
-            new Vector2(1f, 0f),
-            new Vector2(-1f, 0f),
-            new Vector2(0f, 1f),
-            new Vector2(0f, -1f)
-        };
-
         private static HectonSurfaceWeatherDirector _instance;
+        private static readonly int _RainIntensityId = Shader.PropertyToID("_RainIntensity");
+        private static readonly int _CurrentWaterLevelYId = Shader.PropertyToID("_CurrentWaterLevelY");
+        private static readonly int _GlobalWindId = Shader.PropertyToID("_GlobalWind");
+        private static readonly int _ScreenSpaceRainParamsId = Shader.PropertyToID("_HectonScreenSpaceRainParams");
+        private static readonly int _LightningFlashId = Shader.PropertyToID("_HectonLightningFlash");
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -201,15 +198,15 @@ namespace Hecton8.Atmosphere
         [Tooltip("Maximum upward distance checked for local rain shelter such as roofs or dry modules.")]
         [SerializeField, Min(1f)] private float shelterProbeHeight = 12f;
 
-        [Tooltip("Horizontal radius used for fractional local rain shelter probes around player.")]
-        [SerializeField, Min(0.25f)] private float shelterProbeRadius = 2f;
-
         [Tooltip("Seconds used to visually converge local rain exposure after shelter state changes.")]
         [SerializeField, Min(0.05f)] private float shelterExposureBlendTime = 0.45f;
 
         [Header("References")]
         [Tooltip("Optional explicit player movement reference. If null, runtime resolve is used.")]
         [SerializeField] private HectonPlayerMovement playerMovement;
+
+        [Tooltip("Optional camera/head transform used as the single upward rain occlusion ray origin. If null, the runtime player camera is used.")]
+        [SerializeField] private Transform rainOcclusionOrigin;
 
         [Tooltip("Optional explicit underwater visuals reference. If null, runtime resolve is used.")]
         [SerializeField] private HectonUnderwaterVisuals underwaterVisuals;
@@ -295,6 +292,7 @@ namespace Hecton8.Atmosphere
         private bool _bindingsApplied;
         private HectonPlayerMovement _subscribedPlayerMovement;
         private Transform _playerTransform;
+        private Transform _rainOcclusionTransform;
 
         private IHectonOceanKinematics _oceanKinematics;
         private HectonOceanSurfaceWeatherState _oceanSurfaceDefaults = new HectonOceanSurfaceWeatherState
@@ -532,6 +530,8 @@ namespace Hecton8.Atmosphere
             {
                 playerMovement = playerContext.PlayerMovement;
                 _playerTransform = playerContext.PlayerTransform;
+                if (playerContext.PlayerCamera != null)
+                    _rainOcclusionTransform = playerContext.PlayerCamera.transform;
                 return;
             }
 
@@ -1005,6 +1005,24 @@ namespace Hecton8.Atmosphere
             return _playerTransform != null ? _playerTransform.position : transform.position;
         }
 
+        private Transform ResolveRainOcclusionOrigin()
+        {
+            if (rainOcclusionOrigin != null)
+                return rainOcclusionOrigin;
+
+            if (_rainOcclusionTransform != null)
+                return _rainOcclusionTransform;
+
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            if (playerContext != null && playerContext.PlayerCamera != null)
+            {
+                _rainOcclusionTransform = playerContext.PlayerCamera.transform;
+                return _rainOcclusionTransform;
+            }
+
+            return _playerTransform;
+        }
+
         private float ResolveSurfaceY(Vector3 followPosition)
         {
             return playerMovement != null ? playerMovement.CurrentWaterSurfaceY : followPosition.y;
@@ -1063,7 +1081,7 @@ namespace Hecton8.Atmosphere
 
         private void TriggerLightning(float electricalActivity)
         {
-            float flashDuration = math.max(0.02f, _currentState.lightningFlashDuration);
+            float flashDuration = LightningFlashSeconds;
             float flashBase = math.max(0f, _currentState.lightningFlashIntensity);
             float flashVariance = math.lerp(0.7f, 1f, NextRandom01());
             float gustMultiplier = ResolveGustMultiplier(_currentState);
@@ -1230,14 +1248,9 @@ namespace Hecton8.Atmosphere
             float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
             float loudness = math.lerp(_currentState.thunderVolumeNear, _currentState.thunderVolumeFar, distanceT);
             float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
-            float effectiveDistance = thunderDistance * math.max(0.25f, _currentState.thunderPropagationDistanceScale);
-            float thunderDelay = effectiveDistance / 343f;
 
             _pendingThunderPosition = strikePosition;
-            _pendingThunderDelay = math.clamp(
-                thunderDelay,
-                _currentState.thunderDelayMin,
-                _currentState.thunderDelayMax);
+            _pendingThunderDelay = math.lerp(ThunderDelayMinSeconds, ThunderDelayMaxSeconds, NextRandom01());
             _pendingThunderVolume = loudness * stormBoost;
             _pendingThunderPitch = math.lerp(
                 _currentState.thunderPitchMin,
@@ -1323,31 +1336,19 @@ namespace Hecton8.Atmosphere
                 return;
             }
 
-            if (_playerTransform == null)
+            Transform occlusionOrigin = ResolveRainOcclusionOrigin();
+            if (occlusionOrigin == null)
             {
                 _targetLocalRainExposure = 1f;
                 _isLocallySheltered = false;
                 return;
             }
 
-            Vector3 followPosition = ResolveFollowPosition();
-            float probeRadius = math.max(0.25f, shelterProbeRadius);
-            int openProbeCount = 0;
-
-            for (int i = 0; i < ShelterSampleCount; i++)
-            {
-                Vector2 sampleOffset = _shelterProbeOffsets[i] * probeRadius;
-                Vector3 probeOrigin = followPosition;
-                probeOrigin.x += sampleOffset.x;
-                probeOrigin.z += sampleOffset.y;
-                probeOrigin.y += shelterProbeOriginOffset;
-
-                if (!IsShelterProbeBlocked(probeOrigin))
-                    openProbeCount++;
-            }
-
-            _targetLocalRainExposure = openProbeCount / (float)ShelterSampleCount;
-            _isLocallySheltered = _targetLocalRainExposure < 0.999f;
+            Vector3 probeOrigin = occlusionOrigin.position;
+            probeOrigin.y += shelterProbeOriginOffset;
+            bool blocked = IsShelterProbeBlocked(probeOrigin);
+            _targetLocalRainExposure = blocked ? 0f : 1f;
+            _isLocallySheltered = blocked;
         }
 
         private bool IsShelterProbeBlocked(Vector3 probeOrigin)
@@ -1429,6 +1430,8 @@ namespace Hecton8.Atmosphere
 
             bool surfaceVfxActive = _executionMode == SurfaceExecutionMode.SurfaceActive;
             SurfaceWeatherBindingSnapshot bindings = _computedBindings;
+            Vector3 followPosition = ResolveFollowPosition();
+            float surfaceY = ResolveSurfaceY(followPosition);
 
             if (underwaterVisuals != null)
             {
@@ -1470,8 +1473,6 @@ namespace Hecton8.Atmosphere
 
             if (weatherVfxRig != null)
             {
-                Vector3 followPosition = ResolveFollowPosition();
-                float surfaceY = ResolveSurfaceY(followPosition);
                 weatherVfxRig.ApplyState(
                     deltaTime,
                     followPosition,
@@ -1485,6 +1486,7 @@ namespace Hecton8.Atmosphere
                     surfaceVfxActive);
             }
 
+            PublishWeatherShaderGlobals(surfaceY, bindings, surfaceVfxActive);
             _debugGustMultiplier = bindings.gustMultiplier;
             _debugSquallMultiplier = bindings.squallMultiplier;
             ApplyOceanState(bindings);
@@ -1493,6 +1495,8 @@ namespace Hecton8.Atmosphere
 
         private void ClearWeatherBindings()
         {
+            PublishClearedWeatherShaderGlobals();
+
             if (!_bindingsApplied)
                 return;
 
@@ -1513,6 +1517,37 @@ namespace Hecton8.Atmosphere
             _pendingThunderPitch = 1f;
             RestoreOceanDefaults();
             _bindingsApplied = false;
+        }
+
+        private void PublishWeatherShaderGlobals(float surfaceY, in SurfaceWeatherBindingSnapshot bindings, bool surfaceVfxActive)
+        {
+            float rainIntensity = surfaceVfxActive ? math.saturate(bindings.vfxPrecipitation) : 0f;
+            float windSpeedMps = math.max(0f, bindings.targetWindSpeed / 3.6f);
+            Vector2 windDirection = _currentState.windDirection;
+            float windMagnitudeSq = windDirection.sqrMagnitude;
+            if (windMagnitudeSq > 0.0001f)
+                windDirection *= math.rsqrt(windMagnitudeSq);
+            else
+                windDirection = Vector2.zero;
+
+            Shader.SetGlobalFloat(_RainIntensityId, rainIntensity);
+            Shader.SetGlobalFloat(_CurrentWaterLevelYId, surfaceY);
+            Shader.SetGlobalVector(_GlobalWindId, new Vector4(windDirection.x * windSpeedMps, 0f, windDirection.y * windSpeedMps, windSpeedMps));
+            Shader.SetGlobalVector(
+                _ScreenSpaceRainParamsId,
+                new Vector4(
+                    rainIntensity,
+                    math.max(0f, bindings.localRainDensityMultiplier),
+                    math.max(0.1f, bindings.localRainAreaScale),
+                    math.saturate(bindings.localRainExposure)));
+            Shader.SetGlobalFloat(_LightningFlashId, math.saturate(_lightningFlashStrength));
+        }
+
+        private static void PublishClearedWeatherShaderGlobals()
+        {
+            Shader.SetGlobalFloat(_RainIntensityId, 0f);
+            Shader.SetGlobalFloat(_LightningFlashId, 0f);
+            Shader.SetGlobalVector(_ScreenSpaceRainParamsId, Vector4.zero);
         }
 
         private void ApplyOceanState(in SurfaceWeatherBindingSnapshot bindings)

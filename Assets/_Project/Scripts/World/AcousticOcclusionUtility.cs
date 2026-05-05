@@ -1,7 +1,5 @@
 using System.Runtime.InteropServices;
 using Hecton8.Core;
-using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
@@ -126,12 +124,15 @@ namespace Hecton8.World
         private const float MetalAbsorption01 = 0.85f;
         private const float SedimentAbsorption01 = 0.60f;
         private const float WaterAbsorption01 = 0.05f;
-        private const int MaxOcclusionHits = 8;
         private const int MaxQueuedRequests = 48;
-        private const int EnclosureProbeCount = 6;
+        private const int EnclosurePresetFaceCount = 6;
         private const float OcclusionReuseDistanceMeters = 0.5f;
         private const float OcclusionReuseDistanceSqr = OcclusionReuseDistanceMeters * OcclusionReuseDistanceMeters;
-        private const float MinimumProbeDistanceMeters = 0.001f;
+        private const float MinimumPathDistanceMeters = 0.001f;
+        private const float DistanceOcclusionStartMeters = 28f;
+        private const float DistanceOcclusionFullMeters = 180f;
+        private const float DistanceOcclusionTransmissionFloor = 0.32f;
+        private const float DistanceOcclusionLowPassFloorHertz = 900f;
         private const float MinimumEquivalentAbsorptionArea = 0.5f;
         private const float MinimumRt60Seconds = 0.12f;
         private const float MaximumRt60Seconds = 10f;
@@ -146,6 +147,9 @@ namespace Hecton8.World
         private const float LargeRoomWetMix01 = 0.48f;
         private const float SmallRoomOpenness01 = 0.16f;
         private const float LargeRoomOpenness01 = 0.36f;
+        private const float ForwardEchoFakeDistanceRatio = 0.12f;
+        private const float ForwardEchoMinimumFakeDistanceMeters = 18f;
+        private const float ForwardEchoMaximumFakeDistanceMeters = 140f;
         private const float ForwardEchoReuseDistanceMeters = 2f;
         private const float ForwardEchoReuseDistanceSqr = ForwardEchoReuseDistanceMeters * ForwardEchoReuseDistanceMeters;
         private const float ForwardEchoDirectionReuseDot = 0.9961947f;
@@ -155,14 +159,11 @@ namespace Hecton8.World
         private const float FloraScatteringDensityThreshold = 0.08f;
         private const float FloraScatteringTransmissionFloor = 0.18f;
         private const float FloraScatteringLowPassFloorHertz = 220f;
-        private const byte CaveSignedDistanceSolidThreshold = 128;
-        private const float CaveVoxelDdaEpsilon = 0.000001f;
         private const float VoxelDensityTransmissionScale = 1.65f;
         private const float VoxelDensityLowPassScale = 7.5f;
         private const float VoxelDensityHeavyOcclusionThreshold01 = 0.78f;
         private const float VoxelDensityHeavyLowPassStartHertz = 650f;
         private const float VoxelDensityHardLowPassCutoffHertz = 300f;
-        private const int VoxelDensityMaximumDdaSteps = 4096;
 
         private static int PlayerLayer = -1;
         private static int TriggerZoneLayer = -1;
@@ -185,11 +186,6 @@ namespace Hecton8.World
             public ulong IgnoreTargetRootEntityId;
             public ulong IgnoreOriginBodyEntityId;
             public ulong IgnoreTargetBodyEntityId;
-        }
-
-        private struct QueryFrameEntry
-        {
-            public QueryKey Key;
         }
 
         private struct CachedQueryEntry
@@ -218,35 +214,12 @@ namespace Hecton8.World
         }
 
         private static int _runtimeOwnerCount;
-        private static bool _queryBatchScheduled;
-        private static int _queuedFrame = -1;
-        private static int _queuedCount;
-        private static int _scheduledCount;
         private static int _nextCacheWriteIndex;
-        private static JobHandle _pendingQueryHandle;
-        private static JobHandle _pendingForwardEchoHandle;
-        private static bool _forwardEchoQueryScheduled;
-        private static bool _queuedForwardEchoValid;
-        private static bool _scheduledForwardEchoValid;
         private static bool _triggerPresetActive;
         private static AcousticEnclosureResult _triggerPresetResult;
-        private static ForwardEchoKey _queuedForwardEchoKey;
-        private static ForwardEchoKey _scheduledForwardEchoKey;
         private static CachedForwardEchoEntry _cachedForwardEchoEntry;
-        // COLD ALLOC: QueryFrameEntry[48] - queued cross-frame acoustic occlusion requests - owner: AcousticOcclusionUtility
-        private static readonly QueryFrameEntry[] _queuedEntries = new QueryFrameEntry[MaxQueuedRequests];
-        // COLD ALLOC: QueryFrameEntry[48] - scheduled acoustic occlusion request snapshot - owner: AcousticOcclusionUtility
-        private static readonly QueryFrameEntry[] _scheduledEntries = new QueryFrameEntry[MaxQueuedRequests];
         // COLD ALLOC: CachedQueryEntry[48] - last resolved acoustic occlusion cache - owner: AcousticOcclusionUtility
         private static readonly CachedQueryEntry[] _cachedEntries = new CachedQueryEntry[MaxQueuedRequests];
-        // COLD ALLOC: NativeList<RaycastCommand>[48] - deferred acoustic occlusion batch command buffer - owner: AcousticOcclusionUtility
-        private static NativeList<RaycastCommand> _queryCommands;
-        // COLD ALLOC: NativeArray<RaycastHit>[384] - deferred acoustic occlusion batch result buffer - owner: AcousticOcclusionUtility
-        private static NativeArray<RaycastHit> _queryResults;
-        // COLD ALLOC: NativeArray<RaycastCommand>[1] - transient forward-echo acoustic probe command buffer - owner: AcousticOcclusionUtility
-        private static NativeArray<RaycastCommand> _forwardEchoCommands;
-        // COLD ALLOC: NativeArray<RaycastHit>[1] - transient forward-echo acoustic probe result buffer - owner: AcousticOcclusionUtility
-        private static NativeArray<RaycastHit> _forwardEchoResults;
 
         private static void EnsureLayerCache()
         {
@@ -278,24 +251,8 @@ namespace Hecton8.World
             _layerCacheInitialized = false;
             EnsureLayerCache();
 
-            JobHandle teardownDependency = CancelPendingHandlesForTeardown();
-            DisposeRuntimeBuffers(teardownDependency);
-
             _runtimeOwnerCount = 0;
-            _queryBatchScheduled = false;
-            _queuedFrame = -1;
-            _queuedCount = 0;
-            _scheduledCount = 0;
             _nextCacheWriteIndex = 0;
-            _pendingQueryHandle = default;
-            _pendingForwardEchoHandle = default;
-            _queryCommands = default;
-            _queryResults = default;
-            _forwardEchoCommands = default;
-            _forwardEchoResults = default;
-            _forwardEchoQueryScheduled = false;
-            _queuedForwardEchoValid = false;
-            _scheduledForwardEchoValid = false;
             _triggerPresetActive = false;
             _triggerPresetResult = BuildOpenWaterResult(1f);
             _cachedForwardEchoEntry.Valid = false;
@@ -308,7 +265,6 @@ namespace Hecton8.World
         public static void AcquireRuntime()
         {
             _runtimeOwnerCount++;
-            EnsureRuntimeBuffers();
         }
 
         public static void ReleaseRuntime()
@@ -320,17 +276,7 @@ namespace Hecton8.World
             if (_runtimeOwnerCount > 0)
                 return;
 
-            _queryBatchScheduled = false;
-            _queuedFrame = -1;
-            _queuedCount = 0;
-            _scheduledCount = 0;
             _nextCacheWriteIndex = 0;
-
-            JobHandle teardownDependency = CancelPendingHandlesForTeardown();
-            DisposeRuntimeBuffers(teardownDependency);
-            _forwardEchoQueryScheduled = false;
-            _queuedForwardEchoValid = false;
-            _scheduledForwardEchoValid = false;
             _cachedForwardEchoEntry.Valid = false;
 
             for (int i = 0; i < MaxQueuedRequests; i++)
@@ -350,25 +296,10 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Recovers and schedules acoustic raycast jobs in the dispatcher-owned late-frame swap window.
+        /// Kept as a dispatcher hook; acoustic purge now resolves occlusion through cacheable math only.
         /// </summary>
         public static void LateFrameTick()
         {
-            if (_runtimeOwnerCount <= 0)
-                return;
-
-            EnsureRuntimeBuffers();
-            TryConsumeCompletedQuery();
-            TryConsumeCompletedForwardEchoQuery();
-
-            if (!_queryBatchScheduled && _queuedCount > 0)
-                ScheduleQueuedBatch();
-
-            if (!_forwardEchoQueryScheduled && _queuedForwardEchoValid)
-                ScheduleQueuedForwardEchoBatch();
-
-            _queuedFrame = Time.frameCount;
-            _queuedCount = 0;
         }
 
         public static void PrimeOcclusionPath(
@@ -378,11 +309,6 @@ namespace Hecton8.World
             Transform ignoreOriginRoot,
             Transform ignoreTargetRoot)
         {
-            EnsureRuntimeBuffers();
-            AdvanceFrameFence();
-            if (!_queryCommands.IsCreated || !_queryResults.IsCreated)
-                return;
-
             int resolvedLayerMask = ResolveSensoryLayerMask(layerMask);
             QueryKey queryKey = new QueryKey
             {
@@ -395,28 +321,10 @@ namespace Hecton8.World
                 IgnoreTargetBodyEntityId = ResolveAttachedBodyEntityId(ignoreTargetRoot)
             };
 
-            Vector3 delta = listenerPosition - sourcePosition;
-            float distance = delta.magnitude;
-            if (distance <= 0.001f)
-            {
-                StoreCachedResult(queryKey, new AcousticOcclusionResult(1f, OpenLowPassCutoffHertz, 0));
-                return;
-            }
-
             if (TryFindCachedResult(queryKey, out _))
                 return;
 
-            for (int i = 0; i < _queuedCount; i++)
-            {
-                if (KeysMatch(_queuedEntries[i].Key, queryKey))
-                    return;
-            }
-
-            if (_queuedCount >= MaxQueuedRequests)
-                return;
-
-            _queuedEntries[_queuedCount].Key = queryKey;
-            _queuedCount++;
+            StoreCachedResult(queryKey, BuildDistanceOcclusionResult(sourcePosition, listenerPosition));
         }
 
         public static void PrimeForwardEchoSample(
@@ -426,13 +334,8 @@ namespace Hecton8.World
             int layerMask,
             Transform ignoreRoot)
         {
-            EnsureRuntimeBuffers();
-            AdvanceFrameFence();
-            if (!_forwardEchoCommands.IsCreated || !_forwardEchoResults.IsCreated)
-                return;
-
             float directionLengthSq = forwardDirection.sqrMagnitude;
-            if (directionLengthSq <= MinimumProbeDistanceMeters * MinimumProbeDistanceMeters)
+            if (directionLengthSq <= MinimumPathDistanceMeters * MinimumPathDistanceMeters)
                 return;
 
             int resolvedLayerMask = ResolveSensoryLayerMask(layerMask);
@@ -449,8 +352,9 @@ namespace Hecton8.World
             if (TryFindCachedForwardEchoResult(queryKey, out _))
                 return;
 
-            _queuedForwardEchoKey = queryKey;
-            _queuedForwardEchoValid = true;
+            _cachedForwardEchoEntry.Key = queryKey;
+            _cachedForwardEchoEntry.Result = BuildDistanceForwardEchoResult(queryKey);
+            _cachedForwardEchoEntry.Valid = true;
         }
 
         public static bool TryGetCachedOcclusionPath(
@@ -461,8 +365,6 @@ namespace Hecton8.World
             Transform ignoreTargetRoot,
             out AcousticOcclusionResult result)
         {
-            AdvanceFrameFence();
-
             int resolvedLayerMask = ResolveSensoryLayerMask(layerMask);
             QueryKey queryKey = new QueryKey
             {
@@ -480,8 +382,9 @@ namespace Hecton8.World
                 return true;
             }
 
-            result = new AcousticOcclusionResult(1f, OpenLowPassCutoffHertz, 0);
-            return false;
+            result = BuildDistanceOcclusionResult(sourcePosition, listenerPosition);
+            StoreCachedResult(queryKey, result);
+            return true;
         }
 
         public static bool TryGetCachedEnclosureSample(
@@ -526,9 +429,8 @@ namespace Hecton8.World
             Transform ignoreRoot,
             out AcousticForwardEchoResult result)
         {
-            AdvanceFrameFence();
             float directionLengthSq = forwardDirection.sqrMagnitude;
-            if (directionLengthSq <= MinimumProbeDistanceMeters * MinimumProbeDistanceMeters)
+            if (directionLengthSq <= MinimumPathDistanceMeters * MinimumPathDistanceMeters)
             {
                 result = default;
                 return false;
@@ -545,7 +447,14 @@ namespace Hecton8.World
                 IgnoreBodyEntityId = ResolveAttachedBodyEntityId(ignoreRoot)
             };
 
-            return TryFindCachedForwardEchoResult(queryKey, out result);
+            if (TryFindCachedForwardEchoResult(queryKey, out result))
+                return true;
+
+            result = BuildDistanceForwardEchoResult(queryKey);
+            _cachedForwardEchoEntry.Key = queryKey;
+            _cachedForwardEchoEntry.Result = result;
+            _cachedForwardEchoEntry.Valid = true;
+            return true;
         }
 
         public static bool TryTraceVoxelDensityOcclusion(
@@ -555,97 +464,30 @@ namespace Hecton8.World
         {
             result = new AcousticVoxelOcclusionResult(0f, 1f, OpenLowPassCutoffHertz, 0);
 
-            HectonCaveVoxelLightingVolume volume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
-            if (volume == null ||
-                !volume.TryGetPublishedSignedDistanceVoxelPayload(
-                    out NativeArray<byte> signedDistanceVoxels,
-                    out Vector3Int gridDimensions,
-                    out Vector3 gridOrigin,
-                    out Vector3 voxelCellSize))
-            {
+            if (HectonCaveVoxelLightingVolume.ActiveRuntimeInstance == null)
                 return false;
-            }
 
-            int3 dimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
-            float3 origin = new float3(gridOrigin.x, gridOrigin.y, gridOrigin.z);
-            float3 cellSize = new float3(voxelCellSize.x, voxelCellSize.y, voxelCellSize.z);
-            float3 start = new float3(sourcePosition.x, sourcePosition.y, sourcePosition.z);
-            float3 end = new float3(listenerPosition.x, listenerPosition.y, listenerPosition.z);
-            if (!TryWorldToCaveVoxel(start, origin, cellSize, dimensions, out int3 startVoxel) ||
-                !TryWorldToCaveVoxel(end, origin, cellSize, dimensions, out int3 endVoxel))
-            {
+            float distanceMeters = ResolveAupDistanceMeters(sourcePosition, listenerPosition);
+            if (distanceMeters <= MinimumPathDistanceMeters)
                 return false;
-            }
 
-            float3 delta = end - start;
-            float distanceSq = math.lengthsq(delta);
-            if (distanceSq <= CaveVoxelDdaEpsilon)
-            {
-                float density = ResolveCaveVoxelDensity01(SampleCaveVoxel(signedDistanceVoxels, startVoxel, dimensions));
-                result = new AcousticVoxelOcclusionResult(
-                    density,
-                    math.exp(-density * VoxelDensityTransmissionScale),
-                    ResolveVoxelDensityLowPassCutoff(density),
-                    1);
-                return true;
-            }
-
-            float3 rayDirection = delta * math.rsqrt(distanceSq);
-            bool3 positiveMask = rayDirection >= 0f;
-            bool3 activeAxisMask = math.abs(rayDirection) > CaveVoxelDdaEpsilon;
-            int3 step = math.select(new int3(-1, -1, -1), new int3(1, 1, 1), positiveMask);
-            float3 cellMin = origin + (new float3(startVoxel.x, startVoxel.y, startVoxel.z) * cellSize);
-            float3 voxelBoundary = cellMin + math.select(float3.zero, cellSize, positiveMask);
-            float3 safeAbsDirection = math.max(math.abs(rayDirection), new float3(CaveVoxelDdaEpsilon, CaveVoxelDdaEpsilon, CaveVoxelDdaEpsilon));
-            float3 rayDirectionInverse = 1f / safeAbsDirection;
-            float3 tMax = math.abs((voxelBoundary - start) * rayDirectionInverse);
-            float3 tDelta = cellSize * rayDirectionInverse;
-            float3 sentinel = new float3(1000000f, 1000000f, 1000000f);
-            tMax = math.select(sentinel, tMax, activeAxisMask);
-            tDelta = math.select(sentinel, tDelta, activeAxisMask);
-
-            int3 currentVoxel = startVoxel;
-            int maxSteps = math.min(
-                VoxelDensityMaximumDdaSteps,
-                math.max(1, dimensions.x + dimensions.y + dimensions.z));
-            float accumulatedDensity = 0f;
-            int sampledVoxelCount = 0;
-
-            for (int i = 0; i < maxSteps; i++)
-            {
-                accumulatedDensity += ResolveCaveVoxelDensity01(SampleCaveVoxel(signedDistanceVoxels, currentVoxel, dimensions));
-                sampledVoxelCount++;
-
-                if (math.all(currentVoxel == endVoxel))
-                    break;
-
-                bool3 axisMask = (tMax <= tMax.yzx) & (tMax <= tMax.zxy);
-                tMax += math.select(float3.zero, tDelta, axisMask);
-                currentVoxel += math.select(int3.zero, step, axisMask);
-                if (!IsCaveVoxelInside(currentVoxel, dimensions))
-                    break;
-            }
-
-            float normalizedDensity = sampledVoxelCount > 0
-                ? accumulatedDensity / sampledVoxelCount
-                : 0f;
+            float normalizedDensity = ResolveDistanceShadow01(distanceMeters);
             float transmission01 = math.clamp(
                 math.exp(-normalizedDensity * VoxelDensityTransmissionScale),
                 0.02f,
                 1f);
             result = new AcousticVoxelOcclusionResult(
-                accumulatedDensity,
+                normalizedDensity,
                 transmission01,
                 ResolveVoxelDensityLowPassCutoff(normalizedDensity),
-                sampledVoxelCount);
-            return sampledVoxelCount > 0;
+                normalizedDensity > 0.01f ? 1 : 0);
+            return normalizedDensity > 0.01f;
         }
 
         public static AcousticOcclusionResult EvaluateOcclusionPath(
             Vector3 sourcePosition,
             Vector3 listenerPosition,
             int layerMask,
-            RaycastHit[] hitBuffer,
             Transform ignoreOriginRoot,
             Transform ignoreTargetRoot)
         {
@@ -669,271 +511,18 @@ namespace Hecton8.World
             return new AcousticOcclusionResult(1f, OpenLowPassCutoffHertz, 0);
         }
 
-        private static void EnsureRuntimeBuffers()
-        {
-            if (!_queryCommands.IsCreated)
-            {
-                _queryCommands = new NativeList<RaycastCommand>(MaxQueuedRequests, Allocator.Persistent);
-                NativeMemorySentinel.RegisterNativeList(
-                    _queryCommands,
-                    nameof(AcousticOcclusionUtility),
-                    nameof(_queryCommands),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_queryResults.IsCreated)
-            {
-                _queryResults = new NativeArray<RaycastHit>(MaxQueuedRequests * MaxOcclusionHits, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _queryResults,
-                    nameof(AcousticOcclusionUtility),
-                    nameof(_queryResults),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_forwardEchoCommands.IsCreated)
-            {
-                _forwardEchoCommands = new NativeArray<RaycastCommand>(1, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _forwardEchoCommands,
-                    nameof(AcousticOcclusionUtility),
-                    nameof(_forwardEchoCommands),
-                    NativeAllocationLifetime.Session);
-            }
-
-            if (!_forwardEchoResults.IsCreated)
-            {
-                _forwardEchoResults = new NativeArray<RaycastHit>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                NativeMemorySentinel.RegisterNativeArray(
-                    _forwardEchoResults,
-                    nameof(AcousticOcclusionUtility),
-                    nameof(_forwardEchoResults),
-                    NativeAllocationLifetime.Session);
-            }
-        }
-
-        private static void AdvanceFrameFence()
-        {
-            int currentFrame = Time.frameCount;
-            if (_queuedFrame != currentFrame)
-                _queuedFrame = currentFrame;
-        }
-
-        private static void TryConsumeCompletedQuery()
-        {
-            if (!_queryBatchScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _pendingQueryHandle, forceComplete: false))
-                return;
-
-            for (int queryIndex = 0; queryIndex < _scheduledCount; queryIndex++)
-            {
-                QueryKey queryKey = _scheduledEntries[queryIndex].Key;
-                AcousticOcclusionResult result = ResolveOcclusionResult(
-                    queryIndex * MaxOcclusionHits,
-                    queryKey.SourcePosition,
-                    queryKey.ListenerPosition,
-                    queryKey.IgnoreOriginRootEntityId,
-                    queryKey.IgnoreTargetRootEntityId,
-                    queryKey.IgnoreOriginBodyEntityId,
-                    queryKey.IgnoreTargetBodyEntityId);
-                StoreCachedResult(queryKey, result);
-            }
-
-            _queryBatchScheduled = false;
-            _scheduledCount = 0;
-        }
-
-        private static void TryConsumeCompletedForwardEchoQuery()
-        {
-            if (!_forwardEchoQueryScheduled || !_scheduledForwardEchoValid)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _pendingForwardEchoHandle, forceComplete: false))
-                return;
-
-            RaycastHit hit = _forwardEchoResults[0];
-            Collider collider = hit.collider;
-            AcousticForwardEchoResult result;
-            if (collider == null ||
-                ShouldIgnoreCollider(
-                    collider,
-                    _scheduledForwardEchoKey.IgnoreRootEntityId,
-                    0ul,
-                    _scheduledForwardEchoKey.IgnoreBodyEntityId,
-                    0ul))
-            {
-                result = new AcousticForwardEchoResult(
-                    _scheduledForwardEchoKey.ProbeDistance,
-                    1f,
-                    OpenLowPassCutoffHertz,
-                    false);
-            }
-            else
-            {
-                float absorption01 = ResolveAbsorption01(collider);
-                float transmission01 = math.clamp(1f - absorption01, 0f, 1f);
-                float lowPassCutoffHz = math.lerp(
-                    MinimumLowPassCutoffHertz,
-                    OpenLowPassCutoffHertz,
-                    transmission01);
-                result = new AcousticForwardEchoResult(
-                    math.max(MinimumProbeDistanceMeters, hit.distance),
-                    transmission01,
-                    lowPassCutoffHz,
-                    true);
-            }
-
-            _cachedForwardEchoEntry.Key = _scheduledForwardEchoKey;
-            _cachedForwardEchoEntry.Result = result;
-            _cachedForwardEchoEntry.Valid = true;
-            _scheduledForwardEchoValid = false;
-            _forwardEchoQueryScheduled = false;
-        }
-
-        private static JobHandle CancelPendingHandlesForTeardown()
-        {
-            JobHandle dependency = JobHandle.CombineDependencies(_pendingQueryHandle, _pendingForwardEchoHandle);
-
-            _pendingQueryHandle = default;
-            _pendingForwardEchoHandle = default;
-            _queryBatchScheduled = false;
-            _forwardEchoQueryScheduled = false;
-            return dependency;
-        }
-
-        private static void DisposeRuntimeBuffers(JobHandle dependency)
-        {
-            JobHandle disposeHandle = dependency;
-
-            if (_queryCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeList(nameof(AcousticOcclusionUtility), nameof(_queryCommands));
-                disposeHandle = _queryCommands.Dispose(disposeHandle);
-                _queryCommands = default;
-            }
-
-            if (_queryResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_queryResults);
-                disposeHandle = _queryResults.Dispose(disposeHandle);
-                _queryResults = default;
-            }
-
-            if (_forwardEchoCommands.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_forwardEchoCommands);
-                disposeHandle = _forwardEchoCommands.Dispose(disposeHandle);
-                _forwardEchoCommands = default;
-            }
-
-            if (_forwardEchoResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_forwardEchoResults);
-                disposeHandle = _forwardEchoResults.Dispose(disposeHandle);
-                _forwardEchoResults = default;
-            }
-
-            JobHandle.ScheduleBatchedJobs();
-        }
-
-        private static void ScheduleQueuedBatch()
-        {
-            if (_queuedCount <= 0)
-                return;
-
-            _queryCommands.Clear();
-            _scheduledCount = 0;
-            QueryParameters parameters;
-            for (int queryIndex = 0; queryIndex < _queuedCount; queryIndex++)
-            {
-                QueryKey queryKey = _queuedEntries[queryIndex].Key;
-                Vector3 delta = queryKey.ListenerPosition - queryKey.SourcePosition;
-                float distance = delta.magnitude;
-                if (distance <= 0.001f)
-                {
-                    StoreCachedResult(queryKey, new AcousticOcclusionResult(1f, OpenLowPassCutoffHertz, 0));
-                    continue;
-                }
-
-                parameters = new QueryParameters(queryKey.LayerMask, false, QueryTriggerInteraction.Ignore);
-                _queryCommands.AddNoResize(new RaycastCommand(queryKey.SourcePosition, delta / distance, parameters, distance));
-                _scheduledEntries[_scheduledCount].Key = queryKey;
-                _scheduledCount++;
-            }
-
-            if (_scheduledCount <= 0)
-                return;
-
-            int resultLength = math.min(_scheduledCount * MaxOcclusionHits, _queryResults.Length);
-            for (int i = 0; i < resultLength; i++)
-                _queryResults[i] = default;
-
-            _pendingQueryHandle = RaycastCommand.ScheduleBatch(
-                _queryCommands.AsDeferredJobArray(),
-                _queryResults,
-                1,
-                MaxOcclusionHits,
-                default);
-            _queryBatchScheduled = true;
-        }
-
-        private static void ScheduleQueuedForwardEchoBatch()
-        {
-            if (!_queuedForwardEchoValid || !_forwardEchoCommands.IsCreated || !_forwardEchoResults.IsCreated)
-                return;
-
-            QueryParameters parameters = new QueryParameters(_queuedForwardEchoKey.LayerMask, false, QueryTriggerInteraction.Ignore);
-            _forwardEchoCommands[0] = new RaycastCommand(
-                _queuedForwardEchoKey.OriginPosition,
-                _queuedForwardEchoKey.ForwardDirection,
-                parameters,
-                _queuedForwardEchoKey.ProbeDistance);
-            _forwardEchoResults[0] = default;
-            _scheduledForwardEchoKey = _queuedForwardEchoKey;
-            _scheduledForwardEchoValid = true;
-            _queuedForwardEchoValid = false;
-            _pendingForwardEchoHandle = RaycastCommand.ScheduleBatch(_forwardEchoCommands, _forwardEchoResults, 1, default);
-            _forwardEchoQueryScheduled = true;
-        }
-
-        private static AcousticOcclusionResult ResolveOcclusionResult(
-            int resultStartIndex,
+        private static AcousticOcclusionResult BuildDistanceOcclusionResult(
             Vector3 sourcePosition,
-            Vector3 listenerPosition,
-            ulong ignoreOriginRootEntityId,
-            ulong ignoreTargetRootEntityId,
-            ulong ignoreOriginBodyEntityId,
-            ulong ignoreTargetBodyEntityId)
+            Vector3 listenerPosition)
         {
-            float transmission01 = 1f;
-            int occludingHitCount = 0;
-            int resultEndIndex = math.min(resultStartIndex + MaxOcclusionHits, _queryResults.Length);
-            for (int i = resultStartIndex; i < resultEndIndex; i++)
-            {
-                Collider collider = _queryResults[i].collider;
-                if (collider == null)
-                    break;
+            float distanceMeters = ResolveAupDistanceMeters(sourcePosition, listenerPosition);
+            if (distanceMeters <= MinimumPathDistanceMeters)
+                return new AcousticOcclusionResult(1f, OpenLowPassCutoffHertz, 0);
 
-                if (ShouldIgnoreCollider(
-                        collider,
-                        ignoreOriginRootEntityId,
-                        ignoreTargetRootEntityId,
-                        ignoreOriginBodyEntityId,
-                        ignoreTargetBodyEntityId))
-                    continue;
-
-                float absorption01 = ResolveAbsorption01(collider);
-                transmission01 *= 1f - math.clamp(absorption01, 0f, 1f);
-                occludingHitCount++;
-            }
-
-            float lowPassCutoffHz = occludingHitCount > 0
-                ? math.max(
-                    MinimumLowPassCutoffHertz,
-                    OpenLowPassCutoffHertz / math.pow(2f, occludingHitCount))
-                : OpenLowPassCutoffHertz;
+            float shadow01 = ResolveDistanceShadow01(distanceMeters);
+            float transmission01 = math.lerp(1f, DistanceOcclusionTransmissionFloor, shadow01);
+            float lowPassCutoffHz = math.lerp(OpenLowPassCutoffHertz, DistanceOcclusionLowPassFloorHertz, shadow01);
+            int occludingHitCount = shadow01 > 0.04f ? 1 : 0;
 
             ApplyFloraScattering(
                 sourcePosition,
@@ -949,6 +538,37 @@ namespace Hecton8.World
                 math.clamp(transmission01, 0f, 1f),
                 math.clamp(lowPassCutoffHz, MinimumLowPassCutoffHertz, OpenLowPassCutoffHertz),
                 occludingHitCount);
+        }
+
+        private static AcousticForwardEchoResult BuildDistanceForwardEchoResult(ForwardEchoKey queryKey)
+        {
+            float fakeDistanceMeters = math.clamp(
+                queryKey.ProbeDistance * ForwardEchoFakeDistanceRatio,
+                ForwardEchoMinimumFakeDistanceMeters,
+                ForwardEchoMaximumFakeDistanceMeters);
+            float shadow01 = math.saturate(fakeDistanceMeters / ForwardEchoMaximumFakeDistanceMeters);
+            float transmission01 = math.lerp(0.86f, 0.35f, shadow01);
+            float lowPassCutoffHz = math.lerp(12000f, 900f, shadow01);
+            return new AcousticForwardEchoResult(
+                fakeDistanceMeters,
+                math.clamp(transmission01, 0f, 1f),
+                math.clamp(lowPassCutoffHz, MinimumLowPassCutoffHertz, OpenLowPassCutoffHertz),
+                true);
+        }
+
+        private static float ResolveDistanceShadow01(float distanceMeters)
+        {
+            float distance01 = math.saturate(
+                (distanceMeters - DistanceOcclusionStartMeters) /
+                math.max(DistanceOcclusionFullMeters - DistanceOcclusionStartMeters, 0.001f));
+            return distance01 * distance01 * (3f - (2f * distance01));
+        }
+
+        private static float ResolveAupDistanceMeters(Vector3 sourcePosition, Vector3 listenerPosition)
+        {
+            Vector3 sourceAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(sourcePosition);
+            Vector3 listenerAup = HectonFloatingOrigin.ToAbsoluteUniversePosition(listenerPosition);
+            return math.length((float3)(listenerAup - sourceAup));
         }
 
         private static void ApplyFloraScattering(
@@ -1059,56 +679,6 @@ namespace Hecton8.World
                    math.dot((float3)cached.ForwardDirection, (float3)current.ForwardDirection) >= ForwardEchoDirectionReuseDot;
         }
 
-        private static bool TryWorldToCaveVoxel(float3 worldPosition, float3 gridOrigin, float3 voxelCellSize, int3 dimensions, out int3 voxel)
-        {
-            float3 local = worldPosition - gridOrigin;
-            if (local.x < 0f || local.y < 0f || local.z < 0f)
-            {
-                voxel = int3.zero;
-                return false;
-            }
-
-            int3 candidate = new int3(
-                (int)math.floor(local.x / math.max(voxelCellSize.x, CaveVoxelDdaEpsilon)),
-                (int)math.floor(local.y / math.max(voxelCellSize.y, CaveVoxelDdaEpsilon)),
-                (int)math.floor(local.z / math.max(voxelCellSize.z, CaveVoxelDdaEpsilon)));
-            if (!IsCaveVoxelInside(candidate, dimensions))
-            {
-                voxel = int3.zero;
-                return false;
-            }
-
-            voxel = candidate;
-            return true;
-        }
-
-        private static bool IsCaveVoxelInside(int3 voxel, int3 dimensions)
-        {
-            return voxel.x >= 0 &&
-                   voxel.y >= 0 &&
-                   voxel.z >= 0 &&
-                   voxel.x < dimensions.x &&
-                   voxel.y < dimensions.y &&
-                   voxel.z < dimensions.z;
-        }
-
-        private static byte SampleCaveVoxel(NativeArray<byte> signedDistanceVoxels, int3 voxel, int3 dimensions)
-        {
-            int flatIndex = voxel.x + (voxel.y * dimensions.x) + (voxel.z * dimensions.x * dimensions.y);
-            if (flatIndex < 0 || flatIndex >= signedDistanceVoxels.Length)
-                return 255;
-
-            return signedDistanceVoxels[flatIndex];
-        }
-
-        private static float ResolveCaveVoxelDensity01(byte encodedSignedDistance)
-        {
-            if (encodedSignedDistance >= CaveSignedDistanceSolidThreshold)
-                return 0f;
-
-            return math.saturate((CaveSignedDistanceSolidThreshold - encodedSignedDistance) / (float)CaveSignedDistanceSolidThreshold);
-        }
-
         private static float ResolveVoxelDensityLowPassCutoff(float density01)
         {
             float density = math.saturate(density01);
@@ -1172,7 +742,7 @@ namespace Hecton8.World
             float span = OpenWaterPresetSpanMeters;
             float volume = math.max(0.01f, span * span * span);
             float faceArea = span * span;
-            float totalArea = faceArea * EnclosureProbeCount;
+            float totalArea = faceArea * EnclosurePresetFaceCount;
             float equivalentAbsorptionArea = math.max(MinimumEquivalentAbsorptionArea, totalArea * WaterAbsorption01);
             return new AcousticEnclosureResult(
                 span,
@@ -1194,7 +764,7 @@ namespace Hecton8.World
                 : SmallRoomSpanMeters;
             float volume = math.max(0.01f, span * span * span);
             float faceArea = span * span;
-            float totalArea = faceArea * EnclosureProbeCount;
+            float totalArea = faceArea * EnclosurePresetFaceCount;
             float meanAbsorption = preset == AcousticReverbPresetKind.LargeRoom ? 0.58f : 0.72f;
             float equivalentAbsorptionArea = math.max(MinimumEquivalentAbsorptionArea, totalArea * meanAbsorption);
             float rt60Seconds = preset == AcousticReverbPresetKind.LargeRoom
@@ -1216,7 +786,7 @@ namespace Hecton8.World
                 math.clamp(rt60Seconds, MinimumRt60Seconds, MaximumRt60Seconds),
                 wetMix01,
                 openness01,
-                EnclosureProbeCount);
+                EnclosurePresetFaceCount);
         }
 
         private static float ResolveAbsorption01(Collider collider)

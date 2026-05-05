@@ -71,13 +71,14 @@ namespace Hecton8.Visor
 
         private readonly struct RuntimeState
         {
-            public RuntimeState(float wetness, float hullStress, Vector3 localVelocity, float ambientLight01, float effectIntensity)
+            public RuntimeState(float wetness, float hullStress, Vector3 localVelocity, float ambientLight01, float effectIntensity, float rainIntensity)
             {
                 Wetness = wetness;
                 HullStress = hullStress;
                 LocalVelocity = localVelocity;
                 AmbientLight01 = ambientLight01;
                 EffectIntensity = effectIntensity;
+                RainIntensity = rainIntensity;
             }
 
             public float Wetness { get; }
@@ -85,6 +86,7 @@ namespace Hecton8.Visor
             public Vector3 LocalVelocity { get; }
             public float AmbientLight01 { get; }
             public float EffectIntensity { get; }
+            public float RainIntensity { get; }
         }
 
         private sealed class VisorFluidPass : ScriptableRenderPass
@@ -119,8 +121,12 @@ namespace Hecton8.Visor
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (_settings == null || _material == null || _runtimeState.EffectIntensity <= 0.001f)
+                if (_settings == null ||
+                    _material == null ||
+                    (_runtimeState.EffectIntensity <= 0.001f && _runtimeState.RainIntensity <= 0.001f))
+                {
                     return;
+                }
 
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 if (resourceData.isActiveTargetBackBuffer)
@@ -185,6 +191,7 @@ namespace Hecton8.Visor
                 float verticalVelocity = Mathf.Clamp(localVelocity.y * 0.08f, -1f, 1f);
 
                 material.SetFloat(ShaderConstants.IntensityId, runtimeState.EffectIntensity);
+                material.SetFloat(ShaderConstants.RainIntensityId, runtimeState.RainIntensity);
                 material.SetFloat(ShaderConstants.WetnessId, runtimeState.Wetness);
                 material.SetFloat(ShaderConstants.HullStressId, runtimeState.HullStress);
                 material.SetFloat(ShaderConstants.DistortionStrengthId, Mathf.Max(0f, settings.distortionStrength));
@@ -209,6 +216,7 @@ namespace Hecton8.Visor
         private static class ShaderConstants
         {
             internal static readonly int IntensityId = Shader.PropertyToID("_HectonVisorFluidIntensity");
+            internal static readonly int RainIntensityId = Shader.PropertyToID("_RainIntensity");
             internal static readonly int WetnessId = Shader.PropertyToID("_HectonVisorFluidWetness");
             internal static readonly int HullStressId = Shader.PropertyToID("_HectonVisorFluidHullStress");
             internal static readonly int DistortionStrengthId = Shader.PropertyToID("_HectonVisorFluidDistortionStrength");
@@ -291,21 +299,24 @@ namespace Hecton8.Visor
 
             Camera playerCamera = playerContext.PlayerCamera;
             HectonPlayerMovement playerMovement = playerContext.PlayerMovement;
-            if (playerCamera == null || playerMovement == null || !ReferenceEquals(renderCamera, playerCamera))
+            if (playerCamera == null || !ReferenceEquals(renderCamera, playerCamera))
                 return false;
 
-            float wetness = Mathf.Clamp01(playerMovement.CurrentWetLensIntensity01);
-            float hullStress = Mathf.Clamp01(playerMovement.CurrentHullStress01);
+            float wetness = playerMovement != null ? Mathf.Clamp01(playerMovement.CurrentWetLensIntensity01) : 0f;
+            float hullStress = playerMovement != null ? Mathf.Clamp01(playerMovement.CurrentHullStress01) : 0f;
             float ambientLight01 = ResolveAmbientLight01();
             float hullContribution = Mathf.Clamp01(
                 Mathf.InverseLerp(0.65f, 1f, hullStress) * Mathf.Clamp01(settings.hullStressContribution));
             float dustContribution = Mathf.Clamp01(ambientLight01 * Mathf.Clamp01(settings.dustStrength) * Mathf.Max(0f, settings.ambientDustResponse));
             float effectIntensity = Mathf.Clamp01(Mathf.Max(Mathf.Max(wetness, hullContribution), dustContribution));
-            if (effectIntensity <= 0.001f)
+            float rainIntensity = Mathf.Clamp01(Shader.GetGlobalFloat(ShaderConstants.RainIntensityId));
+            if (effectIntensity <= 0.001f && rainIntensity <= 0.001f)
                 return false;
 
-            Vector3 localVelocity = playerCamera.transform.InverseTransformDirection(playerMovement.InterpolatedLinearVelocity);
-            runtimeState = new RuntimeState(wetness, hullStress, localVelocity, ambientLight01, effectIntensity);
+            Vector3 localVelocity = playerMovement != null
+                ? playerCamera.transform.InverseTransformDirection(playerMovement.InterpolatedLinearVelocity)
+                : Vector3.zero;
+            runtimeState = new RuntimeState(wetness, hullStress, localVelocity, ambientLight01, effectIntensity, rainIntensity);
             return true;
         }
 
