@@ -1,6 +1,8 @@
 using System;
+using Hecton8.Audio;
 using Hecton8.Bootstrap;
 using Hecton8.Physics;
+using Hecton8.VFX;
 using Hecton8.World;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -23,7 +25,12 @@ namespace Hecton8.Core
         private const float MainMenuCameraPanDurationSeconds = 2f;
         private const float MainMenuCameraPanDepth = 9f;
         private const float MainMenuCameraPanPitchDegrees = 16f;
-        private const float TransitionDissolveSeconds = 2f;
+        private const float TransitionDissolveSeconds = 2.5f;
+        private const float MainMenuUiSubmergePixels = 140f;
+        private const float WorldDroneLoadDb = -40f;
+        private const float WorldDroneRuntimeDb = -5f;
+        private const float InputReclaimStartFov = 90f;
+        private const float InputReclaimDurationSeconds = 1f;
         private const int TransitionOverlaySortingOrder = 32766;
         private static readonly int _TransitionDitherProgressId = Shader.PropertyToID("_DitherProgress");
         private static readonly int _TransitionDitherColorId = Shader.PropertyToID("_Color");
@@ -44,9 +51,14 @@ namespace Hecton8.Core
         private float _cinematicTransitionElapsed;
         private Camera _cinematicCamera;
         private Camera _configuredCinematicCamera;
+        private CanvasGroup _configuredCinematicMenuGroup;
+        private CanvasGroup _cinematicMenuGroup;
+        private RectTransform _cinematicMenuRect;
         private Texture _configuredBlueNoiseTexture;
         private Vector3 _cinematicCameraStartPosition;
         private Quaternion _cinematicCameraStartRotation;
+        private Vector2 _cinematicMenuStartAnchoredPosition;
+        private float _cinematicMenuStartAlpha;
         private GameObject _transitionOverlayRoot;
         private CanvasGroup _transitionOverlayGroup;
         private Material _transitionDitherMaterial;
@@ -63,8 +75,14 @@ namespace Hecton8.Core
 
         internal void ConfigureMainMenuCinematic(Camera menuCamera, Texture blueNoiseTexture)
         {
+            ConfigureMainMenuCinematic(menuCamera, blueNoiseTexture, null);
+        }
+
+        internal void ConfigureMainMenuCinematic(Camera menuCamera, Texture blueNoiseTexture, CanvasGroup menuGroup)
+        {
             _configuredCinematicCamera = menuCamera;
             _configuredBlueNoiseTexture = blueNoiseTexture;
+            _configuredCinematicMenuGroup = menuGroup;
         }
 
         /// <summary>
@@ -302,6 +320,10 @@ namespace Hecton8.Core
             _cinematicTransitionActive = true;
             _cinematicTransitionElapsed = 0f;
             _cinematicCamera = _configuredCinematicCamera;
+            _cinematicMenuGroup = _configuredCinematicMenuGroup;
+            _cinematicMenuRect = _cinematicMenuGroup != null
+                ? _cinematicMenuGroup.transform as RectTransform
+                : null;
             if (_cinematicCamera != null)
             {
                 Transform cameraTransform = _cinematicCamera.transform;
@@ -309,6 +331,17 @@ namespace Hecton8.Core
                 _cinematicCameraStartRotation = cameraTransform.rotation;
             }
 
+            if (_cinematicMenuGroup != null)
+            {
+                _cinematicMenuStartAlpha = _cinematicMenuGroup.alpha;
+                _cinematicMenuGroup.interactable = false;
+                _cinematicMenuGroup.blocksRaycasts = false;
+            }
+
+            if (_cinematicMenuRect != null)
+                _cinematicMenuStartAnchoredPosition = _cinematicMenuRect.anchoredPosition;
+
+            BeginWorldDroneCrossfade();
             EnsureTransitionOverlay();
             if (_transitionOverlayGroup != null)
                 _transitionOverlayGroup.alpha = 0f;
@@ -338,6 +371,14 @@ namespace Hecton8.Core
 
             if (_transitionOverlayGroup != null)
                 _transitionOverlayGroup.alpha = eased;
+            if (_cinematicMenuGroup != null)
+                _cinematicMenuGroup.alpha = Mathf.LerpUnclamped(_cinematicMenuStartAlpha, 0f, eased);
+            if (_cinematicMenuRect != null)
+                _cinematicMenuRect.anchoredPosition = Vector2.LerpUnclamped(
+                    _cinematicMenuStartAnchoredPosition,
+                    _cinematicMenuStartAnchoredPosition + (Vector2.down * MainMenuUiSubmergePixels),
+                    eased);
+
             SetTransitionDitherCoverage(1f);
         }
 
@@ -364,6 +405,7 @@ namespace Hecton8.Core
                 }
             }
 
+            BeginInputReclaimInterpolation();
             await DissolveTransitionOverlayAsync();
         }
 
@@ -371,7 +413,10 @@ namespace Hecton8.Core
         {
             EnsureTransitionOverlay();
             if (_transitionOverlayGroup == null)
+            {
+                UpdateWorldDroneCrossfade(1f);
                 return;
+            }
 
             _transitionOverlayGroup.alpha = 1f;
             float elapsed = 0f;
@@ -383,6 +428,7 @@ namespace Hecton8.Core
                     : 1f;
                 float eased = SmoothStep01(normalized);
                 SetTransitionDitherCoverage(1f - eased);
+                UpdateWorldDroneCrossfade(eased);
                 if (_transitionDitherMaterial == null)
                     _transitionOverlayGroup.alpha = 1f - eased;
 
@@ -390,6 +436,7 @@ namespace Hecton8.Core
             }
 
             SetTransitionDitherCoverage(0f);
+            UpdateWorldDroneCrossfade(1f);
             _transitionOverlayGroup.alpha = 0f;
         }
 
@@ -399,6 +446,9 @@ namespace Hecton8.Core
             _cinematicTransitionElapsed = 0f;
             _cinematicCamera = null;
             _configuredCinematicCamera = null;
+            _configuredCinematicMenuGroup = null;
+            _cinematicMenuGroup = null;
+            _cinematicMenuRect = null;
             _configuredBlueNoiseTexture = null;
 
             if (_transitionOverlayRoot != null)
@@ -409,6 +459,30 @@ namespace Hecton8.Core
             if (_transitionDitherMaterial != null)
                 Destroy(_transitionDitherMaterial);
             _transitionDitherMaterial = null;
+        }
+
+        private static void BeginWorldDroneCrossfade()
+        {
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio)
+            {
+                spatialAudio.BeginWorldDroneTransition(
+                    WorldDroneLoadDb,
+                    WorldDroneRuntimeDb,
+                    TransitionDissolveSeconds);
+            }
+        }
+
+        private static void UpdateWorldDroneCrossfade(float normalized)
+        {
+            if (GlobalRegistry.Audio is SpatialAudioManager spatialAudio)
+                spatialAudio.SetWorldDroneTransitionProgress(normalized);
+        }
+
+        private static void BeginInputReclaimInterpolation()
+        {
+            CameraJuiceSystem cameraJuice = GlobalRegistry.CameraJuice;
+            if (cameraJuice != null)
+                cameraJuice.BeginInputReclaimFov(InputReclaimStartFov, InputReclaimDurationSeconds);
         }
 
         private void EnsureTransitionOverlay()

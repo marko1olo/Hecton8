@@ -1879,7 +1879,7 @@ namespace Hecton8.Physics
                     (float3)structuralGrid.transform.InverseTransformDirection(impactNormalWorld),
                     new float3(0f, 1f, 0f));
                 structuralGrid.QueueImpactLocal(localPoint, impact.RelativeSpeedMetersPerSecond, impact.IntegrityDelta);
-                structuralGrid.QueueHullDentLocal(localPoint, localNormal, impact.RelativeSpeedMetersPerSecond, impact.Severity01);
+                structuralGrid.QueueHullImpactDecalLocal(localPoint, localNormal, impact.RelativeSpeedMetersPerSecond, impact.Severity01);
                 EnqueueSubmarineImpactSignal(localPoint, impact.RelativeSpeedMetersPerSecond, impact.Severity01, impact.IntegrityDelta, depthMeters);
             }
         }

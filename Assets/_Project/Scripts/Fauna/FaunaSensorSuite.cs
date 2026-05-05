@@ -4,7 +4,6 @@ using Unity.Jobs;
 using UnityEngine.Serialization;
 using Hecton8.Gameplay;
 using Hecton8.World;
-using Unity.Collections;
 using Unity.Mathematics;
 
 namespace Hecton8.AI
@@ -33,16 +32,13 @@ namespace Hecton8.AI
         private const float ToolNoiseRadiusMultiplier = 1.35f;
         private const float PlayerAwarenessMemorySeconds = 0.75f;
         private const float PlayerNoiseFreshSeconds = 0.5f;
-        private const byte CaveSignedDistanceSolidThreshold = 128;
-        private const float CaveVoxelDdaEpsilon = 0.000001f;
-        private const int DeferredObstacleRayCount = 3;
-        private const int DeferredRaycastCommandCount = 4;
         private const int ForwardObstacleRayIndex = 0;
         private const int LeftObstacleRayIndex = 1;
         private const int RightObstacleRayIndex = 2;
-        private const int PlayerLightOcclusionRayIndex = 3;
         private const float SideObstacleRayYawDegrees = 45f;
-        private const float PlayerFlashlightConeDotThreshold = 0.72f;
+        private const float PlayerFlashlightConeDotThreshold = 0.9f;
+        private const float PlayerFlashlightBlindDistanceSq = 400f;
+        private const float PlayerFlashlightBlindDurationSeconds = 0.35f;
 
         [Header("── Avoidance ──────────────────────────────────")]
         public float avoidanceRange = 8f;
@@ -125,13 +121,9 @@ namespace Hecton8.AI
         private RaycastHit _deferredForwardObstacleHit;
         private RaycastHit _deferredLeftObstacleHit;
         private RaycastHit _deferredRightObstacleHit;
-        private RaycastHit _deferredPlayerLightOcclusionHit;
         private bool _hasDeferredForwardObstacleHit;
         private bool _hasDeferredLeftObstacleHit;
         private bool _hasDeferredRightObstacleHit;
-        private bool _hasDeferredPlayerLightOcclusionHit;
-        private bool _hasQueuedPlayerLightOcclusionRay;
-        private float _queuedPlayerLightOcclusionDistance;
         private FoveatedTickRate _foveatedTickRate = FoveatedTickRate.Center60Hz;
         private float _foveatedTickIntervalSeconds = 1.0f / 60.0f;
         private float _foveatedImportanceScore = 1.0f;
@@ -180,13 +172,9 @@ namespace Hecton8.AI
             _deferredForwardObstacleHit = default;
             _deferredLeftObstacleHit = default;
             _deferredRightObstacleHit = default;
-            _deferredPlayerLightOcclusionHit = default;
             _hasDeferredForwardObstacleHit = false;
             _hasDeferredLeftObstacleHit = false;
             _hasDeferredRightObstacleHit = false;
-            _hasDeferredPlayerLightOcclusionHit = false;
-            _hasQueuedPlayerLightOcclusionRay = false;
-            _queuedPlayerLightOcclusionDistance = 0f;
             _foveatedTickRate = FoveatedTickRate.Center60Hz;
             _foveatedTickIntervalSeconds = 1.0f / 60.0f;
             _foveatedImportanceScore = 1.0f;
@@ -320,7 +308,7 @@ namespace Hecton8.AI
             bool visualContact = _hasPlayerSnapshot &&
                                  withinVisionCone &&
                                  distSqrToPlayer < aggroDistance * aggroDistance &&
-                                 HasPlayerLineOfSightThroughCaveSdf(_cachedSelfPosition, _cachedPlayerPosition);
+                                 HasPlayerLineOfSightThroughNavGrid(_cachedPlayerPosition);
             bool reportedContact = HasFreshReportedPlayerNoise();
             if (IsFlashBlinded())
             {
@@ -352,9 +340,8 @@ namespace Hecton8.AI
             }
 
             float3 toCreature = (float3)(_cachedSelfPosition - _cachedPlayerPosition);
-            float range = math.max(1f, aggroDistance);
             double aupDistanceSq = AbsoluteUniversePosition.DistanceSq(in _cachedSelfAup, in _cachedPlayerAup);
-            if (aupDistanceSq <= 0.0001d || aupDistanceSq > (double)range * range)
+            if (aupDistanceSq <= 0.0001d || aupDistanceSq > PlayerFlashlightBlindDistanceSq)
                 return;
 
             float distance = math.sqrt((float)math.min(aupDistanceSq, float.MaxValue));
@@ -363,11 +350,8 @@ namespace Hecton8.AI
             if (flashlightDot < PlayerFlashlightConeDotThreshold)
                 return;
 
-            if (!HasPlayerLightLineOfSight())
-                return;
-
             float cone01 = math.saturate((flashlightDot - PlayerFlashlightConeDotThreshold) / math.max(0.001f, 1f - PlayerFlashlightConeDotThreshold));
-            float distance01 = 1f - math.saturate(distance / range);
+            float distance01 = 1f - math.saturate(distance * 0.05f);
             float exposure01 = math.saturate(cone01 * distance01);
             if (exposure01 <= 0.001f)
                 return;
@@ -375,6 +359,7 @@ namespace Hecton8.AI
             hasPlayerFlashlightConeHit = true;
             playerFlashlightExposure01 = exposure01;
             playerFlashlightThreatPosition = _cachedPlayerPosition;
+            ApplyFlashBlind(_authoredTimeSeconds, PlayerFlashlightBlindDurationSeconds);
         }
 
         public void ReceivePlayerNoiseSignal(NoiseSystem.PlayerNoiseSignal playerNoise)
@@ -776,57 +761,8 @@ namespace Hecton8.AI
 
         internal int BuildDeferredRaycastCommands(RaycastCommand[] commands)
         {
-            if (commands == null || commands.Length < DeferredRaycastCommandCount)
-                return 0;
-
-            if (_ownerBrain == null || lodDisabled || isSleeping)
-                return 0;
-
-            int obstacleLayerMask = obstacleMask.value != 0
-                ? obstacleMask.value
-                : HectonLayerMasks.DefaultRaycastLayerMask;
-            if (obstacleLayerMask == 0)
-                return 0;
-
-            if (_foveatedImportanceScore < 0.2f)
-            {
-                return 0;
-            }
-
-            float distance = Mathf.Clamp(
-                _queuedObstacleRayLength > 0f ? _queuedObstacleRayLength : avoidanceRange,
-                avoidanceRange,
-                maxRayLength);
-            QueryParameters queryParameters = new QueryParameters(obstacleLayerMask, false, QueryTriggerInteraction.Ignore);
-
-            Vector3 forwardDirection = _queuedForwardObstacleRayDirection.sqrMagnitude > 0.0001f
-                ? _queuedForwardObstacleRayDirection.normalized
-                : _cachedSelfForward;
-            Vector3 leftDirection = _queuedLeftObstacleRayDirection.sqrMagnitude > 0.0001f
-                ? _queuedLeftObstacleRayDirection.normalized
-                : forwardDirection;
-            Vector3 rightDirection = _queuedRightObstacleRayDirection.sqrMagnitude > 0.0001f
-                ? _queuedRightObstacleRayDirection.normalized
-                : forwardDirection;
-
-            commands[ForwardObstacleRayIndex] = new RaycastCommand(
-                _cachedSelfPosition,
-                forwardDirection,
-                queryParameters,
-                distance);
-            commands[LeftObstacleRayIndex] = new RaycastCommand(
-                _cachedSelfPosition,
-                leftDirection,
-                queryParameters,
-                distance);
-            commands[RightObstacleRayIndex] = new RaycastCommand(
-                _cachedSelfPosition,
-                rightDirection,
-                queryParameters,
-                distance);
-
-            _hasQueuedPlayerLightOcclusionRay = TryBuildPlayerLightOcclusionCommand(commands, out int commandCount);
-            return commandCount;
+            ClearDeferredObstacleHits();
+            return 0;
         }
 
         internal void ConsumeDeferredRaycastHit(int commandIndex, in RaycastHit hit)
@@ -844,10 +780,6 @@ namespace Hecton8.AI
                 case RightObstacleRayIndex:
                     _deferredRightObstacleHit = hit;
                     _hasDeferredRightObstacleHit = hit.collider != null;
-                    break;
-                case PlayerLightOcclusionRayIndex:
-                    _deferredPlayerLightOcclusionHit = hit;
-                    _hasDeferredPlayerLightOcclusionHit = hit.collider != null;
                     break;
             }
         }
@@ -876,58 +808,6 @@ namespace Hecton8.AI
 
         internal bool HasPlayerLightLineOfSight()
         {
-            if (!_hasQueuedPlayerLightOcclusionRay)
-                return true;
-
-            if (!_hasDeferredPlayerLightOcclusionHit || _deferredPlayerLightOcclusionHit.collider == null)
-                return true;
-
-            float blockedDistance = Mathf.Max(0f, _deferredPlayerLightOcclusionHit.distance);
-            float targetDistance = Mathf.Max(0.01f, _queuedPlayerLightOcclusionDistance);
-            return blockedDistance >= targetDistance - 0.2f;
-        }
-
-        private bool TryBuildPlayerLightOcclusionCommand(RaycastCommand[] commands, out int commandCount)
-        {
-            commandCount = DeferredObstacleRayCount;
-            _deferredPlayerLightOcclusionHit = default;
-            _hasDeferredPlayerLightOcclusionHit = false;
-            _queuedPlayerLightOcclusionDistance = 0f;
-
-            bool flashlightActive = _hasReportedPlayerNoise && _lastReportedPlayerNoise.FlashlightOn;
-            if (!flashlightActive)
-                flashlightActive = _playerFlashlightOn;
-
-            if (!reactToPlayerLight ||
-                !flashlightActive ||
-                !_hasPlayerSnapshot)
-            {
-                return false;
-            }
-
-            Vector3 lightOrigin = _cachedPlayerPosition;
-            Vector3 toCreature = _cachedSelfPosition - lightOrigin;
-            float distance = toCreature.magnitude;
-            if (distance <= 0.01f)
-                return false;
-
-            int occlusionMask =
-                HectonLayerMasks.TerrainLayerMask |
-                HectonLayerMasks.BaseModuleLayerMask |
-                HectonLayerMasks.VehicleLayerMask |
-                HectonLayerMasks.VoxelCaveLayerMask |
-                HectonLayerMasks.DebrisLayerMask;
-            if (occlusionMask == 0)
-                return false;
-
-            QueryParameters queryParameters = new QueryParameters(occlusionMask, false, QueryTriggerInteraction.Ignore);
-            _queuedPlayerLightOcclusionDistance = distance;
-            commands[PlayerLightOcclusionRayIndex] = new RaycastCommand(
-                lightOrigin,
-                toCreature / distance,
-                queryParameters,
-                distance);
-            commandCount = DeferredRaycastCommandCount;
             return true;
         }
 
@@ -941,50 +821,58 @@ namespace Hecton8.AI
             Vector3 resolvedForward = fallbackForward.sqrMagnitude > 0.0001f
                 ? fallbackForward.normalized
                 : _cachedSelfForward;
-            float totalPressure = 0f;
-            Vector3 avoidance = Vector3.zero;
-            bool hasHit = false;
+            Vector3 leftDirection = _queuedLeftObstacleRayDirection.sqrMagnitude > 0.0001f
+                ? _queuedLeftObstacleRayDirection.normalized
+                : RotateObstacleDirection(resolvedForward, -SideObstacleRayYawDegrees);
+            Vector3 rightDirection = _queuedRightObstacleRayDirection.sqrMagnitude > 0.0001f
+                ? _queuedRightObstacleRayDirection.normalized
+                : RotateObstacleDirection(resolvedForward, SideObstacleRayYawDegrees);
 
-            AccumulateObstacleAvoidance(_hasDeferredForwardObstacleHit, _deferredForwardObstacleHit, safeRayLength, ref totalPressure, ref avoidance, ref hasHit);
-            AccumulateObstacleAvoidance(_hasDeferredLeftObstacleHit, _deferredLeftObstacleHit, safeRayLength, ref totalPressure, ref avoidance, ref hasHit);
-            AccumulateObstacleAvoidance(_hasDeferredRightObstacleHit, _deferredRightObstacleHit, safeRayLength, ref totalPressure, ref avoidance, ref hasHit);
-
-            obstaclePressure01 = Mathf.Clamp01(totalPressure);
-            if (!hasHit || obstaclePressure01 <= 0f)
+            bool forwardClosed = TrySampleNavGridObstacle(resolvedForward, safeRayLength, out float forwardPressure01);
+            bool leftClosed = TrySampleNavGridObstacle(leftDirection, safeRayLength, out float leftPressure01);
+            bool rightClosed = TrySampleNavGridObstacle(rightDirection, safeRayLength, out float rightPressure01);
+            if (!forwardClosed && !leftClosed && !rightClosed)
             {
                 avoidanceDirection = Vector3.zero;
+                obstaclePressure01 = 0f;
                 return false;
             }
 
-            Vector3 sideBias = Vector3.zero;
-            if (!_hasDeferredLeftObstacleHit)
-                sideBias += _queuedLeftObstacleRayDirection;
-            if (!_hasDeferredRightObstacleHit)
-                sideBias += _queuedRightObstacleRayDirection;
+            float totalPressure = 0f;
+            Vector3 avoidance = Vector3.zero;
+            if (forwardClosed)
+            {
+                totalPressure += forwardPressure01;
+                avoidance -= resolvedForward * (1f + forwardPressure01);
+                if (!leftClosed)
+                    avoidance += leftDirection * 0.75f;
+                if (!rightClosed)
+                    avoidance += rightDirection * 0.75f;
+            }
 
-            Vector3 combined = resolvedForward + avoidance + sideBias * 0.35f;
+            if (leftClosed)
+            {
+                totalPressure += leftPressure01 * 0.75f;
+                avoidance -= leftDirection * leftPressure01;
+                if (!rightClosed)
+                    avoidance += rightDirection * 0.5f;
+            }
+
+            if (rightClosed)
+            {
+                totalPressure += rightPressure01 * 0.75f;
+                avoidance -= rightDirection * rightPressure01;
+                if (!leftClosed)
+                    avoidance += leftDirection * 0.5f;
+            }
+
+            obstaclePressure01 = Mathf.Clamp01(totalPressure);
+            Vector3 combined = resolvedForward + avoidance;
             if (combined.sqrMagnitude <= 0.0001f)
-                combined = Vector3.Reflect(resolvedForward, _deferredForwardObstacleHit.normal);
+                combined = -resolvedForward;
 
             avoidanceDirection = combined.normalized;
             return avoidanceDirection.sqrMagnitude > 0.0001f;
-        }
-
-        private void AccumulateObstacleAvoidance(
-            bool hasHit,
-            in RaycastHit hit,
-            float rayLength,
-            ref float totalPressure,
-            ref Vector3 avoidance,
-            ref bool anyHit)
-        {
-            if (!hasHit || hit.collider == null || hit.distance <= 0f || hit.distance > rayLength)
-                return;
-
-            anyHit = true;
-            float pressure = 1f - Mathf.Clamp01(hit.distance / Mathf.Max(rayLength, 0.001f));
-            totalPressure += pressure;
-            avoidance += hit.normal * pressure;
         }
 
         private static Vector3 RotateObstacleDirection(Vector3 forwardDirection, float yawDegrees)
@@ -999,123 +887,44 @@ namespace Hecton8.AI
             _deferredForwardObstacleHit = default;
             _deferredLeftObstacleHit = default;
             _deferredRightObstacleHit = default;
-            _deferredPlayerLightOcclusionHit = default;
             _hasDeferredForwardObstacleHit = false;
             _hasDeferredLeftObstacleHit = false;
             _hasDeferredRightObstacleHit = false;
-            _hasDeferredPlayerLightOcclusionHit = false;
-            _hasQueuedPlayerLightOcclusionRay = false;
-            _queuedPlayerLightOcclusionDistance = 0f;
         }
 
-        private static bool HasPlayerLineOfSightThroughCaveSdf(Vector3 startPosition, Vector3 endPosition)
+        private static bool HasPlayerLineOfSightThroughNavGrid(Vector3 endPosition)
         {
-            HectonCaveVoxelLightingVolume caveVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
-            if (caveVolume == null ||
-                !caveVolume.TryGetPublishedSignedDistanceVoxelPayload(out NativeArray<byte> signedDistanceVoxels, out Vector3Int gridDimensions, out Vector3 gridOrigin, out Vector3 voxelCellSize))
-            {
-                return true;
-            }
+            return !TrySampleClosedNavGridCell(endPosition);
+        }
 
-            int3 dimensions = new int3(gridDimensions.x, gridDimensions.y, gridDimensions.z);
-            float3 origin = gridOrigin;
-            float3 cellSize = voxelCellSize;
-            float3 start = startPosition;
-            float3 end = endPosition;
-
-            if (!TryWorldToCaveVoxel(end, origin, cellSize, dimensions, out int3 endVoxel))
-                return true;
-
-            if (IsCaveVoxelSolid(SampleCaveVoxel(signedDistanceVoxels, endVoxel, dimensions)))
+        private bool TrySampleNavGridObstacle(Vector3 direction, float distanceMeters, out float pressure01)
+        {
+            pressure01 = 0f;
+            if (direction.sqrMagnitude <= 0.0001f)
                 return false;
 
-            bool hasStartVoxel = TryWorldToCaveVoxel(start, origin, cellSize, dimensions, out int3 startVoxel);
-            float3 rayStart = hasStartVoxel ? start : end;
-            float3 rayEnd = hasStartVoxel ? end : start;
-            int3 currentVoxel = hasStartVoxel ? startVoxel : endVoxel;
-            float3 delta = rayEnd - rayStart;
-            float distanceSq = math.lengthsq(delta);
-            if (distanceSq <= CaveVoxelDdaEpsilon)
-                return true;
+            float probeDistance = Mathf.Clamp(distanceMeters, Mathf.Max(0.25f, avoidanceRange * 0.5f), maxRayLength);
+            Vector3 probePosition = _cachedSelfPosition + direction.normalized * probeDistance;
+            if (!TrySampleClosedNavGridCell(probePosition))
+                return false;
 
-            float3 rayDirection = delta * math.rsqrt(distanceSq);
-            bool3 positiveMask = rayDirection >= 0f;
-            bool3 activeAxisMask = math.abs(rayDirection) > CaveVoxelDdaEpsilon;
-            int3 step = math.select(new int3(-1, -1, -1), new int3(1, 1, 1), positiveMask);
-            float3 cellMin = origin + (new float3(currentVoxel.x, currentVoxel.y, currentVoxel.z) * cellSize);
-            float3 voxelBoundary = cellMin + math.select(float3.zero, cellSize, positiveMask);
-            float3 safeAbsDirection = math.max(math.abs(rayDirection), new float3(CaveVoxelDdaEpsilon, CaveVoxelDdaEpsilon, CaveVoxelDdaEpsilon));
-            float3 rayDirectionInverse = 1f / safeAbsDirection;
-            float3 tMax = math.abs((voxelBoundary - rayStart) * rayDirectionInverse);
-            float3 tDelta = cellSize * rayDirectionInverse;
-            float3 sentinel = new float3(1000000f, 1000000f, 1000000f);
-            tMax = math.select(sentinel, tMax, activeAxisMask);
-            tDelta = math.select(sentinel, tDelta, activeAxisMask);
-            int maxSteps = math.min(dimensions.x + dimensions.y + dimensions.z, 4096);
-
-            for (int i = 0; i < maxSteps; i++)
-            {
-                if (IsCaveVoxelSolid(SampleCaveVoxel(signedDistanceVoxels, currentVoxel, dimensions)))
-                    return false;
-
-                if (hasStartVoxel && math.all(currentVoxel == endVoxel))
-                    return true;
-
-                bool3 axisMask = (tMax <= tMax.yzx) & (tMax <= tMax.zxy);
-                tMax += math.select(float3.zero, tDelta, axisMask);
-                currentVoxel += math.select(int3.zero, step, axisMask);
-                if (!IsCaveVoxelInside(currentVoxel, dimensions))
-                    return true;
-            }
-
+            pressure01 = Mathf.Clamp01(1f - (probeDistance / Mathf.Max(maxRayLength, 0.001f)));
+            if (pressure01 <= 0.001f)
+                pressure01 = 1f;
             return true;
         }
 
-        private static bool TryWorldToCaveVoxel(float3 worldPosition, float3 gridOrigin, float3 voxelCellSize, int3 dimensions, out int3 voxel)
+        private static bool TrySampleClosedNavGridCell(Vector3 runtimePosition)
         {
-            float3 local = worldPosition - gridOrigin;
-            if (local.x < 0f || local.y < 0f || local.z < 0f)
+            if (!VoxelDynamicNavGridRuntime.TrySampleHybridNavigation(
+                    new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z),
+                    out VoxelDynamicNavGridRuntime.HybridNavigationSample sample))
             {
-                voxel = int3.zero;
                 return false;
             }
 
-            int3 candidate = new int3(
-                (int)math.floor(local.x / math.max(voxelCellSize.x, CaveVoxelDdaEpsilon)),
-                (int)math.floor(local.y / math.max(voxelCellSize.y, CaveVoxelDdaEpsilon)),
-                (int)math.floor(local.z / math.max(voxelCellSize.z, CaveVoxelDdaEpsilon)));
-            if (!IsCaveVoxelInside(candidate, dimensions))
-            {
-                voxel = int3.zero;
-                return false;
-            }
-
-            voxel = candidate;
-            return true;
-        }
-
-        private static bool IsCaveVoxelInside(int3 voxel, int3 dimensions)
-        {
-            return voxel.x >= 0 &&
-                   voxel.y >= 0 &&
-                   voxel.z >= 0 &&
-                   voxel.x < dimensions.x &&
-                   voxel.y < dimensions.y &&
-                   voxel.z < dimensions.z;
-        }
-
-        private static byte SampleCaveVoxel(NativeArray<byte> signedDistanceVoxels, int3 voxel, int3 dimensions)
-        {
-            int flatIndex = voxel.x + (voxel.y * dimensions.x) + (voxel.z * dimensions.x * dimensions.y);
-            if (flatIndex < 0 || flatIndex >= signedDistanceVoxels.Length)
-                return 255;
-
-            return signedDistanceVoxels[flatIndex];
-        }
-
-        private static bool IsCaveVoxelSolid(byte encodedSignedDistance)
-        {
-            return encodedSignedDistance < CaveSignedDistanceSolidThreshold;
+            return sample.Mode == VoxelDynamicNavGridRuntime.HybridNavigationMode.SolidVoxel ||
+                   sample.Passability == VoxelDynamicNavGridRuntime.SolidCell;
         }
     }
 }

@@ -70,6 +70,8 @@ namespace Hecton8.Core
         private static readonly WaitCallback _backgroundLiveTelemetryCallback = ExecuteBackgroundLiveTelemetryWrite;
         private static readonly uint _audioOverflowDropWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CrashTelemetry.AudioOverflowDrop"));
         private static readonly uint _audioOverflowBufferContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CrashTelemetry.NativeAudioFrameRingBuffer"));
+        private static readonly uint _bootPerfWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("BOOT_PERF_WARNING"));
+        private const double BootstrapPerfWarningThresholdMilliseconds = 200d;
         private static int _runtimeFaultFlags;
         private static int _pendingAudioOverflowDropCount;
         private static int _pendingAudioOverflowBufferedFrames;
@@ -105,6 +107,7 @@ namespace Hecton8.Core
             CriticalRecovery = 1u << 17,
             CriticalMemoryPressure = 1u << 18,
             AudioOverflowDropWarning = 1u << 19,
+            BootPerfWarning = 1u << 20,
         }
 
         [Flags]
@@ -140,6 +143,7 @@ namespace Hecton8.Core
             CriticalRecovery = 13u,
             CriticalMemoryPressure = 14u,
             AudioOverflowDropWarning = 15u,
+            BootPerfWarning = 16u,
         }
 
         [StructLayout(LayoutKind.Sequential, Size = CrashExportHeaderSizeBytes)]
@@ -547,7 +551,11 @@ namespace Hecton8.Core
             if (instance == null || !instance._ringBuffer.IsCreated || step == BootstrapStepToken.None)
                 return;
 
-            instance.WriteBootstrapPhaseDuration(step, elapsedMilliseconds);
+            bool isPerfWarning = elapsedMilliseconds > BootstrapPerfWarningThresholdMilliseconds;
+            if (isPerfWarning)
+                OrRuntimeFaultFlags((int)ErrorBits.BootPerfWarning);
+
+            instance.WriteBootstrapPhaseDuration(step, elapsedMilliseconds, isPerfWarning);
         }
 
 #if UNITY_EDITOR
@@ -647,7 +655,9 @@ namespace Hecton8.Core
         /// <param name="dt">Frame delta passed by <see cref="GameTickManager"/>.</param>
         public void Tick(float dt)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             RuntimeWatchdog.Signal(RuntimeWatchdog.RuntimeWatchdogLane.CrashTelemetry);
+#endif
             if (!_ringBuffer.IsCreated)
                 return;
 
@@ -722,7 +732,7 @@ namespace Hecton8.Core
             _lastFixedDeltaTime = fdt;
         }
 
-        private void WriteBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds)
+        private void WriteBootstrapPhaseDuration(BootstrapStepToken step, double elapsedMilliseconds, bool isPerfWarning)
         {
             uint frameIndex = unchecked((uint)Time.frameCount);
             int writeIndex = (int)(frameIndex % RingCapacity);
@@ -737,11 +747,13 @@ namespace Hecton8.Core
             entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
             entry.PlayerAup = float3.zero;
             entry.ActiveChunkCount = SampleActiveChunkCount();
-            entry.ErrorFlags = 0u;
-            entry.ExportReason = (uint)ExportReason.BootstrapPhaseDuration;
+            entry.ErrorFlags = isPerfWarning ? (uint)ErrorBits.BootPerfWarning : 0u;
+            entry.ExportReason = isPerfWarning
+                ? (uint)ExportReason.BootPerfWarning
+                : (uint)ExportReason.BootstrapPhaseDuration;
             entry.AupShiftSequence = shiftEvent.Sequence;
             entry.AiStatePacked = PackBootstrapPhaseDuration(step, elapsedMilliseconds);
-            entry.SubsystemHeatPacked = 0u;
+            entry.SubsystemHeatPacked = isPerfWarning ? _bootPerfWarningHash : 0u;
             entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
             _writeCursor++;

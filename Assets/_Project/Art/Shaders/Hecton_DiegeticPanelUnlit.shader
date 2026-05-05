@@ -8,6 +8,8 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
         _PanelPowerLevel ("Panel Power", Range(0, 1)) = 1
         _DepthFadeRange ("Depth Fade Range", Range(0.001, 1)) = 0.08
         _OcclusionActive ("Occlusion Active", Float) = 0
+        _InventoryScanlineStrength ("Inventory Scanline Strength", Range(0, 1)) = 0.22
+        _InventoryScanlineDensity ("Inventory Scanline Density", Range(16, 320)) = 140
     }
 
     SubShader
@@ -54,12 +56,15 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                 float _PanelPowerLevel;
                 float _DepthFadeRange;
                 float _OcclusionActive;
+                float _InventoryScanlineStrength;
+                float _InventoryScanlineDensity;
             CBUFFER_END
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
             TEXTURE2D(_MainTex);
             SAMPLER(sampler_MainTex);
+            float4 _HectonPdaInventoryParallax;
 
             float Bayer4x4(float2 pixelCoord)
             {
@@ -105,13 +110,20 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
 
             half4 frag(Varyings input) : SV_Target
             {
-                half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
-                half4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv);
+                float2 panelUv = input.uv + (input.uv - 0.5) * _HectonPdaInventoryParallax.xy;
+                panelUv = saturate(panelUv);
+                half4 baseSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, panelUv);
+                half4 mainSample = SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, panelUv);
                 half4 screenSample = max(baseSample, mainSample);
                 float rgbAlpha = saturate(max(max(screenSample.r, screenSample.g), screenSample.b) * 2.0);
                 float powerLevel = saturate(_PanelPowerLevel);
                 float3 emissive = screenSample.rgb * _Color.rgb * lerp(0.45, 1.0, powerLevel);
                 float alpha = max(screenSample.a, rgbAlpha) * _Color.a;
+                float inventoryMask = saturate(_HectonPdaInventoryParallax.z);
+                float scanCoord = frac(input.uv.y * max(1.0, _InventoryScanlineDensity) + _Time.y * 0.85);
+                float scanline = lerp(1.0, lerp(0.72, 1.08, step(0.5, scanCoord)), inventoryMask * _InventoryScanlineStrength);
+                emissive *= scanline;
+                alpha *= lerp(1.0, 0.92 + scanline * 0.08, inventoryMask);
 
                 if (powerLevel < 0.1)
                 {

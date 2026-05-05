@@ -35,8 +35,6 @@ namespace Hecton8.Gameplay
         private const int MaxSlideSweepIterations = 2;
         private const int ScheduledSweepCommandCount = 1;
         private const int ScheduledSweepMaxHits = 8;
-        private const int HydrodynamicGhostHistoryCapacity = 4;
-        private const float MaxHydrodynamicGhostBlend = 0.15f;
         private const float DenormalVelocityFlushThresholdMetersPerSecond = 0.001f;
         private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
         private const float WakeSiltEmissionSpeedThresholdMetersPerSecond = 4.5f;
@@ -45,7 +43,6 @@ namespace Hecton8.Gameplay
 
         private static readonly ProfilerMarker _scheduledSweepProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _scheduledSweepConsumeProfilerMarker = new ProfilerMarker("H8.PlayerMotor.CapsuleSweep.Consume");
-        private static readonly ProfilerMarker _hydrodynamicGhostProfilerMarker = new ProfilerMarker("H8.PlayerMotor.HydrodynamicGhost.Resolve");
 
         private Rigidbody _body;
         private CapsuleCollider _capsule;
@@ -60,8 +57,6 @@ namespace Hecton8.Gameplay
         private RaycastHit _scheduledSweepBlockingHit;
         private Vector3 _scheduledSweepResolvedPosition;
         private float _scheduledSweepBlockedSpeed;
-        private int _hydrodynamicGhostWriteIndex;
-        private int _hydrodynamicGhostSampleCount;
         private bool _registeredPostFixedTick;
         private bool _registeredMotorService;
         private float _encumbranceMovementMultiplier = 1f;
@@ -70,6 +65,7 @@ namespace Hecton8.Gameplay
         private Vector3 _lastWallSlidePoint;
         private float _lastWallSlideBlockedSpeed;
         private float _lastWallSlideAngleDegrees;
+        private float _lastWallSlideVelocityReduction01;
         private int _lastWallSlidePhysicsFrame = -1;
 
         /// <inheritdoc />
@@ -94,12 +90,14 @@ namespace Hecton8.Gameplay
             out Vector3 point,
             out float blockedSpeed,
             out float slideAngleDegrees,
+            out float velocityReduction01,
             out int physicsFrame)
         {
             normal = Vector3.zero;
             point = Vector3.zero;
             blockedSpeed = 0f;
             slideAngleDegrees = 0f;
+            velocityReduction01 = 0f;
             physicsFrame = _lastWallSlidePhysicsFrame;
 
             if (_lastWallSlidePhysicsFrame < 0)
@@ -116,6 +114,7 @@ namespace Hecton8.Gameplay
             point = _lastWallSlidePoint;
             blockedSpeed = _lastWallSlideBlockedSpeed;
             slideAngleDegrees = _lastWallSlideAngleDegrees;
+            velocityReduction01 = _lastWallSlideVelocityReduction01;
             return true;
         }
 
@@ -124,7 +123,6 @@ namespace Hecton8.Gameplay
         {
             _body = body;
             _capsule = capsule;
-            EnsureHydrodynamicGhostState();
             ResetHydrodynamicAddedMassState();
         }
 
@@ -148,7 +146,7 @@ namespace Hecton8.Gameplay
             TryUnregisterMotorService();
             ResetWallSlideContactState();
             DisposeScheduledSweepState();
-            DisposeHydrodynamicGhostState();
+            ResetHydrodynamicAddedMassState();
         }
 
         private void OnDestroy()
@@ -158,7 +156,7 @@ namespace Hecton8.Gameplay
             TryUnregisterMotorService();
             ResetWallSlideContactState();
             DisposeScheduledSweepState();
-            DisposeHydrodynamicGhostState();
+            ResetHydrodynamicAddedMassState();
         }
 
         /// <summary>Updates grounded state mirror for external systems.</summary>
@@ -451,7 +449,8 @@ namespace Hecton8.Gameplay
                 if (safeNormal.y < WallSlideTelemetryMaxNormalY)
                 {
                     float blockedSpeed = ResolveSlideBlockedSpeed(remainingAfterAdvance, slideDisplacement, safeNormal);
-                    RecordWallSlideContact(in nearestHit, safeNormal, slideAngleDegrees, blockedSpeed);
+                    float velocityReduction01 = ResolveProjectionVelocityReduction01(remainingAfterAdvance, slideDisplacement);
+                    RecordWallSlideContact(in nearestHit, safeNormal, slideAngleDegrees, blockedSpeed, velocityReduction01);
                 }
 
                 if (slideDisplacement.sqrMagnitude <= MinVectorMagnitudeSq)
@@ -530,41 +529,16 @@ namespace Hecton8.Gameplay
         }
 
         /// <summary>
-        /// Returns a hydrodynamically weighted perceived velocity using a 3-frame inertial ghost.
-        /// Ghost contribution scales with the requested submersion factor so dry-space KCC sweeps stay immediate.
+        /// Returns current velocity. Added-mass presentation history is intentionally purged.
         /// </summary>
         public Vector3 ResolveHydrodynamicAddedMassVelocity(Vector3 actualVelocity, float submersionFactor)
         {
-            Vector3 safeActualVelocity = SafeVelocity(actualVelocity);
-            float clampedSubmersionFactor = math.saturate(submersionFactor);
-            float ghostBlend = MaxHydrodynamicGhostBlend * clampedSubmersionFactor;
-            if (ghostBlend <= 0.0001f)
-            {
-                ResetHydrodynamicAddedMassState();
-                return safeActualVelocity;
-            }
-
-            using (_hydrodynamicGhostProfilerMarker.Auto())
-            {
-                RecordHydrodynamicGhostVelocity(safeActualVelocity);
-                if (_hydrodynamicGhostSampleCount < _nativeState.HydrodynamicGhostVelocityHistory.Length)
-                    return safeActualVelocity;
-
-                float3 oldestVelocity = _nativeState.HydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
-                float3 currentVelocity = new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z);
-                float3 perceivedVelocity = math.lerp(currentVelocity, oldestVelocity, ghostBlend);
-                return SafeVelocity(new Vector3(perceivedVelocity.x, perceivedVelocity.y, perceivedVelocity.z), safeActualVelocity);
-            }
+            return SafeVelocity(actualVelocity);
         }
 
-        /// <summary>Clears the persistent underwater added-mass history.</summary>
+        /// <summary>Legacy compatibility hook. Velocity history is purged, so this is intentionally a no-op.</summary>
         public void ResetHydrodynamicAddedMassState()
         {
-            EnsureHydrodynamicGhostState();
-            _hydrodynamicGhostWriteIndex = 0;
-            _hydrodynamicGhostSampleCount = 0;
-            for (int i = 0; i < _nativeState.HydrodynamicGhostVelocityHistory.Length; i++)
-                _nativeState.HydrodynamicGhostVelocityHistory[i] = float3.zero;
         }
 
         /// <summary>
@@ -661,12 +635,18 @@ namespace Hecton8.Gameplay
             return math.all(math.isfinite(value3)) && math.lengthsq(value3) > MinVectorMagnitudeSq;
         }
 
-        private void RecordWallSlideContact(in RaycastHit hit, Vector3 normal, float slideAngleDegrees, float blockedSpeed)
+        private void RecordWallSlideContact(
+            in RaycastHit hit,
+            Vector3 normal,
+            float slideAngleDegrees,
+            float blockedSpeed,
+            float velocityReduction01)
         {
             _lastWallSlideNormal = SafeNormal(normal, Vector3.up);
             _lastWallSlidePoint = SafeVelocity(hit.point, _body != null ? _body.position : Vector3.zero);
             _lastWallSlideBlockedSpeed = math.max(0f, blockedSpeed);
             _lastWallSlideAngleDegrees = math.max(0f, slideAngleDegrees);
+            _lastWallSlideVelocityReduction01 = math.saturate(velocityReduction01);
             _lastWallSlidePhysicsFrame = PhysicsFrame.Current;
         }
 
@@ -676,6 +656,7 @@ namespace Hecton8.Gameplay
             _lastWallSlidePoint = Vector3.zero;
             _lastWallSlideBlockedSpeed = 0f;
             _lastWallSlideAngleDegrees = 0f;
+            _lastWallSlideVelocityReduction01 = 0f;
             _lastWallSlidePhysicsFrame = -1;
         }
 
@@ -701,6 +682,21 @@ namespace Hecton8.Gameplay
             float invMagnitude = 1f / math.sqrt(intendedSqr * projectedSqr);
             float dot = math.clamp(Vector3.Dot(intendedDisplacement, projectedDisplacement) * invMagnitude, -1f, 1f);
             return math.degrees(math.acos(dot));
+        }
+
+        private static float ResolveProjectionVelocityReduction01(Vector3 intendedDisplacement, Vector3 projectedDisplacement)
+        {
+            float intendedSqr = intendedDisplacement.sqrMagnitude;
+            if (intendedSqr <= MinVectorMagnitudeSq)
+                return 0f;
+
+            float projectedSqr = projectedDisplacement.sqrMagnitude;
+            if (projectedSqr <= MinVectorMagnitudeSq)
+                return 1f;
+
+            float intendedMagnitude = math.sqrt(intendedSqr);
+            float projectedMagnitude = math.sqrt(projectedSqr);
+            return math.saturate(1f - (projectedMagnitude / math.max(intendedMagnitude, 0.0001f)));
         }
 
         private static int GetHitColliderInstanceId(in RaycastHit hit)
@@ -946,28 +942,6 @@ namespace Hecton8.Gameplay
 
             MovePosition(_scheduledSweepResolvedPosition);
             SetLinearVelocity(projectedVelocity);
-        }
-
-        private void RecordHydrodynamicGhostVelocity(Vector3 velocity)
-        {
-            EnsureHydrodynamicGhostState();
-            Vector3 safeVelocity = SafeVelocity(velocity);
-            _nativeState.HydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = new float3(safeVelocity.x, safeVelocity.y, safeVelocity.z);
-            _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _nativeState.HydrodynamicGhostVelocityHistory.Length;
-            if (_hydrodynamicGhostSampleCount < _nativeState.HydrodynamicGhostVelocityHistory.Length)
-                _hydrodynamicGhostSampleCount++;
-        }
-
-        private void EnsureHydrodynamicGhostState()
-        {
-            _nativeState.EnsureHydrodynamicGhostState(HydrodynamicGhostHistoryCapacity);
-        }
-
-        private void DisposeHydrodynamicGhostState()
-        {
-            _nativeState.DisposeHydrodynamicGhostState();
-            _hydrodynamicGhostWriteIndex = 0;
-            _hydrodynamicGhostSampleCount = 0;
         }
 
         private int ResolveSelfColliderInstanceId()

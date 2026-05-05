@@ -373,9 +373,11 @@ namespace Hecton8.Construction
     internal static class DroneFleetManager
     {
         private const int InitialTaskCapacity = 64;
-        private const int HeadlessDroneCapacity = 512;
+        private const int HeadlessDroneCapacity = 8;
+        private const int PhantomDroneCount = 500;
+        private const int PhantomDroneThreadGroupSize = 64;
         private const int HeadlessTaskCapacity = 512;
-        private const int HeadlessPendingLaunchCapacity = 64;
+        private const int HeadlessPendingLaunchCapacity = HeadlessDroneCapacity;
         private const int DefaultMaxClaimsPerTarget = 2;
         private const int InvalidHubId = 0;
         private const int EmptyTaskIndex = -1;
@@ -399,7 +401,14 @@ namespace Hecton8.Construction
         private const float DroneFlowDragCoefficient = 0.85f;
         private const int FleetTelemetryPublishFrameInterval = 60;
         private const string DroneCullingComputeAssetPath = "Assets/_Project/Art/Shaders/DroneCulling.compute";
+        private const string PhantomDronesComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_PhantomDrones.compute";
+        private const string PhantomDronesShaderName = "Hecton8/VFX/PhantomDrones";
         private const float DroneCullRadiusMeters = 1.25f;
+        private const float PhantomDroneOrbitRadiusMeters = 20f;
+        private const float PhantomDroneVerticalAmplitudeMeters = 4.5f;
+        private const float PhantomDroneScaleMeters = 0.18f;
+        private const float PhantomDroneBoundsDiameterMeters = 64f;
+        private const float PhantomDronePhaseWrapSeconds = 60f;
         private const float DroneRelaySubmarineDistanceMeters = 100f;
         private const float DroneRelayScanRadiusMeters = 160f;
         private const float DroneRelayPingRadiusMeters = 220f;
@@ -452,7 +461,7 @@ namespace Hecton8.Construction
 
             public void Render(float deltaTime)
             {
-                RenderHeadlessFleet();
+                RenderHeadlessFleet(deltaTime);
             }
         }
 
@@ -460,6 +469,8 @@ namespace Hecton8.Construction
         private static readonly HeadlessFleetDriver s_HeadlessDriver = new HeadlessFleetDriver();
         // COLD ALLOC: IndirectDrawIndexedArgs[1] - indirect drone draw argument upload cache - owner: DroneFleetManager
         private static readonly GraphicsBuffer.IndirectDrawIndexedArgs[] s_DroneArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
+        // COLD ALLOC: IndirectDrawIndexedArgs[1] - indirect phantom drone draw argument upload cache - owner: DroneFleetManager
+        private static readonly GraphicsBuffer.IndirectDrawIndexedArgs[] s_PhantomDroneArgsUpload = new GraphicsBuffer.IndirectDrawIndexedArgs[1];
         // COLD ALLOC: RepairTaskCandidate[64] - binary-heap backing store for rupture repair arbitration - owner: DroneFleetManager
         private static RepairTaskCandidate[] s_TaskHeap = new RepairTaskCandidate[InitialTaskCapacity];
 
@@ -514,17 +525,27 @@ namespace Hecton8.Construction
         private static GraphicsBuffer s_DroneVisibleIndexBuffer;
         private static GraphicsBuffer s_DroneArgsBuffer;
         private static ComputeShader s_DroneCullingCompute;
+        private static Material s_PhantomDroneMaterial;
+        private static ComputeShader s_PhantomDronesCompute;
+        private static GraphicsBuffer s_PhantomDroneMatrixBuffer;
+        private static GraphicsBuffer s_PhantomDroneColorBuffer;
+        private static GraphicsBuffer s_PhantomDroneArgsBuffer;
         private static Bounds s_DroneDrawBounds = new Bounds(Vector3.zero, new Vector3(2048f, 2048f, 2048f));
+        private static Bounds s_PhantomDroneDrawBounds = new Bounds(Vector3.zero, new Vector3(PhantomDroneBoundsDiameterMeters, PhantomDroneBoundsDiameterMeters, PhantomDroneBoundsDiameterMeters));
         private static int s_DroneRenderLayer;
         private static float s_HeadlessTaskRebuildTimer;
         private static float s_LastHeadlessDeltaTime;
+        private static float s_PhantomDronePhaseSeconds;
         private static int s_DroneMatrixUploadBufferIndex;
         private static int s_FleetTelemetryFrameCounter;
         private static int s_LogicLeechHijackCount;
         private static DroneFleetFormationMode s_FleetFormationMode;
         private static bool s_DroneCullingKernelsResolved;
+        private static bool s_PhantomDroneKernelResolved;
+        private static bool s_PhantomDroneMaterialRuntimeOwned;
         private static int s_DroneCullKernel;
         private static int s_DroneClearArgsKernel;
+        private static int s_PhantomDroneKernel;
 
         private static int DroneMatricesPropertyId => s_DroneMatricesPropertyId != 0 ? s_DroneMatricesPropertyId : (s_DroneMatricesPropertyId = Shader.PropertyToID("_DroneMatrices"));
         private static int InstanceMatricesPropertyId => s_InstanceMatricesPropertyId != 0 ? s_InstanceMatricesPropertyId : (s_InstanceMatricesPropertyId = Shader.PropertyToID("_InstanceMatrices"));
@@ -536,6 +557,14 @@ namespace Hecton8.Construction
         private static int CameraFrustumPlanesPropertyId => s_CameraFrustumPlanesPropertyId != 0 ? s_CameraFrustumPlanesPropertyId : (s_CameraFrustumPlanesPropertyId = Shader.PropertyToID("_CameraFrustumPlanes"));
         private static int DroneCountPropertyId => s_DroneCountPropertyId != 0 ? s_DroneCountPropertyId : (s_DroneCountPropertyId = Shader.PropertyToID("_DroneCount"));
         private static int DroneCullRadiusPropertyId => s_DroneCullRadiusPropertyId != 0 ? s_DroneCullRadiusPropertyId : (s_DroneCullRadiusPropertyId = Shader.PropertyToID("_DroneCullRadius"));
+        private static int PhantomMatricesPropertyId => s_PhantomMatricesPropertyId != 0 ? s_PhantomMatricesPropertyId : (s_PhantomMatricesPropertyId = Shader.PropertyToID("_PhantomMatrices"));
+        private static int PhantomColorsPropertyId => s_PhantomColorsPropertyId != 0 ? s_PhantomColorsPropertyId : (s_PhantomColorsPropertyId = Shader.PropertyToID("_PhantomColors"));
+        private static int PhantomAnchorPropertyId => s_PhantomAnchorPropertyId != 0 ? s_PhantomAnchorPropertyId : (s_PhantomAnchorPropertyId = Shader.PropertyToID("_PhantomAnchorWS"));
+        private static int PhantomTimePropertyId => s_PhantomTimePropertyId != 0 ? s_PhantomTimePropertyId : (s_PhantomTimePropertyId = Shader.PropertyToID("_PhantomTime"));
+        private static int PhantomCountPropertyId => s_PhantomCountPropertyId != 0 ? s_PhantomCountPropertyId : (s_PhantomCountPropertyId = Shader.PropertyToID("_PhantomCount"));
+        private static int PhantomBaseRadiusPropertyId => s_PhantomBaseRadiusPropertyId != 0 ? s_PhantomBaseRadiusPropertyId : (s_PhantomBaseRadiusPropertyId = Shader.PropertyToID("_PhantomBaseRadius"));
+        private static int PhantomVerticalAmplitudePropertyId => s_PhantomVerticalAmplitudePropertyId != 0 ? s_PhantomVerticalAmplitudePropertyId : (s_PhantomVerticalAmplitudePropertyId = Shader.PropertyToID("_PhantomVerticalAmplitude"));
+        private static int PhantomScalePropertyId => s_PhantomScalePropertyId != 0 ? s_PhantomScalePropertyId : (s_PhantomScalePropertyId = Shader.PropertyToID("_PhantomScale"));
         private static int s_DroneMatricesPropertyId;
         private static int s_InstanceMatricesPropertyId;
         private static int s_DroneStatesPropertyId;
@@ -546,6 +575,14 @@ namespace Hecton8.Construction
         private static int s_CameraFrustumPlanesPropertyId;
         private static int s_DroneCountPropertyId;
         private static int s_DroneCullRadiusPropertyId;
+        private static int s_PhantomMatricesPropertyId;
+        private static int s_PhantomColorsPropertyId;
+        private static int s_PhantomAnchorPropertyId;
+        private static int s_PhantomTimePropertyId;
+        private static int s_PhantomCountPropertyId;
+        private static int s_PhantomBaseRadiusPropertyId;
+        private static int s_PhantomVerticalAmplitudePropertyId;
+        private static int s_PhantomScalePropertyId;
         // COLD ALLOC: Plane[6] - reusable camera frustum plane scratch for GPU drone culling upload - owner: DroneFleetManager
         private static readonly Plane[] s_CullingPlanes = new Plane[6];
         // COLD ALLOC: Vector4[6] - reusable camera frustum plane vector scratch for GPU drone culling upload - owner: DroneFleetManager
@@ -592,6 +629,7 @@ namespace Hecton8.Construction
             CompletePendingHeadlessJobForReset();
             ReleaseHeadlessNativeMemory();
             ReleaseRenderBuffers();
+            ReleasePhantomRenderResources();
 
             s_TaskHeapCount = 0;
             s_PendingLaunchCount = 0;
@@ -607,17 +645,22 @@ namespace Hecton8.Construction
             s_HeadlessJobScheduled = false;
             s_DroneRenderMesh = null;
             s_DroneRenderMaterial = null;
+            s_PhantomDronesCompute = null;
             s_DroneRenderLayer = 0;
             s_HeadlessTaskRebuildTimer = 0f;
             s_LastHeadlessDeltaTime = 0f;
+            s_PhantomDronePhaseSeconds = 0f;
             s_DroneMatrixUploadBufferIndex = 0;
             s_FleetTelemetryFrameCounter = 0;
             s_LogicLeechHijackCount = 0;
             s_FleetFormationMode = DroneFleetFormationMode.Repair;
             s_DroneCullingCompute = null;
             s_DroneCullingKernelsResolved = false;
+            s_PhantomDroneKernelResolved = false;
+            s_PhantomDroneMaterialRuntimeOwned = false;
             s_DroneCullKernel = 0;
             s_DroneClearArgsKernel = 0;
+            s_PhantomDroneKernel = 0;
             s_DroneMatricesPropertyId = 0;
             s_InstanceMatricesPropertyId = 0;
             s_DroneStatesPropertyId = 0;
@@ -628,6 +671,14 @@ namespace Hecton8.Construction
             s_CameraFrustumPlanesPropertyId = 0;
             s_DroneCountPropertyId = 0;
             s_DroneCullRadiusPropertyId = 0;
+            s_PhantomMatricesPropertyId = 0;
+            s_PhantomColorsPropertyId = 0;
+            s_PhantomAnchorPropertyId = 0;
+            s_PhantomTimePropertyId = 0;
+            s_PhantomCountPropertyId = 0;
+            s_PhantomBaseRadiusPropertyId = 0;
+            s_PhantomVerticalAmplitudePropertyId = 0;
+            s_PhantomScalePropertyId = 0;
 
             if (s_TaskClaimCounts.IsCreated)
             {
@@ -698,6 +749,29 @@ namespace Hecton8.Construction
 
             s_DroneRenderLayer = dronePrefab.layer;
             EnsureRenderBuffers();
+        }
+
+        internal static void ConfigurePhantomSwarm(ComputeShader phantomCompute, Material phantomMaterial)
+        {
+            EnsureInitialized();
+
+            if (phantomCompute != null)
+            {
+                s_PhantomDronesCompute = phantomCompute;
+                s_PhantomDroneKernelResolved = false;
+            }
+
+            if (phantomMaterial != null)
+            {
+                if (s_PhantomDroneMaterialRuntimeOwned && s_PhantomDroneMaterial != null)
+                    DestroyRuntimeObject(s_PhantomDroneMaterial);
+
+                s_PhantomDroneMaterial = phantomMaterial;
+                s_PhantomDroneMaterialRuntimeOwned = false;
+            }
+
+            ResolvePhantomDroneKernel();
+            EnsurePhantomRenderResources();
         }
 
         internal static bool TryLaunchHeadlessDrone(
@@ -967,31 +1041,31 @@ namespace Hecton8.Construction
 
         private static void AllocateHeadlessNativeMemory()
         {
-            s_DroneStates = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[512] - authoritative headless drone state pool - owner: DroneFleetManager
-            s_DroneStateBackBuffer = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[512] - headless drone write buffer for Burst double buffering - owner: DroneFleetManager
-            s_DroneRenderMatrices = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[512] - indirect drone render front matrices consumed by renderer - owner: DroneFleetManager
-            s_DroneRenderMatrixBackBuffer = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[512] - indirect drone render back matrices written by Burst - owner: DroneFleetManager
-            s_DroneRenderInstances = new NativeArray<DroneRenderInstance>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DroneRenderInstance>[512] - drone matrix and transaction-progress upload staging - owner: DroneFleetManager
+            s_DroneStates = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[8] - authoritative real headless drone state pool - owner: DroneFleetManager
+            s_DroneStateBackBuffer = new NativeArray<HeadlessDroneState>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<HeadlessDroneState>[8] - real headless drone write buffer for Burst double buffering - owner: DroneFleetManager
+            s_DroneRenderMatrices = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[8] - indirect real drone render front matrices consumed by renderer - owner: DroneFleetManager
+            s_DroneRenderMatrixBackBuffer = new NativeArray<float4x4>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4x4>[8] - indirect real drone render back matrices written by Burst - owner: DroneFleetManager
+            s_DroneRenderInstances = new NativeArray<DroneRenderInstance>(HeadlessDroneCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<DroneRenderInstance>[8] - real drone matrix and transaction-progress upload staging - owner: DroneFleetManager
             s_HeadlessTaskClaimOwners = new NativeArray<int>(HeadlessTaskCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[512] - atomic task claim owners for Burst arbitration - owner: DroneFleetManager
             s_FleetTelemetryAccumulator = new NativeArray<int>((int)DroneFleetTelemetryAccumulatorSlot.Count, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<int>[5] - Burst fleet telemetry accumulator - owner: DroneFleetManager
             s_HeadlessTasksByHub = new NativeParallelMultiHashMap<int, HeadlessDroneTask>(HeadlessTaskCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,HeadlessDroneTask>[512] - hub-keyed drone task fanout - owner: DroneFleetManager
-            s_HeadlessDroneSpatialHash = new NativeParallelMultiHashMap<int, int>(HeadlessDroneCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[512] - drone boid spatial hash - owner: DroneFleetManager
-            s_DroneHubs = new RepairDroneHub[HeadlessDroneCapacity]; // COLD ALLOC: RepairDroneHub[512] - managed hub owner lookup for late-frame service commits - owner: DroneFleetManager
-            s_DroneSlotDroneIds = new int[HeadlessDroneCapacity]; // COLD ALLOC: int[512] - managed active drone id slots safe during job execution - owner: DroneFleetManager
-            s_DroneSlotDestroyed = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[512] - permanently consumed suicide-weld slots - owner: DroneFleetManager
-            s_PendingAbortBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[512] - deferred abort control flags - owner: DroneFleetManager
-            s_PendingReleaseBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[512] - deferred release control flags - owner: DroneFleetManager
-            s_PendingHostileBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[512] - deferred Logic-Leech hijack flags - owner: DroneFleetManager
-            s_PendingResupplyGrantBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[512] - command-queue storage commit success acks - owner: DroneFleetManager
-            s_PendingResupplyFailureBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[512] - command-queue storage commit failure acks - owner: DroneFleetManager
-            s_TargetModulesByDroneSlot = new BaseModule[HeadlessDroneCapacity]; // COLD ALLOC: BaseModule[512] - managed target lookup for late-frame repair application - owner: DroneFleetManager
-            s_TargetVoxelVolumesByDroneSlot = new HectonVoxelVolume[HeadlessDroneCapacity]; // COLD ALLOC: HectonVoxelVolume[512] - managed voxel target lookup for weld/carve commits - owner: DroneFleetManager
-            s_DroneTaskKindsBySlot = new DroneFleetTaskKind[HeadlessDroneCapacity]; // COLD ALLOC: DroneFleetTaskKind[512] - managed task kind mirror for service application - owner: DroneFleetManager
-            s_DronePositions = new Vector3[HeadlessDroneCapacity]; // COLD ALLOC: Vector3[512] - last completed drone positions for non-job contact queries - owner: DroneFleetManager
+            s_HeadlessDroneSpatialHash = new NativeParallelMultiHashMap<int, int>(HeadlessDroneCapacity, Allocator.Persistent); // COLD ALLOC: NativeParallelMultiHashMap<int,int>[8] - real drone boid spatial hash - owner: DroneFleetManager
+            s_DroneHubs = new RepairDroneHub[HeadlessDroneCapacity]; // COLD ALLOC: RepairDroneHub[8] - managed hub owner lookup for late-frame service commits - owner: DroneFleetManager
+            s_DroneSlotDroneIds = new int[HeadlessDroneCapacity]; // COLD ALLOC: int[8] - managed active drone id slots safe during job execution - owner: DroneFleetManager
+            s_DroneSlotDestroyed = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - permanently consumed suicide-weld slots - owner: DroneFleetManager
+            s_PendingAbortBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - deferred abort control flags - owner: DroneFleetManager
+            s_PendingReleaseBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - deferred release control flags - owner: DroneFleetManager
+            s_PendingHostileBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - deferred Logic-Leech hijack flags - owner: DroneFleetManager
+            s_PendingResupplyGrantBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - command-queue storage commit success acks - owner: DroneFleetManager
+            s_PendingResupplyFailureBySlot = new bool[HeadlessDroneCapacity]; // COLD ALLOC: bool[8] - command-queue storage commit failure acks - owner: DroneFleetManager
+            s_TargetModulesByDroneSlot = new BaseModule[HeadlessDroneCapacity]; // COLD ALLOC: BaseModule[8] - managed target lookup for late-frame repair application - owner: DroneFleetManager
+            s_TargetVoxelVolumesByDroneSlot = new HectonVoxelVolume[HeadlessDroneCapacity]; // COLD ALLOC: HectonVoxelVolume[8] - managed voxel target lookup for weld/carve commits - owner: DroneFleetManager
+            s_DroneTaskKindsBySlot = new DroneFleetTaskKind[HeadlessDroneCapacity]; // COLD ALLOC: DroneFleetTaskKind[8] - managed task kind mirror for service application - owner: DroneFleetManager
+            s_DronePositions = new Vector3[HeadlessDroneCapacity]; // COLD ALLOC: Vector3[8] - last completed drone positions for non-job contact queries - owner: DroneFleetManager
             s_TaskModuleRefs = new BaseModule[HeadlessTaskCapacity]; // COLD ALLOC: BaseModule[512] - native task index to managed module lookup - owner: DroneFleetManager
             s_TaskVoxelVolumeRefs = new HectonVoxelVolume[HeadlessTaskCapacity]; // COLD ALLOC: HectonVoxelVolume[512] - native task index to managed voxel lookup - owner: DroneFleetManager
             s_TaskKinds = new DroneFleetTaskKind[HeadlessTaskCapacity]; // COLD ALLOC: DroneFleetTaskKind[512] - native task index to managed task kind lookup - owner: DroneFleetManager
-            s_PendingLaunches = new PendingDroneLaunch[HeadlessPendingLaunchCapacity]; // COLD ALLOC: PendingDroneLaunch[64] - slow-tick launch queue applied after job completion - owner: DroneFleetManager
+            s_PendingLaunches = new PendingDroneLaunch[HeadlessPendingLaunchCapacity]; // COLD ALLOC: PendingDroneLaunch[8] - slow-tick launch queue applied after job completion - owner: DroneFleetManager
         }
 
         private static void ReleaseHeadlessNativeMemory()
@@ -1159,7 +1233,7 @@ namespace Hecton8.Construction
             job.PhantomFlowVerticalFactor = phantomFlowVerticalFactor;
             job.PhantomFlowEnabled = phantomFlowEnabled ? 1 : 0;
             job.FlowDragCoefficient = DroneFlowDragCoefficient;
-            s_HeadlessJobHandle = job.Schedule(HeadlessDroneCapacity, 32);
+            s_HeadlessJobHandle = job.Schedule(HeadlessDroneCapacity, HeadlessDroneCapacity);
             s_HeadlessJobScheduled = true;
         }
 
@@ -2248,25 +2322,25 @@ namespace Hecton8.Construction
                 return;
 
             if (s_DroneMatrixBuffer == null)
-                s_DroneMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[512] - headless drone matrix upload buffer - owner: DroneFleetManager
+                s_DroneMatrixBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[8] - real headless drone matrix upload buffer - owner: DroneFleetManager
 
             if (s_DroneMatrixBufferBackBuffer == null)
-                s_DroneMatrixBufferBackBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[512] - alternate headless drone matrix upload buffer for GPU/CPU double-buffering - owner: DroneFleetManager
+                s_DroneMatrixBufferBackBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<float4x4>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[8] - alternate real drone matrix upload buffer for GPU/CPU double-buffering - owner: DroneFleetManager
 
             if (s_DroneStateGpuBuffer == null)
-                s_DroneStateGpuBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<HeadlessDroneState>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[512] - headless drone state upload buffer for GPU culling - owner: DroneFleetManager
+                s_DroneStateGpuBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<HeadlessDroneState>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[8] - real headless drone state upload buffer for GPU culling - owner: DroneFleetManager
 
             if (s_DroneRenderInstanceBuffer == null)
-                s_DroneRenderInstanceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DroneRenderInstance>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[512] - drone render instance upload buffer for VAT transaction parameters - owner: DroneFleetManager
+                s_DroneRenderInstanceBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<DroneRenderInstance>(HeadlessDroneCapacity); // COLD ALLOC: GraphicsBuffer[8] - real drone render instance upload buffer for VAT transaction parameters - owner: DroneFleetManager
 
             if (s_DroneVisibleMatrixBuffer == null)
-                s_DroneVisibleMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[512] - GPU-compacted visible drone matrices - owner: DroneFleetManager
+                s_DroneVisibleMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[8] - GPU-compacted visible real drone matrices - owner: DroneFleetManager
 
             if (s_DroneVisibleInstanceBuffer == null)
-                s_DroneVisibleInstanceBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, UnsafeUtility.SizeOf<DroneRenderInstance>()); // COLD ALLOC: GraphicsBuffer[512] - GPU-compacted visible drone VAT instance data - owner: DroneFleetManager
+                s_DroneVisibleInstanceBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, UnsafeUtility.SizeOf<DroneRenderInstance>()); // COLD ALLOC: GraphicsBuffer[8] - GPU-compacted visible real drone VAT instance data - owner: DroneFleetManager
 
             if (s_DroneVisibleIndexBuffer == null)
-                s_DroneVisibleIndexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, sizeof(int)); // COLD ALLOC: GraphicsBuffer[512] - visible drone index append buffer for shader indirection/debug - owner: DroneFleetManager
+                s_DroneVisibleIndexBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Append, HeadlessDroneCapacity, sizeof(int)); // COLD ALLOC: GraphicsBuffer[8] - visible real drone index append buffer for shader indirection/debug - owner: DroneFleetManager
 
             if (s_DroneArgsBuffer == null)
                 s_DroneArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments | GraphicsBuffer.Target.Raw, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - headless drone indirect indexed draw arguments - owner: DroneFleetManager
@@ -2325,6 +2399,94 @@ namespace Hecton8.Construction
             }
         }
 
+        private static bool EnsurePhantomRenderResources()
+        {
+            ResolvePhantomDroneKernel();
+            if (s_PhantomDronesCompute == null || !s_PhantomDroneKernelResolved)
+                return false;
+
+            EnsurePhantomDroneMaterial();
+            if (s_DroneRenderMesh == null || s_PhantomDroneMaterial == null)
+                return false;
+
+            if (s_PhantomDroneMatrixBuffer == null)
+                s_PhantomDroneMatrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, PhantomDroneCount, UnsafeUtility.SizeOf<float4x4>()); // COLD ALLOC: GraphicsBuffer[500] - GPU-authored phantom drone matrices - owner: DroneFleetManager
+
+            if (s_PhantomDroneColorBuffer == null)
+                s_PhantomDroneColorBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, PhantomDroneCount, UnsafeUtility.SizeOf<float4>()); // COLD ALLOC: GraphicsBuffer[500] - GPU-authored phantom drone emissive colors - owner: DroneFleetManager
+
+            if (s_PhantomDroneArgsBuffer == null)
+                s_PhantomDroneArgsBuffer = new GraphicsBuffer(GraphicsBuffer.Target.IndirectArguments, 1, GraphicsBuffer.IndirectDrawIndexedArgs.size); // COLD ALLOC: GraphicsBuffer[1] - phantom drone indirect indexed draw arguments - owner: DroneFleetManager
+
+            s_PhantomDroneArgsUpload[0].indexCountPerInstance = s_DroneRenderMesh.GetIndexCount(0);
+            s_PhantomDroneArgsUpload[0].instanceCount = PhantomDroneCount;
+            s_PhantomDroneArgsUpload[0].startIndex = s_DroneRenderMesh.GetIndexStart(0);
+            s_PhantomDroneArgsUpload[0].baseVertexIndex = (uint)Mathf.Max(0, s_DroneRenderMesh.GetBaseVertex(0));
+            s_PhantomDroneArgsUpload[0].startInstance = 0u;
+            s_PhantomDroneArgsBuffer.SetData(s_PhantomDroneArgsUpload);
+            return true;
+        }
+
+        private static void EnsurePhantomDroneMaterial()
+        {
+            if (s_PhantomDroneMaterial != null)
+                return;
+
+            Shader shader = Shader.Find(PhantomDronesShaderName);
+            if (shader == null)
+                return;
+
+            s_PhantomDroneMaterial = new Material(shader)
+            {
+                name = "MAT_Runtime_PhantomDrones",
+                hideFlags = HideFlags.DontSave,
+                enableInstancing = true
+            }; // COLD ALLOC: Material[1] - generated phantom drone indirect material - owner: DroneFleetManager
+            s_PhantomDroneMaterialRuntimeOwned = true;
+        }
+
+        private static void ReleasePhantomRenderResources()
+        {
+            if (s_PhantomDroneMatrixBuffer != null)
+            {
+                s_PhantomDroneMatrixBuffer.Release();
+                s_PhantomDroneMatrixBuffer = null;
+            }
+
+            if (s_PhantomDroneColorBuffer != null)
+            {
+                s_PhantomDroneColorBuffer.Release();
+                s_PhantomDroneColorBuffer = null;
+            }
+
+            if (s_PhantomDroneArgsBuffer != null)
+            {
+                s_PhantomDroneArgsBuffer.Release();
+                s_PhantomDroneArgsBuffer = null;
+            }
+
+            if (s_PhantomDroneMaterialRuntimeOwned && s_PhantomDroneMaterial != null)
+                DestroyRuntimeObject(s_PhantomDroneMaterial);
+
+            s_PhantomDroneMaterial = null;
+        }
+
+        private static void DestroyRuntimeObject(UnityEngine.Object target)
+        {
+            if (target == null)
+                return;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                UnityEngine.Object.DestroyImmediate(target);
+                return;
+            }
+#endif
+
+            UnityEngine.Object.Destroy(target);
+        }
+
         private static void ResolveDroneCullingKernels()
         {
             if (s_DroneCullingKernelsResolved)
@@ -2354,7 +2516,36 @@ namespace Hecton8.Construction
             s_DroneCullingKernelsResolved = s_DroneCullKernel >= 0 && s_DroneClearArgsKernel >= 0;
         }
 
-        private static void RenderHeadlessFleet()
+        private static void ResolvePhantomDroneKernel()
+        {
+            if (s_PhantomDroneKernelResolved)
+                return;
+
+            s_PhantomDroneKernel = -1;
+
+#if UNITY_EDITOR
+            if (s_PhantomDronesCompute == null)
+                s_PhantomDronesCompute = UnityEditor.AssetDatabase.LoadAssetAtPath<ComputeShader>(PhantomDronesComputeAssetPath);
+#endif
+
+            if (s_PhantomDronesCompute == null)
+                return;
+
+            if (s_PhantomDronesCompute.HasKernel("CS_UpdatePhantomDrones"))
+                s_PhantomDroneKernel = s_PhantomDronesCompute.FindKernel("CS_UpdatePhantomDrones");
+            else if (s_PhantomDronesCompute.HasKernel("UpdatePhantomDrones"))
+                s_PhantomDroneKernel = s_PhantomDronesCompute.FindKernel("UpdatePhantomDrones");
+
+            s_PhantomDroneKernelResolved = s_PhantomDroneKernel >= 0;
+        }
+
+        private static void RenderHeadlessFleet(float deltaTime)
+        {
+            RenderRealHeadlessFleet();
+            RenderPhantomSwarm(deltaTime);
+        }
+
+        private static void RenderRealHeadlessFleet()
         {
             if (CountManagedHeadlessDrones() <= 0 || s_DroneRenderMesh == null || s_DroneRenderMaterial == null)
                 return;
@@ -2402,6 +2593,68 @@ namespace Hecton8.Construction
             };
             Graphics.RenderMeshIndirect(renderParams, s_DroneRenderMesh, s_DroneArgsBuffer, 1, 0);
             s_DroneMatrixUploadBufferIndex ^= 1;
+        }
+
+        private static void RenderPhantomSwarm(float deltaTime)
+        {
+            if (!TryResolvePhantomAnchor(out Vector3 anchor) || !EnsurePhantomRenderResources())
+                return;
+
+            s_PhantomDronePhaseSeconds += Mathf.Max(0f, deltaTime);
+            if (s_PhantomDronePhaseSeconds >= PhantomDronePhaseWrapSeconds)
+                s_PhantomDronePhaseSeconds = Mathf.Repeat(s_PhantomDronePhaseSeconds, PhantomDronePhaseWrapSeconds);
+
+            s_PhantomDroneDrawBounds = new Bounds(
+                anchor,
+                new Vector3(
+                    PhantomDroneBoundsDiameterMeters,
+                    PhantomDroneBoundsDiameterMeters,
+                    PhantomDroneBoundsDiameterMeters));
+
+            s_PhantomDronesCompute.SetInt(PhantomCountPropertyId, PhantomDroneCount);
+            s_PhantomDronesCompute.SetVector(PhantomAnchorPropertyId, new Vector4(anchor.x, anchor.y, anchor.z, 0f));
+            s_PhantomDronesCompute.SetFloat(PhantomTimePropertyId, s_PhantomDronePhaseSeconds);
+            s_PhantomDronesCompute.SetFloat(PhantomBaseRadiusPropertyId, PhantomDroneOrbitRadiusMeters);
+            s_PhantomDronesCompute.SetFloat(PhantomVerticalAmplitudePropertyId, PhantomDroneVerticalAmplitudeMeters);
+            s_PhantomDronesCompute.SetFloat(PhantomScalePropertyId, PhantomDroneScaleMeters);
+            s_PhantomDronesCompute.SetBuffer(s_PhantomDroneKernel, PhantomMatricesPropertyId, s_PhantomDroneMatrixBuffer);
+            s_PhantomDronesCompute.SetBuffer(s_PhantomDroneKernel, PhantomColorsPropertyId, s_PhantomDroneColorBuffer);
+            s_PhantomDronesCompute.Dispatch(
+                s_PhantomDroneKernel,
+                (PhantomDroneCount + PhantomDroneThreadGroupSize - 1) / PhantomDroneThreadGroupSize,
+                1,
+                1);
+
+            s_PhantomDroneMaterial.SetBuffer(PhantomMatricesPropertyId, s_PhantomDroneMatrixBuffer);
+            s_PhantomDroneMaterial.SetBuffer(PhantomColorsPropertyId, s_PhantomDroneColorBuffer);
+
+            Graphics.DrawMeshInstancedIndirect(
+                s_DroneRenderMesh,
+                0,
+                s_PhantomDroneMaterial,
+                s_PhantomDroneDrawBounds,
+                s_PhantomDroneArgsBuffer,
+                0,
+                null,
+                ShadowCastingMode.Off,
+                false,
+                s_DroneRenderLayer,
+                Camera.current);
+        }
+
+        private static bool TryResolvePhantomAnchor(out Vector3 position)
+        {
+            if (TryResolveFormationAnchor(out position))
+                return true;
+
+            RepairDroneHub hub = RepairDroneHub.GetActiveHubAt(0);
+            if (hub != null)
+            {
+                position = hub.DockPosition;
+                return true;
+            }
+
+            return TryResolvePlayerPosition(out position);
         }
 
         private static void PrepareDroneRenderInstances()

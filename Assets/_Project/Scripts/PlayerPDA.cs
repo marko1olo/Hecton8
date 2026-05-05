@@ -37,6 +37,7 @@
 
 using Hecton8.Audio;
 using Hecton8.Core;
+using Hecton8.Crafting;
 using Hecton8.Gameplay;
 using Hecton8.Input;
 using Hecton8.World;
@@ -565,8 +566,14 @@ namespace Hecton8.UI
 
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/Player/Player PDA")]
-    public sealed class PlayerPDA : MonoBehaviour, ITickable
+    public sealed class PlayerPDA : MonoBehaviour, ITickable, ICraftingEventListener
     {
+        private const float CraftStartedClickPitch = 0.92f;
+        private const float CraftCompletedClickPitch = 1.08f;
+        private const float CraftCancelledClickPitch = 0.74f;
+        private const float CraftFailedClickPitch = 0.58f;
+        private const float CraftClickVolumeScale = 0.86f;
+
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR — REFERENCES
         // ══════════════════════════════════════════════════════════
@@ -663,6 +670,7 @@ namespace Hecton8.UI
 
         private int _activeTab = -1;
         private bool _registered;
+        private bool _craftingEventsRegistered;
         private bool _inputSubscribed;
         private uint _observedUIStateCommandSequence;
         private IInputService _subscribedInputManager;
@@ -733,6 +741,7 @@ namespace Hecton8.UI
             }
 
             TryRegister();
+            TryRegisterCraftingEvents();
             SubscribeToInputManager();
         }
 
@@ -740,6 +749,7 @@ namespace Hecton8.UI
         {
             ResolveTabReferences(createMissingTabs: false);
             TryRegister();
+            TryRegisterCraftingEvents();
 
             SubscribeToInputManager();
 
@@ -932,6 +942,7 @@ namespace Hecton8.UI
         private void OnDisable()
         {
             TryUnregister();
+            UnregisterCraftingEvents();
             UnsubscribeFromInputManager();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -943,6 +954,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
             TryUnregister();
+            UnregisterCraftingEvents();
             UnsubscribeFromInputManager();
             if (ReferenceEquals(ActiveRuntimeInstance, this))
                 ActiveRuntimeInstance = null;
@@ -1007,6 +1019,24 @@ namespace Hecton8.UI
             _registered = false;
         }
 
+        private void TryRegisterCraftingEvents()
+        {
+            if (_craftingEventsRegistered || !Application.isPlaying)
+                return;
+
+            CraftingEvents.Register(this);
+            _craftingEventsRegistered = true;
+        }
+
+        private void UnregisterCraftingEvents()
+        {
+            if (!_craftingEventsRegistered)
+                return;
+
+            CraftingEvents.Unregister(this);
+            _craftingEventsRegistered = false;
+        }
+
         // ══════════════════════════════════════════════════════════
         //  TICK
         // ══════════════════════════════════════════════════════════
@@ -1036,6 +1066,28 @@ namespace Hecton8.UI
 
             // ── Diagnostics ──
             UpdateDiagnostics();
+        }
+
+        public void OnCraftingEvent(in CraftingEventPayload payload)
+        {
+            if (!IsOpen)
+                return;
+
+            switch ((CraftingEventType)payload.EventType)
+            {
+                case CraftingEventType.CraftStarted:
+                    PlayCraftingClick(CraftStartedClickPitch);
+                    break;
+                case CraftingEventType.CraftCompleted:
+                    PlayCraftingClick(CraftCompletedClickPitch);
+                    break;
+                case CraftingEventType.CraftCancelled:
+                    PlayCraftingClick(CraftCancelledClickPitch);
+                    break;
+                case CraftingEventType.CraftFailed:
+                    PlayCraftingClick(CraftFailedClickPitch);
+                    break;
+            }
         }
 
         private void ApplyHeadlessUIState()
@@ -1410,16 +1462,27 @@ namespace Hecton8.UI
 
         private void PlaySound(AudioClip clip)
         {
+            PlaySound(clip, audioVolume, 1f);
+        }
+
+        private void PlaySound(AudioClip clip, float volume, float pitch)
+        {
             if (clip == null) return;
             Hecton8.Core.IAudioService audioManager = Hecton8.Core.GlobalRegistry.Audio;
             if (audioManager == null) return;
 
-            audioManager.PlayAtPoint(clip, ResolvePdaAudioPosition(), audioVolume, 1f, audioManager.InterfaceGroup);
+            audioManager.PlayAtPoint(clip, ResolvePdaAudioPosition(), volume, pitch, audioManager.InterfaceGroup);
         }
 
         private Vector3 ResolvePdaAudioPosition()
         {
             return pdaPanel != null ? pdaPanel.transform.position : transform.position;
+        }
+
+        private void PlayCraftingClick(float pitch)
+        {
+            AudioClip resolvedClip = tabSwitchSound != null ? tabSwitchSound : openSound;
+            PlaySound(resolvedClip, audioVolume * CraftClickVolumeScale, pitch);
         }
 
         // ══════════════════════════════════════════════════════════

@@ -19,8 +19,7 @@ namespace Hecton8.Environment
         private const float BiomeBlendChangeEpsilon = 0.0001f;
         private const float WeatherLutChangeEpsilon = 0.01f;
         private const float VectorNormalizeEpsilon = 0.0001f;
-        private const int NoirFogLutRowCount = 6;
-        private const int NoirFogLutSliceCount = 3;
+        private const int NoirFogLutRowCount = 1;
 #if UNITY_EDITOR
         private const string CalmWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_DeepStillness.asset";
         private const string StormWeatherProfileAssetPath = "Assets/_Project/Data/Environment/Weather/WeatherProfile_CyclonicSurge.asset";
@@ -190,7 +189,7 @@ namespace Hecton8.Environment
         };
 
         [Header("Noir Fog LUT")]
-        [Tooltip("Width of the runtime 1D noir fog LUT. The texture is authored as 6 rows: source and target slices for fog, absorption, and ambient tint.")]
+        [Tooltip("Width of the runtime depth fog LUT. The texture is one 1-pixel-high row so shaders pay one sample.")]
         [SerializeField, Min(8)] private int noirFogLutResolution = 32;
         [Tooltip("Seconds used to exponentially settle the biome LUT blend factor.")]
         [SerializeField, Min(0.25f)] private float biomeBlendDurationSeconds = 8f;
@@ -728,53 +727,47 @@ namespace Hecton8.Environment
             float weatherInfluence)
         {
             int width = _noirFogLutTexture.width;
-            FillNoirFogLutRows(sourceProfile, 0, width, weatherSourceProfile, weatherInfluence);
-            FillNoirFogLutRows(targetProfile, NoirFogLutSliceCount, width, weatherTargetProfile, weatherInfluence);
+            FillNoirFogLutRow(sourceProfile, targetProfile, width, weatherSourceProfile, weatherTargetProfile, weatherInfluence);
             _noirFogLutTexture.SetPixels(_noirFogLutPixels);
             _noirFogLutTexture.Apply(false, false);
         }
 
-        private void FillNoirFogLutRows(WeatherProfile profile, int rowStart, int width, WeatherProfile weatherProfile, float weatherInfluence)
+        private void FillNoirFogLutRow(
+            WeatherProfile sourceProfile,
+            WeatherProfile targetProfile,
+            int width,
+            WeatherProfile weatherSourceProfile,
+            WeatherProfile weatherTargetProfile,
+            float weatherInfluence)
         {
-            Color fogNear = profile != null ? profile.FogColorNear : new Color(0.03f, 0.09f, 0.14f, 1f);
-            Color fogFar = profile != null ? profile.FogColorFar : new Color(0.01f, 0.04f, 0.08f, 1f);
-            Color absorptionNear = profile != null ? profile.AbsorptionNear : new Color(0.18f, 0.12f, 0.08f, 1f);
-            Color absorptionFar = profile != null ? profile.AbsorptionFar : new Color(0.4f, 0.24f, 0.16f, 1f);
-            Color ambientNear = profile != null ? profile.AmbientTintNear : new Color(0.03f, 0.1f, 0.12f, 1f);
-            Color ambientFar = profile != null ? profile.AmbientTintFar : new Color(0.01f, 0.05f, 0.08f, 1f);
-            Texture2D authoredFogLut = profile != null ? profile.FogColorLut : null;
-            Color weatherFogNear = weatherProfile != null ? weatherProfile.FogColorNear : fogNear;
-            Color weatherFogFar = weatherProfile != null ? weatherProfile.FogColorFar : fogFar;
-            Color weatherAbsorptionNear = weatherProfile != null ? weatherProfile.AbsorptionNear : absorptionNear;
-            Color weatherAbsorptionFar = weatherProfile != null ? weatherProfile.AbsorptionFar : absorptionFar;
-            Color weatherAmbientNear = weatherProfile != null ? weatherProfile.AmbientTintNear : ambientNear;
-            Color weatherAmbientFar = weatherProfile != null ? weatherProfile.AmbientTintFar : ambientFar;
             float clampedWeatherInfluence = math.saturate(weatherInfluence);
+            float biomeBlend = math.saturate(_biomeLutBlend);
 
             for (int x = 0; x < width; x++)
             {
                 float t = width > 1 ? (float)x / (width - 1) : 0f;
-                Color fogSample = Color.Lerp(fogNear, fogFar, t);
-                if (authoredFogLut != null && authoredFogLut.isReadable)
-                {
-                    Color authoredSample = authoredFogLut.GetPixelBilinear(t, 0.5f);
-                    authoredSample.a = 1f;
-                    fogSample = Color.Lerp(fogSample, authoredSample, 0.5f);
-                }
-
-                fogSample = Color.Lerp(fogSample, Color.Lerp(weatherFogNear, weatherFogFar, t), clampedWeatherInfluence);
-                Color absorptionSample = Color.Lerp(absorptionNear, absorptionFar, t);
-                absorptionSample = Color.Lerp(absorptionSample, Color.Lerp(weatherAbsorptionNear, weatherAbsorptionFar, t), clampedWeatherInfluence);
-                Color ambientSample = Color.Lerp(ambientNear, ambientFar, t);
-                ambientSample = Color.Lerp(ambientSample, Color.Lerp(weatherAmbientNear, weatherAmbientFar, t), clampedWeatherInfluence);
-
-                int fogIndex = rowStart * width + x;
-                int absorptionIndex = (rowStart + 1) * width + x;
-                int ambientIndex = (rowStart + 2) * width + x;
-                _noirFogLutPixels[fogIndex] = ClampOpaqueColor(fogSample);
-                _noirFogLutPixels[absorptionIndex] = ClampOpaqueColor(absorptionSample);
-                _noirFogLutPixels[ambientIndex] = ClampOpaqueColor(ambientSample);
+                Color sourceFog = ResolveFogLutColor(sourceProfile, weatherSourceProfile, t, clampedWeatherInfluence);
+                Color targetFog = ResolveFogLutColor(targetProfile, weatherTargetProfile, t, clampedWeatherInfluence);
+                _noirFogLutPixels[x] = ClampOpaqueColor(Color.Lerp(sourceFog, targetFog, biomeBlend));
             }
+        }
+
+        private static Color ResolveFogLutColor(WeatherProfile profile, WeatherProfile weatherProfile, float t, float weatherInfluence)
+        {
+            Color fogNear = profile != null ? profile.FogColorNear : new Color(0.03f, 0.09f, 0.14f, 1f);
+            Color fogFar = profile != null ? profile.FogColorFar : new Color(0.01f, 0.04f, 0.08f, 1f);
+            Texture2D authoredFogLut = profile != null ? profile.FogColorLut : null;
+            Color weatherFogNear = weatherProfile != null ? weatherProfile.FogColorNear : fogNear;
+            Color weatherFogFar = weatherProfile != null ? weatherProfile.FogColorFar : fogFar;
+            Color fogSample = Color.Lerp(fogNear, fogFar, t);
+            if (authoredFogLut != null && authoredFogLut.isReadable)
+            {
+                Color authoredSample = authoredFogLut.GetPixelBilinear(t, 0.5f);
+                authoredSample.a = 1f;
+                fogSample = Color.Lerp(fogSample, authoredSample, 0.5f);
+            }
+
+            return Color.Lerp(fogSample, Color.Lerp(weatherFogNear, weatherFogFar, t), weatherInfluence);
         }
 
         private void PublishNoirFogShaderState()

@@ -36,7 +36,7 @@ namespace Hecton8.World
         private static int _editorValidateDepth;
 #endif
 
-        internal static SargassumMicroFaunaBoids ActiveRuntimeInstance { get; private set; }
+        internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => GlobalRegistry.SargassumMicroFauna;
 
         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
         internal struct BoidData
@@ -740,12 +740,12 @@ namespace Hecton8.World
         private float cameraAvoidWeight = 4.8f;
 
         [SerializeField, Range(0.25f, 12f)]
-        [Tooltip("World-space ray distance projected through the ecosystem threat voxel grid before the boid commits a terrain-avoidance turn.")]
+        [Tooltip("Legacy voxel look-ahead retained for serialized scenes. Boid wall collision is purged for MX350-tier ghosting.")]
         private float voxelAvoidanceLookAheadDistance = 3.5f;
 
         [SerializeField, Range(0f, 16f)]
-        [Tooltip("Repulsive steering weight applied when the velocity-aligned voxel DDA detects solid terrain ahead.")]
-        private float voxelAvoidanceWeight = 7.5f;
+        [Tooltip("Legacy voxel avoidance weight retained for serialized scenes. Runtime clamps this to zero.")]
+        private float voxelAvoidanceWeight = 0f;
 
         [SerializeField, Range(1, 8)]
         [Tooltip("Hard cap for concurrent leviathan or submarine panic threats cached on the CPU and uploaded to the compute shader.")]
@@ -1243,6 +1243,7 @@ namespace Hecton8.World
         private bool _registeredFixedTick;
         private bool _registeredSlowTick;
         private bool _registeredLateFrameTick;
+        private bool _serviceRegistered;
         private bool _hasSpawnData;
         private bool _computeKernelBindingsValid;
         private bool _computeDispatchDisabled;
@@ -1340,7 +1341,6 @@ namespace Hecton8.World
 
         private void Awake()
         {
-            ActiveRuntimeInstance = this;
             _computeDispatchDisabled = false;
             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
             SanitizeSettings();
@@ -1353,7 +1353,6 @@ namespace Hecton8.World
 
         private void OnEnable()
         {
-            ActiveRuntimeInstance = this;
             _computeDispatchDisabled = false;
             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
             ResolveDependencies();
@@ -1365,14 +1364,13 @@ namespace Hecton8.World
             FlashlightEvents.Register(this);
             SpectrumEvents.RegisterSonarPingListener(this);
             HectonFloatingOrigin.RegisterListener(this);
+            TryRegisterService();
             TryRegister();
         }
 
         private void OnDisable()
         {
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
-
+            TryUnregisterService();
             SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
@@ -1435,9 +1433,7 @@ namespace Hecton8.World
 
         private void OnDestroy()
         {
-            if (ReferenceEquals(ActiveRuntimeInstance, this))
-                ActiveRuntimeInstance = null;
-
+            TryUnregisterService();
             SargassumGlobalDragManager.Unregister(this);
             FlashlightEvents.Unregister(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
@@ -1705,7 +1701,7 @@ namespace Hecton8.World
             cameraAvoidRadius = Mathf.Clamp(cameraAvoidRadius, 0.25f, 3f);
             cameraAvoidWeight = Mathf.Clamp(cameraAvoidWeight, 0f, 8f);
             voxelAvoidanceLookAheadDistance = Mathf.Clamp(voxelAvoidanceLookAheadDistance, 0.25f, 12f);
-            voxelAvoidanceWeight = Mathf.Clamp(voxelAvoidanceWeight, 0f, 16f);
+            voxelAvoidanceWeight = 0f;
             maxMassiveThreatCount = Mathf.Clamp(maxMassiveThreatCount, 1, 8);
             massiveThreatPanicRadius = Mathf.Clamp(massiveThreatPanicRadius, 50f, 96f);
             massiveThreatWeight = Mathf.Clamp(massiveThreatWeight, 0f, 12f);
@@ -1974,92 +1970,7 @@ namespace Hecton8.World
         private void RefreshThreatVoxelPayload()
         {
             RefreshThreatGridPayload();
-
-            NativeArray<byte> threatVoxels = default;
-            Vector3Int gridDimensions = Vector3Int.zero;
-            Vector3 gridOrigin = Vector3.zero;
-            Vector3 voxelCellSize = Vector3.one;
-            int threatVoxelSolidThreshold = VoxelDynamicNavGridRuntime.SolidCell;
-            HectonCaveVoxelLightingVolume caveVoxelVolume = HectonCaveVoxelLightingVolume.ActiveRuntimeInstance;
-            if (caveVoxelVolume != null &&
-                caveVoxelVolume.TryGetPublishedSignedDistanceVoxelPayload(
-                    out NativeArray<byte> signedDistanceVoxels,
-                    out Vector3Int caveGridDimensions,
-                    out Vector3 caveGridOrigin,
-                    out Vector3 caveVoxelCellSize))
-            {
-                threatVoxels = signedDistanceVoxels;
-                gridDimensions = caveGridDimensions;
-                gridOrigin = caveGridOrigin;
-                voxelCellSize = caveVoxelCellSize;
-                threatVoxelSolidThreshold = 128;
-            }
-
-            bool resolvedPassability = VoxelDynamicNavGridRuntime.TryGetNearestPassabilityPayload(
-                new float3(_fieldCenter.x, _fieldCenter.y, _fieldCenter.z),
-                out NativeArray<byte> navPassability,
-                out int3 navDimensions,
-                out float3 navOrigin,
-                out float navCellSize);
-            if (!threatVoxels.IsCreated && resolvedPassability)
-            {
-                threatVoxels = navPassability;
-                gridDimensions = new Vector3Int(navDimensions.x, navDimensions.y, navDimensions.z);
-                gridOrigin = new Vector3(navOrigin.x, navOrigin.y, navOrigin.z);
-                voxelCellSize = new Vector3(navCellSize, navCellSize, navCellSize);
-                threatVoxelSolidThreshold = VoxelDynamicNavGridRuntime.SolidCell;
-            }
-            else if (!threatVoxels.IsCreated &&
-                     _mapMagicVegetationBridge != null &&
-                     _mapMagicVegetationBridge.TryGetEcosystemThreatVoxelPayload(
-                         out NativeArray<byte> fallbackThreatVoxels,
-                         out Vector3Int fallbackGridDimensions,
-                         out Vector3 fallbackGridOrigin,
-                         out Vector3 fallbackVoxelCellSize))
-            {
-                threatVoxels = fallbackThreatVoxels;
-                gridDimensions = fallbackGridDimensions;
-                gridOrigin = fallbackGridOrigin;
-                voxelCellSize = fallbackVoxelCellSize;
-                threatVoxelSolidThreshold = VoxelDynamicNavGridRuntime.SolidCell;
-            }
-            else
-            {
-                ResetThreatVoxelSnapshot();
-                return;
-            }
-
-            long cellCountLong = (long)gridDimensions.x * gridDimensions.y * gridDimensions.z;
-            if (!threatVoxels.IsCreated ||
-                gridDimensions.x <= 0 ||
-                gridDimensions.y <= 0 ||
-                gridDimensions.z <= 0 ||
-                cellCountLong <= 0L ||
-                cellCountLong > int.MaxValue ||
-                threatVoxels.Length < cellCountLong)
-            {
-                ResetThreatVoxelSnapshot();
-                return;
-            }
-
-            int cellCount = (int)cellCountLong;
-            EnsureBuffer(ref _threatVoxelBuffer, cellCount, ThreatVoxelStride);
-            EnsureNativeArrayCapacity(ref _threatVoxelUploadNative, cellCount, nameof(_threatVoxelUploadNative));
-
-            // Expand the byte-compressed voxel payload into uint lanes to match the structured buffer contract.
-            for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
-                _threatVoxelUploadNative[cellIndex] = threatVoxels[cellIndex];
-
-            GraphicsBufferUploadUtility.UploadNativeArray(_threatVoxelBuffer, _threatVoxelUploadNative, cellCount);
-            _threatVoxelCellCount = cellCount;
-            _threatVoxelDimensions = gridDimensions;
-            _threatVoxelOriginWS = gridOrigin;
-            _threatVoxelCellSizeWS = new Vector3(
-                Mathf.Max(voxelCellSize.x, ThreatVoxelCellEpsilon),
-                Mathf.Max(voxelCellSize.y, ThreatVoxelCellEpsilon),
-                Mathf.Max(voxelCellSize.z, ThreatVoxelCellEpsilon));
-            _threatVoxelSolidThreshold = Mathf.Clamp(threatVoxelSolidThreshold, 1, 255);
-            _threatVoxelDataValid = true;
+            ResetThreatVoxelSnapshot();
         }
 
         private void RefreshThreatGridPayload()
@@ -2328,12 +2239,14 @@ namespace Hecton8.World
                 return;
 
             Vector3 origin = playerTransform.position;
+            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
             int formationCount = 0;
             for (int i = 0; i < snapshotCount && formationCount < _formationBeacons.Length; i++)
             {
                 BeaconNetworkSystem.BeaconSnapshot snapshot = _formationBeaconSnapshots[i];
                 Vector3 beaconPosition = snapshot.Position;
-                if ((beaconPosition - origin).sqrMagnitude > formationBeaconSearchRadius * formationBeaconSearchRadius)
+                AbsoluteUniversePosition beaconAup = AbsoluteUniversePosition.FromRuntimePosition(beaconPosition);
+                if (AbsoluteUniversePosition.DistanceSq(in beaconAup, in originAup) > (double)formationBeaconSearchRadius * formationBeaconSearchRadius)
                     continue;
 
                 float beaconRadius = Mathf.Clamp(snapshot.LightRange * 2.2f, 4f, formationBeaconSearchRadius * 0.35f);
@@ -3184,9 +3097,9 @@ namespace Hecton8.World
                 boidCompute.SetBuffer(_clearSpatialGridKernelIndex, _SimulationFrameBufferId, _simulationFrameBuffer);
                 boidCompute.SetBuffer(_clearSpatialGridKernelIndex, _SpatialGridCountsId, _spatialGridCountBuffer);
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                DisableComputeDispatch($"Compute binding failure on '{boidCompute.name}'. {exception.Message}");
+                DisableComputeDispatch("Compute binding failure.");
                 return false;
             }
 
@@ -3255,8 +3168,9 @@ namespace Hecton8.World
                 playerTransform != null &&
                 playerTransform.gameObject.activeInHierarchy)
             {
-                Vector3 playerDelta = signal.PositionWS - playerTransform.position;
-                if (playerDelta.sqrMagnitude <= panicRadius * panicRadius &&
+                AbsoluteUniversePosition signalAup = AbsoluteUniversePosition.FromRuntimePosition(signal.PositionWS);
+                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
+                if (AbsoluteUniversePosition.DistanceSq(in signalAup, in playerAup) <= (double)panicRadius * panicRadius &&
                     playerTransform.TryGetComponent(out Rigidbody playerRigidbody) &&
                     playerRigidbody.linearVelocity.sqrMagnitude > 0.0001f)
                 {
@@ -4010,8 +3924,10 @@ namespace Hecton8.World
                     return 0f;
             }
 
-            Vector3 cameraPosition = viewCamera.transform.position;
-            return (_renderBounds.center - cameraPosition).sqrMagnitude;
+            AbsoluteUniversePosition boundsAup = AbsoluteUniversePosition.FromRuntimePosition(_renderBounds.center);
+            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(viewCamera.transform.position);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in boundsAup, in cameraAup);
+            return distanceSq >= float.MaxValue ? float.MaxValue : (float)math.max(0d, distanceSq);
         }
 
         private bool TryConsumeSimulationStep(
@@ -4136,6 +4052,24 @@ namespace Hecton8.World
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
                 _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
             }
+        }
+
+        private void TryRegisterService()
+        {
+            if (_serviceRegistered)
+                return;
+
+            GlobalRegistry.RegisterSargassumMicroFaunaRuntime(this);
+            _serviceRegistered = ReferenceEquals(GlobalRegistry.SargassumMicroFauna, this);
+        }
+
+        private void TryUnregisterService()
+        {
+            if (!_serviceRegistered)
+                return;
+
+            GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(this);
+            _serviceRegistered = false;
         }
 
         private void TryUnregister()
@@ -4440,14 +4374,13 @@ namespace Hecton8.World
                 Marshal.OffsetOf<BoidData>(nameof(BoidData.Panic)).ToInt32() != BoidDataPanicOffsetBytes ||
                 Marshal.OffsetOf<BoidData>(nameof(BoidData.StateFlags)).ToInt32() != BoidDataStateFlagsOffsetBytes)
             {
-                DisableComputeDispatch(
-                    $"BoidData layout mismatch. Expected stride {BoidDataStrideBytes}, align {BoidDataAlignmentBytes}, offsets Position={BoidDataPositionOffsetBytes}, Velocity={BoidDataVelocityOffsetBytes}, Panic={BoidDataPanicOffsetBytes}, StateFlags={BoidDataStateFlagsOffsetBytes}.");
+                DisableComputeDispatch("BoidData layout mismatch.");
                 return false;
             }
 
             if (UnsafeUtility.SizeOf<SimulationFrameConstants>() != SimulationFrameConstantsStride)
             {
-                DisableComputeDispatch($"SimulationFrameConstants layout mismatch. Expected stride {SimulationFrameConstantsStride} bytes.");
+                DisableComputeDispatch("SimulationFrameConstants layout mismatch.");
                 return false;
             }
 
@@ -4517,7 +4450,7 @@ namespace Hecton8.World
         {
             if (!boidCompute.HasKernel(kernelName))
             {
-                DisableComputeDispatch($"Missing kernel '{kernelName}' on '{boidCompute.name}'.");
+                DisableComputeDispatch("Missing compute kernel.");
                 return false;
             }
 
@@ -4526,15 +4459,15 @@ namespace Hecton8.World
                 boidCompute.GetKernelThreadGroupSizes(kernelIndex, out uint groupSizeX, out _, out _);
                 if (groupSizeX == 0u)
                 {
-                    DisableComputeDispatch($"Kernel '{kernelName}' on '{boidCompute.name}' manual index {kernelIndex} reported thread group size 0.");
+                    DisableComputeDispatch("Compute kernel reported thread group size 0.");
                     return false;
                 }
 
                 return true;
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                DisableComputeDispatch($"Kernel '{kernelName}' on '{boidCompute.name}' manual index {kernelIndex} failed validation. {exception.Message}");
+                DisableComputeDispatch("Compute kernel validation failure.");
                 return false;
             }
         }
@@ -4578,7 +4511,7 @@ namespace Hecton8.World
         private static void LogComputeDispatchDisabled(string message, UnityEngine.Object context)
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"SargassumMicroFaunaBoids compute dispatch disabled: {message}", context);
+            Debug.LogError(message, context);
 #endif
         }
 
@@ -4618,9 +4551,9 @@ namespace Hecton8.World
                 boidCompute.SetBuffer(_applyOriginShiftKernelIndex, _BoidsBufferWriteId, _boidsBufferB);
                 boidCompute.Dispatch(_applyOriginShiftKernelIndex, dispatchGroups, 1, 1);
             }
-            catch (Exception exception)
+            catch (Exception)
             {
-                DisableComputeDispatch($"Origin-shift dispatch failure on '{boidCompute.name}'. {exception.Message}");
+                DisableComputeDispatch("Origin-shift dispatch failure.");
             }
         }
 

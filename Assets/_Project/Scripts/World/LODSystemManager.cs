@@ -27,6 +27,7 @@
 //   • Unity Jobs System — Burst-compiled distance jobs
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Unity.Jobs;
@@ -659,7 +660,10 @@ namespace Hecton8.World
             if (impostorSystem == null)
                 return;
 
-            impostorSystem.RegisterImpostorCandidate(lodGroup.gameObject, lodGroup);
+            if (ShouldUseDistantGeologyImpostorCandidate(lodGroup))
+                impostorSystem.RegisterDistantGeologyImpostorCandidate(lodGroup.gameObject, lodGroup);
+            else
+                impostorSystem.RegisterImpostorCandidate(lodGroup.gameObject, lodGroup);
         }
 
         private void TryUnregisterImpostorCandidate(LODGroup lodGroup)
@@ -699,6 +703,56 @@ namespace Hecton8.World
                 return false;
 
             return lodGroup.gameObject.activeInHierarchy;
+        }
+
+        private static bool ShouldUseDistantGeologyImpostorCandidate(LODGroup lodGroup)
+        {
+            if (lodGroup == null || lodGroup.size < 8f)
+                return false;
+
+            GameObject owner = lodGroup.gameObject;
+            if (ContainsGeologyMarker(owner.name))
+                return true;
+
+            LOD[] lods = lodGroup.GetLODs();
+            for (int lodIndex = 0; lodIndex < lods.Length; lodIndex++)
+            {
+                Renderer[] renderers = lods[lodIndex].renderers;
+                if (renderers == null)
+                    continue;
+
+                for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+                {
+                    Renderer renderer = renderers[rendererIndex];
+                    if (renderer == null)
+                        continue;
+
+                    Material material = renderer.sharedMaterial;
+                    if (material == null)
+                        continue;
+
+                    Shader shader = material.shader;
+                    if ((shader != null && ContainsGeologyMarker(shader.name)) ||
+                        ContainsGeologyMarker(material.name))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static bool ContainsGeologyMarker(string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return false;
+
+            return value.IndexOf("AbyssalVoxelRock", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("Geology", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("Mountain", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("Cliff", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf("Rock", StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private void CleanupNullRegistrations()

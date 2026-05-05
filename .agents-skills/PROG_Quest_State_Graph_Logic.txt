@@ -91,32 +91,27 @@ FlagLUT : NativeHashMap<uint, uint>   // key=FNV hash, value=FlagID
 
 ---
 
-## [DATA-3] RING BUFFER — TRANSITION HISTORY
+## [DATA-3] COLD DEVELOPMENT AUDIT LOG
 
-Purpose: Rollback, anti-deadlock revert, debug replay. Zero alloc.
+Purpose: keep the hot quest state to the current 320 packed words only.
+Runtime rollback/debug replay snapshots are forbidden.
 
 ```
-struct TransitionRecord
-    timestamp   : double   // frameContext.timeAsDouble, no float precision loss
-    fromFlagID  : uint
-    toFlagID    : uint
-    eventType   : ushort   // EventBus enum cast to ushort
-    reserved    : ushort   // padding, future use
+Runtime state:
+    flags : NativeArray<uint>[320]
+    version : uint
+    checksum : uint
 
-RING_CAPACITY = 256         // 256 × 12 bytes = 3072 bytes
-head          : uint        // atomic increment
-buffer        : NativeArray<TransitionRecord>[256]
+Development audit:
+    "[{Time}] Quest {ID} -> {State}\n"
+    plain text append
+    DEVELOPMENT_BUILD only
 ```
 
-Write:
-```
-idx = Interlocked.Increment(ref head) & 0xFF  // mod 256, lock-free
-// [FORBID] Managed static calls inside Burst.
-buffer[idx].timestamp = frameContext.timeAsDouble;
-buffer[idx] = new TransitionRecord(...)
-```
-
-Read last N: iterate `(head - N) & 0xFF` to `head & 0xFF`.
+[FORBID] `NativeArray<QuestTransitionHistoryEntry>`.
+[FORBID] `NativeArray<uint>` slabs sized as `historyCapacity * 320`.
+[FORBID] Restoring quest state from transition history.
+[REQ] Save/load persists only the current 320 packed state words and header.
 
 ---
 
@@ -189,7 +184,7 @@ Burst auto-vectorizes `uint` array comparison → 4-wide SIMD on MX350 CPU.
    5b. Execute O(1) gate check (MATH-1)
    5c. If PASS: SetFlag(completionFlagID), emit QuestTransitionEvent
    5d. If FAIL: no-op, no allocation, no branch explosion
-6. Write TransitionRecord to ring buffer
+6. Development build only: append a short text audit line outside Burst
 7. Increment version
 ```
 
@@ -247,7 +242,7 @@ Registration: boot-time only. Hot path: zero allocation, function pointer call.
 ### Signal Flow Guard
 
 ```
-if activeSignalDepth > 4: DROP signal, log to ring buffer, increment lostSignalCount
+if activeSignalDepth > 4: DROP signal, increment lostSignalCount
 // Prevents re-entrant cascade from destroying phase gates
 ```
 
@@ -274,7 +269,7 @@ EntityDestroyedEvent fires:
 5. SetFlag(QuestStateFlags, node.revertFlagID)       // trigger respawn gate
 6. SetFlag(DeadlockFlags, entityHash)                // mark revert active
 7. Emit QuestRevertEvent(node.nodeID, itemFlagID)    // spawner listens
-8. Write TransitionRecord: type=REVERT
+8. Development build only: append text audit line type=REVERT
 9. Decrement version? NO — version still increments (monotonic)
    checksum update: XOR cleared bits back
 ```
@@ -360,8 +355,8 @@ if savedVersion < currentSchemaVersion:
 ```
 - Max active quest nodes evaluated per signal: 16
 - EventBus dispatch: synchronous, same frame
-- Ring buffer: 128 entries (not 256)
-- No TransitionHistory playback at runtime (debug-only stripped)
+- No quest transition ring buffer
+- No TransitionHistory playback at runtime
 - Serialization: async job on worker thread, no main thread stall
 ```
 
@@ -369,7 +364,7 @@ if savedVersion < currentSchemaVersion:
 
 ```
 - Max active quest nodes: 64
-- TransitionHistory: 256 entries, lightweight debug overlay
+- No quest transition ring buffer
 - Checksum validated every 10 saves (not every save)
 - Migration table active
 ```
@@ -378,7 +373,7 @@ if savedVersion < currentSchemaVersion:
 
 ```
 - Max active quest nodes: 256
-- Full TransitionHistory playback for developer telemetry
+- Developer telemetry uses explicit profiling/audit channels, not quest snapshots
 - Checksum every save + background integrity scan job
 - Redundant save: write to slot A, verify, then slot B
 - Event signal profiling: NativeArray<SignalTimingRecord> for perf analysis
@@ -413,7 +408,7 @@ version overflow (uint max):
 
 checksum mismatch on load:
     → Do NOT crash. Mark QuestStateBlock.integrity = DEGRADED
-    → Emit CorruptionEvent, load last known-good snapshot from ring buffer
+    → Emit CorruptionEvent and fall back to save-system backup slot or reset
 
 Circular quest dependency (A requires B, B requires A):
     → Detected at build-time via topological sort of QuestNodeDescriptors

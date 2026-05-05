@@ -37,27 +37,21 @@ namespace Hecton8.SaveSystem
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
         private static readonly long LoadApplyFrameBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 250L);
-        private const float IntegrityScanIntervalSeconds = 10f;
-        private const float IndexedDefragCheckIntervalSeconds = 5f;
-        private const float PredictiveIndexedPagingLookaheadSeconds = 20f;
-        private const float PredictiveIndexedPagingCheckIntervalSeconds = 0.5f;
-        private const float PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond = 0.5f;
-        private const float CompressionFastModeFrameTimeThresholdSeconds = 0.014f;
         private const float SafeAupSnapSphereRadiusMeters = 0.45f;
         private const float SafeAupSnapCastStartHeightMeters = 12f;
         private const float SafeAupSnapCastDistanceMeters = 96f;
         private const float SafeAupSnapGroundPaddingMeters = 0.28f;
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
+        private const int SafeAupSnapHitCapacity = 8;
         private const string EmergencyIntegrityBackupSuffix = "_integrity_emergency";
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: SECTOR CORRUPTION DETECTED. TERRAIN RE-INITIALIZED.";
+        private const string GeologicalAnomalyDetectedMessage = "Geological Anomaly Detected";
         private const int MaxRegisteredSaveables = 256;
         private const string NativeMemoryOwner = nameof(SaveManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const NativeAllocationLifetime NativeTransientMemoryLifetime = NativeAllocationLifetime.TransientArena;
-        private static readonly uint _predictiveIndexedSectorPrewarmFailedWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.PredictiveIndexedSectorPrewarmFailed"));
-        private static readonly uint _predictiveIndexedSectorPrewarmBackupWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.PredictiveIndexedSectorPrewarmBackup"));
-        private static readonly uint _predictiveIndexedSectorPrewarmExceptionWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.PredictiveIndexedSectorPrewarmException"));
-        private static readonly uint _predictiveIndexedSectorPrewarmContextHash = unchecked((uint)Hecton.Localization.LocHash.Compute("Save.PredictiveIndexedSectorPrewarm"));
+        // COLD ALLOC: RaycastHit[8] - nonalloc safe-load AUP ground snap query buffer - owner: SaveManager
+        private static readonly RaycastHit[] s_safeAupSnapHits = new RaycastHit[SafeAupSnapHitCapacity];
 
         // ══════════════════════════════════════════════════════════
         //  SAVE STATE
@@ -129,31 +123,13 @@ namespace Hecton8.SaveSystem
 
         private NativeArray<byte> _savePayloadBuffer;
         private NativeArray<byte> _compressedSaveBuffer;
-        private NativeArray<byte> _integrityPayloadMirror;
-        private NativeArray<ulong> _integrityScanResult;
-        private NativeArray<byte> _pendingIntegrityPayloadSource;
-        private JobHandle _integrityScanHandle;
         private ulong _expectedIntegrityPayloadHash64;
-        private ulong _pendingExpectedIntegrityPayloadHash64;
-        private float _nextIntegrityScanTime;
         private int _integrityPayloadLength;
-        private int _pendingIntegrityPayloadLength;
-        private bool _integrityScanScheduled;
-        private bool _pendingIntegrityPayloadStage;
         private bool _updatableRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
-        private bool _emergencyBackupScheduled;
-        private bool _indexedDefragInFlight;
-        private bool _predictiveIndexedPagingInFlight;
         private LoadingScreenController _cachedLoadingScreenController;
         private string _integritySlotName;
-        private string _pendingIntegritySlotName;
-        private string _activeIndexedSavePath;
-        private float _nextIndexedDefragCheckTime;
-        private float _nextPredictiveIndexedPagingCheckTime;
-        private int _activeIndexedSaveChunkSizeMeters = SaveBinaryStorage.DefaultIndexedPersistentWorldChunkSizeMeters;
-        private long _lastPredictiveIndexedPagedSectorHash = long.MinValue;
 
         private sealed class MemoryCorruptionException : Exception
         {
@@ -179,26 +155,6 @@ namespace Hecton8.SaveSystem
             Manual = 0,
             Auto,
             Quick
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private unsafe struct IntegrityScanJob : IJob
-        {
-            [ReadOnly] public NativeArray<byte> PayloadBytes;
-            public NativeArray<ulong> ResultHash64;
-
-            public void Execute()
-            {
-                if (!PayloadBytes.IsCreated || PayloadBytes.Length <= 0 || !ResultHash64.IsCreated || ResultHash64.Length <= 0)
-                {
-                    if (ResultHash64.IsCreated && ResultHash64.Length > 0)
-                        ResultHash64[0] = 0UL;
-                    return;
-                }
-
-                void* payloadPtr = NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(PayloadBytes);
-                ResultHash64[0] = SaveBinaryStorage.Hash64(payloadPtr, PayloadBytes.Length);
-            }
         }
 
         private int GetBackupRetentionCount(string slotName)
@@ -366,425 +322,38 @@ namespace Hecton8.SaveSystem
                 _compressedSaveBuffer = new NativeArray<byte>(SaveBinaryStorage.MaxCompressedPayloadBytes, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
             }
 
-            if (!_integrityScanResult.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<ulong>[1] - background save integrity hash output - owner: SaveManager
-                _integrityScanResult = new NativeArray<ulong>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            }
-
             RegisterNativeMemorySentinel();
         }
 
         public void Tick(float deltaTime)
         {
-            SaveBinaryStorage.SetRuntimeLz4FastMode(deltaTime > CompressionFastModeFrameTimeThresholdSeconds);
-
-            if (!_isBusy &&
-                !_integrityScanScheduled &&
-                !_indexedDefragInFlight &&
-                !_predictiveIndexedPagingInFlight &&
-                !string.IsNullOrEmpty(_activeIndexedSavePath) &&
-                Time.unscaledTime >= _nextIndexedDefragCheckTime)
-            {
-                _indexedDefragInFlight = true;
-                _nextIndexedDefragCheckTime = Time.unscaledTime + IndexedDefragCheckIntervalSeconds;
-                _ = RunIndexedSaveDefragAsync(_activeIndexedSavePath);
-                return;
-            }
-
-            TrySchedulePredictiveIndexedSectorPrewarm();
-
-            if (_isBusy ||
-                _integrityScanScheduled ||
-                !_integrityPayloadMirror.IsCreated ||
-                _integrityPayloadLength <= 0 ||
-                Time.unscaledTime < _nextIntegrityScanTime)
-            {
-                return;
-            }
-
-            IntegrityScanJob job = new IntegrityScanJob
-            {
-                PayloadBytes = _integrityPayloadMirror.GetSubArray(0, _integrityPayloadLength),
-                ResultHash64 = _integrityScanResult
-            };
-            _integrityScanHandle = job.Schedule();
-            _integrityScanScheduled = true;
-            _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
         }
 
         public void LateFrameTick()
         {
-            if (_integrityScanScheduled)
-            {
-                if (!_integrityScanHandle.IsCompleted)
-                    return;
-
-                if (!DispatcherJobSwap.TryComplete(ref _integrityScanHandle, forceComplete: false))
-                    return;
-
-                _integrityScanScheduled = false;
-                EvaluateIntegrityScanResult();
-            }
-
-            if (_pendingIntegrityPayloadStage)
-                FlushPendingIntegrityPayloadStage();
         }
 
-        private unsafe void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
+        private void StageIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
         {
             if (!payloadBytes.IsCreated || payloadLength <= 0 || payloadLength > payloadBytes.Length)
                 return;
 
-            if (_integrityScanScheduled)
-            {
-                if (!_integrityScanHandle.IsCompleted)
-                {
-                    QueuePendingIntegrityPayloadStage(payloadBytes, payloadLength, expectedHash64, slotName);
-                    return;
-                }
-
-                if (!DispatcherJobSwap.TryComplete(ref _integrityScanHandle, forceComplete: false))
-                {
-                    QueuePendingIntegrityPayloadStage(payloadBytes, payloadLength, expectedHash64, slotName);
-                    return;
-                }
-
-                _integrityScanScheduled = false;
-            }
-
-            CopyIntegrityPayload(payloadBytes, payloadLength, expectedHash64, slotName);
-        }
-
-        private void QueuePendingIntegrityPayloadStage(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
-        {
-            _pendingIntegrityPayloadSource = payloadBytes;
-            _pendingIntegrityPayloadLength = payloadLength;
-            _pendingExpectedIntegrityPayloadHash64 = expectedHash64;
-            _pendingIntegritySlotName = slotName ?? string.Empty;
-            _pendingIntegrityPayloadStage = true;
-        }
-
-        private void FlushPendingIntegrityPayloadStage()
-        {
-            if (!_pendingIntegrityPayloadSource.IsCreated ||
-                _pendingIntegrityPayloadLength <= 0 ||
-                _pendingIntegrityPayloadLength > _pendingIntegrityPayloadSource.Length)
-            {
-                ClearPendingIntegrityPayloadStage();
-                return;
-            }
-
-            CopyIntegrityPayload(
-                _pendingIntegrityPayloadSource,
-                _pendingIntegrityPayloadLength,
-                _pendingExpectedIntegrityPayloadHash64,
-                _pendingIntegritySlotName);
-
-            ClearPendingIntegrityPayloadStage();
-        }
-
-        private void ClearPendingIntegrityPayloadStage()
-        {
-            _pendingIntegrityPayloadSource = default;
-            _pendingIntegrityPayloadLength = 0;
-            _pendingExpectedIntegrityPayloadHash64 = 0UL;
-            _pendingIntegritySlotName = string.Empty;
-            _pendingIntegrityPayloadStage = false;
-        }
-
-        private unsafe void CopyIntegrityPayload(NativeArray<byte> payloadBytes, int payloadLength, ulong expectedHash64, string slotName)
-        {
-            EnsureIntegrityMirrorCapacity(payloadLength);
-            void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(payloadBytes);
-            void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_integrityPayloadMirror);
-            if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, _integrityPayloadMirror.Length, sourcePtr, payloadLength))
-                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveManager));
             _integrityPayloadLength = payloadLength;
             _expectedIntegrityPayloadHash64 = expectedHash64;
             _integritySlotName = slotName ?? string.Empty;
-            _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
-        }
-
-        private void EnsureIntegrityMirrorCapacity(int requiredLength)
-        {
-            if (_integrityPayloadMirror.IsCreated && _integrityPayloadMirror.Length >= requiredLength)
-                return;
-
-            if (_integrityPayloadMirror.IsCreated)
-                DisposeNativeArray(ref _integrityPayloadMirror);
-
-            // COLD ALLOC: NativeArray<byte>[requiredLength] - resident decompressed save payload mirror for integrity scans - owner: SaveManager
-            _integrityPayloadMirror = new NativeArray<byte>(requiredLength, Allocator.Persistent, NativeArrayOptions.UninitializedMemory);
-            NativeMemorySentinel.RegisterNativeArray(_integrityPayloadMirror, NativeMemoryOwner, nameof(_integrityPayloadMirror), NativeMemoryLifetime);
-        }
-
-        private void EvaluateIntegrityScanResult()
-        {
-            if (!_integrityScanResult.IsCreated || _integrityScanResult.Length <= 0)
-                return;
-
-            ulong computedHash64 = _integrityScanResult[0];
-            if (computedHash64 == _expectedIntegrityPayloadHash64)
-                return;
-
-            string slotName = string.IsNullOrEmpty(_integritySlotName) ? "active" : _integritySlotName;
-            string reason = $"Active save integrity drift detected for '{slotName}'. Expected XXH3-64 {_expectedIntegrityPayloadHash64:X16}, got {computedHash64:X16}.";
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogError($"[SaveManager] {reason}");
-#endif
-            SaveEvents.RaiseEmergencyBackupRestoreRequested(slotName);
-            SaveEvents.RaiseSaveFailed(slotName, reason);
-            ScheduleEmergencyBackup(slotName);
-            _nextIntegrityScanTime = Time.unscaledTime + IntegrityScanIntervalSeconds;
-        }
-
-        private void ScheduleEmergencyBackup(string slotName)
-        {
-            if (_emergencyBackupScheduled || string.IsNullOrEmpty(slotName))
-                return;
-
-            _emergencyBackupScheduled = true;
-            _ = RunEmergencyIntegrityBackupAsync(slotName);
-        }
-
-        private async Awaitable RunEmergencyIntegrityBackupAsync(string slotName)
-        {
-            string emergencySlotName = $"{slotName}{EmergencyIntegrityBackupSuffix}";
-            try
-            {
-                await SaveGameAsync(emergencySlotName);
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError($"[SaveManager] Emergency integrity backup failed for '{emergencySlotName}': {ex.Message}");
-            }
-            finally
-            {
-                _emergencyBackupScheduled = false;
-            }
-        }
-
-        private void TrySchedulePredictiveIndexedSectorPrewarm()
-        {
-            if (_isBusy ||
-                _indexedDefragInFlight ||
-                _predictiveIndexedPagingInFlight ||
-                string.IsNullOrEmpty(_activeIndexedSavePath) ||
-                Time.unscaledTime < _nextPredictiveIndexedPagingCheckTime)
-            {
-                return;
-            }
-
-            _nextPredictiveIndexedPagingCheckTime = Time.unscaledTime + PredictiveIndexedPagingCheckIntervalSeconds;
-            if (!TryResolvePredictiveIndexedPagingPlayer(out HectonPlayerMovement playerMovement, out Transform playerTransform))
-                return;
-
-            Vector3 currentRuntimePosition = playerTransform.position;
-            Vector3 playerVelocity = playerMovement.CurrentWorldVelocity;
-            if (!SavePredictivePagingMath.IsFinite(currentRuntimePosition) ||
-                !SavePredictivePagingMath.IsFinite(playerVelocity))
-                return;
-
-            float planarSpeedSq = (playerVelocity.x * playerVelocity.x) + (playerVelocity.z * playerVelocity.z);
-            float minPlanarSpeedSq = PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond * PredictiveIndexedPagingMinimumPlanarSpeedMetersPerSecond;
-            if (planarSpeedSq < minPlanarSpeedSq)
-                return;
-
-            int chunkSizeMeters = math.max(1, _activeIndexedSaveChunkSizeMeters);
-            if (!SavePredictivePagingMath.TryComputeIndexedSectorProjection(
-                    currentRuntimePosition,
-                    playerVelocity,
-                    PredictiveIndexedPagingLookaheadSeconds,
-                    chunkSizeMeters,
-                    out PredictiveIndexedPagingProjection projection))
-            {
-                return;
-            }
-
-            bool projectedChunkChanged = !math.all(projection.CurrentChunkId == projection.ProjectedChunkId);
-            if ((!projectedChunkChanged && projection.ProjectedSectorHash == projection.CurrentSectorHash) ||
-                projection.ProjectedSectorHash == _lastPredictiveIndexedPagedSectorHash)
-            {
-                return;
-            }
-
-            _lastPredictiveIndexedPagedSectorHash = projection.ProjectedSectorHash;
-            _predictiveIndexedPagingInFlight = true;
-            _ = RunPredictiveIndexedSectorPrewarmAsync(_activeIndexedSavePath, projection.ProjectedSectorHash);
-        }
-
-        private static bool TryResolvePredictiveIndexedPagingPlayer(out HectonPlayerMovement playerMovement, out Transform playerTransform)
-        {
-            playerMovement = null;
-            playerTransform = null;
-
-            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
-            if (playerContext == null)
-                return false;
-
-            playerMovement = playerContext.PlayerMovement;
-            playerTransform = playerContext.PlayerTransform;
-            return playerMovement != null && playerTransform != null;
-        }
-
-        private async Awaitable RunPredictiveIndexedSectorPrewarmAsync(string absolutePath, long sectorHash)
-        {
-            bool sectorExists = false;
-            bool usedBackup = false;
-            string error = string.Empty;
-            try
-            {
-                await Awaitable.BackgroundThreadAsync();
-                bool prewarmSucceeded = SaveBinaryStorage.TryPrewarmIndexedPersistentWorldSector(
-                    absolutePath,
-                    sectorHash,
-                    out sectorExists,
-                    out usedBackup,
-                    out error);
-                await Awaitable.MainThreadAsync();
-
-                if (!prewarmSucceeded)
-                {
-                    PublishPredictiveIndexedSectorPrewarmWarning(_predictiveIndexedSectorPrewarmFailedWarningHash, sectorHash, 1f);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm failed for 0x{sectorHash:X16}: {error}");
-#endif
-                }
-                else if (usedBackup)
-                {
-                    PublishPredictiveIndexedSectorPrewarmWarning(_predictiveIndexedSectorPrewarmBackupWarningHash, sectorHash, 1f);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm used .bak for 0x{sectorHash:X16}; primary will promote through CRITICAL_RECOVERY on load.");
-#endif
-                }
-                else if (verboseLogging && sectorExists)
-                {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[SaveManager] Predictive indexed sector prewarmed 0x{sectorHash:X16}.");
-#endif
-                }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                await Awaitable.MainThreadAsync();
-                PublishPredictiveIndexedSectorPrewarmWarning(_predictiveIndexedSectorPrewarmExceptionWarningHash, sectorHash, 1f);
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[SaveManager] Predictive indexed sector prewarm threw for 0x{sectorHash:X16}: {ex.Message}");
-#endif
-            }
-            finally
-            {
-                await Awaitable.MainThreadAsync();
-                _predictiveIndexedPagingInFlight = false;
-                _nextPredictiveIndexedPagingCheckTime = Time.unscaledTime + PredictiveIndexedPagingCheckIntervalSeconds;
-            }
-        }
-
-        private static void PublishPredictiveIndexedSectorPrewarmWarning(uint warningHash, long sectorHash, float scalarValue)
-        {
-            unchecked
-            {
-                ulong packedSectorHash = (ulong)sectorHash;
-                uint contextHash = _predictiveIndexedSectorPrewarmContextHash ^ (uint)packedSectorHash ^ (uint)(packedSectorHash >> 32);
-                GlobalTelemetryBus.PublishPerformanceWarning(warningHash, contextHash, scalarValue);
-            }
-        }
-
-        private async Awaitable WaitForIndexedSaveMaintenanceIdleAsync()
-        {
-            while (_indexedDefragInFlight || _predictiveIndexedPagingInFlight)
-                await Awaitable.NextFrameAsync(cancellationToken: destroyCancellationToken);
-        }
-
-        private async Awaitable RunIndexedSaveDefragAsync(string absolutePath)
-        {
-            long reclaimedBytes = 0L;
-            string error = string.Empty;
-            try
-            {
-                await Awaitable.BackgroundThreadAsync();
-                SaveBinaryStorage.TryDefragmentIndexedPersistentWorldSectors(
-                    absolutePath,
-                    SaveBinaryStorage.IndexedSectorDefragSlackThresholdBytes,
-                    out reclaimedBytes,
-                    out error);
-                await Awaitable.MainThreadAsync();
-
-                if (!string.IsNullOrEmpty(error))
-                {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.LogError($"[SaveManager] Indexed save defrag failed for '{absolutePath}': {error}");
-#endif
-                }
-                else if (verboseLogging && reclaimedBytes > 0L)
-                {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[SaveManager] Indexed save defrag reclaimed {reclaimedBytes} bytes for '{absolutePath}'.");
-#endif
-                }
-            }
-            catch (OperationCanceledException)
-            {
-            }
-            catch (Exception ex)
-            {
-                await Awaitable.MainThreadAsync();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError($"[SaveManager] Indexed save defrag threw for '{absolutePath}': {ex.Message}");
-#endif
-            }
-            finally
-            {
-                await Awaitable.MainThreadAsync();
-                _indexedDefragInFlight = false;
-                _nextIndexedDefragCheckTime = Time.unscaledTime + IndexedDefragCheckIntervalSeconds;
-            }
-        }
-
-        private void UpdateActiveIndexedSavePath(string absolutePath)
-        {
-            _activeIndexedSavePath = string.Empty;
-            _activeIndexedSaveChunkSizeMeters = SaveBinaryStorage.DefaultIndexedPersistentWorldChunkSizeMeters;
-            _lastPredictiveIndexedPagedSectorHash = long.MinValue;
-            _nextPredictiveIndexedPagingCheckTime = 0f;
-            if (string.IsNullOrEmpty(absolutePath) || !File.Exists(absolutePath))
-                return;
-
-            _indexedSectorDirectoryScratch.Clear();
-            if (!SaveBinaryStorage.TryReadIndexedPersistentWorldDirectory(
-                    absolutePath,
-                    _indexedSectorDirectoryScratch,
-                    out _activeIndexedSaveChunkSizeMeters,
-                    out string directoryError))
-            {
-                ReportIndexedDirectoryReadFailure(absolutePath, directoryError);
-                return;
-            }
-
-            _activeIndexedSavePath = absolutePath;
-            _nextIndexedDefragCheckTime = Time.unscaledTime + IndexedDefragCheckIntervalSeconds;
         }
 
         private void DisposeIntegrityResources()
         {
-            DisposeNativeArray(ref _integrityPayloadMirror, _integrityScanHandle, _integrityScanScheduled);
-            DisposeNativeArray(ref _integrityScanResult, _integrityScanHandle, _integrityScanScheduled);
-
-            _integrityScanScheduled = false;
             _integrityPayloadLength = 0;
             _expectedIntegrityPayloadHash64 = 0UL;
-            ClearPendingIntegrityPayloadStage();
+            _integritySlotName = string.Empty;
         }
 
         private void RegisterNativeMemorySentinel()
         {
             NativeMemorySentinel.RegisterNativeArray(_savePayloadBuffer, NativeMemoryOwner, nameof(_savePayloadBuffer), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_compressedSaveBuffer, NativeMemoryOwner, nameof(_compressedSaveBuffer), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_integrityScanResult, NativeMemoryOwner, nameof(_integrityScanResult), NativeMemoryLifetime);
         }
 
         private static void RegisterVoxelDeltaSnapshot(NativeArray<byte> snapshot, string label)
@@ -992,7 +561,6 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                await WaitForIndexedSaveMaintenanceIdleAsync();
                 SortRegistryIfDirty(SavePriorityComparer);
                 for (int i = 0; i < _saveableCount; i++)
                 {
@@ -1048,7 +616,9 @@ namespace Hecton8.SaveSystem
                     Timestamp = saveTimestampTicks,
                     PlayTimeSeconds = (float)playTime,
                     SceneName = UnityEngine.SceneManagement.SceneManager.GetActiveScene().name,
-                    PlayerPosition = data.playerStats.GetPosition()
+                    PlayerPosition = data.playerStats.GetPosition(),
+                    WorldSeed = data.ecosystemState.worldSeed,
+                    WorldGenerationVersionId = data.ecosystemState.worldGenerationVersionId
                 };
 
                 snapshotTimer.Stop();
@@ -1081,7 +651,6 @@ namespace Hecton8.SaveSystem
 
                 await Awaitable.MainThreadAsync();
                 StageIntegrityPayload(_savePayloadBuffer, rawPayloadLength, payloadHash64, slotName);
-                UpdateActiveIndexedSavePath(GetPersistentAbsolutePath(GetPrimarySaveFilePath(slotName)));
                 int backupRetention = GetBackupRetentionCount(slotName);
                 SaveSlotIntegrityState savedIntegrity = backupRetention > 0
                     ? SaveSlotIntegrityState.HealthyWithBackup
@@ -1132,6 +701,7 @@ namespace Hecton8.SaveSystem
                 return;
 
             data.ecosystemState.worldSeed = seedProvider.RuntimeWorldSeed;
+            data.ecosystemState.worldGenerationVersionId = math.max(0, seedProvider.RuntimeWorldGenerationVersionId);
         }
 
         private static void ValidateRuntimeWorldSeed(SaveData data)
@@ -1140,7 +710,8 @@ namespace Hecton8.SaveSystem
                 return;
 
             int savedSeed = data.ecosystemState.worldSeed;
-            if (savedSeed == 0)
+            int savedWorldGenerationVersion = data.ecosystemState.worldGenerationVersionId;
+            if (savedSeed == 0 && savedWorldGenerationVersion == 0)
                 return;
 
             IWorldSeedProvider seedProvider = GlobalRegistry.WorldSeedProvider;
@@ -1148,13 +719,21 @@ namespace Hecton8.SaveSystem
                 return;
 
             int runtimeSeed = seedProvider.RuntimeWorldSeed;
-            if (runtimeSeed == 0 || runtimeSeed == savedSeed)
+            int runtimeWorldGenerationVersion = math.max(0, seedProvider.RuntimeWorldGenerationVersionId);
+            bool seedMismatch = savedSeed != 0 && runtimeSeed != 0 && savedSeed != runtimeSeed;
+            bool versionMismatch = savedWorldGenerationVersion > 0 &&
+                                   savedWorldGenerationVersion != runtimeWorldGenerationVersion;
+            if (!seedMismatch && !versionMismatch)
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.LogWarning($"[SaveManager] Geological Anomaly: saved world seed {savedSeed} != runtime world seed {runtimeSeed}.");
+            Debug.LogWarning(
+                "[SaveManager] Geological Anomaly: saved world seed " + savedSeed +
+                " / version " + savedWorldGenerationVersion +
+                " != runtime world seed " + runtimeSeed +
+                " / version " + runtimeWorldGenerationVersion + ".");
 #endif
-            NotificationEvents.PushWarning("GEOLOGICAL ANOMALY");
+            NotificationEvents.PushWarning(GeologicalAnomalyDetectedMessage);
         }
 
         private void ReportLoadPipelineStage(LoadingPipelineStage stage, float progress01)
@@ -1227,17 +806,17 @@ namespace Hecton8.SaveSystem
                 resolvedRuntime3.y,
                 resolvedRuntime3.z);
             Vector3 castOrigin = resolvedRuntimePosition + (Vector3.up * SafeAupSnapCastStartHeightMeters);
-            if (!UnityEngine.Physics.SphereCast(
-                    castOrigin,
-                    SafeAupSnapSphereRadiusMeters,
-                    Vector3.down,
-                    out RaycastHit hit,
-                    SafeAupSnapCastDistanceMeters,
-                    UnityEngine.Physics.DefaultRaycastLayers,
-                    QueryTriggerInteraction.Ignore))
-            {
+
+            int hitCount = UnityEngine.Physics.SphereCastNonAlloc(
+                castOrigin,
+                SafeAupSnapSphereRadiusMeters,
+                Vector3.down,
+                s_safeAupSnapHits,
+                SafeAupSnapCastDistanceMeters,
+                UnityEngine.Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            if (hitCount <= 0 || !TrySelectHighestSafeAupSnapHit(hitCount, out RaycastHit hit))
                 return false;
-            }
 
             float safeY = hit.point.y + SafeAupSnapGroundPaddingMeters;
             if (safeY <= resolvedRuntimePosition.y + SafeAupSnapMinimumLiftMeters)
@@ -1267,6 +846,29 @@ namespace Hecton8.SaveSystem
             }
 
             return true;
+        }
+
+        private static bool TrySelectHighestSafeAupSnapHit(int hitCount, out RaycastHit selectedHit)
+        {
+            selectedHit = default;
+            int safeCount = Mathf.Min(hitCount, s_safeAupSnapHits.Length);
+            bool hasHit = false;
+            float highestY = float.NegativeInfinity;
+            for (int i = 0; i < safeCount; i++)
+            {
+                RaycastHit candidate = s_safeAupSnapHits[i];
+                if (candidate.collider == null || !float.IsFinite(candidate.point.y))
+                    continue;
+
+                if (hasHit && candidate.point.y <= highestY)
+                    continue;
+
+                highestY = candidate.point.y;
+                selectedHit = candidate;
+                hasHit = true;
+            }
+
+            return hasHit;
         }
 
         private static void TeleportLoadedPlayer(
@@ -1365,7 +967,6 @@ namespace Hecton8.SaveSystem
 
             try
             {
-                await WaitForIndexedSaveMaintenanceIdleAsync();
                 SaveBinaryStorage.ConsumeIndexedSectorQuarantineFlag();
                 await Awaitable.BackgroundThreadAsync();
                 SaveData data = null;
@@ -1557,14 +1158,10 @@ namespace Hecton8.SaveSystem
                             out string loadedDirectoryError))
                     {
                         persistentWorldRegistryForLoad.RestoreFromIndexedSave(loadedAbsolutePath);
-
-                        string primaryAbsolutePath = GetPersistentAbsolutePath(GetPrimarySaveFilePath(slotName));
-                        UpdateActiveIndexedSavePath(FileExists(GetPrimarySaveFilePath(slotName)) ? primaryAbsolutePath : loadedAbsolutePath);
                     }
                     else
                     {
                         ReportIndexedDirectoryReadFailure(loadedAbsolutePath, loadedDirectoryError);
-                        UpdateActiveIndexedSavePath(string.Empty);
                         persistentWorldRegistryForLoad.DisableIndexedSavePaging();
                         persistentWorldRegistryForLoad.RestoreFromLoadedRecords(loadedWorldDeltas);
                     }
@@ -1592,7 +1189,9 @@ namespace Hecton8.SaveSystem
                         Timestamp = DateTime.UtcNow.Ticks,
                         PlayTimeSeconds = (float)data.totalPlayTime,
                         SceneName = string.IsNullOrEmpty(activeSceneName) ? "Unknown" : activeSceneName,
-                        PlayerPosition = playerPosition
+                        PlayerPosition = playerPosition,
+                        WorldSeed = data.ecosystemState.worldSeed,
+                        WorldGenerationVersionId = data.ecosystemState.worldGenerationVersionId
                     };
                     repairedPrimaryArtifacts = SelfRepairPrimaryArtifacts(slotName, data, repairMetadata, loadedQuestHeader, loadedQuestStateWords, loadedWorldDeltas, loadedEcosystemSectors, loadedVoxelDeltaSnapshot);
                     await Awaitable.MainThreadAsync();
@@ -2699,6 +2298,8 @@ namespace Hecton8.SaveSystem
                 PlayTimeSeconds = playTimeSeconds,
                 SceneName = sceneName,
                 PlayerPosition = playerPosition,
+                WorldSeed = data != null ? data.ecosystemState.worldSeed : 0,
+                WorldGenerationVersionId = data != null ? data.ecosystemState.worldGenerationVersionId : 0,
                 Checksum = source != null ? source.Checksum : string.Empty
             };
         }

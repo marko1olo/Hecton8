@@ -322,7 +322,7 @@ namespace Hecton8.Dev
             switch (corruptionMode)
             {
                 case RecoveryCorruptionMode.ProtectedSectorChecksum:
-                    return SaveBinaryStorage.TryCorruptFirstIndexedSectorProtectedBlockForSmoke(
+                    return SaveBinaryStorage.TryCorruptFirstIndexedSectorBlockForSmoke(
                         absolutePath,
                         out sectorHash,
                         out error);

@@ -1,0 +1,57 @@
+#pragma kernel UpdatePhotophobiaField
+
+Texture2D<float> _HectonPhotophobiaSourceTex;
+RWTexture2D<float> _HectonPhotophobiaTargetTex;
+
+float4 _HectonPhotophobiaParams;           // x=dt, y=recover rate, z=attack rate, w=flashlight active
+float4 _HectonPhotophobiaFieldOriginScale; // xyz=field center ws, w=1 / field width meters
+float4 _HectonPhotophobiaCone0;            // xyz=flashlight position ws, w=range meters
+float4 _HectonPhotophobiaCone1;            // xyz=flashlight direction ws, w=outer cone cos
+float4 _HectonPhotophobiaCone2;            // x=inner cone cos, y=1/range, z=strength, w=time
+
+float3 SafeNormalize3(float3 value)
+{
+    float lenSq = dot(value, value);
+    return lenSq > 0.0001 ? value * rsqrt(lenSq) : float3(0.0, 0.0, 1.0);
+}
+
+[numthreads(8, 8, 1)]
+void UpdatePhotophobiaField(uint3 dispatchId : SV_DispatchThreadID)
+{
+    uint width;
+    uint height;
+    _HectonPhotophobiaTargetTex.GetDimensions(width, height);
+    if (dispatchId.x >= width || dispatchId.y >= height)
+        return;
+
+    float previous = saturate(_HectonPhotophobiaSourceTex.Load(int3(dispatchId.xy, 0)).r);
+    float deltaTime = saturate(_HectonPhotophobiaParams.x);
+    float recovered = min(1.0, previous + deltaTime * max(_HectonPhotophobiaParams.y, 0.0));
+
+    float2 textureSize = max(float2((float)width, (float)height), float2(1.0, 1.0));
+    float2 uv = (float2(dispatchId.xy) + 0.5) / textureSize;
+    float fieldWidthMeters = rcp(max(_HectonPhotophobiaFieldOriginScale.w, 0.000001));
+    float2 localMeters = (uv - 0.5) * fieldWidthMeters;
+    float3 samplePositionWS = float3(
+        _HectonPhotophobiaFieldOriginScale.x + localMeters.x,
+        _HectonPhotophobiaCone0.y,
+        _HectonPhotophobiaFieldOriginScale.z + localMeters.y);
+
+    float3 toSample = samplePositionWS - _HectonPhotophobiaCone0.xyz;
+    float distanceMeters = length(toSample);
+    float3 sampleDirection = distanceMeters > 0.0001
+        ? toSample * rcp(distanceMeters)
+        : SafeNormalize3(_HectonPhotophobiaCone1.xyz);
+
+    float innerCos = _HectonPhotophobiaCone2.x;
+    float outerCos = _HectonPhotophobiaCone1.w;
+    float coneDenominator = max(innerCos - outerCos, 0.0001);
+    float coneMask = saturate((dot(SafeNormalize3(_HectonPhotophobiaCone1.xyz), sampleDirection) - outerCos) / coneDenominator);
+    float rangeMask = saturate(1.0 - distanceMeters * max(_HectonPhotophobiaCone2.y, 0.000001));
+    rangeMask *= rangeMask;
+
+    float hit = coneMask * rangeMask * saturate(_HectonPhotophobiaCone2.z) * saturate(_HectonPhotophobiaParams.w);
+    float attacked = max(0.0, recovered - hit * deltaTime * max(_HectonPhotophobiaParams.z, 0.0));
+
+    _HectonPhotophobiaTargetTex[dispatchId.xy] = saturate(attacked);
+}

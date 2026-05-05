@@ -12,6 +12,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
         _InteriorCondensationScale("Interior Condensation Scale", Range(0.05, 2.0)) = 0.42
         _InteriorCondensationRunoff("Interior Condensation Runoff", Range(0.0, 1.0)) = 0.34
         _InteriorCondensationTint("Interior Condensation Tint", Color) = (0.64, 0.76, 0.70, 1)
+        _WaterlineTint("Module Waterline Tint", Color) = (0.10, 0.38, 0.34, 0.32)
         _WaterlineDarken("Module Waterline Darken", Range(0.0, 1.0)) = 0.42
         _WaterlineRefractionStrength("Module Waterline Refraction Strength", Range(0.0, 0.08)) = 0.015
         [HDR] _EmissionColor("Emission", Color) = (0, 0, 0, 1)
@@ -123,6 +124,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 float _InteriorCondensationStrength;
                 float _InteriorCondensationScale;
                 float _InteriorCondensationRunoff;
+                float4 _WaterlineTint;
                 float _WaterlineDarken;
                 float _WaterlineRefractionStrength;
                 float _ParasiteOverlayScale;
@@ -231,21 +233,37 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 }
             }
 
-            void ApplyModuleWaterline(float3 positionWS, half level01, float waterY, inout half3 albedo, inout half smoothness)
+            half ResolveModuleSubmerged01(float3 positionWS, half level01, float waterY)
             {
                 if (level01 <= 0.0001h)
-                    return;
+                    return 0.0h;
 
-                half submerged = (half)smoothstep(0.04, -0.04, positionWS.y - waterY);
-                if (submerged <= 0.0001h)
-                    return;
+                return (half)smoothstep(0.04, -0.04, positionWS.y - waterY);
+            }
+
+            float2 ResolveModuleWaterlineWarp(float3 positionWS, half submerged01)
+            {
+                if (submerged01 <= 0.0001h)
+                    return float2(0.0, 0.0);
 
                 float2 rippleUv = positionWS.xz * 1.9 + _Time.y * float2(0.06, -0.041);
-                half ripple = (half)HectonCoreLitValueNoise2(rippleUv);
-                half refraction = (ripple - 0.5h) * (half)_WaterlineRefractionStrength;
-                half darken = submerged * (half)saturate(_WaterlineDarken);
-                albedo = saturate(albedo * (1.0h - darken * 0.55h) + half3(refraction, refraction, refraction) * submerged);
-                smoothness = lerp(smoothness, 0.88h, saturate(submerged * 0.62h));
+                half rippleX = (half)HectonCoreLitValueNoise2(rippleUv);
+                half rippleY = (half)HectonCoreLitValueNoise2(rippleUv * 1.37 + float2(2.13, -0.71));
+                return float2(rippleX - 0.5h, rippleY - 0.5h) * _WaterlineRefractionStrength * submerged01;
+            }
+
+            void ApplyModuleWaterline(half level01, half submerged01, inout half3 albedo, inout half smoothness)
+            {
+                if (submerged01 <= 0.0001h)
+                    return;
+
+                half floodStrength = saturate(level01 * submerged01);
+                half darken = submerged01 * (half)saturate(_WaterlineDarken);
+                half tintStrength = floodStrength * (half)saturate(_WaterlineTint.a);
+                half3 waterTint = half3(_WaterlineTint.r, _WaterlineTint.g, _WaterlineTint.b);
+                albedo = saturate(albedo * (1.0h - darken * 0.55h));
+                albedo = lerp(albedo, waterTint, tintStrength);
+                smoothness = lerp(smoothness, 0.88h, saturate(submerged01 * 0.62h));
             }
 
             Varyings Vert(Attributes input)
@@ -297,7 +315,13 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv) * _BaseColor;
+                half moduleFloodLevel01;
+                float moduleWaterY;
+                half moduleFlicker01;
+                ResolveModuleAmbience(input.positionWS, moduleFloodLevel01, moduleWaterY, moduleFlicker01);
+                half moduleSubmerged01 = ResolveModuleSubmerged01(input.positionWS, moduleFloodLevel01, moduleWaterY);
+                float2 baseUv = input.uv + ResolveModuleWaterlineWarp(input.positionWS, moduleSubmerged01);
+                half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, baseUv) * _BaseColor;
                 half coverage = 1.0h;
                 #if defined(_ALPHATEST_ON)
                 coverage = saturate((albedoSample.a - _Cutoff) * 14.0h + 0.5h);
@@ -310,11 +334,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half3 albedo = albedoSample.rgb;
                 HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
                 ApplyInteriorCondensation(input.positionWS, normalWS, albedo, smoothness);
-                half moduleFloodLevel01;
-                float moduleWaterY;
-                half moduleFlicker01;
-                ResolveModuleAmbience(input.positionWS, moduleFloodLevel01, moduleWaterY, moduleFlicker01);
-                ApplyModuleWaterline(input.positionWS, moduleFloodLevel01, moduleWaterY, albedo, smoothness);
+                ApplyModuleWaterline(moduleFloodLevel01, moduleSubmerged01, albedo, smoothness);
                 float parasitePulse = 1.0;
                 float thermalGrowthMask = 0.0;
                 float parasiteMask = HectonCoreLitEvaluateParasiteField(input.positionWS, parasitePulse, thermalGrowthMask);

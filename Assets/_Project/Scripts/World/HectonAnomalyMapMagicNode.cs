@@ -73,6 +73,10 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Pillar Prominence")]
         public float pillarProminenceMeters = 35f;
 
+        /// <summary>Minimum descending ridge arms required before a pillar coordinate is exported.</summary>
+        [Den.Tools.GUI.ValAttribute("Pillar Arms")]
+        public int pillarRidgeArms = 3;
+
         /// <summary>Minimum local trough depth before a deep fissure mask cell is exported.</summary>
         [Den.Tools.GUI.ValAttribute("Fissure Depth")]
         public float fissureDepthMeters = 25f;
@@ -80,6 +84,10 @@ namespace MapMagic.Nodes.MatrixGenerators
         /// <summary>Primary biome id packed into fissure influence cells for fog and audio consumers.</summary>
         [Den.Tools.GUI.ValAttribute("Fissure Biome")]
         public int fissurePrimaryBiomeId = 79;
+
+        /// <summary>Maximum pillar anchors per runtime tile that may request deterministic resource binding.</summary>
+        [Den.Tools.GUI.ValAttribute("Pillar Resource Cap")]
+        public int maxRuntimePillarResourceBindings = 64;
 
         /// <summary>Maximum flood cells per candidate. Draft tiles reduce this value.</summary>
         [Den.Tools.GUI.ValAttribute("Max Flood")]
@@ -218,6 +226,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                     CellSizeMeters = cellSizeMeters,
                     OriginAup = new double3(sourceWorldPos.x, sourceWorldPos.y, sourceWorldPos.z),
                     MinimumPillarProminenceMeters = pillarProminenceMeters,
+                    MinimumPillarRidgeArms = pillarRidgeArms,
                     MinimumFissureDepthMeters = fissureDepthMeters,
                     EqualHeightEpsilon = heightEpsilonMeters,
                     FissureInfluencePacked = fissureInfluencePacked
@@ -239,6 +248,13 @@ namespace MapMagic.Nodes.MatrixGenerators
                 CopyMaskToMatrix(fissureMask, fissureMaskMatrix.arr);
                 CopyDeepestPoints(basinRecords, src, resolvedHeightScale, deepestPoints);
                 CopyPillarCoordinates(featureRecords, pillarCoordinates);
+                if (Application.isPlaying)
+                {
+                    HectonAnomalyResourceBinding.TryBindChthonicPillarResources(
+                        featureRecords,
+                        maxRuntimePillarResourceBindings);
+                }
+
                 if (deepestPoints.count == 0)
                     GlobalTelemetryBus.PublishPerformanceWarning(NoBasinWarningHash, AnomalyNodeContextHash, cellCount);
                 data.StoreProduct(brineMaskOut, brineMask);

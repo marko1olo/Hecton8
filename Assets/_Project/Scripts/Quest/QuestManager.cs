@@ -383,24 +383,6 @@ namespace Hecton8.Quest
             _stateManager.RestoreLegacyState(activeQuestIds, completedQuestIds);
         }
 
-        [ContextMenu("Dump Recent Quest Transitions")]
-        public void DumpRecentTransitionsToConsole()
-        {
-            if (_stateManager == null)
-                return;
-
-            int count = Math.Min(_stateManager.TransitionHistoryCount, 32);
-            for (int i = 0; i < count; i++)
-            {
-                if (!_stateManager.TryGetTransitionHistory(i, out QuestTransitionHistoryEntry entry))
-                    continue;
-
-                Debug.Log(
-                    $"[QuestManager] Hist[{i}] Quest=0x{entry.QuestHash:X8} From=0x{entry.FromFlagID:X8} To=0x{entry.ToFlagID:X8} " +
-                    $"Event={(QuestSignalKind)entry.EventType} Payload=0x{entry.SignalPayloadHash:X8} Transition={(QuestTransitionType)entry.TransitionType} Completed={entry.Completed}");
-            }
-        }
-
         private void InitializeStateGraph()
         {
             if (_stateManager == null)

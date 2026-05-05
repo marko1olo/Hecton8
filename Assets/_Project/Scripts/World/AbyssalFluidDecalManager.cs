@@ -40,6 +40,7 @@ namespace Hecton8.World
             public Vector3 DirectionWS;
             public float Width;
             public float Length;
+            public float Speed;
             public float RemainingLifetime;
             public float TotalLifetime;
             public Color Color;
@@ -418,6 +419,7 @@ namespace Hecton8.World
                 DirectionWS = normalizedDirection,
                 Width = Mathf.Lerp(0.12f, 0.42f, clampedIntensity),
                 Length = Mathf.Lerp(1.4f, 5.8f, clampedIntensity),
+                Speed = Mathf.Lerp(0.45f, 3.2f, clampedIntensity),
                 RemainingLifetime = Mathf.Lerp(0.45f, 1.4f, clampedIntensity),
                 TotalLifetime = Mathf.Lerp(0.45f, 1.4f, clampedIntensity),
                 Color = color
@@ -443,7 +445,7 @@ namespace Hecton8.World
                     continue;
                 }
 
-                spray.PositionWS += driftDelta + spray.DirectionWS * (deltaTime * 0.45f);
+                spray.PositionWS += driftDelta + spray.DirectionWS * (deltaTime * spray.Speed);
                 _pressureSprayStates[i] = spray;
                 DrawPressureSpray(spray);
             }

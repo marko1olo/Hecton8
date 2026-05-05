@@ -1094,6 +1094,11 @@ namespace Hecton8.Core
         /// Runtime world seed used by procedural geology and save-header consistency checks.
         /// </summary>
         int RuntimeWorldSeed { get; }
+
+        /// <summary>
+        /// Version identifier for the active procedural world-generation algorithm.
+        /// </summary>
+        int RuntimeWorldGenerationVersionId { get; }
     }
 
     /// <summary>
@@ -1433,6 +1438,7 @@ namespace Hecton8.Core
         WorldSeedProvider = 107,
         GeologyTerrainSeamRuntime = 108,
         GeologyVoxelBridgeRuntime = 109,
+        SargassumMicroFaunaRuntime = 110,
         Unknown = 255
     }
 

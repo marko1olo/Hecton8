@@ -279,6 +279,7 @@ namespace Hecton8.Physics
         private const float KineticAnomalyAccelerationMetersPerSecondSq = 100f;
         private const float AupJitterThresholdMeters = 0.05f;
         private const float AupJitterThresholdMetersSq = AupJitterThresholdMeters * AupJitterThresholdMeters;
+        private const int AupJitterSentinelFrameInterval = 60;
         private const double FarKinematicSleepDistanceSq = FarKinematicSleepDistanceMeters * FarKinematicSleepDistanceMeters;
         private const double ColliderLodCompoundToSimpleDistanceSq = ColliderLodCompoundToSimpleDistanceMeters * ColliderLodCompoundToSimpleDistanceMeters;
         private const double ColliderLodSimpleToCompoundDistanceSq = ColliderLodSimpleToCompoundDistanceMeters * ColliderLodSimpleToCompoundDistanceMeters;
@@ -1252,56 +1253,72 @@ namespace Hecton8.Physics
 
         private void ApplyAupJitterSentinel()
         {
-            if (!_lastValidPositions.IsCreated || _trackedBodyCount <= 0 || HectonFloatingOrigin.IsShiftInProgress)
+            if ((Time.frameCount % AupJitterSentinelFrameInterval) != 0 ||
+                !_lastValidPositions.IsCreated ||
+                _trackedBodyCount <= 0 ||
+                HectonFloatingOrigin.IsShiftInProgress)
                 return;
 
-            for (int i = _trackedBodyCount - 1; i >= 0; i--)
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Rigidbody playerBody = playerContext != null ? playerContext.PlayerRigidbody : null;
+            ApplyAupJitterSentinelForBody(playerBody);
+
+            ISubmarineRuntimeContext submarineContext = GlobalRegistry.Submarine;
+            Rigidbody submarineBody = submarineContext != null ? submarineContext.HullRigidbody : null;
+            if (submarineBody != null && !ReferenceEquals(submarineBody, playerBody))
+                ApplyAupJitterSentinelForBody(submarineBody);
+        }
+
+        private void ApplyAupJitterSentinelForBody(Rigidbody body)
+        {
+            if (body == null || !body.isKinematic)
+                return;
+
+            int bodyIndex = FindTrackedBodyIndex(body);
+            if (bodyIndex < 0)
+                return;
+
+            Rigidbody trackedBody = _trackedBodies[bodyIndex];
+            if (trackedBody == null)
             {
-                Rigidbody body = _trackedBodies[i];
-                if (body == null)
-                {
-                    RemoveTrackedBodyAt(i);
-                    continue;
-                }
-
-                if (!body.isKinematic)
-                    continue;
-
-                RigidbodyState bodyState = _bodyStates[i];
-                if (!bodyState.HasLastValidAup)
-                    continue;
-
-                Vector3 bodyPosition = body.position;
-                if (!IsFinite(bodyPosition))
-                    continue;
-
-                float3 aupRuntimePosition3 = bodyState.LastValidAup.ToRuntimeFloat3();
-                Vector3 aupRuntimePosition = new Vector3(
-                    aupRuntimePosition3.x,
-                    aupRuntimePosition3.y,
-                    aupRuntimePosition3.z);
-                if (!IsFinite(aupRuntimePosition))
-                    continue;
-
-                Vector3 correctionDelta = aupRuntimePosition - bodyPosition;
-                float correctionSq = correctionDelta.sqrMagnitude;
-                if (correctionSq <= AupJitterThresholdMetersSq)
-                    continue;
-
-                Vector3 linearVelocity = IsFinite(body.linearVelocity) ? body.linearVelocity : Vector3.zero;
-                Vector3 angularVelocity = IsFinite(body.angularVelocity) ? body.angularVelocity : Vector3.zero;
-                HectonFloatingOrigin.ResyncBody(body, in bodyState.LastValidAup);
-
-                _lastValidPositions[i] = aupRuntimePosition3;
-                bodyState.HasLastValidPosition = true;
-                bodyState.LastValidAup = AbsoluteUniversePosition.FromRuntimePosition(aupRuntimePosition);
-                bodyState.HasLastValidAup = true;
-                bodyState.LastValidLinearVelocity = linearVelocity;
-                bodyState.LastValidAngularVelocity = angularVelocity;
-                _bodyStates[i] = bodyState;
-
-                CrashTelemetryBuffer.ReportAupJitterCorrection(bodyPosition, math.sqrt(correctionSq));
+                RemoveTrackedBodyAt(bodyIndex);
+                return;
             }
+
+            RigidbodyState bodyState = _bodyStates[bodyIndex];
+            if (!bodyState.HasLastValidAup)
+                return;
+
+            Vector3 bodyPosition = trackedBody.position;
+            if (!IsFinite(bodyPosition))
+                return;
+
+            float3 aupRuntimePosition3 = bodyState.LastValidAup.ToRuntimeFloat3();
+            Vector3 aupRuntimePosition = new Vector3(
+                aupRuntimePosition3.x,
+                aupRuntimePosition3.y,
+                aupRuntimePosition3.z);
+            if (!IsFinite(aupRuntimePosition))
+                return;
+
+            Vector3 correctionDelta = aupRuntimePosition - bodyPosition;
+            float correctionSq = correctionDelta.sqrMagnitude;
+            if (correctionSq <= AupJitterThresholdMetersSq)
+                return;
+
+            Vector3 linearVelocity = IsFinite(trackedBody.linearVelocity) ? trackedBody.linearVelocity : Vector3.zero;
+            Vector3 angularVelocity = IsFinite(trackedBody.angularVelocity) ? trackedBody.angularVelocity : Vector3.zero;
+            HectonFloatingOrigin.ResyncBody(trackedBody, in bodyState.LastValidAup);
+
+            _lastValidPositions[bodyIndex] = aupRuntimePosition3;
+            bodyState.HasLastValidPosition = true;
+            bodyState.LastValidAup = AbsoluteUniversePosition.FromRuntimePosition(aupRuntimePosition);
+            bodyState.HasLastValidAup = true;
+            bodyState.LastValidLinearVelocity = linearVelocity;
+            bodyState.LastValidAngularVelocity = angularVelocity;
+            _bodyStates[bodyIndex] = bodyState;
+
+            CrashTelemetryBuffer.ReportAupJitterCorrection(bodyPosition, math.sqrt(correctionSq));
         }
 
         private void ReportKineticAnomalyOncePerFrame(Vector3 bodyPosition, Vector3 deltaVelocity, float acceleration)

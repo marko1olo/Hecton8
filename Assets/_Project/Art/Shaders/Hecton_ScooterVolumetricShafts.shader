@@ -701,72 +701,55 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return accumulated;
         }
 
+        float2 ResolveSunScreenUv(out float visibility);
+        float ResolveBrightLensDrive();
+
+        half3 SampleBrightShaftSource(float2 sampleUV)
+        {
+            half3 source = SAMPLE_TEXTURE2D_X(_BlitTexture, sampler_LinearClamp, saturate(sampleUV)).rgb;
+            float luminance = dot(source, float3(0.2126, 0.7152, 0.0722));
+            float threshold = lerp(1.12, 0.68, saturate(_HectonShaftDensity * 0.25));
+            float brightMask = saturate((luminance - threshold) * 1.65);
+            brightMask *= brightMask;
+            return source * brightMask;
+        }
+
         half3 IntegrateHeadlightShafts(float2 screenUV)
         {
-            if (_HectonScooterHeadlightCount <= 0 &&
-                _HectonFlashlightActive <= 0.5)
-            {
-                return half3(0.0, 0.0, 0.0);
-            }
-
-            float rawDepth;
-            float depthValid;
-            float3 scenePositionWS;
-            float linearEyeDepth;
-            ResolveDepthData(screenUV, rawDepth, depthValid, scenePositionWS, linearEyeDepth);
-            if (depthValid <= 0.5 || linearEyeDepth <= 0.0001)
+            float drive = ResolveBrightLensDrive();
+            if (drive <= 0.0001 || _HectonShaftIntensity <= 0.0001)
                 return half3(0.0, 0.0, 0.0);
 
-            float3 cameraPositionWS = _WorldSpaceCameraPos;
-            float3 rayVectorWS = scenePositionWS - cameraPositionWS;
-            float rayLength = min(length(rayVectorWS), max(1.0, _HectonShaftMaxRayDistance));
-            if (rayLength <= 0.0001)
-                return half3(0.0, 0.0, 0.0);
+            float sunVisibility;
+            float2 originUV = ResolveSunScreenUv(sunVisibility);
+            float originOnScreen =
+                step(0.0, originUV.x) * step(originUV.x, 1.0) *
+                step(0.0, originUV.y) * step(originUV.y, 1.0);
+            if (originOnScreen <= 0.0)
+                originUV = float2(0.5, 0.5);
 
-            float3 rayDirectionWS = rayVectorWS * SafeRcp(rayLength);
-            float noise = ResolveBlueNoise(screenUV);
-            float jitter = lerp(0.5, noise, _HectonShaftBlueNoiseJitter);
-            const int steps = 8;
-            float stepLength = rayLength * SafeRcp((float)steps);
-            float extinction = max(0.0001, _HectonShaftDensity * 0.08);
+            float2 radial = screenUV - originUV;
+            float radialDistanceSq = dot(radial, radial);
+            float radialFalloff = saturate(1.0 - radialDistanceSq * 1.65);
+            float jitter = (ResolveBlueNoise(screenUV) - 0.5) * _HectonShaftBlueNoiseJitter * 0.12;
+
+            const int taps = 8;
             half3 accumulated = half3(0.0, 0.0, 0.0);
+            float weightSum = 0.0;
 
             [unroll(8)]
-            for (int stepIndex = 0; stepIndex < steps; stepIndex++)
+            for (int tapIndex = 0; tapIndex < taps; tapIndex++)
             {
-                float travelDistance = min(rayLength, ((stepIndex + jitter) * stepLength));
-                float3 samplePositionWS = cameraPositionWS + rayDirectionWS * travelDistance;
-                float caveFogFade = 1.0;
-                if (_HectonCaveVoxelActive > 0.5)
-                {
-                    float signedDistance = SampleCaveVoxelSignedDistance(samplePositionWS);
-                    caveFogFade = ResolveCaveVoxelFogFade(signedDistance);
-                    if (caveFogFade <= 0.0001)
-                        break;
-                }
-
-                half3 scattering =
-                    EvaluateHeadlightScattering(samplePositionWS, rayDirectionWS) +
-                    EvaluateFlashlightScattering(samplePositionWS, rayDirectionWS);
-                float surfaceProximity = saturate(travelDistance * SafeRcp(rayLength));
-                float4 wakeTrailData = EvaluateShallowWaterFieldData(samplePositionWS);
-                float wakeDisplacement = saturate(wakeTrailData.b);
-                float2 wakeVelocity = wakeTrailData.rg * 2.0 - 1.0;
-                float wakeVelocityMagnitude = saturate(length(wakeVelocity));
-                float3 wakeTurbulence = float3(wakeVelocity.x, 0.0, wakeVelocity.y) * (wakeDisplacement * 1.4 + wakeVelocityMagnitude * 0.7);
-                float brakeImpulse = ResolveBrakeSiltImpulse(cameraPositionWS, samplePositionWS, rayDirectionWS);
-                float3 brakeTurbulence = SafeNormalize3(_HectonScooterVelocityWS.xyz) * (brakeImpulse * 1.8);
-                float siltField = ResolveSiltField(samplePositionWS + wakeTurbulence + brakeTurbulence, rayDirectionWS, surfaceProximity);
-                siltField *= lerp(1.0, 1.0 + wakeDisplacement * 1.35, wakeDisplacement);
-                siltField *= 1.0 + brakeImpulse * 2.4;
-                scattering *= (1.0 + siltField) * caveFogFade;
-                float distanceFade = exp2(-travelDistance * extinction);
-                distanceFade *= exp2(-(siltField + brakeImpulse * 0.75) * 0.035);
-                distanceFade *= caveFogFade;
-                accumulated += scattering * (distanceFade * stepLength);
+                float tapT = saturate(((float)tapIndex + 0.5 + jitter) * SafeRcp((float)taps));
+                float2 sampleUV = lerp(screenUV, originUV, tapT);
+                float weight = 1.0 - tapT;
+                weight *= weight;
+                accumulated += SampleBrightShaftSource(sampleUV) * weight;
+                weightSum += weight;
             }
 
-            return accumulated * _HectonShaftIntensity;
+            half3 shafts = accumulated * SafeRcp(max(weightSum, 0.0001));
+            return shafts * (_HectonShaftIntensity * drive * lerp(0.25, 1.0, radialFalloff));
         }
 
         float ResolveLinearEyeDepthAtUv(float2 screenUV)

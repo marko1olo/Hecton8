@@ -1,6 +1,6 @@
 # HECTON-8 Doc Authority Classification
 
-Date: 2026-05-04
+Date: 2026-05-05
 Status: PENDING VERIFICATION
 Scope: active documentation importance and authority sorting across repository root and `Docs/`
 
@@ -37,8 +37,13 @@ These files are the current navigation spine.
 | 12 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/PROJECT_ATLAS.md` | PRIMARY WORKSPACE ATLAS | Current workspace orientation, active maps, and source-count deltas. |
 | 13 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md` | PRIMARY CONCEPT MAP | Current load-bearing/transitional/presentation/experimental system classification. |
 | 14 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/DOCSET_COVERAGE_MATRIX.md` | PRIMARY COVERAGE MAP | Domain-by-domain map of which docs to trust first. |
-| 15 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md` | PRIMARY RISK MATRIX | Historical broad subsystem reality map; read after current May 4/current-state anchors. |
-| 16 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | PRIMARY ACTION QUEUE | Historical high-risk work queue and verification caveats; recheck against current reports before use. |
+| 15 | `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | PRIMARY SPACEENGINE INTEGRATION | Current SpaceEngine 0.9.8 terrain math integration, Burst job list, smoke JSON boundary, and AUP/no-hot-string scans. |
+| 16 | `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | PRIMARY SPACEENGINE RESEARCH | Current terrain/noise research extraction and rules for adapting SpaceEngine math into HECTON. |
+| 17 | `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md` | PRIMARY PLANETARY SANDBOX | Current macro shelf, AUP conversion, sandbox terrain Burst jobs, and smoke/build boundaries. |
+| 18 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` | PRIMARY NAMING LEDGER | Current non-ASCII path/content inventory and English replacement proposals. |
+| 19 | `Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md` | PRIMARY REALITY DELTA | Current Archivarius delta from March hand-authored terrain graph to May procedural shelf and SpaceEngine integration. |
+| 20 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/02_SYSTEM_REALITY_MATRIX.md` | HISTORICAL RISK MATRIX | Historical broad subsystem reality map; read after current May 5/May 4/current-state anchors. |
+| 21 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/06_CRITICAL_ACTION_QUEUE.md` | HISTORICAL ACTION QUEUE | Historical high-risk work queue and verification caveats; recheck against current reports before use. |
 
 ## 2. New / High-Value Reports
 
@@ -57,6 +62,11 @@ These are new enough and important enough to stay active.
 | `Docs/Reports/2026-05-04_CELESTIAL_ORBITAL_PROTOCOL_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Source/build evidence only; no PlayMode smoke/profiler proof. |
 | `Docs/Reports/2026-05-04_CELESTIAL_ENVIRONMENT_ORBITAL_SYNC_REPORT.md` | ACTIVE CELESTIAL REPORT | yes | Historical task evidence; superseded by May 4 sweep for global current-state truth. |
 | `Docs/Reports/2026-05-04_HYDRAULIC_EROSION_ENGINE_SURGERY_LOG.md` | ACTIVE WORLD IMPLEMENTATION REPORT | yes | Hydraulic erosion source/surgery report; Unity import/compile, MapMagic execution, harness output, GCMonitor, and profiler proof remain pending. |
+| `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` | PRIMARY SPACEENGINE INTEGRATION | yes | Current SpaceEngine 0.9.8 terrain math integration and Burst kernel evidence. |
+| `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md` | PRIMARY SPACEENGINE RESEARCH | yes | Current extracted SpaceEngine terrain/noise research; use before adapting SpaceEngine shape language. |
+| `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md` | PRIMARY PLANETARY SANDBOX | yes | Current macro shelf and AUP sandbox terrain report. |
+| `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` | PRIMARY NAMING LEDGER | yes | Current non-ASCII path/content inventory and replacement queue. |
+| `Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md` | PRIMARY REALITY DELTA | yes | Current Archivarius delta and untracked inventory snapshot. |
 | `Docs/Reports/2026-05-02_DOCUMENTATION_ACTUALITY_SWEEP.md` | HISTORICAL DOCSET ACTUALITY | yes | Previous documentation read-pass and May 2 build evidence. Read after May 4 sweep. |
 | `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md` | PRIMARY PROJECT VERDICT | yes | Honest project-level verdict after current docs/source scan; not Play Mode proof. |
 | `Docs/Reports/2026-05-01_EVENT_BUS_SPATIAL_HASH_COMPILE_DELTA.md` | ACTIVE COMPILE DELTA | yes | Latest editor compile/MCP console evidence for Sargassum/Emergency relay listener migration and spatial-hash fix. |
@@ -111,6 +121,17 @@ These are preserved, not active.
 | `Docs/Reports/DEPRECATED/2026-04-29_Static_Audit_Snapshots/` | DEPRECATED REPORT SNAPSHOTS | Early loose static reports with stale counts. |
 | `Docs/_Archive/` | ARCHIVE | Historical work packages; do not treat as current unless explicitly promoted. |
 
+## 5.1 Historical 2026-04-29 Handling
+
+All 2026-04-29 reports and patch artifacts are historical unless a current May 5 or May 4 authority file explicitly promotes a narrow claim.
+
+| Pattern | Authority class | Current handling |
+|---|---|---|
+| `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/2026-04-29_*.md` | HISTORICAL EVIDENCE | Preserve for provenance; do not use as current runtime/source truth without a May 5/May 4 supersession note. |
+| `Docs/Reports/2026-04-29_*.patch` | HISTORICAL PATCH ARTIFACT | Evidence only; paired current report or source diff must carry authority. |
+| `Docs/DEPRECATED/2026-04-29_Audit_Bundles/` | DEPRECATED SNAPSHOT | Superseded by May 5/May 4 counts, interface scan, naming sweep, and source inventory. |
+| `Docs/Reports/DEPRECATED/2026-04-29_Static_Audit_Snapshots/` | DEPRECATED REPORT SNAPSHOTS | Do not cite for current file counts, interface ownership, AUP compliance, or Zero-GC status. |
+
 ## 6. Root Text Surface
 
 Current root text files after cleanup:
@@ -139,10 +160,12 @@ When a task asks "what is current":
 7. Read `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`.
 8. Read `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`.
 9. Read `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`.
-10. Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`.
-11. Read `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`.
-12. Read domain-specific current maps.
-13. Open source files.
+10. Read `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md` for SpaceEngine terrain work.
+11. Read `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md` for Planetary Sandbox terrain work.
+12. Read `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`.
+13. Read `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/CONCEPTUAL_SYSTEM_AUTHORITY_MAP.md`.
+14. Read domain-specific current maps.
+15. Open source files.
 
 Do not start from archive, deprecated folders, copied external prompts, patch files, or old root artifacts.
 

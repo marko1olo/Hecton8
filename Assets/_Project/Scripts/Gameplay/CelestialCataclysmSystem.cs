@@ -1,12 +1,9 @@
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Bootstrap;
-using Hecton8.Caves;
 using Hecton8.Celestial;
 using Hecton8.Core;
-using Hecton8.Items;
 using Hecton8.Physics;
-using Hecton8.SaveSystem;
 using Hecton8.World;
 using NASAPunk.Visor;
 using UnityEngine;
@@ -16,18 +13,8 @@ namespace Hecton8.Gameplay
     [DisallowMultipleComponent]
     public sealed class CelestialCataclysmSystem : MonoBehaviour, ISlowTickable, IRandomEventListener
     {
-        private const string TitaniumScrapPersistentId = "Data_TitaniumScrap";
         private const ushort SolarFlareSourceId = 0xA811;
         private const int MaxMeteorFogShadowCount = 4;
-
-        [Header("Meteor SDF Impact")]
-        [SerializeField] private global::HectonVoxelEngine voxelEngine;
-        [SerializeField] private ItemData titaniumScrapItem;
-        [SerializeField, Min(1f)] private float meteorCraterRadiusMeters = 50f;
-        [SerializeField, Range(1, 256)] private int meteorTitaniumScrapCount = 100;
-        [SerializeField, Min(1f)] private float meteorScrapScatterRadiusMeters = 70f;
-        [SerializeField, Min(8f)] private float meteorImpactRayHeightMeters = 1200f;
-        [SerializeField] private LayerMask meteorImpactLayerMask = ~0;
 
         [Header("Solar EMP Flare")]
         [SerializeField, Min(1f)] private float solarEmpRadiusMeters = 250000f;
@@ -49,8 +36,6 @@ namespace Hecton8.Gameplay
         [SerializeField, Range(0f, 1f)] private float meteorFogShadowStrength = 0.42f;
         [SerializeField, Min(1f)] private float meteorFogShadowDurationSeconds = 45f;
 
-        // COLD ALLOC: RaycastHit[1] - nonalloc terrain hit probe for one meteor impact solve - owner: CelestialCataclysmSystem
-        private readonly RaycastHit[] _impactHitBuffer = new RaycastHit[1];
         // COLD ALLOC: Vector4[4] - global meteor fog shadow upload payload - owner: CelestialCataclysmSystem
         private readonly Vector4[] _meteorFogShadowPayload = new Vector4[MaxMeteorFogShadowCount];
         // COLD ALLOC: List<VisorHUDController>[4] - EMP visor pulse dispatch scratch - owner: CelestialCataclysmSystem
@@ -58,10 +43,6 @@ namespace Hecton8.Gameplay
 
         private bool _registered;
         private bool _hasBaseFluidWaterLevel;
-        private bool _reportedMissingVoxelEngine;
-        private bool _reportedMissingMeteorVolume;
-        private bool _reportedMeteorCraterRejected;
-        private bool _reportedMissingScrapSink;
         private bool _reportedMissingFloraDirector;
         private bool _reportedMissingFluidRuntime;
         private bool _reportedMissingCelestialRuntime;
@@ -72,17 +53,11 @@ namespace Hecton8.Gameplay
         private float _solarEmpGlitchRemainingSeconds;
         private float _solarEmpGlitchDurationSeconds;
         private float _solarEmpGlitchIntensity01;
-        private uint _rngState = 0x91E10DA5u;
 
         private static readonly int _MeteorFogShadowPositionsId = Shader.PropertyToID("_MeteorFogShadowPositions");
         private static readonly int _MeteorFogShadowParamsId = Shader.PropertyToID("_MeteorFogShadowParams");
         private static readonly int _SolarEmpGlitchParamsId = Shader.PropertyToID("_SolarEmpGlitchParams");
         private static readonly uint _CataclysmContextHash = unchecked((uint)LocHash.Compute("CelestialCataclysmSystem"));
-        private static readonly uint _MeteorNoVoxelEngineWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorNoVoxelEngine"));
-        private static readonly uint _MeteorNoVolumeWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorNoVoxelVolume"));
-        private static readonly uint _MeteorCraterRejectedWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorCraterRejected"));
-        private static readonly uint _MeteorScrapSinkMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorScrapSinkMissing"));
-        private static readonly uint _MeteorScrapClampWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.MeteorScrapClamp"));
         private static readonly uint _FloraDirectorMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.FloraDirectorMissing"));
         private static readonly uint _TideFluidMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.TideFluidMissing"));
         private static readonly uint _TideCelestialMissingWarningHash = unchecked((uint)LocHash.Compute("CelestialCataclysm.TideCelestialMissing"));
@@ -133,7 +108,6 @@ namespace Hecton8.Gameplay
             switch (type)
             {
                 case RandomEventType.MeteorShower:
-                    ExecuteMeteorSdfImpact(intensity);
                     _meteorFogShadowRemainingSeconds = Mathf.Max(_meteorFogShadowRemainingSeconds, meteorFogShadowDurationSeconds);
                     PublishMeteorFogShadows(Mathf.Clamp01(intensity));
                     break;
@@ -182,103 +156,6 @@ namespace Hecton8.Gameplay
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _registered = false;
-        }
-
-        private void ExecuteMeteorSdfImpact(float intensity)
-        {
-            if (voxelEngine == null)
-                voxelEngine = global::HectonVoxelEngine.ActiveRuntimeInstance;
-            if (voxelEngine == null)
-            {
-                PublishOnce(ref _reportedMissingVoxelEngine, _MeteorNoVoxelEngineWarningHash, Mathf.Max(1f, meteorCraterRadiusMeters));
-                return;
-            }
-
-            _reportedMissingVoxelEngine = false;
-
-            Vector3 playerPosition = ResolvePlayerPosition();
-            if (!voxelEngine.TryGetNearestActiveVolume(playerPosition, out HectonVoxelVolume targetVolume) || targetVolume == null)
-            {
-                PublishOnce(ref _reportedMissingMeteorVolume, _MeteorNoVolumeWarningHash, Mathf.Max(1f, meteorCraterRadiusMeters));
-                return;
-            }
-
-            _reportedMissingMeteorVolume = false;
-
-            Vector3 impactPosition = ResolveMeteorImpactPosition(playerPosition, targetVolume);
-            if (!targetVolume.TryApplyExtraterrestrialImpactCrater(impactPosition, Mathf.Max(1f, meteorCraterRadiusMeters)))
-            {
-                PublishOnce(ref _reportedMeteorCraterRejected, _MeteorCraterRejectedWarningHash, Mathf.Max(1f, meteorCraterRadiusMeters));
-                return;
-            }
-
-            _reportedMeteorCraterRejected = false;
-            SpawnMeteorScrap(impactPosition, Mathf.Clamp01(intensity));
-        }
-
-        private Vector3 ResolveMeteorImpactPosition(Vector3 playerPosition, HectonVoxelVolume targetVolume)
-        {
-            float angle = NextUnit() * Mathf.PI * 2f;
-            float radius = Mathf.Sqrt(NextUnit()) * Mathf.Max(1f, meteorScrapScatterRadiusMeters);
-            Vector3 lateral = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
-            Vector3 origin = playerPosition + lateral + Vector3.up * Mathf.Max(8f, meteorImpactRayHeightMeters);
-            Ray ray = new Ray(origin, Vector3.down);
-            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
-                ray,
-                _impactHitBuffer,
-                Mathf.Max(16f, meteorImpactRayHeightMeters * 2f),
-                meteorImpactLayerMask,
-                QueryTriggerInteraction.Ignore);
-
-            if (hitCount > 0)
-                return _impactHitBuffer[0].point;
-
-            return targetVolume.generationPosition + lateral;
-        }
-
-        private void SpawnMeteorScrap(Vector3 impactPosition, float intensity01)
-        {
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
-            ItemData scrapItem = ResolveTitaniumScrapItem();
-            if (registry == null || scrapItem == null)
-            {
-                PublishOnce(ref _reportedMissingScrapSink, _MeteorScrapSinkMissingWarningHash, registry == null ? 0f : 1f);
-                return;
-            }
-
-            _reportedMissingScrapSink = false;
-
-            int count = Mathf.Clamp(meteorTitaniumScrapCount, 1, 256);
-            if (count != meteorTitaniumScrapCount)
-                PublishPerformanceWarning(_MeteorScrapClampWarningHash, meteorTitaniumScrapCount);
-
-            float scatterRadius = Mathf.Max(1f, meteorScrapScatterRadiusMeters);
-            for (int i = 0; i < count; i++)
-            {
-                float angle = NextUnit() * Mathf.PI * 2f;
-                float radius = Mathf.Sqrt(NextUnit()) * scatterRadius;
-                Vector3 offset = new Vector3(Mathf.Cos(angle), 0f, Mathf.Sin(angle)) * radius;
-                Vector3 spawnPosition = impactPosition + offset + Vector3.up * Mathf.Lerp(0.35f, 4f, NextUnit());
-                Vector3 impulse = offset.sqrMagnitude > 0.001f
-                    ? offset.normalized * Mathf.Lerp(0.6f, 3.2f, NextUnit()) * Mathf.Max(0.25f, intensity01)
-                    : Vector3.up * Mathf.Max(0.25f, intensity01);
-                registry.TryRegisterDroppedItem(scrapItem, 1, spawnPosition, impulse);
-            }
-        }
-
-        private ItemData ResolveTitaniumScrapItem()
-        {
-            if (titaniumScrapItem != null)
-                return titaniumScrapItem;
-
-            ItemCatalog catalog = GlobalRegistry.PlayerInventoryRuntime != null
-                ? GlobalRegistry.PlayerInventoryRuntime.ItemCatalog
-                : null;
-            if (catalog == null)
-                return null;
-
-            titaniumScrapItem = catalog.FindById(TitaniumScrapPersistentId);
-            return titaniumScrapItem;
         }
 
         private void PublishSolarEmpFlare(float intensity)
@@ -469,14 +346,6 @@ namespace Hecton8.Gameplay
             return SceneBootstrap.TryGetCurrentPlayerTransform(out Transform playerTransform) && playerTransform != null
                 ? playerTransform.position
                 : transform.position;
-        }
-
-        private float NextUnit()
-        {
-            _rngState ^= _rngState << 13;
-            _rngState ^= _rngState >> 17;
-            _rngState ^= _rngState << 5;
-            return (_rngState & 0x00FFFFFFu) / 16777215f;
         }
     }
 }

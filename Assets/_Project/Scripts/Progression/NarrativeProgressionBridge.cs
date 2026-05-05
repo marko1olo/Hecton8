@@ -7,6 +7,7 @@ using Hecton8.Narrative;
 using Hecton8.PDA;
 using Hecton8.Quest;
 using Hecton8.UI;
+using Hecton8.World;
 using UnityEngine;
 
 namespace Hecton8.Progression
@@ -25,6 +26,10 @@ namespace Hecton8.Progression
         private const string AtlasMarkerTitle = "ENCRYPTED SIGNAL SOURCE";
         private const string HullFailureDiscoveryId = "hull_failure_voice_log";
         private const string HullFailureLogId = "captain_last_broadcast";
+
+        [Header("First Hour AUP Gate")]
+        [SerializeField] private Vector3 lifePodExitReferenceWorld = Vector3.zero;
+        [SerializeField, Min(0f)] private float lifePodExitMinimumDistanceMeters = 0f;
 
         private static readonly char[] s_newArchiveDataMessage =
         {
@@ -62,11 +67,7 @@ namespace Hecton8.Progression
             if (profile == null)
                 return;
 
-            if (!_exitLifePodIssued)
-            {
-                _exitLifePodIssued = true;
-                NarrativeEvents.RaiseDiscoveryMade(ExitLifePodDiscoveryId);
-            }
+            TryIssueExitLifePodDiscoveryFromAup();
 
             int biomeId = profile.matrixIndex;
             if (biomeId == _lastBiomeMatrixId)
@@ -135,6 +136,25 @@ namespace Hecton8.Progression
             {
                 CharBufferPool.Release(in lease);
             }
+        }
+
+        private bool TryIssueExitLifePodDiscoveryFromAup()
+        {
+            if (_exitLifePodIssued)
+                return false;
+
+            if (lifePodExitMinimumDistanceMeters > 0f)
+            {
+                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(transform.position);
+                AbsoluteUniversePosition podAup = AbsoluteUniversePosition.FromRuntimePosition(lifePodExitReferenceWorld);
+                double requiredDistanceSq = (double)lifePodExitMinimumDistanceMeters * lifePodExitMinimumDistanceMeters;
+                if (AbsoluteUniversePosition.DistanceSq(in playerAup, in podAup) < requiredDistanceSq)
+                    return false;
+            }
+
+            _exitLifePodIssued = true;
+            NarrativeEvents.RaiseDiscoveryMade(ExitLifePodDiscoveryId);
+            return true;
         }
 
         private void TryPublishAtlasMarker(HectonBiomeMatrixProfile profile)

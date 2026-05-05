@@ -267,6 +267,13 @@ namespace Hecton8.SaveSystem
         private static bool EnsureEcosystemState(ref EcosystemStateDTO dto, List<string> steps)
         {
             bool changed = false;
+            if (dto.worldGenerationVersionId < 0)
+            {
+                dto.worldGenerationVersionId = 0;
+                changed = true;
+                steps.Add("world generation version clamped");
+            }
+
             int existingCount = dto.infectedChunkKeys != null ? dto.infectedChunkKeys.Length : 0;
             long[] previousKeys = null;
             float[] previousSeverities = null;

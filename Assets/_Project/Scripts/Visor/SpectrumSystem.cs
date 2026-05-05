@@ -1027,6 +1027,10 @@ namespace Hecton8.Visor
             Shader.PropertyToID("_SonarRadius");
         private static readonly int _ShaderSonarPulseTime =
             Shader.PropertyToID("_SonarPulseTime");
+        private static readonly int _ShaderSonarPingCenter =
+            Shader.PropertyToID("_SonarPingCenter");
+        private static readonly int _ShaderSonarPingParams =
+            Shader.PropertyToID("_SonarPingParams");
         private static readonly int _ShaderSonarRevealOrigin =
             Shader.PropertyToID("_SonarRevealOriginWS");
         private static readonly int _ShaderSonarRevealExpireTime =
@@ -1319,7 +1323,7 @@ namespace Hecton8.Visor
             }
 
             Shader.SetGlobalFloat(_ShaderSonarPulseTime, pulseTime);
-            Shader.SetGlobalFloat(_ShaderSonarRadius, pulseRadius);
+            Shader.SetGlobalFloat(_ShaderSonarRadius, 0f);
             PublishSonarReveal(playerPosition, pulseRadius, revealDurationSeconds, pulseTime, pulseIntensity, abyssalDistortion, effectiveWaveSpeed);
             WorldSpatialHashGrid.BuildSonarSnapshot(playerPosition, pulseRadius, out _lastSonarSnapshot);
             _hasSonarSnapshot = true;
@@ -1413,6 +1417,9 @@ namespace Hecton8.Visor
             Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, 0f);
             Shader.SetGlobalVector(_ShaderSonarRevealWaveParams, Vector4.zero);
             Shader.SetGlobalFloat(_ShaderSonarWaveFront, 0f);
+            Shader.SetGlobalFloat(_ShaderSonarRadius, 0f);
+            Shader.SetGlobalVector(_ShaderSonarPingCenter, Vector4.zero);
+            Shader.SetGlobalVector(_ShaderSonarPingParams, Vector4.zero);
             Shader.SetGlobalFloat(_ShaderAbyssalDistortion, 0f);
             Shader.SetGlobalFloat(_ShaderLidarPersistence, 0f);
             Shader.SetGlobalVectorArray(_ShaderSonarRevealContactMeta, s_sonarRevealContactMeta);
@@ -1475,6 +1482,14 @@ namespace Hecton8.Visor
             }
 
             Shader.SetGlobalVector(_ShaderSonarRevealOrigin, new Vector4(origin.x, origin.y, origin.z, radius));
+            Shader.SetGlobalVector(_ShaderSonarPingCenter, new Vector4(origin.x, origin.y, origin.z, pulseIntensity));
+            Shader.SetGlobalVector(
+                _ShaderSonarPingParams,
+                new Vector4(
+                    radius,
+                    Mathf.Lerp(6f, 2f, pulseIntensity),
+                    pulseTime,
+                    pulseTime + Mathf.Max(0.05f, revealDurationSeconds)));
             Shader.SetGlobalFloat(_ShaderSonarRevealExpireTime, pulseTime + Mathf.Max(0.05f, revealDurationSeconds));
             Shader.SetGlobalFloat(_ShaderAbyssalDistortion, abyssalDistortion);
             Shader.SetGlobalVector(
@@ -1503,6 +1518,7 @@ namespace Hecton8.Visor
             _activeSonarWaveBandWidth = Mathf.Max(0.25f, waveBandWidth);
             _activeSonarWavefrontActive = pulseRadius > 0f;
             Shader.SetGlobalFloat(_ShaderSonarWaveFront, 0f);
+            Shader.SetGlobalFloat(_ShaderSonarRadius, 0f);
         }
 
         private void UpdateActiveSonarWavefront(float deltaTime)
@@ -1512,6 +1528,7 @@ namespace Hecton8.Visor
 
             _activeSonarWaveFront += Mathf.Max(0f, deltaTime) * _activeSonarWaveSpeed;
             Shader.SetGlobalFloat(_ShaderSonarWaveFront, _activeSonarWaveFront);
+            Shader.SetGlobalFloat(_ShaderSonarRadius, _activeSonarWaveFront);
 
             if (Time.time <= _activeSonarRevealExpireTime)
                 return;
@@ -1519,6 +1536,7 @@ namespace Hecton8.Visor
             _activeSonarWavefrontActive = false;
             _activeSonarWaveSpeed = 0f;
             _activeSonarWaveBandWidth = 0f;
+            Shader.SetGlobalFloat(_ShaderSonarRadius, 0f);
         }
 
         private void UpdateLidarPersistence(float deltaTime)

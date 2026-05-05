@@ -23,7 +23,8 @@ namespace Hecton8.Crafting
         CraftProgressUpdated = 3,
         CraftCompleted = 4,
         CraftOutputSynthesized = 5,
-        CraftCancelled = 6
+        CraftCancelled = 6,
+        CraftFailed = 7
     }
 
     /// <summary>
@@ -398,6 +399,26 @@ namespace Hecton8.Crafting
             {
                 ReferenceSlot = -1,
                 EventType = (ushort)CraftingEventType.CraftCancelled
+            });
+        }
+
+        /// <summary>
+        /// Enqueues a diegetic crafting-failure event for panel shake and local feedback.
+        /// </summary>
+        public static void RaiseCraftFailed(Fabricator fabricator)
+        {
+            if (!TryReserveReferenceSlot(out int referenceSlot))
+                return;
+
+            _referenceSlots[referenceSlot].Fabricator = fabricator;
+            _referenceSlots[referenceSlot].Recipe = null;
+            _referenceSlots[referenceSlot].Item = null;
+
+            Enqueue(new CraftingEventPayload
+            {
+                FabricatorHashId = ComputeFabricatorHash(fabricator),
+                ReferenceSlot = referenceSlot,
+                EventType = (ushort)CraftingEventType.CraftFailed
             });
         }
 

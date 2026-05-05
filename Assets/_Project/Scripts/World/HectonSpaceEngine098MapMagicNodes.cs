@@ -14,7 +14,7 @@ namespace MapMagic.Nodes.MatrixGenerators
     [System.Serializable]
     [GeneratorMenu(
         menu = "Hecton/SpaceEngine 0.9.8",
-        name = "Ridged Multifractal Eroded Detail",
+        name = "RidgedTerrain",
         disengageable = true,
         colorType = typeof(MatrixWorld))]
     [UnityEngine.Scripting.Preserve]
@@ -142,7 +142,7 @@ namespace MapMagic.Nodes.MatrixGenerators
     [System.Serializable]
     [GeneratorMenu(
         menu = "Hecton/SpaceEngine 0.9.8",
-        name = "Impact Crater Kernel",
+        name = "CraterKernel",
         disengageable = true,
         colorType = typeof(MatrixWorld))]
     [UnityEngine.Scripting.Preserve]
@@ -287,7 +287,7 @@ namespace MapMagic.Nodes.MatrixGenerators
     [System.Serializable]
     [GeneratorMenu(
         menu = "Hecton/SpaceEngine 0.9.8",
-        name = "Rille Fissure Generator",
+        name = "RiftFissure",
         disengageable = true,
         colorType = typeof(MatrixWorld))]
     [UnityEngine.Scripting.Preserve]
@@ -410,6 +410,7 @@ namespace MapMagic.Nodes.MatrixGenerators
     internal static class HectonSpaceEngine098MapMagicUtility
     {
         private const float BarrierWarningThresholdMs = 2f;
+        private const double AupCellSizeMeters = 5000.0;
 
         internal static int ResolveCellCount(MatrixWorld matrix, out int width, out int height)
         {
@@ -481,8 +482,8 @@ namespace MapMagic.Nodes.MatrixGenerators
                 if (provider != null && provider.IsInitialized)
                     seed ^= (uint)provider.RuntimeWorldSeed * 0x9E3779B9u;
 
-                int aupCellX = (int)math.floor(matrix.worldPos.x / AbsoluteUniversePosition.CellSizeMeters);
-                int aupCellZ = (int)math.floor(matrix.worldPos.z / AbsoluteUniversePosition.CellSizeMeters);
+                int aupCellX = (int)math.floor(matrix.worldPos.x / AupCellSizeMeters);
+                int aupCellZ = (int)math.floor(matrix.worldPos.z / AupCellSizeMeters);
                 return SpaceEngine098TerrainMath.MixSeed(seed, aupCellX, aupCellZ);
             }
         }

@@ -39,6 +39,23 @@ namespace Hecton8.Items
         Tier3 = 4
     }
 
+    [System.Serializable]
+    public struct DeconstructYieldEntry
+    {
+        public ItemData item;
+        [Min(0)] public int minYield;
+        [Min(0)] public int maxYield;
+
+        public ItemData Item => item;
+
+        public int ResolveRandomAmount()
+        {
+            int min = Mathf.Max(0, minYield);
+            int max = Mathf.Max(min, maxYield);
+            return max <= min ? min : Random.Range(min, max + 1);
+        }
+    }
+
     /// <summary>
     /// Data-only item asset with localization-aware display fields.
     /// </summary>
@@ -135,6 +152,10 @@ namespace Hecton8.Items
         public GameObject worldPrefab;
         [Tooltip("Buoyancy profile applied when this item exists in the world.")]
         public BuoyancyProfile worldBuoyancyProfile;
+
+        [Header("Deconstruction")]
+        [Tooltip("Direct salvage outputs. Recycling reads this authored table once; no recursive recipe expansion is performed.")]
+        [SerializeField] private DeconstructYieldEntry[] deconstructYields = new DeconstructYieldEntry[0];
 
         private GameLanguage _cachedLanguage = (GameLanguage)(-1);
         private string _cachedItemName = string.Empty;
@@ -251,6 +272,18 @@ namespace Hecton8.Items
         /// <summary>Time in seconds to consume this item. 0 = instant.</summary>
         public float UseDuration => useDuration;
 
+        public int DeconstructYieldCount => deconstructYields != null ? deconstructYields.Length : 0;
+
+        public bool TryGetDeconstructYield(int index, out DeconstructYieldEntry entry)
+        {
+            entry = default;
+            if (deconstructYields == null || (uint)index >= (uint)deconstructYields.Length)
+                return false;
+
+            entry = deconstructYields[index];
+            return entry.Item != null && entry.maxYield > 0;
+        }
+
         /// <summary>
         /// Returns true when the supplied ID matches the authored stable ID or the legacy asset name.
         /// </summary>
@@ -300,6 +333,18 @@ namespace Hecton8.Items
 
             if (radiationSvPerSecond < 0f)
                 radiationSvPerSecond = 0f;
+
+            if (deconstructYields != null)
+            {
+                for (int i = 0; i < deconstructYields.Length; i++)
+                {
+                    if (deconstructYields[i].minYield < 0)
+                        deconstructYields[i].minYield = 0;
+
+                    if (deconstructYields[i].maxYield < deconstructYields[i].minYield)
+                        deconstructYields[i].maxYield = deconstructYields[i].minYield;
+                }
+            }
 
             InvalidateLocalizedCache();
             EnsureLocalizedCache();

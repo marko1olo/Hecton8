@@ -15,8 +15,10 @@ using Hecton8.Physics;
 using Hecton8.SaveSystem;
 using Hecton8.UI;
 using Hecton8.World;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
+using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -24,17 +26,28 @@ using UnityEngine.Rendering.Universal;
 namespace Hecton8.VFX
 {
     /// <summary>
-    /// Singleton system managing camera shake, FOV effects, and post-processing modulation.
+    /// Camera presentation runtime managing shake, FOV effects, and post-processing modulation.
     /// Integrates with HectonSurvivalSystem, PlayerMovement, InteractionEvents, GameTickManager, SaveManager.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CameraJuiceSystem : MonoBehaviour, ITickable, IUpdatable, ISlowTickable, ILateFrameTickable, ISaveable, IInteractionEventListener
     {
-        // ═══ SINGLETON ═══
-        private static CameraJuiceSystem _instance;
-        public static CameraJuiceSystem Instance => _instance;
-
         // ═══ CACHED REFERENCES ═══
+        private struct ShakeJobInput
+        {
+            public float NoiseTime;
+            public float NoiseSeed;
+            public float MaxDisplacement;
+            public float Falloff;
+            public float IntensityScale;
+            public float3 AxisWeights;
+        }
+
+        private struct ShakeJobResult
+        {
+            public float3 Offset;
+        }
+
         private Camera _mainCamera;
         private Volume _urpVolume;
         private Transform _cameraTransform;
@@ -62,7 +75,14 @@ namespace Hecton8.VFX
         private const int MAX_ACTIVE_SHAKES = 8;
         private const float MAX_SHAKE_DISPLACEMENT = 0.5f;
         private const float DEFAULT_SHAKE_CLIP_SAFE_DISPLACEMENT = 0.05f;
+        private const float LOW_FREQUENCY_HEAVE_NOISE_SCALE = 0.28f;
+        private const float LOW_FREQUENCY_HEAVE_DISPLACEMENT_SCALE = 0.35f;
         private float _shakeNoiseTime;
+        private NativeArray<ShakeJobInput> _shakeJobInputs;
+        private NativeArray<ShakeJobResult> _shakeJobResults;
+        private JobHandle _shakeJobHandle;
+        private bool _shakeJobScheduled;
+        private bool _shakeJobApplyResult;
 
         // ═══ FOV STATE ═══
         public enum FOVState { Idle, SprintKick, DamageRecoil }
@@ -74,6 +94,11 @@ namespace Hecton8.VFX
         private float _fovBlendDuration;
         private float _fovBlendElapsed;
         private bool _fovBlendActive;
+        private float _inputReclaimFovStart;
+        private float _inputReclaimFovTarget;
+        private float _inputReclaimFovDuration;
+        private float _inputReclaimFovElapsed;
+        private bool _inputReclaimFovActive;
         private const float MIN_FOV = 40f;
         private const float MAX_FOV = 90f;
 
@@ -299,14 +324,13 @@ namespace Hecton8.VFX
 
         private void Awake()
         {
-            // Singleton pattern
-            if (_instance != null && _instance != this)
+            CameraJuiceSystem registeredRuntime = GlobalRegistry.CameraJuice;
+            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
             {
                 LogDuplicateInstanceDetected();
                 Destroy(gameObject);
                 return;
             }
-            _instance = this;
 
             if (!TryResolveCamera())
             {
@@ -342,6 +366,7 @@ namespace Hecton8.VFX
             TryResolveGameplayDependencies();
             SyncDependencyFlags();
             EnsureFocusRaycastBuffers();
+            EnsureShakeJobBuffers();
             SanitizeInteractionFocusMask();
 
             // Performance mode degradation
@@ -367,6 +392,7 @@ namespace Hecton8.VFX
 
             TryResolveGameplayDependencies();
             SyncDependencySubscriptions();
+            EnsureShakeJobBuffers();
 
             InteractionEvents.Register(this);
         }
@@ -382,6 +408,7 @@ namespace Hecton8.VFX
             InteractionEvents.Unregister(this);
 
             _fovBlendActive = false;
+            _inputReclaimFovActive = false;
             _biomeBlendActive = false;
 
             _focusTarget = null;
@@ -391,7 +418,9 @@ namespace Hecton8.VFX
             _pauseDofOverrideEngaged = false;
             _pauseDofDefaultsCaptured = false;
             _shakeOffset = Vector3.zero;
+            _shakeJobApplyResult = false;
             ReleaseFocusRaycastBuffers();
+            ReleaseShakeJobBuffers();
 
             if (_cameraTransform != null)
             {
@@ -442,8 +471,17 @@ namespace Hecton8.VFX
 
         private void TryRegisterToGlobalRegistry()
         {
-            if (_serviceRegistered || !Application.isPlaying || _instance != this)
+            if (_serviceRegistered || !Application.isPlaying)
                 return;
+
+            CameraJuiceSystem registeredRuntime = GlobalRegistry.CameraJuice;
+            if (registeredRuntime != null && !ReferenceEquals(registeredRuntime, this))
+            {
+                LogDuplicateInstanceDetected();
+                enabled = false;
+                Destroy(gameObject);
+                return;
+            }
 
             GlobalRegistry.RegisterCameraJuiceRuntime(this);
             _serviceRegistered = ReferenceEquals(GlobalRegistry.CameraJuice, this);
@@ -481,12 +519,8 @@ namespace Hecton8.VFX
             TryUnregister();
             TryUnregisterFromGlobalRegistry();
 
-            if (_instance == this)
-            {
-                _instance = null;
-            }
-
             ReleaseFocusRaycastBuffers();
+            ReleaseShakeJobBuffers();
 
         }
 
@@ -555,6 +589,7 @@ namespace Hecton8.VFX
 
         public void LateFrameTick()
         {
+            ResolveScheduledShakeJob(false);
             ResolveScheduledFocusRaycast();
             ApplyPostAupShakeOffset();
         }
@@ -641,6 +676,30 @@ namespace Hecton8.VFX
         }
 
         [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogNullShakeProfile()
+        {
+            Debug.LogError("[CameraJuiceSystem] TriggerShake called with null profile.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogShakeMaxDisplacementClamped(float maxDisplacement)
+        {
+            Debug.LogWarning($"[CameraJuiceSystem] ShakeProfile MaxDisplacement out of range [0, 1]: {maxDisplacement}. Clamping.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogShakeDurationDefaulted(float duration)
+        {
+            Debug.LogWarning($"[CameraJuiceSystem] ShakeProfile Duration invalid: {duration}. Using default 0.5s.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void LogNullBiomeProfile()
+        {
+            Debug.LogWarning("[CameraJuiceSystem] TransitionToBiome called with null biome. Using default fallback.");
+        }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
         private static void LogFovCalculationFailed()
         {
             Debug.LogError("[CameraJuiceSystem] FOV calculation failed.");
@@ -713,6 +772,22 @@ namespace Hecton8.VFX
         }
 
         /// <summary>
+        /// Reclaims gameplay control from a cinematic wide FOV without a camera snap.
+        /// </summary>
+        public void BeginInputReclaimFov(float startFov, float durationSeconds)
+        {
+            if (!_fovEnabled || _mainCamera == null)
+                return;
+
+            _inputReclaimFovStart = Mathf.Clamp(startFov, MIN_FOV, MAX_FOV);
+            _inputReclaimFovTarget = Mathf.Clamp(_baseFOV, MIN_FOV, MAX_FOV);
+            _inputReclaimFovDuration = Mathf.Max(0.0001f, durationSeconds);
+            _inputReclaimFovElapsed = 0f;
+            _inputReclaimFovActive = true;
+            _mainCamera.fieldOfView = _inputReclaimFovStart;
+        }
+
+        /// <summary>
         /// Trigger camera shake with specified profile and intensity scale.
         /// </summary>
         /// <param name="profile">Shake configuration profile</param>
@@ -721,9 +796,7 @@ namespace Hecton8.VFX
         {
             if (profile == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogError("[CameraJuiceSystem] TriggerShake called with null profile.");
-#endif
+                LogNullShakeProfile();
                 return;
             }
 
@@ -733,18 +806,14 @@ namespace Hecton8.VFX
             float maxDisplacement = profile.MaxDisplacement;
             if (maxDisplacement < 0f || maxDisplacement > 1f)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[CameraJuiceSystem] ShakeProfile MaxDisplacement out of range [0, 1]: {maxDisplacement}. Clamping.");
-#endif
+                LogShakeMaxDisplacementClamped(maxDisplacement);
                 maxDisplacement = Mathf.Clamp(maxDisplacement, 0f, 1f);
             }
 
             float duration = profile.Duration;
             if (duration <= 0f)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning($"[CameraJuiceSystem] ShakeProfile Duration invalid: {duration}. Using default 0.5s.");
-#endif
+                LogShakeDurationDefaulted(duration);
                 duration = 0.5f;
             }
 
@@ -791,9 +860,7 @@ namespace Hecton8.VFX
         {
             if (biome == null)
             {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                Debug.LogWarning("[CameraJuiceSystem] TransitionToBiome called with null biome. Using default fallback.");
-#endif
+                LogNullBiomeProfile();
                 // TODO: Use default fallback biome
                 return;
             }
@@ -850,10 +917,10 @@ namespace Hecton8.VFX
         public float CurrentFOVOffset => _currentFOVOffset;
         public FOVState CurrentFOVState => _fovState;
         public bool IsPostProcessingEnabled => _postProcessingEnabled;
-        internal float DebugAdaptiveShakeScale => _debugAdaptiveShakeScale;
-        internal float DebugAdaptiveFOVScale => _debugAdaptiveFOVScale;
-        internal float DebugAdaptivePostFxScale => _debugAdaptivePostFxScale;
-        internal int DebugAdaptiveMaxActiveShakes => _debugAdaptiveMaxActiveShakes;
+        internal float DebugAdaptiveShakeScale => _adaptiveShakeScale;
+        internal float DebugAdaptiveFOVScale => _adaptiveFOVScale;
+        internal float DebugAdaptivePostFxScale => _adaptivePostFxScale;
+        internal int DebugAdaptiveMaxActiveShakes => _adaptiveMaxActiveShakes;
         internal bool DebugAdaptiveDisableInteractionDoF => _adaptiveDisableInteractionDoF;
 
         // ═══ PRIVATE METHODS ═══
@@ -911,67 +978,169 @@ namespace Hecton8.VFX
         {
             if (!_shakeEnabled) return;
 
-            // Bypass if zero intensity
             float effectiveShakeScale = _shakeIntensityMultiplier * _adaptiveShakeScale;
             if (effectiveShakeScale <= 0f)
             {
                 _shakeOffset = Vector3.zero;
+                _shakeJobApplyResult = false;
                 return;
             }
 
-            _shakeOffset = Vector3.zero;
             _shakeNoiseTime += Mathf.Max(0f, dt);
 
-            // Iterate active shakes
             int count = _activeShakes.Count;
+            if (count <= 0)
+            {
+                _shakeOffset = Vector3.zero;
+                _shakeJobApplyResult = false;
+                return;
+            }
+
+            if (_shakeJobScheduled || !EnsureShakeJobBuffers())
+                return;
+
+            int liveCount = 0;
             for (int i = count - 1; i >= 0; i--)
             {
                 ActiveShake shake = _activeShakes[i];
+                if (shake.Profile == null)
+                {
+                    _activeShakes.RemoveAt(i);
+                    continue;
+                }
+
                 shake.Elapsed += dt;
 
-                // Check if completed
                 if (shake.Elapsed >= shake.Profile.Duration)
                 {
                     _activeShakes.RemoveAt(i);
                     continue;
                 }
 
-                // Evaluate falloff curve
                 float t = shake.Elapsed / shake.Profile.Duration;
-                float falloffValue = shake.Profile.FalloffCurve.Evaluate(t);
+                _shakeJobInputs[liveCount++] = new ShakeJobInput
+                {
+                    NoiseTime = _shakeNoiseTime * shake.Profile.Frequency,
+                    NoiseSeed = i * 17.31f + 3.17f,
+                    MaxDisplacement = shake.Profile.MaxDisplacement,
+                    Falloff = shake.Profile.FalloffCurve.Evaluate(t),
+                    IntensityScale = shake.IntensityScale,
+                    AxisWeights = new float3(
+                        shake.Profile.AxisWeights.x,
+                        shake.Profile.AxisWeights.y,
+                        shake.Profile.AxisWeights.z)
+                };
 
-                // Generate Perlin noise offset
-                float noiseTime = _shakeNoiseTime * shake.Profile.Frequency;
-                float noiseX = Mathf.PerlinNoise(noiseTime, 0f) * 2f - 1f;
-                float noiseY = Mathf.PerlinNoise(0f, noiseTime) * 2f - 1f;
-                float noiseZ = Mathf.PerlinNoise(noiseTime, noiseTime) * 2f - 1f;
-
-                // Scale offset
-                float scale = shake.Profile.MaxDisplacement * falloffValue * shake.IntensityScale * effectiveShakeScale;
-                Vector3 offset = new Vector3(
-                    noiseX * shake.Profile.AxisWeights.x,
-                    noiseY * shake.Profile.AxisWeights.y,
-                    noiseZ * shake.Profile.AxisWeights.z
-                ) * scale;
-
-                // Accumulate
-                _shakeOffset += offset;
-
-                // Update shake in list
-                shake.Offset = offset;
                 _activeShakes[i] = shake;
             }
 
-            // Clamp magnitude
-            float maxShakeDisplacement = Mathf.Min(
-                MAX_SHAKE_DISPLACEMENT,
-                Mathf.Max(0.005f, _cameraShakeClipSafeDisplacement));
-            if (_shakeOffset.magnitude > maxShakeDisplacement)
+            if (liveCount <= 0)
             {
-                _shakeOffset = _shakeOffset.normalized * maxShakeDisplacement;
+                _shakeOffset = Vector3.zero;
+                _shakeJobApplyResult = false;
+                return;
             }
 
-            // Presentation offset only. LateFrameTick applies this after AUP-to-runtime convergence.
+            ScheduleShakeJob(
+                liveCount,
+                effectiveShakeScale,
+                Mathf.Min(MAX_SHAKE_DISPLACEMENT, Mathf.Max(0.005f, _cameraShakeClipSafeDisplacement)));
+        }
+
+        private bool EnsureShakeJobBuffers()
+        {
+            if (!_shakeJobInputs.IsCreated)
+            {
+                _shakeJobInputs = new NativeArray<ShakeJobInput>(
+                    MAX_ACTIVE_SHAKES,
+                    Allocator.Persistent,
+                    NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<ShakeJobInput>[8] — Burst camera shake inputs — owner: CameraJuiceSystem
+                NativeMemorySentinel.RegisterNativeArray(
+                    _shakeJobInputs,
+                    nameof(CameraJuiceSystem),
+                    nameof(_shakeJobInputs),
+                    NativeAllocationLifetime.Scene);
+            }
+
+            if (!_shakeJobResults.IsCreated)
+            {
+                _shakeJobResults = new NativeArray<ShakeJobResult>(
+                    1,
+                    Allocator.Persistent,
+                    NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ShakeJobResult>[1] — Burst camera shake aggregate output — owner: CameraJuiceSystem
+                NativeMemorySentinel.RegisterNativeArray(
+                    _shakeJobResults,
+                    nameof(CameraJuiceSystem),
+                    nameof(_shakeJobResults),
+                    NativeAllocationLifetime.Scene);
+            }
+
+            return _shakeJobInputs.IsCreated && _shakeJobResults.IsCreated;
+        }
+
+        private void ScheduleShakeJob(int count, float effectiveShakeScale, float maxShakeDisplacement)
+        {
+            _shakeJobResults[0] = default;
+            _shakeJobHandle = new ShakeAccumulationJob
+            {
+                Inputs = _shakeJobInputs,
+                Results = _shakeJobResults,
+                Count = count,
+                EffectiveShakeScale = effectiveShakeScale,
+                MaxShakeDisplacement = maxShakeDisplacement
+            }.Schedule();
+            _shakeJobScheduled = true;
+            _shakeJobApplyResult = true;
+            JobHandle.ScheduleBatchedJobs();
+        }
+
+        private void ResolveScheduledShakeJob(bool forceComplete)
+        {
+            if (!_shakeJobScheduled)
+                return;
+
+            if (!DispatcherJobSwap.TryComplete(ref _shakeJobHandle, forceComplete))
+                return;
+
+            _shakeJobScheduled = false;
+            if (!_shakeJobApplyResult || !_shakeJobResults.IsCreated)
+            {
+                _shakeJobApplyResult = false;
+                return;
+            }
+
+            ShakeJobResult result = _shakeJobResults[0];
+            _shakeOffset = new Vector3(result.Offset.x, result.Offset.y, result.Offset.z);
+            _shakeJobApplyResult = false;
+        }
+
+        private void ReleaseShakeJobBuffers()
+        {
+            if (_shakeJobInputs.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_shakeJobInputs);
+                if (_shakeJobScheduled)
+                    _shakeJobInputs.Dispose(_shakeJobHandle);
+                else
+                    _shakeJobInputs.Dispose();
+
+                _shakeJobInputs = default;
+            }
+
+            if (_shakeJobResults.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_shakeJobResults);
+                if (_shakeJobScheduled)
+                    _shakeJobResults.Dispose(_shakeJobHandle);
+                else
+                    _shakeJobResults.Dispose();
+
+                _shakeJobResults = default;
+            }
+
+            _shakeJobScheduled = false;
+            _shakeJobApplyResult = false;
+            _shakeJobHandle = default;
         }
 
         private void ApplyPostAupShakeOffset()
@@ -1012,6 +1181,16 @@ namespace Hecton8.VFX
             // Calculate target FOV
             float targetFOV = _baseFOV + (_currentFOVOffset * _fovIntensityMultiplier * _adaptiveFOVScale);
             targetFOV = Mathf.Clamp(targetFOV, MIN_FOV, MAX_FOV);
+
+            if (_inputReclaimFovActive)
+            {
+                _inputReclaimFovElapsed = Mathf.Min(_inputReclaimFovElapsed + Mathf.Max(0f, dt), _inputReclaimFovDuration);
+                float normalizedReclaim = Mathf.Clamp01(_inputReclaimFovElapsed / _inputReclaimFovDuration);
+                float easedReclaim = EvaluateEaseOutQuad(normalizedReclaim);
+                targetFOV = Mathf.Lerp(_inputReclaimFovStart, _inputReclaimFovTarget, easedReclaim);
+                if (normalizedReclaim >= 1f)
+                    _inputReclaimFovActive = false;
+            }
 
             // Apply to camera
             _mainCamera.fieldOfView = targetFOV;
@@ -1208,7 +1387,7 @@ namespace Hecton8.VFX
                 float focusCandidate = _focusRaycastScheduled
                     ? _resolvedFocusDistance
                     : (_focusTargetTransform != null
-                        ? Vector3.Distance(_cameraTransform.position, _focusTargetTransform.position)
+                        ? ResolveAupRuntimeDistance(_cameraTransform.position, _focusTargetTransform.position)
                         : ResolveHudPlaneFocusDistance());
 
                 if (focusCandidate <= Mathf.Max(0.01f, _pdaFocusThreshold))
@@ -1221,9 +1400,21 @@ namespace Hecton8.VFX
                 return Mathf.Max(0.01f, _resolvedFocusDistance);
 
             if (_focusTargetTransform != null)
-                return Mathf.Max(0.01f, Vector3.Distance(_cameraTransform.position, _focusTargetTransform.position));
+                return Mathf.Max(0.01f, ResolveAupRuntimeDistance(_cameraTransform.position, _focusTargetTransform.position));
 
             return Mathf.Max(0.01f, ResolveHudPlaneFocusDistance());
+        }
+
+        private static float ResolveAupRuntimeDistance(Vector3 fromRuntimePosition, Vector3 toRuntimePosition)
+        {
+            AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromRuntimePosition);
+            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntimePosition);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in fromAup, in toAup);
+            if (distanceSq <= 0d)
+                return 0f;
+
+            double distance = Math.Sqrt(distanceSq);
+            return distance >= float.MaxValue ? float.MaxValue : (float)distance;
         }
 
         private float ResolveHudPlaneFocusDistance()
@@ -1627,6 +1818,47 @@ namespace Hecton8.VFX
 #endif
 
         // ═══ NESTED TYPES ═══
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ShakeAccumulationJob : IJob
+        {
+            [ReadOnly]
+            public NativeArray<ShakeJobInput> Inputs;
+            public NativeArray<ShakeJobResult> Results;
+            public int Count;
+            public float EffectiveShakeScale;
+            public float MaxShakeDisplacement;
+
+            public void Execute()
+            {
+                float3 offset = float3.zero;
+                int count = math.clamp(Count, 0, Inputs.Length);
+                for (int i = 0; i < count; i++)
+                {
+                    ShakeJobInput input = Inputs[i];
+                    float noiseX = noise.snoise(new float2(input.NoiseTime, input.NoiseSeed));
+                    float noiseY = noise.snoise(new float2(input.NoiseSeed, input.NoiseTime));
+                    float noiseZ = noise.snoise(new float2(input.NoiseTime + input.NoiseSeed, input.NoiseTime - input.NoiseSeed));
+                    float heaveNoise = noise.snoise(new float2(
+                        input.NoiseTime * LOW_FREQUENCY_HEAVE_NOISE_SCALE,
+                        input.NoiseSeed + 17.13f));
+                    float scale = input.MaxDisplacement * input.Falloff * input.IntensityScale * EffectiveShakeScale;
+                    offset += new float3(
+                        noiseX * input.AxisWeights.x,
+                        noiseY * input.AxisWeights.y,
+                        noiseZ * input.AxisWeights.z) * scale;
+                    offset.y += heaveNoise * input.AxisWeights.y * scale * LOW_FREQUENCY_HEAVE_DISPLACEMENT_SCALE;
+                }
+
+                float maxShakeDisplacement = math.max(0.0001f, MaxShakeDisplacement);
+                float maxShakeDisplacementSq = maxShakeDisplacement * maxShakeDisplacement;
+                float offsetSq = math.lengthsq(offset);
+                if (offsetSq > maxShakeDisplacementSq)
+                    offset = math.normalizesafe(offset, float3.zero) * maxShakeDisplacement;
+
+                Results[0] = new ShakeJobResult { Offset = offset };
+            }
+        }
 
         private struct ActiveShake
         {

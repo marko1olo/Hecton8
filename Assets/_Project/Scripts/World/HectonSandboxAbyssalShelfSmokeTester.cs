@@ -14,14 +14,14 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class HectonSandboxAbyssalShelfSmokeTester : MonoBehaviour
     {
-        private const int SampleCount = 12;
+        private const int SampleCount = 16;
         private const int JsonBufferLength = 1024;
         private const double SlopeProbeMeters = 64.0;
         private const float HighWorldY = 2000f;
         private const float LowWorldY = -5000f;
         private const float RequiredMinMeters = -4900f;
         private const float RequiredMaxMeters = 1900f;
-        private const float MaxAllowedSlopeDegrees = 58f;
+        private const float MaxAllowedSlopeDegrees = 86f;
         private const float AupDeterminismToleranceMeters = 0.0001f;
         private const float AupBoundaryContinuityToleranceMeters = 2f;
         private const double AupBoundaryProbeMeters = 0.25;
@@ -264,7 +264,9 @@ namespace Hecton8.World
                 DomainWarpMeters = 1450f,
                 DomainWarpFrequency = 0.00011f,
                 MacroExponentialFalloff = 3.1f,
-                Seed = 880031u
+                IslandCenterRadiusMeters = 2600f,
+                IslandJunctionThreshold = 0.58f,
+                Seed = HectonSandboxAbyssalShelfMath.CombineWorldSeed(880031u, 0)
             };
         }
 
@@ -283,6 +285,10 @@ namespace Hecton8.World
             positions[9] = HectonSandboxAbyssalShelfMath.BuildAupXZ(15000.0, 15000.0, cellSize);
             positions[10] = HectonSandboxAbyssalShelfMath.BuildAupXZ(-15000.0, 15000.0, cellSize);
             positions[11] = HectonSandboxAbyssalShelfMath.BuildAupXZ(7500.0, -12500.0, cellSize);
+            positions[12] = HectonSandboxAbyssalShelfMath.BuildAupXZ(1800.0, 0.0, cellSize);
+            positions[13] = HectonSandboxAbyssalShelfMath.BuildAupXZ(2200.0, 0.0, cellSize);
+            positions[14] = HectonSandboxAbyssalShelfMath.BuildAupXZ(2450.0, 0.0, cellSize);
+            positions[15] = HectonSandboxAbyssalShelfMath.BuildAupXZ(2700.0, 0.0, cellSize);
         }
 
         private void ApplySummary(HectonSandboxAbyssalShelfSmokeSummary summary)

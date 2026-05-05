@@ -124,20 +124,6 @@ namespace Hecton8.Quest
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    internal struct QuestTransitionHistoryEntry
-    {
-        public double Timestamp;
-        public uint QuestHash;
-        public uint FromFlagID;
-        public uint ToFlagID;
-        public uint SignalPayloadHash;
-        public uint SnapshotWordOffset;
-        public ushort EventType;
-        public byte TransitionType;
-        public byte Completed;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
     internal struct QuestRevertDescriptor
     {
         public uint CriticalItemHash;

@@ -238,16 +238,7 @@ namespace Hecton8.World
         private int _nextFaultTelemetryFrame;
         private CancellationTokenSource _lifetimeCancellation;
         private bool _randomEventHooksRegistered;
-
-        private void Awake()
-        {
-            if (!CanUseRuntimeDispatcher())
-                return;
-
-            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
-            ResolveReferences();
-            QueueStartupReconcile();
-        }
+        private bool _runtimeRegistered;
 
         private void OnEnable()
         {
@@ -255,7 +246,7 @@ namespace Hecton8.World
             if (!CanUseRuntimeDispatcher())
                 return;
 
-            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
+            TryRegisterRuntimeService();
             EnsureLifetimeCancellation();
             RegisterRandomEventHooks();
             QueueStartupReconcile();
@@ -278,7 +269,7 @@ namespace Hecton8.World
             if (!CanUseRuntimeDispatcher())
                 return;
 
-            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
+            TryRegisterRuntimeService();
             EnsureLifetimeCancellation();
             RegisterRandomEventHooks();
             QueueStartupReconcile();
@@ -314,14 +305,12 @@ namespace Hecton8.World
             CancelAllPendingRequests();
             ClearAllVolumes();
 
-            if (ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, this))
-                GlobalRegistry.UnregisterGeologyVoxelBridgeRuntime(this);
+            TryUnregisterRuntimeService();
         }
 
         private void OnDestroy()
         {
-            if (ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, this))
-                GlobalRegistry.UnregisterGeologyVoxelBridgeRuntime(this);
+            TryUnregisterRuntimeService();
         }
 
         public void Tick(float deltaTime)
@@ -370,6 +359,24 @@ namespace Hecton8.World
 
             RandomEventEvents.Unregister(this);
             _randomEventHooksRegistered = false;
+        }
+
+        private void TryRegisterRuntimeService()
+        {
+            if (_runtimeRegistered || !Application.isPlaying)
+                return;
+
+            GlobalRegistry.RegisterGeologyVoxelBridgeRuntime(this);
+            _runtimeRegistered = ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, this);
+        }
+
+        private void TryUnregisterRuntimeService()
+        {
+            if (!_runtimeRegistered && !ReferenceEquals(GlobalRegistry.GeologyVoxelBridge, this))
+                return;
+
+            GlobalRegistry.UnregisterGeologyVoxelBridgeRuntime(this);
+            _runtimeRegistered = false;
         }
 
         void IRandomEventListener.OnRandomEventStarted(RandomEventType type, float intensity)
@@ -532,7 +539,7 @@ namespace Hecton8.World
                     seed);
             }
 
-            AbyssalFluidDecalManager fluidDecalManager = AbyssalFluidDecalManager.Instance;
+            AbyssalFluidDecalManager fluidDecalManager = GlobalRegistry.AbyssalFluidDecals;
             if (fluidDecalManager != null)
             {
                 Vector3 dustRuntimePosition = HectonFloatingOrigin.ToRuntimePosition((absoluteStart + absoluteEnd) * 0.5f + Vector3.up * ceilingOffset);
@@ -969,7 +976,6 @@ namespace Hecton8.World
                         return;
                     }
 
-                    volume.name = $"GeoVoxel_{request.familyId}_{request.runtimeKey}";
                     WorldGenerativeGeologyVoxelRuntime runtime = volume.GetComponent<WorldGenerativeGeologyVoxelRuntime>();
                     if (runtime == null)
                         runtime = volume.AddComponent<WorldGenerativeGeologyVoxelRuntime>();

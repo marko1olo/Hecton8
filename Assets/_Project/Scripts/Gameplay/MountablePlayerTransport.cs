@@ -28,7 +28,8 @@ namespace Hecton8.Gameplay
     {
         private const string DefaultMountText = "Board Transport";
         private const string DefaultDismountText = "Dismount";
-        private const float InertialGhostBlend = 0.15f;
+        private const float PresentationVelocityLagSharpness = 5.5f;
+        private const float PresentationVelocityLagBlend = 0.15f;
         private const float MountedDriveSkinWidth = 0.08f;
         private const int EntanglementDensityProbeCount = 4;
         private const int MaxEntanglingFloraCount = 4;
@@ -215,10 +216,10 @@ namespace Hecton8.Gameplay
         private Vector3 _platformAngularVelocity;
         private Vector3 _previousPlatformPosition;
         private Quaternion _previousPlatformRotation = Quaternion.identity;
+        private Vector3 _presentationVelocityLag;
         private float _presentationTransportBoost01;
         private float _nextMountedImpactFeedbackTime;
-        private int _platformVelocityGhostWriteIndex;
-        private int _platformVelocityGhostSampleCount;
+        private bool _presentationVelocityLagInitialized;
         private float _entanglementStressSignalTimer;
         private float _cavitationEventTimer;
         private float _pendingEntanglementShearDamage;
@@ -229,9 +230,6 @@ namespace Hecton8.Gameplay
         private float _permanentSafeDepthPenaltyMeters;
         // COLD ALLOC: List<IDamageSignalReceiver>[1] â€” mounted transport damage listeners (player trauma dispatcher) â€” owner: MountablePlayerTransport
         private readonly List<IDamageSignalReceiver> _damageReceivers = new List<IDamageSignalReceiver>(1);
-        // COLD ALLOC: Vector3[4] Ã¢â‚¬â€ inertial ghost history for presentation-only transport boost carry Ã¢â‚¬â€ owner: MountablePlayerTransport
-        private readonly Vector3[] _platformVelocityGhostHistory = new Vector3[4];
-
         // COLD ALLOC: UInt32[4] - tracked kelp or sargassum instance uids holding the propeller lock - owner: MountablePlayerTransport
         private readonly uint[] _entanglementInstanceUids = new uint[MaxEntanglingFloraCount];
         // COLD ALLOC: Vector3[4] - tracked kelp or sargassum anchor positions paired with entanglement instance ids - owner: MountablePlayerTransport
@@ -1708,7 +1706,7 @@ namespace Hecton8.Gameplay
                 _previousPlatformRotation = currentRotation;
                 _platformLinearVelocity = Vector3.zero;
                 _platformAngularVelocity = Vector3.zero;
-                UpdatePresentationTransportBoost();
+                UpdatePresentationTransportBoost(fixedDeltaTime);
                 return;
             }
 
@@ -1730,7 +1728,7 @@ namespace Hecton8.Gameplay
                 _platformAngularVelocity = HectonPlayerMotor.SafeVelocity(candidateAngularVelocity, _platformAngularVelocity);
             }
 
-            UpdatePresentationTransportBoost();
+            UpdatePresentationTransportBoost(fixedDeltaTime);
             _previousPlatformPosition = currentPosition;
             _previousPlatformRotation = currentRotation;
         }
@@ -1743,7 +1741,7 @@ namespace Hecton8.Gameplay
             _previousPlatformRotation = platformTransform != null ? platformTransform.rotation : Quaternion.identity;
             _platformLinearVelocity = Vector3.zero;
             _platformAngularVelocity = Vector3.zero;
-            ResetInertialGhostHistory();
+            ResetPresentationVelocityLag();
         }
 
         private void TryRestoreBodyFromBailoutDrift()
@@ -1903,46 +1901,42 @@ namespace Hecton8.Gameplay
                 audio.PlayAtPoint(clip, _cachedTransform.position, transportAudioVolume);
         }
 
-        private void UpdatePresentationTransportBoost()
+        private void UpdatePresentationTransportBoost(float fixedDeltaTime)
         {
             if (!_mounted || preset == null)
             {
                 _presentationTransportBoost01 = 0f;
+                ResetPresentationVelocityLag();
                 return;
             }
 
-            RecordInertialGhostVelocity(_platformLinearVelocity);
-            Vector3 ghostVelocity = ResolveGhostVelocity();
-            Vector3 perceivedVelocity = Vector3.Lerp(_platformLinearVelocity, ghostVelocity, InertialGhostBlend);
+            UpdatePresentationVelocityLag(_platformLinearVelocity, fixedDeltaTime);
+            Vector3 perceivedVelocity = Vector3.Lerp(_platformLinearVelocity, _presentationVelocityLag, PresentationVelocityLagBlend);
             float speedReference = Mathf.Max(0.1f, preset.PropulsionForceReference * 0.01f);
             float speedBoost = Mathf.Clamp01(perceivedVelocity.magnitude / speedReference);
             float throttleBoost = Mathf.Clamp01(GetTransportPropulsionForce() / Mathf.Max(0.01f, preset.PropulsionForceReference));
             _presentationTransportBoost01 = Mathf.Clamp01(Mathf.Max(throttleBoost, speedBoost));
         }
 
-        private void RecordInertialGhostVelocity(Vector3 velocity)
+        private void UpdatePresentationVelocityLag(Vector3 velocity, float fixedDeltaTime)
         {
-            _platformVelocityGhostHistory[_platformVelocityGhostWriteIndex] = HectonPlayerMotor.SafeVelocity(velocity);
-            _platformVelocityGhostWriteIndex = (_platformVelocityGhostWriteIndex + 1) % _platformVelocityGhostHistory.Length;
-            if (_platformVelocityGhostSampleCount < _platformVelocityGhostHistory.Length)
-                _platformVelocityGhostSampleCount++;
+            Vector3 safeVelocity = HectonPlayerMotor.SafeVelocity(velocity);
+            if (!_presentationVelocityLagInitialized)
+            {
+                _presentationVelocityLag = safeVelocity;
+                _presentationVelocityLagInitialized = true;
+                return;
+            }
+
+            float blend = 1f - Mathf.Exp(-PresentationVelocityLagSharpness * Mathf.Max(0f, fixedDeltaTime));
+            _presentationVelocityLag = HectonPlayerMotor.SafeVelocity(Vector3.Lerp(_presentationVelocityLag, safeVelocity, Mathf.Clamp01(blend)), safeVelocity);
         }
 
-        private Vector3 ResolveGhostVelocity()
-        {
-            if (_platformVelocityGhostSampleCount < _platformVelocityGhostHistory.Length)
-                return _platformLinearVelocity;
-
-            return _platformVelocityGhostHistory[_platformVelocityGhostWriteIndex];
-        }
-
-        private void ResetInertialGhostHistory()
+        private void ResetPresentationVelocityLag()
         {
             _presentationTransportBoost01 = 0f;
-            _platformVelocityGhostWriteIndex = 0;
-            _platformVelocityGhostSampleCount = 0;
-            for (int i = 0; i < _platformVelocityGhostHistory.Length; i++)
-                _platformVelocityGhostHistory[i] = Vector3.zero;
+            _presentationVelocityLag = Vector3.zero;
+            _presentationVelocityLagInitialized = false;
         }
 
         private static float ResolveBlendFactor(float sharpness, float deltaTime)

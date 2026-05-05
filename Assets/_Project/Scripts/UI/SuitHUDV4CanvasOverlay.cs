@@ -164,7 +164,6 @@ namespace Hecton8.UI
         private static readonly char[] s_statusLifeSupportNominalAscendingChars = DefaultStatusLifeSupportNominalAscending.ToCharArray();
         private static readonly char[] s_statusLifeSupportNominalDescendingChars = DefaultStatusLifeSupportNominalDescending.ToCharArray();
         private static readonly char[] s_loadPrefixChars = "MASS: ".ToCharArray();
-        private static readonly char[] s_loadSeparatorChars = "/".ToCharArray();
         private static readonly char[] s_loadKgSuffixChars = " KG".ToCharArray();
         private static readonly char[] s_emptyHudChars = Array.Empty<char>();
         private static readonly int _HudDepthKeyHash = LocHash.Compute(LocalizationKeys.HUD_DEPTH);
@@ -3262,7 +3261,7 @@ namespace Hecton8.UI
             if (_loadMassCharStart < 0 || _loadMassCharLength <= 0)
                 return;
 
-            if (load01 > 0.9f)
+            if (load01 > 0.8f)
             {
                 _loadMassPulsePhase = Mathf.Repeat(Time.unscaledTime * 10f, Mathf.PI * 2f);
                 ApplyLoadMassVertexColor(ResolveLoadMassPulseColor(warning, _loadMassPulsePhase));
@@ -3308,7 +3307,7 @@ namespace Hecton8.UI
 
         private static Color ResolveLoadBaseColor(Color primary, Color dim, Color warning, float load01)
         {
-            if (load01 <= 0.9f)
+            if (load01 <= 0.8f)
                 return Alpha(Color.Lerp(dim, primary, Mathf.Clamp01(load01 * 0.65f)), 0.72f);
 
             return Alpha(warning, 0.95f);
@@ -3318,8 +3317,9 @@ namespace Hecton8.UI
         {
             float pulse = 0.5f + (0.5f * Mathf.Sin(phase));
             Color32 warning32 = warning;
-            byte green = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(warning32.g, 14f, 0.5f + pulse * 0.35f)), 0, 255);
-            byte blue = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(warning32.b, 10f, 0.55f + pulse * 0.3f)), 0, 255);
+            byte greenBase = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Max(96f, warning32.g * 0.55f)), 0, 255);
+            byte green = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(greenBase, 168f, pulse)), 0, 255);
+            byte blue = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(12f, 28f, pulse * 0.35f)), 0, 255);
             byte alpha = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(224f, 255f, pulse)), 0, 255);
             return new Color32(255, green, blue, alpha);
         }
@@ -3328,19 +3328,19 @@ namespace Hecton8.UI
         {
             length = 0;
             version = 0;
-            if (buffer == null || buffer.Length < 16)
+            if (buffer == null || buffer.Length < 18)
                 return false;
 
-            int roundedMassKg = Mathf.Max(0, Mathf.RoundToInt(totalMassKg));
-            int roundedCapacityKg = Mathf.Max(1, Mathf.RoundToInt(carryCapacityKg));
+            int massTenthKg = Mathf.Max(0, Mathf.RoundToInt(Mathf.Max(0f, totalMassKg) * 10f));
+            float displayMassKg = massTenthKg * 0.1f;
             int cursor = 0;
             cursor = AppendChars(s_loadPrefixChars, buffer, cursor);
-            cursor = AppendInt(roundedMassKg, buffer, cursor);
-            cursor = AppendChars(s_loadSeparatorChars, buffer, cursor);
-            cursor = AppendInt(roundedCapacityKg, buffer, cursor);
+            if (!displayMassKg.TryFormat(buffer.AsSpan(cursor), out int written, "F1"))
+                return false;
+            cursor += written;
             cursor = AppendChars(s_loadKgSuffixChars, buffer, cursor);
             length = Mathf.Clamp(cursor, 0, buffer.Length);
-            version = unchecked((roundedMassKg * 397) ^ roundedCapacityKg);
+            version = massTenthKg;
             return cursor <= buffer.Length;
         }
 

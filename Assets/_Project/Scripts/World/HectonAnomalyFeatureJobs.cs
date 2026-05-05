@@ -40,6 +40,9 @@ namespace Hecton8.World
         /// <summary>Minimum crossed-ridge prominence required for a pillar candidate.</summary>
         public float MinimumPillarProminenceMeters;
 
+        /// <summary>Minimum number of descending ridge arms required for a pillar junction.</summary>
+        public int MinimumPillarRidgeArms;
+
         /// <summary>Minimum local trough depth required for a fissure candidate.</summary>
         public float MinimumFissureDepthMeters;
 
@@ -59,6 +62,7 @@ namespace Hecton8.World
                 CellSizeMeters = math.max(0.001f, CellSizeMeters),
                 OriginAup = OriginAup,
                 MinimumPillarProminenceMeters = math.max(0f, MinimumPillarProminenceMeters),
+                MinimumPillarRidgeArms = math.clamp(MinimumPillarRidgeArms <= 0 ? 3 : MinimumPillarRidgeArms, 3, 8),
                 MinimumFissureDepthMeters = math.max(0f, MinimumFissureDepthMeters),
                 EqualHeightEpsilon = math.max(0.000001f, EqualHeightEpsilon),
                 FissureInfluencePacked = FissureInfluencePacked
@@ -108,7 +112,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that detects ridge-local maxima for pillars and narrow low troughs for fissures.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct AnomalyRidgeFeatureDetectionJob : IJobParallelFor
     {
         /// <summary>Input heightmap in meters.</summary>
@@ -172,7 +176,21 @@ namespace Hecton8.World
                 center >= southWest - epsilon &&
                 center > math.min(math.min(north, south), math.min(east, west)) + epsilon;
 
-            if (localMaximum && pillarProminence >= Settings.MinimumPillarProminenceMeters)
+            int ridgeArms = CountPillarRidgeArms(
+                center,
+                north,
+                south,
+                east,
+                west,
+                northEast,
+                northWest,
+                southEast,
+                southWest,
+                math.max(Settings.MinimumPillarProminenceMeters, epsilon));
+
+            if (localMaximum &&
+                pillarProminence >= Settings.MinimumPillarProminenceMeters &&
+                ridgeArms >= Settings.MinimumPillarRidgeArms)
             {
                 FeatureRecords[index] = BuildRecord(
                     index,
@@ -280,6 +298,30 @@ namespace Hecton8.World
             float diagonalA = math.min(center - northEast, center - southWest);
             float diagonalB = math.min(center - northWest, center - southEast);
             return math.max(math.min(northSouth, eastWest), math.min(diagonalA, diagonalB));
+        }
+
+        private static int CountPillarRidgeArms(
+            float center,
+            float north,
+            float south,
+            float east,
+            float west,
+            float northEast,
+            float northWest,
+            float southEast,
+            float southWest,
+            float armDropMeters)
+        {
+            int count = 0;
+            count += center - north >= armDropMeters ? 1 : 0;
+            count += center - south >= armDropMeters ? 1 : 0;
+            count += center - east >= armDropMeters ? 1 : 0;
+            count += center - west >= armDropMeters ? 1 : 0;
+            count += center - northEast >= armDropMeters ? 1 : 0;
+            count += center - northWest >= armDropMeters ? 1 : 0;
+            count += center - southEast >= armDropMeters ? 1 : 0;
+            count += center - southWest >= armDropMeters ? 1 : 0;
+            return count;
         }
 
         private static float ComputeFissureDepth(

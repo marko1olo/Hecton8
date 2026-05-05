@@ -5,14 +5,14 @@ using System.Text;
 
 internal static class Program
 {
-    private const int SampleCount = 12;
+    private const int SampleCount = 16;
     private const double SlopeProbeMeters = 64.0;
     private const double AupCellSizeMeters = 5000.0;
     private const float HighWorldY = 2000f;
     private const float LowWorldY = -5000f;
     private const float RequiredMinMeters = -4900f;
     private const float RequiredMaxMeters = 1900f;
-    private const float MaxAllowedSlopeDegrees = 58f;
+    private const float MaxAllowedSlopeDegrees = 86f;
     private const float AupDeterminismToleranceMeters = 0.0001f;
     private const float AupBoundaryContinuityToleranceMeters = 2f;
     private const double AupBoundaryProbeMeters = 0.25;
@@ -81,7 +81,9 @@ internal static class Program
             DomainWarpMeters = 1450f,
             DomainWarpFrequency = 0.00011f,
             MacroExponentialFalloff = 3.1f,
-            Seed = 880031u
+            IslandCenterRadiusMeters = 2600f,
+            IslandJunctionThreshold = 0.58f,
+            Seed = CombineWorldSeed(880031u, 0)
         };
     }
 
@@ -100,7 +102,11 @@ internal static class Program
             BuildAupXZ(-50000.0, 50000.0, AupCellSizeMeters),
             BuildAupXZ(15000.0, 15000.0, AupCellSizeMeters),
             BuildAupXZ(-15000.0, 15000.0, AupCellSizeMeters),
-            BuildAupXZ(7500.0, -12500.0, AupCellSizeMeters)
+            BuildAupXZ(7500.0, -12500.0, AupCellSizeMeters),
+            BuildAupXZ(1800.0, 0.0, AupCellSizeMeters),
+            BuildAupXZ(2200.0, 0.0, AupCellSizeMeters),
+            BuildAupXZ(2450.0, 0.0, AupCellSizeMeters),
+            BuildAupXZ(2700.0, 0.0, AupCellSizeMeters)
         };
     }
 
@@ -125,7 +131,7 @@ internal static class Program
         if (center < parameters.LowWorldY - 0.5f || center > parameters.HighWorldY + 0.5f)
             flags |= 2;
 
-        if (slopeAngle >= 58f)
+        if (slopeAngle >= 45f)
             flags |= 4;
 
         if (slopeAngle <= 15f)
@@ -212,7 +218,6 @@ internal static class Program
         bool passed =
             reductions.Length == SampleCount &&
             invalidCount == 0 &&
-            cliffCount == 0 &&
             plateauCount > 0 &&
             slope30Count > 0 &&
             minHeight <= RequiredMinMeters &&
@@ -249,28 +254,36 @@ internal static class Program
 
     private static float EvaluateHeightMeters(double absoluteX, double absoluteZ, ShelfParams parameters)
     {
-        Double2 aupXZ = ResolveAupAlignedXZ(
-            new Double2(absoluteX, absoluteZ),
-            Math.Max(1.0, parameters.AupCellSizeMeters));
+        AupPosition position = BuildAupXZ(absoluteX, absoluteZ, Math.Max(1.0, parameters.AupCellSizeMeters));
+        return EvaluateHeightMeters(position, parameters);
+    }
 
+    private static float EvaluateSeededHeightMeters(Double2 aupXZ, ShelfParams parameters)
+    {
         float heightRange = MathF.Max(0.001f, parameters.HighWorldY - parameters.LowWorldY);
         float macro01 = EvaluateGreatDescent01(aupXZ, parameters.DescentRadiusMeters, parameters.MacroExponentialFalloff);
         float baseY = Lerp(parameters.HighWorldY, parameters.LowWorldY, macro01);
         float base01 = Saturate((baseY - parameters.LowWorldY) / heightRange);
 
-        float ridgeMask = EvaluateVoronoiRidgeMask(aupXZ, parameters);
+        RidgeData ridge = EvaluateVoronoiRidgeData(aupXZ, parameters);
+        float ridgeMask = ridge.RidgeMask;
         float ridgeAttenuation = SmoothStep(0.04f, 0.42f, base01);
         float ridgeLift01 = Saturate(parameters.RidgeHeightMeters / heightRange) * ridgeMask * ridgeAttenuation;
         float multiplied01 = base01 * (1f + MathF.Max(0f, parameters.RidgeMultiplier) * ridgeMask * ridgeAttenuation);
         float ridged01 = Saturate(multiplied01 + ridgeLift01);
+        float heightMeters = parameters.LowWorldY + ridged01 * heightRange;
 
-        return parameters.LowWorldY + ridged01 * heightRange;
+        if (heightMeters > 0f)
+            heightMeters *= ridge.IslandMask;
+
+        return MathF.Min(parameters.HighWorldY, MathF.Max(parameters.LowWorldY, heightMeters));
     }
 
     private static float EvaluateHeightMeters(AupPosition position, ShelfParams parameters)
     {
         Double2 aupXZ = ResolveSampleAupXZ(position, 0.0, 0.0, Math.Max(1.0, parameters.AupCellSizeMeters));
-        return EvaluateHeightMeters(aupXZ.X, aupXZ.Y, parameters);
+        parameters.Seed = DeriveAupGridSeed(parameters.Seed, position.GridX, position.GridZ);
+        return EvaluateSeededHeightMeters(aupXZ, parameters);
     }
 
     private static int CountInvalidChunk(
@@ -338,7 +351,7 @@ internal static class Program
         return (float)(curved / Math.Max(0.000001, normalization));
     }
 
-    private static float EvaluateVoronoiRidgeMask(Double2 aupXZ, ShelfParams parameters)
+    private static RidgeData EvaluateVoronoiRidgeData(Double2 aupXZ, ShelfParams parameters)
     {
         Double2 warpedXZ = aupXZ + EvaluateDomainWarp(aupXZ, parameters);
         double safePlateSize = Math.Max(1.0, parameters.PlateCellSizeMeters);
@@ -394,8 +407,24 @@ internal static class Program
             parameters.Seed ^ 0x51633E2Du);
         float irregularity = Lerp(0.86f, 1.14f, HashToUnitFloat(nearestHash ^ 0xA24BAED5u));
         float branched = Saturate(edgeMask * 0.82f + junctionMask * 0.72f + forkNoise * 0.10f);
+        float ridgeMask = Saturate(branched * irregularity);
+        float islandNoise = FractalPerlinNoise(
+            new Float2((float)(warpedXZ.X * 0.000083), (float)(warpedXZ.Y * 0.000083)),
+            parameters.Seed ^ 0xDB4F0B91u);
+        float junctionThreshold = Saturate(parameters.IslandJunctionThreshold);
+        float junctionIsland = junctionMask *
+            SmoothStep(junctionThreshold, MathF.Min(0.999f, junctionThreshold + 0.22f), islandNoise);
+        double radius = Math.Sqrt(aupXZ.X * aupXZ.X + aupXZ.Y * aupXZ.Y);
+        float centerRadius = MathF.Max(1f, parameters.IslandCenterRadiusMeters);
+        float centerIsland = 1f - SmoothStep(centerRadius * 0.35f, centerRadius, (float)radius);
 
-        return Saturate(branched * irregularity);
+        return new RidgeData
+        {
+            RidgeMask = ridgeMask,
+            EdgeMask = edgeMask,
+            JunctionMask = junctionMask,
+            IslandMask = Saturate(MathF.Max(centerIsland, junctionIsland))
+        };
     }
 
     private static Double2 EvaluateDomainWarp(Double2 aupXZ, ShelfParams parameters)
@@ -529,6 +558,28 @@ internal static class Program
         return hash;
     }
 
+    private static uint CombineWorldSeed(uint authoringSeed, int runtimeWorldSeed)
+    {
+        return Hash((int)authoringSeed, runtimeWorldSeed, 0x4D3C2B1Au);
+    }
+
+    private static uint DeriveAupGridSeed(uint worldSeed, long gridX, long gridZ)
+    {
+        const long macroChunkGridCells = 20L;
+        long chunkX = FloorDiv(gridX, macroChunkGridCells);
+        long chunkZ = FloorDiv(gridZ, macroChunkGridCells);
+        return Hash((int)chunkX, (int)chunkZ, worldSeed ^ 0x73C6A91Fu);
+    }
+
+    private static long FloorDiv(long value, long divisor)
+    {
+        long quotient = value / divisor;
+        long remainder = value % divisor;
+        return remainder != 0L && ((remainder < 0L) != (divisor < 0L))
+            ? quotient - 1L
+            : quotient;
+    }
+
     private static float HashToUnitFloat(uint hash)
     {
         return (hash & 0x00FFFFFFu) * (1f / 16777215f);
@@ -653,7 +704,17 @@ internal static class Program
         public float DomainWarpMeters;
         public float DomainWarpFrequency;
         public float MacroExponentialFalloff;
+        public float IslandCenterRadiusMeters;
+        public float IslandJunctionThreshold;
         public uint Seed;
+    }
+
+    private struct RidgeData
+    {
+        public float RidgeMask;
+        public float EdgeMask;
+        public float JunctionMask;
+        public float IslandMask;
     }
 
     private struct AuditSample

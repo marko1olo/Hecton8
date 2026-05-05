@@ -56,7 +56,7 @@ namespace Hecton8.Caves
         private const float MinRuntimeVoxelSize = 0.25f;
         private const float MinCarveRadiusMeters = 0.9f;
         private const float MaxCarveRadiusMeters = 4f;
-        private const float ThermalMeltDurationSeconds = 10f;
+        private const float ThermalMeltDurationSeconds = 5f;
         private const float ThermalMeltStepIntervalSeconds = 0.25f;
         private const float ThermalMeltMinimumHeat = 0.01f;
         private const float SphereVolumeFactor = 4f / 3f * math.PI;
@@ -67,7 +67,6 @@ namespace Hecton8.Caves
         private const byte ThermalMeltMaterialId = 2;
         private const byte DeltaModeAdditive = 1 << 0;
         private const byte DeltaModeReplace = 1 << 1;
-        private const byte DeltaModeThermalMelt = 1 << 2;
         private const byte CarveSourceLaser = 1 << 0;
         private const byte DeltaShapeSphere = 0;
         private const byte DeltaShapeBox = 1;
@@ -107,7 +106,7 @@ namespace Hecton8.Caves
         private readonly List<HectonVoxelVolume> _pendingRebuildVolumes = new List<HectonVoxelVolume>(InitialVolumeRegistryCapacity);
         // COLD ALLOC: PendingCarveRequest[InitialPendingCarveCapacity] â€” deferred plasma-cut carve staging buffer â€” owner: VoxelDeltaProcessor
         private readonly PendingCarveRequest[] _pendingCarves = new PendingCarveRequest[InitialPendingCarveCapacity];
-        // COLD ALLOC: ThermalMeltRuntime[16] - bounded lava melt erosion requests - owner: VoxelDeltaProcessor
+        // COLD ALLOC: ThermalMeltRuntime[16] - bounded lava crater-expansion requests - owner: VoxelDeltaProcessor
         private readonly ThermalMeltRuntime[] _thermalMeltEvents = new ThermalMeltRuntime[MaxActiveThermalMeltEvents];
         private int _pendingCarveCount;
         private int _thermalMeltCount;
@@ -290,7 +289,7 @@ namespace Hecton8.Caves
         }
 
         /// <summary>
-        /// Queues a bounded ten-second lava/vent erosion event in absolute-universe coordinates.
+        /// Queues a bounded five-second lava/vent crater expansion in absolute-universe coordinates.
         /// </summary>
         /// <param name="meltEvent">Absolute melt request.</param>
         /// <returns>True when one live volume accepted the melt request.</returns>
@@ -317,8 +316,7 @@ namespace Hecton8.Caves
 
                 existing.AbsoluteCenter = Vector3.Lerp(existing.AbsoluteCenter, meltEvent.AbsoluteUniversePosition, 0.5f);
                 existing.RadiusMeters = math.max(existing.RadiusMeters, radius);
-                existing.Heat01 = math.max(existing.Heat01, heat01);
-                existing.ElapsedSeconds = math.min(existing.ElapsedSeconds, ThermalMeltDurationSeconds * 0.5f);
+                existing.ElapsedSeconds = math.min(existing.ElapsedSeconds, ThermalMeltStepIntervalSeconds);
                 _thermalMeltEvents[i] = existing;
                 return true;
             }
@@ -331,7 +329,6 @@ namespace Hecton8.Caves
                 Volume = targetVolume,
                 AbsoluteCenter = meltEvent.AbsoluteUniversePosition,
                 RadiusMeters = radius,
-                Heat01 = heat01,
                 ElapsedSeconds = 0f,
                 StepAccumulatorSeconds = ThermalMeltStepIntervalSeconds
             };
@@ -398,8 +395,8 @@ namespace Hecton8.Caves
         private bool TryStageThermalMeltStep(in ThermalMeltRuntime melt)
         {
             float progress = ResolveThermalMeltProgress(melt.ElapsedSeconds);
-            float radius = math.max(MinCarveRadiusMeters, melt.RadiusMeters * math.lerp(0.35f, 1f, progress));
-            float strength = math.max(MinRuntimeVoxelSize, radius * math.lerp(0.18f, 0.42f, melt.Heat01));
+            float radius = math.max(MinCarveRadiusMeters, melt.RadiusMeters * progress);
+            float strength = math.max(MinRuntimeVoxelSize, radius * 0.35f);
             return TryEnqueuePendingCarve(new PendingCarveRequest
             {
                 Volume = melt.Volume,
@@ -407,7 +404,7 @@ namespace Hecton8.Caves
                 ExplicitRadiusMeters = radius,
                 ExplicitBlendStrength = strength,
                 MaterialId = ThermalMeltMaterialId,
-                DeltaFlags = DeltaModeThermalMelt,
+                DeltaFlags = 0,
                 Shape = DeltaShapeSphere
             });
         }
@@ -1571,7 +1568,6 @@ namespace Hecton8.Caves
                 bool emittedTransientLaserDebris = false;
                 if ((_scheduledCarveRequest.SourceFlags & CarveSourceLaser) != 0 &&
                     (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
-                    (_scheduledCarveRequest.DeltaFlags & DeltaModeThermalMelt) == 0 &&
                     _scheduledCarveRequest.Shape != DeltaShapeBox)
                 {
                     emittedTransientLaserDebris = EmitLaserCarveDebris(
@@ -1581,7 +1577,6 @@ namespace Hecton8.Caves
 
                 if (!emittedTransientLaserDebris &&
                     (_scheduledCarveRequest.DeltaFlags & DeltaModeAdditive) == 0 &&
-                    (_scheduledCarveRequest.DeltaFlags & DeltaModeThermalMelt) == 0 &&
                     _scheduledCarveRequest.Shape != DeltaShapeBox)
                 {
                     EmitCarveDebris(in _scheduledCarveRequest, ResolveCarveRadius(in _scheduledCarveRequest, volume));
@@ -2455,7 +2450,6 @@ namespace Hecton8.Caves
             public HectonVoxelVolume Volume;
             public Vector3 AbsoluteCenter;
             public float RadiusMeters;
-            public float Heat01;
             public float ElapsedSeconds;
             public float StepAccumulatorSeconds;
         }

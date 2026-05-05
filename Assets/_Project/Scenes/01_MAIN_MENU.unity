@@ -6456,7 +6456,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
+  m_TargetGraphic: {fileID: 1476939432}
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
@@ -12299,7 +12299,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
+  m_TargetGraphic: {fileID: 1749972496}
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
@@ -13416,7 +13416,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
+  m_TargetGraphic: {fileID: 725575313}
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
@@ -13665,7 +13665,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 0}
+  m_TargetGraphic: {fileID: 1502967432}
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
@@ -19567,7 +19567,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 76c392e42b5098c458856cdf6ecaaaa1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.EventSystems.EventSystem
-  m_FirstSelected: {fileID: 0}
+  m_FirstSelected: {fileID: 1197518412}
   m_sendNavigationEvents: 1
   m_DragThreshold: 10
 --- !u!4 &1804571619

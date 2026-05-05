@@ -116,16 +116,16 @@ namespace Hecton8.Dev
                 if (!ValidatePureVoidNavGrid())
                     return;
 
+                _debugLastPhase = "VoidChunkBounds";
+                if (!ValidateVoidChunkBoundsEarlyExit())
+                    return;
+
                 _debugLastPhase = "VertexAo";
                 if (!ValidateVertexAmbientOcclusion())
                     return;
 
-                _debugLastPhase = "SeamNormal";
-                if (!ValidateSeamDensityPerturbation())
-                    return;
-
-                _debugLastPhase = "HullDent";
-                if (!ValidateGaussianHullDent())
+                _debugLastPhase = "HullImpactDecal";
+                if (!ValidateHullImpactDecalSizing())
                     return;
 
                 _debugLastPhase = "Passed";
@@ -244,6 +244,51 @@ namespace Hecton8.Dev
             }
         }
 
+        private bool ValidateVoidChunkBoundsEarlyExit()
+        {
+            NativeArray<float> density = default;
+            NativeArray<int> hasContent = default;
+            try
+            {
+                density = new NativeArray<float>(8, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                hasContent = new NativeArray<int>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                for (int i = 0; i < density.Length; i++)
+                    density[i] = -1f;
+
+                JobHandle handle = new global::VoxelChunkBoundsContentJob
+                {
+                    ptsX = 2,
+                    ptsY = 2,
+                    ptsZ = 2,
+                    density = density,
+                    hasContent = hasContent
+                }.Schedule();
+                // COLD SYNC JOB: dev smoke tester validates the eight-corner void early-exit gate outside gameplay.
+                handle.Complete();
+                bool pureVoidRejected = hasContent[0] == 0;
+
+                density[7] = 1f;
+                handle = new global::VoxelChunkBoundsContentJob
+                {
+                    ptsX = 2,
+                    ptsY = 2,
+                    ptsZ = 2,
+                    density = density,
+                    hasContent = hasContent
+                }.Schedule();
+                // COLD SYNC JOB: dev smoke tester validates non-void corner admission outside gameplay.
+                handle.Complete();
+                return Require(pureVoidRejected && hasContent[0] == 1, "Voxel chunk bounds content gate failed.");
+            }
+            finally
+            {
+                if (density.IsCreated)
+                    density.Dispose();
+                if (hasContent.IsCreated)
+                    hasContent.Dispose();
+            }
+        }
+
         private bool ValidateVertexAmbientOcclusion()
         {
             NativeArray<float> density = default;
@@ -316,29 +361,14 @@ namespace Hecton8.Dev
             }
         }
 
-        private bool ValidateSeamDensityPerturbation()
+        private bool ValidateHullImpactDecalSizing()
         {
-            float perturbation = VoxelSeamDirector.ComputeCaveMouthDensityPerturbation(
-                new float3(0f, 0.5f, 0f),
-                float3.zero,
-                new float3(0f, 1f, 0f),
-                1f,
-                2f,
-                0.5f);
-            return Require(perturbation > 0.01f && perturbation < 0.08f, "Cave-mouth terrain-normal perturbation failed.");
-        }
-
-        private bool ValidateGaussianHullDent()
-        {
-            float3 dented = SubmarineStructuralGrid.DebugEvaluateHullDentVertex(
-                float3.zero,
-                float3.zero,
-                new float3(0f, 1f, 0f),
-                1f,
-                0.1f,
-                0.5f,
-                0.05f);
-            return Require(dented.y < -0.09f && math.abs(dented.x) < 0.0001f && math.abs(dented.z) < 0.0001f, "Gaussian hull dent failed.");
+            float small = SubmarineStructuralGrid.DebugResolveHullImpactDentDecalSize(0.35f, 0.95f, 0f, 0f);
+            float severe = SubmarineStructuralGrid.DebugResolveHullImpactDentDecalSize(0.35f, 0.95f, 30f, 1f);
+            return Require(
+                math.abs(small - 0.35f) < 0.0001f &&
+                math.abs(severe - 1.5f) < 0.0001f,
+                "Hull impact decal sizing failed.");
         }
 
         private bool Require(bool condition, string issue)

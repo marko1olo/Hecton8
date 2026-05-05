@@ -1,11 +1,14 @@
 using System.Collections.Generic;
+using Hecton.Localization;
 using Hecton8.Bootstrap;
 using Hecton8.Core;
 using Hecton8.Gameplay;
 using Hecton8.Optimization;
 using Hecton8.Physics;
 using Hecton8.Tools;
+using Hecton8.UI;
 using Hecton8.World;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering.Universal;
 #if UNITY_EDITOR
@@ -43,6 +46,8 @@ namespace NASAPunk.Visor
         [SerializeField] private Camera _baseStackCamera;
         [SerializeField] private Camera _referenceCamera;
         [SerializeField] private RenderTexture _sharedRenderTexture;
+        [SerializeField] private Texture2D _blueNoiseTexture;
+        [SerializeField] private Light _strongestSceneLightSource;
 
         [Header("Projection")]
         [SerializeField] private ProjectionMode _projectionMode = ProjectionMode.Disabled;
@@ -91,6 +96,9 @@ namespace NASAPunk.Visor
         [SerializeField, Range(0f, 1f)] private float _condensationShockHoldDuration = 0.22f;
         [SerializeField, Range(0.25f, 8f)] private float _condensationShockRecoverySpeed = 1.3f;
         [SerializeField, Range(0.25f, 8f)] private float _criticalPressureCondensationBlendSpeed = 2.2f;
+        [SerializeField, Range(-10f, 10f)] private float _coldCondensationStartTemperature = 4f;
+        [SerializeField, Range(-20f, 4f)] private float _coldCondensationFullTemperature = -6f;
+        [SerializeField, Range(0f, 1f)] private float _coldCondensationMaximum = 0.42f;
 
         [Header("Abyssal Frost")]
         [SerializeField, Range(0f, 1f)] private float _screenFrostMaximum = 0.78f;
@@ -118,6 +126,8 @@ namespace NASAPunk.Visor
         [Header("BIOS Recovery")]
         [SerializeField] private Color _biosRecoveryHudTint = new Color(0.16f, 1f, 0.22f, 0.18f);
         [SerializeField, Range(0f, 5f)] private float _biosRecoveryHudIntensity = 2.2f;
+        [SerializeField] private TMP_FontAsset _terminalBiosFont;
+        [SerializeField] private bool _enableBiosFontSwap = true;
         [SerializeField, Range(0f, 200f)] private float _thermalShockBiosRecoveryTemperature = 80f;
         [SerializeField, Range(0f, 200f)] private float _thermalShockBiosRecoverySpike = 80f;
         [SerializeField, Range(0f, 10f)] private float _thermalShockBiosRecoveryHoldSeconds = 2f;
@@ -138,6 +148,8 @@ namespace NASAPunk.Visor
         private RenderTexture _hudRT;
         private MaterialPropertyBlock _mpb;
         private bool _ownsRuntimeTexture;
+        // COLD ALLOC: LabelSwapScheduler[1] — staged BIOS HUD font swap queue — owner: VisorHUDController
+        private readonly LabelSwapScheduler _biosFontSwapScheduler = new LabelSwapScheduler();
         private int _cachedRTWidth = -1;
         private int _cachedRTHeight = -1;
         private float _cachedEffectiveRenderScale = -1f;
@@ -168,6 +180,8 @@ namespace NASAPunk.Visor
         private float _condensationShockHoldTimer;
         private float _criticalPressureCondensationTarget;
         private float _criticalPressureCondensation;
+        private float _coldCondensationTarget;
+        private float _coldCondensation;
         private float _screenFrostTarget;
         private float _screenFrostStrength;
         private float _interferenceDistortionIntensity;
@@ -202,10 +216,15 @@ namespace NASAPunk.Visor
         private float _thermalShockBiosRecoveryTimer;
         private float _submarinePowerNormalized = 1f;
         private bool _hasSubmarinePowerSnapshot;
+        private TMP_FontAsset _activeTerminalBiosFont;
+        private TMP_FontAsset _primaryHudFont;
+        private TMP_FontAsset _queuedHudFont;
+        private bool _biosFontModeApplied;
 
         private uint _glitchRngState = 1u;
 
         private static readonly int ID_HUDTex = Shader.PropertyToID("_HUD_RenderTexture");
+        private static readonly int ID_BlueNoiseTex = Shader.PropertyToID("_BlueNoiseTex");
         private static readonly int ID_HUDIntensity = Shader.PropertyToID("_HUD_Intensity");
         private static readonly int ID_HUDColor = Shader.PropertyToID("_HUD_Color");
         private static readonly int ID_ScratchBleed = Shader.PropertyToID("_HUD_ScratchBleed");
@@ -230,6 +249,8 @@ namespace NASAPunk.Visor
         private static readonly int ID_HazardGlitchLevel = Shader.PropertyToID("_HazardGlitchLevel");
         private static readonly int ID_BiosRecoveryMode = Shader.PropertyToID("_BiosRecoveryMode");
         private static readonly int ID_ToolBatteryNormalized = Shader.PropertyToID("_ToolBatteryNormalized");
+        private static readonly int ID_VisorCameraForwardWS = Shader.PropertyToID("_VisorCameraForwardWS");
+        private static readonly int ID_VisorStrongestLightDirectionWS = Shader.PropertyToID("_VisorStrongestLightDirectionWS");
 
         public Camera HudCamera => _hudCamera;
         public RenderTexture SharedRenderTexture => _sharedRenderTexture;
@@ -260,6 +281,7 @@ namespace NASAPunk.Visor
         private void Awake()
         {
             EnsurePropertyBlock();
+            PrewarmBiosTerminalFont();
         }
 
         private void OnEnable()
@@ -275,6 +297,7 @@ namespace NASAPunk.Visor
 
             RegisterActiveController();
             EnsurePropertyBlock();
+            PrewarmBiosTerminalFont();
             _materialPropertiesDirty = true;
             AutoResolveReferences(force: true);
             SyncProjectionPose();
@@ -313,6 +336,7 @@ namespace NASAPunk.Visor
             if (_condensationShockIntensity > 0f ||
                 _condensationShockHoldTimer > 0f ||
                 _criticalPressureCondensation > 0f ||
+                _coldCondensation > 0f ||
                 _screenFrostStrength > 0f ||
                 _interferenceDistortionIntensity > 0f ||
                 _interferenceDistortionHoldTimer > 0f)
@@ -321,6 +345,8 @@ namespace NASAPunk.Visor
                 _condensationShockHoldTimer = 0f;
                 _criticalPressureCondensationTarget = 0f;
                 _criticalPressureCondensation = 0f;
+                _coldCondensationTarget = 0f;
+                _coldCondensation = 0f;
                 _screenFrostTarget = 0f;
                 _screenFrostStrength = 0f;
                 _interferenceDistortionIntensity = 0f;
@@ -342,6 +368,9 @@ namespace NASAPunk.Visor
             _thermalShockBiosRecoveryTimer = 0f;
             _submarinePowerNormalized = 1f;
             _hasSubmarinePowerSnapshot = false;
+            _biosFontSwapScheduler.Clear();
+            _queuedHudFont = null;
+            _biosFontModeApplied = false;
             HectonSubmarineOsEvents.Unregister(this);
             UnregisterRuntimeTick();
             ReleaseRT();
@@ -434,6 +463,8 @@ namespace NASAPunk.Visor
             UpdateInterferenceState(deltaTime);
             UpdateStructuralFatigueState(deltaTime);
             UpdateHazardTraumaState(deltaTime);
+            UpdateBiosFontSwapState();
+            DrainBiosFontSwapQueue();
             UpdateHypoxiaState(deltaTime);
             UpdatePressureFlickerState(deltaTime);
             if (_materialPropertiesDirty)
@@ -597,7 +628,7 @@ namespace NASAPunk.Visor
 
             EnsurePropertyBlock();
 
-            float condensationStrength = Mathf.Clamp01(_condensationShockIntensity + _criticalPressureCondensation);
+            float condensationStrength = Mathf.Clamp01(_condensationShockIntensity + _criticalPressureCondensation + _coldCondensation);
             float environmentalDistortion = _interferenceDistortionIntensity * _interferenceDistortionMax;
             float hazardChromaticAberration = (_hazardRadiationLevel * 0.010f) + (_hazardGlitchLevel * 0.006f);
             float hazardStaticNoise = (_hazardGlitchLevel * 0.28f) + (_hazardToxicLevel * 0.18f);
@@ -611,8 +642,13 @@ namespace NASAPunk.Visor
                 ? hazardStaticNoise * 0.08f
                 : Mathf.Max(_structuralFatigueStaticNoise, hazardStaticNoise);
             float activeToolBatteryNormalized = ResolveActiveToolBatteryNormalized();
+            Vector3 visorCameraForward = ResolveVisorCameraForward();
+            Vector4 strongestLightDirection = ResolveStrongestLightDirectionPayload();
 
             _visorRenderer.GetPropertyBlock(_mpb);
+            if (_blueNoiseTexture != null)
+                _mpb.SetTexture(ID_BlueNoiseTex, _blueNoiseTexture);
+
             _mpb.SetFloat(ID_HUDIntensity, compositeHudIntensity);
             _mpb.SetColor(ID_HUDColor, compositeHudTint);
             _mpb.SetFloat(ID_ScratchBleed, _scratchBleed);
@@ -637,8 +673,30 @@ namespace NASAPunk.Visor
             _mpb.SetFloat(ID_HazardGlitchLevel, _hazardGlitchLevel);
             _mpb.SetFloat(ID_BiosRecoveryMode, biosRecoverySwitch);
             _mpb.SetFloat(ID_ToolBatteryNormalized, activeToolBatteryNormalized);
+            _mpb.SetVector(ID_VisorCameraForwardWS, new Vector4(visorCameraForward.x, visorCameraForward.y, visorCameraForward.z, 1f));
+            _mpb.SetVector(ID_VisorStrongestLightDirectionWS, strongestLightDirection);
             _visorRenderer.SetPropertyBlock(_mpb);
             _materialPropertiesDirty = false;
+        }
+
+        private Vector3 ResolveVisorCameraForward()
+        {
+            Camera camera = _referenceCamera != null ? _referenceCamera : _baseStackCamera;
+            if (camera != null)
+                return camera.transform.forward;
+
+            return transform.forward;
+        }
+
+        private Vector4 ResolveStrongestLightDirectionPayload()
+        {
+            Light lightSource = _strongestSceneLightSource != null ? _strongestSceneLightSource : RenderSettings.sun;
+            if (lightSource == null || !lightSource.isActiveAndEnabled)
+                return Vector4.zero;
+
+            Vector3 directionToLight = -lightSource.transform.forward;
+            float intensity = Mathf.Max(0f, lightSource.intensity);
+            return new Vector4(directionToLight.x, directionToLight.y, directionToLight.z, intensity);
         }
 
         private static float ResolveActiveToolBatteryNormalized()
@@ -876,6 +934,26 @@ namespace NASAPunk.Visor
                 _materialPropertiesDirty = true;
             }
 
+            float targetColdCondensation = 0f;
+            if (_subscribedSurvivalSystem != null)
+            {
+                float coldCondensation01 = ResolveColdCondensation01(_subscribedSurvivalSystem.EnvironmentTemperature);
+                targetColdCondensation = coldCondensation01 * Mathf.Clamp01(_coldCondensationMaximum);
+            }
+
+            if (!Mathf.Approximately(targetColdCondensation, _coldCondensationTarget))
+                _coldCondensationTarget = targetColdCondensation;
+
+            float blendedColdCondensation = Mathf.Lerp(
+                _coldCondensation,
+                _coldCondensationTarget,
+                pressureBlendT);
+            if (!Mathf.Approximately(blendedColdCondensation, _coldCondensation))
+            {
+                _coldCondensation = blendedColdCondensation;
+                _materialPropertiesDirty = true;
+            }
+
             if (_condensationShockHoldTimer > 0f)
             {
                 _condensationShockHoldTimer -= deltaTime;
@@ -911,9 +989,11 @@ namespace NASAPunk.Visor
             if (_subscribedSurvivalSystem != null)
             {
                 float temperature = _subscribedSurvivalSystem.EnvironmentTemperature;
+                float coldCondensation01 = ResolveColdCondensation01(temperature);
                 float temperatureT = Mathf.InverseLerp(_frostStartTemperature, _frostFullTemperature, temperature);
                 float coldSeverity = Mathf.Clamp01(_subscribedSurvivalSystem.ColdStressSeverity01);
                 target = Mathf.Max(temperatureT, coldSeverity * (0.62f + _abyssalColdFrostBoost));
+                target = Mathf.Max(target, coldCondensation01 * Mathf.Clamp01(_coldCondensationMaximum + 0.12f));
                 target *= _screenFrostMaximum;
             }
 
@@ -1001,11 +1081,14 @@ namespace NASAPunk.Visor
                 targetBiosRecovery = clarityRemaining01 < BiosRecoveryClarityThreshold ? 1f : 0f;
             }
 
-            if (_playerHealth != null &&
-                _playerHealth.RadiationExposureSeconds >= RadiationFatigueCriticalExposureSeconds)
+            if (_playerHealth != null)
             {
-                targetRadiation = 1f;
-                targetBiosRecovery = 1f;
+                targetRadiation = Mathf.Max(targetRadiation, Mathf.Clamp01(_playerHealth.RadiationExposure));
+                if (_playerHealth.RadiationExposureSeconds >= RadiationFatigueCriticalExposureSeconds)
+                {
+                    targetRadiation = 1f;
+                    targetBiosRecovery = 1f;
+                }
             }
 
             if (_thermalShockBiosRecoveryTimer > 0f)
@@ -1106,6 +1189,95 @@ namespace NASAPunk.Visor
 
             current = nextValue;
             return true;
+        }
+
+        private float ResolveColdCondensation01(float temperature)
+        {
+            float fullTemperature = Mathf.Min(_coldCondensationStartTemperature - 0.01f, _coldCondensationFullTemperature);
+            return Mathf.Clamp01(Mathf.InverseLerp(_coldCondensationStartTemperature, fullTemperature, temperature));
+        }
+
+        private void PrewarmBiosTerminalFont()
+        {
+            if (!_enableBiosFontSwap)
+                return;
+
+            _activeTerminalBiosFont = TMP_TextRegistry.PrewarmTerminalFont(_terminalBiosFont);
+        }
+
+        private void UpdateBiosFontSwapState()
+        {
+            if (!_enableBiosFontSwap)
+                return;
+
+            if (!LocalizedFontResolver.IsFontReady(_activeTerminalBiosFont))
+                PrewarmBiosTerminalFont();
+
+            bool biosActive = _biosRecoveryModeBlend >= 0.5f;
+            if (biosActive == _biosFontModeApplied)
+                return;
+
+            TMP_FontAsset targetFont = biosActive ? _activeTerminalBiosFont : ResolvePrimaryHudFont();
+            if (targetFont == null)
+                return;
+
+            QueueBiosFontSwap(targetFont);
+            _biosFontModeApplied = biosActive;
+        }
+
+        private TMP_FontAsset ResolvePrimaryHudFont()
+        {
+            if (LocalizedFontResolver.IsFontReady(_primaryHudFont))
+                return _primaryHudFont;
+
+            int registeredCount = TMP_TextRegistry.Count;
+            for (int i = 0; i < registeredCount; i++)
+            {
+                TMP_TextEntry entry = TMP_TextRegistry.GetEntryAt(i);
+                if (entry.Layer != LocLayer.Core || entry.IsUserInput)
+                    continue;
+
+                TMP_Text text = entry.Text;
+                if (text == null || !LocalizedFontResolver.IsFontReady(text.font))
+                    continue;
+
+                _primaryHudFont = text.font;
+                return _primaryHudFont;
+            }
+
+            _primaryHudFont = TMP_Settings.defaultFontAsset;
+            return _primaryHudFont;
+        }
+
+        private void QueueBiosFontSwap(TMP_FontAsset targetFont)
+        {
+            _biosFontSwapScheduler.Clear();
+            _queuedHudFont = targetFont;
+
+            int registeredCount = TMP_TextRegistry.Count;
+            for (int i = 0; i < registeredCount; i++)
+            {
+                TMP_TextEntry entry = TMP_TextRegistry.GetEntryAt(i);
+                if (entry.Layer != LocLayer.Core || entry.IsUserInput)
+                    continue;
+
+                TMP_Text text = entry.Text;
+                if (text == null || text.font == targetFont)
+                    continue;
+
+                if (!_biosFontSwapScheduler.Enqueue(entry))
+                    break;
+            }
+        }
+
+        private void DrainBiosFontSwapQueue()
+        {
+            if (_queuedHudFont == null || !_biosFontSwapScheduler.HasPending)
+                return;
+
+            _biosFontSwapScheduler.DrainTick(_queuedHudFont, _queuedHudFont.material);
+            if (!_biosFontSwapScheduler.HasPending)
+                _queuedHudFont = null;
         }
 
         private void PrepareProjectionTexture()

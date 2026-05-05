@@ -178,6 +178,7 @@ namespace Hecton8.Core
         private static AbyssalFluidDecalManager _abyssalFluidDecalRuntime;
         private static SargassumGlobalDragManager _sargassumDragRuntime;
         private static SargassumCutManager _sargassumCutRuntime;
+        private static SargassumMicroFaunaBoids _sargassumMicroFaunaRuntime;
         private static SoundscapeSystem _soundscapeRuntime;
         private static EnvironmentalStrainManager _environmentalStrainRuntime;
         private static EcosystemHealthDirector _ecosystemHealthRuntime;
@@ -712,6 +713,11 @@ namespace Hecton8.Core
         /// Registered sargassum cut-mask runtime owner.
         /// </summary>
         public static SargassumCutManager SargassumCut => _sargassumCutRuntime;
+
+        /// <summary>
+        /// Registered sargassum micro-fauna boid runtime owner.
+        /// </summary>
+        public static SargassumMicroFaunaBoids SargassumMicroFauna => _sargassumMicroFaunaRuntime;
 
         /// <summary>
         /// Registered environmental soundscape runtime owner.
@@ -1786,6 +1792,14 @@ namespace Hecton8.Core
         }
 
         /// <summary>
+        /// Registers the authoritative sargassum micro-fauna boid runtime owner.
+        /// </summary>
+        public static void RegisterSargassumMicroFaunaRuntime(SargassumMicroFaunaBoids instance)
+        {
+            RegisterServiceAllowSameInstance(ref _sargassumMicroFaunaRuntime, instance);
+        }
+
+        /// <summary>
         /// Registers the authoritative environmental soundscape runtime owner.
         /// </summary>
         public static void RegisterSoundscapeRuntime(SoundscapeSystem instance)
@@ -2665,6 +2679,14 @@ namespace Hecton8.Core
         public static void UnregisterSargassumCutRuntime(SargassumCutManager instance)
         {
             UnregisterService(ref _sargassumCutRuntime, instance);
+        }
+
+        /// <summary>
+        /// Unregisters the current sargassum micro-fauna boid runtime owner if the owner matches.
+        /// </summary>
+        public static void UnregisterSargassumMicroFaunaRuntime(SargassumMicroFaunaBoids instance)
+        {
+            UnregisterService(ref _sargassumMicroFaunaRuntime, instance);
         }
 
         /// <summary>
@@ -3698,6 +3720,7 @@ namespace Hecton8.Core
             if (serviceType == typeof(AbyssalFluidDecalManager)) return GlobalRegistryServiceSlot.AbyssalFluidDecalRuntime;
             if (serviceType == typeof(SargassumGlobalDragManager)) return GlobalRegistryServiceSlot.SargassumDragRuntime;
             if (serviceType == typeof(SargassumCutManager)) return GlobalRegistryServiceSlot.SargassumCutRuntime;
+            if (serviceType == typeof(SargassumMicroFaunaBoids)) return GlobalRegistryServiceSlot.SargassumMicroFaunaRuntime;
             if (serviceType == typeof(SoundscapeSystem)) return GlobalRegistryServiceSlot.SoundscapeRuntime;
             if (serviceType == typeof(EnvironmentalStrainManager)) return GlobalRegistryServiceSlot.EnvironmentalStrainRuntime;
             if (serviceType == typeof(EcosystemHealthDirector)) return GlobalRegistryServiceSlot.EcosystemHealthRuntime;

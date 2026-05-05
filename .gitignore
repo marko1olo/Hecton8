@@ -16,6 +16,23 @@
 /[Rr]ecordings/
 /[Aa]ssets/AssetStoreTools*
 
+# ---- Agent / local verification artifacts ----
+/.codexbuild/
+/.codex-build/
+/.codex-artifacts/
+/CodexArtifacts/
+/.codex_tmp/
+/codex_tmp/
+/Assets/_Recovery/
+/playmode_metrics.json
+*.log
+*.diff
+*.patch
+*.sarif
+*.rsp
+*.mmf
+*.orig
+
 # ---- Auto-generated VS/MD/Rider solution and project files ----
 ExportedObj/
 .consoleapp.meta

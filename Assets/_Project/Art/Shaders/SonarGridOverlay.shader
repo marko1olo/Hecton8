@@ -52,6 +52,9 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
 
         float4 _SonarRevealOriginWS;
         float4 _SonarRevealWaveParams;
+        float4 _SonarPingCenter;
+        float4 _SonarPingParams;
+        float _SonarRadius;
         float _SonarWaveFront;
         float _LidarPersistence;
         float4 _SonarGridParams0;
@@ -399,7 +402,15 @@ Shader "Hidden/Hecton8/SonarGridOverlay"
             half3 overlay =
                 pointCloud.rgb * (pointCloud.a * _OverlayOpacity) +
                 worldPointCloud.rgb * (worldPointCloud.a * (_OverlayOpacity * 0.85h));
-            return half4(sourceColor.rgb + overlay, sourceColor.a);
+
+            float pingActive = saturate(_SonarPingCenter.w) * step(_Time.y, _SonarPingParams.w);
+            float pingBandWidth = max(0.25, _SonarPingParams.y);
+            float pingDistance = depthValid > 0.5 ? distance(sceneWorldPos, _SonarPingCenter.xyz) : 0.0;
+            float pingShell = pingActive * (1.0 - smoothstep(pingBandWidth, pingBandWidth * 2.0, abs(pingDistance - _SonarRadius)));
+            float pingContour = ComputeSonarContourMask(input.screenUV, rawDepth);
+            half3 pingColor = half3(0.0h, 0.92h, 1.0h) * (half)(pingShell * (1.15 + pingContour * 1.35));
+
+            return half4(sourceColor.rgb + overlay + pingColor, sourceColor.a);
         }
         ENDHLSL
 

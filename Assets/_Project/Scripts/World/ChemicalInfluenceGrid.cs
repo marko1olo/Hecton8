@@ -1,26 +1,17 @@
-using Hecton8.AI;
 using Hecton8.Bootstrap;
+using Hecton8.AI;
 using Hecton8.Core;
 using Hecton8.Gameplay;
-using Unity.Burst;
 using Unity.Collections;
-using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEngine;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace Hecton8.World
 {
-    /// <summary>
-    /// Runtime scent field used by predator cognition to follow blood, exhaust, and fear pheromones.
-    /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-6440)]
     [AddComponentMenu("Hecton8/World/Chemical Influence Grid")]
-    public sealed class ChemicalInfluenceGrid : MonoBehaviour, ISlowTickable, ILateFrameTickable
+    public sealed class ChemicalInfluenceGrid : MonoBehaviour, ISlowTickable
     {
         internal enum ChemicalChannel : int
         {
@@ -30,123 +21,56 @@ namespace Hecton8.World
             Toxicity = 3,
         }
 
-        private struct InfluenceWrite
+        internal struct ChemicalBreadcrumbWaypoint
         {
-            public float3 WorldPosition;
-            public float4 Delta;
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ChemicalDiffusionJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<float4> Source;
-            [WriteOnly] public NativeArray<float4> Target;
-            public int3 Dimensions;
-            public float4 DecayRates;
-            public float4 DiffusionRates;
-            public float MaxChannelIntensity;
-
-            public void Execute(int index)
-            {
-                int width = Dimensions.x;
-                int height = Dimensions.y;
-                int slice = width * height;
-                int z = index / slice;
-                int y = (index - (z * slice)) / width;
-                int x = index - (z * slice) - (y * width);
-
-                float4 self = Source[index];
-                float4 left = Source[x > 0 ? index - 1 : index];
-                float4 right = Source[x + 1 < width ? index + 1 : index];
-                float4 down = Source[y > 0 ? index - width : index];
-                float4 up = Source[y + 1 < height ? index + width : index];
-                float4 back = Source[z > 0 ? index - slice : index];
-                float4 forward = Source[z + 1 < Dimensions.z ? index + slice : index];
-
-                float4 neighborAverage = (left + right + down + up + back + forward) / 6f;
-                float4 retained = self * (new float4(1f, 1f, 1f, 1f) - DecayRates);
-                float4 diffused = neighborAverage * DiffusionRates;
-                float4 next = retained + diffused;
-                Target[index] = new float4(
-                    math.clamp(next.x, 0f, MaxChannelIntensity),
-                    math.clamp(next.y, 0f, MaxChannelIntensity),
-                    math.clamp(next.z, 0f, MaxChannelIntensity),
-                    math.clamp(next.w, -MaxChannelIntensity, MaxChannelIntensity));
-            }
+            public float3 AbsolutePosition;
+            public float3 RuntimePosition;
+            public float4 Channels;
+            public float RadiusMeters;
+            public float SpawnTime;
+            public float ExpiresAt;
         }
 
         private const string RuntimeRootName = "[ChemicalInfluenceGrid]";
-        private const string DefaultComputeShaderAssetPath = "Assets/_Project/Art/Shaders/ChemicalGrid.compute";
-        private const int PendingWriteCapacity = 1024;
+        private const string NativeMemoryOwner = nameof(ChemicalInfluenceGrid);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
+        private const int DefaultBreadcrumbCapacity = 256;
+        private const int MaxDefoliantDeadZones = 64;
         private const float DefaultMaximumChannelIntensity = 32f;
-        private const float MinimumCellDimension = 0.25f;
+        private const float MinimumRadiusMeters = 0.25f;
         private const float MinimumSubmarineVelocitySqr = 0.25f;
         private const float MinimumTransportSignal = 0.05f;
         private const float ChemicalTransientRadiusMeters = 18f;
         private const float ChemicalTransientLifetimeSeconds = 12f;
         private const float DefaultDefoliantDeadZoneRadiusMeters = 30f;
-        private const int MaxDefoliantDeadZones = 64;
-
-        private static readonly int _ChemicalGridSourceId = Shader.PropertyToID("_ChemicalGridSource");
-        private static readonly int _ChemicalGridTargetId = Shader.PropertyToID("_ChemicalGridTarget");
-        private static readonly int _ChemicalGridDimensionsId = Shader.PropertyToID("_ChemicalGridDimensions");
-        private static readonly int _ChemicalGridDecayRatesId = Shader.PropertyToID("_ChemicalGridDecayRates");
-        private static readonly int _ChemicalGridDiffusionRatesId = Shader.PropertyToID("_ChemicalGridDiffusionRates");
-        private static readonly int _ChemicalGridMaxIntensityId = Shader.PropertyToID("_ChemicalGridMaxIntensity");
+        private const float BreadcrumbMergeDistanceMeters = 8f;
 
         private static ChemicalInfluenceGrid _activeRuntimeInstance;
 
-        [Header("── Grid ──────────────────")]
-        [SerializeField, Tooltip("Chemical-grid resolution used for the runtime scent field.")]
-        private Vector3Int gridResolution = new Vector3Int(64, 32, 64);
+        [Header("Breadcrumbs")]
+        [SerializeField, Range(32, 2048)] private int breadcrumbCapacity = DefaultBreadcrumbCapacity;
+        [SerializeField, Min(0.25f)] private float breadcrumbDropIntervalSeconds = 5f;
+        [SerializeField, Min(1f)] private float breadcrumbLifetimeSeconds = 90f;
+        [SerializeField, Min(1f)] private float breadcrumbRadiusMeters = 28f;
+        [SerializeField, Min(0.1f)] private float maximumChannelIntensity = DefaultMaximumChannelIntensity;
 
-        [SerializeField, Tooltip("World-space volume covered by the chemical grid.")]
-        private Vector3 gridWorldSize = new Vector3(512f, 256f, 512f);
-
-        [SerializeField, Tooltip("Maximum value allowed in one scent channel before clamping.")]
-        private float maximumChannelIntensity = DefaultMaximumChannelIntensity;
-
-        [Header("── Balance ──────────────────")]
-        [SerializeField, Tooltip("Optional authored biome scent-balance profile. Fallback defaults are used when null.")]
-        private EcosystemBalanceProfile ecosystemBalanceProfile;
-
-        [SerializeField, Tooltip("Optional compute shader used to mirror the CPU scent diffusion kernel on the GPU.")]
-        private ComputeShader chemicalGridCompute;
-
-        [Header("── Diagnostics ──────────────────")]
-        [SerializeField] private Vector3Int _debugGridResolution;
-        [SerializeField] private Vector3 _debugGridOrigin;
-        [SerializeField] private Vector3 _debugCellSize;
+        [Header("Diagnostics")]
+        [SerializeField] private int _debugBreadcrumbCount;
         [SerializeField] private int _debugPendingWriteCount;
-        [SerializeField] private bool _debugDiffusionPending;
+        [SerializeField] private Vector3 _debugLastBreadcrumbPosition;
 
-        // COLD ALLOC: InfluenceWrite[1024] - bounded scent write ring consumed by ChemicalInfluenceGrid - owner: ChemicalInfluenceGrid
-        private readonly InfluenceWrite[] _pendingWrites = new InfluenceWrite[PendingWriteCapacity];
         // COLD ALLOC: Vector4[64] - permanent defoliant dead-zone registry in absolute-universe space - owner: ChemicalInfluenceGrid
         private readonly Vector4[] _defoliantDeadZones = new Vector4[MaxDefoliantDeadZones];
 
-        private NativeArray<float4> _frontGrid;
-        private NativeArray<float4> _backGrid;
-        private NativeArray<float4> _overlayGrid;
-        private JobHandle _diffusionHandle;
-        private bool _diffusionPending;
+        private NativeArray<ChemicalBreadcrumbWaypoint> _breadcrumbs;
         private bool _registeredSlowTick;
-        private bool _registeredLateFrameTick;
         private bool _runtimeInitialized;
-        private int _pendingWriteCount;
-        private int _lastPublishedFrame = -1;
+        private int _breadcrumbCount;
+        private int _breadcrumbWriteCursor;
+        private int _defoliantDeadZoneCount;
         private Transform _cachedPlayerTransform;
         private HectonSurvivalSystem _cachedPlayerSurvival;
-        private float3 _gridOriginWS;
-        private float3 _cellSizeWS;
-        private GraphicsBuffer _gpuFrontBuffer;
-        private GraphicsBuffer _gpuBackBuffer;
-        private int _diffusionKernelIndex = -1;
-        private int _defoliantDeadZoneCount;
 
-        /// <summary>
-        /// Active runtime instance when the scent field is live.
-        /// </summary>
         public static ChemicalInfluenceGrid ActiveRuntimeInstance => _activeRuntimeInstance;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -155,15 +79,12 @@ namespace Hecton8.World
             _activeRuntimeInstance = null;
         }
 
-        /// <summary>
-        /// Ensures a runtime-owned scent field exists.
-        /// </summary>
         public static ChemicalInfluenceGrid EnsureRuntimeInstance()
         {
             if (_activeRuntimeInstance != null)
                 return _activeRuntimeInstance;
 
-            GameObject runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - runtime-owned scent-grid service root - owner: ChemicalInfluenceGrid
+            GameObject runtimeRoot = new GameObject(RuntimeRootName); // COLD ALLOC: GameObject[1] - runtime-owned breadcrumb service root - owner: ChemicalInfluenceGrid
             return runtimeRoot.AddComponent<ChemicalInfluenceGrid>();
         }
 
@@ -179,14 +100,13 @@ namespace Hecton8.World
             out float3 origin,
             out float3 cellSize)
         {
-            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
-            instance.PublishFrame(Time.frameCount);
-            frontGrid = instance._frontGrid;
-            overlayGrid = instance._overlayGrid;
-            dimensions = instance.ResolveDimensions();
-            origin = instance._gridOriginWS;
-            cellSize = instance._cellSizeWS;
-            return frontGrid.IsCreated && overlayGrid.IsCreated;
+            EnsureRuntimeInstance().PublishFrame(Time.frameCount);
+            frontGrid = default;
+            overlayGrid = default;
+            dimensions = int3.zero;
+            origin = float3.zero;
+            cellSize = new float3(1f, 1f, 1f);
+            return false;
         }
 
         internal static bool TryGetActivePublishedSnapshot(
@@ -200,18 +120,26 @@ namespace Hecton8.World
             overlayGrid = default;
             dimensions = int3.zero;
             origin = float3.zero;
-            cellSize = float3.zero;
+            cellSize = new float3(1f, 1f, 1f);
             ChemicalInfluenceGrid instance = _activeRuntimeInstance;
             if (instance == null)
                 return false;
 
             instance.PublishFrame(Time.frameCount);
-            frontGrid = instance._frontGrid;
-            overlayGrid = instance._overlayGrid;
-            dimensions = instance.ResolveDimensions();
-            origin = instance._gridOriginWS;
-            cellSize = instance._cellSizeWS;
-            return frontGrid.IsCreated && overlayGrid.IsCreated;
+            return false;
+        }
+
+        internal static bool TryGetPublishedBreadcrumbs(
+            out NativeArray<ChemicalBreadcrumbWaypoint> breadcrumbs,
+            out int count,
+            out float followStepMeters)
+        {
+            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            instance.PublishFrame(Time.frameCount);
+            breadcrumbs = instance._breadcrumbs;
+            count = instance._breadcrumbCount;
+            followStepMeters = math.max(1f, instance.breadcrumbRadiusMeters * 0.5f);
+            return breadcrumbs.IsCreated && count > 0;
         }
 
         internal static bool TrySampleNormalizedChannels(Vector3 worldPosition, out float4 normalizedChannels)
@@ -223,48 +151,65 @@ namespace Hecton8.World
                 out normalizedChannels);
         }
 
+        internal static bool TryFindNearestScentWaypoint(
+            Vector3 worldPosition,
+            ChemicalChannel channel,
+            out ChemicalBreadcrumbWaypoint waypoint,
+            out float distanceMeters,
+            out float intensity01)
+        {
+            ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
+            instance.PublishFrame(Time.frameCount);
+            return instance.TryFindNearestScentWaypointInternal(
+                new float3(worldPosition.x, worldPosition.y, worldPosition.z),
+                channel,
+                out waypoint,
+                out distanceMeters,
+                out intensity01);
+        }
+
         internal static void QueueBloodScent(Vector3 worldPosition, float intensity = 1f)
         {
             float clampedIntensity = math.max(0f, intensity);
-            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(clampedIntensity, 0f, 0f, 0f));
+            EnsureRuntimeInstance().DropBreadcrumb(worldPosition, new float4(clampedIntensity, 0f, 0f, 0f), ChemicalChannel.Blood);
             RegisterChemicalTransient(worldPosition, clampedIntensity);
         }
 
         internal static void QueueExhaustScent(Vector3 worldPosition, float intensity = 1f)
         {
             float clampedIntensity = math.max(0f, intensity);
-            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, clampedIntensity, 0f, 0f));
+            EnsureRuntimeInstance().DropBreadcrumb(worldPosition, new float4(0f, clampedIntensity, 0f, 0f), ChemicalChannel.Exhaust);
             RegisterChemicalTransient(worldPosition, clampedIntensity);
         }
 
         internal static void QueueFearPheromone(Vector3 worldPosition, float intensity)
         {
             float clampedIntensity = math.max(0f, intensity);
-            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, clampedIntensity, 0f));
+            EnsureRuntimeInstance().DropBreadcrumb(worldPosition, new float4(0f, 0f, clampedIntensity, 0f), ChemicalChannel.Fear);
             RegisterChemicalTransient(worldPosition, clampedIntensity);
         }
 
         internal static void QueueToxicityBurst(Vector3 worldPosition, float intensity)
         {
             float clampedIntensity = math.max(0f, intensity);
-            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, 0f, clampedIntensity));
+            EnsureRuntimeInstance().DropBreadcrumb(worldPosition, new float4(0f, 0f, 0f, clampedIntensity), ChemicalChannel.Toxicity);
             RegisterChemicalTransient(worldPosition, clampedIntensity);
         }
 
         internal static void QueueDefoliantBurst(Vector3 worldPosition, float intensity)
         {
             float clampedIntensity = math.max(0f, intensity);
-            EnsureRuntimeInstance().Enqueue(worldPosition, new float4(0f, 0f, 0f, -clampedIntensity));
+            EnsureRuntimeInstance().DropBreadcrumb(worldPosition, new float4(0f, 0f, 0f, -clampedIntensity), ChemicalChannel.Toxicity);
             RegisterChemicalTransient(worldPosition, clampedIntensity);
         }
 
         internal static void QueueDefoliantDeadZone(Vector3 worldPosition, float radiusMeters = DefaultDefoliantDeadZoneRadiusMeters, float intensity = DefaultMaximumChannelIntensity)
         {
-            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
+            float safeRadius = math.max(MinimumRadiusMeters, radiusMeters);
             float clampedIntensity = math.max(0f, intensity);
             ChemicalInfluenceGrid instance = EnsureRuntimeInstance();
             instance.RegisterDefoliantDeadZone(worldPosition, safeRadius);
-            instance.EnqueueRadiusClamped(worldPosition, safeRadius, new float4(0f, 0f, 0f, -math.max(1f, clampedIntensity)));
+            instance.DropBreadcrumb(worldPosition, new float4(0f, 0f, 0f, -math.max(1f, clampedIntensity)), ChemicalChannel.Toxicity, safeRadius);
             RegisterChemicalTransient(worldPosition, clampedIntensity);
 
             DestructibleOrganicManager organicManager = DestructibleOrganicManager.ActiveRuntimeInstance;
@@ -309,35 +254,30 @@ namespace Hecton8.World
         {
             InitializeRuntime();
             TryRegisterSlowTick();
-            TryRegisterLateFrameTick();
         }
 
         private void OnDisable()
         {
             TryUnregisterSlowTick();
-            TryUnregisterLateFrameTick();
             DisposeBuffers();
         }
 
         private void OnDestroy()
         {
             TryUnregisterSlowTick();
-            TryUnregisterLateFrameTick();
             DisposeBuffers();
 
             if (_activeRuntimeInstance == this)
                 _activeRuntimeInstance = null;
         }
 
-        /// <inheritdoc />
         public void SlowTick()
         {
             InitializeRuntime();
             PublishFrame(Time.frameCount);
             CollectPersistentRuntimeEmissions();
-            ApplyOverlayToFrontGrid();
-            ScheduleDiffusionPass();
-            DispatchGpuMirror();
+            PruneExpiredBreadcrumbs(Time.time);
+            RefreshRuntimePositions();
             UpdateDebugState();
         }
 
@@ -364,22 +304,26 @@ namespace Hecton8.World
             if (Application.isPlaying)
                 GameBootstrapper.PersistRuntimeService(this);
 
-            ResolveGridMetrics();
+            breadcrumbCapacity = Mathf.Clamp(breadcrumbCapacity, 32, 2048);
+            breadcrumbDropIntervalSeconds = Mathf.Max(0.25f, breadcrumbDropIntervalSeconds);
+            breadcrumbLifetimeSeconds = Mathf.Max(1f, breadcrumbLifetimeSeconds);
+            breadcrumbRadiusMeters = Mathf.Max(1f, breadcrumbRadiusMeters);
+            maximumChannelIntensity = Mathf.Max(0.1f, maximumChannelIntensity);
             InitializeBuffers();
-            ResolveComputeKernel();
             _runtimeInitialized = true;
             UpdateDebugState();
         }
 
         private void InitializeBuffers()
         {
-            int cellCount = ResolveCellCount();
-            if (!_frontGrid.IsCreated)
-                _frontGrid = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[cellCount] - published chemical scent front buffer - owner: ChemicalInfluenceGrid
-            if (!_backGrid.IsCreated)
-                _backGrid = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[cellCount] - scheduled chemical scent back buffer - owner: ChemicalInfluenceGrid
-            if (!_overlayGrid.IsCreated)
-                _overlayGrid = new NativeArray<float4>(cellCount, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float4>[cellCount] - immediate-frame scent overlay - owner: ChemicalInfluenceGrid
+            if (_breadcrumbs.IsCreated)
+                return;
+
+            _breadcrumbs = new NativeArray<ChemicalBreadcrumbWaypoint>(
+                math.max(32, breadcrumbCapacity),
+                Allocator.Persistent,
+                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<ChemicalBreadcrumbWaypoint>[capacity] - AUP scent breadcrumb ring - owner: ChemicalInfluenceGrid
+            NativeMemorySentinel.RegisterNativeArray(_breadcrumbs, NativeMemoryOwner, nameof(_breadcrumbs), NativeMemoryLifetime);
         }
 
         private void PublishFrame(int frameId)
@@ -388,12 +332,8 @@ namespace Hecton8.World
             if (_activeRuntimeInstance != this)
                 return;
 
-            if (_lastPublishedFrame == frameId)
-                return;
-
-            FlushPendingWritesToOverlay();
-            _lastPublishedFrame = frameId;
-            UpdateDebugState();
+            PruneExpiredBreadcrumbs(Time.time);
+            RefreshRuntimePositions();
         }
 
         private void CollectPersistentRuntimeEmissions()
@@ -403,13 +343,13 @@ namespace Hecton8.World
                 playerSurvival != null &&
                 playerSurvival.IsBleeding)
             {
-                Enqueue(playerTransform.position, new float4(1f, 0f, 0f, 0f));
+                DropBreadcrumb(playerTransform.position, new float4(1f, 0f, 0f, 0f), ChemicalChannel.Blood);
             }
 
             if (NoiseSystem.TryGetPlayerSignal(out NoiseSystem.PlayerNoiseSignal playerNoise) &&
                 playerNoise.TransportBoost01 >= MinimumTransportSignal)
             {
-                Enqueue(playerNoise.Position, new float4(0f, 1f, 0f, 0f));
+                DropBreadcrumb(playerNoise.Position, new float4(0f, 1f, 0f, 0f), ChemicalChannel.Exhaust);
             }
 
             ISubmarineRuntimeContext submarine = GlobalRegistry.Submarine;
@@ -418,10 +358,8 @@ namespace Hecton8.World
                 submarine.HullRigidbody != null &&
                 submarine.HullRigidbody.linearVelocity.sqrMagnitude >= MinimumSubmarineVelocitySqr)
             {
-                Enqueue(submarine.PlatformTransform.position, new float4(0f, 1f, 0f, 0f));
+                DropBreadcrumb(submarine.PlatformTransform.position, new float4(0f, 1f, 0f, 0f), ChemicalChannel.Exhaust);
             }
-
-            FlushPendingWritesToOverlay();
         }
 
         private bool TryResolvePlayerSurvival(out Transform playerTransform, out HectonSurvivalSystem playerSurvival)
@@ -440,50 +378,138 @@ namespace Hecton8.World
             return playerTransform != null && playerSurvival != null;
         }
 
-        private void Enqueue(Vector3 worldPosition, float4 delta)
+        private void DropBreadcrumb(Vector3 worldPosition, float4 channels, ChemicalChannel primaryChannel, float radiusOverrideMeters = 0f)
         {
-            if (_pendingWriteCount >= _pendingWrites.Length)
+            InitializeRuntime();
+            if (!_breadcrumbs.IsCreated)
                 return;
 
-            _pendingWrites[_pendingWriteCount].WorldPosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
-            _pendingWrites[_pendingWriteCount].Delta = delta;
-            _pendingWriteCount++;
+            float now = Time.time;
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
+            float3 absolute = new float3(absolutePosition.x, absolutePosition.y, absolutePosition.z);
+            float safeRadius = math.max(1f, radiusOverrideMeters > 0f ? radiusOverrideMeters : breadcrumbRadiusMeters);
+            int mergeIndex = FindMergeCandidate(absolute, primaryChannel, now);
+            float4 clampedChannels = ClampChemicalChannels(channels, maximumChannelIntensity);
+            if (mergeIndex >= 0)
+            {
+                ChemicalBreadcrumbWaypoint merged = _breadcrumbs[mergeIndex];
+                merged.AbsolutePosition = absolute;
+                merged.RuntimePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
+                merged.Channels = ClampChemicalChannels(merged.Channels + clampedChannels, maximumChannelIntensity);
+                merged.RadiusMeters = math.max(merged.RadiusMeters, safeRadius);
+                merged.SpawnTime = now;
+                merged.ExpiresAt = now + breadcrumbLifetimeSeconds;
+                _breadcrumbs[mergeIndex] = merged;
+                _debugLastBreadcrumbPosition = worldPosition;
+                return;
+            }
+
+            int writeIndex = ResolveWriteIndex(now);
+            _breadcrumbs[writeIndex] = new ChemicalBreadcrumbWaypoint
+            {
+                AbsolutePosition = absolute,
+                RuntimePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z),
+                Channels = clampedChannels,
+                RadiusMeters = safeRadius,
+                SpawnTime = now,
+                ExpiresAt = now + breadcrumbLifetimeSeconds
+            };
+
+            if (_breadcrumbCount < _breadcrumbs.Length)
+                _breadcrumbCount++;
+
+            _breadcrumbWriteCursor = (_breadcrumbWriteCursor + 1) % _breadcrumbs.Length;
+            _debugLastBreadcrumbPosition = worldPosition;
         }
 
-        private void EnqueueRadiusClamped(Vector3 worldPosition, float radiusMeters, float4 delta)
+        private int FindMergeCandidate(float3 absolutePosition, ChemicalChannel primaryChannel, float now)
         {
-            if (!TryWorldSphereToCellBounds(new float3(worldPosition.x, worldPosition.y, worldPosition.z), radiusMeters, out int3 minCell, out int3 maxCell))
+            int safeCount = math.min(_breadcrumbCount, _breadcrumbs.Length);
+            float mergeDistanceSq = BreadcrumbMergeDistanceMeters * BreadcrumbMergeDistanceMeters;
+            int channelIndex = (int)primaryChannel;
+            for (int i = 0; i < safeCount; i++)
+            {
+                ChemicalBreadcrumbWaypoint waypoint = _breadcrumbs[i];
+                if (waypoint.ExpiresAt <= now)
+                    continue;
+
+                if (math.abs(GetChannel(waypoint.Channels, channelIndex)) <= 0f)
+                    continue;
+
+                if (now - waypoint.SpawnTime < breadcrumbDropIntervalSeconds &&
+                    math.lengthsq(waypoint.AbsolutePosition - absolutePosition) <= mergeDistanceSq)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
+        private int ResolveWriteIndex(float now)
+        {
+            if (_breadcrumbCount < _breadcrumbs.Length)
+                return _breadcrumbCount;
+
+            int safeLength = _breadcrumbs.Length;
+            for (int i = 0; i < safeLength; i++)
+            {
+                int index = (_breadcrumbWriteCursor + i) % safeLength;
+                if (_breadcrumbs[index].ExpiresAt <= now)
+                    return index;
+            }
+
+            return _breadcrumbWriteCursor;
+        }
+
+        private void PruneExpiredBreadcrumbs(float now)
+        {
+            if (!_breadcrumbs.IsCreated || _breadcrumbCount <= 0)
                 return;
 
-            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
-            float radiusSq = safeRadius * safeRadius;
-            float3 center = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
-            float3 safeCellSize = math.max(_cellSizeWS, new float3(MinimumCellDimension));
-            for (int z = minCell.z; z <= maxCell.z; z++)
+            int write = 0;
+            int safeCount = math.min(_breadcrumbCount, _breadcrumbs.Length);
+            for (int read = 0; read < safeCount; read++)
             {
-                for (int y = minCell.y; y <= maxCell.y; y++)
-                {
-                    for (int x = minCell.x; x <= maxCell.x; x++)
-                    {
-                        if (_pendingWriteCount >= _pendingWrites.Length)
-                            return;
+                ChemicalBreadcrumbWaypoint waypoint = _breadcrumbs[read];
+                if (waypoint.ExpiresAt <= now)
+                    continue;
 
-                        float3 cellCenter = _gridOriginWS + ((new float3(x, y, z) + new float3(0.5f)) * safeCellSize);
-                        if (math.lengthsq(cellCenter - center) > radiusSq)
-                            continue;
+                if (write != read)
+                    _breadcrumbs[write] = waypoint;
+                write++;
+            }
 
-                        _pendingWrites[_pendingWriteCount].WorldPosition = cellCenter;
-                        _pendingWrites[_pendingWriteCount].Delta = delta;
-                        _pendingWriteCount++;
-                    }
-                }
+            for (int i = write; i < safeCount; i++)
+                _breadcrumbs[i] = default;
+
+            _breadcrumbCount = write;
+            if (_breadcrumbs.Length > 0)
+                _breadcrumbWriteCursor = write % _breadcrumbs.Length;
+        }
+
+        private void RefreshRuntimePositions()
+        {
+            if (!_breadcrumbs.IsCreated)
+                return;
+
+            int safeCount = math.min(_breadcrumbCount, _breadcrumbs.Length);
+            for (int i = 0; i < safeCount; i++)
+            {
+                ChemicalBreadcrumbWaypoint waypoint = _breadcrumbs[i];
+                Vector3 runtime = HectonFloatingOrigin.ToRuntimePosition(new Vector3(
+                    waypoint.AbsolutePosition.x,
+                    waypoint.AbsolutePosition.y,
+                    waypoint.AbsolutePosition.z));
+                waypoint.RuntimePosition = new float3(runtime.x, runtime.y, runtime.z);
+                _breadcrumbs[i] = waypoint;
             }
         }
 
         private void RegisterDefoliantDeadZone(Vector3 worldPosition, float radiusMeters)
         {
             Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(worldPosition);
-            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
+            float safeRadius = math.max(MinimumRadiusMeters, radiusMeters);
             float mergeRadiusSq = safeRadius * safeRadius;
             for (int i = 0; i < _defoliantDeadZoneCount; i++)
             {
@@ -501,309 +527,111 @@ namespace Hecton8.World
                 return;
             }
 
-            if (_defoliantDeadZoneCount < _defoliantDeadZones.Length)
-            {
-                _defoliantDeadZones[_defoliantDeadZoneCount++] = new Vector4(
-                    absolutePosition.x,
-                    absolutePosition.y,
-                    absolutePosition.z,
-                    safeRadius);
-                return;
-            }
-
-            _defoliantDeadZones[_defoliantDeadZoneCount - 1] = new Vector4(
+            int writeIndex = _defoliantDeadZoneCount < _defoliantDeadZones.Length
+                ? _defoliantDeadZoneCount++
+                : _defoliantDeadZones.Length - 1;
+            _defoliantDeadZones[writeIndex] = new Vector4(
                 absolutePosition.x,
                 absolutePosition.y,
                 absolutePosition.z,
                 safeRadius);
         }
 
-        private void FlushPendingWritesToOverlay()
-        {
-            if (!_overlayGrid.IsCreated || _pendingWriteCount <= 0)
-                return;
-
-            for (int i = 0; i < _pendingWriteCount; i++)
-            {
-                InfluenceWrite write = _pendingWrites[i];
-                if (!TryWorldToCell(write.WorldPosition, out int3 cell))
-                    continue;
-
-                if (!TryFlatten(cell, out int flatIndex))
-                    continue;
-
-                float4 next = _overlayGrid[flatIndex] + write.Delta;
-                _overlayGrid[flatIndex] = ClampChemicalChannels(next, math.max(0.1f, maximumChannelIntensity));
-            }
-
-            _pendingWriteCount = 0;
-        }
-
-        private void ApplyOverlayToFrontGrid()
-        {
-            if (!_frontGrid.IsCreated || !_overlayGrid.IsCreated)
-                return;
-
-            for (int i = 0; i < _frontGrid.Length; i++)
-            {
-                float4 overlay = _overlayGrid[i];
-                if (math.lengthsq(overlay) <= 0f)
-                    continue;
-
-                _frontGrid[i] = ClampChemicalChannels(_frontGrid[i] + overlay, math.max(0.1f, maximumChannelIntensity));
-                _overlayGrid[i] = float4.zero;
-            }
-        }
-
-        private void ScheduleDiffusionPass()
-        {
-            if (_diffusionPending || !_frontGrid.IsCreated || !_backGrid.IsCreated)
-                return;
-
-            EcosystemBalanceProfile.BiomeChemicalBalance balance = ResolveRuntimeBalance();
-            var job = new ChemicalDiffusionJob
-            {
-                Source = _frontGrid,
-                Target = _backGrid,
-                Dimensions = ResolveDimensions(),
-                DecayRates = new float4(balance.bloodDecayRate, balance.exhaustDecayRate, balance.fearDecayRate, 0f),
-                DiffusionRates = new float4(balance.bloodDiffusionRate, balance.exhaustDiffusionRate, balance.fearDiffusionRate, 0f),
-                MaxChannelIntensity = math.max(0.1f, maximumChannelIntensity)
-            };
-
-            _diffusionHandle = job.Schedule(_frontGrid.Length, 64);
-            _diffusionPending = true;
-            _debugDiffusionPending = true;
-        }
-
-        private void FinalizeDiffusionIfReady()
-        {
-            if (!_diffusionPending || !_diffusionHandle.IsCompleted)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _diffusionHandle, forceComplete: false))
-                return;
-
-            (_frontGrid, _backGrid) = (_backGrid, _frontGrid);
-            _diffusionPending = false;
-            _debugDiffusionPending = false;
-        }
-
-        /// <inheritdoc />
-        public void LateFrameTick()
-        {
-            FinalizeDiffusionIfReady();
-        }
-
-        private void DispatchGpuMirror()
-        {
-            if (chemicalGridCompute == null || _diffusionKernelIndex < 0 || !_frontGrid.IsCreated)
-                return;
-
-            int cellCount = _frontGrid.Length;
-            EnsureGpuBuffers(cellCount);
-            if (_gpuFrontBuffer == null || _gpuBackBuffer == null)
-                return;
-
-            EcosystemBalanceProfile.BiomeChemicalBalance balance = ResolveRuntimeBalance();
-            _gpuFrontBuffer.SetData(_frontGrid);
-            chemicalGridCompute.SetBuffer(_diffusionKernelIndex, _ChemicalGridSourceId, _gpuFrontBuffer);
-            chemicalGridCompute.SetBuffer(_diffusionKernelIndex, _ChemicalGridTargetId, _gpuBackBuffer);
-            chemicalGridCompute.SetInts(_ChemicalGridDimensionsId, gridResolution.x, gridResolution.y, gridResolution.z);
-            chemicalGridCompute.SetVector(_ChemicalGridDecayRatesId, new Vector4(balance.bloodDecayRate, balance.exhaustDecayRate, balance.fearDecayRate, 0f));
-            chemicalGridCompute.SetVector(_ChemicalGridDiffusionRatesId, new Vector4(balance.bloodDiffusionRate, balance.exhaustDiffusionRate, balance.fearDiffusionRate, 0f));
-            chemicalGridCompute.SetFloat(_ChemicalGridMaxIntensityId, math.max(0.1f, maximumChannelIntensity));
-
-            int groupCount = Mathf.Max(1, Mathf.CeilToInt(cellCount / 64f));
-            chemicalGridCompute.Dispatch(_diffusionKernelIndex, groupCount, 1, 1);
-            (_gpuFrontBuffer, _gpuBackBuffer) = (_gpuBackBuffer, _gpuFrontBuffer);
-        }
-
-        private void EnsureGpuBuffers(int cellCount)
-        {
-            if (_gpuFrontBuffer == null)
-                _gpuFrontBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, cellCount, 16); // COLD ALLOC: GraphicsBuffer[cellCount] - GPU mirror of chemical scent front field - owner: ChemicalInfluenceGrid
-            if (_gpuBackBuffer == null)
-                _gpuBackBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, cellCount, 16); // COLD ALLOC: GraphicsBuffer[cellCount] - GPU mirror of chemical scent back field - owner: ChemicalInfluenceGrid
-        }
-
-        private EcosystemBalanceProfile.BiomeChemicalBalance ResolveRuntimeBalance()
-        {
-            return ecosystemBalanceProfile != null
-                ? ecosystemBalanceProfile.DefaultBiomeBalance
-                : EcosystemBalanceProfile.DefaultBalance;
-        }
-
-        private void ResolveGridMetrics()
-        {
-            gridResolution.x = Mathf.Max(1, gridResolution.x);
-            gridResolution.y = Mathf.Max(1, gridResolution.y);
-            gridResolution.z = Mathf.Max(1, gridResolution.z);
-            gridWorldSize.x = Mathf.Max(MinimumCellDimension, gridWorldSize.x);
-            gridWorldSize.y = Mathf.Max(MinimumCellDimension, gridWorldSize.y);
-            gridWorldSize.z = Mathf.Max(MinimumCellDimension, gridWorldSize.z);
-            maximumChannelIntensity = Mathf.Max(0.1f, maximumChannelIntensity);
-
-            _cellSizeWS = new float3(
-                gridWorldSize.x / gridResolution.x,
-                gridWorldSize.y / gridResolution.y,
-                gridWorldSize.z / gridResolution.z);
-
-            Transform anchor = GlobalRegistry.Player != null ? GlobalRegistry.Player.PlayerTransform : null;
-            float3 anchorPosition = anchor != null
-                ? new float3(anchor.position.x, anchor.position.y, anchor.position.z)
-                : float3.zero;
-            _gridOriginWS = anchorPosition - (new float3(gridWorldSize.x, gridWorldSize.y, gridWorldSize.z) * 0.5f);
-        }
-
-        private void ResolveComputeKernel()
-        {
-#if UNITY_EDITOR
-            if (chemicalGridCompute == null)
-                chemicalGridCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(DefaultComputeShaderAssetPath);
-#endif
-
-            if (chemicalGridCompute == null)
-            {
-                _diffusionKernelIndex = -1;
-                return;
-            }
-
-            _diffusionKernelIndex = chemicalGridCompute.FindKernel("DiffuseChemicalGrid");
-        }
-
-        private int ResolveCellCount()
-        {
-            int3 dimensions = ResolveDimensions();
-            return dimensions.x * dimensions.y * dimensions.z;
-        }
-
-        private int3 ResolveDimensions()
-        {
-            return new int3(math.max(1, gridResolution.x), math.max(1, gridResolution.y), math.max(1, gridResolution.z));
-        }
-
-        private bool TryWorldToCell(float3 worldPosition, out int3 cell)
-        {
-            float3 local = worldPosition - _gridOriginWS;
-            if (local.x < 0f || local.y < 0f || local.z < 0f)
-            {
-                cell = int3.zero;
-                return false;
-            }
-
-            float3 safeCellSize = math.max(_cellSizeWS, new float3(MinimumCellDimension));
-            int3 candidate = new int3(
-                (int)math.floor(local.x / safeCellSize.x),
-                (int)math.floor(local.y / safeCellSize.y),
-                (int)math.floor(local.z / safeCellSize.z));
-            int3 dimensions = ResolveDimensions();
-            if (candidate.x < 0 || candidate.y < 0 || candidate.z < 0 ||
-                candidate.x >= dimensions.x || candidate.y >= dimensions.y || candidate.z >= dimensions.z)
-            {
-                cell = int3.zero;
-                return false;
-            }
-
-            cell = candidate;
-            return true;
-        }
-
-        private bool TryWorldSphereToCellBounds(float3 worldPosition, float radiusMeters, out int3 minCell, out int3 maxCell)
-        {
-            int3 dimensions = ResolveDimensions();
-            minCell = int3.zero;
-            maxCell = int3.zero;
-            if (dimensions.x <= 0 || dimensions.y <= 0 || dimensions.z <= 0)
-                return false;
-
-            float safeRadius = math.max(MinimumCellDimension, radiusMeters);
-            float3 safeCellSize = math.max(_cellSizeWS, new float3(MinimumCellDimension));
-            float3 localMin = worldPosition - new float3(safeRadius) - _gridOriginWS;
-            float3 localMax = worldPosition + new float3(safeRadius) - _gridOriginWS;
-            int3 rawMin = new int3(
-                (int)math.floor(localMin.x / safeCellSize.x),
-                (int)math.floor(localMin.y / safeCellSize.y),
-                (int)math.floor(localMin.z / safeCellSize.z));
-            int3 rawMax = new int3(
-                (int)math.floor(localMax.x / safeCellSize.x),
-                (int)math.floor(localMax.y / safeCellSize.y),
-                (int)math.floor(localMax.z / safeCellSize.z));
-
-            if (rawMax.x < 0 || rawMax.y < 0 || rawMax.z < 0 ||
-                rawMin.x >= dimensions.x || rawMin.y >= dimensions.y || rawMin.z >= dimensions.z)
-            {
-                return false;
-            }
-
-            int3 lastCell = dimensions - new int3(1);
-            minCell = math.clamp(rawMin, int3.zero, lastCell);
-            maxCell = math.clamp(rawMax, int3.zero, lastCell);
-            return minCell.x <= maxCell.x && minCell.y <= maxCell.y && minCell.z <= maxCell.z;
-        }
-
-        private bool TryFlatten(int3 cell, out int flatIndex)
-        {
-            flatIndex = -1;
-            int3 dimensions = ResolveDimensions();
-            if (cell.x < 0 || cell.y < 0 || cell.z < 0 ||
-                cell.x >= dimensions.x || cell.y >= dimensions.y || cell.z >= dimensions.z)
-            {
-                return false;
-            }
-
-            int resolvedIndex = cell.x + (cell.y * dimensions.x) + (cell.z * dimensions.x * dimensions.y);
-            if (resolvedIndex < 0 ||
-                (_frontGrid.IsCreated && resolvedIndex >= _frontGrid.Length) ||
-                (_overlayGrid.IsCreated && resolvedIndex >= _overlayGrid.Length))
-            {
-                return false;
-            }
-
-            flatIndex = resolvedIndex;
-            return true;
-        }
-
         private bool TrySampleNormalizedChannelsInternal(float3 worldPosition, out float4 normalizedChannels)
         {
             normalizedChannels = float4.zero;
             Vector3 runtimePosition = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
-            bool insideDeadZone = IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition));
-            if (!_frontGrid.IsCreated || !_overlayGrid.IsCreated)
-            {
-                if (!insideDeadZone)
-                    return false;
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            bool insideDeadZone = IsInsidePermanentDefoliantDeadZoneAbsoluteInternal(absolutePosition);
+            float4 accumulated = float4.zero;
+            bool hasSample = false;
+            float now = Time.time;
 
-                normalizedChannels = new float4(0f, 0f, 0f, -1f);
-                return true;
+            if (_breadcrumbs.IsCreated)
+            {
+                float3 queryAbsolute = new float3(absolutePosition.x, absolutePosition.y, absolutePosition.z);
+                int safeCount = math.min(_breadcrumbCount, _breadcrumbs.Length);
+                for (int i = 0; i < safeCount; i++)
+                {
+                    ChemicalBreadcrumbWaypoint waypoint = _breadcrumbs[i];
+                    if (waypoint.ExpiresAt <= now || waypoint.RadiusMeters <= 0f)
+                        continue;
+
+                    float radius = math.max(MinimumRadiusMeters, waypoint.RadiusMeters);
+                    float distanceSq = math.lengthsq(waypoint.AbsolutePosition - queryAbsolute);
+                    if (distanceSq > radius * radius)
+                        continue;
+
+                    float distance01 = math.saturate(math.sqrt(distanceSq) / radius);
+                    float falloff = SmoothStep01(1f - distance01);
+                    accumulated += waypoint.Channels * falloff;
+                    hasSample = true;
+                }
             }
 
-            if (!TryWorldToCell(worldPosition, out int3 cell))
-            {
-                if (!insideDeadZone)
-                    return false;
+            if (!hasSample && !insideDeadZone)
+                return false;
 
-                normalizedChannels = new float4(0f, 0f, 0f, -1f);
-                return true;
-            }
-
-            if (!TryFlatten(cell, out int flatIndex))
-            {
-                if (!insideDeadZone)
-                    return false;
-
-                normalizedChannels = new float4(0f, 0f, 0f, -1f);
-                return true;
-            }
-
-            float4 combinedChannels = _frontGrid[flatIndex] + _overlayGrid[flatIndex];
             float inverseMaxIntensity = 1f / math.max(0.1f, maximumChannelIntensity);
-            float4 normalized = combinedChannels * inverseMaxIntensity;
+            float4 normalized = accumulated * inverseMaxIntensity;
             normalizedChannels = new float4(
                 math.saturate(normalized.x),
                 math.saturate(normalized.y),
                 math.saturate(normalized.z),
                 insideDeadZone ? -1f : math.clamp(normalized.w, -1f, 1f));
+            return true;
+        }
+
+        private bool TryFindNearestScentWaypointInternal(
+            float3 worldPosition,
+            ChemicalChannel channel,
+            out ChemicalBreadcrumbWaypoint nearestWaypoint,
+            out float distanceMeters,
+            out float intensity01)
+        {
+            nearestWaypoint = default;
+            distanceMeters = 0f;
+            intensity01 = 0f;
+            if (!_breadcrumbs.IsCreated || _breadcrumbCount <= 0)
+                return false;
+
+            Vector3 runtimePosition = new Vector3(worldPosition.x, worldPosition.y, worldPosition.z);
+            Vector3 absolutePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(runtimePosition);
+            float3 queryAbsolute = new float3(absolutePosition.x, absolutePosition.y, absolutePosition.z);
+            int channelIndex = (int)channel;
+            int safeCount = math.min(_breadcrumbCount, _breadcrumbs.Length);
+            float now = Time.time;
+            float bestDistanceSq = float.MaxValue;
+            float bestIntensity = 0f;
+            bool found = false;
+
+            for (int i = 0; i < safeCount; i++)
+            {
+                ChemicalBreadcrumbWaypoint waypoint = _breadcrumbs[i];
+                if (waypoint.ExpiresAt <= now || waypoint.RadiusMeters <= 0f)
+                    continue;
+
+                float channelSignal = GetChannel(waypoint.Channels, channelIndex);
+                if (channelSignal <= 0f)
+                    continue;
+
+                float radius = math.max(MinimumRadiusMeters, waypoint.RadiusMeters);
+                float distanceSq = math.lengthsq(waypoint.AbsolutePosition - queryAbsolute);
+                if (distanceSq > radius * radius || distanceSq >= bestDistanceSq)
+                    continue;
+
+                float distance01 = math.saturate(math.sqrt(distanceSq) / radius);
+                bestIntensity = math.saturate(channelSignal * SmoothStep01(1f - distance01) / math.max(0.1f, maximumChannelIntensity));
+                bestDistanceSq = distanceSq;
+                nearestWaypoint = waypoint;
+                found = true;
+            }
+
+            if (!found)
+                return false;
+
+            distanceMeters = math.sqrt(bestDistanceSq);
+            intensity01 = bestIntensity;
             return true;
         }
 
@@ -831,6 +659,23 @@ namespace Hecton8.World
                 math.clamp(value.w, -safeMax, safeMax));
         }
 
+        private static float GetChannel(float4 value, int channelIndex)
+        {
+            switch (channelIndex)
+            {
+                case 0: return value.x;
+                case 1: return value.y;
+                case 2: return value.z;
+                default: return value.w;
+            }
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
+        }
+
         private void TryRegisterSlowTick()
         {
             if (_registeredSlowTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
@@ -849,60 +694,26 @@ namespace Hecton8.World
             _registeredSlowTick = false;
         }
 
-        private void TryRegisterLateFrameTick()
-        {
-            if (_registeredLateFrameTick || !Application.isPlaying || GlobalRegistry.Dispatcher == null)
-                return;
-
-            GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrameTick = SystemDispatcher.GetLateFrameLane(PriorityLayer.Environment).Contains(this);
-        }
-
-        private void TryUnregisterLateFrameTick()
-        {
-            if (!_registeredLateFrameTick)
-                return;
-
-            GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Environment);
-            _registeredLateFrameTick = false;
-        }
-
         private void DisposeBuffers()
         {
-            JobHandle disposeDependency = _diffusionPending ? _diffusionHandle : default;
-            if (_frontGrid.IsCreated)
-                _frontGrid.Dispose(disposeDependency);
-            if (_backGrid.IsCreated)
-                _backGrid.Dispose(disposeDependency);
-            if (_overlayGrid.IsCreated)
-                _overlayGrid.Dispose();
+            if (_breadcrumbs.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(_breadcrumbs);
+                _breadcrumbs.Dispose();
+                _breadcrumbs = default;
+            }
 
-            _frontGrid = default;
-            _backGrid = default;
-            _overlayGrid = default;
-            _diffusionHandle = default;
-            _diffusionPending = false;
-            _pendingWriteCount = 0;
-            _lastPublishedFrame = -1;
+            _breadcrumbCount = 0;
+            _breadcrumbWriteCursor = 0;
             _runtimeInitialized = false;
             _cachedPlayerTransform = null;
             _cachedPlayerSurvival = null;
-            _diffusionKernelIndex = -1;
-            _debugDiffusionPending = false;
-
-            _gpuFrontBuffer?.Dispose();
-            _gpuBackBuffer?.Dispose();
-            _gpuFrontBuffer = null;
-            _gpuBackBuffer = null;
         }
 
         private void UpdateDebugState()
         {
-            _debugGridResolution = gridResolution;
-            _debugGridOrigin = new Vector3(_gridOriginWS.x, _gridOriginWS.y, _gridOriginWS.z);
-            _debugCellSize = new Vector3(_cellSizeWS.x, _cellSizeWS.y, _cellSizeWS.z);
-            _debugPendingWriteCount = _pendingWriteCount;
-            _debugDiffusionPending = _diffusionPending;
+            _debugBreadcrumbCount = _breadcrumbCount;
+            _debugPendingWriteCount = 0;
         }
     }
 }

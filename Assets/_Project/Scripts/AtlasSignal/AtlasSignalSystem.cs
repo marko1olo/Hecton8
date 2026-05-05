@@ -97,6 +97,7 @@ namespace Hecton8.AtlasSignal
         private float _pulseTimer;
         private float _currentStrength;
         private float _lastPublishedStrength;
+        private int _currentStrengthBand;
         private bool _signalEverDetected;
         private int _maxRevealStageUnlocked;
         private bool _registered;
@@ -113,6 +114,10 @@ namespace Hecton8.AtlasSignal
         private const int FullDecodeRevealStage = 4;
         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
         private const string SignalFullyDecodedDiscoveryId = "atlas6_signal_fully_decoded";
+        private const string SignalFirstDetectedLog = "[AtlasSignal] Signal first detected.";
+        private const string SignalPulseLog = "[AtlasSignal] Pulse emitted.";
+        private const string SignalDecodedLog = "[AtlasSignal] Signal decoded.";
+        private const string RevealStageUnlockedLog = "[AtlasSignal] Reveal stage unlocked.";
         private static readonly uint _AudioLogRuntimeMissingWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.AudioLogRuntimeMissing"));
         private static readonly uint _EncryptedLogFallbackWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.EncryptedLogFallback"));
         private static readonly uint _DuplicateRuntimeWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.DuplicateRuntime"));
@@ -131,6 +136,7 @@ namespace Hecton8.AtlasSignal
         // ══════════════════════════════════════════════════════════
 
         public float CurrentStrength => _currentStrength;
+        public int CurrentStrengthBand => _currentStrengthBand;
         public bool IsDetected =>
             _maxRevealStageUnlocked >= FormalDetectionRevealStage &&
             _currentStrength >= detectionThreshold;
@@ -209,6 +215,9 @@ namespace Hecton8.AtlasSignal
                 _maxRevealStageUnlocked = desiredRevealStage;
 
             float newStrength = math.min(rawStrength, ResolveRevealStrengthCap(_maxRevealStageUnlocked));
+            _currentStrengthBand = math.min(
+                SignalStrengthSystem.StrengthToBand(newStrength),
+                math.clamp(_maxRevealStageUnlocked, 0, FullDecodeRevealStage));
 
             // Публикуем изменение силы
             if (math.abs(newStrength - _lastPublishedStrength) > StrengthEpsilon)
@@ -224,7 +233,7 @@ namespace Hecton8.AtlasSignal
                 {
                     _signalEverDetected = true;
                     AtlasSignalEvents.RaiseDetected(atlasCorePosWorld);
-                    LogSignalFirstDetected(newStrength);
+                    LogSignalFirstDetected();
                 }
 
                 // Шейдер
@@ -248,8 +257,7 @@ namespace Hecton8.AtlasSignal
             float pulseIntensity = _currentStrength;
             AtlasSignalEvents.RaisePulse(pulseIntensity);
 
-            LogSignalPulse(pulseIntensity,
-                SignalStrengthSystem.CalculateDistanceMeters(_playerTransform.position, atlasCorePosWorld));
+            LogSignalPulse();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -270,7 +278,7 @@ namespace Hecton8.AtlasSignal
                 TryEnsureFullDecodeDiscoveryPublished();
             }
 
-            LogSignalDecoded(messageId);
+            LogSignalDecoded();
         }
 
         // ══════════════════════════════════════════════════════════
@@ -446,7 +454,7 @@ namespace Hecton8.AtlasSignal
                     break;
             }
 
-            LogRevealStageUnlocked(revealStage, manifestedStrength);
+            LogRevealStageUnlocked();
         }
 
         private void TryEnsureIdentityDiscoveryPublished()
@@ -525,31 +533,31 @@ namespace Hecton8.AtlasSignal
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        private static void LogSignalFirstDetected(float strength)
+        private static void LogSignalFirstDetected()
         {
-            Debug.Log($"[AtlasSignal] Signal first detected. Strength: {strength:F2}");
+            Debug.Log(SignalFirstDetectedLog);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        private static void LogSignalPulse(float pulseIntensity, float distanceToCore)
+        private static void LogSignalPulse()
         {
             if (Time.time < _nextSignalLogTime)
                 return;
 
             _nextSignalLogTime = Time.time + 5f;
-            Debug.Log($"[AtlasSignal] Pulse intensity: {pulseIntensity:F2} (dist to core: {distanceToCore:F0}m)");
+            Debug.Log(SignalPulseLog);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        private static void LogSignalDecoded(string messageId)
+        private static void LogSignalDecoded()
         {
-            Debug.Log($"[AtlasSignal] Signal decoded: {messageId}");
+            Debug.Log(SignalDecodedLog);
         }
 
         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
-        private static void LogRevealStageUnlocked(int revealStage, float manifestedStrength)
+        private static void LogRevealStageUnlocked()
         {
-            Debug.Log($"[AtlasSignal] Reveal stage {revealStage} unlocked. Manifested strength: {manifestedStrength:F2}");
+            Debug.Log(RevealStageUnlockedLog);
         }
 
         private static string ResolveLocalized(string key, string fallback)
@@ -593,6 +601,11 @@ namespace Hecton8.AtlasSignal
 
     internal static class SignalStrengthSystem
     {
+        private const float StrengthBandOneThreshold = 0.001f;
+        private const float StrengthBandTwoThreshold = 0.25f;
+        private const float StrengthBandThreeThreshold = 0.5f;
+        private const float StrengthBandFourThreshold = 0.75f;
+
         public static float CalculateStrength(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition, float maxRangeMeters)
         {
             float safeRange = math.max(0.001f, maxRangeMeters);
@@ -601,6 +614,26 @@ namespace Hecton8.AtlasSignal
                 return 0f;
 
             return math.saturate(1f - (distance / safeRange));
+        }
+
+        public static int CalculateStrengthBand(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition, float maxRangeMeters)
+        {
+            return StrengthToBand(CalculateStrength(playerRuntimePosition, coreRuntimePosition, maxRangeMeters));
+        }
+
+        public static int StrengthToBand(float strength01)
+        {
+            float strength = math.saturate(strength01);
+            if (strength < StrengthBandOneThreshold)
+                return 0;
+            if (strength < StrengthBandTwoThreshold)
+                return 1;
+            if (strength < StrengthBandThreeThreshold)
+                return 2;
+            if (strength < StrengthBandFourThreshold)
+                return 3;
+
+            return 4;
         }
 
         public static float CalculateDistanceMeters(Vector3 playerRuntimePosition, Vector3 coreRuntimePosition)

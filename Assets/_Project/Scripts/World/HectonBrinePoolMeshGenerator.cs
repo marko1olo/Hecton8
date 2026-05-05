@@ -22,6 +22,8 @@ namespace Hecton8.World
         private const uint PoolCapWarningHash = 0x414E4250u;
         private const uint BrineGeneratorContextHash = 0x414E4252u;
         private const int MaxGeneratedBrinePools = 32;
+        private const string BrineToxicityLayerName = "BrineToxicity";
+        private static readonly int BrineToxicityLayer = LayerMask.NameToLayer(BrineToxicityLayerName);
 
         [Header("Rendering")]
         [Tooltip("Material assigned to generated flat brine pool surfaces.")]
@@ -162,7 +164,7 @@ namespace Hecton8.World
             Transform existing = transform.Find("Generated Brine Pools");
             if (existing != null)
             {
-                existing.gameObject.layer = HectonLayerMasks.TriggerZone;
+                existing.gameObject.layer = ResolveBrinePhysicsLayer();
                 _poolRoot = existing;
                 return;
             }
@@ -170,7 +172,7 @@ namespace Hecton8.World
             // COLD ALLOC: GameObject[1] — brine pool container — owner: HectonBrinePoolMeshGenerator
             var rootObject = new GameObject("Generated Brine Pools");
             rootObject.transform.SetParent(transform, false);
-            rootObject.layer = HectonLayerMasks.TriggerZone;
+            rootObject.layer = ResolveBrinePhysicsLayer();
             _poolRoot = rootObject.transform;
         }
 
@@ -194,7 +196,7 @@ namespace Hecton8.World
             poolObject.transform.SetParent(_poolRoot, false);
             poolObject.transform.position = center;
             poolObject.transform.localScale = new Vector3(sizeX, 1f, sizeZ);
-            poolObject.layer = HectonLayerMasks.TriggerZone;
+            poolObject.layer = ResolveBrinePhysicsLayer();
 
             MeshFilter meshFilter = poolObject.AddComponent<MeshFilter>();
             MeshRenderer meshRenderer = poolObject.AddComponent<MeshRenderer>();
@@ -222,7 +224,7 @@ namespace Hecton8.World
             var fogObject = new GameObject("BrinePoolFog");
             fogObject.transform.SetParent(poolTransform, false);
             fogObject.transform.localPosition = new Vector3(0f, -0.05f, 0f);
-            fogObject.layer = HectonLayerMasks.TriggerZone;
+            fogObject.layer = ResolveBrinePhysicsLayer();
 
             MeshFilter meshFilter = fogObject.AddComponent<MeshFilter>();
             MeshRenderer meshRenderer = fogObject.AddComponent<MeshRenderer>();
@@ -291,6 +293,11 @@ namespace Hecton8.World
             float sizeZ = math.max(cellSizeMeters, (poolBounds.MaxZ - poolBounds.MinZ + 1) * cellSizeMeters);
             float radius = math.sqrt(sizeX * sizeX + sizeZ * sizeZ) * 0.5f;
             HectonHazardManager.Register(hazardId, runtimeCenter, hazardIntensity, radius, HazardType.Toxicity, hazardVisorGlitchBias);
+        }
+
+        private static int ResolveBrinePhysicsLayer()
+        {
+            return BrineToxicityLayer >= 0 ? BrineToxicityLayer : HectonLayerMasks.TriggerZone;
         }
 
         private static void DisposeTracked<T>(ref NativeArray<T> array) where T : struct

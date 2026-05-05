@@ -188,4 +188,57 @@ namespace Hecton8.World
             maxDelta = math.max(maxDelta, math.abs(height - neighborHeight));
         }
     }
+
+    /// <summary>
+    /// Burst reduction over metric blocks. Keeps smoke-test aggregation off the managed main-thread loop.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct HydraulicErosionMetricReductionJob : IJob
+    {
+        /// <summary>Metric blocks produced by <see cref="HydraulicErosionMetricsJob"/>.</summary>
+        [ReadOnly] public NativeArray<HydraulicErosionMetricBlock> Blocks;
+
+        /// <summary>Single-element summary output.</summary>
+        [WriteOnly] public NativeArray<HydraulicErosionMetricBlock> Summary;
+
+        /// <summary>Number of valid metric blocks to reduce.</summary>
+        public int BlockCount;
+
+        /// <inheritdoc />
+        public void Execute()
+        {
+            var summary = new HydraulicErosionMetricBlock
+            {
+                MinHeight = 1f,
+                MaxHeight = 0f
+            };
+
+            int count = math.min(math.max(0, BlockCount), Blocks.Length);
+            for (int i = 0; i < count; i++)
+            {
+                HydraulicErosionMetricBlock block = Blocks[i];
+                if (block.SampleCount > 0)
+                {
+                    summary.MinHeight = math.min(summary.MinHeight, block.MinHeight);
+                    summary.MaxHeight = math.max(summary.MaxHeight, block.MaxHeight);
+                    summary.SumHeight += block.SumHeight;
+                    summary.SumSediment += block.SumSediment;
+                    summary.SumWear += block.SumWear;
+                    summary.MaxSediment = math.max(summary.MaxSediment, block.MaxSediment);
+                    summary.MaxWear = math.max(summary.MaxWear, block.MaxWear);
+                    summary.MaxBoundaryHeightDelta = math.max(summary.MaxBoundaryHeightDelta, block.MaxBoundaryHeightDelta);
+                    summary.MaxBoundarySediment = math.max(summary.MaxBoundarySediment, block.MaxBoundarySediment);
+                    summary.MaxBoundaryWear = math.max(summary.MaxBoundaryWear, block.MaxBoundaryWear);
+                    summary.SampleCount += block.SampleCount;
+                    summary.BoundarySampleCount += block.BoundarySampleCount;
+                }
+
+                summary.NanCount += block.NanCount;
+                summary.BoundaryNanCount += block.BoundaryNanCount;
+            }
+
+            if (Summary.Length > 0)
+                Summary[0] = summary;
+        }
+    }
 }

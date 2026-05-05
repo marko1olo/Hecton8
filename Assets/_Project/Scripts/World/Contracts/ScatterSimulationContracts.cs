@@ -5,13 +5,13 @@ using UnityEngine;
 
 namespace Hecton8.World
 {
-    internal enum ScatterSimulationBackendKind
+    public enum ScatterSimulationBackendKind
     {
         ClassicJobs = 0,
         EntitiesDots = 1
     }
 
-    internal enum ScatterBackendExecutionMode
+    public enum ScatterBackendExecutionMode
     {
         Disabled = 0,
         Shadow = 1,
@@ -97,7 +97,7 @@ namespace Hecton8.World
     /// Immutable config for one scatter simulation pass.
     /// Shared by classic Jobs and future DOTS backends.
     /// </summary>
-    internal struct ScatterSimulationConfig
+    public struct ScatterSimulationConfig
     {
         public float CellSize;
         public int RadiusCells;
@@ -124,7 +124,7 @@ namespace Hecton8.World
     /// Blittable scatter candidate contract shared by classic Jobs and future DOTS backends.
     /// Managed refs are resolved later by the owner-driven main-thread apply path.
     /// </summary>
-    internal struct ScatterSimulationCandidate
+    public struct ScatterSimulationCandidate
     {
         public float3 Position;
         public float Rotation;
@@ -141,7 +141,7 @@ namespace Hecton8.World
     /// Completed simulation output for one scatter pass.
     /// NativeArray ownership stays with the backend that produced it.
     /// </summary>
-    internal readonly struct ScatterSimulationResult
+    public readonly struct ScatterSimulationResult
     {
         public ScatterSimulationResult(
             NativeArray<ScatterSimulationCandidate> candidates,
@@ -162,7 +162,7 @@ namespace Hecton8.World
     /// Backend seam for scatter candidate simulation.
     /// Current implementation is classic Jobs; DOTS backend plugs into the same contract.
     /// </summary>
-    internal interface IScatterSimulationBackend : IDisposable
+    public interface IScatterSimulationBackend : IDisposable
     {
         ScatterSimulationBackendKind BackendKind { get; }
         bool IsInitialized { get; }

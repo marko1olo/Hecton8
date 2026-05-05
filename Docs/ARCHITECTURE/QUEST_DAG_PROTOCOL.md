@@ -192,27 +192,26 @@ When the runtime receives an item-loss path for a critical quest item:
 2. Set the `Deadlock` bit.
 3. Clear the quest `Completed` bit.
 4. Re-set the quest `Active` bit.
-5. Append transition history.
+5. In `DEVELOPMENT_BUILD` only, append a short text audit line.
 6. Emit `QuestRevertRequest` so the external spawn owner can re-spawn the item.
 
 This prevents permanent story deadlocks caused by destruction or discard of a quest-critical item.
 
-## Transition History
-`QuestStateManager` keeps a zero-alloc ring buffer with `256` entries:
-- metadata: `NativeArray<QuestTransitionHistoryEntry>`
-- state snapshots: `NativeArray<uint>` with `256 * 320` packed words
+## Transition Audit
+`QuestStateManager` stores no transition history and no state snapshots.
 
-Each entry records:
-- `Timestamp`
-- `QuestHash`
-- `FromFlagID`
-- `ToFlagID`
-- `SignalPayloadHash`
-- `EventType`
-- `TransitionType`
-- `Completed`
+Deleted runtime allocations:
+- `NativeArray<QuestTransitionHistoryEntry>`
+- `NativeArray<uint>` history slab sized as `256 * 320`
 
-The snapshot offset points into the packed-history word slab for state restoration/debug replay.
+Runtime persistence keeps only the current 320 packed state words, version, and checksum.
+
+Development audit is a cold path:
+- compiled behind `DEVELOPMENT_BUILD`
+- appends plain text to `quest_transition_audit.log`
+- format: `[{Time}] Quest {ID} -> {State}`
+
+There is no runtime state restoration from transition history.
 
 ## Mission Markers
 `MissionMarkerSystem` renders active quest markers through `Graphics.DrawMeshInstanced`.
@@ -269,16 +268,15 @@ Rules:
 - forced spawns bypass normal pacing selection but still enter through the existing encounter output lane
 - forced squad candidates prefer the far edge of the spawn ring so hunters emerge at the fog boundary and close in over successive cold ticks
 
-## Decoder Wave Solve
-The final Atlas decode is no longer granted by signal strength alone. Strength phase `4` only opens the decode window.
+## Decoder Progress
+The final Atlas decode is a scalar progress gate. Strength phase `4` opens the decode window.
 
-Wave solve contract:
-- sample domain: `32` fixed precomputed samples across `0..2π`
-- player waveform: `sin((sample * frequency) + phase) * amplitude`
-- target waveform: `sin((sample * targetFrequency) + targetPhaseOffset) * targetAmplitude`
-- completion gate: `sum(abs(playerWave - targetWave)) / 32 < decodeTolerance`
+Decode contract:
+- `Progress += UnpackSpeed * dt`
+- clamp progress to `0..1`
+- when `Progress >= 1.0`, emit the decoded Atlas signal
 
-The decoder stores only normalized dial values and a fixed sample domain buffer. No arrays are allocated during solve evaluation.
+No waveform sample domain, sine comparison, dial solve, or decode buffer exists.
 
 ## Failure Modes
 - If no external owner consumes `QuestRevertRequest.RespawnEventHash`, the quest will revert but the lost item will not physically respawn.

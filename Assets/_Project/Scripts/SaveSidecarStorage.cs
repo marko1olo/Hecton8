@@ -41,6 +41,7 @@ namespace Hecton8.SaveSystem
                 + sizeof(float)
                 + GetStringByteCount(metadata.SceneName)
                 + (sizeof(float) * 3)
+                + (sizeof(int) * 2)
                 + GetStringByteCount(metadata.Checksum);
 
             NativeArray<byte> buffer = new NativeArray<byte>(byteCount, Allocator.Temp, NativeArrayOptions.UninitializedMemory);
@@ -56,7 +57,9 @@ namespace Hecton8.SaveSystem
                     || !writer.WriteFloat(metadata.PlayerPosition.x)
                     || !writer.WriteFloat(metadata.PlayerPosition.y)
                     || !writer.WriteFloat(metadata.PlayerPosition.z)
-                    || !writer.WriteString(metadata.Checksum))
+                    || !writer.WriteString(metadata.Checksum)
+                    || !writer.WriteInt(metadata.WorldSeed)
+                    || !writer.WriteInt(metadata.WorldGenerationVersionId))
                 {
                     error = writer.Error;
                     return false;
@@ -256,6 +259,23 @@ namespace Hecton8.SaveSystem
         private static bool FinalizeMetadata(ref SaveMetadata metadata, float posX, float posY, float posZ, SidecarReader reader, out string error)
         {
             metadata.PlayerPosition = new Vector3(posX, posY, posZ);
+
+            int remainingBytes = reader.TotalLength - reader.BytesRead;
+            if (remainingBytes >= sizeof(int) * 2)
+            {
+                if (!reader.ReadInt(out metadata.WorldSeed) ||
+                    !reader.ReadInt(out metadata.WorldGenerationVersionId))
+                {
+                    error = reader.Error;
+                    return false;
+                }
+            }
+            else if (remainingBytes > 0)
+            {
+                error = "Metadata sidecar world-seed signature is truncated.";
+                return false;
+            }
+
             return FinalizeSidecar(reader, out error);
         }
 

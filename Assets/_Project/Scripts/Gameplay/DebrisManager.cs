@@ -149,7 +149,6 @@ namespace Hecton8.Gameplay
                 _matrixBuffer = new GraphicsBuffer(GraphicsBuffer.Target.Structured, MaxActiveChunks, MatrixStrideBytes);
             }
 
-            InitializeService();
         }
 
         private void OnEnable()
@@ -361,7 +360,7 @@ namespace Hecton8.Gameplay
                     WorldCullY = WorldCullY,
                     RandomSeed = ResolveJobSeed()
                 };
-                _simulationHandle = job.Schedule();
+                _simulationHandle = job.Schedule(_frontStates.Length, 32);
                 _simulationScheduled = true;
             }
         }
@@ -889,7 +888,7 @@ namespace Hecton8.Gameplay
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct DebrisSimulationJob : IJob
+        private struct DebrisSimulationJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<DebrisChunkState> ReadStates;
             public NativeArray<DebrisChunkState> WriteStates;
@@ -903,87 +902,85 @@ namespace Hecton8.Gameplay
             public float WorldCullY;
             public uint RandomSeed;
 
-            public void Execute()
+            public void Execute(int i)
             {
-                BurstRandom rng = new BurstRandom(RandomSeed != 0u ? RandomSeed : 1u);
+                uint seed = math.hash(new uint2(RandomSeed != 0u ? RandomSeed : 1u, (uint)i + 1u));
+                BurstRandom rng = new BurstRandom(seed != 0u ? seed : 1u);
                 float dt = math.max(0.0001f, DeltaTime);
 
-                for (int i = 0; i < ReadStates.Length; i++)
+                DebrisChunkState state = ReadStates[i];
+                if (state.Active == 0)
                 {
-                    DebrisChunkState state = ReadStates[i];
-                    if (state.Active == 0)
+                    WriteStates[i] = state;
+                    return;
+                }
+
+                state.Age += dt;
+                if (state.Age > MaximumLifetime || state.Position.y < WorldCullY)
+                {
+                    WriteStates[i] = default;
+                    return;
+                }
+
+                float inverseMass = 1f / math.max(0.2f, state.MassScale);
+                float3 randomDrift = rng.NextFloat3Direction() * (NoiseStrength * dt * inverseMass);
+                float physicsPhaseDuration = state.PhysicsPhaseDuration > 0f
+                    ? state.PhysicsPhaseDuration
+                    : PhysicsPhaseDuration;
+                float poolReturnDelay = state.PoolReturnDelay > 0f
+                    ? state.PoolReturnDelay
+                    : PoolReturnDelay;
+
+                if (state.CollisionEnabled != 0)
+                {
+                    state.Velocity += new float3(0f, -Gravity, 0f) * dt;
+                    state.Velocity += randomDrift;
+                    state.Velocity *= math.saturate(1f - (state.LinearDamping * dt));
+                    state.Position += state.Velocity * dt;
+
+                    if (state.Position.y < state.GroundY)
                     {
-                        WriteStates[i] = state;
-                        continue;
+                        state.Position.y = state.GroundY;
+                        if (state.Velocity.y < 0f)
+                            state.Velocity.y = -state.Velocity.y * state.BounceDamping;
+
+                        float lateralDamping = math.saturate(1f - (state.BounceDamping * 0.25f));
+                        state.Velocity.x *= lateralDamping;
+                        state.Velocity.z *= lateralDamping;
                     }
 
-                    state.Age += dt;
-                    if (state.Age > MaximumLifetime || state.Position.y < WorldCullY)
+                    if (state.Age >= physicsPhaseDuration)
                     {
-                        WriteStates[i] = default;
-                        continue;
-                    }
-
-                    float inverseMass = 1f / math.max(0.2f, state.MassScale);
-                    float3 randomDrift = rng.NextFloat3Direction() * (NoiseStrength * dt * inverseMass);
-                    float physicsPhaseDuration = state.PhysicsPhaseDuration > 0f
-                        ? state.PhysicsPhaseDuration
-                        : PhysicsPhaseDuration;
-                    float poolReturnDelay = state.PoolReturnDelay > 0f
-                        ? state.PoolReturnDelay
-                        : PoolReturnDelay;
-
-                    if (state.CollisionEnabled != 0)
-                    {
-                        state.Velocity += new float3(0f, -Gravity, 0f) * dt;
-                        state.Velocity += randomDrift;
-                        state.Velocity *= math.saturate(1f - (state.LinearDamping * dt));
-                        state.Position += state.Velocity * dt;
-
-                        if (state.Position.y < state.GroundY)
-                        {
-                            state.Position.y = state.GroundY;
-                            if (state.Velocity.y < 0f)
-                                state.Velocity.y = -state.Velocity.y * state.BounceDamping;
-
-                            float lateralDamping = math.saturate(1f - (state.BounceDamping * 0.25f));
-                            state.Velocity.x *= lateralDamping;
-                            state.Velocity.z *= lateralDamping;
-                        }
-
-                        if (state.Age >= physicsPhaseDuration)
-                        {
-                            state.CollisionEnabled = 0;
-                            state.Kinematic = 1;
-                            state.SinkStartY = state.Position.y;
-                            state.SinkTargetY = state.SinkStartY - SinkDepthMeters;
-                            state.Velocity = float3.zero;
-                            state.AngularVelocity = float3.zero;
-                        }
-                    }
-                    else
-                    {
-                        float sink01 = math.saturate((state.Age - physicsPhaseDuration) / math.max(0.0001f, poolReturnDelay - physicsPhaseDuration));
-                        float sinkSmooth = sink01 * sink01 * (3f - (2f * sink01));
-                        state.Position.y = math.lerp(state.SinkStartY, state.SinkTargetY, sinkSmooth);
-                        if (state.Age >= poolReturnDelay)
-                            state.Active = 0;
-                    }
-
-                    if (state.Kinematic == 0)
-                    {
-                        state.AngularVelocity += randomDrift * 0.45f;
-                        state.AngularVelocity *= math.saturate(1f - (state.AngularDamping * dt));
-                        quaternion deltaRotation = quaternion.Euler(state.AngularVelocity * dt);
-                        state.Rotation = math.normalize(math.mul(state.Rotation, deltaRotation));
-                    }
-                    else
-                    {
+                        state.CollisionEnabled = 0;
+                        state.Kinematic = 1;
+                        state.SinkStartY = state.Position.y;
+                        state.SinkTargetY = state.SinkStartY - SinkDepthMeters;
+                        state.Velocity = float3.zero;
                         state.AngularVelocity = float3.zero;
                     }
-
-                    WriteStates[i] = state;
                 }
+                else
+                {
+                    float sink01 = math.saturate((state.Age - physicsPhaseDuration) / math.max(0.0001f, poolReturnDelay - physicsPhaseDuration));
+                    float sinkSmooth = sink01 * sink01 * (3f - (2f * sink01));
+                    state.Position.y = math.lerp(state.SinkStartY, state.SinkTargetY, sinkSmooth);
+                    if (state.Age >= poolReturnDelay)
+                        state.Active = 0;
+                }
+
+                if (state.Kinematic == 0)
+                {
+                    state.AngularVelocity += randomDrift * 0.45f;
+                    state.AngularVelocity *= math.saturate(1f - (state.AngularDamping * dt));
+                    quaternion deltaRotation = quaternion.Euler(state.AngularVelocity * dt);
+                    state.Rotation = math.normalize(math.mul(state.Rotation, deltaRotation));
+                }
+                else
+                {
+                    state.AngularVelocity = float3.zero;
+                }
+
+                WriteStates[i] = state;
             }
         }
     }

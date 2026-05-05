@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using Conditional = System.Diagnostics.ConditionalAttribute;
 using Hecton8.Core;
 using Unity.Burst;
 using Unity.Collections;
@@ -29,7 +31,6 @@ namespace Hecton8.Quest
         private const int EntityDestroyWordCount = 32;
         private const int DeadlockWordStart = 288;
         private const int DeadlockWordCount = 32;
-        private const int TransitionHistoryCapacity = 256;
         private const uint ActiveFlagSalt = 0xA11F0A11u;
         private const uint CompletedFlagSalt = 0xC0DE0C01u;
         private const uint BiomeFlagSalt = 0xB10F0001u;
@@ -37,6 +38,7 @@ namespace Hecton8.Quest
         private const uint EclipseFlagHash = 0xE011C1E5u;
         private const uint EntityDestroyFlagSalt = 0xD357F1A6u;
         private const uint DeadlockFlagSalt = 0xDEAD10CCu;
+        private const string QuestAuditLogFileName = "quest_transition_audit.log";
         private const string NativeMemoryOwner = nameof(QuestStateManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
         private static readonly uint _abyssalPhaseFlagHash = QuestFlagHashKernel.ComputeStableHash("phase.abyssal");
@@ -67,10 +69,6 @@ namespace Hecton8.Quest
         private QuestBitAddress _abyssalPhaseAddress;
         private QuestBitAddress _thermalPhaseAddress;
         private ThresholdFlag[] _depthThresholdFlags;
-        private NativeArray<QuestTransitionHistoryEntry> _transitionHistory;
-        private NativeArray<uint> _transitionHistoryWords;
-        private int _transitionHistoryWriteIndex;
-        private int _transitionHistoryCount;
         private int _authoredQuestCount;
         private string _compileErrorSummary = string.Empty;
         private uint _stateVersion;
@@ -84,8 +82,6 @@ namespace Hecton8.Quest
         public int WordCount => WordCapacity;
 
         public int ResultCount => _runtimeResults.Count;
-
-        public int TransitionHistoryCount => math.min(_transitionHistoryCount, TransitionHistoryCapacity);
 
         public uint StateVersion => _stateVersion;
 
@@ -135,18 +131,6 @@ namespace Hecton8.Quest
                 _globalPrerequisites.Dispose();
             }
 
-            if (_transitionHistory.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_transitionHistory);
-                _transitionHistory.Dispose();
-            }
-
-            if (_transitionHistoryWords.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(_transitionHistoryWords);
-                _transitionHistoryWords.Dispose();
-            }
-
             _runtimeResults.Clear();
             _bitAddressByHash = null;
             _questIndexByHash = null;
@@ -165,8 +149,6 @@ namespace Hecton8.Quest
             _abyssalPhaseAddress = default;
             _thermalPhaseAddress = default;
             _depthThresholdFlags = null;
-            _transitionHistoryWriteIndex = 0;
-            _transitionHistoryCount = 0;
             _authoredQuestCount = 0;
             _compileErrorSummary = string.Empty;
             _stateVersion = 0u;
@@ -408,12 +390,8 @@ namespace Hecton8.Quest
 
             _activatedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), Allocator.Persistent);
             _completedQuestIndices = new NativeList<int>(Math.Max(nodeCapacity, 1), Allocator.Persistent);
-            _transitionHistory = new NativeArray<QuestTransitionHistoryEntry>(TransitionHistoryCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            _transitionHistoryWords = new NativeArray<uint>(TransitionHistoryCapacity * WordCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             NativeMemorySentinel.RegisterNativeList(_activatedQuestIndices, NativeMemoryOwner, nameof(_activatedQuestIndices), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeList(_completedQuestIndices, NativeMemoryOwner, nameof(_completedQuestIndices), NativeMemoryLifetime);
-            RegisterTrackedNativeArray(_transitionHistory, nameof(_transitionHistory));
-            RegisterTrackedNativeArray(_transitionHistoryWords, nameof(_transitionHistoryWords));
             _revertDescriptors = revertBuilder.ToArray();
             _depthThresholdFlags = depthFlags.ToArray();
             _isInitialized = true;
@@ -479,7 +457,7 @@ namespace Hecton8.Quest
                 mutated = true;
                 activatedNow = true;
                 _runtimeResults.Add(new QuestRuntimeResult(questIndex, completed: false, QuestTransitionType.Activate));
-                AppendTransitionHistory(questIndex, completed: false, QuestTransitionType.Activate, default);
+                AppendTransitionAudit(questIndex, completed: false, QuestTransitionType.Activate, default);
             }
 
             if (mutated)
@@ -640,7 +618,7 @@ namespace Hecton8.Quest
 
                 mutated = true;
                 _runtimeResults.Add(new QuestRuntimeResult(activatedQuestIndex, completed: false, QuestTransitionType.Activate));
-                AppendTransitionHistory(activatedQuestIndex, completed: false, QuestTransitionType.Activate, default);
+                AppendTransitionAudit(activatedQuestIndex, completed: false, QuestTransitionType.Activate, default);
             }
 
             if (mutated)
@@ -666,21 +644,22 @@ namespace Hecton8.Quest
                 ActivatedQuestIndices = _activatedQuestIndices,
                 CompletedQuestIndices = _completedQuestIndices
             };
-            job.Execute();
+            JobHandle signalEvaluationHandle = job.Schedule();
+            signalEvaluationHandle.Complete();
 
             bool graphMutation = _activatedQuestIndices.Length > 0 || _completedQuestIndices.Length > 0;
             for (int i = 0; i < _activatedQuestIndices.Length; i++)
             {
                 int questIndex = _activatedQuestIndices[i];
                 _runtimeResults.Add(new QuestRuntimeResult(questIndex, completed: false, QuestTransitionType.Activate));
-                AppendTransitionHistory(questIndex, completed: false, QuestTransitionType.Activate, signal);
+                AppendTransitionAudit(questIndex, completed: false, QuestTransitionType.Activate, signal);
             }
 
             for (int i = 0; i < _completedQuestIndices.Length; i++)
             {
                 int questIndex = _completedQuestIndices[i];
                 _runtimeResults.Add(new QuestRuntimeResult(questIndex, completed: true, QuestTransitionType.Complete));
-                AppendTransitionHistory(questIndex, completed: true, QuestTransitionType.Complete, signal);
+                AppendTransitionAudit(questIndex, completed: true, QuestTransitionType.Complete, signal);
             }
 
             if (persistentMutation || graphMutation)
@@ -724,7 +703,7 @@ namespace Hecton8.Quest
             };
 
             _runtimeResults.Add(new QuestRuntimeResult(descriptor.QuestIndex, completed: false, QuestTransitionType.Revert));
-            AppendTransitionHistory(descriptor.QuestIndex, completed: false, QuestTransitionType.Revert, payload);
+            AppendTransitionAudit(descriptor.QuestIndex, completed: false, QuestTransitionType.Revert, payload);
             RefreshStateMetadata(resetVersion: false);
 
             request = new QuestRevertRequest(
@@ -767,16 +746,6 @@ namespace Hecton8.Quest
             return count;
         }
 
-        public bool TryGetTransitionHistory(int newestHistoryOffset, out QuestTransitionHistoryEntry entry)
-        {
-            entry = default;
-            if (!_transitionHistory.IsCreated || newestHistoryOffset < 0 || newestHistoryOffset >= TransitionHistoryCount)
-                return false;
-
-            entry = _transitionHistory[ResolveTransitionHistorySlot(newestHistoryOffset)];
-            return true;
-        }
-
         public NativeArray<uint> CapturePackedStateSnapshot(Allocator allocator)
         {
             NativeArray<uint> snapshot = new NativeArray<uint>(WordCapacity, allocator, NativeArrayOptions.ClearMemory);
@@ -817,7 +786,6 @@ namespace Hecton8.Quest
             if (!_globalPrerequisites.IsCreated)
                 return;
 
-            ClearTransitionHistory();
             unsafe
             {
                 UnsafeUtility.MemClear(
@@ -858,7 +826,6 @@ namespace Hecton8.Quest
             if (!_globalPrerequisites.IsCreated)
                 return;
 
-            ClearTransitionHistory();
             unsafe
             {
                 void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
@@ -870,37 +837,9 @@ namespace Hecton8.Quest
             RefreshStateMetadata(resetVersion: false);
         }
 
-        public bool TryRestoreTransitionHistory(int newestHistoryOffset)
-        {
-            if (!_globalPrerequisites.IsCreated ||
-                !_transitionHistory.IsCreated ||
-                !_transitionHistoryWords.IsCreated ||
-                newestHistoryOffset < 0 ||
-                newestHistoryOffset >= TransitionHistoryCount)
-            {
-                return false;
-            }
-
-            QuestTransitionHistoryEntry entry = _transitionHistory[ResolveTransitionHistorySlot(newestHistoryOffset)];
-            if (entry.SnapshotWordOffset + WordCapacity > _transitionHistoryWords.Length)
-                return false;
-
-            unsafe
-            {
-                int copyBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
-                void* destinationPtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
-                void* sourcePtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeReadOnlyPtr(_transitionHistoryWords) + (entry.SnapshotWordOffset * UnsafeUtility.SizeOf<uint>());
-                if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, copyBytes, sourcePtr, copyBytes))
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
-            }
-
-            RefreshStateMetadata(resetVersion: false);
-            return true;
-        }
-
         public void RecordManualTransition(int questIndex, bool completed)
         {
-            AppendTransitionHistory(
+            AppendTransitionAudit(
                 questIndex,
                 completed,
                 completed ? QuestTransitionType.Complete : QuestTransitionType.Activate,
@@ -1223,100 +1162,48 @@ namespace Hecton8.Quest
             _compileErrorSummary += System.Environment.NewLine + message;
         }
 
-        private void AppendTransitionHistory(int questIndex, bool completed, QuestTransitionType transitionType, in QuestSignalPayload signal)
+        [Conditional("DEVELOPMENT_BUILD")]
+        private void AppendTransitionAudit(int questIndex, bool completed, QuestTransitionType transitionType, QuestSignalPayload signal)
         {
-            if (!_globalPrerequisites.IsCreated ||
-                !_transitionHistory.IsCreated ||
-                !_transitionHistoryWords.IsCreated ||
-                questIndex < 0 ||
+            if (questIndex < 0 ||
                 _questHashesByQuestIndex == null ||
                 questIndex >= _questHashesByQuestIndex.Length)
             {
                 return;
             }
 
-            int slot = _transitionHistoryWriteIndex;
-            int snapshotWordOffset = slot * WordCapacity;
-            unsafe
-            {
-                int copyBytes = WordCapacity * UnsafeUtility.SizeOf<uint>();
-                int destinationBytes = (_transitionHistoryWords.Length - snapshotWordOffset) * UnsafeUtility.SizeOf<uint>();
-                void* destinationPtr = (byte*)NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_transitionHistoryWords) + (snapshotWordOffset * UnsafeUtility.SizeOf<uint>());
-                void* sourcePtr = NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_globalPrerequisites);
-                if (!UnsafeMemoryCopyGuard.SafeCopy(destinationPtr, destinationBytes, sourcePtr, copyBytes))
-                    UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(QuestStateManager));
-            }
-
-            uint fromFlagId = 0u;
-            uint toFlagId = 0u;
+            string state;
             switch (transitionType)
             {
                 case QuestTransitionType.Activate:
-                    toFlagId = _activeAddressesByQuestIndex[questIndex].FlagId;
+                    state = completed ? "Complete" : "Active";
                     break;
 
                 case QuestTransitionType.Complete:
-                    fromFlagId = _activeAddressesByQuestIndex[questIndex].FlagId;
-                    toFlagId = _completedAddressesByQuestIndex[questIndex].FlagId;
+                    state = "Complete";
                     break;
 
                 case QuestTransitionType.Revert:
-                    fromFlagId = _completedAddressesByQuestIndex[questIndex].FlagId;
-                    toFlagId = _activeAddressesByQuestIndex[questIndex].FlagId;
+                    state = "Revert";
+                    break;
+
+                default:
+                    state = completed ? "Complete" : "Active";
                     break;
             }
 
-            _transitionHistory[slot] = new QuestTransitionHistoryEntry
+            try
             {
-                Timestamp = signal.Timestamp,
-                QuestHash = _questHashesByQuestIndex[questIndex],
-                FromFlagID = fromFlagId,
-                ToFlagID = toFlagId,
-                SignalPayloadHash = ResolveSignalPayloadHash(signal),
-                SnapshotWordOffset = (uint)snapshotWordOffset,
-                EventType = signal.EventType,
-                TransitionType = (byte)transitionType,
-                Completed = completed ? (byte)1 : (byte)0
-            };
-
-            _transitionHistoryWriteIndex = (_transitionHistoryWriteIndex + 1) % TransitionHistoryCapacity;
-            if (_transitionHistoryCount < TransitionHistoryCapacity)
-                _transitionHistoryCount++;
-        }
-
-        private void ClearTransitionHistory()
-        {
-            _transitionHistoryWriteIndex = 0;
-            _transitionHistoryCount = 0;
-
-            if (_transitionHistory.IsCreated)
-            {
-                unsafe
-                {
-                    UnsafeUtility.MemClear(
-                        NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_transitionHistory),
-                        _transitionHistory.Length * UnsafeUtility.SizeOf<QuestTransitionHistoryEntry>());
-                }
+                double timestamp = signal.Timestamp > 0d ? signal.Timestamp : Time.timeAsDouble;
+                string path = Path.Combine(Application.persistentDataPath, QuestAuditLogFileName);
+                File.AppendAllText(
+                    path,
+                    $"[{timestamp:F3}] Quest 0x{_questHashesByQuestIndex[questIndex]:X8} -> {state}\n");
             }
-
-            if (_transitionHistoryWords.IsCreated)
+            catch (Exception exception)
             {
-                unsafe
-                {
-                    UnsafeUtility.MemClear(
-                        NativeArrayUnsafeUtility.GetUnsafeBufferPointerWithoutChecks(_transitionHistoryWords),
-                        _transitionHistoryWords.Length * UnsafeUtility.SizeOf<uint>());
-                }
+                Debug.LogWarning($"[QuestStateManager] Quest audit append failed: {exception.Message}");
             }
-        }
-
-        private int ResolveTransitionHistorySlot(int newestHistoryOffset)
-        {
-            int slot = _transitionHistoryWriteIndex - 1 - newestHistoryOffset;
-            while (slot < 0)
-                slot += TransitionHistoryCapacity;
-
-            return slot;
         }
 
         private bool TrySetResolvedBit(uint bitHash)
@@ -1461,22 +1348,6 @@ namespace Hecton8.Quest
             return signal.EntityHash != 0u
                 ? signal.EntityHash
                 : ComputeNumericSignalHash(QuestSignalKind.BiomeEntered, signal.NumericValue);
-        }
-
-        private static uint ResolveSignalPayloadHash(in QuestSignalPayload signal)
-        {
-            QuestSignalKind signalKind = (QuestSignalKind)signal.EventType;
-            switch (signalKind)
-            {
-                case QuestSignalKind.BiomeEntered:
-                    return ResolveBiomeSignalHash(signal);
-
-                case QuestSignalKind.DepthReached:
-                    return ComputeNumericSignalHash(QuestSignalKind.DepthReached, signal.NumericValue);
-
-                default:
-                    return signal.EntityHash;
-            }
         }
 
         private static QuestSignalKind MapTriggerSignalKind(QuestTriggerType triggerType)

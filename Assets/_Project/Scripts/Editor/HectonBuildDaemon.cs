@@ -71,18 +71,22 @@ namespace Hecton8.Editor
             if (!_reloadOrCompileObserved)
                 BeginObservation();
 
-            if (editorBusy || beePresent)
+            if (editorBusy)
             {
                 if (beePresent)
                     UpdateBeeProgress(now, beeCpuSeconds);
 
+                return;
+            }
+
+            if (beePresent)
+            {
+                UpdateBeeProgress(now, beeCpuSeconds);
+
                 if (_killAttemptedThisCycle ||
-                    !beePresent ||
                     now - _lastBeeProgressTime < BeeLockTimeoutSeconds ||
                     now - _lastKillTime < KillCooldownSeconds)
-                {
                     return;
-                }
 
                 int killed = KillBeeBackends();
                 _killAttemptedThisCycle = true;

@@ -1,5 +1,6 @@
 using Den.Tools;
 using Den.Tools.Matrices;
+using Hecton8.Core;
 using Hecton8.World;
 using MapMagic.Nodes;
 using MapMagic.Products;
@@ -19,6 +20,9 @@ namespace MapMagic.Nodes.MatrixGenerators
     public sealed class HectonBiomeMatrixMapMagicPostProcessNode : Generator, IInlet<MatrixWorld>, IOutlet<MatrixWorld>
     {
         private const string TectonicSpineFamilyId = "biome.family.tectonic_spine";
+        private const string NativeMemoryOwner = nameof(HectonBiomeMatrixMapMagicPostProcessNode);
+        private const string BufferALabel = "heightA";
+        private const string BufferBLabel = "heightB";
 
         [Den.Tools.GUI.ValAttribute("Thermal")] public bool enableThermalWeathering = true;
         [Den.Tools.GUI.ValAttribute("Thermal Iterations")] public int thermalIterations = 1;
@@ -66,6 +70,7 @@ namespace MapMagic.Nodes.MatrixGenerators
             {
                 bufferA = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 bufferB = new NativeArray<float>(cellCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                RegisterTempJobBuffers(bufferA, bufferB);
 
                 for (int i = 0; i < cellCount; i++)
                     bufferA[i] = math.saturate(source[i]);
@@ -131,7 +136,10 @@ namespace MapMagic.Nodes.MatrixGenerators
                 }
 
                 if (hasScheduledWork)
+                {
+                    // COLD SYNC JOB: MapMagic Generate must publish concrete matrix products before returning to the graph.
                     handle.Complete();
+                }
 
                 if (stopRequested)
                     return;
@@ -143,11 +151,25 @@ namespace MapMagic.Nodes.MatrixGenerators
             }
             finally
             {
-                if (bufferA.IsCreated)
-                    bufferA.Dispose();
-                if (bufferB.IsCreated)
-                    bufferB.Dispose();
+                DisposeTracked(ref bufferA);
+                DisposeTracked(ref bufferB);
             }
+        }
+
+        private static void RegisterTempJobBuffers(NativeArray<float> bufferA, NativeArray<float> bufferB)
+        {
+            NativeMemorySentinel.RegisterNativeArray(bufferA, NativeMemoryOwner, BufferALabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(bufferB, NativeMemoryOwner, BufferBLabel, NativeAllocationLifetime.TempJob);
+        }
+
+        private static void DisposeTracked(ref NativeArray<float> array)
+        {
+            if (!array.IsCreated)
+                return;
+
+            NativeMemorySentinel.UnregisterNativeArray(array);
+            array.Dispose();
+            array = default;
         }
 
         private bool ShouldApplyTectonicDisplacement()

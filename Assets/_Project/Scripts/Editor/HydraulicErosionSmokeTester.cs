@@ -28,6 +28,7 @@ namespace Hecton8.Editor
         private const string SedimentLabel = "sediment";
         private const string WearLabel = "wear";
         private const string MetricBlocksLabel = "metricBlocks";
+        private const string MetricSummaryLabel = "metricSummary";
         private const uint SmokeFailureWarningHash = 0x48594553u;
         private const uint NativeLeakContextHash = 0x48594E4Cu;
         private const int ErosionSubGridSize = 32;
@@ -188,6 +189,7 @@ namespace Hecton8.Editor
             NativeArray<float> sediment = default;
             NativeArray<float> wear = default;
             NativeArray<HydraulicErosionMetricBlock> metricBlocks = default;
+            NativeArray<HydraulicErosionMetricBlock> metricSummary = default;
             JobHandle handle = default;
             bool handleScheduled = false;
             var result = new ScenarioResult
@@ -208,7 +210,8 @@ namespace Hecton8.Editor
                 sediment = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 wear = new NativeArray<float>(pixelCount, Allocator.TempJob, NativeArrayOptions.ClearMemory);
                 metricBlocks = new NativeArray<HydraulicErosionMetricBlock>(blockCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
-                RegisterTempJobBuffers(before, heightA, heightB, sediment, wear, metricBlocks);
+                metricSummary = new NativeArray<HydraulicErosionMetricBlock>(1, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                RegisterTempJobBuffers(before, heightA, heightB, sediment, wear, metricBlocks, metricSummary);
 
                 handle = new ErosionFractalHeightmapJob
                 {
@@ -233,18 +236,24 @@ namespace Hecton8.Editor
                     Height = config.Resolution,
                     BoundaryMargin = config.Margin
                 }.Schedule(blockCount, 1, handle);
+                handle = new HydraulicErosionMetricReductionJob
+                {
+                    Blocks = metricBlocks,
+                    Summary = metricSummary,
+                    BlockCount = blockCount
+                }.Schedule(handle);
 
                 // COLD SYNC JOB: editor smoke tester must block to inspect deterministic result bounds.
                 DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
                 handleScheduled = false;
 
-                ReduceMetrics(metricBlocks, ref result);
+                ApplyMetrics(metricSummary[0], ref result);
                 result.SentinelDelta = NativeMemorySentinel.ActiveAllocationCount - sentinelBefore;
                 result.TrackedByteDelta = NativeMemorySentinel.TrackedBytes - trackedBytesBefore;
                 result.Passed =
                     result.NanCount == 0 &&
                     result.BoundaryNanCount == 0 &&
-                    result.SentinelDelta == 6 &&
+                    result.SentinelDelta == 7 &&
                     result.MinHeight >= -0.0001f &&
                     result.MaxHeight <= 1.0001f;
             }
@@ -254,6 +263,7 @@ namespace Hecton8.Editor
                     DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
 
                 DisposeTracked(ref metricBlocks);
+                DisposeTracked(ref metricSummary);
                 DisposeTracked(ref before);
                 DisposeTracked(ref heightA);
                 DisposeTracked(ref heightB);
@@ -386,59 +396,21 @@ namespace Hecton8.Editor
             return handle;
         }
 
-        private static void ReduceMetrics(NativeArray<HydraulicErosionMetricBlock> blocks, ref ScenarioResult result)
+        private static void ApplyMetrics(in HydraulicErosionMetricBlock summary, ref ScenarioResult result)
         {
-            float minHeight = 1f;
-            float maxHeight = 0f;
-            float sumHeight = 0f;
-            float sumSediment = 0f;
-            float sumWear = 0f;
-            float maxSediment = 0f;
-            float maxWear = 0f;
-            float maxBoundaryHeightDelta = 0f;
-            float maxBoundarySediment = 0f;
-            float maxBoundaryWear = 0f;
-            int sampleCount = 0;
-            int nanCount = 0;
-            int boundarySampleCount = 0;
-            int boundaryNanCount = 0;
-
-            for (int i = 0; i < blocks.Length; i++)
-            {
-                HydraulicErosionMetricBlock block = blocks[i];
-                if (block.SampleCount > 0)
-                {
-                    minHeight = math.min(minHeight, block.MinHeight);
-                    maxHeight = math.max(maxHeight, block.MaxHeight);
-                    sumHeight += block.SumHeight;
-                    sumSediment += block.SumSediment;
-                    sumWear += block.SumWear;
-                    maxSediment = math.max(maxSediment, block.MaxSediment);
-                    maxWear = math.max(maxWear, block.MaxWear);
-                    maxBoundaryHeightDelta = math.max(maxBoundaryHeightDelta, block.MaxBoundaryHeightDelta);
-                    maxBoundarySediment = math.max(maxBoundarySediment, block.MaxBoundarySediment);
-                    maxBoundaryWear = math.max(maxBoundaryWear, block.MaxBoundaryWear);
-                    sampleCount += block.SampleCount;
-                    boundarySampleCount += block.BoundarySampleCount;
-                }
-
-                nanCount += block.NanCount;
-                boundaryNanCount += block.BoundaryNanCount;
-            }
-
-            result.MinHeight = minHeight;
-            result.MaxHeight = maxHeight;
-            result.MeanHeight = sampleCount > 0 ? sumHeight / sampleCount : 0f;
-            result.SumSediment = sumSediment;
-            result.SumWear = sumWear;
-            result.MaxSediment = maxSediment;
-            result.MaxWear = maxWear;
-            result.NanCount = nanCount;
-            result.MaxBoundaryHeightDelta = maxBoundaryHeightDelta;
-            result.MaxBoundarySediment = maxBoundarySediment;
-            result.MaxBoundaryWear = maxBoundaryWear;
-            result.BoundarySampleCount = boundarySampleCount;
-            result.BoundaryNanCount = boundaryNanCount;
+            result.MinHeight = summary.MinHeight;
+            result.MaxHeight = summary.MaxHeight;
+            result.MeanHeight = summary.SampleCount > 0 ? summary.SumHeight / summary.SampleCount : 0f;
+            result.SumSediment = summary.SumSediment;
+            result.SumWear = summary.SumWear;
+            result.MaxSediment = summary.MaxSediment;
+            result.MaxWear = summary.MaxWear;
+            result.NanCount = summary.NanCount;
+            result.MaxBoundaryHeightDelta = summary.MaxBoundaryHeightDelta;
+            result.MaxBoundarySediment = summary.MaxBoundarySediment;
+            result.MaxBoundaryWear = summary.MaxBoundaryWear;
+            result.BoundarySampleCount = summary.BoundarySampleCount;
+            result.BoundaryNanCount = summary.BoundaryNanCount;
         }
 
         private static string BuildJson(ScenarioResult[] results, int passCount)
@@ -513,7 +485,8 @@ namespace Hecton8.Editor
             NativeArray<float> heightB,
             NativeArray<float> sediment,
             NativeArray<float> wear,
-            NativeArray<HydraulicErosionMetricBlock> metricBlocks)
+            NativeArray<HydraulicErosionMetricBlock> metricBlocks,
+            NativeArray<HydraulicErosionMetricBlock> metricSummary)
         {
             NativeMemorySentinel.RegisterNativeArray(before, NativeMemoryOwner, BeforeLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(heightA, NativeMemoryOwner, HeightALabel, NativeAllocationLifetime.TempJob);
@@ -521,6 +494,7 @@ namespace Hecton8.Editor
             NativeMemorySentinel.RegisterNativeArray(sediment, NativeMemoryOwner, SedimentLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(wear, NativeMemoryOwner, WearLabel, NativeAllocationLifetime.TempJob);
             NativeMemorySentinel.RegisterNativeArray(metricBlocks, NativeMemoryOwner, MetricBlocksLabel, NativeAllocationLifetime.TempJob);
+            NativeMemorySentinel.RegisterNativeArray(metricSummary, NativeMemoryOwner, MetricSummaryLabel, NativeAllocationLifetime.TempJob);
         }
 
         private static void DisposeTracked(ref NativeArray<float> array)

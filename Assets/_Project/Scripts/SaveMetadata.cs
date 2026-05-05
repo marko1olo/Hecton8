@@ -20,6 +20,8 @@ namespace Hecton8.SaveSystem
         public float PlayTimeSeconds;
         public string SceneName;
         public Vector3 PlayerPosition;
+        public int WorldSeed;
+        public int WorldGenerationVersionId;
         
         [Header("── Integrity ─────────────────────────────────")]
         public string Checksum; // XXHash3 checksum (hex; v4+ uses 64-bit, legacy v3 remains 32-bit)
@@ -88,6 +90,8 @@ namespace Hecton8.SaveSystem
                 PlayTimeSeconds = 0f,
                 SceneName = "Unknown",
                 PlayerPosition = Vector3.zero,
+                WorldSeed = 0,
+                WorldGenerationVersionId = 0,
                 Checksum = string.Empty
             };
         }

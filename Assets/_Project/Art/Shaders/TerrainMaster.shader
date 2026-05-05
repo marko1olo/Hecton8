@@ -14,12 +14,22 @@ Shader "HECTON/Terrain/TerrainMaster"
         _RockNormal     ("Rock Normal Map", 2D) = "bump" {}
         _RockNormalStr  ("Rock Normal Strength", Range(0,2)) = 1.0
 
+        [Header(Texture Array Packing)]
+        [NoScaleOffset] _TerrainAlbedoArray ("Terrain Albedo Array", 2DArray) = "" {}
+        [NoScaleOffset] _TerrainNormalArray ("Terrain Normal Array", 2DArray) = "" {}
+        _TerrainLayerCount ("Terrain Array Layer Count", Float) = 8
+        _BiomeLayerStride ("Biome Layer Stride", Float) = 2
+        _SandLayerIndex ("Sand Layer Offset", Float) = 0
+        _RockLayerIndex ("Rock Layer Offset", Float) = 1
+
         [Header(Blending)]
         _SlopeSharpness ("Slope Blend Sharpness", Range(1,32)) = 8.0
         _TriplanarThreshold ("Triplanar Slope Threshold", Range(0.01, 0.99)) = 0.3
 
         [Header(Biome)]
         _BiomeTint      ("Biome Tint", Color) = (0.15, 0.12, 0.1, 1)
+        _BiomeEdgeBleedScale ("Biome Edge Bleed Scale", Float) = 0.018
+        _BiomeEdgeBleedStrength ("Biome Edge Bleed Strength", Range(0,1)) = 0.38
 
         [Header(Depth)]
         _DarkenPower    ("Depth Darken Power", Range(0.1,10)) = 2.5
@@ -32,6 +42,9 @@ Shader "HECTON/Terrain/TerrainMaster"
         [Header(Surface)]
         _Metallic       ("Metallic", Range(0,1)) = 0.0
         _BaseSmooth     ("Smoothness", Range(0,1)) = 0.5
+
+        [Header(Planetary Canvas)]
+        _FadeDistance   ("AUP Fade Distance", Float) = 2600
     }
 
     SubShader
@@ -58,10 +71,17 @@ Shader "HECTON/Terrain/TerrainMaster"
             float  _SandScale;
             float  _RockScale;
             float  _RockNormalStr;
+            float  _TerrainLayerCount;
+            float  _BiomeLayerStride;
+            float  _SandLayerIndex;
+            float  _RockLayerIndex;
             float  _SlopeSharpness;
             float  _TriplanarThreshold;
+            float  _BiomeEdgeBleedScale;
+            float  _BiomeEdgeBleedStrength;
             float  _DarkenPower;
             float  _CaveGlowPower;
+            float  _FadeDistance;
             half   _Metallic;
             half   _BaseSmooth;
             half4  _SandColor;
@@ -75,19 +95,28 @@ Shader "HECTON/Terrain/TerrainMaster"
         TEXTURE2D(_SandTex);    SAMPLER(sampler_SandTex);
         TEXTURE2D(_RockTex);    SAMPLER(sampler_RockTex);
         TEXTURE2D(_RockNormal); SAMPLER(sampler_RockNormal);
+        TEXTURE2D_ARRAY(_TerrainAlbedoArray); SAMPLER(sampler_TerrainAlbedoArray);
+        TEXTURE2D_ARRAY(_TerrainNormalArray); SAMPLER(sampler_TerrainNormalArray);
+        TEXTURE2D(_HectonDistantTerrainShadowMask); SAMPLER(sampler_HectonDistantTerrainShadowMask);
         float4 _SargassumCanopyShadowParams;
         float4 _SargassumCanopyLightingParams;
+        float4 _HectonTerrainFadeParams;
+        float4 _HectonTerrainFadeRuntimeOrigin;
+        float4 _HectonTerrainFadeAupOrigin;
+        float4 _HectonDistantTerrainShadowRect;
+        float4 _HectonDistantTerrainShadowParams;
 
         // -------------------------------------------------------------
-        // Triplanar weights (custom name to avoid CommonMaterial clash)
+        // Texture array slice: vertex alpha selects biome, vertex red slope selects material offset.
         // -------------------------------------------------------------
-        float3 HectonTriplanarWeights(float3 normalWS)
+        float HectonResolveTerrainArraySlice(half slopeBlend, half biome)
         {
-            float3 w = abs(normalWS);
-            w = saturate(w - 0.2);
-            w = w * w * w;
-            w /= (dot(w, float3(1.0, 1.0, 1.0)) + 1e-6);
-            return w;
+            float safeLayerCount = max(1.0, _TerrainLayerCount);
+            float safeStride = max(1.0, _BiomeLayerStride);
+            float biomeCount = max(1.0, floor(safeLayerCount / max(safeStride, 0.0001)));
+            float biomeBase = round(saturate(biome) * (biomeCount - 1.0)) * safeStride;
+            float materialOffset = lerp(_SandLayerIndex, _RockLayerIndex, step(0.5h, slopeBlend));
+            return clamp(biomeBase + materialOffset, 0.0, safeLayerCount - 1.0);
         }
 
         // -------------------------------------------------------------
@@ -102,15 +131,15 @@ Shader "HECTON/Terrain/TerrainMaster"
             half   triplanarBlend)
         {
             // Always sample XZ plane (Y-weight projection) â€” cheapest
-            half4 ySample = SAMPLE_TEXTURE2D(tex, samp, posWS.xz * scale);
+            half4 ySample = half4(1.0h, 1.0h, 1.0h, 1.0h);
 
             // Early out for flat terrain â€” single texture read
             if (triplanarBlend < 0.001)
                 return ySample;
 
             // Full triplanar for steep surfaces
-            half4 xSample = SAMPLE_TEXTURE2D(tex, samp, posWS.zy * scale);
-            half4 zSample = SAMPLE_TEXTURE2D(tex, samp, posWS.xy * scale);
+            half4 xSample = ySample;
+            half4 zSample = ySample;
             half4 triResult = xSample * weights.x + ySample * weights.y + zSample * weights.z;
 
             return lerp(ySample, triResult, triplanarBlend);
@@ -129,26 +158,69 @@ Shader "HECTON/Terrain/TerrainMaster"
             half   triplanarBlend)
         {
             // XZ plane normal (Y-weight)
-            half3 ny = UnpackNormalScale(
-                SAMPLE_TEXTURE2D(tex, samp, posWS.xz * scale), strength);
+            half3 ny = half3(0.0h, 0.0h, 1.0h);
             ny = half3(ny.x, 0.0, ny.y);
 
             if (triplanarBlend < 0.001)
                 return ny;
 
             // ZY plane normal (X-weight)
-            half3 nx = UnpackNormalScale(
-                SAMPLE_TEXTURE2D(tex, samp, posWS.zy * scale), strength);
+            half3 nx = half3(0.0h, 0.0h, 1.0h);
             nx = half3(0.0, nx.y, nx.x);
 
             // XY plane normal (Z-weight)
-            half3 nz = UnpackNormalScale(
-                SAMPLE_TEXTURE2D(tex, samp, posWS.xy * scale), strength);
+            half3 nz = half3(0.0h, 0.0h, 1.0h);
             nz = half3(nz.x, nz.y, 0.0);
 
             half3 triNormal = nx * weights.x + ny * weights.y + nz * weights.z;
 
             return lerp(ny, triNormal, triplanarBlend);
+        }
+
+        void HectonResolveTerrainProjection(float3 posWS, float3 normalWS, float scale, out float2 uv, out half dominantAxis)
+        {
+            half3 absNormal = saturate(abs(normalWS));
+            if (absNormal.x >= absNormal.y && absNormal.x >= absNormal.z)
+            {
+                uv = posWS.zy * scale;
+                dominantAxis = 0.0h;
+            }
+            else if (absNormal.z >= absNormal.y)
+            {
+                uv = posWS.xy * scale;
+                dominantAxis = 2.0h;
+            }
+            else
+            {
+                uv = posWS.xz * scale;
+                dominantAxis = 1.0h;
+            }
+        }
+
+        half4 HectonSampleTerrainAlbedoArray(float3 posWS, float3 normalWS, float scale, float slice)
+        {
+            float2 uv;
+            half dominantAxis;
+            HectonResolveTerrainProjection(posWS, normalWS, scale, uv, dominantAxis);
+            return SAMPLE_TEXTURE2D_ARRAY(_TerrainAlbedoArray, sampler_TerrainAlbedoArray, uv, slice);
+        }
+
+        half3 HectonSampleTerrainNormalArray(float3 posWS, float3 normalWS, float scale, float strength, float slice)
+        {
+            float2 uv;
+            half dominantAxis;
+            HectonResolveTerrainProjection(posWS, normalWS, scale, uv, dominantAxis);
+
+            half3 tangentNormal = UnpackNormalScale(
+                SAMPLE_TEXTURE2D_ARRAY(_TerrainNormalArray, sampler_TerrainNormalArray, uv, slice), strength);
+            half3 normalSign = sign((half3)normalWS);
+            if (dominantAxis < 0.5h)
+                return half3(tangentNormal.z * normalSign.x, tangentNormal.y, tangentNormal.x);
+
+            if (dominantAxis > 1.5h)
+                return half3(tangentNormal.x, tangentNormal.y, tangentNormal.z * normalSign.z);
+
+            return half3(tangentNormal.x, tangentNormal.z * normalSign.y, tangentNormal.y);
         }
 
         half EvaluateSargassumCanopyShadow(float3 positionWS)
@@ -163,6 +235,101 @@ Shader "HECTON/Terrain/TerrainMaster"
             half canopyWindow = saturate(_SargassumCanopyLightingParams.z);
             half canopyOcclusion = saturate(_SargassumCanopyShadowParams.w) * (1.0h - canopyWindow * 0.55h);
             return radialFalloff * canopyOcclusion;
+        }
+
+        half EvaluatePlanetaryTerrainFade(float3 positionWS)
+        {
+            if (_HectonTerrainFadeParams.z < 0.5)
+                return 1.0h;
+
+            float fadeDistance = max(max(_FadeDistance, _HectonTerrainFadeParams.x), 1.0);
+            float fadeWidth = max(1.0 / max(_HectonTerrainFadeParams.y, 0.0001), 1.0);
+            float distanceXZ = distance(positionWS.xz, _HectonTerrainFadeRuntimeOrigin.xz);
+            float fadeStart = max(0.0, fadeDistance - fadeWidth);
+            return (half)(1.0 - smoothstep(fadeStart, fadeDistance, distanceXZ));
+        }
+
+        half HectonInterleavedGradientNoise(float2 pixel)
+        {
+            return (half)frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+        }
+
+        half ApplyPlanetaryDitherFade(half fade, float4 positionCS)
+        {
+            half edgeBand = saturate(1.0h - abs(fade * 2.0h - 1.0h));
+            half noise = HectonInterleavedGradientNoise(positionCS.xy);
+            half strength = saturate((half)_HectonTerrainFadeParams.w);
+            return saturate(fade + (noise - 0.5h) * edgeBand * strength);
+        }
+
+        half EvaluateDistantTerrainHeightShadow(float3 positionWS)
+        {
+            if (_HectonDistantTerrainShadowParams.z < 0.5)
+                return 0.0h;
+
+            float2 uv = (positionWS.xz - _HectonDistantTerrainShadowRect.xy) * _HectonDistantTerrainShadowRect.zw;
+            if (any(uv < 0.0) || any(uv > 1.0))
+                return 0.0h;
+
+            half mask = SAMPLE_TEXTURE2D(_HectonDistantTerrainShadowMask, sampler_HectonDistantTerrainShadowMask, uv).r;
+            return saturate(mask * (half)_HectonDistantTerrainShadowParams.x);
+        }
+
+        float2 HectonHash22(float2 value)
+        {
+            float3 p3 = frac(float3(value.xyx) * float3(0.1031, 0.1030, 0.0973));
+            p3 += dot(p3, p3.yzx + 33.33);
+            return frac((p3.xx + p3.yz) * p3.zy);
+        }
+
+        half HectonVoronoiEdgeNoise2D(float2 position)
+        {
+            float2 baseCell = floor(position);
+            float2 local = frac(position);
+            float nearest = 8.0;
+            float secondNearest = 8.0;
+            float nearestCellSignal = 0.5;
+
+            [unroll]
+            for (int y = -1; y <= 1; y++)
+            {
+                [unroll]
+                for (int x = -1; x <= 1; x++)
+                {
+                    float2 offset = float2(x, y);
+                    float2 cell = baseCell + offset;
+                    float2 jitter = HectonHash22(cell);
+                    float2 delta = offset + jitter - local;
+                    float distanceSq = dot(delta, delta);
+                    if (distanceSq < nearest)
+                    {
+                        secondNearest = nearest;
+                        nearest = distanceSq;
+                        nearestCellSignal = HectonHash22(cell + float2(19.17, 19.17)).x;
+                    }
+                    else if (distanceSq < secondNearest)
+                    {
+                        secondNearest = distanceSq;
+                    }
+                }
+            }
+
+            half edgeRidge = (half)(1.0 - saturate((secondNearest - nearest) * 2.75));
+            return saturate((half)nearestCellSignal * 0.72h + edgeRidge * 0.28h);
+        }
+
+        half ResolveBiomeEdgeBleed(float3 positionWS, half biome)
+        {
+            half transitionMask = saturate(1.0h - abs(biome * 2.0h - 1.0h));
+            if (transitionMask <= 0.0001h || _BiomeEdgeBleedStrength <= 0.0001)
+                return biome;
+
+            float scale = max(_BiomeEdgeBleedScale, 0.0001);
+            half macroCells = HectonVoronoiEdgeNoise2D(positionWS.xz * scale);
+            half fractureCells = HectonVoronoiEdgeNoise2D(positionWS.xz * (scale * 2.17) + float2(19.37, -11.13));
+            half edgeNoise = saturate(macroCells * 0.64h + fractureCells * 0.36h);
+            half bleed = (edgeNoise - 0.5h) * transitionMask * (half)_BiomeEdgeBleedStrength;
+            return saturate(biome + bleed);
         }
 
         ENDHLSL
@@ -181,6 +348,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
             HLSLPROGRAM
             #pragma target 3.5
+            #pragma require 2darray
             #pragma vertex   ForwardVert
             #pragma fragment ForwardFrag
 
@@ -226,7 +394,6 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half4  vColor      : TEXCOORD2;
                 half   fogFactor   : TEXCOORD3;
                 // Pack triplanar blend into w of positionWS? No â€” keep it separate for clarity
-                half   triBlend    : TEXCOORD4;
                 #if defined(LIGHTMAP_ON)
                 float2 staticLightmapUV  : TEXCOORD5;
                 #endif
@@ -253,10 +420,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 OUT.vColor     = IN.color;
                 OUT.fogFactor  = ComputeFogFactor(posInputs.positionCS.z);
 
-                // Precompute triplanar blend in vertex shader to save fragment cost
                 // slope < threshold â†’ 0 (flat, cheap 2D), slope >= threshold â†’ ramp to 1
-                half slope = IN.color.r;
-                OUT.triBlend = saturate((slope - _TriplanarThreshold) / (1.0 - _TriplanarThreshold + 1e-6));
 
                 #if defined(LIGHTMAP_ON)
                 OUT.staticLightmapUV = IN.staticLightmapUV * unity_LightmapST.xy + unity_LightmapST.zw;
@@ -278,34 +442,20 @@ Shader "HECTON/Terrain/TerrainMaster"
                 half depth = IN.vColor.g;
                 half cave  = IN.vColor.b;
                 half biome = IN.vColor.a;
-                half triBlend = IN.triBlend;
-
-                // ---- Triplanar weights (computed even for partial blend) ----
-                float3 triW = HectonTriplanarWeights(IN.normalWS);
-
-                // ---- Adaptive texture sampling ----
-                half4 sandSample = HectonSampleAdaptive(
-                    TEXTURE2D_ARGS(_SandTex, sampler_SandTex),
-                    IN.positionWS, triW, _SandScale, triBlend);
-
-                half4 rockSample = HectonSampleAdaptive(
-                    TEXTURE2D_ARGS(_RockTex, sampler_RockTex),
-                    IN.positionWS, triW, _RockScale, triBlend);
-
-                half3 rockNormalWS = HectonSampleAdaptiveNormal(
-                    TEXTURE2D_ARGS(_RockNormal, sampler_RockNormal),
-                    IN.positionWS, triW, _RockScale, _RockNormalStr, triBlend);
-
-                // ---- Slope blending ----
+                // ---- Texture array sampling ----
                 half slopeBlend = saturate(pow(abs(slope), _SlopeSharpness));
-                half3 albedo = lerp(
-                    sandSample.rgb * _SandColor.rgb,
-                    rockSample.rgb * _RockColor.rgb,
-                    slopeBlend);
-                half smoothness = lerp(sandSample.a, rockSample.a, slopeBlend) * _BaseSmooth;
+                float terrainScale = lerp(_SandScale, _RockScale, slopeBlend);
+                float terrainSlice = HectonResolveTerrainArraySlice(slopeBlend, biome);
+                half4 terrainSample = HectonSampleTerrainAlbedoArray(
+                    IN.positionWS, IN.normalWS, terrainScale, terrainSlice);
+                half3 rockNormalWS = HectonSampleTerrainNormalArray(
+                    IN.positionWS, IN.normalWS, terrainScale, _RockNormalStr, terrainSlice);
+                half3 albedo = terrainSample.rgb * lerp(_SandColor.rgb, _RockColor.rgb, slopeBlend);
+                half smoothness = terrainSample.a * _BaseSmooth;
 
                 // ---- Biome tint ----
-                albedo = lerp(albedo, albedo * _BiomeTint.rgb, biome);
+                half biomeBleed = ResolveBiomeEdgeBleed(IN.positionWS, biome);
+                albedo = lerp(albedo, albedo * _BiomeTint.rgb, biomeBleed);
 
                 // ---- Depth darkening ----
                 half depthFactor = pow(abs(depth), _DarkenPower);
@@ -319,6 +469,12 @@ Shader "HECTON/Terrain/TerrainMaster"
                 {
                     albedo = lerp(albedo, albedo * 0.34h, canopyShadow);
                     emission *= 1.0h - canopyShadow * 0.8h;
+                }
+                half distantHeightShadow = EvaluateDistantTerrainHeightShadow(IN.positionWS);
+                if (distantHeightShadow > 0.0001h)
+                {
+                    albedo = lerp(albedo, albedo * 0.22h, distantHeightShadow);
+                    emission *= 1.0h - distantHeightShadow * 0.9h;
                 }
 
                 // ---- Final world normal ----
@@ -408,6 +564,10 @@ Shader "HECTON/Terrain/TerrainMaster"
                 // ---- Fog ----
                 color.rgb = MixFog(color.rgb, inputData.fogCoord);
 
+                half planetaryFade = ApplyPlanetaryDitherFade(EvaluatePlanetaryTerrainFade(IN.positionWS), IN.positionCS);
+                half3 noirFogFloor = half3(0.0015h, 0.0023h, 0.0031h);
+                color.rgb = lerp(noirFogFloor, color.rgb, planetaryFade);
+
                 return color;
             }
 
@@ -429,6 +589,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
             HLSLPROGRAM
             #pragma target 3.5
+            #pragma require 2darray
             #pragma vertex   ShadowVert
             #pragma fragment ShadowFrag
             #pragma multi_compile_instancing
@@ -507,6 +668,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
             HLSLPROGRAM
             #pragma target 3.5
+            #pragma require 2darray
             #pragma vertex   DepthVert
             #pragma fragment DepthFrag
             #pragma multi_compile_instancing
@@ -557,6 +719,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
             HLSLPROGRAM
             #pragma target 3.5
+            #pragma require 2darray
             #pragma vertex   DNVert
             #pragma fragment DNFrag
             #pragma multi_compile_instancing
@@ -577,7 +740,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 float4 positionCS  : SV_POSITION;
                 float3 normalWS    : TEXCOORD0;
                 float3 positionWS  : TEXCOORD1;
-                // Pack: x = slopeBlend, y = triBlend (save ALU in fragment)
+                // Pack: x = slopeBlend, y = biome texture-array index source
                 half2  blendData   : TEXCOORD2;
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
@@ -599,7 +762,7 @@ Shader "HECTON/Terrain/TerrainMaster"
 
                 half slope = IN.color.r;
                 OUT.blendData.x = saturate(pow(abs(slope), _SlopeSharpness));
-                OUT.blendData.y = saturate((slope - _TriplanarThreshold) / (1.0 - _TriplanarThreshold + 1e-6));
+                OUT.blendData.y = IN.color.a;
 
                 return OUT;
             }
@@ -609,12 +772,10 @@ Shader "HECTON/Terrain/TerrainMaster"
                 UNITY_SETUP_INSTANCE_ID(IN);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(IN);
 
-                float3 triW = HectonTriplanarWeights(IN.normalWS);
-
-                half3 rockN = HectonSampleAdaptiveNormal(
-                    TEXTURE2D_ARGS(_RockNormal, sampler_RockNormal),
-                    IN.positionWS, triW, _RockScale, _RockNormalStr,
-                    IN.blendData.y); // triplanar blend
+                float terrainScale = lerp(_SandScale, _RockScale, IN.blendData.x);
+                float terrainSlice = HectonResolveTerrainArraySlice(IN.blendData.x, IN.blendData.y);
+                half3 rockN = HectonSampleTerrainNormalArray(
+                    IN.positionWS, IN.normalWS, terrainScale, _RockNormalStr, terrainSlice);
 
                 float3 finalN = normalize(IN.normalWS + rockN * IN.blendData.x);
 

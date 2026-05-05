@@ -1,3 +1,4 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using System.Diagnostics;
 using System.Globalization;
@@ -303,3 +304,41 @@ namespace Hecton8.Core
         }
     }
 }
+#else
+using UnityEngine;
+
+namespace Hecton8.Core
+{
+    [DisallowMultipleComponent]
+    public sealed class RuntimeWatchdog : MonoBehaviour
+    {
+        public enum RuntimeWatchdogLane : byte
+        {
+            DispatcherUpdate = 0,
+            DispatcherLateFrame = 1,
+            CrashTelemetry = 2,
+            Worker0 = 16,
+            Worker1 = 17,
+            Worker2 = 18,
+            Worker3 = 19,
+            Worker4 = 20,
+            Worker5 = 21,
+            Worker6 = 22,
+            Worker7 = 23,
+        }
+
+        public static RuntimeWatchdog EnsureRuntimeInstance()
+        {
+            return null;
+        }
+
+        public static void Signal(RuntimeWatchdogLane lane)
+        {
+        }
+
+        public void InitializeService()
+        {
+        }
+    }
+}
+#endif

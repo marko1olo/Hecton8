@@ -1,10 +1,10 @@
 # PROJECT ATLAS
 
-Version: 1.4.9
-Date: 2026-05-04
+Version: 1.5.0
+Date: 2026-05-05
 Status: PENDING VERIFICATION
 Scope: live orientation map for the current HECTON-8 workspace
-Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`
+Mandates followed: `ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`, `ARCH_Global_Registry_ServiceLocator_DI_Init.txt`, `OPT_Zero_GC_Policy_AllocFree_Mandate.txt`, `OPT_Performance_Budgets_FrameTime_VRAM_Limits.txt`, `UI_Data_Streaming_ZeroGC_Optimization.txt`, `STRM_Asset_Lifecycle_Addressables_Loading_Memory.txt`, `OPT_Native_Memory_Collections_JobSystem_Protocol.txt`, `STRM_Persistent_Object_Registry.txt`, `MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`, `VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`, `PROJECT_LTS_Compatibility_Layer.txt`
 
 ## 1. What This File Is
 
@@ -56,9 +56,9 @@ Primary first-party code still lives under:
 - `Assets/_Project/Art`
 - `Assets/_Project/UI`
 
-Observed first-party C# file count under `Assets/_Project`: `1118`
-Observed first-party C# file count under `Assets/_Project/Scripts`: `1078`
-Observed first-party C# line count under `Assets/_Project/Scripts`: `519952`
+Observed first-party C# file count under `Assets/_Project`: `1202`
+Observed first-party C# file count under `Assets/_Project/Scripts`: `1162`
+Observed first-party C# line count under `Assets/_Project/Scripts`: `551892`
 
 This is physical file count only.
 It does not imply quality, cohesion, or compile health.
@@ -370,6 +370,126 @@ None. Markdown-only change.
 
 Kept because it is source-backed and narrower than the older narrative-heavy version.
 Rejected content: stale counts, ghost-interface claims contradicted by source, and unsupported event-bus descriptions.
+
+STATUS: PENDING VERIFICATION
+
+## 2026-05-05 Archivarius Docset Sync Delta
+
+Mandates followed for this update:
+
+- `OPT_Zero_GC_Policy_AllocFree_Mandate`
+- `MATH_Coordinate_Precision_AUP_FloatingOrigin`
+- `ARCH_Global_Registry_ServiceLocator_DI_Init`
+- `OPT_Native_Memory_Collections_JobSystem_Protocol`
+- `VOX_MapMagic_Voxel_Seam_Alignment_Integration`
+- `PROJECT_LTS_Compatibility_Layer`
+
+Current measured source and documentation surface:
+
+- `Assets/_Project`: `1202` C# files.
+- `Assets/_Project/Scripts`: `1162` C# files.
+- Script LOC by PowerShell line count: `551892`.
+- `.agents-skills`: `52` mandate files.
+- `Docs/**/*.md`: `422` markdown files.
+- Active `Docs/**/*.md` excluding `_Archive`, `DEPRECATED`, `Reports/DEPRECATED`, and `03_OBSOLETE`: `209`.
+- Active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports`: `162`.
+- Active `Docs/Reports/*.md`: `47`.
+- Scripts created today by filesystem timestamp: `71`.
+- Scripts modified today by filesystem timestamp: `209`.
+- Git-untracked entries before this Archivarius edit pass: `85`.
+
+Current top-level `Assets/_Project/Scripts` ownership counts:
+
+| Folder | C# files |
+|---|---:|
+| `(root)` | `339` |
+| `Editor` | `162` |
+| `World` | `162` |
+| `Gameplay` | `112` |
+| `UI` | `80` |
+| `Core` | `41` |
+| `Construction` | `31` |
+| `Optimization` | `22` |
+| `ModdingAPI` | `21` |
+| `Visor` | `20` |
+| `Audio` | `18` |
+| `Fauna` | `17` |
+
+Current SpaceEngine research authority:
+
+- research corpus: `Docs/SPACE_ENGINE_RESEARCH/`
+- extracted reference corpus: `Docs/SPACE_ENGINE_RESEARCH/_extracted/`
+- current SpaceEngine integration report: `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md`
+- terrain/noise research anchor: `Docs/SPACE_ENGINE_RESEARCH/TERRAIN_AND_NOISE_098.md`
+- runtime terrain kernel assembly folder: `Assets/_Project/Scripts/World/SpaceEngine098/`
+- kernel asmdef: `Assets/_Project/Scripts/World/SpaceEngine098/Hecton8.SpaceEngine098Terrain.asmdef`
+- Burst kernel source: `Assets/_Project/Scripts/World/SpaceEngine098/SpaceEngine098TerrainKernels.cs`
+- MapMagic bridge nodes: `Assets/_Project/Scripts/World/HectonSpaceEngine098MapMagicNodes.cs`
+- dev/editor smoke runners:
+  - `Assets/_Project/Scripts/Dev/SpaceEngine098TerrainSmokeTester.cs`
+  - `Assets/_Project/Scripts/Editor/SpaceEngine098TerrainSmokeTestRunner.cs`
+  - `Assets/_Project/Scripts/Editor/SpaceEngineResearchSmokeTester.cs`
+  - `Assets/_Project/Scripts/Editor/SpaceEngineResearchJsonWriter.cs`
+  - `Assets/_Project/Scripts/Editor/SpaceEngineResearchContracts.cs`
+
+Current Planetary Sandbox / terrain shelf authority:
+
+- sandbox shelf Burst jobs: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfJobs.cs`
+- sandbox shelf MapMagic node: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfMapMagicNode.cs`
+- sandbox shelf smoke tester: `Assets/_Project/Scripts/World/HectonSandboxAbyssalShelfSmokeTester.cs`
+- standalone smoke output: `Docs/SPACE_ENGINE_RESEARCH/HectonSandboxAbyssalShelfStandaloneSmoke.json`
+- current sandbox surgery report: `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md`
+- planetary canvas smoke: `Assets/_Project/Scripts/World/PlanetaryCanvasSmokeTester.cs`
+- planetary canvas editor runners:
+  - `Assets/_Project/Scripts/Editor/PlanetaryCanvasSmokeTestRunner.cs`
+  - `Assets/_Project/Scripts/Editor/PlanetaryCanvasMapMagicGraphIntegrator.cs`
+- terrain splatmap Burst job: `Assets/_Project/Scripts/World/WorldProceduralTerrainSplatmapJobs.cs`
+- terrain splatmap MapMagic node: `Assets/_Project/Scripts/World/HectonTerrainSplatmapMapMagicNode.cs`
+
+Burst kernel ownership classification:
+
+- `SpaceEngine098TerrainKernels.cs` belongs to the SpaceEngine 0.9.8 terrain research integration domain.
+- `HectonSandboxAbyssalShelfJobs.cs` belongs to the Planetary Sandbox / macro shelf terrain domain.
+- `WorldProceduralTerrainSplatmapJobs.cs` belongs to the Planetary Canvas / terrain splatmap bridge domain.
+- No explicit per-agent owner string was found in source. Archivarius ownership is therefore domain-owned: World generation terrain agents, not Bootstrap/Core.
+
+Mandate sync result for today's additions:
+
+- `52` mandate files exist.
+- Empty mandate files: `0`.
+- Zero-GC/allocation-related mandate files by name: `4`.
+- AUP/coordinate/submarine/voxel/MapMagic-related mandate files by name: `6`.
+- Created-today script scan found `0` `using System.Linq`, `.Where(`, `.Select(`, or `.ToList(` hits.
+- Created-today script scan found `4` `transform.position` hits, `0` `Vector3.Distance` hits, and `0` `math.distance` hits. No scan hit proved a greater-than-50-meter distance calculation from `transform.position`; the hits are event origin, presentation placement, or fallback position reads and remain review items.
+- Created-today script scan found `25` `.Complete(` tokens and `12` `.Run(` tokens. Sampled hits are editor smoke, standalone smoke, MapMagic/generator cold paths, or comments/string guards; no hot `Tick`/`Update` completion was proven by this pass.
+- Created-today script scan found `7` string interpolation or `string.Format` tokens. Sampled hits are smoke logs, source-token guards, or cold object naming; no hot `Tick`/`Update` string allocation was proven by this pass.
+
+Interface health result from `GlobalRegistryContracts.cs`:
+
+- Current direct public interface count: `34`.
+- Interfaces with at least one direct implementor by source-line scan: `33`.
+- Ghost interface: `IRegistryEventListener` has `0` direct class/struct implementors and is marked for deletion or implementation.
+
+Naming sweep result:
+
+- Non-ASCII path entries under `Assets/_Project` and `Docs`: `637`.
+- Non-ASCII path entries excluding archive/deprecated/obsolete folders: `575`.
+- Non-ASCII path entries under `Assets/_Project`: `570`.
+- Non-ASCII path entries under `Docs`: `67`.
+- Non-ASCII content files in active scan scope: `648`.
+- Current active ledger: `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md`.
+
+Reality delta:
+
+- March/legacy terrain authority was effectively a hand-authored MapMagic graph surface: `Assets/MapMagic/Map_Graph/New Gen/USE IT.asset`.
+- May terrain authority has shifted toward procedural, AUP-space generation: SpaceEngine 0.9.8 math research, Burst kernels, MapMagic bridge nodes, Planetary Sandbox macro shelf jobs, and 108-biome volumetric matrix reports.
+- The correct current read path is source-first: SpaceEngine research report, sandbox shelf surgery log, terrain/biome reality map, then the specific Burst kernel source.
+
+Verification boundary:
+
+- This was a filesystem/source/doc scan.
+- No Unity Play Mode, player build, profiler, or GCMonitor run was executed by this Archivarius pass.
+- Requested `ARCHIVE SYNCHRONIZED` status is not claimable under `AGENTS.md`; project status remains `PENDING VERIFICATION`.
 
 STATUS: PENDING VERIFICATION
 

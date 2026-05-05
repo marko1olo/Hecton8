@@ -124,6 +124,7 @@ namespace Hecton8.Physics
         private static readonly int _AbyssalFlowWeatherWindId = Shader.PropertyToID("_AbyssalFlowWeatherWind");
         private static readonly int _AbyssalFlowWeatherParamsId = Shader.PropertyToID("_AbyssalFlowWeatherParams");
         private static readonly int _AbyssalFlowSurfaceYId = Shader.PropertyToID("_AbyssalFlowSurfaceY");
+        private static readonly int _CurrentWaterLevelId = Shader.PropertyToID("_CurrentWaterLevel");
         private static readonly int _AbyssalFlowThermoclineYId = Shader.PropertyToID("_AbyssalFlowThermoclineY");
         private static readonly int _AbyssalFlowHeatSourceCountId = Shader.PropertyToID("_AbyssalFlowHeatSourceCount");
         private static readonly int _AbyssalFlowWeatherStateMaskId = Shader.PropertyToID("_AbyssalFlowWeatherStateMask");
@@ -280,7 +281,11 @@ namespace Hecton8.Physics
         public float WaterLevel
         {
             get => waterLevel;
-            set => waterLevel = value;
+            set
+            {
+                waterLevel = value;
+                PublishCurrentWaterLevelUniform();
+            }
         }
 
         /// <summary>Плотность воды (кг/м³).</summary>
@@ -531,6 +536,7 @@ namespace Hecton8.Physics
             _gpuReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] - GPU buoyancy readback slot activity - owner: HectonFluidEngine
             _gpuAbyssalReadbackRequests = new AsyncGPUReadbackRequest[GpuReadbackRingSize]; // COLD ALLOC: AsyncGPUReadbackRequest[3] - fixed GPU abyssal-flow readback ring state - owner: HectonFluidEngine
             _gpuAbyssalReadbackActive = new bool[GpuReadbackRingSize]; // COLD ALLOC: bool[3] - GPU abyssal-flow readback slot activity - owner: HectonFluidEngine
+            PublishCurrentWaterLevelUniform();
         }
 
         private void OnEnable()
@@ -723,6 +729,8 @@ namespace Hecton8.Physics
         {
             using (ProfilerRegistry.PhysicsTick.Auto())
             {
+            PublishCurrentWaterLevelUniform();
+
             if (!TryDrainScheduledBuoyancyJob())
                 return;
 
@@ -1436,6 +1444,11 @@ namespace Hecton8.Physics
                 return default;
 
             return weatherService.GetRuntimeSnapshot();
+        }
+
+        private void PublishCurrentWaterLevelUniform()
+        {
+            Shader.SetGlobalFloat(_CurrentWaterLevelId, waterLevel);
         }
 
         private void EnsureGpuBuoyancyBuffers(int capacity)

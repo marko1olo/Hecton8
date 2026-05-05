@@ -30,6 +30,7 @@ using Hecton8.Physics;
 using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
+using Unity.Mathematics;
 using UnityEngine;
 
 namespace Hecton8.Gameplay
@@ -1099,10 +1100,31 @@ namespace Hecton8.Gameplay
             float radius = Mathf.Max(4f, meteorWaterImpactRadiusMeters);
             float duration = Mathf.Max(0.5f, meteorWaterImpactDurationSeconds);
             PublishMeteorWaterImpactGlobals(impactPosition, radius, duration, impactEnvelope);
+            PublishMeteorSplashFeedback(impactPosition, radius, impactEnvelope);
 
             SargassumGlobalDragManager sargassumDrag = GlobalRegistry.SargassumDrag;
             if (sargassumDrag != null)
                 sargassumDrag.RegisterMassiveDisplacement(impactPosition, radius, duration);
+        }
+
+        private static void PublishMeteorSplashFeedback(Vector3 impactPosition, float radius, float intensity)
+        {
+            Vector3 absoluteUniversePosition = HectonFloatingOrigin.ToAbsoluteUniversePosition(impactPosition);
+            float clampedIntensity = Mathf.Clamp01(intensity);
+            SplashEvent splashEvent = new SplashEvent
+            {
+                RuntimePosition = new float3(impactPosition.x, impactPosition.y, impactPosition.z),
+                AbsoluteUniversePosition = new float3(
+                    absoluteUniversePosition.x,
+                    absoluteUniversePosition.y,
+                    absoluteUniversePosition.z),
+                SurfaceNormal = new float3(0f, 1f, 0f),
+                ImpactSpeedMetersPerSecond = Mathf.Lerp(18f, 54f, clampedIntensity),
+                KineticEnergyJoules = radius * radius * Mathf.Lerp(480f, 3200f, clampedIntensity),
+                SubmersionFactor = 1f,
+                SampleIndex = -1
+            };
+            FluidFeedbackEvents.PublishSplashQueued(in splashEvent);
         }
 
         private static float ResolveCurrentSeaLevelY()
@@ -1143,7 +1165,7 @@ namespace Hecton8.Gameplay
                 return false;
 
             float maxTargetRadius = Mathf.Max(4f, seismicTargetRadius);
-            if ((targetVolume.generationPosition - playerPosition).sqrMagnitude > maxTargetRadius * maxTargetRadius)
+            if (IsAupDistanceGreater(targetVolume.generationPosition, playerPosition, maxTargetRadius))
                 return false;
 
             string familyId = null;
@@ -1277,12 +1299,12 @@ namespace Hecton8.Gameplay
                 if (body == null)
                     continue;
 
-                Vector3 away = body.worldCenterOfMass - epicenter;
-                float distance = away.magnitude;
+                ResolveAupDirectionAndDistance(epicenter, body.worldCenterOfMass, out Vector3 direction, out float distance);
                 if (distance > safeRadius)
                     continue;
 
-                Vector3 direction = distance > 0.0001f ? away / distance : Vector3.up;
+                if (distance <= 0.0001f)
+                    direction = Vector3.up;
                 direction.y = Mathf.Max(direction.y, 0.25f);
                 direction.Normalize();
 
@@ -1290,6 +1312,34 @@ namespace Hecton8.Gameplay
                 float resolvedImpulse = impulseMagnitude * Mathf.Pow(distance01, 0.65f);
                 PhysicsForceRouter.QueueForce(body, direction * resolvedImpulse, ForceMode.Impulse);
             }
+        }
+
+        private static bool IsAupDistanceGreater(Vector3 runtimeA, Vector3 runtimeB, float thresholdMeters)
+        {
+            float safeThreshold = Mathf.Max(0f, thresholdMeters);
+            AbsoluteUniversePosition aupA = AbsoluteUniversePosition.FromRuntimePosition(runtimeA);
+            AbsoluteUniversePosition aupB = AbsoluteUniversePosition.FromRuntimePosition(runtimeB);
+            return AbsoluteUniversePosition.DistanceSq(in aupA, in aupB) > (double)safeThreshold * safeThreshold;
+        }
+
+        private static void ResolveAupDirectionAndDistance(
+            Vector3 fromRuntime,
+            Vector3 toRuntime,
+            out Vector3 direction,
+            out float distance)
+        {
+            AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromRuntime);
+            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toRuntime);
+            double3 delta = toAup.ToAbsoluteDouble3() - fromAup.ToAbsoluteDouble3();
+            double distanceSq = math.dot(delta, delta);
+            double resolvedDistance = math.sqrt(math.max(0d, distanceSq));
+            distance = resolvedDistance > float.MaxValue ? float.MaxValue : (float)resolvedDistance;
+            direction = resolvedDistance > 0.0001d
+                ? new Vector3(
+                    (float)(delta.x / resolvedDistance),
+                    (float)(delta.y / resolvedDistance),
+                    (float)(delta.z / resolvedDistance))
+                : Vector3.up;
         }
     }
 }

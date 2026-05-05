@@ -1,3 +1,4 @@
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
 using System;
 using UnityEngine;
 using UnityEngine.Profiling;
@@ -190,3 +191,22 @@ namespace Hecton8.Core
         }
     }
 }
+#else
+using UnityEngine;
+
+namespace Hecton8.Core
+{
+    [DisallowMultipleComponent]
+    public sealed class GCMonitor : MonoBehaviour
+    {
+        public static GCMonitor EnsureRuntimeInstance()
+        {
+            return null;
+        }
+
+        public void InitializeService()
+        {
+        }
+    }
+}
+#endif

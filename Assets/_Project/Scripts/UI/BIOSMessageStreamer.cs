@@ -58,6 +58,7 @@ namespace Hecton8.UI
         private int _pendingEntryCount;
         private int _typingSourceLength;
         private int _typingVisibleLength;
+        private int _typingRenderBaseLength;
         private float _typingAccumulator;
         private bool _typingActive;
         private bool _registeredUpdatable;
@@ -89,7 +90,7 @@ namespace Hecton8.UI
                 return;
 
             _typingVisibleLength = nextVisibleLength;
-            RefreshTerminal();
+            ApplyTypingVisibleCharacters();
             if (_typingVisibleLength >= _typingSourceLength)
             {
                 CommitTypedLine();
@@ -97,6 +98,8 @@ namespace Hecton8.UI
                 _typingAccumulator = 0f;
                 _typingVisibleLength = 0;
                 _typingSourceLength = 0;
+                _typingRenderBaseLength = 0;
+                RefreshTerminal();
                 TryStartNextEntry();
             }
         }
@@ -331,7 +334,6 @@ namespace Hecton8.UI
             _historyLineWriteIndex = (_historyLineWriteIndex + 1) % HistoryLineCount;
             if (_historyLineCount < HistoryLineCount)
                 _historyLineCount++;
-            RefreshTerminal();
         }
 
         private void RefreshTerminal()
@@ -356,10 +358,37 @@ namespace Hecton8.UI
             }
 
             if (_typingActive)
-                cursor = AppendRange(_renderBuffer, cursor, _typingBuffer, 0, _typingVisibleLength);
+            {
+                _typingRenderBaseLength = cursor;
+                cursor = AppendRange(_renderBuffer, cursor, _typingBuffer, 0, _typingSourceLength);
+            }
 
             int safeLength = Mathf.Clamp(cursor, 0, _renderBuffer.Length);
             terminalLabel.SetCharArray(_renderBuffer, 0, safeLength);
+            ApplyTypingVisibleCharacters(safeLength);
+        }
+
+        private void ApplyTypingVisibleCharacters()
+        {
+            ApplyTypingVisibleCharacters(_renderBuffer != null ? _renderBuffer.Length : 0);
+        }
+
+        private void ApplyTypingVisibleCharacters(int renderedLength)
+        {
+            if (terminalLabel == null)
+                return;
+
+            if (!_typingActive)
+            {
+                if (terminalLabel.maxVisibleCharacters != int.MaxValue)
+                    terminalLabel.maxVisibleCharacters = int.MaxValue;
+                return;
+            }
+
+            int safeRenderedLength = renderedLength > 0 ? renderedLength : _typingRenderBaseLength + _typingSourceLength;
+            int visibleCharacters = Mathf.Clamp(_typingRenderBaseLength + _typingVisibleLength, 0, safeRenderedLength);
+            if (terminalLabel.maxVisibleCharacters != visibleCharacters)
+                terminalLabel.maxVisibleCharacters = visibleCharacters;
         }
 
         private static int AppendRange(char[] destination, int cursor, char[] source)

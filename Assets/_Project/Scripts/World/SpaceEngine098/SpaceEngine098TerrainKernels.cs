@@ -58,10 +58,25 @@ namespace Hecton8.World
         public float RimLift01;
     }
 
+    /// <summary>
+    /// Per-sample terrain pipeline audit record produced by the Burst metrics pass.
+    /// </summary>
+    public struct SpaceEngine098PipelineMetricSample
+    {
+        public float MinHeight;
+        public float MaxHeight;
+        public float RidgedDelta;
+        public float CraterDelta;
+        public float RilleDelta;
+        public int ChecksumContribution;
+        public byte IsFinite;
+        public byte HasChecksumContribution;
+    }
+
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public static class SpaceEngine098TerrainMath
     {
-        public const float DefaultLacunarity = 2.21828f;
+        public const float DefaultLacunarity = 2.218281828459f;
         public const float DefaultH = 0.5f;
         public const float DefaultOffset = 0.8f;
         public const float DefaultRidgeSmooth = 0.0001f;
@@ -302,6 +317,146 @@ namespace Hecton8.World
         }
     }
 
+    /// <summary>
+    /// Literal SpaceEngine 0.9.8 noise utility facade matching the research report naming.
+    /// Existing jobs use <see cref="SpaceEngine098TerrainMath"/> directly; this type keeps integration code aligned with the extracted equations.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public static class SpaceEngineNoise098
+    {
+        public const float DefaultLacunarity = SpaceEngine098TerrainMath.DefaultLacunarity;
+        public const float DefaultH = SpaceEngine098TerrainMath.DefaultH;
+        public const float DefaultOffset = SpaceEngine098TerrainMath.DefaultOffset;
+        public const float DefaultRidgeSmooth = SpaceEngine098TerrainMath.DefaultRidgeSmooth;
+
+        /// <summary>
+        /// Saturates a scalar to the [0,1] interval.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Saturate(float value)
+        {
+            return math.saturate(value);
+        }
+
+        /// <summary>
+        /// SpaceEngine-style cubic smoothstep.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float SmoothStep(float edge0, float edge1, float value)
+        {
+            return SpaceEngine098TerrainMath.SmoothStep(edge0, edge1, value);
+        }
+
+        /// <summary>
+        /// Deterministic seed mix used for AUP chunk anchoring.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint MixSeed(uint seed, int x, int z)
+        {
+            return SpaceEngine098TerrainMath.MixSeed(seed, x, z);
+        }
+
+        /// <summary>
+        /// Deterministic uint avalanche hash.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static uint Avalanche(uint hash)
+        {
+            return SpaceEngine098TerrainMath.Avalanche(hash);
+        }
+
+        /// <summary>
+        /// Converts a hash to a deterministic [0,1] scalar.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Float01(uint hash)
+        {
+            return SpaceEngine098TerrainMath.Float01(hash);
+        }
+
+        /// <summary>
+        /// Returns deterministic 2D cellular F1/F2 distances for rille and crack fields.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2 Cell2F1F2(float2 point, uint seed)
+        {
+            return SpaceEngine098TerrainMath.Cell2F1F2(point, seed);
+        }
+
+        /// <summary>
+        /// Returns deterministic fBM domain warp in meters.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float2 DomainWarp2(float2 absoluteXZ, float amplitudeMeters, float frequency, uint seed)
+        {
+            return SpaceEngine098TerrainMath.DomainWarp2(absoluteXZ, amplitudeMeters, frequency, seed);
+        }
+
+        /// <summary>
+        /// Returns deterministic 2D fBM used by the SpaceEngine rille domain warp.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float Fbm2(float2 point, int octaves, float lacunarity, float h, uint seed)
+        {
+            return SpaceEngine098TerrainMath.Fbm2(point, octaves, lacunarity, h, seed);
+        }
+
+        /// <summary>
+        /// SpaceEngine ridged multifractal eroded-detail kernel using the default extracted constants.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float RidgedMultifractalErodedDetail(float3 point, in SpaceEngine098RidgedMultifractalParams parameters, uint seed)
+        {
+            return SpaceEngine098TerrainMath.RidgedMultifractalErodedDetail(point, in parameters, seed);
+        }
+
+        /// <summary>
+        /// SpaceEngine ridged multifractal eroded-detail overload matching the research report scaffold.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float RidgedMultifractalErodedDetail(
+            float3 point,
+            int octaves,
+            float gain,
+            float warp,
+            float firstOctaveValue,
+            float lacunarity,
+            float h,
+            float offset,
+            float ridgeSmooth,
+            uint seed)
+        {
+            var parameters = new SpaceEngine098RidgedMultifractalParams
+            {
+                Frequency = 1f,
+                Strength01 = 1f,
+                Gain = gain,
+                Warp = warp,
+                FirstOctaveValue = firstOctaveValue,
+                Lacunarity = lacunarity,
+                H = h,
+                Offset = offset,
+                RidgeSmooth = ridgeSmooth,
+                Octaves = octaves
+            };
+            return SpaceEngine098TerrainMath.RidgedMultifractalErodedDetail(point, in parameters, seed);
+        }
+
+        /// <summary>
+        /// SpaceEngine analytic crater profile facade.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static float CraterHeightFuncSE(
+            float lastlastLand,
+            float lastLand,
+            float height,
+            float r,
+            in SpaceEngine098CraterProfile crater)
+        {
+            return SpaceEngine098TerrainMath.CraterHeightFuncSE(lastlastLand, lastLand, height, r, in crater);
+        }
+    }
+
     [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
     public struct SpaceEngine098RidgedMultifractalJob : IJobParallelFor
     {
@@ -415,6 +570,44 @@ namespace Hecton8.World
             float shoulder = SpaceEngine098TerrainMath.SmoothStep(0.35f, 0.8f, r) * (1f - r) * math.max(0f, Parameters.RimLift01);
             float height = math.saturate(InputHeights01[index]);
             OutputHeights01[index] = math.saturate(height - fissure * math.max(0f, Parameters.Depth01) + shoulder);
+        }
+    }
+
+    /// <summary>
+    /// Computes per-sample validation metrics for the terrain pipeline without managed float-array reads.
+    /// </summary>
+    [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+    public struct SpaceEngine098PipelineMetricsJob : IJobParallelFor
+    {
+        [ReadOnly] public NativeArray<float> InputHeights01;
+        [ReadOnly] public NativeArray<float> RidgedHeights01;
+        [ReadOnly] public NativeArray<float> CraterHeights01;
+        [ReadOnly] public NativeArray<float> RilleHeights01;
+        [WriteOnly] public NativeArray<SpaceEngine098PipelineMetricSample> Metrics;
+        public int ChecksumStride;
+
+        public void Execute(int index)
+        {
+            float inputHeight = InputHeights01[index];
+            float ridgedHeight = RidgedHeights01[index];
+            float craterHeight = CraterHeights01[index];
+            float rilleHeight = RilleHeights01[index];
+            bool contributesChecksum = index % math.max(1, ChecksumStride) == 0;
+
+            Metrics[index] = new SpaceEngine098PipelineMetricSample
+            {
+                MinHeight = rilleHeight,
+                MaxHeight = rilleHeight,
+                RidgedDelta = math.abs(ridgedHeight - inputHeight),
+                CraterDelta = math.abs(craterHeight - ridgedHeight),
+                RilleDelta = math.abs(rilleHeight - craterHeight),
+                ChecksumContribution = contributesChecksum ? (int)math.round(rilleHeight * 100000f) : 0,
+                IsFinite = math.isfinite(inputHeight) &&
+                           math.isfinite(ridgedHeight) &&
+                           math.isfinite(craterHeight) &&
+                           math.isfinite(rilleHeight) ? (byte)1 : (byte)0,
+                HasChecksumContribution = contributesChecksum ? (byte)1 : (byte)0
+            };
         }
     }
 }

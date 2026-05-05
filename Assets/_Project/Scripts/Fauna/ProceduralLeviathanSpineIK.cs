@@ -30,6 +30,17 @@ namespace Hecton8.AI
             [ReadOnly] public NativeArray<float> NormalizedBoneT;
             [ReadOnly] public NativeArray<quaternion> BindWorldRotations;
             [WriteOnly] public NativeArray<quaternion> SolvedWorldRotations;
+            // NATIVE SAFETY EXCEPTION: these two one-element buffers are side-channel outputs for the final head bone only.
+            // IJobParallelForTransform cannot express "only index == LastBoneIndex writes element 0", so Unity's default
+            // parallel-for index restriction would reject a deterministic single-writer pattern that the job already guards.
+            //
+            // The write site is constrained by `if (index == LastBoneIndex)`, and LastBoneIndex is fixed for the scheduled
+            // chain length. Every other transform writes only its own SolvedWorldRotations slot. There is no read/write
+            // overlap inside the job, and the main thread only consumes these buffers after the dispatcher swap completes.
+            //
+            // Lifetime is owned by ProceduralLeviathanSpineIK: buffers are Allocator.Persistent, registered with
+            // NativeMemorySentinel, and disposed after pending job completion in DisposeRuntimeBuffers. This exception
+            // avoids allocating per-bone head-output arrays while keeping the Burst job single-pass and cache-local.
             [NativeDisableParallelForRestriction] public NativeArray<quaternion> SolvedHeadWorldRotations;
             [NativeDisableParallelForRestriction] public NativeArray<float> JawOpenRadians;
             public float3 HistoryTail;

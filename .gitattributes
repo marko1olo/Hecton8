@@ -1,7 +1,7 @@
-# Автоматически определять текстовые файлы и нормализовать окончания строк
+# Auto-detect text files and normalize line endings.
 * text=auto
 
-# Исключить эти файлы из нормализации, так как Unity очень чувствителен к ним
+# Keep Unity serialized assets byte-stable.
 *.meta -text
 *.asset -text
 *.unity -text
@@ -22,3 +22,16 @@
 *.renderTexture -text
 *.spriteatlas -text
 *.terrainlayer -text
+
+# Generated verification/build artifacts do not belong in source archives.
+.codexbuild/** export-ignore
+.codex-build/** export-ignore
+.codex-artifacts/** export-ignore
+CodexArtifacts/** export-ignore
+Assets/_Recovery/** export-ignore
+*.log export-ignore
+*.diff export-ignore
+*.patch export-ignore
+*.sarif export-ignore
+*.rsp export-ignore
+*.mmf export-ignore

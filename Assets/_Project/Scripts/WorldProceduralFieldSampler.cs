@@ -188,6 +188,9 @@ namespace Hecton8.World
             public float WaterSurface;
             public int BiomeIndex;
             public int BiomeMatrixId;
+            public int SecondaryBiomeMatrixId;
+            public int BiomeBlend255;
+            public int MapMagicBiomeDataValid;
             public int CellX;
             public int CellZ;
             public int SeafloorSource;
@@ -262,6 +265,8 @@ namespace Hecton8.World
             public int ZoneDataIndex;
             public int BiomeMatrixDataIndex;
             public int PreviousBiomeMatrixDataIndex;
+            public int SecondaryBiomeMatrixDataIndex;
+            public int MapMagicBiomeBlend255;
             public int BiomeFamilyDataIndex;
             public int ResolvedZoneKind;
             public int ResolvedPattern;
@@ -358,6 +363,8 @@ namespace Hecton8.World
         [SerializeField] private float slopeProbeMeters = 4f;
         [SerializeField] private float fieldNoiseScale = 0.0035f;
         [SerializeField] private float detailNoiseScale = 0.0125f;
+        [SerializeField, Min(0f)] private float steepSlopeRaycastCorrectionThresholdDegrees = 45f;
+        [SerializeField, Min(0f)] private float steepSlopeRaycastCorrectionMaxDropMeters = 1.25f;
 
         [Header("Preview Overrides")]
         [SerializeField] private bool forcePatternPreviewOverride;
@@ -588,6 +595,7 @@ namespace Hecton8.World
                 ZoneDataIndex = -1,
                 BiomeMatrixDataIndex = currentBiomeMatrixDataIndex,
                 PreviousBiomeMatrixDataIndex = -1,
+                SecondaryBiomeMatrixDataIndex = -1,
                 BiomeFamilyDataIndex = currentBiomeFamilyDataIndex,
                 ResolvedZoneKind = (int)WorldZoneAnchor.ZoneKind.Generic,
                 ResolvedPattern = (int)WorldProceduralPattern.SedimentResources,
@@ -660,6 +668,11 @@ namespace Hecton8.World
                     biomeMatrixIdToDataIndex,
                     currentBiomeMatrixDataIndex),
                 PreviousBiomeMatrixDataIndex = -1,
+                SecondaryBiomeMatrixDataIndex = ResolveBiomeMatrixDataIndexFromMatrixId(
+                    input.SecondaryBiomeMatrixId,
+                    biomeMatrixIdToDataIndex,
+                    -1),
+                MapMagicBiomeBlend255 = math.clamp(input.BiomeBlend255, 0, 255),
                 BiomeFamilyDataIndex = currentBiomeFamilyDataIndex,
                 ResolvedZoneKind = (int)WorldZoneAnchor.ZoneKind.Generic,
                 ResolvedPattern = (int)WorldProceduralPattern.SedimentResources,
@@ -672,7 +685,8 @@ namespace Hecton8.World
             if (output.ZoneDataIndex >= 0)
             {
                 ZoneData zoneData = zones[output.ZoneDataIndex];
-                output.BiomeMatrixDataIndex = zoneData.DominantMatrixDataIndex;
+                if (input.MapMagicBiomeDataValid == 0)
+                    output.BiomeMatrixDataIndex = zoneData.DominantMatrixDataIndex;
                 output.BiomeFamilyDataIndex = zoneData.DominantFamilyDataIndex;
                 output.ResolvedZoneKind = zoneData.Kind;
             }
@@ -841,6 +855,23 @@ namespace Hecton8.World
                 if (secondaryBiomeId != 0 && secondaryBiomeId != primaryBiomeId)
                 {
                     blend255 = 255;
+                    flags |= (byte)BiomeInfluenceFlags.TransitionEdge;
+                }
+                else
+                {
+                    secondaryBiomeId = 0;
+                }
+            }
+            else if (output.SecondaryBiomeMatrixDataIndex >= 0 && output.MapMagicBiomeBlend255 > 0)
+            {
+                secondaryBiomeId = ResolveBiomeInfluenceMatrixId(
+                    output.SecondaryBiomeMatrixDataIndex,
+                    biomeMatrices,
+                    biomeMatrixCount,
+                    ref flags);
+                if (secondaryBiomeId != 0 && secondaryBiomeId != primaryBiomeId)
+                {
+                    blend255 = (byte)math.clamp(output.MapMagicBiomeBlend255, 0, 255);
                     flags |= (byte)BiomeInfluenceFlags.TransitionEdge;
                 }
                 else
@@ -2001,7 +2032,14 @@ namespace Hecton8.World
             if (!TryGetCellHeightContext(position, out CellHeightContext terrainContext))
                 return false;
 
-            TryResolveBiomeReadout(position.x, position.z, out int biomeIndex, out int biomeMatrixId);
+            TryResolveBiomeReadout(
+                position.x,
+                position.z,
+                out int biomeIndex,
+                out int biomeMatrixId,
+                out int secondaryBiomeMatrixId,
+                out int biomeBlend255,
+                out int mapMagicBiomeDataValid);
 
             float waterSurface = mapMagicBridge != null
                 ? mapMagicBridge.WaterSurfaceLevel
@@ -2018,6 +2056,9 @@ namespace Hecton8.World
                 WaterSurface = waterSurface,
                 BiomeIndex = biomeIndex,
                 BiomeMatrixId = biomeMatrixId,
+                SecondaryBiomeMatrixId = secondaryBiomeMatrixId,
+                BiomeBlend255 = biomeBlend255,
+                MapMagicBiomeDataValid = mapMagicBiomeDataValid,
                 CellX = cellX,
                 CellZ = cellZ,
                 SeafloorSource = (int)terrainContext.CenterSource,
@@ -2131,7 +2172,7 @@ namespace Hecton8.World
                     _biomeInfluenceGraphicsBufferCapacity);
             }
 
-            // COLD ALLOC: GraphicsBuffer[_biomeInfluenceGraphicsBufferCapacity] - packed biome influence grid upload owned by WorldProceduralFieldSampler.
+            // COLD ALLOC: GraphicsBuffer[_biomeInfluenceGraphicsBufferCapacity] - packed 8-family biome influence grid upload owned by WorldProceduralFieldSampler.
             _biomeInfluenceGraphicsBuffer = GraphicsBufferUploadUtility.CreateStructuredLockBuffer<uint>(_biomeInfluenceGraphicsBufferCapacity);
             return _biomeInfluenceGraphicsBuffer != null && _biomeInfluenceGraphicsBuffer.IsValid();
         }
@@ -2619,9 +2660,25 @@ namespace Hecton8.World
 
             int biomeIndex = 0;
             int matrixBiomeId = ResolveCurrentMatrixBiomeId();
+            HectonBiomeMatrixProfile mapMagicSecondaryProfile = null;
+            byte mapMagicBlend255 = 0;
             if (mapMagicBridge != null)
             {
-                if (mapMagicBridge.TryGetMatrixBiomeId(position.x, position.z, out int mapMagicMatrixBiomeId, out int mapMagicAlphamapLayer))
+                if (mapMagicBridge.TryGetMatrixBiomeInfluence(
+                        position.x,
+                        position.z,
+                        out int mapMagicMatrixBiomeId,
+                        out int secondaryMatrixBiomeId,
+                        out byte resolvedBlend255,
+                        out int mapMagicAlphamapLayer,
+                        out _))
+                {
+                    matrixBiomeId = mapMagicMatrixBiomeId;
+                    biomeIndex = mapMagicAlphamapLayer;
+                    mapMagicSecondaryProfile = ResolveBiomeMatrixProfileById(secondaryMatrixBiomeId);
+                    mapMagicBlend255 = resolvedBlend255;
+                }
+                else if (mapMagicBridge.TryGetMatrixBiomeId(position.x, position.z, out mapMagicMatrixBiomeId, out mapMagicAlphamapLayer))
                 {
                     matrixBiomeId = mapMagicMatrixBiomeId;
                     biomeIndex = mapMagicAlphamapLayer;
@@ -2736,7 +2793,9 @@ namespace Hecton8.World
                     previewOverrideApplied,
                     hazardBias,
                     volumetricOverrideApplied,
-                    volumetricOverrideApplied ? previousBiomeProfile : null),
+                    volumetricOverrideApplied ? previousBiomeProfile : null,
+                    mapMagicSecondaryProfile,
+                    mapMagicBlend255),
                 zone = zone,
                 zoneWeight = zoneWeight,
                 resolvedZoneKind = resolvedZoneKind,
@@ -2825,7 +2884,9 @@ namespace Hecton8.World
             bool previewOverrideApplied,
             float hazardBias,
             bool volumetricOverrideApplied,
-            HectonBiomeMatrixProfile volumetricSecondaryProfile)
+            HectonBiomeMatrixProfile volumetricSecondaryProfile,
+            HectonBiomeMatrixProfile mapMagicSecondaryProfile,
+            byte mapMagicBlend255)
         {
             byte flags = 0;
             if (primaryProfile != null && primaryProfile.isPlaceholder)
@@ -2850,6 +2911,19 @@ namespace Hecton8.World
                 if (secondaryBiomeId != 0 && secondaryBiomeId != primaryBiomeId)
                 {
                     blend255 = 255;
+                    flags |= (byte)BiomeInfluenceFlags.TransitionEdge;
+                }
+                else
+                {
+                    secondaryBiomeId = 0;
+                }
+            }
+            else if (mapMagicSecondaryProfile != null && mapMagicBlend255 > 0)
+            {
+                secondaryBiomeId = ResolveManagedBiomeId(mapMagicSecondaryProfile);
+                if (secondaryBiomeId != 0 && secondaryBiomeId != primaryBiomeId)
+                {
+                    blend255 = mapMagicBlend255;
                     flags |= (byte)BiomeInfluenceFlags.TransitionEdge;
                 }
                 else
@@ -3310,15 +3384,52 @@ namespace Hecton8.World
 
         private bool TryResolveBiomeReadout(float x, float z, out int biomeIndex, out int biomeMatrixId)
         {
+            return TryResolveBiomeReadout(
+                x,
+                z,
+                out biomeIndex,
+                out biomeMatrixId,
+                out _,
+                out _,
+                out _);
+        }
+
+        private bool TryResolveBiomeReadout(
+            float x,
+            float z,
+            out int biomeIndex,
+            out int biomeMatrixId,
+            out int secondaryBiomeMatrixId,
+            out int biomeBlend255,
+            out int mapMagicBiomeDataValid)
+        {
             biomeMatrixId = ResolveCurrentMatrixBiomeId();
             biomeIndex = biomeMatrixId;
+            secondaryBiomeMatrixId = 0;
+            biomeBlend255 = 0;
+            mapMagicBiomeDataValid = 0;
 
             if (mapMagicBridge != null)
             {
-                if (mapMagicBridge.TryGetMatrixBiomeId(x, z, out int mapMagicMatrixBiomeId, out int alphamapLayer))
+                if (mapMagicBridge.TryGetMatrixBiomeInfluence(
+                        x,
+                        z,
+                        out int mapMagicMatrixBiomeId,
+                        out secondaryBiomeMatrixId,
+                        out byte blend255,
+                        out int alphamapLayer,
+                        out _))
                 {
                     biomeMatrixId = mapMagicMatrixBiomeId;
                     biomeIndex = alphamapLayer;
+                    biomeBlend255 = blend255;
+                    mapMagicBiomeDataValid = 1;
+                }
+                else if (mapMagicBridge.TryGetMatrixBiomeId(x, z, out mapMagicMatrixBiomeId, out alphamapLayer))
+                {
+                    biomeMatrixId = mapMagicMatrixBiomeId;
+                    biomeIndex = alphamapLayer;
+                    mapMagicBiomeDataValid = 1;
                 }
                 else if (!mapMagicBridge.SandboxProceduralTerrainOnly &&
                          mapMagicBridge.TryGetBiomeIndex(x, z, out int mapMagicBiomeIndex))
@@ -3444,6 +3555,14 @@ namespace Hecton8.World
                 return false;
             }
 
+            if (centerSource == SeafloorSource.MapMagicHeight &&
+                steepSlopeRaycastCorrectionMaxDropMeters > 0f &&
+                CalculateSlopeDegrees(centerHeight, northHeight, southHeight, eastHeight, westHeight, probe) >= steepSlopeRaycastCorrectionThresholdDegrees &&
+                TryResolveSteepMapMagicContactCorrection(position, centerHeight, out float correctedHeight))
+            {
+                centerHeight = correctedHeight;
+            }
+
             terrainContext = new CellHeightContext
             {
                 CenterHeight = centerHeight,
@@ -3453,6 +3572,55 @@ namespace Hecton8.World
                 WestHeight = westHeight,
                 CenterSource = centerSource
             };
+            return true;
+        }
+
+        private static float CalculateSlopeDegrees(float centerHeight, float northHeight, float southHeight, float eastHeight, float westHeight, float probeMeters)
+        {
+            float probe = Mathf.Max(0.0001f, probeMeters);
+            float dx = (eastHeight - westHeight) / (probe * 2f);
+            float dz = (northHeight - southHeight) / (probe * 2f);
+            return Mathf.Atan(Mathf.Sqrt((dx * dx) + (dz * dz))) * Mathf.Rad2Deg;
+        }
+
+        private bool TryResolveSteepMapMagicContactCorrection(Vector3 position, float mapMagicHeight, out float correctedHeight)
+        {
+            correctedHeight = mapMagicHeight;
+            float maxDrop = Mathf.Max(0f, steepSlopeRaycastCorrectionMaxDropMeters);
+            if (maxDrop <= 0f)
+                return false;
+
+            float originY = mapMagicHeight + maxDrop + 1f;
+            float distance = (maxDrop * 2f) + 2f;
+            int hitCount = UnityEngine.Physics.RaycastNonAlloc(
+                new Vector3(position.x, originY, position.z),
+                Vector3.down,
+                _seafloorRaycastHits,
+                distance,
+                HectonLayerMasks.TerrainLayerMask,
+                QueryTriggerInteraction.Ignore);
+
+            float bestHeight = mapMagicHeight;
+            float bestDrop = maxDrop + 0.001f;
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
+            {
+                RaycastHit hit = _seafloorRaycastHits[hitIndex];
+                if (ShouldIgnoreSeafloorHit(hit))
+                    continue;
+
+                float hitHeight = hit.point.y;
+                float drop = mapMagicHeight - hitHeight;
+                if (drop < 0f || drop > maxDrop || drop >= bestDrop)
+                    continue;
+
+                bestDrop = drop;
+                bestHeight = hitHeight;
+            }
+
+            if (bestDrop > maxDrop)
+                return false;
+
+            correctedHeight = bestHeight;
             return true;
         }
 

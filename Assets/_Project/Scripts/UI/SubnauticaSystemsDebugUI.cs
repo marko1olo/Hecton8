@@ -29,6 +29,8 @@ namespace Hecton8.UI
 
         internal static SubnauticaSystemsDebugUI ActiveRuntimeInstance => s_activeRuntimeInstance;
 
+        [SerializeField] private bool logLifecycleDiagnostics;
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
         {
@@ -192,7 +194,8 @@ namespace Hecton8.UI
                 if (s_activeRuntimeInstance != null && s_activeRuntimeInstance != this)
                 {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                    Debug.Log($"[SubnauticaSystemsDebugUI] Destroying duplicate runtime owner '{name}' id={EntityId.ToULong(GetEntityId())} active={gameObject.activeSelf}.", this);
+                    if (logLifecycleDiagnostics)
+                        Debug.Log($"[SubnauticaSystemsDebugUI] Destroying duplicate runtime owner '{name}' id={EntityId.ToULong(GetEntityId())} active={gameObject.activeSelf}.", this);
 #endif
                     Destroy(gameObject);
                     return;
@@ -208,7 +211,8 @@ namespace Hecton8.UI
                 return;
 
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            Debug.Log($"[SubnauticaSystemsDebugUI] Awake '{name}' id={EntityId.ToULong(GetEntityId())} persist={persistAcrossSceneLoads}.", this);
+            if (logLifecycleDiagnostics)
+                Debug.Log($"[SubnauticaSystemsDebugUI] Awake '{name}' id={EntityId.ToULong(GetEntityId())} persist={persistAcrossSceneLoads}.", this);
 #endif
             QueueRuntimeBootstrap(forceManagerResolve: true);
         }
@@ -216,7 +220,7 @@ namespace Hecton8.UI
         private void OnEnable()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Application.isPlaying)
+            if (Application.isPlaying && logLifecycleDiagnostics)
                 Debug.Log($"[SubnauticaSystemsDebugUI] OnEnable '{name}' id={EntityId.ToULong(GetEntityId())}.", this);
 #endif
             SceneManager.activeSceneChanged += HandleActiveSceneChanged;
@@ -238,7 +242,7 @@ namespace Hecton8.UI
         private void OnDestroy()
         {
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-            if (Application.isPlaying)
+            if (Application.isPlaying && logLifecycleDiagnostics)
                 Debug.Log($"[SubnauticaSystemsDebugUI] OnDestroy '{name}' id={EntityId.ToULong(GetEntityId())}.", this);
 #endif
             if (s_activeRuntimeInstance == this)

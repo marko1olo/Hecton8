@@ -93,28 +93,6 @@ namespace Hecton8.World
             return blend > 0.0001f;
         }
 
-        public static float ComputeCaveMouthDensityPerturbation(
-            float3 samplePosition,
-            float3 surfacePosition,
-            float3 terrainNormal,
-            float normalBlend,
-            float mouthRadius,
-            float voxelStep)
-        {
-            float safeBlend = math.saturate(normalBlend);
-            if (safeBlend <= 0f)
-                return 0f;
-
-            float3 safeTerrainNormal = math.normalizesafe(terrainNormal, new float3(0f, 1f, 0f));
-            float horizontalDistance = math.length(samplePosition.xz - surfacePosition.xz);
-            float mouthWeight = 1f - math.smoothstep(
-                math.max(mouthRadius * 0.25f, 0.001f),
-                math.max(mouthRadius * 1.55f, voxelStep),
-                horizontalDistance);
-            float terrainPlane = math.dot(samplePosition - surfacePosition, safeTerrainNormal);
-            return terrainPlane * (0.08f * safeBlend * mouthWeight);
-        }
-
         public static float ResolveTerrainVoxelSnapStep(Vector3 voxelVolumeSize, float fallbackRadiusMeters)
         {
             float dominantSize = math.max(

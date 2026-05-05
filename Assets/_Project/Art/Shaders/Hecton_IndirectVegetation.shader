@@ -41,6 +41,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
         _LocalCausticStrength ("Local Caustic Strength", Range(0, 1)) = 0.18
         _LocalCausticScale ("Local Caustic Scale", Range(0.1, 4)) = 0.82
         _LocalCausticSpeed ("Local Caustic Speed", Range(0, 4)) = 0.48
+        _CullFadeDistance ("Cull Fade Distance", Range(0, 32)) = 10
         _SurfaceWaterLevelFallback ("Surface Water Level Fallback", Float) = 4900
         [Enum(UnityEngine.Rendering.CullMode)] _Cull ("Cull", Float) = 0
     }
@@ -131,6 +132,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half _LocalCausticStrength;
                 half _LocalCausticScale;
                 half _LocalCausticSpeed;
+                half _CullFadeDistance;
                 float _SurfaceWaterLevelFallback;
                 float _HectonLodPassMode;
                 float _HectonLodNearDistance;
@@ -600,6 +602,20 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                         distanceToCamera));
 
                 return passMode < 0.5 ? nearAlpha : farAlpha;
+            }
+
+            half ResolveCullFadeCoverage(float3 positionWS, float4 positionCS)
+            {
+                float farDistance = max(_HectonLodFarDistance, _HectonLodNearDistance);
+                float fadeDistance = max((float)_CullFadeDistance, 0.0);
+                if (farDistance <= 1.0 || fadeDistance <= 0.001)
+                    return 1.0h;
+
+                float fadeStart = max(0.0, farDistance - fadeDistance);
+                float3 cameraDelta = positionWS - _WorldSpaceCameraPos;
+                float distanceSq = dot(cameraDelta, cameraDelta);
+                half fade = (half)(1.0 - smoothstep(fadeStart * fadeStart, farDistance * farDistance, distanceSq));
+                return (half)step(ResolveVegetationBlueNoise(positionCS), fade);
             }
 
             float ResolveInteractionDistance()
@@ -1345,6 +1361,7 @@ Shader "Hecton8/Vegetation/IndirectStrip"
                 half entropyCoverage = 1.0h - input.entropyProgress * saturate(lerp(0.28h, 1.0h, input.heightMask) * lerp(0.35h, 1.0h, input.curvatureMask));
                 half coverage = saturate(_Opacity) * porousCoverageMask * entropyCoverage;
                 coverageVisibility *= (half)step(ResolveBayer4x4(floor(input.positionCS.xy)), coverage);
+                coverageVisibility *= ResolveCullFadeCoverage(input.positionWS, input.positionCS);
 
                 half3 normalWS = SafeNormalize3(input.normalWS);
                 half3 viewDirectionWS = SafeNormalize(GetWorldSpaceViewDir(input.positionWS));

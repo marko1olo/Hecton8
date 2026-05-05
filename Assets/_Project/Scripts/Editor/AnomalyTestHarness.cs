@@ -242,6 +242,7 @@ namespace Hecton8.Editor
                     CellSizeMeters = 2f,
                     OriginAup = new double3(100.0, 5.0, 200.0),
                     MinimumPillarProminenceMeters = 20f,
+                    MinimumPillarRidgeArms = 3,
                     MinimumFissureDepthMeters = 20f,
                     EqualHeightEpsilon = 0.000001f,
                     FissureInfluencePacked = packedFissure

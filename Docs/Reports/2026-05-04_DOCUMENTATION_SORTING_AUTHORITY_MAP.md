@@ -118,6 +118,7 @@ These files are not proof by themselves. They are routing and contract surfaces.
 | `Docs/2026-04-30_Codex_Full_Project_Forensic_Audit/` | historical forensic audit bundle with current supersession notes |
 | `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/` | workspace maps and authority classifications |
 | `Docs/ARCHIVARIUS REPORTS/02_ACTUAL_REPORTS/` | older concrete audit outputs; many are evidence-level, not first-read authority |
+| `Docs/SPACE_ENGINE_RESEARCH/` | primary SpaceEngine research and integration evidence bundle |
 | `Docs/AI_Fauna/` | active/reference fauna planning bundle |
 | `Docs/Flora_Pipeline/` | active/reference flora pipeline bundle |
 | `Docs/Scatter_Runtime/` | active/reference scatter runtime bundle |
@@ -142,6 +143,10 @@ Current first-read reports:
 - `Docs/Reports/2026-05-04_DOCUMENTATION_ACTUALITY_SWEEP.md`
 - `Docs/Reports/2026-05-04_WARNING_CLEANUP.md`
 - `Docs/Reports/2026-05-05_OMEGA_AUTONOMY_FORENSIC_HARDENING.md`
+- `Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md`
+- `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md`
+- `Docs/SPACE_ENGINE_RESEARCH/SPACE_ENGINE_MATH_INTEGRATION_2026-05-05.md`
+- `Docs/Reports/2026-05-05_HECTON_SANDBOX_BIOMES_OMEGA_SURGERY_LOG.md`
 - `Docs/Reports/2026-05-04_FOUNDATION_GUARD_UNSAFE_COPY_AND_MENU_LOOP_REPAIR.md`
 - `Docs/Reports/2026-05-01_CURRENT_PROJECT_STATE.md`
 - `Docs/Reports/2026-05-01_OBJECTIVE_PROJECT_CONCLUSION.md`
@@ -196,6 +201,11 @@ Historical but still useful evidence reports:
 - Added decomposition, stress, and telemetry-warning hooks to the editor-only documentation authority smoke guard, then normalized the new active SpaceEngine Omega audit header so the active missing-`Status:` count returned to `0`.
 - Added the CI-facing documentation authority batch entrypoint `RunBatchAll`; direct Core/Editor Roslyn compile passed, but Unity batch execution is still blocked by licensing/project-lock environment failures and did not emit batch JSON.
 - Expanded the relocated-root-log counter to scan every `Root_Logs_*` bundle and moved two newly generated root logs into the 2026-05-05 deprecated evidence bundle.
+- Archivarius reality sync added `Docs/Reports/2026-05-05_ARCHIVARIUS_REALITY_DELTA.md` as the current SpaceEngine/Sandbox/source-count/naming/interface delta.
+- Archivarius naming sync added `Docs/ARCHIVARIUS REPORTS/01_GENERAL_INFO/NAMING_VIOLATIONS.md` as the current active non-ASCII path/content ledger.
+- Current measured post-sync counts: `Docs/**/*.md` total `422`, active docs excluding archive/deprecated/obsolete `209`, active non-report docs excluding archive/deprecated/obsolete and `Docs/Reports` `162`, `Docs/Reports/*.md` `47`.
+- SpaceEngine research and Planetary Sandbox logs are primary authority for terrain math/shelf work before old 2026-04-29 reports.
+- Old `2026-04-29` reports and patch artifacts are historical unless a current May 5/May 4 authority file explicitly promotes a narrow claim.
 
 No gameplay/runtime files, scenes, prefabs, project settings, packages, or assets were changed by this sorting pass. The only source changes are the editor-only smoke guard and compile-proof fixes in adjacent dirty smoke/import code.
 

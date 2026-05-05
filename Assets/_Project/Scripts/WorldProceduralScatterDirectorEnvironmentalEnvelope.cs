@@ -40,22 +40,6 @@ namespace Hecton8.World
         [Tooltip("Minimum desired abyssal-flow magnitude for abyssal kelp placements.")]
         private float abyssalKelpMinFlowMagnitude = 0.06f;
 
-        [SerializeField]
-        [Tooltip("True when flora candidate acceptance counts nearby flora inside a 100 m-style envelope and silently drops over-budget requests.")]
-        private bool enableFloraDensityClamp = true;
-
-        [SerializeField, Min(1f)]
-        [Tooltip("Planar radius in meters used when policing nearby flora density before candidate acceptance.")]
-        private float floraDensityClampRadiusMeters = 100f;
-
-        [SerializeField, Min(1)]
-        [Tooltip("Hard cap for micro-flora placements inside the density-clamp radius.")]
-        private int floraDensityClampMicroCap = 2000;
-
-        [SerializeField, Min(1)]
-        [Tooltip("Hard cap for macro-flora placements inside the density-clamp radius.")]
-        private int floraDensityClampMacroCap = 50;
-
         private bool PassesEnvironmentalEnvelope(
             in WorldProceduralFieldSampler.FieldSample fieldSample,
             in ScatterRuntimeRuleEntry runtimeRule,

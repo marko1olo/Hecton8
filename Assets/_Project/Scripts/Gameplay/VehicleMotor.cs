@@ -34,33 +34,20 @@ namespace Hecton8.Gameplay
             public int SelfColliderInstanceId;
         }
 
-        private struct HydrodynamicWakeSample
-        {
-            public float3 Position;
-            public float3 Acceleration;
-            public float RadiusMeters;
-            public float RemainingSeconds;
-        }
-
         private const float MinVectorMagnitudeSq = 0.000001f;
         private const int ScheduledSweepCommandCount = 1;
         private const int ScheduledSweepMaxHits = 8;
-        private const int HydrodynamicWakeSampleCount = 4;
-        private const int MaxRegisteredWakeMotors = 32;
+        private const int MaxRegisteredMotors = 32;
         private const float DefaultGroundSlopeLimitDegrees = 45f;
         private const float TractionLossStartDegrees = 45f;
         private const float GroundContactHoldSeconds = 0.2f;
         private const float VehicleGravityAcceleration = 9.81f;
         private const float SlopeDot45Degrees = 0.70710678f;
         private const float GroundAlignmentSharpness = 10f;
-        private const float MinDepthViscosityReferenceMeters = 100f;
         private const float DenormalVelocityFlushThresholdMetersPerSecond = 0.001f;
-        private const float WakeEmissionSpeedThresholdMetersPerSecond = 15f;
-        private const float WakeLifetimeSeconds = 0.45f;
-        private const float WakeRadiusMeters = 5.5f;
+        private const float CinematicDepthReferenceMeters = 900f;
+        private const float WakeSiltVisualSpeedThresholdMetersPerSecond = 15f;
         private const float WakeEmitterOffsetMeters = 4f;
-        private const float WakeAccelerationPerExcessMeterPerSecond = 0.85f;
-        private const float WakeMaxAccelerationMetersPerSecondSq = 24f;
         private const float WakeSiltDecalCooldownSeconds = 0.24f;
         private const float MinEntanglementTetherMeters = 1.25f;
         private const float EntanglementFacingSharpness = 8f;
@@ -69,20 +56,26 @@ namespace Hecton8.Gameplay
         private const float KelpDragScale = 1.35f;
         private const float KelpMaxDragCoefficient = 2.8f;
 
-        private static readonly VehicleMotor[] _registeredWakeMotors = new VehicleMotor[MaxRegisteredWakeMotors];
+        private static readonly VehicleMotor[] _registeredMotors = new VehicleMotor[MaxRegisteredMotors];
         private static readonly ProfilerMarker _scheduleProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Schedule");
         private static readonly ProfilerMarker _consumeProfilerMarker = new ProfilerMarker("H8.VehicleMotor.CapsuleSweep.Consume");
         private static readonly ProfilerMarker _driveProfilerMarker = new ProfilerMarker("H8.VehicleMotor.Drive");
 
-        [Header("-- Hydrodynamic Drag ---------------")]
-        [Tooltip("Forward-axis multiplier applied to depth-scaled quadratic drag. Lower values let the hull slice through water.")]
-        [SerializeField, Min(0f)] private float hydrodynamicForwardDragScale = 0.42f;
+        [Header("-- Cinematic Hull Feel -------------")]
+        [Tooltip("Legacy scalar folded into cinematic velocity bleed. Kept for serialized preset compatibility.")]
+        [SerializeField, Min(0f)] private float hydrodynamicForwardDragScale = 0.58f;
 
-        [Tooltip("Side-axis multiplier applied to depth-scaled quadratic drag. Higher values resist sideways sliding.")]
-        [SerializeField, Min(0f)] private float hydrodynamicLateralDragScale = 2.6f;
+        [Tooltip("Legacy scalar folded into cinematic velocity bleed. Kept for serialized preset compatibility.")]
+        [SerializeField, Min(0f)] private float hydrodynamicLateralDragScale = 3.2f;
 
-        [Tooltip("Vertical-axis multiplier applied to depth-scaled quadratic drag. Keeps ballast motion heavier than forward drive.")]
-        [SerializeField, Min(0f)] private float hydrodynamicVerticalDragScale = 1.25f;
+        [Tooltip("Legacy scalar folded into cinematic velocity bleed. Kept for serialized preset compatibility.")]
+        [SerializeField, Min(0f)] private float hydrodynamicVerticalDragScale = 1.7f;
+
+        [Tooltip("Cinematic acceleration scalar replacing presentation velocity history. Lower values make the hull feel heavy without frame buffers.")]
+        [SerializeField, Range(0.1f, 1f)] private float cinematicAccelerationScale = 0.72f;
+
+        [Tooltip("Cinematic drag scalar replacing presentation velocity history. Higher values make the hull settle without inertial ghost buffers.")]
+        [SerializeField, Range(1f, 4f)] private float cinematicDragScale = 1.35f;
 
         [Header("-- Headless Presentation -----------")]
         [Tooltip("Optional visual-only submarine root interpolated from the authoritative NativeArray state in the late-frame dispatcher lane.")]
@@ -94,8 +87,6 @@ namespace Hecton8.Gameplay
         private Rigidbody _body;
         private CapsuleCollider _capsule;
         private NativeArray<SubmarineState> _submarineState;
-        private NativeArray<float3> _hydrodynamicGhostVelocityHistory;
-        private NativeArray<HydrodynamicWakeSample> _hydrodynamicWakeSamples;
         private NativeArray<CapsulecastCommand> _scheduledSweepCommands;
         private NativeArray<RaycastHit> _scheduledSweepResults;
         private JobHandle _scheduledSweepHandle;
@@ -106,13 +97,10 @@ namespace Hecton8.Gameplay
         private float _groundSlopeLimitDegrees = DefaultGroundSlopeLimitDegrees;
         private Vector3 _groundNormal = Vector3.up;
         private float _groundContactTimer;
-        private int _hydrodynamicGhostWriteIndex;
-        private int _hydrodynamicGhostSampleCount;
-        private int _hydrodynamicWakeWriteIndex;
         private float _hydrodynamicSubmersionFactor;
         private float _hydrodynamicDepthMeters;
         private bool _isEntangled;
-        private bool _wakeRegistryRegistered;
+        private bool _motorRegistryRegistered;
         private bool _registeredOriginShiftListener;
         private bool _registeredLateFrameTick;
         private bool _visualTeleportPending;
@@ -130,8 +118,8 @@ namespace Hecton8.Gameplay
         /// <summary>Current kinematic linear velocity in world space.</summary>
         public Vector3 LinearVelocity => _linearVelocity;
 
-        /// <summary>Hydrodynamically damped presentation velocity. Do not feed back into kinematic integration.</summary>
-        public Vector3 PerceivedLinearVelocity => ResolveHydrodynamicPerceivedVelocity(_linearVelocity);
+        /// <summary>Current presentation velocity. Inertial history buffers are intentionally purged.</summary>
+        public Vector3 PerceivedLinearVelocity => HectonPlayerMotor.SafeVelocity(_linearVelocity);
 
         internal NativeArray<SubmarineState> SubmarineStateNative => _submarineState;
 
@@ -156,9 +144,9 @@ namespace Hecton8.Gameplay
             if (body == null)
                 return false;
 
-            for (int i = 0; i < _registeredWakeMotors.Length; i++)
+            for (int i = 0; i < _registeredMotors.Length; i++)
             {
-                VehicleMotor candidate = _registeredWakeMotors[i];
+                VehicleMotor candidate = _registeredMotors[i];
                 if (candidate == null || candidate._body != body)
                     continue;
 
@@ -183,9 +171,7 @@ namespace Hecton8.Gameplay
             _body = body;
             _capsule = capsule;
             EnsureSubmarineState();
-            EnsureHydrodynamicGhostState();
-            EnsureHydrodynamicWakeState();
-            RegisterWakeMotor();
+            RegisterMotor();
             TryRegisterOriginShiftListener();
             TryRegisterLateFrameTickable();
             ResetRuntimeState();
@@ -193,7 +179,7 @@ namespace Hecton8.Gameplay
 
         private void OnEnable()
         {
-            RegisterWakeMotor();
+            RegisterMotor();
             TryRegisterOriginShiftListener();
             TryRegisterLateFrameTickable();
         }
@@ -202,10 +188,8 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterLateFrameTickable();
             TryUnregisterOriginShiftListener();
-            UnregisterWakeMotor();
+            UnregisterMotor();
             DisposeScheduledSweepState();
-            DisposeHydrodynamicWakeState();
-            DisposeHydrodynamicGhostState();
             DisposeSubmarineState();
         }
 
@@ -213,10 +197,8 @@ namespace Hecton8.Gameplay
         {
             TryUnregisterLateFrameTickable();
             TryUnregisterOriginShiftListener();
-            UnregisterWakeMotor();
+            UnregisterMotor();
             DisposeScheduledSweepState();
-            DisposeHydrodynamicWakeState();
-            DisposeHydrodynamicGhostState();
             DisposeSubmarineState();
         }
 
@@ -240,15 +222,12 @@ namespace Hecton8.Gameplay
             _lastBlockingImpactPoint = Vector3.zero;
             _lastBlockingImpactNormal = Vector3.up;
             _visualTeleportPending = true;
-            ResetHydrodynamicGhostState();
-            ResetHydrodynamicWakeState();
             WriteSubmarineState(_body != null ? _body.position : Vector3.zero, _body != null ? _body.rotation : Quaternion.identity);
         }
 
-        /// <summary>Clears vehicle presentation-only added-mass velocity history after teleport or hard rebase.</summary>
+        /// <summary>Legacy compatibility hook. Velocity history is purged, so this is intentionally a no-op.</summary>
         public void ResetHydrodynamicPresentationState()
         {
-            ResetHydrodynamicGhostState();
         }
 
         /// <summary>Configures the maximum climbable ground slope before vehicle drive is flattened against world up.</summary>
@@ -257,7 +236,7 @@ namespace Hecton8.Gameplay
             _groundSlopeLimitDegrees = math.clamp(maxSlopeDegrees, 5f, 89f);
         }
 
-        /// <summary>Sets the current fluid-submersion factor used by the added-mass inertial ghost.</summary>
+        /// <summary>Sets the current fluid-submersion factor used by cinematic drag.</summary>
         public void ConfigureHydrodynamicSubmersion(float submersionFactor)
         {
             _hydrodynamicSubmersionFactor = math.saturate(submersionFactor);
@@ -265,7 +244,7 @@ namespace Hecton8.Gameplay
                 GlobalPhysicsStateManager.SetHydrodynamicSubmersion(_body, _hydrodynamicSubmersionFactor);
         }
 
-        /// <summary>Sets the current water depth used to scale analytical viscosity drag.</summary>
+        /// <summary>Sets the current water depth used by cinematic velocity bleed.</summary>
         public void ConfigureHydrodynamicDepth(float depthMeters)
         {
             _hydrodynamicDepthMeters = math.max(0f, depthMeters);
@@ -390,7 +369,6 @@ namespace Hecton8.Gameplay
             if (_lastBlockingImpactPoint.sqrMagnitude > MinVectorMagnitudeSq)
                 _lastBlockingImpactPoint -= shiftOffset;
 
-            RebaseHydrodynamicWakeState(shiftOffset);
             _visualTeleportPending = true;
 
             if (_body != null)
@@ -414,7 +392,7 @@ namespace Hecton8.Gameplay
                 float tetherLength = math.max(MinEntanglementTetherMeters, _entanglementTetherLength);
                 Vector3 safeFlowVelocity = HectonPlayerMotor.SafeVelocity(currentFlowVelocity);
                 Vector3 candidateVelocity = _linearVelocity + (safeFlowVelocity * math.max(0f, currentAcceleration) * safeDeltaTime);
-                candidateVelocity = ApplyDirectionalAnalyticalDrag(candidateVelocity, _body.rotation, math.max(0f, linearDamping), safeDeltaTime);
+                candidateVelocity = ApplyCinematicVelocityBleed(candidateVelocity, math.max(0f, linearDamping), safeDeltaTime);
 
                 Vector3 predictedRelative = relative + (candidateVelocity * safeDeltaTime);
                 if (predictedRelative.sqrMagnitude <= MinVectorMagnitudeSq)
@@ -437,7 +415,6 @@ namespace Hecton8.Gameplay
                     _lastEntanglementTensionNewtons = 0f;
 
                 _linearVelocity = HectonPlayerMotor.SafeVelocity(constrainedVelocity);
-                RecordHydrodynamicGhostVelocity(_linearVelocity);
 
                 if (_linearVelocity.sqrMagnitude > MinVectorMagnitudeSq)
                 {
@@ -447,7 +424,7 @@ namespace Hecton8.Gameplay
                     _body.MoveRotation(Quaternion.Slerp(_body.rotation, targetRotation, facingBlend));
                 }
 
-                UpdateHydrodynamicWake(_body.rotation, safeDeltaTime);
+                TryEmitCinematicWakeSiltDecal(_body.rotation, safeDeltaTime);
                 WriteSubmarineState(targetPosition, _body.rotation);
             }
         }
@@ -495,13 +472,17 @@ namespace Hecton8.Gameplay
                 float clampedForwardInput = math.clamp(forwardInput, -1f, 1f);
                 Vector3 targetForward = targetRotation * Vector3.forward;
                 EvaluateSlopeTraction(targetForward, safeDeltaTime, out float tractionMultiplier, out float downwardAcceleration);
-                float effectiveAcceleration = math.max(0f, thrustAcceleration) * tractionMultiplier * clampedForwardInput;
+                float effectiveAcceleration =
+                    math.max(0f, thrustAcceleration) *
+                    math.saturate(cinematicAccelerationScale) *
+                    tractionMultiplier *
+                    clampedForwardInput;
                 Vector3 candidateVelocity = _linearVelocity + (targetForward * effectiveAcceleration * safeDeltaTime);
                 if (downwardAcceleration > 0f)
                     candidateVelocity += Vector3.down * (downwardAcceleration * safeDeltaTime);
 
-                float effectiveDragCoefficient = ResolveDepthScaledDragCoefficient(linearDamping);
-                candidateVelocity = ApplyDirectionalAnalyticalDrag(candidateVelocity, targetRotation, effectiveDragCoefficient, safeDeltaTime);
+                float effectiveDragCoefficient = ResolveCinematicVelocityBleedSharpness(linearDamping) * math.max(1f, cinematicDragScale);
+                candidateVelocity = ApplyCinematicVelocityBleed(candidateVelocity, effectiveDragCoefficient, safeDeltaTime);
                 candidateVelocity = ApplyKelpPushback(candidateVelocity, safeDeltaTime);
 
                 float safeMaxSpeed = math.max(0.1f, maxSpeed);
@@ -510,8 +491,7 @@ namespace Hecton8.Gameplay
                     candidateVelocity = candidateVelocity.normalized * safeMaxSpeed;
 
                 _linearVelocity = HectonPlayerMotor.SafeVelocity(candidateVelocity);
-                RecordHydrodynamicGhostVelocity(_linearVelocity);
-                UpdateHydrodynamicWake(targetRotation, safeDeltaTime);
+                TryEmitCinematicWakeSiltDecal(targetRotation, safeDeltaTime);
                 WriteSubmarineState(_body.position + (_linearVelocity * safeDeltaTime), targetRotation);
             }
         }
@@ -712,20 +692,20 @@ namespace Hecton8.Gameplay
             WriteSubmarineState(position, _body.rotation);
         }
 
-        private float ResolveDepthScaledDragCoefficient(float baseDragCoefficient)
-        {
-            return ResolveDepthLogarithmicDragCoefficient(baseDragCoefficient, _hydrodynamicDepthMeters);
-        }
-
-        internal static float ResolveDepthLogarithmicDragCoefficient(float baseDragCoefficient, float depthMeters)
+        private float ResolveCinematicVelocityBleedSharpness(float baseDragCoefficient)
         {
             float safeBaseDrag = math.max(0f, baseDragCoefficient);
             if (safeBaseDrag <= 0f)
                 return 0f;
 
-            float safeDepthMeters = math.max(0f, depthMeters);
-            float depthScale = math.log10(1f + (safeDepthMeters / MinDepthViscosityReferenceMeters));
-            return safeBaseDrag * math.max(0f, depthScale);
+            float submersionWeight = 1f + (math.saturate(_hydrodynamicSubmersionFactor) * 0.65f);
+            float depthWeight = 1f + (math.saturate(_hydrodynamicDepthMeters / CinematicDepthReferenceMeters) * 0.35f);
+            float legacyShapeWeight = math.max(
+                0.1f,
+                (math.max(0f, hydrodynamicForwardDragScale) +
+                 math.max(0f, hydrodynamicLateralDragScale) +
+                 math.max(0f, hydrodynamicVerticalDragScale)) * 0.33333334f);
+            return safeBaseDrag * submersionWeight * depthWeight * legacyShapeWeight;
         }
 
         private Vector3 ApplyKelpPushback(Vector3 velocity, float deltaTime)
@@ -758,22 +738,7 @@ namespace Hecton8.Gameplay
                 samplePosition,
                 velocity,
                 math.max(bendRadiusMeters, KelpPushbackProbeRadiusMeters + speed * 0.12f));
-            return ApplyAnalyticalDrag(velocity, dragCoefficient, deltaTime);
-        }
-
-        private static Vector3 ApplyAnalyticalDrag(Vector3 velocity, float dragCoefficient, float deltaTime)
-        {
-            float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
-            float speed = math.length(velocity3);
-            if (speed < DenormalVelocityFlushThresholdMetersPerSecond)
-                return Vector3.zero;
-            if (dragCoefficient <= 0f)
-                return velocity;
-
-            float safeDeltaTime = math.max(deltaTime, 0.0001f);
-            float denominator = math.max(1f, 1f + (dragCoefficient * speed * safeDeltaTime));
-            float3 result = velocity3 / denominator;
-            return new Vector3(result.x, result.y, result.z);
+            return ApplyCinematicVelocityBleed(velocity, dragCoefficient, deltaTime);
         }
 
         private static Vector3 ResolveVelocityDelta(Vector3 force, ForceMode mode, float mass, float fixedDeltaTime)
@@ -807,129 +772,44 @@ namespace Hecton8.Gameplay
             return new Quaternion(composed.value.x, composed.value.y, composed.value.z, composed.value.w);
         }
 
-        private Vector3 ApplyDirectionalAnalyticalDrag(Vector3 velocity, Quaternion hullRotation, float dragCoefficient, float deltaTime)
+        private Vector3 ApplyCinematicVelocityBleed(Vector3 velocity, float bleedSharpness, float deltaTime)
         {
             float3 velocity3 = new float3(velocity.x, velocity.y, velocity.z);
             float speed = math.length(velocity3);
             if (speed < DenormalVelocityFlushThresholdMetersPerSecond)
                 return Vector3.zero;
-            if (dragCoefficient <= 0f)
+            if (bleedSharpness <= 0f)
                 return velocity;
 
-            Vector3 localVelocity = Quaternion.Inverse(hullRotation) * velocity;
-            float safeDeltaTime = math.max(deltaTime, 0.0001f);
-            float lateralCoefficient = dragCoefficient * math.max(0f, hydrodynamicLateralDragScale);
-            float verticalCoefficient = dragCoefficient * math.max(0f, hydrodynamicVerticalDragScale);
-            float forwardCoefficient = dragCoefficient * math.max(0f, hydrodynamicForwardDragScale);
-            localVelocity.x /= math.max(1f, 1f + (lateralCoefficient * speed * safeDeltaTime));
-            localVelocity.y /= math.max(1f, 1f + (verticalCoefficient * speed * safeDeltaTime));
-            localVelocity.z /= math.max(1f, 1f + (forwardCoefficient * speed * safeDeltaTime));
-            return HectonPlayerMotor.SafeVelocity(hullRotation * localVelocity);
+            float bleed = 1f - math.exp(-bleedSharpness * math.max(deltaTime, 0f));
+            float3 bledVelocity = math.lerp(velocity3, float3.zero, math.saturate(bleed));
+            return HectonPlayerMotor.SafeVelocity(new Vector3(bledVelocity.x, bledVelocity.y, bledVelocity.z), velocity);
         }
 
         internal static bool TrySampleAnyHydrodynamicWake(Vector3 worldPosition, out Vector3 acceleration)
         {
             acceleration = Vector3.zero;
-            float3 totalAcceleration = float3.zero;
-            for (int i = 0; i < _registeredWakeMotors.Length; i++)
-            {
-                VehicleMotor motor = _registeredWakeMotors[i];
-                if (motor == null || !motor.isActiveAndEnabled)
-                    continue;
-
-                if (!motor.TrySampleHydrodynamicWake(worldPosition, out Vector3 motorAcceleration))
-                    continue;
-
-                totalAcceleration += new float3(motorAcceleration.x, motorAcceleration.y, motorAcceleration.z);
-            }
-
-            float accelerationSq = math.lengthsq(totalAcceleration);
-            if (accelerationSq <= MinVectorMagnitudeSq || !math.all(math.isfinite(totalAcceleration)))
-                return false;
-
-            float maxAccelerationSq = WakeMaxAccelerationMetersPerSecondSq * WakeMaxAccelerationMetersPerSecondSq;
-            if (accelerationSq > maxAccelerationSq)
-                totalAcceleration *= WakeMaxAccelerationMetersPerSecondSq * math.rsqrt(accelerationSq);
-
-            acceleration = new Vector3(totalAcceleration.x, totalAcceleration.y, totalAcceleration.z);
-            return true;
+            return false;
         }
 
-        private bool TrySampleHydrodynamicWake(Vector3 worldPosition, out Vector3 acceleration)
+        private void TryEmitCinematicWakeSiltDecal(Quaternion bodyRotation, float deltaTime)
         {
-            acceleration = Vector3.zero;
-            if (!_hydrodynamicWakeSamples.IsCreated)
-                return false;
-
-            float3 samplePosition = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
-            if (!math.all(math.isfinite(samplePosition)))
-                return false;
-
-            float3 accumulatedAcceleration = float3.zero;
-            for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
-            {
-                HydrodynamicWakeSample sample = _hydrodynamicWakeSamples[i];
-                if (sample.RemainingSeconds <= 0f || sample.RadiusMeters <= 0.001f)
-                    continue;
-
-                float3 delta = samplePosition - sample.Position;
-                float distanceSq = math.lengthsq(delta);
-                float radiusSq = sample.RadiusMeters * sample.RadiusMeters;
-                if (distanceSq > radiusSq)
-                    continue;
-
-                float distance01 = math.sqrt(distanceSq) / math.max(sample.RadiusMeters, 0.001f);
-                float radiusWeight = 1f - math.saturate(distance01);
-                float lifeWeight = math.saturate(sample.RemainingSeconds / WakeLifetimeSeconds);
-                accumulatedAcceleration += sample.Acceleration * radiusWeight * radiusWeight * lifeWeight;
-            }
-
-            if (!math.all(math.isfinite(accumulatedAcceleration)) ||
-                math.lengthsq(accumulatedAcceleration) <= MinVectorMagnitudeSq)
-            {
-                return false;
-            }
-
-            acceleration = new Vector3(accumulatedAcceleration.x, accumulatedAcceleration.y, accumulatedAcceleration.z);
-            return true;
-        }
-
-        private void UpdateHydrodynamicWake(Quaternion bodyRotation, float deltaTime)
-        {
-            EnsureHydrodynamicWakeState();
-            DecayHydrodynamicWakeSamples(deltaTime);
             _wakeSiltDecalCooldown = math.max(0f, _wakeSiltDecalCooldown - math.max(0f, deltaTime));
             if (_body == null || _hydrodynamicSubmersionFactor <= 0.01f)
                 return;
 
             float speed = _linearVelocity.magnitude;
-            if (speed <= WakeEmissionSpeedThresholdMetersPerSecond)
+            if (speed <= WakeSiltVisualSpeedThresholdMetersPerSecond)
                 return;
 
             Vector3 forward = bodyRotation * Vector3.forward;
             if (forward.sqrMagnitude <= MinVectorMagnitudeSq)
                 forward = _linearVelocity.sqrMagnitude > MinVectorMagnitudeSq ? _linearVelocity.normalized : Vector3.forward;
 
-            float excessSpeed = speed - WakeEmissionSpeedThresholdMetersPerSecond;
-            float accelerationMagnitude = math.min(
-                WakeMaxAccelerationMetersPerSecondSq,
-                excessSpeed * WakeAccelerationPerExcessMeterPerSecond * math.saturate(_hydrodynamicSubmersionFactor));
-            if (accelerationMagnitude <= 0.001f)
-                return;
-
-            Vector3 emitterPosition = _body.worldCenterOfMass - (forward.normalized * WakeEmitterOffsetMeters);
-            Vector3 wakeAcceleration = -forward.normalized * accelerationMagnitude;
-            HydrodynamicWakeSample sample = new HydrodynamicWakeSample
-            {
-                Position = new float3(emitterPosition.x, emitterPosition.y, emitterPosition.z),
-                Acceleration = new float3(wakeAcceleration.x, wakeAcceleration.y, wakeAcceleration.z),
-                RadiusMeters = WakeRadiusMeters + (speed * 0.05f),
-                RemainingSeconds = WakeLifetimeSeconds
-            };
-
-            _hydrodynamicWakeSamples[_hydrodynamicWakeWriteIndex] = sample;
-            _hydrodynamicWakeWriteIndex = (_hydrodynamicWakeWriteIndex + 1) % _hydrodynamicWakeSamples.Length;
-            TryEmitWakeSiltDecal(emitterPosition, wakeAcceleration, speed);
+            Vector3 safeForward = forward.normalized;
+            Vector3 emitterPosition = _body.worldCenterOfMass - (safeForward * WakeEmitterOffsetMeters);
+            Vector3 visualWakeVelocity = -safeForward * (speed * math.saturate(_hydrodynamicSubmersionFactor) * 0.35f);
+            TryEmitWakeSiltDecal(emitterPosition, visualWakeVelocity, speed);
         }
 
         private void TryEmitWakeSiltDecal(Vector3 emitterPosition, Vector3 wakeVelocity, float speedMetersPerSecond)
@@ -949,103 +829,42 @@ namespace Hecton8.Gameplay
             AbsoluteUniversePosition emitAup = AbsoluteUniversePosition.FromRuntimePosition(emitterPosition);
             float3 runtimeFromAup = emitAup.ToRuntimeFloat3();
             Vector3 aupRuntimePosition = new Vector3(runtimeFromAup.x, runtimeFromAup.y, runtimeFromAup.z);
-            float intensity01 = math.saturate((speedMetersPerSecond - WakeEmissionSpeedThresholdMetersPerSecond) / 18f);
+            float intensity01 = math.saturate((speedMetersPerSecond - WakeSiltVisualSpeedThresholdMetersPerSecond) / 18f);
             fluidDecals.RegisterWakeSilt(aupRuntimePosition, wakeVelocity, intensity01);
             _wakeSiltDecalCooldown = WakeSiltDecalCooldownSeconds;
         }
 
-        private void DecayHydrodynamicWakeSamples(float deltaTime)
+        private void RegisterMotor()
         {
-            if (!_hydrodynamicWakeSamples.IsCreated)
+            if (_motorRegistryRegistered)
                 return;
 
-            float safeDeltaTime = math.max(0f, deltaTime);
-            for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
+            for (int i = 0; i < _registeredMotors.Length; i++)
             {
-                HydrodynamicWakeSample sample = _hydrodynamicWakeSamples[i];
-                if (sample.RemainingSeconds <= 0f)
+                if (_registeredMotors[i] != null && !ReferenceEquals(_registeredMotors[i], this))
                     continue;
 
-                sample.RemainingSeconds = math.max(0f, sample.RemainingSeconds - safeDeltaTime);
-                _hydrodynamicWakeSamples[i] = sample;
-            }
-        }
-
-        private void EnsureHydrodynamicWakeState()
-        {
-            if (_hydrodynamicWakeSamples.IsCreated)
-                return;
-
-            // COLD ALLOC: NativeArray<HydrodynamicWakeSample>[4] - local prop-wash turbulence samples for KCC wake sampling - owner: VehicleMotor
-            _hydrodynamicWakeSamples = new NativeArray<HydrodynamicWakeSample>(HydrodynamicWakeSampleCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-        }
-
-        private void ResetHydrodynamicWakeState()
-        {
-            EnsureHydrodynamicWakeState();
-            _hydrodynamicWakeWriteIndex = 0;
-            for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
-                _hydrodynamicWakeSamples[i] = default;
-        }
-
-        private void RebaseHydrodynamicWakeState(Vector3 shiftOffset)
-        {
-            if (!_hydrodynamicWakeSamples.IsCreated)
-                return;
-
-            float3 shift = new float3(shiftOffset.x, shiftOffset.y, shiftOffset.z);
-            for (int i = 0; i < _hydrodynamicWakeSamples.Length; i++)
-            {
-                HydrodynamicWakeSample sample = _hydrodynamicWakeSamples[i];
-                if (sample.RemainingSeconds <= 0f)
-                    continue;
-
-                sample.Position -= shift;
-                _hydrodynamicWakeSamples[i] = sample;
-            }
-        }
-
-        private void DisposeHydrodynamicWakeState()
-        {
-            if (!_hydrodynamicWakeSamples.IsCreated)
-                return;
-
-            _hydrodynamicWakeSamples.Dispose();
-            _hydrodynamicWakeSamples = default;
-            _hydrodynamicWakeWriteIndex = 0;
-        }
-
-        private void RegisterWakeMotor()
-        {
-            if (_wakeRegistryRegistered)
-                return;
-
-            for (int i = 0; i < _registeredWakeMotors.Length; i++)
-            {
-                if (_registeredWakeMotors[i] != null && !ReferenceEquals(_registeredWakeMotors[i], this))
-                    continue;
-
-                _registeredWakeMotors[i] = this;
-                _wakeRegistryRegistered = true;
+                _registeredMotors[i] = this;
+                _motorRegistryRegistered = true;
                 return;
             }
         }
 
-        private void UnregisterWakeMotor()
+        private void UnregisterMotor()
         {
-            if (!_wakeRegistryRegistered)
+            if (!_motorRegistryRegistered)
                 return;
 
-            for (int i = 0; i < _registeredWakeMotors.Length; i++)
+            for (int i = 0; i < _registeredMotors.Length; i++)
             {
-                if (!ReferenceEquals(_registeredWakeMotors[i], this))
+                if (!ReferenceEquals(_registeredMotors[i], this))
                     continue;
 
-                _registeredWakeMotors[i] = null;
+                _registeredMotors[i] = null;
                 break;
             }
 
-            _wakeRegistryRegistered = false;
+            _motorRegistryRegistered = false;
         }
 
         private void TryRegisterOriginShiftListener()
@@ -1164,62 +983,6 @@ namespace Hecton8.Gameplay
 
             _submarineState.Dispose();
             _submarineState = default;
-        }
-
-        private void RecordHydrodynamicGhostVelocity(Vector3 velocity)
-        {
-            EnsureHydrodynamicGhostState();
-            Vector3 safeVelocity = HectonPlayerMotor.SafeVelocity(velocity);
-            _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex] = new float3(safeVelocity.x, safeVelocity.y, safeVelocity.z);
-            _hydrodynamicGhostWriteIndex = (_hydrodynamicGhostWriteIndex + 1) % _hydrodynamicGhostVelocityHistory.Length;
-            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
-                _hydrodynamicGhostSampleCount++;
-        }
-
-        private Vector3 ResolveHydrodynamicPerceivedVelocity(Vector3 actualVelocity)
-        {
-            Vector3 safeActualVelocity = HectonPlayerMotor.SafeVelocity(actualVelocity);
-            EnsureHydrodynamicGhostState();
-            if (_hydrodynamicGhostSampleCount < _hydrodynamicGhostVelocityHistory.Length)
-                return safeActualVelocity;
-
-            float ghostBlend = 0.15f * math.saturate(_hydrodynamicSubmersionFactor);
-            if (ghostBlend <= 0.0001f)
-                return safeActualVelocity;
-
-            float3 oldestVelocity = _hydrodynamicGhostVelocityHistory[_hydrodynamicGhostWriteIndex];
-            float3 currentVelocity = new float3(safeActualVelocity.x, safeActualVelocity.y, safeActualVelocity.z);
-            float3 perceivedVelocity = math.lerp(currentVelocity, oldestVelocity, ghostBlend);
-            return HectonPlayerMotor.SafeVelocity(new Vector3(perceivedVelocity.x, perceivedVelocity.y, perceivedVelocity.z), safeActualVelocity);
-        }
-
-        private void ResetHydrodynamicGhostState()
-        {
-            EnsureHydrodynamicGhostState();
-            _hydrodynamicGhostWriteIndex = 0;
-            _hydrodynamicGhostSampleCount = 0;
-            for (int i = 0; i < _hydrodynamicGhostVelocityHistory.Length; i++)
-                _hydrodynamicGhostVelocityHistory[i] = float3.zero;
-        }
-
-        private void EnsureHydrodynamicGhostState()
-        {
-            if (_hydrodynamicGhostVelocityHistory.IsCreated)
-                return;
-
-            // COLD ALLOC: NativeArray<float3>[4] — 3-frame added-mass inertial ghost history for vehicle KCC sweeps — owner: VehicleMotor
-            _hydrodynamicGhostVelocityHistory = new NativeArray<float3>(4, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-        }
-
-        private void DisposeHydrodynamicGhostState()
-        {
-            if (!_hydrodynamicGhostVelocityHistory.IsCreated)
-                return;
-
-            _hydrodynamicGhostVelocityHistory.Dispose();
-            _hydrodynamicGhostVelocityHistory = default;
-            _hydrodynamicGhostWriteIndex = 0;
-            _hydrodynamicGhostSampleCount = 0;
         }
 
         private static void ResolveCapsulePoints(Rigidbody body, CapsuleCollider capsule, out Vector3 point1, out Vector3 point2, out float radius)

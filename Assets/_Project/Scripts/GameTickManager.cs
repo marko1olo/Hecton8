@@ -395,12 +395,7 @@ namespace Hecton8.Core
             int count = items.Count;
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             if (!_loggedFirstSlowTickExecution && enableSlowTickProfiling)
-            {
                 _loggedFirstSlowTickExecution = true;
-                UnityEngine.Debug.Log(
-                    $"[GameTickManager] first-slow-tick registered={count} timeScale={Time.timeScale:0.###} deltaTime={Time.deltaTime:0.###} unscaledDeltaTime={Time.unscaledDeltaTime:0.###}",
-                    this);
-            }
 #endif
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
             bool profileSlowTick = enableSlowTickProfiling;

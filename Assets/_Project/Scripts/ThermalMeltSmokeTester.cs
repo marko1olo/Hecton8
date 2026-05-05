@@ -93,9 +93,9 @@ namespace Hecton8.Dev
         private bool ValidateThermalProgress()
         {
             float start = VoxelDeltaProcessor.DebugResolveThermalMeltProgress(0f);
-            float mid = VoxelDeltaProcessor.DebugResolveThermalMeltProgress(5f);
-            float end = VoxelDeltaProcessor.DebugResolveThermalMeltProgress(10f);
-            return Require(math.abs(start) < 0.0001f && mid > 0.49f && mid < 0.51f && math.abs(end - 1f) < 0.0001f, "Thermal melt ten-second curve invalid.");
+            float mid = VoxelDeltaProcessor.DebugResolveThermalMeltProgress(2.5f);
+            float end = VoxelDeltaProcessor.DebugResolveThermalMeltProgress(5f);
+            return Require(math.abs(start) < 0.0001f && mid > 0.49f && mid < 0.51f && math.abs(end - 1f) < 0.0001f, "Thermal melt five-second crater expansion invalid.");
         }
 
         private bool ValidateDistanceLod()

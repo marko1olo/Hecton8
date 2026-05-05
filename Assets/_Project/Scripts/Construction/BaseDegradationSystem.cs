@@ -519,7 +519,7 @@ namespace Hecton8.Construction
         {
             if (moduleObject != null && moduleObject.TryGetComponent(out BaseModule baseModule))
             {
-                Vector3 localRupturePoint = baseModule.transform.InverseTransformPoint(ruptureWorldPosition);
+                Vector3 localRupturePoint = baseModule.SetBreachVisualAnchor(ruptureWorldPosition);
                 baseModule.EmitHullBreachJet(localRupturePoint, DefaultPressureDelta);
             }
 

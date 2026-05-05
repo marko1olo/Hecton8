@@ -8,21 +8,6 @@ using Unity.Mathematics;
 
 namespace Hecton8.AI
 {
-    internal struct FaunaHibernationCatchUpInput
-    {
-        public float Health;
-        public float Hunger01;
-        public float SleepStartTimeSeconds;
-    }
-
-    internal struct FaunaHibernationCatchUpResult
-    {
-        public float Health;
-        public float Hunger01;
-        public float SleepSeconds;
-        public byte StateFlags;
-    }
-
     internal struct FaunaParasiteAttachInput
     {
         public AbsoluteUniversePositionBlit128 HostAup;
@@ -47,9 +32,6 @@ namespace Hecton8.AI
     /// </summary>
     public sealed class FaunaSimulationEngine : IFaunaSim
     {
-        internal const byte CatchUpStateStarving = 1 << 0;
-        internal const byte CatchUpStateCorpse = 1 << 1;
-
         /// <inheritdoc />
         public bool IsReady { get; private set; }
 
@@ -99,31 +81,6 @@ namespace Hecton8.AI
             };
 
             return job.Schedule(poolSlots.Length, 32);
-        }
-
-        internal void RunHibernationCatchUp(
-            NativeArray<FaunaHibernationCatchUpInput> inputs,
-            NativeArray<FaunaHibernationCatchUpResult> results,
-            int count,
-            float currentTimeSeconds,
-            float hungerRatePerSecond,
-            float starvationHealthDrainPerSecond)
-        {
-            int safeCount = math.min(math.max(0, count), math.min(inputs.Length, results.Length));
-            if (safeCount <= 0)
-                return;
-
-            HibernationCatchUpJob job = new HibernationCatchUpJob
-            {
-                Inputs = inputs,
-                Results = results,
-                CurrentTimeSeconds = currentTimeSeconds,
-                HungerRatePerSecond = math.max(0f, hungerRatePerSecond),
-                StarvationHealthDrainPerSecond = math.max(0f, starvationHealthDrainPerSecond)
-            };
-
-            for (int i = 0; i < safeCount; i++)
-                job.Execute(i);
         }
 
         internal void RunParasiteAttach(
@@ -223,49 +180,6 @@ namespace Hecton8.AI
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct HibernationCatchUpJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<FaunaHibernationCatchUpInput> Inputs;
-            public NativeArray<FaunaHibernationCatchUpResult> Results;
-            public float CurrentTimeSeconds;
-            public float HungerRatePerSecond;
-            public float StarvationHealthDrainPerSecond;
-
-            public void Execute(int index)
-            {
-                FaunaHibernationCatchUpInput input = Inputs[index];
-                float sleepSeconds = ResolveSleepSeconds(input.SleepStartTimeSeconds, CurrentTimeSeconds);
-                float savedHunger01 = math.saturate(input.Hunger01);
-                float rawHunger = savedHunger01 + (HungerRatePerSecond * sleepSeconds);
-                float starvationSeconds = HungerRatePerSecond > 0f
-                    ? math.max(0f, (rawHunger - 1f) / HungerRatePerSecond)
-                    : 0f;
-                float health = math.max(0f, input.Health - (starvationSeconds * StarvationHealthDrainPerSecond));
-                byte flags = 0;
-                if (rawHunger > 1f)
-                    flags |= CatchUpStateStarving;
-                if (health <= 0.001f)
-                    flags |= CatchUpStateCorpse;
-
-                Results[index] = new FaunaHibernationCatchUpResult
-                {
-                    Health = health,
-                    Hunger01 = math.saturate(rawHunger),
-                    SleepSeconds = sleepSeconds,
-                    StateFlags = flags
-                };
-            }
-
-            private static float ResolveSleepSeconds(float sleepStartTimeSeconds, float currentTimeSeconds)
-            {
-                if (!math.isfinite(sleepStartTimeSeconds) || !math.isfinite(currentTimeSeconds) || sleepStartTimeSeconds <= 0f)
-                    return 0f;
-
-                return math.max(0f, currentTimeSeconds - sleepStartTimeSeconds);
-            }
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
         private struct ParasiteAttachJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<FaunaParasiteAttachInput> Inputs;
@@ -332,8 +246,6 @@ namespace Hecton8.AI
         public NativeArray<PoolSlotData> PoolSlots;
         public NativeArray<float3> LinearVelocities;
         public NativeArray<byte> SimulationFlags;
-        public NativeArray<FaunaHibernationCatchUpInput> HibernationCatchUpInputs;
-        public NativeArray<FaunaHibernationCatchUpResult> HibernationCatchUpResults;
         public NativeQueue<int> FreeSlots;
         public int Capacity;
 
@@ -341,8 +253,6 @@ namespace Hecton8.AI
             PoolSlots.IsCreated &&
             LinearVelocities.IsCreated &&
             SimulationFlags.IsCreated &&
-            HibernationCatchUpInputs.IsCreated &&
-            HibernationCatchUpResults.IsCreated &&
             FreeSlots.IsCreated;
 
         public void Allocate(int capacity)
@@ -358,10 +268,6 @@ namespace Hecton8.AI
             LinearVelocities = new NativeArray<float3>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<byte>[Capacity] - resident/dehydrated simulation flags for Burst LOD updates - owner: FaunaSimulationMemory
             SimulationFlags = new NativeArray<byte>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<FaunaHibernationCatchUpInput>[Capacity] - Tier 2 metabolic restore inputs - owner: FaunaSimulationMemory
-            HibernationCatchUpInputs = new NativeArray<FaunaHibernationCatchUpInput>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<FaunaHibernationCatchUpResult>[Capacity] - Tier 2 metabolic restore outputs - owner: FaunaSimulationMemory
-            HibernationCatchUpResults = new NativeArray<FaunaHibernationCatchUpResult>(Capacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterArrays();
             // COLD ALLOC: NativeQueue<int>(Persistent) - free fauna residency slot queue - owner: FaunaSimulationMemory
             FreeSlots = new NativeQueue<int>(Allocator.Persistent);
@@ -396,18 +302,6 @@ namespace Hecton8.AI
                     SimulationFlags[i] = 0;
             }
 
-            if (HibernationCatchUpInputs.IsCreated)
-            {
-                for (int i = 0; i < HibernationCatchUpInputs.Length; i++)
-                    HibernationCatchUpInputs[i] = default;
-            }
-
-            if (HibernationCatchUpResults.IsCreated)
-            {
-                for (int i = 0; i < HibernationCatchUpResults.Length; i++)
-                    HibernationCatchUpResults[i] = default;
-            }
-
             if (!FreeSlots.IsCreated)
                 return;
 
@@ -434,18 +328,6 @@ namespace Hecton8.AI
             {
                 NativeMemorySentinel.UnregisterNativeArray(SimulationFlags);
                 SimulationFlags.Dispose();
-            }
-
-            if (HibernationCatchUpInputs.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(HibernationCatchUpInputs);
-                HibernationCatchUpInputs.Dispose();
-            }
-
-            if (HibernationCatchUpResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(HibernationCatchUpResults);
-                HibernationCatchUpResults.Dispose();
             }
 
             if (FreeSlots.IsCreated)
@@ -480,20 +362,6 @@ namespace Hecton8.AI
                 SimulationFlags = default;
             }
 
-            if (HibernationCatchUpInputs.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(HibernationCatchUpInputs);
-                HibernationCatchUpInputs.Dispose(dependency);
-                HibernationCatchUpInputs = default;
-            }
-
-            if (HibernationCatchUpResults.IsCreated)
-            {
-                NativeMemorySentinel.UnregisterNativeArray(HibernationCatchUpResults);
-                HibernationCatchUpResults.Dispose(dependency);
-                HibernationCatchUpResults = default;
-            }
-
             if (FreeSlots.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeQueue(nameof(FaunaSimulationMemory), nameof(FreeSlots));
@@ -509,8 +377,6 @@ namespace Hecton8.AI
             NativeMemorySentinel.RegisterNativeArray(PoolSlots, nameof(FaunaSimulationMemory), nameof(PoolSlots), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(LinearVelocities, nameof(FaunaSimulationMemory), nameof(LinearVelocities), NativeAllocationLifetime.Session);
             NativeMemorySentinel.RegisterNativeArray(SimulationFlags, nameof(FaunaSimulationMemory), nameof(SimulationFlags), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(HibernationCatchUpInputs, nameof(FaunaSimulationMemory), nameof(HibernationCatchUpInputs), NativeAllocationLifetime.Session);
-            NativeMemorySentinel.RegisterNativeArray(HibernationCatchUpResults, nameof(FaunaSimulationMemory), nameof(HibernationCatchUpResults), NativeAllocationLifetime.Session);
         }
     }
 }

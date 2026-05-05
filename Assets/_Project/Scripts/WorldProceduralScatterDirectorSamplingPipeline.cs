@@ -863,7 +863,11 @@ namespace Hecton8.World
                 if ((uint)index >= (uint)CellCount)
                     return;
 
-                Destination[index] = Source[index].Packed;
+                WorldProceduralFieldSampler.BiomeInfluenceCell influence = Source[index];
+                Destination[index] = HectonBiomeVisualFamilyUtility.PackCompactInfluence(
+                    influence.PrimaryBiomeId,
+                    influence.SecondaryBiomeId,
+                    influence.Blend255);
             }
         }
 

@@ -92,6 +92,12 @@ namespace Hecton8.SaveSystem
             if (string.IsNullOrEmpty(slotName) || !TryResolveCaptureCamera(overrideCamera, out Camera captureCamera))
                 return;
 
+            if ((_hasPendingRequest && string.Equals(_pendingRequest.SlotName, slotName, StringComparison.OrdinalIgnoreCase)) ||
+                (_hasInflightRequest && string.Equals(_inflightRequest.SlotName, slotName, StringComparison.OrdinalIgnoreCase)))
+            {
+                return;
+            }
+
             ClearCacheEntry(slotName);
             _requestSequence++;
             _pendingRequest = new CaptureRequest

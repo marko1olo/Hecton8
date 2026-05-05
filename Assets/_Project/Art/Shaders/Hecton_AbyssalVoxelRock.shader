@@ -9,7 +9,7 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         [NoScaleOffset] _FreshRockNormalMap ("Fresh Rock Normal Map", 2D) = "bump" {}
         _Instance_Color ("Instance Color", Color) = (1, 1, 1, 1)
         _Tiling ("Tiling", Range(0.01, 4)) = 0.2
-        _TriplanarBlendSharpness ("Triplanar Blend Sharpness", Range(1, 8)) = 4
+        _TriplanarBlendSharpness ("Triplanar Blend Sharpness", Range(1, 8)) = 8
         _Smoothness ("Smoothness", Range(0, 1)) = 0.15
         [MainTexture] _BaseMap ("Base Map", 2D) = "white" {}
         [NoScaleOffset] _NormalMap ("Normal Map", 2D) = "bump" {}
@@ -38,6 +38,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         _ChunkDissolvePhosphorTint ("Chunk Dissolve Phosphor Tint", Color) = (0.04, 0.82, 0.18, 1)
         _FreshCutColorBoost ("Fresh Cut Color Boost", Range(1, 2)) = 1.18
         _FreshCutNormalBoost ("Fresh Cut Normal Boost", Range(1, 3)) = 1.45
+        _CaveMouthDisplacementStrength ("Cave Mouth GPU Jag Strength", Range(0, 0.35)) = 0.08
+        _CaveMouthDisplacementScale ("Cave Mouth GPU Jag Scale", Range(0.05, 4)) = 0.85
         _LocalCausticStrength ("Local Caustic Strength", Range(0, 1)) = 0.22
         _LocalCausticScale ("Local Caustic Scale", Range(0.1, 4)) = 0.7
         _LocalCausticSpeed ("Local Caustic Speed", Range(0, 4)) = 0.36
@@ -92,6 +94,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             float _ChunkDissolveGlitchStrength;
             float _FreshCutColorBoost;
             float _FreshCutNormalBoost;
+            float _CaveMouthDisplacementStrength;
+            float _CaveMouthDisplacementScale;
             float _LocalCausticStrength;
             float _LocalCausticScale;
             float _LocalCausticSpeed;
@@ -239,12 +243,55 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return positionWS + _HectonFloatingOriginOffset.xyz;
         }
 
-        half3 ComputeTriplanarWeights(half3 normalWS)
+        void ResolveDominantAxisProjection(float3 positionWS, half3 normalWS, out float2 uv, out half dominantAxis)
         {
-            half3 weights = saturate(abs(normalWS));
-            weights = pow(weights, max((half)_TriplanarBlendSharpness, 1.0h));
-            half weightSum = max(weights.x + weights.y + weights.z, 0.0001h);
-            return weights / weightSum;
+            half3 absNormal = saturate(abs(normalWS));
+            float tiling = max(_Tiling, 0.0001);
+
+            if (absNormal.x >= absNormal.y && absNormal.x >= absNormal.z)
+            {
+                uv = positionWS.zy * tiling;
+                dominantAxis = 0.0h;
+            }
+            else if (absNormal.z >= absNormal.y)
+            {
+                uv = positionWS.xy * tiling;
+                dominantAxis = 2.0h;
+            }
+            else
+            {
+                uv = positionWS.xz * tiling;
+                dominantAxis = 1.0h;
+            }
+
+            half edgeBand = saturate((1.0h - max(absNormal.x, max(absNormal.y, absNormal.z))) * 2.0h);
+            float noise = Hash31(float3(floor(uv * 37.0), (float)dominantAxis + 5.37)) * 2.0 - 1.0;
+            float stochasticEdgeOffset = noise * edgeBand * 0.035;
+            uv += float2(stochasticEdgeOffset, -stochasticEdgeOffset);
+        }
+
+        float ResolveCaveMouthVertexDisplacement(float3 absolutePositionWS, float3 normalOS, half splatBlend, half skirtAlpha)
+        {
+            float seamMask = saturate(max(splatBlend, skirtAlpha));
+            if (seamMask <= 0.0001)
+                return 0.0;
+
+            float scale = max(_CaveMouthDisplacementScale, 0.05);
+            float lowNoise = ValueNoise3(absolutePositionWS * scale + 17.13);
+            float highNoise = ValueNoise3(absolutePositionWS * (scale * 2.37) + 41.9);
+            float jagged = ((lowNoise * 0.72 + highNoise * 0.28) * 2.0) - 1.0;
+            return jagged * _CaveMouthDisplacementStrength * seamMask;
+        }
+
+        float3 ResolveVoxelPositionOS(Attributes input)
+        {
+            float3 safeNormalOS = normalize(input.normalOS + float3(0.0, 0.0001, 0.0));
+            float displacement = ResolveCaveMouthVertexDisplacement(
+                input.absolutePositionWS,
+                safeNormalOS,
+                saturate((half)input.color.a),
+                saturate((half)input.dirtyBlendUv2.y));
+            return input.positionOS.xyz + safeNormalOS * displacement;
         }
 
         void ApplyChunkDissolveFade(float4 positionCS)
@@ -274,54 +321,29 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
             return malfunction;
         }
 
-        half4 SampleTriplanarColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 weights)
+        half4 SampleDominantAxisColor(TEXTURE2D_PARAM(tex, samp), float3 positionWS, half3 normalWS)
         {
-            float tiling = max(_Tiling, 0.0001);
-            half4 ySample = SAMPLE_TEXTURE2D(tex, samp, positionWS.xz * tiling);
-            if (weights.y >= 0.999h)
-                return ySample;
-
-            half4 xSample = SAMPLE_TEXTURE2D(tex, samp, positionWS.zy * tiling);
-            half4 zSample = SAMPLE_TEXTURE2D(tex, samp, positionWS.xy * tiling);
-            return xSample * weights.x + ySample * weights.y + zSample * weights.z;
+            float2 uv;
+            half dominantAxis;
+            ResolveDominantAxisProjection(positionWS, normalWS, uv, dominantAxis);
+            return SAMPLE_TEXTURE2D(tex, samp, uv);
         }
 
-        half3 SampleTriplanarNormal(float3 positionWS, half3 baseNormalWS, half3 weights)
+        half3 SampleDominantAxisNormal(float3 positionWS, half3 baseNormalWS)
         {
+            float2 uv;
+            half dominantAxis;
+            ResolveDominantAxisProjection(positionWS, baseNormalWS, uv, dominantAxis);
+
             half3 normalSign = sign(baseNormalWS);
-            float tiling = max(_Tiling, 0.0001);
+            half3 tangentNormal = UnpackNormal(SAMPLE_TEXTURE2D(_Normal_Map, sampler_Normal_Map, uv));
+            if (dominantAxis < 0.5h)
+                return SafeNormalize3(half3(tangentNormal.z * normalSign.x, tangentNormal.y, tangentNormal.x));
 
-            half3 normalY = UnpackNormal(SAMPLE_TEXTURE2D(_Normal_Map, sampler_Normal_Map, positionWS.xz * tiling));
-            normalY = half3(normalY.x, normalY.z * normalSign.y, normalY.y);
-            if (weights.y >= 0.999h)
-                return SafeNormalize3(normalY);
+            if (dominantAxis > 1.5h)
+                return SafeNormalize3(half3(tangentNormal.x, tangentNormal.y, tangentNormal.z * normalSign.z));
 
-            half3 normalX = UnpackNormal(SAMPLE_TEXTURE2D(_Normal_Map, sampler_Normal_Map, positionWS.zy * tiling));
-            normalX = half3(normalX.z * normalSign.x, normalX.y, normalX.x);
-
-            half3 normalZ = UnpackNormal(SAMPLE_TEXTURE2D(_Normal_Map, sampler_Normal_Map, positionWS.xy * tiling));
-            normalZ = half3(normalZ.x, normalZ.y, normalZ.z * normalSign.z);
-
-            return SafeNormalize3(normalX * weights.x + normalY * weights.y + normalZ * weights.z);
-        }
-
-        half3 SampleFreshTriplanarNormal(float3 positionWS, half3 baseNormalWS, half3 weights)
-        {
-            half3 normalSign = sign(baseNormalWS);
-            float tiling = max(_Tiling, 0.0001);
-
-            half3 normalY = UnpackNormal(SAMPLE_TEXTURE2D(_FreshRockNormalMap, sampler_FreshRockNormalMap, positionWS.xz * tiling));
-            normalY = half3(normalY.x, normalY.z * normalSign.y, normalY.y);
-            if (weights.y >= 0.999h)
-                return SafeNormalize3(normalY);
-
-            half3 normalX = UnpackNormal(SAMPLE_TEXTURE2D(_FreshRockNormalMap, sampler_FreshRockNormalMap, positionWS.zy * tiling));
-            normalX = half3(normalX.z * normalSign.x, normalX.y, normalX.x);
-
-            half3 normalZ = UnpackNormal(SAMPLE_TEXTURE2D(_FreshRockNormalMap, sampler_FreshRockNormalMap, positionWS.xy * tiling));
-            normalZ = half3(normalZ.x, normalZ.y, normalZ.z * normalSign.z);
-
-            return SafeNormalize3(normalX * weights.x + normalY * weights.y + normalZ * weights.z);
+            return SafeNormalize3(half3(tangentNormal.x, tangentNormal.z * normalSign.y, tangentNormal.y));
         }
 
         half EvaluateGlobalCutMask(float3 positionWS)
@@ -508,7 +530,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         SurfaceVaryings Vert(Attributes input)
         {
             SurfaceVaryings output;
-            VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
+            float3 displacedPositionOS = ResolveVoxelPositionOS(input);
+            VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
             output.positionCS = positionInputs.positionCS;
             output.positionWS = positionInputs.positionWS;
@@ -528,7 +551,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         ClipVaryings DepthVert(Attributes input)
         {
             ClipVaryings output;
-            VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
+            float3 displacedPositionOS = ResolveVoxelPositionOS(input);
+            VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
             output.skirtAlpha = saturate(input.dirtyBlendUv2.y);
             output.positionCS = ApplySkirtDepthBias(positionInputs.positionCS, output.skirtAlpha);
             output.positionWS = positionInputs.positionWS;
@@ -538,7 +562,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
         ShadowVaryings ShadowVert(Attributes input)
         {
             ShadowVaryings output;
-            VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
+            float3 displacedPositionOS = ResolveVoxelPositionOS(input);
+            VertexPositionInputs positionInputs = GetVertexPositionInputs(displacedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS);
             output.positionWS = positionInputs.positionWS;
             output.normalWS = SafeNormalize3(normalInputs.normalWS);
@@ -587,21 +612,17 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 ApplyChunkDissolveFade(input.positionCS);
                 half skirtCoverage = ResolveSkirtCoverageMask(input.skirtAlpha);
                 half3 baseNormalWS = SafeNormalize3(input.normalWS);
-                half3 triplanarWeights = ComputeTriplanarWeights(baseNormalWS);
                 float3 samplePositionWS = input.absolutePositionWS;
-                half3 triplanarNormalWS = SampleTriplanarNormal(samplePositionWS, baseNormalWS, triplanarWeights);
-                half3 freshNormalWS = SampleFreshTriplanarNormal(samplePositionWS, baseNormalWS, triplanarWeights);
+                half3 dominantNormalWS = SampleDominantAxisNormal(samplePositionWS, baseNormalWS);
 
-                half4 baseSample = SampleTriplanarColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, triplanarWeights);
-                half4 freshSample = SampleTriplanarColor(TEXTURE2D_ARGS(_FreshRockAlbedoMap, sampler_FreshRockAlbedoMap), samplePositionWS, triplanarWeights);
-                half4 maskSample = SampleTriplanarColor(TEXTURE2D_ARGS(_Mask_Map, sampler_Mask_Map), samplePositionWS, triplanarWeights);
+                half4 baseSample = SampleDominantAxisColor(TEXTURE2D_ARGS(_Base_Map, sampler_Base_Map), samplePositionWS, baseNormalWS);
                 half cutMask = max(EvaluateGlobalCutMask(input.positionWS), EvaluateDamageVolumeMask(input.positionWS));
                 half freshCutMask = saturate(max(input.freshCutBlend, cutMask));
                 half scarMask = pow(saturate(cutMask), max(_CutScarSharpness, 0.5h));
                 half recentHeatMask;
                 half recentHeatAge01;
                 EvaluateRecentCutHeat(input.positionWS, recentHeatMask, recentHeatAge01);
-                half3 boostedNormalWS = lerp(triplanarNormalWS, freshNormalWS, freshCutMask) * lerp(1.0h, (half)_FreshCutNormalBoost, freshCutMask);
+                half3 boostedNormalWS = dominantNormalWS * lerp(1.0h, (half)_FreshCutNormalBoost, freshCutMask * 0.5h);
                 half3 normalWS = SafeNormalize3(baseNormalWS + boostedNormalWS);
                 half skirtBlend = 1.0h - skirtCoverage;
                 half curvature = saturate(input.curvature);
@@ -610,7 +631,8 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
                 half cavityMask = pow(saturate((0.5h - curvature) * 2.0h), curvatureContrast);
 
                 half3 albedo = baseSample.rgb * _Instance_Color.rgb;
-                half3 freshAlbedo = freshSample.rgb * _Instance_Color.rgb * (half)_FreshCutColorBoost;
+                half3 freshAlbedo = baseSample.rgb * _Instance_Color.rgb * (half)_FreshCutColorBoost;
+                freshAlbedo = lerp(freshAlbedo, (half3)_CutScarColor.rgb, scarMask * 0.45h);
                 albedo = lerp(albedo, freshAlbedo, freshCutMask * 0.62h);
                 albedo = lerp(albedo, input.terrainSplatColor.rgb, saturate(input.terrainSplatColor.a) * 0.78h);
                 albedo = lerp(albedo, _SkirtSandTint.rgb, skirtBlend * 0.72h);
@@ -624,13 +646,13 @@ Shader "Hecton8/Environment/Hecton_AbyssalVoxelRock"
 
                 half metallic = 0.0h;
                 half smoothness = saturate(lerp(_Smoothness, 0.88h, scarMask * 0.65h) + convexMask * (_CurvatureEdgeWearStrength * 0.08h));
-                half ambientOcclusion = saturate(maskSample.g * input.bakedAmbientOcclusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
+                half ambientOcclusion = saturate(input.bakedAmbientOcclusion * (1.0h - cavityMask * _CurvatureCavityDarkenStrength)) * SampleVoxelAmbientOcclusion(input.positionCS);
                 half localCausticMask = ResolveLocalLightCaustic(samplePositionWS, normalWS, input.positionCS);
                 HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
                 HectonCoreLitApplyProceduralRustSilt(
                     samplePositionWS,
                     normalWS,
-                    triplanarNormalWS,
+                    dominantNormalWS,
                     convexMask,
                     (half)_ProceduralDirtAge,
                     (half)_SiltStrength,

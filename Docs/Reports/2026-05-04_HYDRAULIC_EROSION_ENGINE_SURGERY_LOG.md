@@ -294,3 +294,142 @@ Status: `PENDING VERIFICATION`
 - Passed: external `dotnet build Hecton8.Core.csproj --no-restore -v:minimal /m:1 /nr:false` writing `CodexArtifacts/tactile-forge-build.log` exited successfully with `0 Warning(s)` and `0 Error(s)`.
 - Passed: `dotnet build .\Hecton8.Editor.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` exited successfully with `0 Warning(s)` and `0 Error(s)`.
 - Passed: scoped static scan after this repeat pass found no LINQ, no dictionary `foreach`, no `string.Format`, no `transform.position`, no `Vector3.Distance`, no `math.distance`, no `GlobalRegistry`, no `Awake`, no `OnEnable`, and no runtime update/tick methods in touched code. `.ToString()` remains editor JSON-only.
+
+## 2026-05-05 Omega-Autonomy V2 Third Crucible
+
+Status: `PENDING VERIFICATION`
+
+### Garbage Found
+
+- Defect: MapMagic hydraulic erosion scheduling had no profiler markers around the new erosion, flat smoothing, canyon, normalization, and publish-barrier stages. That left the MX350 metric gate unable to isolate which stage stalls.
+- No new NativeCollection leak defect was found in touched scope.
+- No hot-path LINQ, dictionary `foreach`, `string.Format`, AUP/Transform-distance, or GlobalRegistry init-cycle defect was found in touched scope.
+
+### Excision
+
+- Added `Unity.Profiling.ProfilerMarker` fields to `HectonHydraulicErosionMapMagicNode`.
+- Wrapped schedule/publish sections with markers:
+  `H8/World/HydraulicErosion.ScheduleFourPhase`,
+  `H8/World/HydraulicErosion.SedimentaryFlatSchedule`,
+  `H8/World/HydraulicErosion.ThermalSlumpSchedule`,
+  `H8/World/HydraulicErosion.CanyonWallSchedule`,
+  `H8/World/HydraulicErosion.MaskNormalizeSchedule`,
+  and `H8/World/HydraulicErosion.PublishBarrier`.
+
+### Verification Delta
+
+- Passed: `git diff --check` on touched files returned no whitespace errors; Git emitted LF-to-CRLF warnings only.
+- Blocked: Unity MCP validation unavailable; tool returned `no_unity_session`.
+- Blocked: direct `dotnet build .\Hecton8.Core.csproj --no-restore --disable-build-servers -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal` failed on unrelated current errors in `Assets/_Project/Scripts/VFX/CameraJuiceSystem.cs`: missing `_instance` at lines `300`, `306`, `442`, `481`, and `483`.
+- Finding: no compiler diagnostics in the failed build named `HydraulicErosionJob.cs`, `HectonHydraulicErosionMapMagicNode.cs`, `ErosionTestHarness.cs`, or `HydraulicErosionSmokeTester.cs`.
+
+## 2026-05-05 Omega-Autonomy V2 Current Crucible
+
+Status: `PENDING VERIFICATION`
+
+Project authority status is not promoted to `OMEGA V2 VERIFIED`; Scene 03 MapMagic graph runtime seam proof and profiler/GC proof are still not present in the repository. The current editor smoke and Unity console evidence below are valid for the hydraulic smoke domain only.
+
+### Mandates Re-Read
+
+- `.agents-skills/OPT_Native_Memory_Collections_JobSystem_Protocol.txt`
+- `.agents-skills/OPT_Zero_GC_Policy_AllocFree_Mandate.txt`
+- `.agents-skills/MATH_Coordinate_Precision_AUP_FloatingOrigin.txt`
+- `.agents-skills/ARCH_Project_Bootstrap_Sequence_Init_Safety.txt`
+- `.agents-skills/DBG_Telemetry_Crash_Reporting_PostMortem.txt`
+- `.agents-skills/VOX_MapMagic_Voxel_Seam_Alignment_Integration.txt`
+
+### Inquisition Findings
+
+- No unregistered `NativeArray`, `NativeList`, or `NativeQueue` was found in the currently touched hydraulic smoke source.
+- `HydraulicErosionSmokeTester.RunScenario` now owns seven TempJob NativeArrays: `before`, `heightA`, `heightB`, `sediment`, `wear`, `metricBlocks`, and `metricSummary`.
+- All seven TempJob NativeArrays are registered through `NativeMemorySentinel.RegisterNativeArray` and disposed through unregister-before-dispose helpers in `finally`.
+- No hot-path LINQ, dictionary `foreach`, `string.Format`, interpolated string, `transform.position`, `Vector3.Distance`, `math.distance`, `GlobalRegistry`, `Awake`, or `OnEnable` was found in the currently touched hydraulic smoke source.
+- `.ToString()` remains editor JSON-only in `BuildJson` / `AppendFloat`, outside runtime `Update`, `Tick`, `FixedTick`, `LateUpdate`, or `SlowTick`.
+
+### Excision
+
+- Added Burst `HydraulicErosionMetricReductionJob : IJob` to reduce `HydraulicErosionMetricBlock` data off the managed main thread.
+- Replaced the previous editor scalar `ReduceMetrics` block loop with a single `metricSummary[0]` read after the scheduled reduction job completes.
+- Added `metricSummary` NativeArray registration and disposal; active sentinel expectation during the scenario window changed from `6` to `7`, and post-dispose JSON remains `sentinelDelta=0`.
+- Added the missing Windows x64 native dependency for `SaveBinaryStorage` LZ4 externs at `Assets/_Project/Plugins/Windows/x86_64/liblz4.dll`.
+- Native dependency hash: `SHA256=911CAA0291D0B2EB44C1115E5B3E7F0FD38A93FEE4C1F4F0004FB8CFCF040990`.
+
+### Verification Delta
+
+- Passed: Unity MCP recovered after domain reload and `read_console` returned `0` error entries before smoke execution.
+- Passed: Unity MCP executed `Tools/Hecton/Dev/Terrain/Run Hydraulic Erosion Smoke Tester`.
+- Passed: current `CodexArtifacts/HydraulicErosionSmokeTester.json` was regenerated at `2026-05-05 20:51:55` and reports `scenarioCount=4`, `passCount=4`, `status=PENDING VERIFICATION`.
+- Passed: all four scenarios report `passed=true`, `nanCount=0`, `boundaryNanCount=0`, `sentinelDelta=0`, and `trackedByteDelta=0`.
+- Passed: Unity MCP `validate_script(level=standard)` returned `0` errors and `0` warnings for `HydraulicErosionMetricsJob.cs` and `HydraulicErosionSmokeTester.cs`.
+- Passed: scoped `git diff --check` returned no whitespace errors; Git emitted LF-to-CRLF warnings only.
+- Passed: scoped static scan returned no `.Complete()`, `.Run()`, `string.Format`, `foreach`, `GlobalRegistry`, `Awake`, `OnEnable`, `transform.position`, `Vector3.Distance`, `math.distance`, `NativeList`, `NativeQueue`, or `$"` in `HydraulicErosionMetricsJob.cs` / `HydraulicErosionSmokeTester.cs`.
+- Scenario data: `dry_zero_power` `milliseconds=13.3188`, `boundarySampleCount=28`, `maxBoundaryHeightDelta=0.604872`, `sumSediment=0`, `sumWear=0`.
+- Scenario data: `tiny_margin_clamp` `milliseconds=3.4187`, `boundarySampleCount=192`, `maxSediment=0.75611`, `maxWear=0.775886`.
+- Scenario data: `draft_tile` `milliseconds=24.7887`, `boundarySampleCount=960`, `sumSediment=364.3792`, `sumWear=381.0726`.
+- Scenario data: `thermal_stress` `milliseconds=19.7306`, `boundarySampleCount=1472`, `sumSediment=219.2557`, `sumWear=241.2482`.
+- Passed: after clearing the Unity console and rerunning smoke with a single `liblz4.dll` asset, `read_console(types=error,count=80)` returned `0` log entries.
+
+## 2026-05-05 Omega-Autonomy V2 Cancellation Crucible
+
+Status: `PENDING VERIFICATION`
+
+Project authority status remains blocked from promotion until Scene 03 MapMagic graph execution, profiler captures, and runtime GC evidence exist. This pass verifies only the scoped hydraulic erosion code path and its editor smoke harness.
+
+### Garbage Found
+
+- Defect: `HectonHydraulicErosionMapMagicNode.Generate` still scheduled sediment and erosion-depth `NormalizeMaskInPlaceJob` work after MapMagic set `stop.stop`.
+- Impact: publish was skipped after the cold barrier, so these normalization jobs were provably wasted cancellation-path CPU/worker work. On MX350-class budget this is a bad failure mode during terrain graph abort/rebuild churn.
+- No unregistered `NativeArray`, `NativeList`, or `NativeQueue` allocation was found in scoped erosion files.
+- No hot-path LINQ, dictionary `foreach`, `string.Format`, interpolated string, `transform.position`, `Vector3.Distance`, `math.distance`, `GlobalRegistry`, `Awake`, or `OnEnable` was found in scoped erosion files.
+- `.ToString()` remains editor JSON-only in smoke artifact writers, outside runtime `Update`, `Tick`, `FixedTick`, `LateUpdate`, or `SlowTick`.
+
+### Excision
+
+- Guarded `MaskNormalizeProfilerMarker` and both `NormalizeMaskInPlaceJob` schedules with `if (stop == null || !stop.stop)`.
+- Kept the publish barrier and `finally` completion path intact. Any erosion, flat smoothing, thermal slump, or canyon jobs already scheduled before cancellation are still completed before `NativeMemorySentinel` unregister and `Dispose()`.
+
+### Verification Delta
+
+- Passed: Unity MCP `validate_script(level=standard)` returned `0` errors and `0` warnings for `HydraulicErosionJob.cs`, `HectonHydraulicErosionMapMagicNode.cs`, `HydraulicErosionMetricsJob.cs`, `ErosionTestHarness.cs`, and `HydraulicErosionSmokeTester.cs`.
+- Passed: Unity MCP `read_console(types=error)` returned `0` entries before and after smoke execution.
+- Passed: Unity MCP executed `Tools/Hecton/Dev/Terrain/Run Hydraulic Erosion Smoke Tester`.
+- Passed: `CodexArtifacts/HydraulicErosionSmokeTester.json` regenerated at `2026-05-05 21:42:17`, reporting `scenarioCount=4`, `passCount=4`, and `status=PENDING VERIFICATION`.
+- Passed: all four smoke scenarios report `passed=true`, `nanCount=0`, `boundaryNanCount=0`, `sentinelDelta=0`, and `trackedByteDelta=0`.
+- Scenario data: `dry_zero_power` `milliseconds=19.9758`, `sumSediment=0`, `sumWear=0`.
+- Scenario data: `tiny_margin_clamp` `milliseconds=2.3511`, `maxSediment=0.75611`, `maxWear=0.775886`.
+- Scenario data: `draft_tile` `milliseconds=22.3727`, `sumSediment=364.3792`, `sumWear=381.0726`.
+- Scenario data: `thermal_stress` `milliseconds=8.0361`, `sumSediment=219.2557`, `sumWear=241.2482`.
+- Passed: scoped `git diff --check` returned no whitespace errors; Git emitted LF-to-CRLF warnings only.
+- Passed: `dotnet build Hecton8.Core.csproj --disable-build-servers -m:1 -v:minimal` completed with `0` errors and `51` existing warnings from Unity/third-party/project files outside this erosion patch.
+
+## 2026-05-05 Scene 03 Sandbox MapMagic Binding Crucible
+
+Status: `PENDING VERIFICATION`
+
+Project authority status is not promoted to `OMEGA V2 VERIFIED`; runtime Scene 03 generation, profiler markers, and GC allocation proof are still blocked by Unity MCP disconnects. This pass repairs and verifies the serialized Scene 03 sandbox binding only.
+
+### Garbage Found
+
+- Defect: `Assets/_Project/Scenes/03_HECTON_SANDBOX_BIOMES.unity` contained an inactive MapMagic object named `[SANDBOX_MAPMAGIC_BINDING_COMPILE_BLOCKED]`.
+- Defect: `Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset` was an empty sandbox graph shell and did not contain the integrated HECTON biome, hydraulic erosion, or splatmap nodes.
+- Defect: first filesystem graph copy carried CRLF line endings that `git diff --check` treated as trailing whitespace across the new YAML payload.
+- No runtime C# code was changed in this pass. No new `NativeArray`, `NativeList`, `NativeQueue`, LINQ, dictionary `foreach`, `string.Format`, `transform.position`, `GlobalRegistry`, `Awake`, or `OnEnable` surface was introduced by the Scene 03 binding repair.
+
+### Excision
+
+- Replaced the sandbox graph payload with the already integrated canonical MapMagic graph from `Assets/MapMagic/Map_Graph/New Gen/ACTUAL TERRAIN.asset`, preserving the sandbox `.meta` GUID `569d36fc879e1e044a410c62ce64a383`.
+- Renamed the graph asset payload to `HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH` so Unity object name and asset path agree.
+- Reactivated the Scene 03 MapMagic object and renamed it to `SANDBOX_MAPMAGIC_RUNTIME`.
+- Preserved the Scene 03 graph reference: `{fileID: 11400000, guid: 569d36fc879e1e044a410c62ce64a383, type: 2}`.
+- Normalized the copied graph asset to LF line endings and stripped trailing whitespace.
+
+### Verification Delta
+
+- Passed: sandbox graph now contains `HectonBiomeMatrixMapMagicPostProcessNode` at line `12587`.
+- Passed: sandbox graph now contains `HectonHydraulicErosionMapMagicNode` at line `12674`.
+- Passed: sandbox graph now contains `HectonTerrainSplatmapMapMagicNode` at line `12883`.
+- Passed: Scene 03 YAML now contains `m_Name: SANDBOX_MAPMAGIC_RUNTIME` at line `323`, `m_IsActive: 1` at line `328`, and the preserved graph GUID at line `356`.
+- Passed: `git diff --check -- Assets/_Project/Scenes/03_HECTON_SANDBOX_BIOMES.unity Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset` returned no whitespace errors after LF normalization.
+- Passed: Unity `Editor.log` recorded imports for `Assets/_Project/Scenes/03_HECTON_SANDBOX_BIOMES.unity` and `Assets/_Project/Data/World/Sandbox/HECTON_SANDBOX_BIOMES_MAPMAGIC_GRAPH.asset` after the repair.
+- Blocked: Unity MCP `refresh_unity` timed out after `60s` waiting for editor readiness, then `manage_scene` and `read_console` calls repeatedly failed with WebSocket/session disconnects.
+- Blocked: runtime Scene 03 terrain generation, profiler marker capture, and zero-GC runtime evidence remain absent.

@@ -19,8 +19,8 @@ namespace Hecton8.Gameplay
         private const string MsgRadiationExit = "RADIATION EXPOSURE CLEARED";
         private const string MsgHeatEnter = "THERMAL HAZARD DETECTED";
         private const string MsgHeatExit = "THERMAL HAZARD CLEARED";
-        private const string MsgToxicityEnter = "TOXIN EXPOSURE DETECTED";
-        private const string MsgToxicityExit = "TOXIN EXPOSURE CLEARED";
+        private const string MsgToxicityEnter = "TOXIC INCURSION";
+        private const string MsgToxicityExit = "TOXIC INCURSION CLEARED";
         private const string MsgBiohazardEnter = "BIOHAZARD EXPOSURE DETECTED";
         private const string MsgBiohazardExit = "BIOHAZARD EXPOSURE CLEARED";
 

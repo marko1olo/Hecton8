@@ -125,6 +125,8 @@ namespace Hecton8.AI
         
         // --- Animator Hashes (Prime Directive #18) ---
         private static readonly int _HashSwimSpeed = Animator.StringToHash("SwimSpeed");
+        private static readonly int _FaunaBiolumDimShaderId = Shader.PropertyToID("_FaunaBiolumDim");
+        private static readonly int _DeathDitherFadeShaderId = Shader.PropertyToID("_DeathDitherFade");
         private const float SlowTickIntervalSeconds = 0.5f;
         private const int MaxSlowTicksPerDispatcherTick = 2;
         private const float AmbientCurrentInfluence = 0.22f;
@@ -197,6 +199,8 @@ namespace Hecton8.AI
         private const float DeathSpiralTorqueMin = 0.08f;
         private const float DeathSpiralTorqueMax = 0.26f;
         private const int MaxBiolumPresentationLights = 4;
+        private const byte FaunaPresentationBiolumMask = 1;
+        private const byte FaunaPresentationDeathDitherMask = 2;
         private const float BiolumFlashBangBlindDurationSeconds = 0.35f;
         private const float BiolumFlashBangShaderRadiusMeters = 42f;
         private const float LeviathanBreachHeightDeltaMeters = 50f;
@@ -243,6 +247,14 @@ namespace Hecton8.AI
         private readonly float[] _biolumPresentationBaseIntensities = new float[MaxBiolumPresentationLights];
         // COLD ALLOC: List<Light>[4] - owned light discovery scratch without array allocations - owner: FaunaBrain
         private readonly List<Light> _biolumPresentationLightScratch = new List<Light>(MaxBiolumPresentationLights);
+        // COLD ALLOC: List<Material>[4] - shared-material scratch for one-time fauna presentation material binding - owner: FaunaBrain
+        private readonly List<Material> _faunaPresentationMaterialScratch = new List<Material>(4);
+        // COLD ALLOC: List<Material>[4] - original fauna materials restored before destroying runtime material instances - owner: FaunaBrain
+        private readonly List<Material> _faunaPresentationOriginalMaterials = new List<Material>(4);
+        // COLD ALLOC: List<Material>[4] - owned runtime material instances for shader-side biolum dim and corpse dither - owner: FaunaBrain
+        private readonly List<Material> _faunaPresentationRuntimeMaterials = new List<Material>(4);
+        // COLD ALLOC: List<byte>[4] - cached shader property support masks for fauna runtime materials - owner: FaunaBrain
+        private readonly List<byte> _faunaPresentationRuntimeMaterialMasks = new List<byte>(4);
 
         // --- Event Hooks ---
         public Action<AIState> OnStateChanged;
@@ -299,6 +311,8 @@ namespace Hecton8.AI
         private float _deathDitherFade01;
         private int _biolumPresentationLightCount;
         private float _lastAppliedBiolumLightScale01 = 1f;
+        private float _lastAppliedFaunaBiolumShader01 = -1f;
+        private float _lastAppliedDeathDitherShader01 = -1f;
         private uint _latchedCorpseNodeId;
         private Vector3 _corpseLatchOffset;
         private Vector3 _corpseLatchTargetPosition;
@@ -375,6 +389,8 @@ namespace Hecton8.AI
 
             _renderer = Hecton8.Core.ComponentReferenceUtility.ResolveOwnedComponent<Renderer>(transform);
             CacheBiolumPresentationLights();
+            EnsureFaunaPresentationMaterials();
+            ApplyFaunaPresentationShaderState(1f, 0f);
             TryGetComponent(out _animator);
             CacheLogicalLodComponents();
             TryGetComponent(out _proceduralLeviathanSpineIk);
@@ -457,6 +473,7 @@ namespace Hecton8.AI
             ClearHibernationStarvationHuntCommand();
             ClearEcholocationMimicSignal();
             ReleaseMimicOcclusionRuntimeOwner();
+            ReleaseFaunaPresentationMaterials();
         }
 
         public void OnSpawn()
@@ -469,10 +486,13 @@ namespace Hecton8.AI
             _passiveFlashlightDimUntilTime = 0f;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
+            _lastAppliedFaunaBiolumShader01 = -1f;
+            _lastAppliedDeathDitherShader01 = -1f;
             ClearAttackTelegraphState();
             ClearCorpseLatchState();
             RestoreBaseRigidbodyPresentationState();
             ApplyBiolumPresentationLightScale(1f);
+            ApplyFaunaPresentationShaderState(1f, 0f);
             _tier2HibernationRecordWritten = false;
             _tier2HibernationHandoffInProgress = false;
             _breachDragBypassUntilTime = 0f;
@@ -507,9 +527,12 @@ namespace Hecton8.AI
             _passiveFlashlightDimUntilTime = 0f;
             _faunaBiolumDim01 = 1f;
             _lastAppliedBiolumLightScale01 = -1f;
+            _lastAppliedFaunaBiolumShader01 = -1f;
+            _lastAppliedDeathDitherShader01 = -1f;
             ClearAttackTelegraphState();
             ClearCorpseLatchState();
             ApplyBiolumPresentationLightScale(1f);
+            ApplyFaunaPresentationShaderState(1f, 0f);
             _playerNoiseEmitterTransform = null;
             _tier2HibernationHandoffInProgress = false;
             _breachDragBypassUntilTime = 0f;
@@ -1198,7 +1221,7 @@ namespace Hecton8.AI
             Vector3 selfPosition = transform.position;
             float vanishDistance = _faunaDataTemplate.MimicPingVanishDistanceMeters;
             float vanishDistanceSqr = vanishDistance * vanishDistance;
-            float playerDistanceSqr = (playerPosition - selfPosition).sqrMagnitude;
+            double playerDistanceSqr = ResolveRuntimeAupDistanceSq(playerPosition, selfPosition);
 
             if (_mimicSignalActive)
             {
@@ -2385,6 +2408,102 @@ namespace Hecton8.AI
             _biolumPresentationLightScratch.Clear();
         }
 
+        private void EnsureFaunaPresentationMaterials()
+        {
+            _faunaPresentationOriginalMaterials.Clear();
+            _faunaPresentationRuntimeMaterials.Clear();
+            _faunaPresentationRuntimeMaterialMasks.Clear();
+            _faunaPresentationMaterialScratch.Clear();
+            if (_renderer == null)
+                return;
+
+            _renderer.GetSharedMaterials(_faunaPresentationMaterialScratch);
+            int materialCount = _faunaPresentationMaterialScratch.Count;
+            bool materialSlotsChanged = false;
+            for (int i = 0; i < materialCount; i++)
+            {
+                Material sourceMaterial = _faunaPresentationMaterialScratch[i];
+                if (sourceMaterial == null)
+                    continue;
+
+                byte propertyMask = 0;
+                if (sourceMaterial.HasProperty(_FaunaBiolumDimShaderId))
+                    propertyMask |= FaunaPresentationBiolumMask;
+                if (sourceMaterial.HasProperty(_DeathDitherFadeShaderId))
+                    propertyMask |= FaunaPresentationDeathDitherMask;
+                if (propertyMask == 0)
+                    continue;
+
+                Material runtimeMaterial = new Material(sourceMaterial); // COLD ALLOC: Material[1] - per-fauna shader presentation state - owner: FaunaBrain
+                runtimeMaterial.hideFlags = HideFlags.DontSave;
+                if ((propertyMask & FaunaPresentationBiolumMask) != 0)
+                    runtimeMaterial.SetFloat(_FaunaBiolumDimShaderId, 1f);
+                if ((propertyMask & FaunaPresentationDeathDitherMask) != 0)
+                    runtimeMaterial.SetFloat(_DeathDitherFadeShaderId, 0f);
+
+                _faunaPresentationMaterialScratch[i] = runtimeMaterial;
+                _faunaPresentationOriginalMaterials.Add(sourceMaterial);
+                _faunaPresentationRuntimeMaterials.Add(runtimeMaterial);
+                _faunaPresentationRuntimeMaterialMasks.Add(propertyMask);
+                materialSlotsChanged = true;
+            }
+
+            if (materialSlotsChanged)
+                _renderer.SetSharedMaterials(_faunaPresentationMaterialScratch);
+
+            _faunaPresentationMaterialScratch.Clear();
+        }
+
+        private void ReleaseFaunaPresentationMaterials()
+        {
+            int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
+            if (_renderer != null && runtimeMaterialCount > 0)
+            {
+                _faunaPresentationMaterialScratch.Clear();
+                _renderer.GetSharedMaterials(_faunaPresentationMaterialScratch);
+                int slotCount = _faunaPresentationMaterialScratch.Count;
+                bool restoredAnySlot = false;
+                for (int slotIndex = 0; slotIndex < slotCount; slotIndex++)
+                {
+                    Material slotMaterial = _faunaPresentationMaterialScratch[slotIndex];
+                    if (slotMaterial == null)
+                        continue;
+
+                    for (int runtimeIndex = 0; runtimeIndex < runtimeMaterialCount; runtimeIndex++)
+                    {
+                        if (!ReferenceEquals(slotMaterial, _faunaPresentationRuntimeMaterials[runtimeIndex]))
+                            continue;
+
+                        _faunaPresentationMaterialScratch[slotIndex] = _faunaPresentationOriginalMaterials[runtimeIndex];
+                        restoredAnySlot = true;
+                        break;
+                    }
+                }
+
+                if (restoredAnySlot)
+                    _renderer.SetSharedMaterials(_faunaPresentationMaterialScratch);
+            }
+
+            for (int i = 0; i < runtimeMaterialCount; i++)
+            {
+                Material runtimeMaterial = _faunaPresentationRuntimeMaterials[i];
+                if (runtimeMaterial == null)
+                    continue;
+
+                if (Application.isPlaying)
+                    Destroy(runtimeMaterial);
+                else
+                    DestroyImmediate(runtimeMaterial);
+            }
+
+            _faunaPresentationMaterialScratch.Clear();
+            _faunaPresentationOriginalMaterials.Clear();
+            _faunaPresentationRuntimeMaterials.Clear();
+            _faunaPresentationRuntimeMaterialMasks.Clear();
+            _lastAppliedFaunaBiolumShader01 = -1f;
+            _lastAppliedDeathDitherShader01 = -1f;
+        }
+
         private void UpdateFaunaBiolumPresentation(float dt)
         {
             float targetDim = _cognitionTimeSeconds < _passiveFlashlightDimUntilTime
@@ -2394,6 +2513,36 @@ namespace Hecton8.AI
             _faunaBiolumDim01 = Mathf.Lerp(_faunaBiolumDim01, targetDim, alpha);
             float deathLightFade01 = 1f - Mathf.Clamp01(_deathDitherFade01);
             ApplyBiolumPresentationLightScale(_faunaBiolumDim01 * deathLightFade01);
+            ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01);
+        }
+
+        private void ApplyFaunaPresentationShaderState(float biolumDim01, float deathDitherFade01)
+        {
+            int runtimeMaterialCount = _faunaPresentationRuntimeMaterials.Count;
+            if (runtimeMaterialCount <= 0)
+                return;
+
+            float resolvedBiolumDim01 = Mathf.Clamp01(biolumDim01);
+            float resolvedDeathDitherFade01 = Mathf.Clamp01(deathDitherFade01);
+            bool applyBiolum = Mathf.Abs(_lastAppliedFaunaBiolumShader01 - resolvedBiolumDim01) >= 0.001f;
+            bool applyDeathDither = Mathf.Abs(_lastAppliedDeathDitherShader01 - resolvedDeathDitherFade01) >= 0.001f;
+            if (!applyBiolum && !applyDeathDither)
+                return;
+
+            _lastAppliedFaunaBiolumShader01 = resolvedBiolumDim01;
+            _lastAppliedDeathDitherShader01 = resolvedDeathDitherFade01;
+            for (int i = 0; i < runtimeMaterialCount; i++)
+            {
+                Material runtimeMaterial = _faunaPresentationRuntimeMaterials[i];
+                if (runtimeMaterial == null)
+                    continue;
+
+                byte propertyMask = _faunaPresentationRuntimeMaterialMasks[i];
+                if (applyBiolum && (propertyMask & FaunaPresentationBiolumMask) != 0)
+                    runtimeMaterial.SetFloat(_FaunaBiolumDimShaderId, resolvedBiolumDim01);
+                if (applyDeathDither && (propertyMask & FaunaPresentationDeathDitherMask) != 0)
+                    runtimeMaterial.SetFloat(_DeathDitherFadeShaderId, resolvedDeathDitherFade01);
+            }
         }
 
         private void ApplyBiolumPresentationLightScale(float scale01)
@@ -2629,7 +2778,7 @@ namespace Hecton8.AI
                 return;
             }
 
-            SargassumMicroFaunaBoids boidSystem = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+            SargassumMicroFaunaBoids boidSystem = GlobalRegistry.SargassumMicroFauna;
             if (boidSystem == null)
                 return;
 
@@ -2662,8 +2811,8 @@ namespace Hecton8.AI
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref _currentCullingPlayerTransform);
             if (_currentCullingPlayerTransform != null)
             {
-                Vector3 toPlayer = _currentCullingPlayerTransform.position - _rb.worldCenterOfMass;
-                if (toPlayer.sqrMagnitude > AmbientCurrentCullDistanceSqr)
+                double distanceToPlayerSqr = ResolveRuntimeAupDistanceSq(_currentCullingPlayerTransform.position, _rb.worldCenterOfMass);
+                if (distanceToPlayerSqr > AmbientCurrentCullDistanceSqr)
                 {
                     if (_rb.linearVelocity.sqrMagnitude <= 0.04f && !_rb.IsSleeping())
                         _rb.Sleep();
@@ -2796,7 +2945,7 @@ namespace Hecton8.AI
 
                 ChemicalInfluenceGrid.QueueFearPheromone(preyPosition, 1f);
 
-                SargassumMicroFaunaBoids microFaunaBoids = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+                SargassumMicroFaunaBoids microFaunaBoids = GlobalRegistry.SargassumMicroFauna;
                 if (microFaunaBoids != null)
                 {
                     microFaunaBoids.RegisterPredatorFearBurst(
@@ -3166,6 +3315,7 @@ namespace Hecton8.AI
             {
                 _deathDitherFade01 = Mathf.Clamp01(fadeAge / DeathSpiralFadeDurationSeconds);
                 ApplyBiolumPresentationLightScale(1f - _deathDitherFade01);
+                ApplyFaunaPresentationShaderState(_faunaBiolumDim01, _deathDitherFade01);
             }
 
             if (_deathDitherFade01 < 0.999f)
@@ -3250,18 +3400,6 @@ namespace Hecton8.AI
                 return;
 
             _utilityBrain.ApplyFatigueRelief(fatigueRelief);
-        }
-
-        internal void ApplyHibernationCatchUp(float sleepSeconds)
-        {
-            if (sleepSeconds <= 0f)
-                return;
-
-            if (_utilityBrain.ApplyHibernationCatchUp(sleepSeconds, _cognitionTimeSeconds))
-            {
-                _stateMachine.currentState = AIState.Starving;
-                _currentStateCache = AIState.Starving;
-            }
         }
 
         internal float CurrentHunger01 => _utilityBrain.CurrentHunger01;
@@ -3548,7 +3686,7 @@ namespace Hecton8.AI
             Vector3 selfPosition = transform.position;
             ChemicalInfluenceGrid.QueueFearPheromone(selfPosition, fearIntensity);
 
-            SargassumMicroFaunaBoids microFaunaBoids = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+            SargassumMicroFaunaBoids microFaunaBoids = GlobalRegistry.SargassumMicroFauna;
             if (microFaunaBoids != null)
             {
                 microFaunaBoids.RegisterPredatorFearBurst(
@@ -3732,7 +3870,7 @@ namespace Hecton8.AI
             WorldRuntimeReferenceUtility.TryResolvePlayerTransform(ref playerTransform);
             _currentCullingPlayerTransform = playerTransform;
             if (playerTransform == null ||
-                (playerTransform.position - transform.position).sqrMagnitude > FeedingObservationRadiusMetersSqr)
+                ResolveRuntimeAupDistanceSq(playerTransform.position, transform.position) > FeedingObservationRadiusMetersSqr)
             {
                 return;
             }

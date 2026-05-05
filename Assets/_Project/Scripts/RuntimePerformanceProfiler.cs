@@ -387,8 +387,6 @@ namespace Hecton8.Dev
                 $"bootstrapInstance={hasBootstrapInstance} profilerInstance={hasProfilerInstance} " +
                 $"existingProfiler={hasExistingProfiler} ensureCompleted={_developmentProfilerEnsureCompleted}";
 
-            Debug.Log(message);
-
             if (RuntimeDiagnosticsTrace.IsActive)
             {
                 RuntimeDiagnosticsTrace.WriteEvent(
@@ -536,7 +534,6 @@ namespace Hecton8.Dev
                 RuntimeDiagnosticsTrace.EnsureSession(traceSessionLabel);
                 _debugTraceFilePath = RuntimeDiagnosticsTrace.CurrentFilePath;
                 RuntimeDiagnosticsTrace.WriteEvent("session", "Runtime performance profiler session started.");
-                Debug.Log($"[RuntimeProfiler] Trace file: {_debugTraceFilePath}", this);
             }
             else
             {

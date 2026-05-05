@@ -173,7 +173,7 @@ namespace Hecton8.Dev
                 }
 
                 _debugLastPhase = "CorruptPrimarySubBlock";
-                if (!SaveBinaryStorage.TryCorruptFirstIndexedSectorProtectedBlockForSmoke(primaryAbsolutePath, out long sectorHash, out string corruptError))
+                if (!SaveBinaryStorage.TryCorruptFirstIndexedSectorBlockForSmoke(primaryAbsolutePath, out long sectorHash, out string corruptError))
                 {
                     FailIndexedSubBlock(corruptError);
                     return;

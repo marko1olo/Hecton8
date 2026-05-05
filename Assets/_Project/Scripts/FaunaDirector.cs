@@ -79,7 +79,6 @@ namespace Hecton8.AI
         private const double DehydrationDistanceSq = DehydrationDistanceMeters * DehydrationDistanceMeters;
         private const float HibernationDistanceMeters = 150f;
         private const double HibernationDistanceSq = HibernationDistanceMeters * HibernationDistanceMeters;
-        private const float HibernationStarvationHealthDrainPerSecond = 0.002f;
         private const float HibernationStarvationHuntThreshold01 = 0.9f;
         private const float ThermalApexMigrationIntervalSeconds = 2f;
         private const float ThermalApexMigrationRadiusMeters = 1000f;
@@ -172,9 +171,7 @@ namespace Hecton8.AI
             public Vector3 pendingHibernationHuntTarget;
             public float health;
             public float hunger01;
-            public float pendingHibernationSleepSeconds;
             public float hibernationStartTimeSeconds;
-            public byte hibernationStateFlags;
             public int speciesId;
             public int creatureTypeIndex;
             public int biomeIndex;
@@ -186,6 +183,12 @@ namespace Hecton8.AI
             public bool isResident;
             public bool isDehydrated;
             public bool hasPendingHibernationHuntTarget;
+        }
+
+        private struct FaunaHibernationRestoreResult
+        {
+            public float Health;
+            public float Hunger01;
         }
 
         private struct AcousticPanicCommand
@@ -851,7 +854,7 @@ namespace Hecton8.AI
             if (_acousticPanicCount <= 0)
                 return;
 
-            SargassumMicroFaunaBoids boids = SargassumMicroFaunaBoids.ActiveRuntimeInstance;
+            SargassumMicroFaunaBoids boids = GlobalRegistry.SargassumMicroFauna;
             while (_acousticPanicCount > 0)
             {
                 AcousticPanicCommand command = _acousticPanicCommands[_acousticPanicReadIndex];
@@ -2466,9 +2469,7 @@ namespace Hecton8.AI
                 pendingHibernationHuntTarget = default,
                 health = health,
                 hunger01 = hunger01,
-                pendingHibernationSleepSeconds = 0f,
                 hibernationStartTimeSeconds = -1f,
-                hibernationStateFlags = 0,
                 speciesId = ResolveStableSpeciesId(archetype, prefabSource),
                 creatureTypeIndex = creatureTypeIndex,
                 biomeIndex = biomeIndex,
@@ -2537,10 +2538,6 @@ namespace Hecton8.AI
                     if (restoreDamage > 0.001f)
                         ai.TakeDamage(restoreDamage);
 
-                    if (state.pendingHibernationSleepSeconds > 0.001f)
-                        ai.ApplyHibernationCatchUp(state.pendingHibernationSleepSeconds);
-                    if ((state.hibernationStateFlags & FaunaSimulationEngine.CatchUpStateStarving) != 0)
-                        ai.ForceStarvingState();
                     if (state.hasPendingHibernationHuntTarget)
                     {
                         ai.ForceHighPriorityHibernationHunt(state.pendingHibernationHuntTarget, state.hunger01);
@@ -2577,9 +2574,7 @@ namespace Hecton8.AI
 
                 _activeCreatures.Add(creature);
                 state.isDehydrated = false;
-                state.pendingHibernationSleepSeconds = 0f;
                 state.hibernationStartTimeSeconds = -1f;
-                state.hibernationStateFlags = 0;
                 state.pendingHibernationHuntTarget = default;
                 state.hasPendingHibernationHuntTarget = false;
                 _dehydratedCreatureStates[slotIndex] = state;
@@ -2679,25 +2674,11 @@ namespace Hecton8.AI
             if (restoredCount <= 0)
                 return;
 
-            int catchUpCount = PreparePersistedFaunaCatchUpInputs(restoredCount);
-            if (catchUpCount > 0 && _faunaSimulationEngine != null)
-            {
-                _faunaSimulationEngine.RunHibernationCatchUp(
-                    _faunaSimulationMemory.HibernationCatchUpInputs,
-                    _faunaSimulationMemory.HibernationCatchUpResults,
-                    catchUpCount,
-                    Time.time,
-                    PredatorCognitionDomain.HibernationHungerRatePerSecond,
-                    HibernationStarvationHealthDrainPerSecond);
-            }
-
             for (int i = 0; i < _persistedFaunaRestoreScratch.Count; i++)
             {
                 EntityDataRecord cachedState = _persistedFaunaRestoreScratch[i];
-                FaunaHibernationCatchUpResult catchUpResult = i < catchUpCount
-                    ? _faunaSimulationMemory.HibernationCatchUpResults[i]
-                    : BuildFallbackHibernationCatchUpResult(in cachedState);
-                if (!TryRestorePersistedTier2FaunaState(in cachedState, in catchUpResult))
+                FaunaHibernationRestoreResult restoreResult = BuildPurgeHibernationRestoreResult(in cachedState);
+                if (!TryRestorePersistedTier2FaunaState(in cachedState, in restoreResult))
                 {
                     registry.TryCacheFaunaHibernationState(in cachedState);
                     continue;
@@ -2708,56 +2689,16 @@ namespace Hecton8.AI
             }
         }
 
-        private int PreparePersistedFaunaCatchUpInputs(int restoredCount)
+        private static FaunaHibernationRestoreResult BuildPurgeHibernationRestoreResult(in EntityDataRecord cachedState)
         {
-            if (!_faunaSimulationMemory.HibernationCatchUpInputs.IsCreated ||
-                !_faunaSimulationMemory.HibernationCatchUpResults.IsCreated ||
-                _persistedFaunaRestoreScratch == null)
+            return new FaunaHibernationRestoreResult
             {
-                return 0;
-            }
-
-            int count = math.min(restoredCount, math.min(_persistedFaunaRestoreScratch.Count, _faunaSimulationMemory.HibernationCatchUpInputs.Length));
-            for (int i = 0; i < count; i++)
-            {
-                EntityDataRecord cachedState = _persistedFaunaRestoreScratch[i];
-                _faunaSimulationMemory.HibernationCatchUpInputs[i] = new FaunaHibernationCatchUpInput
-                {
-                    Health = PersistentWorldRegistry.GetFaunaHibernationHealth(in cachedState),
-                    Hunger01 = PersistentWorldRegistry.GetFaunaHibernationHunger01(in cachedState),
-                    SleepStartTimeSeconds = PersistentWorldRegistry.GetFaunaHibernationSleepStartTimeSeconds(in cachedState)
-                };
-            }
-
-            return count;
-        }
-
-        private static FaunaHibernationCatchUpResult BuildFallbackHibernationCatchUpResult(in EntityDataRecord cachedState)
-        {
-            float sleepStartTimeSeconds = PersistentWorldRegistry.GetFaunaHibernationSleepStartTimeSeconds(in cachedState);
-            float sleepSeconds = PredatorCognitionDomain.ResolveHibernationTimeAsleepSeconds(sleepStartTimeSeconds, Time.time);
-            float savedHunger01 = PersistentWorldRegistry.GetFaunaHibernationHunger01(in cachedState);
-            float rawHunger = savedHunger01 + (PredatorCognitionDomain.HibernationHungerRatePerSecond * sleepSeconds);
-            float starvationSeconds = PredatorCognitionDomain.HibernationHungerRatePerSecond > 0f
-                ? math.max(0f, (rawHunger - 1f) / PredatorCognitionDomain.HibernationHungerRatePerSecond)
-                : 0f;
-            float health = math.max(0f, PersistentWorldRegistry.GetFaunaHibernationHealth(in cachedState) - (starvationSeconds * HibernationStarvationHealthDrainPerSecond));
-            byte flags = 0;
-            if (rawHunger > 1f)
-                flags |= FaunaSimulationEngine.CatchUpStateStarving;
-            if (health <= 0.001f)
-                flags |= FaunaSimulationEngine.CatchUpStateCorpse;
-
-            return new FaunaHibernationCatchUpResult
-            {
-                Health = health,
-                Hunger01 = math.saturate(rawHunger),
-                SleepSeconds = sleepSeconds,
-                StateFlags = flags
+                Health = PersistentWorldRegistry.GetFaunaHibernationHealth(in cachedState),
+                Hunger01 = PersistentWorldRegistry.StableRandom01(cachedState.InstanceUid)
             };
         }
 
-        private bool TryRestorePersistedTier2FaunaState(in EntityDataRecord cachedState, in FaunaHibernationCatchUpResult catchUpResult)
+        private bool TryRestorePersistedTier2FaunaState(in EntityDataRecord cachedState, in FaunaHibernationRestoreResult restoreResult)
         {
             if (!PersistentWorldRegistry.IsFaunaHibernationState(in cachedState))
                 return false;
@@ -2775,12 +2716,6 @@ namespace Hecton8.AI
             WorldMacroZoneCoordinate macroZoneCoord = WorldMacroZoneCoordinate.FromWorldPosition(runtimePosition, _runtimeMacroZoneSize);
             bool isLargeThreat = PersistentWorldRegistry.GetFaunaHibernationLargeThreatFlag(in cachedState) || entry.isLargeThreat;
             bool isPredator = PersistentWorldRegistry.GetFaunaHibernationPredatorFlag(in cachedState) || entry.isPredator;
-            float sleepStartTimeSeconds = PersistentWorldRegistry.GetFaunaHibernationSleepStartTimeSeconds(in cachedState);
-            if ((catchUpResult.StateFlags & FaunaSimulationEngine.CatchUpStateCorpse) != 0)
-            {
-                RegisterHibernationCatchUpCorpse(in cachedState, speciesId, entry.archetype, isLargeThreat, in position);
-                return true;
-            }
 
             int slotIndex = AllocateDehydrationSlot();
             if (slotIndex == InvalidDehydrationSlotIndex)
@@ -2802,16 +2737,14 @@ namespace Hecton8.AI
                 markDehydrated: true);
 
             FaunaResidencyState restoredState = _dehydratedCreatureStates[slotIndex];
-            restoredState.health = catchUpResult.Health;
-            restoredState.hunger01 = catchUpResult.Hunger01;
-            restoredState.pendingHibernationSleepSeconds = catchUpResult.SleepSeconds;
-            restoredState.hibernationStartTimeSeconds = sleepStartTimeSeconds;
-            restoredState.hibernationStateFlags = catchUpResult.StateFlags;
+            restoredState.health = restoreResult.Health;
+            restoredState.hunger01 = restoreResult.Hunger01;
+            restoredState.hibernationStartTimeSeconds = -1f;
             restoredState.speciesId = speciesId;
             restoredState.isLargeThreat = isLargeThreat;
             restoredState.isPredator = isPredator;
             if (isPredator &&
-                catchUpResult.Hunger01 > HibernationStarvationHuntThreshold01 &&
+                restoreResult.Hunger01 > HibernationStarvationHuntThreshold01 &&
                 TryResolveHibernationStarvationHuntTarget(runtimePosition, out Vector3 huntTarget))
             {
                 restoredState.pendingHibernationHuntTarget = huntTarget;
@@ -2833,32 +2766,6 @@ namespace Hecton8.AI
             huntTarget = default;
             EcosystemDirector ecosystemDirector = ResolveConcreteEcosystemDirector();
             return ecosystemDirector != null && ecosystemDirector.TryResolveNearestOrganicMass(runtimePosition, out huntTarget);
-        }
-
-        private static void RegisterHibernationCatchUpCorpse(
-            in EntityDataRecord cachedState,
-            int speciesId,
-            CreatureArchetypeData archetype,
-            bool isLargeThreat,
-            in AbsoluteUniversePosition position)
-        {
-            EcosystemDirector ecosystemDirector = ResolveConcreteEcosystemDirector();
-            if (ecosystemDirector != null)
-            {
-                float capacityUnits = archetype != null
-                    ? math.max(25f, archetype.maxHealth)
-                    : 25f;
-                ecosystemDirector.RegisterCorpseResourceNode(in position, speciesId, capacityUnits);
-            }
-
-            if (!isLargeThreat)
-                return;
-
-            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
-            if (registry == null)
-                return;
-
-            registry.TryCacheWhaleFallPoiState(cachedState.InstanceUid, speciesId, in position, Time.time);
         }
 
         private bool TryResolvePersistedTier2Entry(int speciesId, out FaunaBiomeData biomeData, out ResolvedFaunaEntry entry)
@@ -3032,7 +2939,6 @@ namespace Hecton8.AI
             restoredState.linearVelocity = new Vector3(savedState.linearVelocityX, savedState.linearVelocityY, savedState.linearVelocityZ);
             restoredState.angularVelocity = new Vector3(savedState.angularVelocityX, savedState.angularVelocityY, savedState.angularVelocityZ);
             restoredState.health = savedState.health;
-            restoredState.pendingHibernationSleepSeconds = 0f;
             restoredState.hibernationStartTimeSeconds = -1f;
             restoredState.speciesId = savedState.speciesId;
             restoredState.isLargeThreat = isLargeThreat;

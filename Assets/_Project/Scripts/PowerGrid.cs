@@ -1,7 +1,7 @@
 // ============================================================================
 // HECTON-8 — PowerGrid.cs
 // Energy grid owner. Uses a CSR-backed LogisticsNetworkGraph for alloc-free
-// topology, DSU island detection, and priority brownout distribution.
+// topology, DSU island detection, and binary brownout state.
 // ============================================================================
 
 using System.Collections.Generic;
@@ -36,7 +36,7 @@ namespace Hecton8.Power
         private const float OverloadThermalDamagePerSecond = 18f;
         private const float OverloadMeltdownTemperatureCelsius = 150f;
         private const float CableThermalConductivityWattsPerCelsius = 140f;
-        private const int CableThermalRelaxationMaxIterations = 8;
+        private const int CableThermalSharePassCount = 1;
         private const float OceanThermalSinkTemperatureCelsius = 2f;
         private const float ThermalHeatInjectionScale = 0.001f;
         private const float ThermalDissipationApplyBlend = 0.25f;
@@ -94,7 +94,7 @@ namespace Hecton8.Power
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct ThermalJacobiIterationJob : IJobParallelFor
+        private struct ThermalSharePassJob : IJobParallelFor
         {
             private const float MinConductance = 0.0001f;
 
@@ -196,7 +196,7 @@ namespace Hecton8.Power
         private int _islandCount = 1;
         private int _cycleCount;
         private int _graphBuildVersion;
-        private int _cableThermalIterationBudget = CableThermalRelaxationMaxIterations;
+        private int _cableThermalIterationBudget = CableThermalSharePassCount;
         private bool _isDirty = true;
         private bool _hasEvaluatedAtLeastOnce;
         private bool _slowTickEvaluationPending;
@@ -912,13 +912,13 @@ namespace Hecton8.Power
             if (directedEdgeCount <= 0)
                 return false;
 
-            int iterationBudget = math.clamp(_cableThermalIterationBudget, 1, CableThermalRelaxationMaxIterations);
+            int iterationBudget = CableThermalSharePassCount;
             NativeArray<float> inputTemperatures = _thermalTemperatureFront;
             NativeArray<float> outputTemperatures = _thermalTemperatureBack;
             JobHandle thermalHandle = default;
             for (int iteration = 0; iteration < iterationBudget; iteration++)
             {
-                ThermalJacobiIterationJob job = new ThermalJacobiIterationJob
+                ThermalSharePassJob job = new ThermalSharePassJob
                 {
                     NodeCount = nodeCount,
                     OceanTemperatureCelsius = OceanThermalSinkTemperatureCelsius,
@@ -1000,7 +1000,7 @@ namespace Hecton8.Power
                 return;
             }
 
-            if (completedIterations >= requestedIterations && requestedIterations < CableThermalRelaxationMaxIterations)
+            if (completedIterations >= requestedIterations && requestedIterations < CableThermalSharePassCount)
                 _cableThermalIterationBudget = requestedIterations + 1;
         }
 
@@ -1156,10 +1156,10 @@ namespace Hecton8.Power
             if (!_thermalTemperatureFront.IsCreated || _thermalTemperatureFront.Length < safeNodeCount)
             {
                 DisposeThermalDissipationBuffers();
-                // COLD ALLOC: NativeArray<float>[nodeCount] - thermal Jacobi front buffer - owner: PowerGrid
+                // COLD ALLOC: NativeArray<float>[nodeCount] - thermal sharing front buffer - owner: PowerGrid
                 _thermalTemperatureFront = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterNativeArray(_thermalTemperatureFront, nameof(_thermalTemperatureFront));
-                // COLD ALLOC: NativeArray<float>[nodeCount] - thermal Jacobi back buffer - owner: PowerGrid
+                // COLD ALLOC: NativeArray<float>[nodeCount] - thermal sharing back buffer - owner: PowerGrid
                 _thermalTemperatureBack = new NativeArray<float>(safeNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
                 RegisterNativeArray(_thermalTemperatureBack, nameof(_thermalTemperatureBack));
                 // COLD ALLOC: NativeArray<float>[nodeCount] - thermal heat injection buffer - owner: PowerGrid

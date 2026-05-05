@@ -74,6 +74,7 @@ using Hecton8.World;
 using Unity.Mathematics;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Serialization;
 
 namespace Hecton8.Gameplay
 {
@@ -167,6 +168,7 @@ namespace Hecton8.Gameplay
         private const float DefaultFloodedReefActivationDays = 3f;
         private const int FloodedReefFaunaAnchorSalt = unchecked((int)0x52EF0A11);
         private const int ParasiteSporeHazardThreshold = 5;
+        private const float ParasiteAttachedPowerConsumptionScalar = 1.2f;
         private const int MinimumFloodedReefProxyPoolReserve = 10;
         private const string FloodedReefFaunaFamilyId = "fauna.family.reef_small";
         private const string FoundationPersistentId = "Build_Foundation_Platform";
@@ -220,14 +222,13 @@ namespace Hecton8.Gameplay
         [Tooltip("Absolute cap applied to unmoored buoyancy acceleration in meters per second squared.")]
         [SerializeField, Min(0.1f)] private float maximumUnmooredAccelerationMetersPerSecondSquared = 24f;
 
-        [Tooltip("Maximum local-space center-of-mass shift toward the breach while the room floods.")]
-        [SerializeField, Min(0.01f)] private float maximumCenterOfMassShiftMeters = 0.85f;
+        [Tooltip("Maximum local-space visual lean bias toward the breach while the room floods.")]
+        [FormerlySerializedAs("maximumCenterOfMassShiftMeters")]
+        [SerializeField, Min(0.01f)] private float maximumFloodVisualLeanBiasMeters = 0.85f;
 
-        [Tooltip("Blend time constant used when shifting center of mass toward the flooding breach.")]
-        [SerializeField, Min(0.01f)] private float centerOfMassShiftTauSeconds = 1.2f;
-
-        [Tooltip("Per-fixed-step clamp on center-of-mass movement to avoid solver spikes.")]
-        [SerializeField, Min(0.001f)] private float maxCenterOfMassShiftPerTickMeters = 0.05f;
+        [Tooltip("Blend time constant used when leaning the visual root toward the flooding breach.")]
+        [FormerlySerializedAs("centerOfMassShiftTauSeconds")]
+        [SerializeField, Min(0.01f)] private float floodVisualLeanTauSeconds = 1.2f;
 
         [Tooltip("Flooded unmoored modules crossing this external depth get an additional crushing sink acceleration.")]
         [SerializeField, Min(1f)] private float hullCrushDepthMeters = 4000f;
@@ -530,10 +531,7 @@ namespace Hecton8.Gameplay
         private int _cachedAtmosphereRoomIndex = -1;
         private Vector3 _defaultCenterOfMassLocal;
         private Vector3 _breachCenterOfMassTargetLocal;
-        private Vector3 _islandFloodCenterOfMassTargetLocal;
         private bool _hasBreachCenterOfMassTarget;
-        private bool _hasIslandFloodCenterOfMassTarget;
-        private float _islandFloodCenterOfMassWeight01;
         private float _defaultBodyMass;
         private float _defaultLinearDamping;
         private float _defaultAngularDamping;
@@ -554,6 +552,7 @@ namespace Hecton8.Gameplay
         private bool _moduleBodyDefaultsCaptured;
         private bool _floodSurfaceDefaultsCaptured;
         private Vector3 _defaultPressureCompressionVisualScale = Vector3.one;
+        private Quaternion _defaultPressureCompressionVisualRotation = Quaternion.identity;
         private bool _pressureCompressionDefaultsCaptured;
         private float _pressureCompressionAxisScale = 1f;
         private float _pressureCompressionVolumeScale = 1f;
@@ -759,10 +758,34 @@ namespace Hecton8.Gameplay
         internal float ParasiteAddedMassKilograms => _parasiteAddedMassKilograms;
         internal float ParasiteThermalInsulation01 => _parasiteThermalInsulation01;
         internal float ParasiteBioReactorOverheatMultiplier => _parasiteBioReactorOverheatMultiplier;
-        internal float PowerRatingForHabitatGraph => _interiorReefInfestationActive
-            ? 0f
-            : _basePowerRating + _cultivationLightingPowerCreditWatts - ResolveFloodPumpPowerDraw() - _parasitePowerDrainWatts - _cultivationScrubberPowerDrainWatts;
+        internal float PowerRatingForHabitatGraph => ResolveStaticDebuffedPowerRating();
         internal PowerGrid CachedPowerGrid => _powerNode != null ? _powerNode.Grid : null;
+
+        private float ResolveStaticDebuffedPowerRating()
+        {
+            if (_interiorReefInfestationActive)
+                return 0f;
+
+            float generationWatts = Mathf.Max(0f, _basePowerRating) + _cultivationLightingPowerCreditWatts;
+            float consumptionWatts = Mathf.Max(0f, -_basePowerRating) +
+                                     ResolveFloodPumpPowerDraw() +
+                                     _parasitePowerDrainWatts +
+                                     _cultivationScrubberPowerDrainWatts;
+
+            if (HasAttachedParasitePowerDebuff())
+                consumptionWatts *= ParasiteAttachedPowerConsumptionScalar;
+
+            return generationWatts - consumptionWatts;
+        }
+
+        private bool HasAttachedParasitePowerDebuff()
+        {
+            return _attachedParasiteCount > 0 ||
+                   _parasiteInfectionLevel > 0.001f ||
+                   _parasiteRootInfectionLevel > 0.001f ||
+                   _parasiteRootPowerDrainWatts > 0.01f;
+        }
+
         internal float CachedPowerSupplyRatio
         {
             get
@@ -784,9 +807,7 @@ namespace Hecton8.Gameplay
         /// Базовое энергопотребление модуля.
         /// Источник: BuildableData.powerRating → fallback.
         /// </summary>
-        public float PowerRating => _interiorReefInfestationActive
-            ? 0f
-            : PowerRatingForHabitatGraph - _parasiteRootPowerDrainWatts;
+        public float PowerRating => ResolveStaticDebuffedPowerRating();
 
         public int PowerPriority => powerPriority;
 
@@ -857,8 +878,6 @@ namespace Hecton8.Gameplay
             _breachLatched = IsBreached;
             _cachedAtmosphereRoomIndex = -1;
             _hasBreachCenterOfMassTarget = false;
-            _hasIslandFloodCenterOfMassTarget = false;
-            _islandFloodCenterOfMassWeight01 = 0f;
             _cachedFloodLevel01 = 0f;
             _bulkheadFloodStress01 = 0f;
             _jointShearStress01 = 0f;
@@ -910,8 +929,6 @@ namespace Hecton8.Gameplay
             _breachLatched = false;
             _cachedAtmosphereRoomIndex = -1;
             _hasBreachCenterOfMassTarget = false;
-            _hasIslandFloodCenterOfMassTarget = false;
-            _islandFloodCenterOfMassWeight01 = 0f;
             _cachedFloodLevel01 = 0f;
             _bulkheadFloodStress01 = 0f;
             _jointShearStress01 = 0f;
@@ -1058,7 +1075,7 @@ namespace Hecton8.Gameplay
                     ForceMode.Acceleration);
             }
 
-            ApplyFloodWeightedCenterOfMass(fixedDeltaTime, floodFill01);
+            ApplyFloodVisualLean(fixedDeltaTime, floodFill01);
         }
 
         /// <summary>
@@ -1353,13 +1370,19 @@ namespace Hecton8.Gameplay
 
         internal void ForceFloodFromBulkheadOverride(Vector3 breachWorldPoint)
         {
+            Vector3 localBreachPoint = SetBreachVisualAnchor(breachWorldPoint);
+            ForceFlood();
+            TriggerBreachDepressurizationVortex(localBreachPoint);
+        }
+
+        internal Vector3 SetBreachVisualAnchor(Vector3 breachWorldPoint)
+        {
             Vector3 localBreachPoint = IsFiniteVector(breachWorldPoint)
                 ? transform.InverseTransformPoint(breachWorldPoint)
                 : ResolveDefaultBreachLocalPoint();
             _breachCenterOfMassTargetLocal = localBreachPoint;
             _hasBreachCenterOfMassTarget = true;
-            ForceFlood();
-            TriggerBreachDepressurizationVortex(localBreachPoint);
+            return localBreachPoint;
         }
 
         /// <summary>
@@ -1554,32 +1577,6 @@ namespace Hecton8.Gameplay
             _queuedHydroStructuralLoadNewtons = Mathf.Max(_queuedHydroStructuralLoadNewtons, forceNewtons);
             _queuedHydroStructuralLoadRemainingSeconds = Mathf.Max(_queuedHydroStructuralLoadRemainingSeconds, durationSeconds);
             _queuedHydroStructuralLoadPointWorld = applicationWorldPoint;
-        }
-
-        internal void ApplyIslandFloodCenterOfMassShift(Vector3 floodCentroidWorld, float islandFloodMassKilograms, float deltaTime)
-        {
-            if (!_isUnmoored ||
-                islandFloodMassKilograms <= 0f ||
-                deltaTime <= 0f ||
-                !float.IsFinite(islandFloodMassKilograms) ||
-                !float.IsFinite(deltaTime) ||
-                !IsFiniteVector(floodCentroidWorld))
-            {
-                _hasIslandFloodCenterOfMassTarget = false;
-                _islandFloodCenterOfMassWeight01 = 0f;
-                return;
-            }
-
-            Vector3 localCentroid = transform.InverseTransformPoint(floodCentroidWorld);
-            Vector3 offsetFromCenter = localCentroid - _defaultCenterOfMassLocal;
-            float maxShift = ResolveMaximumCenterOfMassShiftMeters();
-            if (offsetFromCenter.sqrMagnitude > (maxShift * maxShift))
-                offsetFromCenter = offsetFromCenter.normalized * maxShift;
-
-            float effectiveMass = ResolveDryMassKilograms() + islandFloodMassKilograms;
-            _islandFloodCenterOfMassTargetLocal = _defaultCenterOfMassLocal + offsetFromCenter;
-            _islandFloodCenterOfMassWeight01 = Mathf.Clamp01(islandFloodMassKilograms / Mathf.Max(MinimumMassKilograms, effectiveMass));
-            _hasIslandFloodCenterOfMassTarget = _islandFloodCenterOfMassWeight01 > 0.001f;
         }
 
         internal void DecayBulkheadFloodStress(float deltaTime)
@@ -2788,6 +2785,7 @@ namespace Hecton8.Gameplay
 
             CapturePressureCompressionDefaults();
             pressureCompressionVisualRoot.localScale = _defaultPressureCompressionVisualScale;
+            pressureCompressionVisualRoot.localRotation = _defaultPressureCompressionVisualRotation;
         }
 
         private void ApplyFluidIncursion(float deltaTime)
@@ -2934,6 +2932,7 @@ namespace Hecton8.Gameplay
                 return;
 
             _defaultPressureCompressionVisualScale = pressureCompressionVisualRoot.localScale;
+            _defaultPressureCompressionVisualRotation = pressureCompressionVisualRoot.localRotation;
             _pressureCompressionDefaultsCaptured = true;
         }
 
@@ -3240,19 +3239,13 @@ namespace Hecton8.Gameplay
             _moduleRigidbody.useGravity = false;
             _moduleRigidbody.mass = Mathf.Max(MinimumMassKilograms, ResolveDryMassKilograms());
             _moduleRigidbody.interpolation = RigidbodyInterpolation.Interpolate;
-            _moduleRigidbody.centerOfMass = _defaultCenterOfMassLocal;
-            _hasIslandFloodCenterOfMassTarget = false;
-            _islandFloodCenterOfMassWeight01 = 0f;
         }
 
         private void DisableUnmooredPhysics()
         {
-            _hasIslandFloodCenterOfMassTarget = false;
-            _islandFloodCenterOfMassWeight01 = 0f;
             if (_moduleRigidbody == null || !_moduleBodyDefaultsCaptured)
                 return;
 
-            _moduleRigidbody.centerOfMass = _defaultCenterOfMassLocal;
             _moduleRigidbody.mass = _defaultBodyMass;
             _moduleRigidbody.linearDamping = _defaultLinearDamping;
             _moduleRigidbody.angularDamping = _defaultAngularDamping;
@@ -3454,80 +3447,73 @@ namespace Hecton8.Gameplay
                    float.IsFinite(value.w);
         }
 
-        private float ResolveMaximumCenterOfMassShiftMeters()
+        private float ResolveMaximumFloodVisualLeanBiasMeters()
         {
             if (moduleTemplate != null)
                 return Mathf.Max(0.01f, moduleTemplate.MaximumCenterOfMassShiftMeters);
 
-            return Mathf.Max(0.01f, maximumCenterOfMassShiftMeters);
+            return Mathf.Max(0.01f, maximumFloodVisualLeanBiasMeters);
         }
 
-        private float ResolveCenterOfMassShiftTauSeconds()
+        private float ResolveFloodVisualLeanTauSeconds()
         {
             if (moduleTemplate != null)
                 return Mathf.Max(0.01f, moduleTemplate.CenterOfMassShiftTauSeconds);
 
-            return Mathf.Max(0.01f, centerOfMassShiftTauSeconds);
+            return Mathf.Max(0.01f, floodVisualLeanTauSeconds);
         }
 
-        private void ApplyFloodWeightedCenterOfMass(float fixedDeltaTime, float floodFill01)
+        private void ApplyFloodVisualLean(float fixedDeltaTime, float floodFill01)
         {
-            if (_moduleRigidbody == null)
+            if (pressureCompressionVisualRoot == null || fixedDeltaTime <= 0f)
                 return;
 
-            Vector3 currentCenterOfMass = _moduleRigidbody.centerOfMass;
-            Vector3 targetCenterOfMass = _defaultCenterOfMassLocal;
-            bool hasFloodCenterOfMassShift = false;
-            if (_hasBreachCenterOfMassTarget && floodFill01 > 0.001f)
+            CapturePressureCompressionDefaults();
+
+            Vector3 localFloodBias = _hasBreachCenterOfMassTarget
+                ? _breachCenterOfMassTargetLocal - _defaultCenterOfMassLocal
+                : ResolveDefaultBreachLocalPoint() - _defaultCenterOfMassLocal;
+            localFloodBias.y = 0f;
+
+            if (!IsFiniteVector(localFloodBias) || localFloodBias.sqrMagnitude <= 0.000001f || floodFill01 <= 0.001f)
             {
-                Vector3 offsetFromCenter = _breachCenterOfMassTargetLocal - _defaultCenterOfMassLocal;
-                float maxShift = ResolveMaximumCenterOfMassShiftMeters();
-                if (offsetFromCenter.sqrMagnitude > (maxShift * maxShift))
-                    offsetFromCenter = offsetFromCenter.normalized * maxShift;
-
-                targetCenterOfMass += offsetFromCenter * floodFill01;
-                hasFloodCenterOfMassShift = true;
-            }
-
-            if (_hasIslandFloodCenterOfMassTarget && _islandFloodCenterOfMassWeight01 > 0.001f)
-            {
-                Vector3 islandOffset = _islandFloodCenterOfMassTargetLocal - _defaultCenterOfMassLocal;
-                float maxShift = ResolveMaximumCenterOfMassShiftMeters();
-                if (islandOffset.sqrMagnitude > (maxShift * maxShift))
-                    islandOffset = islandOffset.normalized * maxShift;
-
-                targetCenterOfMass += islandOffset * _islandFloodCenterOfMassWeight01;
-                hasFloodCenterOfMassShift = true;
-            }
-
-            Vector3 targetOffset = targetCenterOfMass - _defaultCenterOfMassLocal;
-            float maximumTargetShift = ResolveMaximumCenterOfMassShiftMeters();
-            if (targetOffset.sqrMagnitude > (maximumTargetShift * maximumTargetShift))
-                targetCenterOfMass = _defaultCenterOfMassLocal + targetOffset.normalized * maximumTargetShift;
-
-            if (!IsFiniteVector(currentCenterOfMass) || !IsFiniteVector(targetCenterOfMass))
-            {
-                _moduleRigidbody.centerOfMass = _defaultCenterOfMassLocal;
-                _hasIslandFloodCenterOfMassTarget = false;
-                _islandFloodCenterOfMassWeight01 = 0f;
+                BlendPressureVisualRootRotation(_defaultPressureCompressionVisualRotation, fixedDeltaTime);
                 return;
             }
 
-            if (!hasFloodCenterOfMassShift && (currentCenterOfMass - _defaultCenterOfMassLocal).sqrMagnitude <= 0f)
+            float maxShift = ResolveMaximumFloodVisualLeanBiasMeters();
+            if (localFloodBias.sqrMagnitude > (maxShift * maxShift))
+                localFloodBias = localFloodBias.normalized * maxShift;
+
+            float normalizedX = Mathf.Clamp(localFloodBias.x / maxShift, -1f, 1f);
+            float normalizedZ = Mathf.Clamp(localFloodBias.z / maxShift, -1f, 1f);
+            float maxTiltDegrees = Mathf.Clamp(maxShift * 10f, 1f, 8f);
+            Quaternion targetRotation = _defaultPressureCompressionVisualRotation *
+                                        Quaternion.Euler(
+                                            Mathf.Clamp(-normalizedZ * maxTiltDegrees * floodFill01, -maxTiltDegrees, maxTiltDegrees),
+                                            0f,
+                                            Mathf.Clamp(normalizedX * maxTiltDegrees * floodFill01, -maxTiltDegrees, maxTiltDegrees));
+
+            BlendPressureVisualRootRotation(targetRotation, fixedDeltaTime);
+        }
+
+        private void BlendPressureVisualRootRotation(Quaternion targetRotation, float fixedDeltaTime)
+        {
+            if (pressureCompressionVisualRoot == null)
                 return;
 
-            float tauSeconds = ResolveCenterOfMassShiftTauSeconds();
+            if (!IsFiniteQuaternion(targetRotation))
+            {
+                pressureCompressionVisualRoot.localRotation = _defaultPressureCompressionVisualRotation;
+                return;
+            }
+
+            float tauSeconds = ResolveFloodVisualLeanTauSeconds();
             float alpha = 1f - Mathf.Exp(-fixedDeltaTime / tauSeconds);
-            Vector3 nextCenterOfMass = Vector3.Lerp(currentCenterOfMass, targetCenterOfMass, alpha);
-            Vector3 clampedDelta = nextCenterOfMass - currentCenterOfMass;
-            if (clampedDelta.sqrMagnitude <= 0f)
-                return;
-
-            float maxStep = Mathf.Max(0.001f, maxCenterOfMassShiftPerTickMeters);
-            if (clampedDelta.sqrMagnitude > (maxStep * maxStep))
-                nextCenterOfMass = currentCenterOfMass + clampedDelta.normalized * maxStep;
-
-            _moduleRigidbody.centerOfMass = nextCenterOfMass;
+            pressureCompressionVisualRoot.localRotation = Quaternion.Slerp(
+                pressureCompressionVisualRoot.localRotation,
+                targetRotation,
+                alpha);
         }
 
         private void NotifyEmergencyLockdownStateChanged()
@@ -3947,8 +3933,6 @@ namespace Hecton8.Gameplay
                 return false;
             }
 
-            bool rootStateChanged = Mathf.Abs(_parasiteRootPowerDrainWatts - sanitizedRootDrain) > 0.01f ||
-                                    Mathf.Abs(_parasiteRootInfectionLevel - sanitizedRootInfection) > 0.001f;
             bool sporeStateChanged = _attachedParasiteCount != sanitizedParasiteCount ||
                                      Mathf.Abs(_parasiteInfectionLevel - sanitizedInfection) > 0.001f ||
                                      Mathf.Abs(_parasiteRootInfectionLevel - sanitizedRootInfection) > 0.001f;
@@ -3958,8 +3942,6 @@ namespace Hecton8.Gameplay
             _parasiteRootInfectionLevel = sanitizedRootInfection;
             _attachedParasiteCount = sanitizedParasiteCount;
             TryMarkPowerGridDirty();
-            if (rootStateChanged)
-                NotifyParasiteRootGraphChanged();
             if (sporeStateChanged)
             {
                 BaseDegradationSystem.SynchronizeParasiteSporeHazard(this);
@@ -4020,20 +4002,6 @@ namespace Hecton8.Gameplay
             float clampedIntensity = Mathf.Clamp01(intensity);
             ChemicalInfluenceGrid.QueueToxicityBurst(center, clampedIntensity);
             ApplyFloodExposure(Mathf.Clamp01(clampedIntensity * 0.025f), Mathf.Max(0f, co2Amplifier));
-        }
-
-        internal bool TryGetMatureParasiteRootLoad(out float drainWatts, out float infectionLevel)
-        {
-            if (_interiorReefInfestationActive)
-            {
-                drainWatts = 0f;
-                infectionLevel = 0f;
-                return false;
-            }
-
-            drainWatts = _parasiteRootPowerDrainWatts;
-            infectionLevel = _parasiteRootInfectionLevel;
-            return drainWatts > 0.01f;
         }
 
         internal bool TryGetParasiteSporeHazard(out Vector3 position, out float radius, out float intensity)
@@ -4131,13 +4099,6 @@ namespace Hecton8.Gameplay
             _powerNode.Grid.MarkDirty();
         }
 
-        private void NotifyParasiteRootGraphChanged()
-        {
-            ConstructionManager constructionManager = GlobalRegistry.ConstructionRuntime;
-            if (constructionManager != null)
-                constructionManager.NotifyModuleParasiteRootStateChanged(this);
-        }
-
         internal void ApplyFloodExposure(float normalizedFloodDelta, float co2Amplifier)
         {
             _lifeSupportComponent.ApplyFloodExposure(normalizedFloodDelta, co2Amplifier);
@@ -4166,7 +4127,6 @@ namespace Hecton8.Gameplay
             _interiorReefInfestationActive = true;
             SetInteriorReefVisualActive(true);
             TryMarkPowerGridDirty();
-            NotifyParasiteRootGraphChanged();
             RegisterFloodedReefFaunaAnchor();
             BaseDegradationSystem.SynchronizeIntegrityState(this);
         }
@@ -4624,9 +4584,8 @@ namespace Hecton8.Gameplay
             if (structuralDryMassKilograms < 1f) structuralDryMassKilograms = 1f;
             if (buoyancyDisplacementVolumeCubicMeters < 0.1f) buoyancyDisplacementVolumeCubicMeters = 0.1f;
             if (maximumUnmooredAccelerationMetersPerSecondSquared < 0.1f) maximumUnmooredAccelerationMetersPerSecondSquared = 0.1f;
-            if (maximumCenterOfMassShiftMeters < 0.01f) maximumCenterOfMassShiftMeters = 0.01f;
-            if (centerOfMassShiftTauSeconds < 0.01f) centerOfMassShiftTauSeconds = 0.01f;
-            if (maxCenterOfMassShiftPerTickMeters < 0.001f) maxCenterOfMassShiftPerTickMeters = 0.001f;
+            if (maximumFloodVisualLeanBiasMeters < 0.01f) maximumFloodVisualLeanBiasMeters = 0.01f;
+            if (floodVisualLeanTauSeconds < 0.01f) floodVisualLeanTauSeconds = 0.01f;
             if (hullCrushDepthMeters < 1f) hullCrushDepthMeters = 1f;
             if (maximumHydroStructuralLoadNewtons < 1f) maximumHydroStructuralLoadNewtons = 1f;
             if (deepCompressionStartDepthMeters < 0f) deepCompressionStartDepthMeters = 0f;

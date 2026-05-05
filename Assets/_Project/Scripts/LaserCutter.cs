@@ -492,9 +492,6 @@ namespace Hecton8.Gameplay
         [Range(0f, 0.5f)]
         [SerializeField] private float heatDamageBonus = 0.15f;
 
-        [Tooltip("Passive heat decay bonus applied while the player remains submerged.")]
-        [SerializeField, Range(0f, 1.2f)] private float passiveWaterCoolingBonus = 0.45f;
-
         [Tooltip("Base recoil impulse used for deferred player-body kickback.")]
         [SerializeField, Range(0f, 12f)] private float recoilImpulseBase = 4f;
 
@@ -795,7 +792,7 @@ namespace Hecton8.Gameplay
             _isFiring = true;
             PublishBeamState(true);
 
-            _heatLevel += deltaTime * GetRuntimeHeatGenerationRate(1f / math.max(overheatTime, 0.1f));
+            _heatLevel += deltaTime / math.max(overheatTime, 0.1f);
 
             if (_heatLevel >= 1f)
             {
@@ -887,8 +884,7 @@ namespace Hecton8.Gameplay
             {
                   if (_heatLevel > 0f)
                   {
-                      float runtimeCooldown = GetRuntimeCooldownRate(cooldownRate);
-                      _heatLevel = math.max(0f, _heatLevel - deltaTime * runtimeCooldown * (1f + ResolvePassiveCoolingBonus()));
+                      _heatLevel = math.max(0f, _heatLevel - deltaTime * math.max(0f, cooldownRate));
                       EnterCooldownState();
                       SyncModularHeat(_heatLevel);
                       PublishHeat();
@@ -1843,12 +1839,6 @@ namespace Hecton8.Gameplay
 
             TryQueuePlayerToolRecoil(direction, impulseMagnitude);
             QueueToolHapticFeedback(normalizedPower, 1f);
-        }
-
-        private float ResolvePassiveCoolingBonus()
-        {
-            EnsurePlayerBindings();
-            return _cachedPlayerMovement != null && _cachedPlayerMovement.IsPlayerSubmerged ? passiveWaterCoolingBonus : 0f;
         }
 
         private void EnterCooldownState()

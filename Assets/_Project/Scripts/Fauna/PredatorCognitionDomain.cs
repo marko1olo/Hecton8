@@ -358,11 +358,9 @@ namespace Hecton8.AI
         private static float3 _threatVoxelCellSize;
         private static byte _threatVoxelSolidThreshold = SolidThreatVoxel;
         private static bool _threatVoxelUsesSignedDistanceEncoding;
-        private static NativeArray<float4> _chemicalGrid;
-        private static NativeArray<float4> _chemicalOverlayGrid;
-        private static int3 _chemicalGridDimensions;
-        private static float3 _chemicalGridOrigin;
-        private static float3 _chemicalGridCellSize;
+        private static NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> _chemicalBreadcrumbs;
+        private static int _chemicalBreadcrumbCount;
+        private static float _chemicalBreadcrumbFollowStepMeters = 12f;
         private static JobHandle _scheduledSwarmHandle;
         private static JobHandle _scheduledEvaluationHandle;
         private static bool _evaluationScheduled;
@@ -578,16 +576,6 @@ namespace Hecton8.AI
             _cores[slot] = core;
         }
 
-        internal static float ResolveHibernationTimeAsleepSeconds(float decodedSleepStartSeconds, float currentTime)
-        {
-            if (!math.isfinite(decodedSleepStartSeconds) || !math.isfinite(currentTime) || decodedSleepStartSeconds <= 0f)
-                return 0f;
-
-            return math.max(0f, currentTime - decodedSleepStartSeconds);
-        }
-
-        internal static float HibernationHungerRatePerSecond => HungerRate;
-
         internal static float GetHunger01(int slot)
         {
             if (!IsValidSlot(slot))
@@ -606,27 +594,6 @@ namespace Hecton8.AI
             UnpackDriveChannels(core.QuantizedDrives, out _, out float aggression, out float fear, out float threatLevel);
             core.QuantizedDrives = PackDriveChannels(math.saturate(hunger01), aggression, fear, threatLevel);
             _cores[slot] = core;
-        }
-
-        internal static bool ApplyHibernationCatchUp(int slot, float sleepSeconds, float currentTime)
-        {
-            if (!IsValidSlot(slot) || !math.isfinite(sleepSeconds) || sleepSeconds <= 0f)
-                return false;
-
-            CognitionCore core = _cores[slot];
-            UnpackDriveChannels(core.QuantizedDrives, out float hunger, out float aggression, out float fear, out float threatLevel);
-            float fatigue = UnpackSingleDrive(core.QuantizedFatigue);
-            hunger = math.clamp(hunger + (HungerRate * sleepSeconds), 0f, 1f);
-            fatigue = math.clamp(fatigue + (FatigueRate * sleepSeconds), 0f, 1f);
-            core.QuantizedDrives = PackDriveChannels(hunger, aggression, fear, threatLevel);
-            core.QuantizedFatigue = PackSingleDrive(fatigue);
-            _cores[slot] = core;
-
-            bool forceHunt = hunger >= 0.999f;
-            if (forceHunt)
-                ApplyExternalState(slot, PredatorUtilityState.Attacking, currentTime);
-
-            return forceHunt;
         }
 
         internal static void NotifyAttackPerformed(int slot, float currentTime, float cooldownSeconds)
@@ -827,11 +794,9 @@ namespace Hecton8.AI
                 ThreatVoxelCellSize = _threatVoxelCellSize,
                 ThreatVoxelSolidThreshold = _threatVoxelSolidThreshold,
                 ThreatVoxelUsesSignedDistanceEncoding = _threatVoxelUsesSignedDistanceEncoding ? 1 : 0,
-                ChemicalGrid = _chemicalGrid,
-                ChemicalOverlayGrid = _chemicalOverlayGrid,
-                ChemicalGridDimensions = _chemicalGridDimensions,
-                ChemicalGridOrigin = _chemicalGridOrigin,
-                ChemicalGridCellSize = _chemicalGridCellSize
+                ChemicalBreadcrumbs = _chemicalBreadcrumbs,
+                ChemicalBreadcrumbCount = _chemicalBreadcrumbCount,
+                ChemicalBreadcrumbFollowStepMeters = _chemicalBreadcrumbFollowStepMeters
             };
 
             _scheduledEvaluationHandle = job.Schedule(_activeSlots.Length, EvaluationJobBatchSize, _scheduledSwarmHandle);
@@ -915,11 +880,9 @@ namespace Hecton8.AI
             _threatVoxelCellSize = new float3(1f, 1f, 1f);
             _threatVoxelSolidThreshold = SolidThreatVoxel;
             _threatVoxelUsesSignedDistanceEncoding = false;
-            _chemicalGrid = default;
-            _chemicalOverlayGrid = default;
-            _chemicalGridDimensions = int3.zero;
-            _chemicalGridOrigin = float3.zero;
-            _chemicalGridCellSize = new float3(1f, 1f, 1f);
+            _chemicalBreadcrumbs = default;
+            _chemicalBreadcrumbCount = 0;
+            _chemicalBreadcrumbFollowStepMeters = 12f;
             _scheduledSwarmHandle = default;
             _scheduledEvaluationHandle = default;
             _evaluationScheduled = false;
@@ -1152,21 +1115,20 @@ namespace Hecton8.AI
                 return;
 
             _lastChemicalGridBindFrame = frameId;
-            if (ChemicalInfluenceGrid.TryGetPublishedSnapshot(out NativeArray<float4> grid, out NativeArray<float4> overlayGrid, out int3 dimensions, out float3 origin, out float3 cellSize))
+            if (ChemicalInfluenceGrid.TryGetPublishedBreadcrumbs(
+                out NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> breadcrumbs,
+                out int count,
+                out float followStepMeters))
             {
-                _chemicalGrid = grid;
-                _chemicalOverlayGrid = overlayGrid;
-                _chemicalGridDimensions = dimensions;
-                _chemicalGridOrigin = origin;
-                _chemicalGridCellSize = cellSize;
+                _chemicalBreadcrumbs = breadcrumbs;
+                _chemicalBreadcrumbCount = count;
+                _chemicalBreadcrumbFollowStepMeters = followStepMeters;
                 return;
             }
 
-            _chemicalGrid = default;
-            _chemicalOverlayGrid = default;
-            _chemicalGridDimensions = int3.zero;
-            _chemicalGridOrigin = float3.zero;
-            _chemicalGridCellSize = new float3(1f, 1f, 1f);
+            _chemicalBreadcrumbs = default;
+            _chemicalBreadcrumbCount = 0;
+            _chemicalBreadcrumbFollowStepMeters = 12f;
         }
 
         private static void EmitFearPheromones()
@@ -1759,11 +1721,9 @@ namespace Hecton8.AI
             public float3 ThreatVoxelCellSize;
             public byte ThreatVoxelSolidThreshold;
             public int ThreatVoxelUsesSignedDistanceEncoding;
-            [ReadOnly] public NativeArray<float4> ChemicalGrid;
-            [ReadOnly] public NativeArray<float4> ChemicalOverlayGrid;
-            public int3 ChemicalGridDimensions;
-            public float3 ChemicalGridOrigin;
-            public float3 ChemicalGridCellSize;
+            [ReadOnly] public NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> ChemicalBreadcrumbs;
+            public int ChemicalBreadcrumbCount;
+            public float ChemicalBreadcrumbFollowStepMeters;
 
             public void Execute(int index)
             {
@@ -1846,7 +1806,7 @@ namespace Hecton8.AI
                 if (playerVisible)
                     control.LastVisualContactTime = input.CurrentTime;
 
-                TryResolveChemicalGradient(resolvedInput.Position, out _, out float fearPheromoneSignal, out _);
+                TryResolveChemicalGradient(resolvedInput.Position, input.CurrentTime, out _, out float fearPheromoneSignal, out _);
                 float rawFear = math.saturate((1f - math.saturate(input.HealthNormalized)) + input.FearPressure01);
                 fear = math.max(fear, math.max(rawFear, fearPheromoneSignal * FearPheromoneContagionShare));
 
@@ -1906,7 +1866,7 @@ namespace Hecton8.AI
                 bool isApexPredator = (input.Flags & (int)CognitionInputFlags.IsApexPredator) != 0;
                 bool isAmbusher = (input.Flags & (int)CognitionInputFlags.IsAmbusher) != 0;
                 bool hasApexRivalTarget = (input.Flags & (int)CognitionInputFlags.HasApexRivalTarget) != 0;
-                bool hasChemicalTrail = TryResolveChemicalGradient(input.Position, out float attractantSignal, out float fearPheromoneSignal, out float3 scentGradient);
+                bool hasChemicalTrail = TryResolveChemicalGradient(input.Position, input.CurrentTime, out float attractantSignal, out float fearPheromoneSignal, out float3 scentGradient);
                 bool lightAversionActive = IsLightAversionActive(input);
                 bool lightFrenzyActive = IsLightFrenzyActive(input) && hasPlayerTarget;
                 if (lightAversionActive)
@@ -1988,7 +1948,7 @@ namespace Hecton8.AI
                 }
                 else if (hasChemicalTrail && chemicalScore > PredatorScentFollowThreshold && math.lengthsq(scentGradient) > DdaEpsilon)
                 {
-                    targetPosition = input.Position + (math.normalizesafe(scentGradient, fallbackForward) * math.cmax(ChemicalGridCellSize));
+                    targetPosition = input.Position + (math.normalizesafe(scentGradient, fallbackForward) * math.max(1f, ChemicalBreadcrumbFollowStepMeters));
                     hasTarget = true;
                     threatLevel = math.max(threatLevel, chemicalScore * 0.65f);
                 }
@@ -2330,7 +2290,7 @@ namespace Hecton8.AI
                     : 0f;
                 bool hasAcousticMemory = TryResolveStrongestAcousticMemory(slot, input.Position, input.CurrentTime, out float3 acousticMemoryPosition, out float acousticMemoryScore);
                 float acousticScore = math.max(directAcousticScore, acousticMemoryScore);
-                TryResolveChemicalGradient(input.Position, out _, out float fearPheromoneSignal, out _);
+                TryResolveChemicalGradient(input.Position, input.CurrentTime, out _, out float fearPheromoneSignal, out _);
                 float threatVisual = playerVisible
                     ? ComputeThreatVisual(input.Position, input.PlayerPosition, fallbackForward, math.max(input.EscapeSafeDistance, 1f))
                     : 0f;
@@ -2776,103 +2736,55 @@ namespace Hecton8.AI
                 return math.saturate(directScore * math.max(0f, chemicalSensitivity));
             }
 
-            private bool TryResolveChemicalGradient(float3 worldPosition, out float attractantSignal, out float fearSignal, out float3 gradient)
+            private bool TryResolveChemicalGradient(float3 worldPosition, float currentTime, out float attractantSignal, out float fearSignal, out float3 gradient)
             {
                 attractantSignal = 0f;
                 fearSignal = 0f;
                 gradient = float3.zero;
-                if (!ChemicalGrid.IsCreated ||
-                    ChemicalGrid.Length <= 0 ||
-                    ChemicalGridDimensions.x <= 0 ||
-                    ChemicalGridDimensions.y <= 0 ||
-                    ChemicalGridDimensions.z <= 0 ||
-                    !TryWorldToChemicalCell(worldPosition, out int3 cell))
+                if (!ChemicalBreadcrumbs.IsCreated ||
+                    ChemicalBreadcrumbs.Length <= 0 ||
+                    ChemicalBreadcrumbCount <= 0)
                 {
                     return false;
                 }
 
-                attractantSignal = SampleChemicalAttractant(cell);
-                fearSignal = SampleChemicalFear(cell);
+                int safeCount = math.min(ChemicalBreadcrumbCount, ChemicalBreadcrumbs.Length);
+                for (int i = 0; i < safeCount; i++)
+                {
+                    ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint waypoint = ChemicalBreadcrumbs[i];
+                    if (waypoint.ExpiresAt <= currentTime || waypoint.RadiusMeters <= DdaEpsilon)
+                        continue;
 
-                float gradientX = SampleChemicalAttractant(cell + new int3(1, 0, 0)) - SampleChemicalAttractant(cell + new int3(-1, 0, 0));
-                float gradientY = SampleChemicalAttractant(cell + new int3(0, 1, 0)) - SampleChemicalAttractant(cell + new int3(0, -1, 0));
-                float gradientZ = SampleChemicalAttractant(cell + new int3(0, 0, 1)) - SampleChemicalAttractant(cell + new int3(0, 0, -1));
-                float3 safeCellSize = math.max(ChemicalGridCellSize, new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon));
-                gradient = new float3(
-                    gradientX / (safeCellSize.x * 2f),
-                    gradientY / (safeCellSize.y * 2f),
-                    gradientZ / (safeCellSize.z * 2f));
+                    float radius = math.max(1f, waypoint.RadiusMeters);
+                    float3 delta = waypoint.RuntimePosition - worldPosition;
+                    float distanceSq = math.lengthsq(delta);
+                    if (distanceSq > radius * radius)
+                        continue;
+
+                    float distance = math.sqrt(math.max(0f, distanceSq));
+                    float falloff = SmoothStep01(1f - math.saturate(distance / radius));
+                    float4 sample = waypoint.Channels * falloff;
+                    float attractant = math.saturate(sample.x + sample.y);
+                    float fear = math.saturate(sample.z);
+                    attractantSignal = math.max(attractantSignal, attractant);
+                    fearSignal = math.max(fearSignal, fear);
+
+                    if (attractant > DdaEpsilon)
+                        gradient += math.normalizesafe(delta, float3.zero) * (attractant / radius);
+                }
+
                 return attractantSignal > DdaEpsilon || fearSignal > DdaEpsilon || math.lengthsq(gradient) > DdaEpsilon;
-            }
-
-            private float SampleChemicalAttractant(int3 cell)
-            {
-                float4 sample = SampleChemicalCell(cell);
-                return math.saturate(sample.x + sample.y);
-            }
-
-            private float SampleChemicalFear(int3 cell)
-            {
-                return math.saturate(SampleChemicalCell(cell).z);
-            }
-
-            private float4 SampleChemicalCell(int3 cell)
-            {
-                if (!IsChemicalCellInside(cell))
-                    return float4.zero;
-
-                int flatIndex = FlattenChemicalCellIndex(cell, ChemicalGridDimensions);
-                if (flatIndex < 0 || flatIndex >= ChemicalGrid.Length)
-                    return float4.zero;
-
-                float4 sample = ChemicalGrid[flatIndex];
-                if (ChemicalOverlayGrid.IsCreated && flatIndex < ChemicalOverlayGrid.Length)
-                    sample += ChemicalOverlayGrid[flatIndex];
-                return sample;
-            }
-
-            private bool TryWorldToChemicalCell(float3 worldPosition, out int3 cell)
-            {
-                float3 local = worldPosition - ChemicalGridOrigin;
-                if (local.x < 0f || local.y < 0f || local.z < 0f)
-                {
-                    cell = int3.zero;
-                    return false;
-                }
-
-                float3 safeCellSize = math.max(ChemicalGridCellSize, new float3(DdaEpsilon, DdaEpsilon, DdaEpsilon));
-                int3 candidate = new int3(
-                    (int)math.floor(local.x / safeCellSize.x),
-                    (int)math.floor(local.y / safeCellSize.y),
-                    (int)math.floor(local.z / safeCellSize.z));
-                if (!IsChemicalCellInside(candidate))
-                {
-                    cell = int3.zero;
-                    return false;
-                }
-
-                cell = candidate;
-                return true;
-            }
-
-            private bool IsChemicalCellInside(int3 cell)
-            {
-                return cell.x >= 0 &&
-                       cell.y >= 0 &&
-                       cell.z >= 0 &&
-                       cell.x < ChemicalGridDimensions.x &&
-                       cell.y < ChemicalGridDimensions.y &&
-                       cell.z < ChemicalGridDimensions.z;
-            }
-
-            private static int FlattenChemicalCellIndex(int3 cell, int3 dimensions)
-            {
-                return cell.x + (cell.y * dimensions.x) + (cell.z * dimensions.x * dimensions.y);
             }
 
             private static float Pow01(float value, float exponent)
             {
                 return math.pow(math.saturate(value), exponent);
+            }
+
+            private static float SmoothStep01(float value)
+            {
+                float t = math.saturate(value);
+                return t * t * (3f - 2f * t);
             }
 
             private static float EvaluateHuntUtility(

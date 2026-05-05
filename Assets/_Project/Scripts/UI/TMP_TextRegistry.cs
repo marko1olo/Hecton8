@@ -39,11 +39,17 @@ namespace Hecton8.UI
         // COLD ALLOC: Dictionary[512] — hierarchy hash to TMP registry index map — owner: TMP_TextRegistry
         private static readonly Dictionary<int, int> s_indicesByHash = new Dictionary<int, int>(512);
         private static int s_count;
+        private static TMP_FontAsset s_terminalFontAsset;
 
         /// <summary>
         /// Active entry count.
         /// </summary>
         public static int Count => s_count;
+
+        /// <summary>
+        /// Terminal/BIOS font cached by the registry for zero-scan HUD font swaps.
+        /// </summary>
+        public static TMP_FontAsset TerminalFontAsset => s_terminalFontAsset;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -56,6 +62,22 @@ namespace Hecton8.UI
 
             s_count = 0;
             s_indicesByHash.Clear();
+            s_terminalFontAsset = null;
+        }
+
+        /// <summary>
+        /// Cache the terminal font variant before BIOS mode needs to swap registered HUD labels.
+        /// </summary>
+        public static TMP_FontAsset PrewarmTerminalFont(TMP_FontAsset preferredTerminalFont)
+        {
+            if (LocalizedFontResolver.IsFontReady(preferredTerminalFont))
+            {
+                s_terminalFontAsset = preferredTerminalFont;
+                return s_terminalFontAsset;
+            }
+
+            s_terminalFontAsset = LocalizedFontResolver.ResolveBiosFallbackFont();
+            return s_terminalFontAsset;
         }
 
         /// <summary>

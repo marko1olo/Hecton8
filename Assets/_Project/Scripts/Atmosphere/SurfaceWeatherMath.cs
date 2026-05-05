@@ -191,6 +191,9 @@ namespace Hecton8.Atmosphere
         private const byte SurfaceExecutionModeSurfaceActive = 0;
         private const byte SurfaceExecutionModeSurfaceSuppressed = 2;
         private const float TwoPi = 6.283185307179586f;
+        private const float LightningFlashSeconds = 0.1f;
+        private const float ThunderDelayMinSeconds = 1f;
+        private const float ThunderDelayMaxSeconds = 3f;
 
         public SurfaceWeatherJobInput input;
         public NativeArray<SurfaceWeatherJobOutput> output;
@@ -319,7 +322,7 @@ namespace Hecton8.Atmosphere
             float3 followPosition,
             float surfaceY)
         {
-            float flashDuration = math.max(0.02f, state.lightningFlashDuration);
+            float flashDuration = LightningFlashSeconds;
             float flashBase = math.max(0f, state.lightningFlashIntensity);
             float randomA = NextRandom01(ref result.randomState);
             float randomB = NextRandom01(ref result.randomState);
@@ -356,8 +359,7 @@ namespace Hecton8.Atmosphere
             float distanceT = math.saturate((thunderDistance - minDistance) / math.max(maxDistance - minDistance, 0.0001f));
             float loudness = math.lerp(state.thunderVolumeNear, state.thunderVolumeFar, distanceT);
             float stormBoost = math.lerp(0.65f, 1f, electricalActivity);
-            float effectiveDistance = thunderDistance * math.max(0.25f, state.thunderPropagationDistanceScale);
-            float thunderDelay = effectiveDistance / 343f;
+            float thunderDelay = math.lerp(ThunderDelayMinSeconds, ThunderDelayMaxSeconds, NextRandom01(ref result.randomState));
 
             result.lightningFlashRemaining = flashDuration;
             result.lightningFlashStrength = flashBase * flashVariance;
@@ -366,7 +368,7 @@ namespace Hecton8.Atmosphere
                 math.lerp(18f, 4.5f, electricalActivity) +
                 ((NextRandom01(ref result.randomState) * 2f) - 1f) * math.lerp(8f, 1.5f, electricalActivity));
             result.pendingThunderPosition = strikePosition;
-            result.pendingThunderDelay = math.clamp(thunderDelay, state.thunderDelayMin, state.thunderDelayMax);
+            result.pendingThunderDelay = thunderDelay;
             result.pendingThunderVolume = loudness * stormBoost;
             result.pendingThunderPitch = math.lerp(state.thunderPitchMin, state.thunderPitchMax, NextRandom01(ref result.randomState)) *
                 math.lerp(0.94f, 1.02f, 1f - distanceT);

@@ -33,8 +33,6 @@ namespace Hecton8.EditorTools
         private const string WorldProceduralPatternCatalogPath = "Assets/_Project/Data/World/ProceduralPatternCatalog.asset";
         private const string WorldProceduralBiomeContextCatalogPath = "Assets/_Project/Data/World/ProceduralBiomeFamilyContextCatalog.asset";
         private const string WorldChunkStreamingProfilePath = "Assets/_Project/Data/World/Streaming/WorldChunkStreamingProfile.asset";
-        private const string SedimentComputeAssetPath = "Assets/_Project/Art/Shaders/SedimentAccumulation.compute";
-        private const string SedimentCaptureShaderPath = "Assets/_Project/Art/Shaders/Hecton_SedimentCapture.shader";
         private const string BiomeFamilyProfileFolder = "Assets/_Project/Data/Biomes/FamilyProfiles";
         private const string BiomeMatrixCatalogPath = "Assets/_Project/Data/Biomes/BiomeMatrixCatalog.asset";
         private const string ManagersRootName = "[MANAGERS]";
@@ -181,10 +179,7 @@ namespace Hecton8.EditorTools
                 geologyVoxelBridgeDirector,
                 geologySeamExecutionDirector,
                 FindSceneObjectIncludingInactive<HectonVoxelEngine>());
-            ConfigureSedimentAccumulationManager(
-                sedimentAccumulationManager,
-                playerTransform,
-                playerTransform != null ? playerTransform.GetComponentInChildren<Camera>(true) : null);
+            ConfigureSedimentAccumulationManager(sedimentAccumulationManager);
             ConfigureBiomeMatrixDirector(biomeMatrixDirector, playerTransform, biomeMatrixCatalog);
             ConfigureWorldReadabilityDirector(readabilityDirector, zoneDirector, biomeMatrixDirector);
             EnsureRelayHudMarker();
@@ -250,20 +245,11 @@ namespace Hecton8.EditorTools
             EditorUtility.SetDirty(biomeCache);
         }
 
-        private static void ConfigureSedimentAccumulationManager(
-            SedimentAccumulationManager sedimentAccumulationManager,
-            Transform playerTransform,
-            Camera playerCamera)
+        private static void ConfigureSedimentAccumulationManager(SedimentAccumulationManager sedimentAccumulationManager)
         {
             if (sedimentAccumulationManager == null)
                 return;
 
-            SerializedObject so = new SerializedObject(sedimentAccumulationManager);
-            so.FindProperty("playerTransform").objectReferenceValue = playerTransform;
-            so.FindProperty("playerCamera").objectReferenceValue = playerCamera;
-            so.FindProperty("sedimentCompute").objectReferenceValue = AssetDatabase.LoadAssetAtPath<ComputeShader>(SedimentComputeAssetPath);
-            so.FindProperty("sedimentCaptureShader").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Shader>(SedimentCaptureShaderPath);
-            so.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(sedimentAccumulationManager);
         }
 

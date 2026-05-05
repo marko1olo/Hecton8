@@ -45,7 +45,7 @@ namespace Hecton8.SaveSystem
         public double totalPlayTime;
 
         /// <summary>Текущая версия формата. Используется для миграции.</summary>
-        public const int CurrentVersion = 57; // v57: Player nitrogen build-up persists across save/load.
+        public const int CurrentVersion = 59; // v59: Inventory item genetics persist as byte flags.
 
         // ─────────────────────── DTO Sections ────────────────────
 
@@ -371,7 +371,7 @@ namespace Hecton8.SaveSystem
         public uint[] packedCellCoordinates;
         public ushort[] stackCounts;
         public ushort[] itemStateFlags;
-        public ulong[] itemGeneticsWords;
+        public byte[] itemGeneticsWords;
         public ushort[] qualityMilli;
         public uint[] lastUpdateUnixSeconds;
         public float totalWeight;
@@ -395,7 +395,7 @@ namespace Hecton8.SaveSystem
                 itemStateFlags = new ushort[MaxCells];
 
             if (itemGeneticsWords == null || itemGeneticsWords.Length < MaxCells)
-                itemGeneticsWords = new ulong[MaxCells];
+                itemGeneticsWords = new byte[MaxCells];
 
             if (qualityMilli == null || qualityMilli.Length < MaxCells)
                 qualityMilli = new ushort[MaxCells];
@@ -1046,6 +1046,7 @@ namespace Hecton8.SaveSystem
         public const int MaxInfectedZones = 64;
 
         public int worldSeed;
+        public int worldGenerationVersionId;
         public int infectedZoneCount;
         public long[] infectedChunkKeys;
         public float[] infectedSeverities;

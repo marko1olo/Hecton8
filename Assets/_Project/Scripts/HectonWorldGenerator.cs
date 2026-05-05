@@ -448,10 +448,12 @@ public struct HectonColorJob : IJobParallelFor
 
 public class HectonWorldGenerator : MonoBehaviour, ITickable, IUpdatable, ILateFrameTickable, IWorldSeedProvider
 {
+    private const int WorldGenerationAlgorithmVersionId = 1;
     private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.WorldGenerator.Tick");
     private static readonly ProfilerMarker _physicsBakeBatchProfilerMarker = new ProfilerMarker("H8.WorldGenerator.PhysicsBakeBatch");
     public bool IsInitialized => ReferenceEquals(GlobalRegistry.WorldSeedProvider, this);
     public int RuntimeWorldSeed => ComputeRuntimeWorldSeed();
+    public int RuntimeWorldGenerationVersionId => WorldGenerationAlgorithmVersionId;
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetStaticState()

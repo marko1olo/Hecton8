@@ -87,6 +87,11 @@ namespace Hecton8.UI
         [Header("Batch Crafting")]
         [SerializeField, Min(1)] private int craftBatchMultiplier = 1;
 
+        [Header("Diegetic Failure Feedback")]
+        [SerializeField, Min(0f)] private float failurePanelShakeDurationSeconds = 0.22f;
+        [SerializeField, Min(0f)] private float failurePanelShakeAmplitudeMeters = 0.018f;
+        [SerializeField, Min(0f)] private float failurePanelShakeFrequencyHz = 32f;
+
         [Header("Diagnostics")]
         [SerializeField] private bool _debugIsOpen;
         [SerializeField] private bool _debugIsCrafting;
@@ -129,13 +134,23 @@ namespace Hecton8.UI
         private bool _hotSwapListenerRegistered;
         private InputManager _subscribedInputManager;
         private float _hologramAnimationTime;
+        private float _failurePanelShakeRemainingSeconds;
+        private float _failurePanelShakeElapsedSeconds;
         private JobHandle _recipePointerHandle;
 
         public static bool IsMenuOpen { get; private set; }
         public int CraftBatchMultiplier
         {
             get => Mathf.Max(1, craftBatchMultiplier);
-            set => craftBatchMultiplier = Mathf.Max(1, value);
+            set
+            {
+                int nextMultiplier = Mathf.Max(1, value);
+                if (nextMultiplier == craftBatchMultiplier)
+                    return;
+
+                craftBatchMultiplier = nextMultiplier;
+                _lastRecipeVisualVersion = int.MinValue;
+            }
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -270,6 +285,7 @@ namespace Hecton8.UI
             }
 
             ResolveRuntimeReferences();
+            AdvanceFailurePanelShake(deltaTime);
             UpdateRecipeListPose();
             RefreshRecipeListIfDirty();
             RenderActiveRecipeHologram(deltaTime);
@@ -301,6 +317,9 @@ namespace Hecton8.UI
                     break;
                 case CraftingEventType.CraftCancelled:
                     HandleCraftCancelled();
+                    break;
+                case CraftingEventType.CraftFailed:
+                    HandleCraftFailed(in payload);
                     break;
             }
         }
@@ -374,6 +393,22 @@ namespace Hecton8.UI
             _craftProgress = 0f;
         }
 
+        private void HandleCraftFailed(in CraftingEventPayload payload)
+        {
+            if (!_isOpen)
+                return;
+
+            if (CraftingEvents.TryResolveFabricator(in payload, out Fabricator fabricator) &&
+                _currentFabricator != null &&
+                !ReferenceEquals(fabricator, _currentFabricator))
+            {
+                return;
+            }
+
+            _failurePanelShakeRemainingSeconds = Mathf.Max(_failurePanelShakeRemainingSeconds, failurePanelShakeDurationSeconds);
+            _failurePanelShakeElapsedSeconds = 0f;
+        }
+
         private void HandleNavigateInput(Vector2 direction)
         {
             if (!_isOpen || _isCrafting || _recipes == null || _recipes.Count == 0)
@@ -442,6 +477,8 @@ namespace Hecton8.UI
             _filteredRecipes.Clear();
             _debugVisibleInstanceCount = 0;
             _hoveredRecipeIndex = -1;
+            _failurePanelShakeRemainingSeconds = 0f;
+            _failurePanelShakeElapsedSeconds = 0f;
             _lastRecipeVisualVersion = int.MinValue;
             SetRecipeListVisible(false);
 
@@ -496,6 +533,8 @@ namespace Hecton8.UI
             _subscribedInputManager.OnNavigate += HandleNavigateInput;
             _subscribedInputManager.OnSubmit += HandleSubmitInput;
             _subscribedInputManager.OnCancel += HandleCancelInput;
+            _subscribedInputManager.OnTabNext += HandleBatchNextInput;
+            _subscribedInputManager.OnTabPrevious += HandleBatchPreviousInput;
         }
 
         private void UnsubscribeInputManager()
@@ -506,7 +545,32 @@ namespace Hecton8.UI
             _subscribedInputManager.OnNavigate -= HandleNavigateInput;
             _subscribedInputManager.OnSubmit -= HandleSubmitInput;
             _subscribedInputManager.OnCancel -= HandleCancelInput;
+            _subscribedInputManager.OnTabNext -= HandleBatchNextInput;
+            _subscribedInputManager.OnTabPrevious -= HandleBatchPreviousInput;
             _subscribedInputManager = null;
+        }
+
+        private void HandleBatchNextInput()
+        {
+            CycleCraftBatchMultiplier(1);
+        }
+
+        private void HandleBatchPreviousInput()
+        {
+            CycleCraftBatchMultiplier(-1);
+        }
+
+        /// <summary>
+        /// Cycles the diegetic batch count used by the next fabrication request.
+        /// </summary>
+        public void CycleCraftBatchMultiplier(int direction)
+        {
+            int nextMultiplier = ResolveNextBatchMultiplier(craftBatchMultiplier, direction);
+            if (nextMultiplier == craftBatchMultiplier)
+                return;
+
+            craftBatchMultiplier = nextMultiplier;
+            _lastRecipeVisualVersion = int.MinValue;
         }
 
         /// <inheritdoc />
@@ -1017,6 +1081,7 @@ namespace Hecton8.UI
             ResolveRuntimeReferences();
             Transform anchor = _currentFabricator.transform;
             Vector3 rootPosition = anchor.position + anchor.up * recipeListHeight + anchor.forward * recipeListForwardOffset;
+            rootPosition += ResolveFailurePanelShakeOffset(anchor);
             _recipeListRoot.position = rootPosition;
             _recipeListRoot.localScale = Vector3.one * recipeEntryScale;
 
@@ -1045,7 +1110,8 @@ namespace Hecton8.UI
         {
             int recipeCount = _recipes != null ? _recipes.Count : 0;
             int inventoryVersion = playerInventory != null ? playerInventory.InventoryVersion : 0;
-            return recipeCount ^ (_selectedIndex << 8) ^ (((int)_selectedGroup & 0xFF) << 16) ^ (inventoryVersion << 1) ^ ((_hoveredRecipeIndex + 1) << 24);
+            int batchMultiplier = Mathf.Clamp(craftBatchMultiplier, 1, 99);
+            return recipeCount ^ (_selectedIndex << 8) ^ (((int)_selectedGroup & 0xFF) << 16) ^ (inventoryVersion << 1) ^ ((_hoveredRecipeIndex + 1) << 24) ^ (batchMultiplier << 4);
         }
 
         private void RebuildRecipeListEntries()
@@ -1137,12 +1203,25 @@ namespace Hecton8.UI
             string displayName = recipe != null ? recipe.DisplayNameOrFallback : string.Empty;
             cursor = AppendString(displayName, _recipeLabelBuffer, cursor);
 
-            if (recipe != null && recipe.resultQuantity > 1)
+            int displayOutputQuantity = ResolveDisplayedOutputQuantity(recipe, craftBatchMultiplier);
+            if (displayOutputQuantity > 1)
             {
                 cursor = AppendLiteral(' ', _recipeLabelBuffer, cursor);
                 cursor = AppendLiteral('x', _recipeLabelBuffer, cursor);
-                if (recipe.resultQuantity.TryFormat(_recipeLabelBuffer.AsSpan(cursor), out int written))
+                if (displayOutputQuantity.TryFormat(_recipeLabelBuffer.AsSpan(cursor), out int written))
                     cursor += written;
+            }
+
+            int safeBatchMultiplier = Mathf.Max(1, craftBatchMultiplier);
+            if (safeBatchMultiplier > 1)
+            {
+                cursor = AppendLiteral(' ', _recipeLabelBuffer, cursor);
+                cursor = AppendLiteral('[', _recipeLabelBuffer, cursor);
+                cursor = AppendLiteral('B', _recipeLabelBuffer, cursor);
+                cursor = AppendLiteral('x', _recipeLabelBuffer, cursor);
+                if (safeBatchMultiplier.TryFormat(_recipeLabelBuffer.AsSpan(cursor), out int written))
+                    cursor += written;
+                cursor = AppendLiteral(']', _recipeLabelBuffer, cursor);
             }
 
             TMP_TextRegistry.EnsureRegistered(label);
@@ -1201,7 +1280,7 @@ namespace Hecton8.UI
                 return false;
 
             if (_currentFabricator != null)
-                return _currentFabricator.CanCraft(recipe);
+                return _currentFabricator.CanCraft(recipe, Mathf.Max(1, craftBatchMultiplier));
 
             InventoryGrid grid = playerInventory.Grid;
             NativeArray<int>.ReadOnly anchorHashIds = grid != null ? grid.AnchorHashIds : default;
@@ -1221,9 +1300,7 @@ namespace Hecton8.UI
 
                 int availableCount = 0;
                 int anchorCount = Mathf.Min(anchorHashIds.Length, stackCounts.Length);
-                int requiredAmount = _currentFabricator != null
-                    ? _currentFabricator.GetAdjustedIngredientAmount(ingredient)
-                    : ingredient.amount;
+                int requiredAmount = Mathf.Max(1, ingredient.amount) * Mathf.Max(1, craftBatchMultiplier);
                 for (int anchorIndex = 0; anchorIndex < anchorCount; anchorIndex++)
                 {
                     if (anchorHashIds[anchorIndex] != itemHashId)
@@ -1244,6 +1321,47 @@ namespace Hecton8.UI
         private static int ComputeItemHash(ItemData item)
         {
             return item != null ? LocHash.Compute(item.PersistentId) : 0;
+        }
+
+        private void AdvanceFailurePanelShake(float deltaTime)
+        {
+            if (!(_failurePanelShakeRemainingSeconds > 0f))
+                return;
+
+            float safeDeltaTime = Mathf.Max(0f, deltaTime);
+            _failurePanelShakeRemainingSeconds = Mathf.Max(0f, _failurePanelShakeRemainingSeconds - safeDeltaTime);
+            _failurePanelShakeElapsedSeconds += safeDeltaTime;
+        }
+
+        private Vector3 ResolveFailurePanelShakeOffset(Transform anchor)
+        {
+            if (anchor == null || !(_failurePanelShakeRemainingSeconds > 0f))
+                return Vector3.zero;
+
+            float duration = Mathf.Max(0.001f, failurePanelShakeDurationSeconds);
+            float intensity = Mathf.Clamp01(_failurePanelShakeRemainingSeconds / duration);
+            float phase = _failurePanelShakeElapsedSeconds * Mathf.Max(0f, failurePanelShakeFrequencyHz) * Mathf.PI * 2f;
+            float lateral = Mathf.Sin(phase) * failurePanelShakeAmplitudeMeters * intensity;
+            float vertical = Mathf.Sin(phase * 1.73f) * failurePanelShakeAmplitudeMeters * 0.35f * intensity;
+            return anchor.right * lateral + anchor.up * vertical;
+        }
+
+        private static int ResolveDisplayedOutputQuantity(RecipeData recipe, int multiplier)
+        {
+            if (recipe == null)
+                return 0;
+
+            long quantity = (long)Mathf.Max(1, recipe.resultQuantity) * Mathf.Max(1, multiplier);
+            return quantity > int.MaxValue ? int.MaxValue : (int)quantity;
+        }
+
+        private static int ResolveNextBatchMultiplier(int currentMultiplier, int direction)
+        {
+            int current = Mathf.Max(1, currentMultiplier);
+            if (direction >= 0)
+                return current < 5 ? 5 : 1;
+
+            return current > 1 ? 1 : 5;
         }
 
         private static int AppendLiteral(char value, char[] buffer, int cursor)

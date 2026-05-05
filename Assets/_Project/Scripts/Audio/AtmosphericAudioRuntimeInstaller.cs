@@ -26,8 +26,7 @@ namespace Hecton8.Audio
             if (playerObject.GetComponent<PlayerStressVFX>() == null)
                 playerObject.AddComponent<PlayerStressVFX>();
 
-            if (playerObject.GetComponent<CausticsProjectorManager>() == null)
-                playerObject.AddComponent<CausticsProjectorManager>();
+            // Projected caustics are shader-only on MX350; no player-owned compute projector is installed.
         }
 
         private static void EnsureProceduralAudioRenderer(GameObject playerObject)

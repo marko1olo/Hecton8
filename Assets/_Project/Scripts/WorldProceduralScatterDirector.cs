@@ -83,6 +83,7 @@ namespace Hecton8.World
         private const int ScatterPlacementSyncSignatureVersion = 2;
         private const int MaxFloraInstancesPerStreamCellPerBiome = 4096;
         private const float FloraScatterMaxTiltAngleDegrees = 30f;
+        private const float ScatterMinimumSurfaceNormalUpDot = 0.2f;
         private const float FloraMicroClusterPatchThreshold = 0.36f;
         private const float FloraMacroClusterPatchThreshold = 0.42f;
         private const float FloraFallbackClusterNoiseScale = 0.009f;
@@ -252,6 +253,7 @@ namespace Hecton8.World
         [Header("References")]
         [SerializeField] private Transform playerTransform;
         [SerializeField] private WorldProceduralFieldSampler fieldSampler;
+        [SerializeField] private MapMagicBridge mapMagicBridge;
         [SerializeField] private WorldProceduralFillDirector proceduralFillDirector;
         [SerializeField] private WorldProceduralPatternCatalog patternCatalog;
         [SerializeField] private WorldProceduralBiomeFamilyContextCatalog biomeContextCatalog;
@@ -3158,7 +3160,14 @@ namespace Hecton8.World
                     new Unity.Mathematics.float3(resolvedPosition.x, resolvedPosition.y, resolvedPosition.z))
                 : Mathf.Abs(placement.StableHash % 360);
             Quaternion rotation = Quaternion.Euler(0f, yawDegrees, 0f);
-            if (placement.Rule != null &&
+            bool snappedToTerrain = TrySnapFloraPlacementToMapMagicTerrain(
+                placement,
+                floraFamily,
+                yawDegrees,
+                ref resolvedPosition,
+                ref rotation);
+            if (!snappedToTerrain &&
+                placement.Rule != null &&
                 EnsureEnvironmentalVegetationBridgeResolved() &&
                 environmentalVegetationBridge.TrySnapScatterPlacement(
                     placement.RuntimePosition,
@@ -3177,6 +3186,76 @@ namespace Hecton8.World
                 ? WorldMacroZoneCoordinate.FromWorldPosition(resolvedPosition, _runtimeStreamingState.MacroZoneSize)
                 : default;
             placement.ResolveDeferredRuntimeState(variant, resolvedPosition, rotation, scale, chunkCoord, macroZoneCoord);
+        }
+
+        private bool TrySnapFloraPlacementToMapMagicTerrain(
+            ScatterPlacement placement,
+            bool floraFamily,
+            float yawDegrees,
+            ref Vector3 resolvedPosition,
+            ref Quaternion rotation)
+        {
+            if (!floraFamily ||
+                placement == null ||
+                placement.FieldSource != WorldProceduralFieldSampler.SeafloorSource.MapMagicHeight)
+            {
+                return false;
+            }
+
+            Vector3 runtimePosition = ToRuntimeScatterPosition(resolvedPosition);
+            if (enableAbyssalSiltFalseCeiling &&
+                Mathf.Abs(runtimePosition.y - abyssalSiltFalseCeilingY) <= 0.5f)
+            {
+                return false;
+            }
+
+            if (mapMagicBridge == null &&
+                !WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge))
+            {
+                return false;
+            }
+
+            if (mapMagicBridge == null ||
+                !mapMagicBridge.TryGetHeight(runtimePosition.x, runtimePosition.z, out float terrainHeight) ||
+                !mapMagicBridge.TryGetNormal(runtimePosition.x, runtimePosition.z, Mathf.Max(1f, cellSize * 0.25f), out Vector3 terrainNormal) ||
+                !IsScatterSurfaceNormalSpawnable(terrainNormal))
+            {
+                return false;
+            }
+
+            float maxTiltAngleDegrees = placement.Rule != null
+                ? Mathf.Min(placement.Rule.maxTiltAngleDegrees, FloraScatterMaxTiltAngleDegrees)
+                : FloraScatterMaxTiltAngleDegrees;
+            Vector3 clampedUp = ClampScatterUpVector(terrainNormal, maxTiltAngleDegrees);
+            Quaternion alignRotation = Quaternion.FromToRotation(Vector3.up, clampedUp);
+            Quaternion yawRotation = Quaternion.AngleAxis(Mathf.Repeat(yawDegrees, 360f), clampedUp);
+            runtimePosition.y = terrainHeight + surfaceYOffset;
+            resolvedPosition = ToAbsoluteScatterPosition(runtimePosition);
+            rotation = yawRotation * alignRotation;
+            return true;
+        }
+
+        private static Vector3 ClampScatterUpVector(Vector3 normal, float maxTiltAngleDegrees)
+        {
+            Vector3 safeNormal = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            float safeMaxTilt = Mathf.Clamp(maxTiltAngleDegrees, 0f, 89.5f);
+            float angle = Vector3.Angle(Vector3.up, safeNormal);
+            if (angle <= safeMaxTilt)
+                return safeNormal;
+
+            Vector3 axis = Vector3.Cross(Vector3.up, safeNormal);
+            if (axis.sqrMagnitude <= 0.000001f)
+                return Vector3.up;
+
+            return Quaternion.AngleAxis(safeMaxTilt, axis.normalized) * Vector3.up;
+        }
+
+        private static bool IsScatterSurfaceNormalSpawnable(Vector3 normal)
+        {
+            if (normal.sqrMagnitude <= 0.0001f)
+                return false;
+
+            return Vector3.Dot(normal.normalized, Vector3.up) >= ScatterMinimumSurfaceNormalUpDot;
         }
 
         private bool TryRegisterDesiredPlacement(ScatterPlacement placement)
@@ -8752,28 +8831,6 @@ namespace Hecton8.World
             return ReferenceEquals(a, b) || a.GetEntityId() == b.GetEntityId();
         }
 
-        private int CountPlacedFamily(
-            WorldPrefabFamilyProfile family,
-            WorldPrefabFamilyProfile.ScatterLayer layer)
-        {
-            if (family == null || string.IsNullOrWhiteSpace(family.familyId))
-                return 0;
-
-            int count = 0;
-            Dictionary<long, ScatterPlacement>.Enumerator enumerator = _desiredPlacements.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                ScatterPlacement placement = enumerator.Current.Value;
-                if (placement.Family == null || placement.Family.scatterLayer != layer)
-                    continue;
-
-                if (IsSameFamily(placement.Family, family))
-                    count++;
-            }
-
-            return count;
-        }
-
         private void BuildPreferredFamilyPlacementCounts(
             WorldPrefabFamilyProfile[] preferredFamilies,
             WorldPrefabFamilyProfile.ScatterLayer layer,
@@ -10924,6 +10981,7 @@ namespace Hecton8.World
             WorldRuntimeReferenceUtility.TryResolveWorldProceduralStateRegistry(ref proceduralStateRegistry);
             WorldRuntimeReferenceUtility.TryResolveWorldGenerativeGeologyService(ref generativeGeologyService);
             WorldRuntimeReferenceUtility.TryResolveHectonMapMagicVegetationBridge(ref environmentalVegetationBridge);
+            WorldRuntimeReferenceUtility.TryResolveMapMagicBridge(ref mapMagicBridge);
             HectonRockManager rockManager = GlobalRegistry.RockManager;
             if (floraGpuiManager == null &&
                 rockManager != null &&

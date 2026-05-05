@@ -9,7 +9,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that forces SDF density to exactly match a terrain heightfield top surface.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct SnapSDFToTerrainJob : IJobParallelFor
     {
         /// <summary>Terrain heights in meters.</summary>
@@ -88,7 +88,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that forces the nearest terrain-roof voxel in each XZ column to exact zero density.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct SnapSDFTopCellsToTerrainJob : IJobParallelFor
     {
         /// <summary>Terrain heights in meters.</summary>
@@ -167,7 +167,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that unions a 1 km chthonic pillar into an SDF density array.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct InjectMegaPillarSDFJob : IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
@@ -236,7 +236,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that carves a sharp vertical fissure into an SDF density array.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct InjectDeepFissureSDFJob : IJobParallelFor
     {
         /// <summary>SDF density array. Positive means solid.</summary>
@@ -319,7 +319,7 @@ namespace Hecton8.World
     /// <summary>
     /// Burst kernel that applies lateral noise displacement to steep SDF slopes.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct VoxelCliffOverhangNoiseJob : IJobParallelFor
     {
         /// <summary>Input stitched SDF density array.</summary>

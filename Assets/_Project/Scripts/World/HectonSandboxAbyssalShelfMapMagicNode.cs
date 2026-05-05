@@ -44,13 +44,15 @@ namespace MapMagic.Nodes.MatrixGenerators
         [Den.Tools.GUI.ValAttribute("Plate Uniformity")] public float plateUniformity = 0.78f;
         [Den.Tools.GUI.ValAttribute("Warp m")] public float domainWarpMeters = 1450f;
         [Den.Tools.GUI.ValAttribute("Warp Frequency")] public float domainWarpFrequency = 0.00011f;
+        [Den.Tools.GUI.ValAttribute("Island Radius m")] public float islandCenterRadiusMeters = 2600f;
+        [Den.Tools.GUI.ValAttribute("Island Junction")] public float islandJunctionThreshold = 0.58f;
         [Den.Tools.GUI.ValAttribute("Seed")] public int seed = 880031;
 
         [Den.Tools.GUI.ValAttribute("Quantize Slopes")] public bool enableSlopeQuantization = true;
-        [Den.Tools.GUI.ValAttribute("Flat Dead deg")] public float plateauSourceAngleDegrees = 4f;
-        [Den.Tools.GUI.ValAttribute("Target Slope deg")] public float plateauTargetAngleDegrees = 30f;
-        [Den.Tools.GUI.ValAttribute("Steep Source deg")] public float cliffSourceAngleDegrees = 40f;
-        [Den.Tools.GUI.ValAttribute("Steep Full deg")] public float cliffTargetAngleDegrees = 58f;
+        [Den.Tools.GUI.ValAttribute("Plateau Source deg")] public float plateauSourceAngleDegrees = 15f;
+        [Den.Tools.GUI.ValAttribute("Plateau Target deg")] public float plateauTargetAngleDegrees = 3.5f;
+        [Den.Tools.GUI.ValAttribute("Cliff Source deg")] public float cliffSourceAngleDegrees = 45f;
+        [Den.Tools.GUI.ValAttribute("Cliff Target deg")] public float cliffTargetAngleDegrees = 80f;
         [Den.Tools.GUI.ValAttribute("Quantize Strength")] public float slopeQuantizationStrength = 1f;
 
         public override (string, int) GetCodeFileLine() => GetCodeFileLineBase();
@@ -98,6 +100,13 @@ namespace MapMagic.Nodes.MatrixGenerators
                 RegisterTempJobArray(quantizedHeights, nameof(quantizedHeights));
 
                 double sampleCellSizeMeters = ResolveCellSizeMeters(dst);
+                AbsoluteUniversePosition worldOriginAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
+                    dst.worldPos.x,
+                    dst.worldPos.z,
+                    AbsoluteUniversePosition.CellSizeMeters);
+                uint worldSeed = HectonSandboxAbyssalShelfMath.CombineWorldSeed(
+                    unchecked((uint)seed),
+                    ResolveRuntimeWorldSeed());
                 var parameters = new HectonSandboxAbyssalShelfParams
                 {
                     AupCellSizeMeters = AbsoluteUniversePosition.CellSizeMeters,
@@ -113,7 +122,9 @@ namespace MapMagic.Nodes.MatrixGenerators
                     DomainWarpMeters = math.max(0f, domainWarpMeters),
                     DomainWarpFrequency = math.max(0.000001f, domainWarpFrequency),
                     MacroExponentialFalloff = math.max(0.1f, macroExponentialFalloff),
-                    Seed = unchecked((uint)seed)
+                    IslandCenterRadiusMeters = math.max(1f, islandCenterRadiusMeters),
+                    IslandJunctionThreshold = math.saturate(islandJunctionThreshold),
+                    Seed = worldSeed
                 };
 
                 var baseJob = new HectonSandboxAbyssalShelfBaseJob
@@ -121,10 +132,7 @@ namespace MapMagic.Nodes.MatrixGenerators
                     OutputHeights01 = rawHeights,
                     Parameters = parameters,
                     Width = width,
-                    WorldOriginAup = HectonSandboxAbyssalShelfMath.BuildAupXZ(
-                        dst.worldPos.x,
-                        dst.worldPos.z,
-                        parameters.AupCellSizeMeters),
+                    WorldOriginAup = worldOriginAup,
                     CellSizeMeters = sampleCellSizeMeters
                 };
 
@@ -213,6 +221,14 @@ namespace MapMagic.Nodes.MatrixGenerators
         private static int ResolveBatchCount(int cellCount)
         {
             return math.max(1, math.min(64, cellCount / 16));
+        }
+
+        private static int ResolveRuntimeWorldSeed()
+        {
+            IWorldSeedProvider provider = GlobalRegistry.WorldSeedProvider;
+            return provider != null && provider.IsInitialized
+                ? provider.RuntimeWorldSeed
+                : 0;
         }
     }
 }

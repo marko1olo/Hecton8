@@ -1,4 +1,5 @@
 using System;
+using Hecton8.Core;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
@@ -51,22 +52,12 @@ namespace Hecton8.Gameplay
     /// </summary>
     internal struct HectonPlayerMotorNativeState : IDisposable
     {
-        public NativeArray<float3> HydrodynamicGhostVelocityHistory;
         public NativeArray<CapsulecastCommand> ScheduledSweepCommands;
         public NativeArray<RaycastHit> ScheduledSweepResults;
         public JobHandle ScheduledSweepHandle;
 
-        public void EnsureHydrodynamicGhostState(int capacity)
-        {
-            if (HydrodynamicGhostVelocityHistory.IsCreated)
-                return;
-
-            int safeCapacity = math.max(1, capacity);
-            HydrodynamicGhostVelocityHistory = new NativeArray<float3>(
-                safeCapacity,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<float3>[capacity] - motor added-mass history - owner: HectonPlayerMotorNativeState
-        }
+        private const string NativeMemoryOwner = nameof(HectonPlayerMotorNativeState);
+        private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Scene;
 
         public void EnsureScheduledSweepState(int commandCount, int resultCount)
         {
@@ -76,6 +67,11 @@ namespace Hecton8.Gameplay
                     math.max(1, commandCount),
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<CapsulecastCommand>[commandCount] - deferred KCC sweep commands - owner: HectonPlayerMotorNativeState
+                NativeMemorySentinel.RegisterNativeArray(
+                    ScheduledSweepCommands,
+                    NativeMemoryOwner,
+                    nameof(ScheduledSweepCommands),
+                    NativeMemoryLifetime);
             }
 
             if (!ScheduledSweepResults.IsCreated)
@@ -84,16 +80,12 @@ namespace Hecton8.Gameplay
                     math.max(1, resultCount),
                     Allocator.Persistent,
                     NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<RaycastHit>[resultCount] - deferred KCC sweep results - owner: HectonPlayerMotorNativeState
+                NativeMemorySentinel.RegisterNativeArray(
+                    ScheduledSweepResults,
+                    NativeMemoryOwner,
+                    nameof(ScheduledSweepResults),
+                    NativeMemoryLifetime);
             }
-        }
-
-        public void DisposeHydrodynamicGhostState()
-        {
-            if (!HydrodynamicGhostVelocityHistory.IsCreated)
-                return;
-
-            HydrodynamicGhostVelocityHistory.Dispose();
-            HydrodynamicGhostVelocityHistory = default;
         }
 
         public void DisposeScheduledSweepState(bool hasDependency, JobHandle dependency)
@@ -107,9 +99,15 @@ namespace Hecton8.Gameplay
             if (!hasDependency)
             {
                 if (ScheduledSweepCommands.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepCommands);
                     ScheduledSweepCommands.Dispose();
+                }
                 if (ScheduledSweepResults.IsCreated)
+                {
+                    NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepResults);
                     ScheduledSweepResults.Dispose();
+                }
                 ScheduledSweepCommands = default;
                 ScheduledSweepResults = default;
                 ScheduledSweepHandle = default;
@@ -118,9 +116,15 @@ namespace Hecton8.Gameplay
 
             JobHandle disposeHandle = dependency;
             if (ScheduledSweepCommands.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepCommands);
                 disposeHandle = ScheduledSweepCommands.Dispose(disposeHandle);
+            }
             if (ScheduledSweepResults.IsCreated)
+            {
+                NativeMemorySentinel.UnregisterNativeArray(ScheduledSweepResults);
                 disposeHandle = ScheduledSweepResults.Dispose(disposeHandle);
+            }
 
             ScheduledSweepCommands = default;
             ScheduledSweepResults = default;
@@ -130,7 +134,6 @@ namespace Hecton8.Gameplay
         public void Dispose()
         {
             DisposeScheduledSweepState(ScheduledSweepHandle.IsCompleted == false, ScheduledSweepHandle);
-            DisposeHydrodynamicGhostState();
         }
     }
 }

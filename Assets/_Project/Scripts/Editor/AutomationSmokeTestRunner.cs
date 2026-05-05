@@ -21,6 +21,33 @@ namespace Hecton8.Editor
                 EditorApplication.Exit(1);
         }
 
+        public static void RunBatchCraftingRuntimeSmokePass()
+        {
+            bool passed = CraftingRuntimeSmokeTester.RunAsyncQueueSmoke(
+                1f,
+                1f,
+                out float pausedProgress,
+                out float firstPoweredProgress,
+                out float completedProgress);
+            int pausedProgressMilli = Mathf.RoundToInt(pausedProgress * 1000f);
+            int firstPoweredProgressMilli = Mathf.RoundToInt(firstPoweredProgress * 1000f);
+            int completedProgressMilli = Mathf.RoundToInt(completedProgress * 1000f);
+
+            Debug.Log(
+                "{\"CraftingRuntimeSmokeTester\":{\"pass\":" +
+                (passed ? "true" : "false") +
+                ",\"pausedProgressMilli\":" +
+                pausedProgressMilli +
+                ",\"firstPoweredProgressMilli\":" +
+                firstPoweredProgressMilli +
+                ",\"completedProgressMilli\":" +
+                completedProgressMilli +
+                "}}");
+
+            if (!passed)
+                EditorApplication.Exit(1);
+        }
+
         public static void RunBatchOmegaAutomationSmokePass()
         {
             AutomationOmegaSmokeResult result = AutomationOmegaSmokeTester.RunLogisticsRouteStressSmoke();

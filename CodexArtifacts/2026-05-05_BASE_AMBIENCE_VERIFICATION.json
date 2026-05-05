@@ -1,22 +1,22 @@
-﻿{
-    "task":  "BASE_AMBIENCE",
-    "date":  "2026-05-05T19:09:57.8380408+04:00",
-    "assembly_csharp_build":  {
-                                  "command":  "dotnet build Assembly-CSharp.csproj --no-restore -v:minimal",
-                                  "exit_code":  0,
-                                  "warnings":  0,
-                                  "errors":  0
-                              },
-    "unity_mcp":  {
-                      "first_console_error_read":  0,
-                      "refresh_wait_for_ready":  "timeout_60s",
-                      "second_console_read":  "unity_session_not_ready"
-                  },
-    "source_audit":  {
-                         "git_diff_check":  "no_whitespace_errors_lineending_warnings_only",
-                         "no_hotpath_string_or_job_run_hits_in_scoped_files":  true,
-                         "dryzone_shader_latest_import":  "imported_after_line_ending_normalization_no_DryZone_shader_error_found_in_latest_log_scan"
-                     },
-    "diff_artifact":  "CodexArtifacts/2026-05-05_BASE_AMBIENCE_DIFF.patch",
-    "status":  "PENDING_VERIFICATION"
+{
+  "status": "PENDING VERIFICATION",
+  "date": "2026-05-05",
+  "domain": "CONSTRUCTION_LOGISTICS_BASE_AMBIENCE",
+  "source_checks": {
+    "dotnet_build": {
+      "command": "dotnet build Assembly-CSharp.csproj --no-restore --no-dependencies -v:q -clp:ErrorsOnly",
+      "result": "0 warnings, 0 errors",
+      "log": "CodexArtifacts/dotnet-base-ambience-build.log"
+    },
+    "git_diff_check": {
+      "result": "pass",
+      "note": "Only line-ending normalization warnings from Git autocrlf."
+    }
+  },
+  "unity_mcp_console": {
+    "result": "unavailable",
+    "reason": "Unity session not ready for read_console; ping not answered after refresh timeout.",
+    "last_refresh_result": "Refresh triggered but timed out after 60s waiting for editor readiness."
+  },
+  "diff_artifact": "CodexArtifacts/2026-05-05_BASE_AMBIENCE_DIFF.patch"
 }

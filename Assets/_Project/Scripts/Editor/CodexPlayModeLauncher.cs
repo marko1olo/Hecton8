@@ -65,6 +65,7 @@ namespace Hecton8.Editor
         private const string UiSelectedGameObjectKey = "H8.CodexPlayModeLauncher.UiSelectedGameObject";
         private const string MetricsPathKey = "H8.CodexPlayModeLauncher.MetricsPath";
         private const string MainMenuSceneName = "01_MAIN_MENU";
+        private const string AutoRunFlagFileName = "run_playmode_sentinel.flag";
         private const double RequestedPlaySeconds = 15.0;
         private const double PhaseTimeoutSeconds = 90.0;
         private const int MaxFrameDeltaSamples = 4096;
@@ -79,6 +80,9 @@ namespace Hecton8.Editor
         {
             if (SessionState.GetBool(ActiveKey, false))
                 AttachCallbacks();
+
+            if (TryConsumeAutoRunFlag())
+                EditorApplication.delayCall += Run;
         }
 
         [MenuItem("Hecton8/Codex/Run Play Mode Sentinel")]
@@ -542,6 +546,26 @@ namespace Hecton8.Editor
             DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
             string rootPath = projectRoot != null ? projectRoot.FullName : Application.dataPath;
             return Path.Combine(rootPath, "playmode_metrics.json");
+        }
+
+        private static bool TryConsumeAutoRunFlag()
+        {
+            DirectoryInfo projectRoot = Directory.GetParent(Application.dataPath);
+            string rootPath = projectRoot != null ? projectRoot.FullName : Application.dataPath;
+            string flagPath = Path.Combine(rootPath, "CodexArtifacts", AutoRunFlagFileName);
+            if (!File.Exists(flagPath))
+                return false;
+
+            try
+            {
+                File.Delete(flagPath);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning("[CodexPlayModeLauncher] Failed to consume autorun flag: " + exception.Message);
+                return false;
+            }
         }
 
         private static void WriteMetrics()

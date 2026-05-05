@@ -650,6 +650,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private float _rotationTimer;
         private float _rotationPhase;
         private float _gameTime;
+        private float _debugCelestialTimeScale = 1f;
 
         private float _previousBlendForColors;
         private const float COLOR_BLEND_EPSILON = 0.001f;
@@ -756,7 +757,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private const int CelestialBodyCacheCapacity = 8;
         private const float AtmosphereWeightBlendThreshold = 0.01f;
         private const int CelestialAtmosphereLutResolution = 512;
-        private const int FirmamentStartupStarCount = 200000;
+        private const int FirmamentStartupStarCount = 100000;
         private const int FirmamentMinResolution = 256;
         private const int FirmamentMx350ResolutionCap = 2048;
         private const int FirmamentMidVramResolutionCap = 4096;
@@ -1197,13 +1198,14 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
         public void Tick(float deltaTime)
         {
-            _rotationAccumulator += (double)deltaTime;
+            float celestialDeltaTime = deltaTime * Mathf.Max(0f, _debugCelestialTimeScale);
+            _rotationAccumulator += (double)celestialDeltaTime;
             if (_rotationAccumulator > 10000.0)
                 _rotationAccumulator -= 10000.0;
             _rotationTimer = (float)_rotationAccumulator;
             _rotationPhase = (float)(_rotationAccumulator % 1.0);
 
-            _gameTime += deltaTime * Mathf.Max(0f, _cloudSpeed * ResolveCloudSpeedMultiplier());
+            _gameTime += celestialDeltaTime * Mathf.Max(0f, _cloudSpeed * ResolveCloudSpeedMultiplier());
 
             if (!_eclipseRadiusCalculated && aegirTransform != null && playerTransform != null)
             {
@@ -1213,7 +1215,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
             _cachedAegirRadius = ComputeAegirWorldRadius();
 
-            UpdateSunPosition(deltaTime);
+            UpdateSunPosition(celestialDeltaTime);
             ResolveSunDirection();
             SyncCrestPrimaryLight();
             UpdateSunVisualPosition();
@@ -1224,7 +1226,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             CalculateEclipseBacklight();
             DetectEclipse();
             DetectLunarResonance();
-            UpdateSunOcclusion(deltaTime);
+            UpdateSunOcclusion(celestialDeltaTime);
 
             UpdateSkyboxBlend(sunElevation);
             UpdateStarIntensity(sunElevation);
@@ -2638,9 +2640,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
 
             if (aegirTransform != null && playerTransform != null)
             {
-                float3 playerPos = (float3)playerTransform.position;
-                float3 aegirPos = (float3)aegirTransform.position;
-                direction = math.normalizesafe(aegirPos - playerPos);
+                direction = ResolveAupDirectionBetweenTransforms(playerTransform, aegirTransform);
                 if (math.lengthsq(direction) > 0.0001f)
                     return true;
             }
@@ -2658,7 +2658,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             {
                 float radius = GetAegirWorldRadius();
                 float distance = math.max(
-                    math.length((float3)aegirTransform.position - (float3)playerTransform.position),
+                    ResolveAupDistanceMeters(playerTransform, aegirTransform),
                     0.01f);
                 return math.degrees(math.atan2(radius, distance));
             }
@@ -3611,6 +3611,28 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             return new float2(shadowRuntime.x, shadowRuntime.z);
         }
 
+        private static float ResolveAupDistanceMeters(Transform fromTransform, Transform toTransform)
+        {
+            if (fromTransform == null || toTransform == null)
+                return 0f;
+
+            AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromTransform.position);
+            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toTransform.position);
+            double distanceSq = AbsoluteUniversePosition.DistanceSq(in fromAup, in toAup);
+            return (float)math.sqrt(math.max(0d, distanceSq));
+        }
+
+        private static float3 ResolveAupDirectionBetweenTransforms(Transform fromTransform, Transform toTransform)
+        {
+            if (fromTransform == null || toTransform == null)
+                return float3.zero;
+
+            AbsoluteUniversePosition fromAup = AbsoluteUniversePosition.FromRuntimePosition(fromTransform.position);
+            AbsoluteUniversePosition toAup = AbsoluteUniversePosition.FromRuntimePosition(toTransform.position);
+            double3 delta = toAup.ToAbsoluteDouble3() - fromAup.ToAbsoluteDouble3();
+            return math.normalizesafe(new float3((float)delta.x, (float)delta.y, (float)delta.z), float3.zero);
+        }
+
         private void DisableLegacySunFlare()
         {
             if (_sunLensFlare == null)
@@ -3874,19 +3896,18 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             ref bool insideExitBand,
             ref float penumbraFactor)
         {
-            float dotSunOccluder = math.dot(toSun, toOccluder);
-            float angleDeg = math.degrees(
-                math.acos(math.clamp(dotSunOccluder, -1f, 1f)));
-
             float sunRadius = math.max(0.001f, sunAngularRadiusDegrees);
             float occluderRadius = math.max(0.001f, angularRadius);
-            float overlap01 = ComputeAngularDiscOverlapFactor(sunRadius, occluderRadius, angleDeg);
+            float dotSunOccluder = math.clamp(math.dot(toSun, toOccluder), -1f, 1f);
+            float overlap01 = ComputeCheapPenumbraOverlapFromDot(dotSunOccluder, sunRadius, occluderRadius);
             penumbraFactor = math.max(penumbraFactor, overlap01);
 
             if (overlap01 >= math.clamp(eclipseEventStartPenumbraThreshold, 0.01f, 1f))
                 sunOccluded = true;
 
-            if (angleDeg < occluderRadius + sunRadius + math.max(0f, eclipseHysteresisMargin))
+            float exitAngle = sunRadius + occluderRadius + math.max(0f, eclipseHysteresisMargin);
+            float exitDot = math.cos(math.radians(math.max(0f, exitAngle)));
+            if (dotSunOccluder >= exitDot)
                 insideExitBand = true;
         }
 
@@ -3894,47 +3915,21 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         // UTILITY
         // ─────────────────────────────────────────────
 
-        private static float ComputeAngularDiscOverlapFactor(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
+        private static float ComputeCheapPenumbraOverlapFromDot(float dotSunOccluder, float sunRadiusDeg, float occluderRadiusDeg)
         {
             float sunRadius = math.max(0.0001f, sunRadiusDeg);
             float occluderRadius = math.max(0.0001f, occluderRadiusDeg);
-            float separation = math.max(0f, separationDeg);
-            float sunArea = math.PI * sunRadius * sunRadius;
+            float thresholdEnter = math.cos(math.radians(sunRadius + occluderRadius));
+            float thresholdFull = math.cos(math.radians(math.abs(occluderRadius - sunRadius)));
+            float t = (math.clamp(dotSunOccluder, -1f, 1f) - thresholdEnter) /
+                      math.max(0.0001f, thresholdFull - thresholdEnter);
+            return SmoothStep01(t);
+        }
 
-            if (separation >= sunRadius + occluderRadius)
-                return 0f;
-
-            if (separation <= math.abs(occluderRadius - sunRadius))
-            {
-                if (occluderRadius >= sunRadius)
-                    return 1f;
-
-                return math.saturate((math.PI * occluderRadius * occluderRadius) / sunArea);
-            }
-
-            float separationSq = separation * separation;
-            float sunRadiusSq = sunRadius * sunRadius;
-            float occluderRadiusSq = occluderRadius * occluderRadius;
-            float sunTerm = math.acos(math.clamp(
-                (separationSq + sunRadiusSq - occluderRadiusSq) / (2f * separation * sunRadius),
-                -1f,
-                1f));
-            float occluderTerm = math.acos(math.clamp(
-                (separationSq + occluderRadiusSq - sunRadiusSq) / (2f * separation * occluderRadius),
-                -1f,
-                1f));
-            float rootTerm = math.max(
-                0f,
-                (-separation + sunRadius + occluderRadius) *
-                (separation + sunRadius - occluderRadius) *
-                (separation - sunRadius + occluderRadius) *
-                (separation + sunRadius + occluderRadius));
-            float overlapArea =
-                sunRadiusSq * sunTerm +
-                occluderRadiusSq * occluderTerm -
-                0.5f * math.sqrt(rootTerm);
-
-            return math.saturate(overlapArea / sunArea);
+        private static float ComputeCheapPenumbraOverlapFromSeparation(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
+        {
+            float dotSunOccluder = math.cos(math.radians(math.max(0f, separationDeg)));
+            return ComputeCheapPenumbraOverlapFromDot(dotSunOccluder, sunRadiusDeg, occluderRadiusDeg);
         }
 
         private static float SmoothStep01(float t)
@@ -4025,10 +4020,11 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             aegirObserverRelativeBody != null && aegirObserverRelativeBody.UsesFixedDirection;
         public float RotationTimer => _rotationTimer;
         public float GameTime => _gameTime;
+        public float DebugCelestialTimeScale => _debugCelestialTimeScale;
 
         public static float EvaluatePenumbraOverlapForSmoke(float sunRadiusDeg, float occluderRadiusDeg, float separationDeg)
         {
-            return ComputeAngularDiscOverlapFactor(sunRadiusDeg, occluderRadiusDeg, separationDeg);
+            return ComputeCheapPenumbraOverlapFromSeparation(sunRadiusDeg, occluderRadiusDeg, separationDeg);
         }
 
         public bool TryGetAegirSkyDirection(out Vector3 direction)
@@ -4044,6 +4040,11 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         public void SetOrbitalAngle(float angleDegrees)
         {
             _accumulatedOrbitalAngle = angleDegrees % 360f;
+        }
+
+        public void SetDebugCelestialTimeScale(float multiplier)
+        {
+            _debugCelestialTimeScale = Mathf.Max(1f, multiplier);
         }
 
         // ─────────────────────────────────────────────
@@ -4065,10 +4066,10 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             float3 toSun = _resolvedSunDirection;
             Gizmos.DrawRay((Vector3)playerPos, (Vector3)(toSun * 50f));
 
-            float3 toAegir = math.normalizesafe(aegirPos - playerPos);
+            float3 toAegir = ResolveAupDirectionBetweenTransforms(playerTransform, aegirTransform);
             Gizmos.color = new Color(0.5f, 0f, 1f, 0.5f);
             Gizmos.DrawRay((Vector3)playerPos,
-                (Vector3)(toAegir * math.length(aegirPos - playerPos)));
+                (Vector3)(toAegir * ResolveAupDistanceMeters(playerTransform, aegirTransform)));
 
             float gizmoRadius = GetAegirWorldRadius();
             if (_currentBacklitFactor > 0.01f)
@@ -4096,7 +4097,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             {
                 Gizmos.color = new Color(0.6f, 0.5f, 0.8f, 0.7f);
                 Gizmos.DrawRay((Vector3)playerPos,
-                    (Vector3)(math.normalizesafe(aegirPos - playerPos) * 30f));
+                    (Vector3)(toAegir * 30f));
             }
         }
 #endif

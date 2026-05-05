@@ -466,7 +466,10 @@ namespace Hecton8.World
         private const int PagedSectorWindowWidth = 3;
         private const int PagedSectorHashCount = PagedSectorWindowWidth * PagedSectorWindowWidth;
         private const int PagedSectorEdgeLengthMeters = 1000;
-        private const float SectorEvictionDistanceMeters = 2500f;
+        private const long InvalidPagedSectorHash = long.MinValue;
+        private const float PagedSectorLoadRadiusMeters = 1000f;
+        private const float PagedSectorLoadRadiusSq = PagedSectorLoadRadiusMeters * PagedSectorLoadRadiusMeters;
+        private const float SectorEvictionDistanceMeters = 1500f;
         private const float SectorOverrideCommitIntervalSeconds = 10f;
         private const float SectorOverrideCommitDelaySeconds = 300f;
         private const float FloraStateQuantizationScale = 255f;
@@ -1930,7 +1933,11 @@ namespace Hecton8.World
                 {
                     for (int x = -1; x <= 1; x++)
                     {
-                        desiredSectorHashes[hashCursor++] = PackSectorHash(centerSector + new int2(x, z));
+                        float planarDistanceSq = ((x * PagedSectorEdgeLengthMeters) * (x * PagedSectorEdgeLengthMeters)) +
+                                                 ((z * PagedSectorEdgeLengthMeters) * (z * PagedSectorEdgeLengthMeters));
+                        desiredSectorHashes[hashCursor++] = planarDistanceSq <= PagedSectorLoadRadiusSq
+                            ? PackSectorHash(centerSector + new int2(x, z))
+                            : InvalidPagedSectorHash;
                     }
                 }
 
@@ -2551,6 +2558,9 @@ namespace Hecton8.World
         {
             for (int i = 0; i < desiredSectorHashes.Length; i++)
             {
+                if (desiredSectorHashes[i] == InvalidPagedSectorHash)
+                    continue;
+
                 if (desiredSectorHashes[i] == sectorHash)
                     return true;
             }
@@ -2843,6 +2853,9 @@ namespace Hecton8.World
             for (int i = 0; i < desiredSectorHashes.Length; i++)
             {
                 long sectorHash = desiredSectorHashes[i];
+                if (sectorHash == InvalidPagedSectorHash)
+                    continue;
+
                 if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) ||
                     string.IsNullOrEmpty(state.TempPath) ||
                     !File.Exists(state.TempPath))
@@ -2903,6 +2916,9 @@ namespace Hecton8.World
             for (int i = 0; i < desiredSectorHashes.Length; i++)
             {
                 long sectorHash = desiredSectorHashes[i];
+                if (sectorHash == InvalidPagedSectorHash)
+                    continue;
+
                 if (!_sectorOverrideStates.TryGetValue(sectorHash, out SectorOverrideState state) ||
                     state == null ||
                     string.IsNullOrEmpty(state.EntityStateTempPath) ||
@@ -3020,6 +3036,9 @@ namespace Hecton8.World
 
             for (int i = 0; i < desiredSectorHashes.Length; i++)
             {
+                if (desiredSectorHashes[i] == InvalidPagedSectorHash)
+                    continue;
+
                 if (_sectorOverrideStates.TryGetValue(desiredSectorHashes[i], out SectorOverrideState state))
                     state.IsResident = true;
             }
@@ -3293,7 +3312,15 @@ namespace Hecton8.World
                             continue;
                         }
 
-                        destination.Add(entityState);
+                        destination.Add(CreateFaunaHibernationState(
+                            entityState.InstanceUid,
+                            GetFaunaHibernationSpeciesId(in entityState),
+                            GetFaunaHibernationHealth(in entityState),
+                            in faunaAup,
+                            GetFaunaHibernationLargeThreatFlag(in entityState),
+                            GetFaunaHibernationPredatorFlag(in entityState),
+                            Time.time,
+                            StableRandom01(entityState.InstanceUid)));
                         _entityStateByInstanceUid.Remove(entityState.InstanceUid);
                         restoredCount++;
                         consumedAnyFauna = true;
@@ -4158,6 +4185,17 @@ namespace Hecton8.World
             return TryUnpackFaunaVitals(state.Position.Reserved, out _, out float hunger01)
                 ? hunger01
                 : 0f;
+        }
+
+        internal static float StableRandom01(uint uid)
+        {
+            uint value = uid != 0u ? uid : 0x9E3779B9u;
+            value ^= value >> 16;
+            value *= 0x85EBCA6Bu;
+            value ^= value >> 13;
+            value *= 0xC2B2AE35u;
+            value ^= value >> 16;
+            return (value & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
         internal static bool GetFaunaHibernationLargeThreatFlag(in EntityDataRecord state)

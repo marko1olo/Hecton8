@@ -2,6 +2,7 @@ using System.IO;
 using System.Text;
 using Hecton8.Core;
 using Hecton8.World;
+using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -27,6 +28,10 @@ namespace Hecton8.Editor
         private const string MetricsLabel = "metrics";
         private const string ShelfRawLabel = "shelfRaw";
         private const string ShelfQuantizedLabel = "shelfQuantized";
+        private const string HeightPixelsLabel = "heightPixels";
+        private const string NormalPixelsLabel = "normalPixels";
+        private const string MaskPixelsLabel = "maskPixels";
+        private const string MaskMaxLabel = "maskMax";
         private const double ShelfPreviewOriginMeters = -16000.0;
         private const double ShelfPreviewCellSizeMeters = 64.0;
         private const double ShelfAupCellSizeMeters = 5000.0;
@@ -251,10 +256,10 @@ namespace Hecton8.Editor
                     CellSizeMeters = (float)ShelfPreviewCellSizeMeters,
                     LowWorldY = ShelfLowWorldY,
                     HighWorldY = ShelfHighWorldY,
-                    PlateauSourceAngleDegrees = 4f,
-                    PlateauTargetAngleDegrees = 30f,
-                    CliffSourceAngleDegrees = 40f,
-                    CliffTargetAngleDegrees = 58f,
+                    PlateauSourceAngleDegrees = 15f,
+                    PlateauTargetAngleDegrees = 3.5f,
+                    CliffSourceAngleDegrees = 45f,
+                    CliffTargetAngleDegrees = 80f,
                     Strength = 1f
                 }.Schedule(PixelCount, 64, handle);
 
@@ -296,7 +301,9 @@ namespace Hecton8.Editor
                 DomainWarpMeters = 1450f,
                 DomainWarpFrequency = 0.00011f,
                 MacroExponentialFalloff = 3.1f,
-                Seed = 880031u
+                IslandCenterRadiusMeters = 2600f,
+                IslandJunctionThreshold = 0.58f,
+                Seed = HectonSandboxAbyssalShelfMath.CombineWorldSeed(880031u, 0)
             };
         }
 
@@ -328,64 +335,122 @@ namespace Hecton8.Editor
 
         private static void WriteHeightPng(NativeArray<float> heights, string path)
         {
-            Color32[] pixels = new Color32[PixelCount];
-            for (int i = 0; i < PixelCount; i++)
-            {
-                byte value = (byte)math.round(math.saturate(heights[i]) * 255f);
-                pixels[i] = new Color32(value, value, value, 255);
-            }
+            NativeArray<Color32> pixels = default;
+            JobHandle handle = default;
+            bool handleScheduled = false;
 
-            WritePng(pixels, path);
+            try
+            {
+                pixels = new NativeArray<Color32>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, HeightPixelsLabel, NativeAllocationLifetime.TempJob);
+
+                handle = new ErosionGrayscalePngBakeJob
+                {
+                    Values = heights,
+                    Pixels = pixels
+                }.Schedule(PixelCount, 64);
+                handleScheduled = true;
+
+                // COLD SYNC JOB: editor harness blocks to write deterministic grayscale PNG artifacts.
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                handleScheduled = false;
+
+                WritePng(pixels, path);
+            }
+            finally
+            {
+                if (handleScheduled)
+                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+
+                DisposeTracked(ref pixels);
+            }
         }
 
         private static void WriteNormalPng(NativeArray<float> heights, string path, float heightScaleMeters, float cellSizeMeters)
         {
-            Color32[] pixels = new Color32[PixelCount];
-            float safeCellSize = math.max(0.001f, cellSizeMeters);
-            float safeHeightScale = math.max(0.001f, heightScaleMeters);
+            NativeArray<Color32> pixels = default;
+            JobHandle handle = default;
+            bool handleScheduled = false;
 
-            for (int z = 0; z < Resolution; z++)
+            try
             {
-                int zBack = math.max(0, z - 1);
-                int zForward = math.min(Resolution - 1, z + 1);
-                for (int x = 0; x < Resolution; x++)
-                {
-                    int xLeft = math.max(0, x - 1);
-                    int xRight = math.min(Resolution - 1, x + 1);
-                    int index = z * Resolution + x;
-                    float left = heights[z * Resolution + xLeft] * safeHeightScale;
-                    float right = heights[z * Resolution + xRight] * safeHeightScale;
-                    float back = heights[zBack * Resolution + x] * safeHeightScale;
-                    float forward = heights[zForward * Resolution + x] * safeHeightScale;
-                    float dx = (right - left) * (0.5f / safeCellSize);
-                    float dz = (forward - back) * (0.5f / safeCellSize);
-                    float3 normal = math.normalize(new float3(-dx, 1f, -dz));
-                    pixels[index] = new Color32(
-                        ToByte(normal.x * 0.5f + 0.5f),
-                        ToByte(normal.y * 0.5f + 0.5f),
-                        ToByte(normal.z * 0.5f + 0.5f),
-                        255);
-                }
-            }
+                pixels = new NativeArray<Color32>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, NormalPixelsLabel, NativeAllocationLifetime.TempJob);
 
-            WritePng(pixels, path);
+                handle = new ErosionNormalMapBakeJob
+                {
+                    Heights = heights,
+                    Pixels = pixels,
+                    Width = Resolution,
+                    Height = Resolution,
+                    HeightScaleMeters = math.max(0.001f, heightScaleMeters),
+                    CellSizeMeters = math.max(0.001f, cellSizeMeters)
+                }.Schedule(PixelCount, 64);
+                handleScheduled = true;
+
+                // COLD SYNC JOB: editor harness blocks to write deterministic normal-map PNG artifacts.
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                handleScheduled = false;
+
+                WritePng(pixels, path);
+            }
+            finally
+            {
+                if (handleScheduled)
+                    DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+
+                DisposeTracked(ref pixels);
+            }
         }
 
         private static void WriteMaskPng(NativeArray<float> mask, string path)
         {
-            float maxValue = 0f;
-            for (int i = 0; i < PixelCount; i++)
-                maxValue = math.max(maxValue, mask[i]);
+            NativeArray<Color32> pixels = default;
+            NativeArray<float> maxValue = default;
+            JobHandle maxHandle = default;
+            JobHandle bakeHandle = default;
+            bool maxHandleScheduled = false;
+            bool bakeHandleScheduled = false;
 
-            float invMax = maxValue > 0.000001f ? 1f / maxValue : 0f;
-            Color32[] pixels = new Color32[PixelCount];
-            for (int i = 0; i < PixelCount; i++)
+            try
             {
-                byte value = (byte)math.round(math.saturate(mask[i] * invMax) * 255f);
-                pixels[i] = new Color32(value, value, value, 255);
-            }
+                pixels = new NativeArray<Color32>(PixelCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                maxValue = new NativeArray<float>(1, Allocator.TempJob, NativeArrayOptions.ClearMemory);
+                NativeMemorySentinel.RegisterNativeArray(pixels, NativeMemoryOwner, MaskPixelsLabel, NativeAllocationLifetime.TempJob);
+                NativeMemorySentinel.RegisterNativeArray(maxValue, NativeMemoryOwner, MaskMaxLabel, NativeAllocationLifetime.TempJob);
 
-            WritePng(pixels, path);
+                maxHandle = new ErosionMaskMaxJob
+                {
+                    Values = mask,
+                    MaxValue = maxValue
+                }.Schedule();
+                maxHandleScheduled = true;
+
+                bakeHandle = new ErosionMaskPngBakeJob
+                {
+                    Values = mask,
+                    MaxValue = maxValue,
+                    Pixels = pixels
+                }.Schedule(PixelCount, 64, maxHandle);
+                bakeHandleScheduled = true;
+                maxHandleScheduled = false;
+
+                // COLD SYNC JOB: editor harness blocks to write deterministic mask PNG artifacts.
+                DispatcherJobSwap.TryComplete(ref bakeHandle, forceComplete: true);
+                bakeHandleScheduled = false;
+
+                WritePng(pixels, path);
+            }
+            finally
+            {
+                if (bakeHandleScheduled)
+                    DispatcherJobSwap.TryComplete(ref bakeHandle, forceComplete: true);
+                else if (maxHandleScheduled)
+                    DispatcherJobSwap.TryComplete(ref maxHandle, forceComplete: true);
+
+                DisposeTracked(ref maxValue);
+                DisposeTracked(ref pixels);
+            }
         }
 
         private static void WriteMetricsJson(ErosionSmokeMetrics metrics, string path)
@@ -450,10 +515,10 @@ namespace Hecton8.Editor
             return (byte)math.round(math.saturate(value) * 255f);
         }
 
-        private static void WritePng(Color32[] pixels, string path)
+        private static void WritePng(NativeArray<Color32> pixels, string path)
         {
             Texture2D texture = new Texture2D(Resolution, Resolution, TextureFormat.RGBA32, false, true);
-            texture.SetPixels32(pixels);
+            texture.SetPixelData(pixels, 0);
             texture.Apply(false, false);
             File.WriteAllBytes(path, texture.EncodeToPNG());
             Object.DestroyImmediate(texture);
@@ -464,6 +529,89 @@ namespace Hecton8.Editor
             NativeArray<float> swap = current;
             current = next;
             next = swap;
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ErosionGrayscalePngBakeJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float> Values;
+            [WriteOnly] public NativeArray<Color32> Pixels;
+
+            public void Execute(int index)
+            {
+                byte value = ToByte(Values[index]);
+                Pixels[index] = new Color32(value, value, value, 255);
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ErosionNormalMapBakeJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float> Heights;
+            [WriteOnly] public NativeArray<Color32> Pixels;
+            public int Width;
+            public int Height;
+            public float HeightScaleMeters;
+            public float CellSizeMeters;
+
+            public void Execute(int index)
+            {
+                int width = math.max(1, Width);
+                int height = math.max(1, Height);
+                int x = index % width;
+                int z = index / width;
+                int xLeft = math.max(0, x - 1);
+                int xRight = math.min(width - 1, x + 1);
+                int zBack = math.max(0, z - 1);
+                int zForward = math.min(height - 1, z + 1);
+                float safeHeightScale = math.max(0.001f, HeightScaleMeters);
+                float invCellSize = 0.5f / math.max(0.001f, CellSizeMeters);
+                float left = Heights[z * width + xLeft] * safeHeightScale;
+                float right = Heights[z * width + xRight] * safeHeightScale;
+                float back = Heights[zBack * width + x] * safeHeightScale;
+                float forward = Heights[zForward * width + x] * safeHeightScale;
+                float dx = (right - left) * invCellSize;
+                float dz = (forward - back) * invCellSize;
+                float3 normal = math.normalize(new float3(-dx, 1f, -dz));
+                Pixels[index] = new Color32(
+                    ToByte(normal.x * 0.5f + 0.5f),
+                    ToByte(normal.y * 0.5f + 0.5f),
+                    ToByte(normal.z * 0.5f + 0.5f),
+                    255);
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ErosionMaskMaxJob : IJob
+        {
+            [ReadOnly] public NativeArray<float> Values;
+            [WriteOnly] public NativeArray<float> MaxValue;
+
+            public void Execute()
+            {
+                float maxValue = 0f;
+                int count = Values.Length;
+                for (int i = 0; i < count; i++)
+                    maxValue = math.max(maxValue, Values[i]);
+
+                MaxValue[0] = maxValue;
+            }
+        }
+
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        private struct ErosionMaskPngBakeJob : IJobParallelFor
+        {
+            [ReadOnly] public NativeArray<float> Values;
+            [ReadOnly] public NativeArray<float> MaxValue;
+            [WriteOnly] public NativeArray<Color32> Pixels;
+
+            public void Execute(int index)
+            {
+                float maxValue = MaxValue[0];
+                float invMax = maxValue > 0.000001f ? 1f / maxValue : 0f;
+                byte value = ToByte(Values[index] * invMax);
+                Pixels[index] = new Color32(value, value, value, 255);
+            }
         }
     }
 }

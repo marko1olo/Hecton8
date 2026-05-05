@@ -383,19 +383,22 @@ namespace MapMagic.Nodes.MatrixGenerators
                     }
                 }
 
-                using (MaskNormalizeProfilerMarker.Auto())
+                if (stop == null || !stop.stop)
                 {
-                    handle = new NormalizeMaskInPlaceJob
+                    using (MaskNormalizeProfilerMarker.Auto())
                     {
-                        Mask = sediment,
-                        Count = cellCount
-                    }.Schedule(handle);
+                        handle = new NormalizeMaskInPlaceJob
+                        {
+                            Mask = sediment,
+                            Count = cellCount
+                        }.Schedule(handle);
 
-                    handle = new NormalizeMaskInPlaceJob
-                    {
-                        Mask = wear,
-                        Count = cellCount
-                    }.Schedule(handle);
+                        handle = new NormalizeMaskInPlaceJob
+                        {
+                            Mask = wear,
+                            Count = cellCount
+                        }.Schedule(handle);
+                    }
                 }
 
                 // COLD SYNC JOB: MapMagic Generate must publish concrete matrix products before returning to the graph.

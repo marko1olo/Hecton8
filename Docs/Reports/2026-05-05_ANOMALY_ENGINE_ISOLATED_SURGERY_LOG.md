@@ -4,6 +4,8 @@
 
 Source implementation: ANOMALY ENGINE ISOLATED AND COMPLETE.
 
+Hadal basin source objective: ANOMALY DETECTION COMPLETE.
+
 Verification status: PARTIAL. Unity Editor execution is still blocked by the active editor session, not by a confirmed anomaly diagnostic.
 
 Reason: `Hecton8.Core.csproj` and `Hecton8.Editor.csproj --no-dependencies` compile clean. Unity MCP refresh timed out while the editor window reported `Compiling Scripts`; MCP console reads returned `no_unity_session`. Direct Bee/Roslyn response-file compilation of `Hecton8.Core.rsp` returned an unrelated `BaseModule._brownoutPropertyBlock` duplicate-definition error outside anomaly ownership.
@@ -38,8 +40,8 @@ The basin detector is split into two Burst jobs:
    - Scans the 8-neighborhood.
    - Marks a cell as a seed only when no neighbor is lower, at least one neighbor is higher, and equal-height plateaus resolve to the lowest flat index.
 
-2. `ClosedBasinFloodFillJob : IJobParallelFor`
-   - Scheduled as one lane to preserve deterministic scratch ownership for the heap flood-fill.
+2. `ClosedBasinFloodFillJob : IJob`
+   - Runs after the parallel scan to preserve deterministic scratch ownership for the heap flood-fill.
    - Iterates marked minima.
    - Uses caller-owned `NativeArray<int>` scratch as a binary min-heap.
    - Expands cells in ascending height order from the seed.
@@ -59,7 +61,77 @@ No managed allocations occur inside either job. All native buffers are caller-ow
 - `ApplyVoxelCliffOverhangNoise` uses a separate output SDF buffer and lateral trilinear sampling for steep horizontal gradients.
 - `HectonBrinePoolMeshGenerator` creates cold-path rectangular water meshes at basin lip height, adds a trigger `BoxCollider`, attaches `ToxinHazard`, and registers the enclosing toxic hazard sphere through `HectonHazardManager`.
 - `HectonAnomalyMapMagicNode` emits a `MatrixWorld` brine mask, a `TransitionsList` of deepest basin points, a `TransitionsList` of pillar AUP coordinates, and a `MatrixWorld` fissure mask.
-- `BrineToxicity` is not present in `ProjectSettings/TagManager.asset`. No project settings were changed. Generated brine objects use the audited `HectonLayerMasks.TriggerZone` layer and represent toxicity through `HazardType.Toxicity` plus `ToxinHazard`.
+- `BrineToxicity` is not present in `ProjectSettings/TagManager.asset`. `AGENTS.md` forbids changing Tags/Layers, so no project settings were changed. Generated brine objects now resolve `LayerMask.NameToLayer("BrineToxicity")` once and use that layer if the project defines it; the current fallback remains audited `HectonLayerMasks.TriggerZone`.
+- Brine toxicity uses the existing `HazardType.Toxicity` signal path. `HazardExposureNotifier` and `English.json` now report `TOXIC INCURSION` for `HAZARD_TOXICITY_ENTER`.
+
+## Hadal Basin Discovery - 2026-05-05
+
+Mandatory reconnaissance:
+
+- Read `Docs/Reports/TERRAIN_AND_BIOME_REALITY_MAP.md`. Current project status remains `PENDING VERIFICATION`.
+- Inspected `Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs`.
+
+Local minima Burst logic:
+
+```csharp
+public void Execute(int index)
+{
+    if (IsBorder(index) || !math.isfinite(Heightmap[index]))
+        return;
+
+    float center = Heightmap[index];
+    bool hasHigherNeighbor = false;
+
+    for (int dz = -1; dz <= 1; dz++)
+    for (int dx = -1; dx <= 1; dx++)
+    {
+        if ((dx | dz) == 0)
+            continue;
+
+        int neighborIndex = index + dx + dz * Width;
+        float neighbor = Heightmap[neighborIndex];
+        if (!math.isfinite(neighbor) || neighbor < center)
+            return;
+
+        hasHigherNeighbor |= neighbor > center;
+        if (neighbor == center && neighborIndex < index)
+            return;
+    }
+
+    if (hasHigherNeighbor)
+        CandidateMask[index] = 1;
+}
+```
+
+Flood-fill and mesh generation facts:
+
+- `ClosedBasinFloodFillJob : IJob` runs a deterministic flood over caller-owned `NativeArray<int>` heap and visited scratch buffers. The local-minima scan remains `ClosedBasinDetectionJob : IJobParallelFor`.
+- Accepted basins require `LipHeight - DeepestHeight >= minimumDepthMeters`; the default MapMagic node depth is `50f`.
+- `HectonBrinePoolMeshGenerator` resolves basin bounds in `ResolveBrinePoolBoundsJob : IJobParallelFor`, then creates capped cold-path pool objects at the basin lip height.
+- Each generated pool has `BoxCollider.isTrigger = true`, `ToxinHazard`, and a matching `HectonHazardManager.Register(..., HazardType.Toxicity, ...)` sphere.
+- `HectonAnomalyMapMagicNode` exports `Brine Mask` as a `MatrixWorld` copied from `BasinMask`, enabling MapMagic terrain texture swaps such as `Viscous Mud`.
+
+Memory and GC interrogation:
+
+- `HectonAnomalyEngine` jobs allocate no native memory internally.
+- `HectonAnomalyMapMagicNode`, `HectonBrinePoolMeshGenerator`, and `AnomalyTestHarness` own all new `NativeArray` allocations, register them with `NativeMemorySentinel`, and dispose them through `finally`/`DisposeTracked(...)`.
+- No LINQ, `foreach`, `string.Format`, `Update`, `Tick`, or `SlowTick` patterns were found in the touched anomaly files.
+- No new `GlobalRegistry.Get<T>()`, `Awake()`, or `OnEnable()` dependency query was added.
+
+Verification delta:
+
+- `CodexArtifacts/anomaly-hadal-core-build.log`: sequential `dotnet build Hecton8.Core.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `EXIT_CODE=0`.
+- `CodexArtifacts/anomaly-hadal-editor-build.log`: sequential `dotnet build Hecton8.Editor.csproj --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `EXIT_CODE=0`.
+- `--no-dependencies` builds are not valid after Unity clears `Temp/bin/Debug`; they reported missing metadata for package/project DLLs, not anomaly source errors.
+- After dependency DLLs were restored, `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 errors, 0 warnings`.
+- After dependency DLLs were restored, `dotnet build Hecton8.Editor.csproj --no-restore --no-dependencies -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 errors, 0 warnings`.
+
+Crucible rerun defects found and fixed:
+
+- `ClosedBasinFloodFillJob : IJobParallelFor` failed the editor harness with `IndexOutOfRangeException: Index 144 is out of restricted IJobParallelFor range [0...0]`. The flood-fill reads and writes arbitrary full-buffer cells by design, so it was converted to `ClosedBasinFloodFillJob : IJob` scheduled after the parallel local-minima scan.
+- Anomaly Burst jobs used `CompileSynchronously = true`, which produced Unity editor sync-compile exceptions while scripts were compiling. Removed synchronous Burst compilation from the anomaly jobs; they remain Burst-compiled.
+- `Assets/_Project/Scripts/Gameplay/HectonPlayerHealth.cs` was already dirty and blocked `Hecton8.Core.csproj` with a duplicate/missing `RadiationFatigueCriticalExposureSeconds` state. Removed the duplicate declaration only, to unblock project compilation.
+- Unity MCP refresh after these fixes timed out waiting for editor readiness, and subsequent menu execution/console reads timed out. `CodexArtifacts/anomaly-hadal-harness-unity.log` batchmode also exited before method entry with `return code 1`. No post-fix `ANOMALY_TEST_HARNESS_PASS` console line was captured in this session.
 
 ## 2D-to-3D Seam Burst Logic
 
@@ -97,7 +169,7 @@ Blocked:
 
 Additional changes made after the Omega audit:
 
-- Converted `ClosedBasinFloodFillJob` to `IJobParallelFor` with a single scheduled lane. This satisfies the processor contract while preserving deterministic heap/visited scratch ownership.
+- Converted `ClosedBasinFloodFillJob` to a Burst `IJob` after Unity proved that single-lane `IJobParallelFor` still enforces per-index restricted ranges for arbitrary flood-fill reads and writes.
 - Added exact SDF top-cell zeroing after terrain density stitching.
 - Added ridge feature detection output for chthonic pillar AUP coordinates and deep fissure masks.
 - Added deep fissure SDF subtraction with optional packed biome influence writes.
@@ -110,6 +182,61 @@ Current objective status:
 - Source isolation: complete.
 - Mathematical harness source: complete.
 - Unity execution proof: pending because editor readiness and console access are unavailable in the current Unity session.
+
+## Omega Autonomy V2 Crucible - 2026-05-05
+
+Status: PENDING VERIFICATION. Source audit passed after fixes; runtime GC/profiler proof is still absent.
+
+Audit scope:
+
+- `Assets/_Project/Scripts/World/HectonAnomalyEngine.cs`
+- `Assets/_Project/Scripts/World/HectonAnomalyFeatureJobs.cs`
+- `Assets/_Project/Scripts/World/HectonAnomalySdfJobs.cs`
+- `Assets/_Project/Scripts/World/HectonAnomalyBrineJobs.cs`
+- `Assets/_Project/Scripts/World/HectonBrinePoolMeshGenerator.cs`
+- `Assets/_Project/Scripts/World/HectonAnomalyMapMagicNode.cs`
+- `Assets/_Project/Scripts/Editor/AnomalyTestHarness.cs`
+
+Garbage found and excised:
+
+- `HectonBrinePoolMeshGenerator` registered brine hazards from `poolObject.transform.position` even though the runtime center had already been computed. Removed the transform read. `CreatePoolObject(...)` now returns `runtimeCenter` through an `out Vector3`, and `RegisterBrineHazard(...)` consumes that value directly. Remaining `transform.position` use is a presentation placement write only.
+- `_activePools` was a `List<ActiveBrinePool>` with initial capacity 32 but no hard cap. Added `MaxGeneratedBrinePools = 32`, added `PoolCapWarningHash`, and stop generation before `_activePools.Add(...)` can force a List reallocation.
+- Brine mesh generation allocated a new `Mesh` plus vertex/uv/normal/index arrays per pool. Replaced it with one owned shared unit quad mesh per generator, scaled each pool transform to its basin bounds, and added `DestroySharedPoolMesh()` in `OnDestroy()`.
+
+Memory interrogation:
+
+- `HectonAnomalyMapMagicNode` allocates nine `Allocator.TempJob` `NativeArray` buffers. All are registered through `NativeMemorySentinel.RegisterNativeArray(...)` and all are disposed in a `finally` block through `DisposeTracked(...)`.
+- `HectonBrinePoolMeshGenerator` allocates one `Allocator.TempJob` bounds array. It is registered with `NativeMemorySentinel` and disposed in a `finally` block through `DisposeTracked(...)`.
+- `AnomalyTestHarness` allocates editor-only `Allocator.TempJob` arrays per assertion. Every allocation is registered and disposed in local `finally` blocks.
+- SDF, basin, brine bounds, feature detection, and overhang jobs allocate no native memory internally. They operate on caller-owned `NativeArray` buffers.
+
+GC purge:
+
+- No LINQ usage was found in the audited anomaly files.
+- No `foreach` loop was found in the audited anomaly files.
+- No `string.Format(...)` was found in the audited anomaly files.
+- No `Update`, `FixedUpdate`, `LateUpdate`, `Tick`, `FixedTick`, or `SlowTick` method was found in the audited anomaly files.
+- Cold generation still creates GameObjects for brine pools. That path is not a frame tick path and is capped at 32 pools.
+
+AUP and init-order check:
+
+- No `Vector3.Distance(...)`, `math.distance(...)`, `.magnitude`, or `.sqrMagnitude` distance calculation was found in the audited anomaly files.
+- No `GlobalRegistry.Get<T>()`, `Awake()`, or `OnEnable()` dependency query was found in the audited anomaly files.
+- `HectonHazardManager.Register(...)` internally resolves `GlobalRegistry.Environment`, but anomaly code calls it only from cold brine generation, not `Awake()` or `OnEnable()`.
+
+Verification:
+
+- `rg` scan for `IJob(?!ParallelFor)` in anomaly job files returned no matches.
+- `rg` scan for LINQ/foreach/string.Format/update-tick patterns in anomaly files returned no matches.
+- `dotnet build Hecton8.Core.csproj --no-restore --no-dependencies -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 errors, 0 warnings`.
+- `dotnet build Hecton8.Editor.csproj --no-restore --no-dependencies -m:1 -nr:false -p:UseSharedCompilation=false -p:RunAnalyzers=false -v:minimal -clp:Summary` returned `0 errors, 0 warnings`.
+- `git diff --check` on the edited anomaly files returned no whitespace errors.
+- Unity MCP console proof remains blocked: `read_console` returned `Unity session not ready for 'read_console' (ping not answered)`.
+
+Status decision:
+
+- Source-level Crucible survived.
+- Runtime status remains `PENDING VERIFICATION` until Unity console and profiler data are available.
 
 ## Omega Audit - 2026-05-05
 

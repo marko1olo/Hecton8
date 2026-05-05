@@ -24,6 +24,7 @@ Shader "NASAPunk/SuitVisor"
         _ScratchNormalStrength ("Scratch Normal Strength", Range(0, 2)) = 0.6
         _FingerprintTex ("Fingerprint Smudge (R=mask)", 2D) = "black" {}
         _FingerprintStrength ("Fingerprint Strength", Range(0, 1)) = 0.3
+        _LensGrimeIntensity ("Blue Noise Lens Grime", Range(0, 2)) = 1
 
         [Header(Water Runoff)]
         _WaterRunoffStrength ("Water Runoff Strength", Range(0, 1)) = 0
@@ -46,6 +47,9 @@ Shader "NASAPunk/SuitVisor"
         _ScreenFrostStrength ("Screen Frost Strength", Range(0, 1)) = 0
         _FrostBlueNoiseDither ("Frost Blue Noise Dither", Range(0, 1)) = 0.35
         _BlueNoiseTex ("Blue Noise", 2D) = "gray" {}
+
+        [Header(Projection Failure)]
+        _HudCloseOcclusionDistance ("HUD Close Occlusion Distance", Range(0.01, 0.5)) = 0.18
 
         [Header(Refraction Distortion)]
         _DistortionStrength ("Edge Distortion", Range(0, 0.1)) = 0.02
@@ -122,6 +126,7 @@ Shader "NASAPunk/SuitVisor"
                 float  _ScratchNormalStrength;
                 float4 _FingerprintTex_ST;
                 float  _FingerprintStrength;
+                float  _LensGrimeIntensity;
 
                 float  _WaterRunoffStrength;
                 float  _WaterRunoffSpeed;
@@ -152,6 +157,9 @@ Shader "NASAPunk/SuitVisor"
                 float  _HazardToxicLevel;
                 float  _HazardGlitchLevel;
                 float  _BiosRecoveryMode;
+                float  _HudCloseOcclusionDistance;
+                float4 _VisorCameraForwardWS;
+                float4 _VisorStrongestLightDirectionWS;
 
                 float4 _FresnelColor;
                 float  _FresnelPower;
@@ -291,11 +299,43 @@ Shader "NASAPunk/SuitVisor"
                 float2 pixel = floor(uv * _ScreenParams.xy);
                 float fallback = Hash21(pixel + floor(timeValue * 19.0));
                 float hasBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
-                float2 texelScale = lerp(float2(1.0 / 64.0, 1.0 / 64.0), _BlueNoiseTex_TexelSize.xy, hasBlueNoise);
+                float2 texelScale = lerp(float2(1.0 / 256.0, 1.0 / 256.0), _BlueNoiseTex_TexelSize.xy, hasBlueNoise);
                 float2 temporalR2 = frac(float2(0.754877666, 0.569840291) * floor(timeValue * 12.0));
                 float2 blueNoiseUV = frac(pixel * texelScale + temporalR2);
                 float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, blueNoiseUV).r;
                 return lerp(fallback, sampled, hasBlueNoise);
+            }
+
+            float ResolveLensBlueNoise(float2 uv, float2 tileScale, float timeValue)
+            {
+                float hasBlueNoise = step(0.0001, _BlueNoiseTex_TexelSize.z) * step(0.0001, _BlueNoiseTex_TexelSize.w);
+                float2 temporalR2 = frac(float2(0.754877666, 0.569840291) * floor(timeValue * 8.0));
+                float2 noiseUV = frac(uv * tileScale + temporalR2);
+                float fallback = Hash21(floor(uv * tileScale * 256.0) + floor(timeValue * 13.0));
+                float sampled = SAMPLE_TEXTURE2D(_BlueNoiseTex, sampler_BlueNoiseTex, noiseUV).r;
+                return lerp(fallback, sampled, hasBlueNoise);
+            }
+
+            void ComputeBlueNoiseLensGrime(float2 uv, float timeValue, out float dustMask, out float moistureMask)
+            {
+                float edgeBias = smoothstep(0.05, 0.92, EdgeMask(uv, 1.16));
+                float topBias = smoothstep(0.08, 0.96, uv.y);
+
+                float dustNoise = ResolveLensBlueNoise(uv + float2(0.17, 0.41), float2(47.0, 31.0), timeValue);
+                float dustCluster = ResolveLensBlueNoise(uv + float2(0.63, 0.19), float2(14.0, 18.0), timeValue + 3.0);
+                dustMask = step(0.965, dustNoise) * saturate(0.45 + dustCluster * 0.9) * edgeBias;
+
+                float2 dropletSpace = uv * float2(12.0, 18.0) + float2(timeValue * 0.003, timeValue * -0.011);
+                float2 dropletCell = frac(dropletSpace) - 0.5;
+                float dropletSeed = ResolveLensBlueNoise(uv + float2(0.31, 0.73), float2(12.0, 18.0), timeValue + 7.0);
+                float dropletGate = step(0.72, dropletSeed);
+                float dropletCore = (1.0 - smoothstep(0.10, 0.25, length(dropletCell * float2(1.0, 1.45)))) * dropletGate;
+                float dropletTrail = (1.0 - smoothstep(0.012, 0.045, abs(dropletCell.x)))
+                    * (1.0 - smoothstep(-0.28, 0.45, dropletCell.y))
+                    * dropletGate
+                    * smoothstep(0.38, 0.92, dropletSeed);
+
+                moistureMask = saturate((dropletCore * 0.72 + dropletTrail * 0.58) * topBias * edgeBias);
             }
 
             float SampleRgbMask(float3 rgb)
@@ -343,7 +383,8 @@ Shader "NASAPunk/SuitVisor"
 
             float ComputeProceduralFrostMask(float2 uv, float edgeDist, float timeValue)
             {
-                float frostEdge = pow(saturate(edgeDist), 1.42);
+                float edgeWarpNoise = ResolveFrostBlueNoise(uv + float2(timeValue * 0.003, timeValue * -0.005), timeValue + 5.0);
+                float frostEdge = pow(saturate(smoothstep(0.05, 0.96, edgeDist + (edgeWarpNoise - 0.5) * 0.18)), 1.42);
                 float2 baseUv = uv * float2(11.5, 17.0) + float2(timeValue * 0.004, timeValue * -0.006);
                 float2 sampleUv = TRANSFORM_TEX(baseUv, _FingerprintTex);
                 float4 packedNoise = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, sampleUv);
@@ -377,7 +418,7 @@ Shader "NASAPunk/SuitVisor"
                 float droplet = (1.0 - smoothstep(radius * 0.65, radius, length(cellUV))) * activeCell;
                 float streakWidth = lerp(0.02, 0.05, seed);
                 float streak = (1.0 - smoothstep(streakWidth, streakWidth * 3.0, abs(cellUV.x)))
-                    * smoothstep(0.45, -0.35, cellUV.y)
+                    * (1.0 - smoothstep(-0.35, 0.45, cellUV.y))
                     * activeCell;
                 float topBias = smoothstep(0.15, 1.0, uv.y);
                 return saturate((droplet * 0.85 + streak * 0.75) * topBias);
@@ -488,6 +529,12 @@ Shader "NASAPunk/SuitVisor"
 
                 float2 screenUV = IN.screenPos.xy / IN.screenPos.w;
                 float edgeDist = EdgeMask(IN.uv, _DistortionFalloff);
+                float blueNoiseDustMask;
+                float blueNoiseMoistureMask;
+                ComputeBlueNoiseLensGrime(IN.uv, _Time.y, blueNoiseDustMask, blueNoiseMoistureMask);
+                float blueNoiseGrimeMask = saturate((blueNoiseDustMask * 0.55 + blueNoiseMoistureMask * 0.75) * _LensGrimeIntensity);
+                fingerprint = saturate(fingerprint + blueNoiseGrimeMask * 0.42);
+                smudgeOpacity = saturate(fingerprint * 0.4 + blueNoiseDustMask * 0.08);
                 float2 distortionOffset = scratchNormalTS.xy * _DistortionStrength;
                 distortionOffset += edgeDist * normalWS.xy * _DistortionStrength * 0.5;
                 float2 radialScreenOffset = screenUV - 0.5;
@@ -506,7 +553,9 @@ Shader "NASAPunk/SuitVisor"
                         proceduralRunoffMask,
                         max(proceduralRunoffMask, authoredDropletMask),
                         saturate(_WaterDropletMaskInfluence));
-                    runoffMask = saturate(runoffMask * _WaterRunoffStrength * (1.0 + fingerprint * 0.5));
+                    runoffMask = saturate(max(
+                        runoffMask * _WaterRunoffStrength * (1.0 + fingerprint * 0.5),
+                        blueNoiseMoistureMask * _WaterRunoffStrength * 0.62));
 
                     float2 runoffNormalUV = TRANSFORM_TEX(IN.uv + float2(0.0, runoffTime * -0.08), _WaterRunoffNormalTex);
                     float4 runoffNormalPacked = SAMPLE_TEXTURE2D(_WaterRunoffNormalTex, sampler_WaterRunoffNormalTex, runoffNormalUV);
@@ -525,7 +574,10 @@ Shader "NASAPunk/SuitVisor"
                     float condensationTextureMask = SAMPLE_TEXTURE2D(_FingerprintTex, sampler_FingerprintTex, condensationUV).r;
                     float condensationProceduralMask = ComputeProceduralSmudgeMask(
                         IN.uv + float2(condensationTime * 0.012, condensationTime * -0.018));
-                    float condensationEdge = pow(saturate(edgeDist), max(0.5, _CondensationEdgeExponent));
+                    float condensationWarp = (ResolveFrostBlueNoise(IN.uv + float2(condensationTime * 0.014, condensationTime * -0.021), _Time.y + 9.0) - 0.5) * 0.16;
+                    float condensationEdge = pow(
+                        saturate(smoothstep(0.04, 0.96, edgeDist + condensationWarp)),
+                        max(0.5, _CondensationEdgeExponent));
                     condensationMask = saturate(
                         max(condensationTextureMask, condensationProceduralMask * 1.2)
                         * condensationEdge
@@ -556,13 +608,18 @@ Shader "NASAPunk/SuitVisor"
                 distortionOffset.x += criticalTear;
                 distortionOffset.y += (criticalMicroGate - 0.5) * criticalHealthGlitch * 0.0035;
 
-                float2 refractedUV = screenUV + distortionOffset;
                 float staticNoise = (Hash21(floor(screenUV * _ScaledScreenParams.xy * 0.35 + _Time.y * 32.0)) - 0.5) * 2.0;
                 float hazardRadiation = saturate(_HazardRadiationLevel);
                 float hazardThermal = saturate(_HazardThermalLevel);
                 float hazardToxic = saturate(_HazardToxicLevel);
                 float hazardGlitch = saturate(_HazardGlitchLevel);
                 float biosRecoveryMode = saturate(_BiosRecoveryMode);
+                float radiationSceneBand = floor((screenUV.y + _Time.y * (8.0 + hazardRadiation * 17.0)) * lerp(96.0, 340.0, hazardRadiation));
+                float radiationSceneNoise = ResolveFrostBlueNoise(screenUV + float2(0.17, hazardRadiation * 0.13), _Time.y + 17.0);
+                float radiationSceneGate = step(0.62 - hazardRadiation * 0.28, radiationSceneNoise);
+                distortionOffset.x += (radiationSceneNoise - 0.5) * hazardRadiation * 0.018 * radiationSceneGate;
+                distortionOffset.y += (Hash21(float2(radiationSceneBand * 1.23, floor(_Time.y * 29.0))) - 0.5) * hazardRadiation * 0.004 * radiationSceneGate;
+                float2 refractedUV = screenUV + distortionOffset;
                 float2 hazardSceneSplit = float2(hazardRadiation * 0.006 + hazardGlitch * 0.003, 0.0);
                 float2 criticalSceneSplit = float2(_HectonSuitHealthGlitch.w * criticalSpikeGate * (0.5 + radialMagnitude), 0.0);
                 float2 chromaOffset = radialScreenOffset * _ChromaticAberration + hazardSceneSplit + criticalSceneSplit;
@@ -647,6 +704,11 @@ Shader "NASAPunk/SuitVisor"
                 float tearGate = step(0.58 - hazardGlitch * 0.26, tearNoise);
                 hudDistortedUV.x += (tearNoise - 0.5) * hazardGlitch * 0.048 * tearGate;
                 hudDistortedUV.y += (Hash21(float2(tearBands * 1.31, floor(_Time.y * 11.0))) - 0.5) * hazardToxic * 0.012;
+                float radiationHudBands = floor((hudDistortedUV.y + _Time.y * (10.0 + hazardRadiation * 21.0)) * lerp(104.0, 380.0, hazardRadiation));
+                float radiationHudNoise = ResolveFrostBlueNoise(hudDistortedUV + float2(0.29, 0.0), _Time.y + 23.0);
+                float radiationHudGate = step(0.66 - hazardRadiation * 0.31, radiationHudNoise);
+                hudDistortedUV.x += (radiationHudNoise - 0.5) * hazardRadiation * 0.034 * radiationHudGate;
+                hudDistortedUV.y += (Hash21(float2(radiationHudBands * 1.37, floor(_Time.y * 37.0))) - 0.5) * hazardRadiation * 0.006 * radiationHudGate;
                 float criticalHudBands = floor((hudDistortedUV.y + _Time.y * (18.0 + criticalHealthGlitch * 24.0)) * lerp(180.0, 420.0, criticalHealthGlitch));
                 float criticalHudNoise = Hash21(float2(criticalHudBands, floor(_Time.y * (31.0 + criticalHealthGlitch * 53.0))));
                 float criticalHudGate = step(0.66 - criticalHealthGlitch * 0.33, criticalHudNoise);
@@ -720,7 +782,7 @@ Shader "NASAPunk/SuitVisor"
                         float3(0.2126, 0.7152, 0.0722));
                     float rawHudLuminance = dot(hudBaseSample.rgb, float3(0.2126, 0.7152, 0.0722));
                     float trailLuminance = max(rawHudLuminance, max(trailLuminanceA * 0.72, trailLuminanceB * 0.46));
-                    float biosNoise = Hash21(floor(hudDistortedUV * _ScreenParams.xy * 0.11) + float2(tearBands, floor(_Time.y * 14.0)));
+                    float biosNoise = ResolveFrostBlueNoise(hudDistortedUV + float2(tearBands * 0.0007, 0.0), _Time.y + 5.0);
                     float biosScan = abs(frac(hudDistortedUV.y * _ScreenParams.y * 0.28 + _Time.y * 16.0) - 0.5);
                     float phosphorLineMask = step(0.24, frac(hudDistortedUV.y * _ScreenParams.y * 0.32));
                     float biosThreshold = 0.38 + biosNoise * 0.16 + biosScan * 0.12;
@@ -746,12 +808,13 @@ Shader "NASAPunk/SuitVisor"
                 float linearSceneDepth = LinearEyeDepth(sceneRawDepth, _ZBufferParams);
                 float linearFragDepth = LinearEyeDepth(fragRawDepth, _ZBufferParams);
                 float hudOccluded = sceneDepthValid * step(linearSceneDepth + 0.002, linearFragDepth) * step(0.001, hudAlpha);
-                if (hudOccluded > 0.5)
-                {
-                    float2 screenPixel = floor(IN.positionCS.xy);
-                    float bayer = Bayer4x4(screenPixel);
-                    clip((hudAlpha * 0.2) - bayer);
-                }
+                float closeDepthDelta = max(0.0, linearFragDepth - linearSceneDepth);
+                float closeOcclusionRange = max(0.001, _HudCloseOcclusionDistance);
+                float hudCloseOcclusion = hudOccluded * (1.0 - smoothstep(closeOcclusionRange * 0.45, closeOcclusionRange, closeDepthDelta));
+                float occlusionFrame = floor(_Time.y * 18.0);
+                float occlusionBayer = Bayer4x4(floor(IN.positionCS.xy) + float2(occlusionFrame, occlusionFrame));
+                float occlusionKeep = lerp(1.0, lerp(0.35, 1.0, step(occlusionBayer, saturate(hudAlpha * 0.72 + 0.18))), hudCloseOcclusion);
+                hudAlpha *= occlusionKeep;
 
                 float wetImperfectionBoost = 1.0 + runoffMask * 0.9;
                 float boostedFingerprint = saturate(fingerprint * wetImperfectionBoost);
@@ -773,17 +836,26 @@ Shader "NASAPunk/SuitVisor"
                 float directLightGlint = pow(
                     saturate(dot(reflect(-mainLight.direction, normalWS), viewDir)),
                     64.0 * _Smoothness) * saturate(length(mainLight.color));
-                float brightLightGlare = saturate((sceneLuminance - 0.62) * 1.85 + directLightGlint * 0.45);
+                float3 cameraForwardWS = _VisorCameraForwardWS.xyz;
+                float cameraForwardValid = step(0.0001, dot(cameraForwardWS, cameraForwardWS));
+                cameraForwardWS = normalize(lerp(-viewDir, cameraForwardWS, cameraForwardValid));
+                float3 strongestLightDirectionWS = _VisorStrongestLightDirectionWS.xyz;
+                float strongestLightValid = step(0.0001, dot(strongestLightDirectionWS, strongestLightDirectionWS)) * step(0.0001, _VisorStrongestLightDirectionWS.w);
+                strongestLightDirectionWS = normalize(lerp(mainLight.direction, strongestLightDirectionWS, strongestLightValid));
+                float cameraLightGlare = pow(saturate(dot(cameraForwardWS, strongestLightDirectionWS)), 3.0)
+                    * saturate(_VisorStrongestLightDirectionWS.w + length(mainLight.color) * 0.25);
+                float brightLightGlare = saturate((sceneLuminance - 0.62) * 1.85 + directLightGlint * 0.32 + cameraLightGlare * 0.65);
                 float imperfectionGlareMask = saturate(
                     scratchMask * 0.52 +
                     boostedFingerprint * 0.36 +
                     runoffMask * 0.28 +
                     condensationMask * 0.18 +
-                    frostMask * 0.10);
+                    frostMask * 0.10 +
+                    blueNoiseGrimeMask * 0.44);
                 float lensDirtGlare = brightLightGlare * imperfectionGlareMask * smoothstep(0.16, 0.98, edgeDist);
                 float3 lensDirtGlareColor = (fresnelColor + mainLight.color * 0.08 + _HUD_Color.rgb * 0.04) *
                     lensDirtGlare *
-                    (1.0 + runoffMask * 0.8);
+                    (1.0 + runoffMask * 0.8 + blueNoiseMoistureMask * 0.35);
 
                 float3 finalColor = 0.0;
                 finalColor += sceneColor * (1.0 - _BaseColor.a);
@@ -821,7 +893,8 @@ Shader "NASAPunk/SuitVisor"
                     + condensationHazeMask * 0.16
                     + frostMask * 0.22
                     + sonarOverlayMask * 0.08
-                    + lensDirtGlare * 0.08;
+                    + lensDirtGlare * 0.08
+                    + blueNoiseGrimeMask * 0.04;
                 finalAlpha *= 1.0 - (criticalHypoxiaAlphaDissolve * criticalHypoxiaEdgeVignette * 0.18);
                 finalAlpha = saturate(finalAlpha);
 

@@ -10,7 +10,7 @@ namespace Hecton8.Dev
     public static class PersistenceUxSmokeTester
     {
         private const string ArtifactRelativePath = "CodexArtifacts/persistence-ux-smoke.json";
-        private const string InventoryDeltaMmfRelativePath = "CodexArtifacts/persistence-ux-inventory-delta.mmf";
+        private const string InventoryFullWriteMmfRelativePath = "CodexArtifacts/persistence-ux-inventory-full-write.mmf";
         private const int SectorSizeBytes = 16 * 1024;
         private const int InventorySlotStrideBytes = 16;
         private const int InventorySlotCount = 64;
@@ -44,11 +44,11 @@ namespace Hecton8.Dev
                 SourceIndex(saveManager, "SaveEvents.RaiseSaveStarted(slotName);");
 
             bool loadingStagePass =
-                ContainsAll(loadingScreen, "LoadingPipelineStage", "Paging Sectors...", "Hydrating Entities...", "Building NavGrid...", "CharBufferPool.TryAcquire", "SetCharArray") &&
+                ContainsAll(loadingScreen, "LoadingPipelineStage", "Paging Sectors...", "Hydrating Entities...", "Building NavGrid...", "CharBufferPool.TryAcquire", "SetCharArray", "WritePercent") &&
                 ContainsAll(saveManager, "ReportLoadPipelineStage(LoadingPipelineStage.PagingSectors", "ReportLoadPipelineStage(LoadingPipelineStage.HydratingEntities", "ReportLoadPipelineStage(LoadingPipelineStage.BuildingNavGrid");
 
             bool safeAupSnapPass =
-                ContainsAll(saveManager, "TryApplySafeAupSnapOnLoad(data)", "Physics.SphereCast", "AbsoluteUniversePosition.FromRuntimePosition", "HectonFloatingOrigin.BeginSafeTeleportProtocol");
+                ContainsAll(saveManager, "TryApplySafeAupSnapOnLoad(data)", "Physics.SphereCastNonAlloc", "AbsoluteUniversePosition.FromRuntimePosition", "HectonFloatingOrigin.BeginSafeTeleportProtocol");
 
             bool savingHudPass =
                 ContainsAll(suitHud, "ISaveEventListener", "SavingProgressRoot", "SaveEventType.SaveStarted", "SaveEventType.SaveCompleted", "_savingProgressTargetAlpha");
@@ -57,14 +57,21 @@ namespace Hecton8.Dev
                 ContainsAll(saveBinaryStorage, "ConsumeIndexedSectorQuarantineFlag", "ReportIndexedSectorQuarantine") &&
                 ContainsAll(saveManager, "CriticalSectorCorruptionMessage", "NotificationEvents.PushCritical(CriticalSectorCorruptionMessage)");
 
-            bool inventoryDeltaSpanPass = RunInventoryDeltaMmfAssert(out int changedOffset, out int changedLength);
+            bool seedConsistencyPass =
+                ContainsAll(saveManager, "GeologicalAnomalyDetectedMessage", "WorldGenerationVersionId", "RuntimeWorldGenerationVersionId") &&
+                ContainsAll(ReadProjectFile("Assets/_Project/Scripts/SaveData.cs"), "worldGenerationVersionId", "CurrentVersion = 58") &&
+                ContainsAll(ReadProjectFile("Assets/_Project/Scripts/Core/GlobalRegistryContracts.cs"), "RuntimeWorldGenerationVersionId") &&
+                ContainsAll(ReadProjectFile("Assets/_Project/Scripts/HectonWorldGenerator.cs"), "WorldGenerationAlgorithmVersionId");
+
+            bool inventoryFullWritePass = RunInventoryFullWriteMmfAssert(out int rewrittenOffset, out int rewrittenLength);
 
             bool pass = asyncThumbnailPass &&
                         loadingStagePass &&
                         safeAupSnapPass &&
                         savingHudPass &&
                         corruptionDialogPass &&
-                        inventoryDeltaSpanPass;
+                        seedConsistencyPass &&
+                        inventoryFullWritePass;
 
             WriteArtifact(
                 pass,
@@ -73,9 +80,10 @@ namespace Hecton8.Dev
                 safeAupSnapPass,
                 savingHudPass,
                 corruptionDialogPass,
-                inventoryDeltaSpanPass,
-                changedOffset,
-                changedLength);
+                seedConsistencyPass,
+                inventoryFullWritePass,
+                rewrittenOffset,
+                rewrittenLength);
 
             if (pass)
                 Debug.Log("[PersistenceUxSmokeTester] PASS artifact=" + ArtifactRelativePath);
@@ -85,11 +93,11 @@ namespace Hecton8.Dev
             return pass;
         }
 
-        private static bool RunInventoryDeltaMmfAssert(out int changedOffset, out int changedLength)
+        private static bool RunInventoryFullWriteMmfAssert(out int rewrittenOffset, out int rewrittenLength)
         {
-            byte[] before = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] - editor-only inventory delta sector fixture - owner: PersistenceUxSmokeTester
-            byte[] after = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] - editor-only inventory delta sector fixture - owner: PersistenceUxSmokeTester
-            byte[] observed = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] - editor-only MMF delta verification readback - owner: PersistenceUxSmokeTester
+            byte[] before = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] - editor-only inventory full-write sector fixture - owner: PersistenceUxSmokeTester
+            byte[] after = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] - editor-only inventory full-write sector fixture - owner: PersistenceUxSmokeTester
+            byte[] observed = new byte[SectorSizeBytes]; // COLD ALLOC: byte[16KB] - editor-only MMF full-write verification readback - owner: PersistenceUxSmokeTester
             for (int slot = 0; slot < InventorySlotCount; slot++)
             {
                 int offset = slot * InventorySlotStrideBytes;
@@ -101,7 +109,7 @@ namespace Hecton8.Dev
             int changedSlotOffset = changedSlot * InventorySlotStrideBytes;
             WriteInventorySlot(after, changedSlotOffset, 0u, (ushort)0, (ushort)1);
 
-            string mmfPath = Path.Combine(System.Environment.CurrentDirectory, InventoryDeltaMmfRelativePath.Replace('/', Path.DirectorySeparatorChar));
+            string mmfPath = Path.Combine(System.Environment.CurrentDirectory, InventoryFullWriteMmfRelativePath.Replace('/', Path.DirectorySeparatorChar));
             string directory = Path.GetDirectoryName(mmfPath);
             if (!string.IsNullOrEmpty(directory))
                 Directory.CreateDirectory(directory);
@@ -109,8 +117,8 @@ namespace Hecton8.Dev
             File.WriteAllBytes(mmfPath, before);
             using (FileStream stream = new FileStream(mmfPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
             {
-                stream.Position = changedSlotOffset;
-                stream.Write(after, changedSlotOffset, InventorySlotStrideBytes);
+                stream.Position = 0L;
+                stream.Write(after, 0, SectorSizeBytes);
                 stream.Flush(true);
             }
 
@@ -119,13 +127,13 @@ namespace Hecton8.Dev
                 int read = stream.Read(observed, 0, observed.Length);
                 if (read != observed.Length)
                 {
-                    changedOffset = -1;
-                    changedLength = 0;
+                    rewrittenOffset = -1;
+                    rewrittenLength = 0;
                     return false;
                 }
             }
 
-            changedOffset = -1;
+            int changedOffset = -1;
             int lastChangedOffset = -1;
             for (int i = 0; i < observed.Length; i++)
             {
@@ -137,7 +145,9 @@ namespace Hecton8.Dev
                 lastChangedOffset = i;
             }
 
-            changedLength = changedOffset >= 0 ? lastChangedOffset - changedOffset + 1 : 0;
+            int changedLength = changedOffset >= 0 ? lastChangedOffset - changedOffset + 1 : 0;
+            rewrittenOffset = 0;
+            rewrittenLength = SectorSizeBytes;
             return changedOffset >= changedSlotOffset &&
                    changedOffset + changedLength <= changedSlotOffset + InventorySlotStrideBytes &&
                    changedLength > 0 &&
@@ -194,9 +204,10 @@ namespace Hecton8.Dev
             bool safeAupSnapPass,
             bool savingHudPass,
             bool corruptionDialogPass,
-            bool inventoryDeltaSpanPass,
-            int inventoryDeltaOffset,
-            int inventoryDeltaLength)
+            bool seedConsistencyPass,
+            bool inventoryFullWritePass,
+            int inventoryRewriteOffset,
+            int inventoryRewriteLength)
         {
             string artifactPath = Path.Combine(System.Environment.CurrentDirectory, ArtifactRelativePath.Replace('/', Path.DirectorySeparatorChar));
             string directory = Path.GetDirectoryName(artifactPath);
@@ -212,9 +223,10 @@ namespace Hecton8.Dev
                 .Append("\"safeAupSnapPass\":").Append(safeAupSnapPass ? "true" : "false").Append(',')
                 .Append("\"savingHudPass\":").Append(savingHudPass ? "true" : "false").Append(',')
                 .Append("\"corruptionDialogPass\":").Append(corruptionDialogPass ? "true" : "false").Append(',')
-                .Append("\"inventoryDeltaSpanPass\":").Append(inventoryDeltaSpanPass ? "true" : "false").Append(',')
-                .Append("\"inventoryDeltaOffset\":").Append(inventoryDeltaOffset).Append(',')
-                .Append("\"inventoryDeltaLength\":").Append(inventoryDeltaLength)
+                .Append("\"seedConsistencyPass\":").Append(seedConsistencyPass ? "true" : "false").Append(',')
+                .Append("\"inventoryFullWritePass\":").Append(inventoryFullWritePass ? "true" : "false").Append(',')
+                .Append("\"inventoryRewriteOffset\":").Append(inventoryRewriteOffset).Append(',')
+                .Append("\"inventoryRewriteLength\":").Append(inventoryRewriteLength)
                 .Append('}');
 
             File.WriteAllText(artifactPath, builder.ToString());

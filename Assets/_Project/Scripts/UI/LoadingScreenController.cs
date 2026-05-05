@@ -33,21 +33,6 @@ namespace Hecton8.UI
             FadingOut
         }
 
-        private static readonly string[] PercentStrings =
-        {
-            "0%", "1%", "2%", "3%", "4%", "5%", "6%", "7%", "8%", "9%",
-            "10%", "11%", "12%", "13%", "14%", "15%", "16%", "17%", "18%", "19%",
-            "20%", "21%", "22%", "23%", "24%", "25%", "26%", "27%", "28%", "29%",
-            "30%", "31%", "32%", "33%", "34%", "35%", "36%", "37%", "38%", "39%",
-            "40%", "41%", "42%", "43%", "44%", "45%", "46%", "47%", "48%", "49%",
-            "50%", "51%", "52%", "53%", "54%", "55%", "56%", "57%", "58%", "59%",
-            "60%", "61%", "62%", "63%", "64%", "65%", "66%", "67%", "68%", "69%",
-            "70%", "71%", "72%", "73%", "74%", "75%", "76%", "77%", "78%", "79%",
-            "80%", "81%", "82%", "83%", "84%", "85%", "86%", "87%", "88%", "89%",
-            "90%", "91%", "92%", "93%", "94%", "95%", "96%", "97%", "98%", "99%",
-            "100%"
-        };
-
         private static readonly char[] LoadingChars = "Loading...".ToCharArray();
         private static readonly char[] PagingSectorsChars = "Paging Sectors...".ToCharArray();
         private static readonly char[] HydratingEntitiesChars = "Hydrating Entities...".ToCharArray();
@@ -100,10 +85,12 @@ namespace Hecton8.UI
         private float _delayRemaining;
         private float _lastUnscaledTickTime;
         private VisibilityState _visibilityState;
-        private string _currentProgressText = "0%";
+        private int _currentProgressPercent = -1;
         private string _currentTipText = "Loading...";
         // COLD ALLOC: char[128] - status text equality cache for zero-GC load-stage updates - owner: LoadingScreenController
         private readonly char[] _currentStatusBuffer = new char[128];
+        // COLD ALLOC: char[4] - progress percent fallback when CharBufferPool is exhausted - owner: LoadingScreenController
+        private readonly char[] _progressFallbackBuffer = new char[4];
         private int _currentStatusLength = -1;
         private LoadingPipelineStage _currentPipelineStage = LoadingPipelineStage.Idle;
 
@@ -225,12 +212,27 @@ namespace Hecton8.UI
                 return;
 
             int percent = Mathf.Clamp(Mathf.RoundToInt(progress * 100f), 0, 100);
-            string nextText = PercentStrings[percent];
-            if (string.Equals(_currentProgressText, nextText, StringComparison.Ordinal))
+            if (_currentProgressPercent == percent)
                 return;
 
-            _currentProgressText = nextText;
-            _progressText.SetText(nextText);
+            _currentProgressPercent = percent;
+            if (CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
+            {
+                try
+                {
+                    int length = WritePercent(percent, lease.Buffer);
+                    _progressText.SetCharArray(lease.Buffer, 0, length);
+                }
+                finally
+                {
+                    CharBufferPool.Release(in lease);
+                }
+
+                return;
+            }
+
+            int fallbackLength = WritePercent(percent, _progressFallbackBuffer.AsSpan());
+            _progressText.SetCharArray(_progressFallbackBuffer, 0, fallbackLength);
         }
 
         /// <summary>
@@ -346,6 +348,19 @@ namespace Hecton8.UI
             }
 
             length = buffer.Length;
+        }
+
+        private static int WritePercent(int percent, Span<char> buffer)
+        {
+            percent = Mathf.Clamp(percent, 0, 100);
+            if (!percent.TryFormat(buffer, out int charsWritten))
+                return 0;
+
+            if (charsWritten >= buffer.Length)
+                return charsWritten;
+
+            buffer[charsWritten++] = '%';
+            return charsWritten;
         }
 
         public void Tick(float deltaTime)

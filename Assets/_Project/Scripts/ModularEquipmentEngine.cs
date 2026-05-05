@@ -1,12 +1,9 @@
 namespace Hecton8.Tools
 {
-    using System.Runtime.CompilerServices;
-    using System.Threading;
     using Hecton8.Core;
     using Hecton8.Gameplay;
     using Hecton8.Power;
     using Unity.Collections;
-    using Unity.Collections.LowLevel.Unsafe;
     using Unity.Mathematics;
     using UnityEngine;
     using UnityEngine.SceneManagement;
@@ -481,43 +478,32 @@ namespace Hecton8.Tools
             return Mathf.Clamp(owner.RuntimeMetadata.maxUpgradeSlots, 0, ToolUpgradeSystem.MaxModuleSlots);
         }
 
-        private unsafe float ReadBatteryAbsolute(int slotIndex)
+        private float ReadBatteryAbsolute(int slotIndex)
         {
-            ref int batteryBits = ref GetBatteryBitsRef(slotIndex);
-            return math.max(0f, math.asfloat(Volatile.Read(ref batteryBits)));
+            if (!_toolStates.IsCreated || (uint)slotIndex >= (uint)_toolStates.Length)
+                return 0f;
+
+            return math.max(0f, _toolStates[slotIndex].CurrentBattery);
         }
 
-        private unsafe void SetBatteryAbsolute(int slotIndex, float absoluteBattery)
+        private void SetBatteryAbsolute(int slotIndex, float absoluteBattery)
         {
-            ref int batteryBits = ref GetBatteryBitsRef(slotIndex);
-            Interlocked.Exchange(ref batteryBits, math.asint(math.max(0f, absoluteBattery)));
-        }
-
-        private unsafe void ConsumeBatteryAbsolute(int slotIndex, float absoluteBatteryDelta)
-        {
-            if (absoluteBatteryDelta <= 0f)
+            if (!_toolStates.IsCreated || (uint)slotIndex >= (uint)_toolStates.Length)
                 return;
 
-            ref int batteryBits = ref GetBatteryBitsRef(slotIndex);
-            int observedBits = Volatile.Read(ref batteryBits);
-            while (true)
-            {
-                float currentBattery = math.max(0f, math.asfloat(observedBits));
-                float nextBattery = math.max(0f, currentBattery - absoluteBatteryDelta);
-                int nextBits = math.asint(nextBattery);
-                int originalBits = Interlocked.CompareExchange(ref batteryBits, nextBits, observedBits);
-                if (originalBits == observedBits)
-                    return;
-
-                observedBits = originalBits;
-            }
+            ToolState state = _toolStates[slotIndex];
+            state.CurrentBattery = math.max(0f, absoluteBattery);
+            _toolStates[slotIndex] = state;
         }
 
-        private unsafe ref int GetBatteryBitsRef(int slotIndex)
+        private void ConsumeBatteryAbsolute(int slotIndex, float absoluteBatteryDelta)
         {
-            void* basePtr = NativeArrayUnsafeUtility.GetUnsafePtr(_toolStates);
-            ToolState* statePtr = ((ToolState*)basePtr) + slotIndex;
-            return ref Unsafe.AsRef<int>((void*)(&statePtr->CurrentBattery));
+            if (absoluteBatteryDelta <= 0f || !_toolStates.IsCreated || (uint)slotIndex >= (uint)_toolStates.Length)
+                return;
+
+            ToolState state = _toolStates[slotIndex];
+            state.CurrentBattery = math.max(0f, state.CurrentBattery - absoluteBatteryDelta);
+            _toolStates[slotIndex] = state;
         }
 
         private void RebuildCompiledState(int slotIndex, PlayerTool owner, uint toolId)

@@ -71,6 +71,7 @@ namespace Hecton8.World
         private const float MinimumBillboardWidth = 0.25f;
         private const float MinimumBillboardHeight = 0.25f;
         private const float CameraResolveRetryInterval = 1f;
+        private const float DistantGeologyImpostorDistanceMeters = 5000f;
         private static readonly int _baseMapId = Shader.PropertyToID("_BaseMap");
         private static readonly int _baseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _mainTexId = Shader.PropertyToID("_MainTex");
@@ -164,6 +165,11 @@ namespace Hecton8.World
         /// Distance threshold for impostor activation.
         /// </summary>
         public float ImpostorDistanceThreshold => _impostorDistanceThreshold;
+
+        /// <summary>
+        /// Distance threshold for distant geology HLOD billboard activation.
+        /// </summary>
+        public float DistantGeologyImpostorDistanceThreshold => DistantGeologyImpostorDistanceMeters;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -314,8 +320,24 @@ namespace Hecton8.World
         /// Registers a GameObject as an impostor candidate.
         /// </summary>
         /// <param name="obj">Candidate owner.</param>
-        /// <param name="lodGroup">Unused placeholder for future LOD integration.</param>
+        /// <param name="lodGroup">Optional source LODGroup for cached presentation bounds.</param>
         public void RegisterImpostorCandidate(GameObject obj, LODGroup lodGroup = null)
+        {
+            RegisterImpostorCandidate(obj, lodGroup, _impostorDistanceThreshold);
+        }
+
+        /// <summary>
+        /// Registers a geology HLOD candidate. Geometry switches to a pooled camera-facing billboard past 5km.
+        /// Baked normal/albedo billboard materials are preferred; source-material fallback is cold-path only.
+        /// </summary>
+        /// <param name="obj">Candidate owner.</param>
+        /// <param name="lodGroup">Optional source LODGroup for cached presentation bounds.</param>
+        public void RegisterDistantGeologyImpostorCandidate(GameObject obj, LODGroup lodGroup = null)
+        {
+            RegisterImpostorCandidate(obj, lodGroup, DistantGeologyImpostorDistanceMeters);
+        }
+
+        private void RegisterImpostorCandidate(GameObject obj, LODGroup lodGroup, float activationDistanceMeters)
         {
             if (obj == null)
                 return;
@@ -326,7 +348,7 @@ namespace Hecton8.World
             EntityId impostorID = obj.GetEntityId();
             if (_textureCache.ContainsKey(impostorID))
             {
-                if (!TryAddImpostorInstance(obj, impostorID, lodGroup))
+                if (!TryAddImpostorInstance(obj, impostorID, lodGroup, activationDistanceMeters))
                     _registeredCandidates.Remove(obj);
                 return;
             }
@@ -337,7 +359,7 @@ namespace Hecton8.World
                 return;
             }
 
-            if (!TryAddImpostorInstance(obj, impostorID, lodGroup))
+            if (!TryAddImpostorInstance(obj, impostorID, lodGroup, activationDistanceMeters))
             {
                 _registeredCandidates.Remove(obj);
                 if (_textureCache.TryGetValue(impostorID, out ImpostorTextureData failedData))
@@ -487,7 +509,7 @@ namespace Hecton8.World
             return true;
         }
 
-        private bool TryAddImpostorInstance(GameObject obj, EntityId impostorID, LODGroup lodGroup)
+        private bool TryAddImpostorInstance(GameObject obj, EntityId impostorID, LODGroup lodGroup, float activationDistanceMeters)
         {
             for (int i = 0; i < _activeImpostors.Count; i++)
             {
@@ -505,7 +527,8 @@ namespace Hecton8.World
             if (!TryCalculateBillboardPresentation(managedRenderers, obj.transform.position, out Vector3 billboardCenterOffset, out Vector3 billboardScale))
                 return false;
 
-            float activationDistanceSqr = _impostorDistanceThreshold * _impostorDistanceThreshold;
+            float safeActivationDistance = Mathf.Max(1f, activationDistanceMeters);
+            float activationDistanceSqr = safeActivationDistance * safeActivationDistance;
             float exitPaddingScale = Mathf.Max(1f, 1f + (_impostorExitDistancePaddingPercent * 0.01f));
 
             ImpostorInstance instance = new ImpostorInstance

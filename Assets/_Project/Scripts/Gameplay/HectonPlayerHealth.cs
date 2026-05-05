@@ -28,19 +28,31 @@ namespace Hecton8.Gameplay
         private const float SurvivalGraceLockoutSeconds = 8f;
         private const float RadiationFatigueMinimumScale = 0.65f;
         private const float RadiationFatigueScalePerSecond = 0.005f;
+        private const float RadiationFatigueCriticalExposureSeconds =
+            (1f - RadiationFatigueMinimumScale) / RadiationFatigueScalePerSecond;
         private const float GillsOxygenCapacityMultiplier = 1.25f;
         private const float BioluminescentPredatorVisibilityScale = 2f;
         private const float NutritionalToxicityRegenFloor = 0.35f;
         private const float CriticalRadiationAdvisoryThresholdSeconds = 90f;
+        private const float RadiationAdvisoryStageOneExposure01 = 0.30f;
+        private const float RadiationAdvisoryStageTwoExposure01 = 0.70f;
         private const float LeviathanTraumaDamageThreshold01 = 0.40f;
+        private const string RadiationFatigueDiscoveryId = "radiation_fatigue_advisory_30";
         private const string RadiationCriticalDiscoveryId = "radiation_critical_advisory";
         private const string LeviathanTraumaDiscoveryId = "leviathan_trauma_voice_log";
         private const string RadShieldQuestId = "quest_rad_shield";
+        private const string RadiationFatigueFallbackMessage = "CRITICAL ADVISORY // RADIATION LOAD 30 PERCENT";
+        private const string RadiationCriticalFallbackMessage = "CRITICAL ADVISORY // RADIATION LOAD 70 PERCENT - RAD-SHIELD REQUIRED";
+        private static readonly char[] s_radiationFatigueMessage =
+        {
+            'C','R','I','T','I','C','A','L',' ','A','D','V','I','S','O','R','Y',' ','/','/',' ',
+            'R','A','D','I','A','T','I','O','N',' ','L','O','A','D',' ','3','0',' ','P','E','R','C','E','N','T'
+        };
         private static readonly char[] s_radiationCriticalMessage =
         {
             'C','R','I','T','I','C','A','L',' ','A','D','V','I','S','O','R','Y',' ','/','/',' ',
-            'R','A','D','I','A','T','I','O','N',' ','L','O','A','D',' ','E','X','C','E','E','D','S',' ',
-            'S','A','F','E',' ','E','N','V','E','L','O','P','E'
+            'R','A','D','I','A','T','I','O','N',' ','L','O','A','D',' ','7','0',' ','P','E','R','C','E','N','T',' ','-',' ',
+            'R','A','D','-','S','H','I','E','L','D',' ','R','E','Q','U','I','R','E','D'
         };
         // COLD ALLOC: MutationThreshold[2] — fallback mutation thresholds when no authored profile is assigned — owner: HectonPlayerHealth
         private static readonly HazardMutationProfile.MutationThreshold[] s_fallbackMutationThresholds =
@@ -126,6 +138,9 @@ namespace Hecton8.Gameplay
         /// <summary>Current cumulative radiation-fatigue exposure in seconds.</summary>
         public float RadiationExposureSeconds => _radiationExposureSeconds;
 
+        /// <summary>Normalized cumulative radiation exposure used by visor degradation shaders.</summary>
+        public float RadiationExposure => Mathf.Clamp01(_radiationExposureSeconds / Mathf.Max(1f, RadiationFatigueCriticalExposureSeconds));
+
         /// <summary>Permanent mutation bitmask unlocked by radiation exposure.</summary>
         public uint MutationFlags => _mutationFlags;
 
@@ -146,7 +161,7 @@ namespace Hecton8.Gameplay
             float fatigueScale = ResolveRadiationFatigueScale(_radiationExposureSeconds);
             SetRuntimeMaxHealthScaleInternal(fatigueScale);
             EvaluateMutationThresholds();
-            TryIssueRadiationCriticalAdvisory();
+            TryIssueRadiationAdvisories();
         }
 
         internal static float ResolveRadiationFatigueScale(float exposureSeconds)
@@ -178,48 +193,78 @@ namespace Hecton8.Gameplay
             SetRuntimeMaxHealthScaleInternal(1f);
         }
 
-        private void TryIssueRadiationCriticalAdvisory()
+        private void TryIssueRadiationAdvisories()
         {
-            if (_radiationCriticalAdvisoryIssued ||
-                _radiationExposureSeconds < CriticalRadiationAdvisoryThresholdSeconds)
-            {
+            float exposure01 = RadiationExposure;
+            TryIssueRadiationAdvisory(
+                exposure01,
+                RadiationAdvisoryStageOneExposure01,
+                ref _radiationFatigueAdvisoryIssued,
+                RadiationFatigueDiscoveryId,
+                0.72f,
+                0.22f,
+                s_radiationFatigueMessage,
+                RadiationFatigueFallbackMessage);
+
+            TryIssueRadiationAdvisory(
+                exposure01,
+                RadiationAdvisoryStageTwoExposure01,
+                ref _radiationCriticalAdvisoryIssued,
+                RadiationCriticalDiscoveryId,
+                1f,
+                0.3f,
+                s_radiationCriticalMessage,
+                RadiationCriticalFallbackMessage);
+        }
+
+        private void TryIssueRadiationAdvisory(
+            float exposure01,
+            float threshold01,
+            ref bool issued,
+            string discoveryId,
+            float glitchIntensity,
+            float glitchDuration,
+            char[] message,
+            string fallbackMessage)
+        {
+            if (issued || exposure01 < threshold01)
                 return;
-            }
+
+            issued = true;
 
             HectonNarrativeDirector narrativeDirector = GlobalRegistry.NarrativeDirector;
-            if (narrativeDirector != null && narrativeDirector.HasDiscovery(RadiationCriticalDiscoveryId))
-            {
-                _radiationCriticalAdvisoryIssued = true;
-                return;
-            }
+            if (narrativeDirector == null || !narrativeDirector.HasDiscovery(discoveryId))
+                NarrativeEvents.RaiseDiscoveryMade(discoveryId);
 
-            _radiationCriticalAdvisoryIssued = true;
-            NarrativeEvents.RaiseDiscoveryMade(RadiationCriticalDiscoveryId);
+            ActivateRadShieldQuest();
 
+            PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(glitchIntensity, glitchDuration, 1f, Mathf.Clamp01(HealthPercent), true));
+            ShowRadiationAdvisory(message, fallbackMessage);
+        }
+
+        private static void ActivateRadShieldQuest()
+        {
             QuestManager questManager = GlobalRegistry.Quest;
             if (questManager != null)
                 questManager.ActivateQuest(RadShieldQuestId);
-
-            PlayerSignalEvents.RaiseTraumaHudSignal(new TraumaHudSignal(1f, 0.3f, 1f, Mathf.Clamp01(HealthPercent), true));
-            ShowRadiationCriticalAdvisory();
         }
 
-        private static void ShowRadiationCriticalAdvisory()
+        private static void ShowRadiationAdvisory(char[] message, string fallbackMessage)
         {
             if (!CharBufferPool.TryAcquire(out CharBufferPool.Lease lease))
             {
-                NotificationEvents.PushCritical("CRITICAL ADVISORY // RADIATION LOAD EXCEEDS SAFE ENVELOPE");
+                NotificationEvents.PushCritical(fallbackMessage);
                 return;
             }
 
             try
             {
                 FixedCharBuffer buffer = new FixedCharBuffer(lease.Buffer);
-                buffer.Append(s_radiationCriticalMessage);
+                buffer.Append(message);
                 if (HUDNotification.TryGetActive(out HUDNotification notification))
                     notification.ShowCritical(in buffer);
                 else
-                    NotificationEvents.PushCritical("CRITICAL ADVISORY // RADIATION LOAD EXCEEDS SAFE ENVELOPE");
+                    NotificationEvents.PushCritical(fallbackMessage);
             }
             finally
             {
@@ -277,6 +322,7 @@ namespace Hecton8.Gameplay
         private float _nutritionalToxicityTimer;
         private float _nutritionalToxicitySeverity01;
         private uint _mutationFlags;
+        private bool _radiationFatigueAdvisoryIssued;
         private bool _radiationCriticalAdvisoryIssued;
         private bool _leviathanTraumaAdvisoryIssued;
         private HectonSurvivalSystem _survivalSystem;

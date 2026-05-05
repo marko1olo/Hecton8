@@ -79,6 +79,7 @@ namespace Hecton8.Environment
     {
 #if UNITY_EDITOR
         private const string HudFogLuminanceComputeAssetPath = "Assets/_Project/Art/Shaders/HectonHudFogLuminance.compute";
+        private const string PhotophobiaFieldComputeAssetPath = "Assets/_Project/Art/Shaders/Hecton_PhotophobiaField.compute";
 #endif
 
         internal static HectonUnderwaterVisuals ActiveRuntimeInstance { get; private set; }
@@ -116,6 +117,8 @@ namespace Hecton8.Environment
         private const float HudFogLuminanceReadbackIntervalSeconds = 0.1f;
         private const float HudFogVolumetricScatterBoost = 0.14f;
         private const float SuitCriticalHealthThreshold01 = 0.2f;
+        private const int FlashlightPhotophobiaFieldResolution = 128;
+        private const float FlashlightPhotophobiaRecoveryGraceSeconds = 0.25f;
         private const float GpuBubbleTrailMinSpeed = 1.4f;
         private const float GpuBubbleTrailFullSpeed = 5.2f;
         private const float GpuBubbleExhaleImpulseDecayRate = 2.8f;
@@ -165,6 +168,14 @@ namespace Hecton8.Environment
         private int _hudFogLuminanceKernel = -1;
         private bool _hudFogLuminanceReady;
         private bool _hudFogReadbackPending;
+        private RenderTexture _photophobiaFieldTextureA;
+        private RenderTexture _photophobiaFieldTextureB;
+        private int _photophobiaFieldKernel = -1;
+        private bool _photophobiaFieldReady;
+        private bool _photophobiaFieldWriteToA = true;
+        private bool _photophobiaFieldDirty;
+        private float _photophobiaRecoverUntilUnscaledTime;
+        private Vector4 _photophobiaFieldOriginScale;
         private float _gpuBubbleExhaleImpulse01;
 
         // Ã¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢ÂÃ¢â€¢Â
@@ -176,6 +187,7 @@ namespace Hecton8.Environment
         [SerializeField] private Light sunLight;
         [SerializeField] private LensFlareComponentSRP sunFlare;
         [SerializeField] private ComputeShader hudFogLuminanceCompute;
+        [SerializeField] private ComputeShader photophobiaFieldCompute;
         [SerializeField] private Transform sunVisualTransform;
         [SerializeField] private Camera mainCamera;
         [SerializeField] private DepthZoneDirector depthZoneDirector;
@@ -387,6 +399,16 @@ namespace Hecton8.Environment
         [SerializeField, UnityEngine.Range(0.5f, 32f)] private float noirCausticsDepthFadeStart = 12f;
         [Tooltip("Fade span after the start depth. Larger values keep caustics alive deeper.")]
         [SerializeField, UnityEngine.Range(0.5f, 32f)] private float noirCausticsDepthFadeRange = 8f;
+
+        [Header("Flashlight Photophobia Field")]
+        [Tooltip("Compute-driven temporal dimming field sampled by first-party bioluminescent flora shaders.")]
+        [SerializeField] private bool enableFlashlightPhotophobiaField = true;
+        [Tooltip("World-space width in meters covered by the local photophobia texture.")]
+        [SerializeField, UnityEngine.Range(32f, 192f)] private float flashlightPhotophobiaFieldExtent = 96f;
+        [Tooltip("Seconds for flora emission to recover after leaving the flashlight cone.")]
+        [SerializeField, UnityEngine.Range(0.25f, 4f)] private float flashlightPhotophobiaRecoverySeconds = 1f;
+        [Tooltip("How hard the flashlight suppresses bioluminescent flora emission inside the cone.")]
+        [SerializeField, UnityEngine.Range(0f, 1f)] private float flashlightPhotophobiaStrength = 1f;
 
         [Header("Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬ UNDERWATER MOTES Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬")]
         [Tooltip("Enables camera-local suspended particulate while underwater.")]
@@ -652,6 +674,34 @@ namespace Hecton8.Environment
             Shader.PropertyToID("_HectonFlowSynchronyParams");
         private static readonly int _HectonSuitHealthGlitchId =
             Shader.PropertyToID("_HectonSuitHealthGlitch");
+        private static readonly int _HectonPhotophobiaFieldTexId =
+            Shader.PropertyToID("_HectonPhotophobiaFieldTex");
+        private static readonly int _HectonPhotophobiaFieldOriginScaleId =
+            Shader.PropertyToID("_HectonPhotophobiaFieldOriginScale");
+        private static readonly int _HectonPhotophobiaFieldStateId =
+            Shader.PropertyToID("_HectonPhotophobiaFieldState");
+        private static readonly int _HectonPhotophobiaSourceTexId =
+            Shader.PropertyToID("_HectonPhotophobiaSourceTex");
+        private static readonly int _HectonPhotophobiaTargetTexId =
+            Shader.PropertyToID("_HectonPhotophobiaTargetTex");
+        private static readonly int _HectonPhotophobiaParamsId =
+            Shader.PropertyToID("_HectonPhotophobiaParams");
+        private static readonly int _HectonPhotophobiaCone0Id =
+            Shader.PropertyToID("_HectonPhotophobiaCone0");
+        private static readonly int _HectonPhotophobiaCone1Id =
+            Shader.PropertyToID("_HectonPhotophobiaCone1");
+        private static readonly int _HectonPhotophobiaCone2Id =
+            Shader.PropertyToID("_HectonPhotophobiaCone2");
+        private static readonly int _HectonFlashlightPositionWSId =
+            Shader.PropertyToID("_HectonFlashlightPositionWS");
+        private static readonly int _HectonFlashlightDirectionWSId =
+            Shader.PropertyToID("_HectonFlashlightDirectionWS");
+        private static readonly int _HectonFlashlightColorId =
+            Shader.PropertyToID("_HectonFlashlightColor");
+        private static readonly int _HectonFlashlightConeDataId =
+            Shader.PropertyToID("_HectonFlashlightConeData");
+        private static readonly int _HectonFlashlightActiveId =
+            Shader.PropertyToID("_HectonFlashlightActive");
         private static readonly Action<AsyncGPUReadbackRequest> s_HudFogLuminanceReadbackCompleted =
             HandleHudFogLuminanceReadbackCompleted;
         private static readonly int _ID_SunSize =
@@ -1234,6 +1284,7 @@ namespace Hecton8.Environment
             RestoreSkyMaterialDefaults();
             ReleaseRuntimeSkyboxMaterial();
             ReleaseHudFogLuminanceResources();
+            ReleasePhotophobiaFieldResources();
             ReleaseBiomeFogBlendBuffers();
             Shader.SetGlobalVector(_SargassumCanopyShadowParamsId, Vector4.zero);
             Shader.SetGlobalVector(_SargassumCanopyLightingParamsId, new Vector4(0f, 0f, 1f, 0f));
@@ -1277,6 +1328,7 @@ namespace Hecton8.Environment
             }
 
             ReleaseHudFogLuminanceResources();
+            ReleasePhotophobiaFieldResources();
             ReleaseBiomeFogBlendBuffers();
         }
 
@@ -4823,6 +4875,213 @@ namespace Hecton8.Environment
             instance._hudFogDownsampledLuminance01 = math.isfinite(resolved) ? math.saturate(resolved) : 0f;
         }
 
+        private void UpdateFlashlightPhotophobiaField(float deltaTime)
+        {
+            if (!Application.isPlaying || !enableFlashlightPhotophobiaField || !_cachedVisualIsUnderwater)
+            {
+                Shader.SetGlobalVector(_HectonPhotophobiaFieldStateId, Vector4.zero);
+                return;
+            }
+
+            float now = Time.unscaledTime;
+            Vector4 lightPosition = Shader.GetGlobalVector(_HectonFlashlightPositionWSId);
+            Vector4 lightDirection = Shader.GetGlobalVector(_HectonFlashlightDirectionWSId);
+            Vector4 lightColor = Shader.GetGlobalVector(_HectonFlashlightColorId);
+            Vector4 coneData = Shader.GetGlobalVector(_HectonFlashlightConeDataId);
+            float active = Shader.GetGlobalFloat(_HectonFlashlightActiveId);
+            float rangeMeters = math.max(lightPosition.w, 0.1f);
+            float lightEnergy = math.saturate(lightColor.w * flashlightPhotophobiaStrength);
+
+            float3 direction = new float3(lightDirection.x, lightDirection.y, lightDirection.z);
+            if (!math.all(math.isfinite(direction)) || math.lengthsq(direction) < 0.0001f)
+                direction = new float3(0f, 0f, 1f);
+            else
+                direction = math.normalize(direction);
+
+            bool hasActiveCone =
+                active > 0.5f &&
+                lightEnergy > 0.0001f &&
+                math.isfinite(rangeMeters) &&
+                rangeMeters > 0.1f;
+
+            if (hasActiveCone)
+            {
+                float fieldExtentMeters = math.max(32f, math.max(flashlightPhotophobiaFieldExtent, rangeMeters * 1.2f));
+                float3 lightPositionWs = new float3(lightPosition.x, lightPosition.y, lightPosition.z);
+                if (!math.all(math.isfinite(lightPositionWs)))
+                    lightPositionWs = float3.zero;
+
+                float3 fieldOriginWs = lightPositionWs + direction * (rangeMeters * 0.5f);
+                _photophobiaFieldOriginScale = new Vector4(
+                    fieldOriginWs.x,
+                    fieldOriginWs.y,
+                    fieldOriginWs.z,
+                    1f / fieldExtentMeters);
+                _photophobiaRecoverUntilUnscaledTime =
+                    now + math.max(0.25f, flashlightPhotophobiaRecoverySeconds) + FlashlightPhotophobiaRecoveryGraceSeconds;
+            }
+
+            bool shouldRun = hasActiveCone || now <= _photophobiaRecoverUntilUnscaledTime;
+            if (!shouldRun)
+            {
+                if (_photophobiaFieldDirty)
+                {
+                    ClearPhotophobiaFieldTextures();
+                    _photophobiaFieldDirty = false;
+                }
+
+                Shader.SetGlobalVector(_HectonPhotophobiaFieldStateId, Vector4.zero);
+                return;
+            }
+
+            EnsurePhotophobiaFieldResources();
+            if (!_photophobiaFieldReady || _photophobiaFieldTextureA == null || _photophobiaFieldTextureB == null)
+            {
+                Shader.SetGlobalVector(_HectonPhotophobiaFieldStateId, Vector4.zero);
+                return;
+            }
+
+            RenderTexture source = _photophobiaFieldWriteToA ? _photophobiaFieldTextureB : _photophobiaFieldTextureA;
+            RenderTexture target = _photophobiaFieldWriteToA ? _photophobiaFieldTextureA : _photophobiaFieldTextureB;
+            float safeDeltaTime = math.clamp(deltaTime, 0f, 0.05f);
+            float transitionSeconds = math.max(0.25f, flashlightPhotophobiaRecoverySeconds);
+            float transitionRate = 1f / transitionSeconds;
+            float innerCos = lightDirection.w;
+            float outerCos = coneData.x;
+            float invRange = math.rcp(math.max(rangeMeters, 0.1f));
+
+            photophobiaFieldCompute.SetTexture(_photophobiaFieldKernel, _HectonPhotophobiaSourceTexId, source);
+            photophobiaFieldCompute.SetTexture(_photophobiaFieldKernel, _HectonPhotophobiaTargetTexId, target);
+            photophobiaFieldCompute.SetVector(
+                _HectonPhotophobiaParamsId,
+                new Vector4(
+                    safeDeltaTime,
+                    transitionRate,
+                    transitionRate,
+                    hasActiveCone ? 1f : 0f));
+            photophobiaFieldCompute.SetVector(_HectonPhotophobiaFieldOriginScaleId, _photophobiaFieldOriginScale);
+            photophobiaFieldCompute.SetVector(
+                _HectonPhotophobiaCone0Id,
+                new Vector4(lightPosition.x, lightPosition.y, lightPosition.z, rangeMeters));
+            photophobiaFieldCompute.SetVector(
+                _HectonPhotophobiaCone1Id,
+                new Vector4(direction.x, direction.y, direction.z, outerCos));
+            photophobiaFieldCompute.SetVector(
+                _HectonPhotophobiaCone2Id,
+                new Vector4(innerCos, invRange, lightEnergy, now));
+
+            int groups = FlashlightPhotophobiaFieldResolution / 8;
+            photophobiaFieldCompute.Dispatch(_photophobiaFieldKernel, groups, groups, 1);
+            _photophobiaFieldWriteToA = !_photophobiaFieldWriteToA;
+            _photophobiaFieldDirty = true;
+
+            Shader.SetGlobalTexture(_HectonPhotophobiaFieldTexId, target);
+            Shader.SetGlobalVector(_HectonPhotophobiaFieldOriginScaleId, _photophobiaFieldOriginScale);
+            Shader.SetGlobalVector(
+                _HectonPhotophobiaFieldStateId,
+                new Vector4(1f, lightEnergy, transitionSeconds, hasActiveCone ? 1f : 0f));
+        }
+
+        private void EnsurePhotophobiaFieldResources()
+        {
+#if UNITY_EDITOR
+            if (photophobiaFieldCompute == null)
+                photophobiaFieldCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(PhotophobiaFieldComputeAssetPath);
+#endif
+
+            if (photophobiaFieldCompute == null)
+            {
+                _photophobiaFieldReady = false;
+                return;
+            }
+
+            if (_photophobiaFieldKernel < 0)
+                _photophobiaFieldKernel = photophobiaFieldCompute.FindKernel("UpdatePhotophobiaField");
+
+            if (_photophobiaFieldTextureA == null || _photophobiaFieldTextureB == null)
+            {
+                ReleasePhotophobiaFieldResources();
+                if (_photophobiaFieldKernel < 0)
+                    _photophobiaFieldKernel = photophobiaFieldCompute.FindKernel("UpdatePhotophobiaField");
+                _photophobiaFieldTextureA = CreatePhotophobiaFieldTexture("__HectonPhotophobiaFieldA");
+                _photophobiaFieldTextureB = CreatePhotophobiaFieldTexture("__HectonPhotophobiaFieldB");
+                ClearPhotophobiaFieldTextures();
+                _photophobiaFieldWriteToA = true;
+            }
+
+            _photophobiaFieldReady = _photophobiaFieldKernel >= 0;
+        }
+
+        private static RenderTexture CreatePhotophobiaFieldTexture(string name)
+        {
+            RenderTextureDescriptor descriptor = new RenderTextureDescriptor(
+                FlashlightPhotophobiaFieldResolution,
+                FlashlightPhotophobiaFieldResolution)
+            {
+                dimension = TextureDimension.Tex2D,
+                graphicsFormat = GraphicsFormat.R8_UNorm,
+                depthBufferBits = 0,
+                msaaSamples = 1,
+                useMipMap = false,
+                autoGenerateMips = false,
+                enableRandomWrite = true,
+                sRGB = false
+            };
+
+            RenderTexture texture = new RenderTexture(descriptor)
+            {
+                name = name,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear,
+                hideFlags = HideFlags.HideAndDontSave
+            }; // COLD ALLOC: RenderTexture[128x128 R8] - ping-pong flora photophobia field - owner: HectonUnderwaterVisuals
+            texture.Create();
+            return texture;
+        }
+
+        private void ClearPhotophobiaFieldTextures()
+        {
+            ClearPhotophobiaFieldTexture(_photophobiaFieldTextureA);
+            ClearPhotophobiaFieldTexture(_photophobiaFieldTextureB);
+        }
+
+        private static void ClearPhotophobiaFieldTexture(RenderTexture texture)
+        {
+            if (texture == null)
+                return;
+
+            RenderTexture previous = RenderTexture.active;
+            Graphics.SetRenderTarget(texture);
+            GL.Clear(false, true, Color.white);
+            Graphics.SetRenderTarget(previous);
+        }
+
+        private void ReleasePhotophobiaFieldResources()
+        {
+            _photophobiaFieldReady = false;
+            _photophobiaFieldKernel = -1;
+            _photophobiaFieldWriteToA = true;
+            _photophobiaFieldDirty = false;
+            _photophobiaRecoverUntilUnscaledTime = 0f;
+            _photophobiaFieldOriginScale = Vector4.zero;
+
+            if (_photophobiaFieldTextureA != null)
+            {
+                _photophobiaFieldTextureA.Release();
+                Destroy(_photophobiaFieldTextureA);
+                _photophobiaFieldTextureA = null;
+            }
+
+            if (_photophobiaFieldTextureB != null)
+            {
+                _photophobiaFieldTextureB.Release();
+                Destroy(_photophobiaFieldTextureB);
+                _photophobiaFieldTextureB = null;
+            }
+
+            Shader.SetGlobalVector(_HectonPhotophobiaFieldStateId, Vector4.zero);
+        }
+
         private void ApplyNoirResolveGlobals()
         {
             float causticsGate = enableShallowCaustics && _cachedVisualIsUnderwater
@@ -4847,6 +5106,7 @@ namespace Hecton8.Environment
 
             float hudFogTargetLuminance01 = math.max(_hudFogTargetLuminance01, _hudFogDownsampledLuminance01);
             float hudDeltaTime = Application.isPlaying ? math.max(0f, SystemDispatcher.CurrentFrameUnscaledDeltaTime) : 0.0166667f;
+            UpdateFlashlightPhotophobiaField(hudDeltaTime);
             float hudAlpha = 1f - math.exp(-HudFogPerturbationResponse * hudDeltaTime);
             _hudFogSmoothedLuminance01 = math.lerp(
                 _hudFogSmoothedLuminance01,
@@ -4963,6 +5223,8 @@ namespace Hecton8.Environment
             Shader.SetGlobalVector(_HectonFlowSynchronyParamsId, new Vector4(1f, 0.26f, 0f, 0f));
             Shader.SetGlobalVector(_HectonHudFogPerturbationId, Vector4.zero);
             Shader.SetGlobalVector(_HectonSuitHealthGlitchId, Vector4.zero);
+            Shader.SetGlobalVector(_HectonPhotophobiaFieldOriginScaleId, Vector4.zero);
+            Shader.SetGlobalVector(_HectonPhotophobiaFieldStateId, Vector4.zero);
             Shader.SetGlobalFloat(_FogScatteringCoeffId, 0f);
         }
 

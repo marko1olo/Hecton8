@@ -18,6 +18,7 @@ namespace Hecton8.Dev
         private const int WarmupWidth = 16;
         private const int TimedWidth = 64;
         private const float CellSizeMeters = 16f;
+        private const double AupCellSizeMeters = 5000.0;
         private const uint Seed = 880031u;
 
         private readonly struct PipelineResult
@@ -31,6 +32,10 @@ namespace Hecton8.Dev
                 float ridgedDelta,
                 float craterDelta,
                 float rilleDelta,
+                float ridgedMs,
+                float craterMs,
+                float rilleMs,
+                float metricsMs,
                 int checksum,
                 int nativeAllocationDelta,
                 long nativeByteDelta)
@@ -43,6 +48,10 @@ namespace Hecton8.Dev
                 RidgedDelta = ridgedDelta;
                 CraterDelta = craterDelta;
                 RilleDelta = rilleDelta;
+                RidgedMs = ridgedMs;
+                CraterMs = craterMs;
+                RilleMs = rilleMs;
+                MetricsMs = metricsMs;
                 Checksum = checksum;
                 NativeAllocationDelta = nativeAllocationDelta;
                 NativeByteDelta = nativeByteDelta;
@@ -56,6 +65,11 @@ namespace Hecton8.Dev
             public float RidgedDelta { get; }
             public float CraterDelta { get; }
             public float RilleDelta { get; }
+            public float RidgedMs { get; }
+            public float CraterMs { get; }
+            public float RilleMs { get; }
+            public float MetricsMs { get; }
+            public bool NodeBudgetPassed => RidgedMs <= 2f && CraterMs <= 2f && RilleMs <= 2f;
             public int Checksum { get; }
             public int NativeAllocationDelta { get; }
             public long NativeByteDelta { get; }
@@ -77,6 +91,11 @@ namespace Hecton8.Dev
                 + "\"ridgedDeltaX100000\":" + HundredK(timed.RidgedDelta) + ","
                 + "\"craterDeltaX100000\":" + HundredK(timed.CraterDelta) + ","
                 + "\"rilleDeltaX100000\":" + HundredK(timed.RilleDelta) + ","
+                + "\"ridgedMsX1000\":" + Milli(timed.RidgedMs) + ","
+                + "\"craterMsX1000\":" + Milli(timed.CraterMs) + ","
+                + "\"rilleMsX1000\":" + Milli(timed.RilleMs) + ","
+                + "\"metricsMsX1000\":" + Milli(timed.MetricsMs) + ","
+                + "\"nodeBudgetPassed\":" + (timed.NodeBudgetPassed ? "true" : "false") + ","
                 + "\"checksum\":" + timed.Checksum + ","
                 + "\"nativeAllocationDelta\":" + timed.NativeAllocationDelta + ","
                 + "\"nativeByteDelta\":" + timed.NativeByteDelta + "}";
@@ -93,6 +112,7 @@ namespace Hecton8.Dev
             NativeArray<float> crater = default;
             NativeArray<float> rille = default;
             NativeArray<float3> craterCenters = default;
+            NativeArray<SpaceEngine098PipelineMetricSample> metrics = default;
             JobHandle handle = default;
             bool scheduled = false;
             long start = 0L;
@@ -100,6 +120,10 @@ namespace Hecton8.Dev
             float ridgedDelta = 0f;
             float craterDelta = 0f;
             float rilleDelta = 0f;
+            float ridgedMs = 0f;
+            float craterMs = 0f;
+            float rilleMs = 0f;
+            float metricsMs = 0f;
             float minHeight = float.MaxValue;
             float maxHeight = float.MinValue;
             int checksum = 17;
@@ -107,17 +131,19 @@ namespace Hecton8.Dev
 
             try
             {
-                // COLD ALLOC: NativeArray SpaceEngine smoke buffers[sampleCount * 4 + 4] - dev-only Burst terrain pipeline probe - owner: SpaceEngine098TerrainSmokeTester
+                // COLD ALLOC: NativeArray<float>[sampleCount * 4] + NativeArray<float3>[4] + NativeArray<SpaceEngine098PipelineMetricSample>[sampleCount] - dev-only Burst terrain pipeline probe - owner: SpaceEngine098TerrainSmokeTester
                 input = new NativeArray<float>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 ridged = new NativeArray<float>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 crater = new NativeArray<float>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 rille = new NativeArray<float>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 craterCenters = new NativeArray<float3>(4, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
+                metrics = new NativeArray<SpaceEngine098PipelineMetricSample>(sampleCount, Allocator.TempJob, NativeArrayOptions.UninitializedMemory);
                 Register(input, nameof(input));
                 Register(ridged, nameof(ridged));
                 Register(crater, nameof(crater));
                 Register(rille, nameof(rille));
                 Register(craterCenters, nameof(craterCenters));
+                Register(metrics, nameof(metrics));
 
                 for (int i = 0; i < sampleCount; i++)
                 {
@@ -129,6 +155,7 @@ namespace Hecton8.Dev
                 if (measureElapsed)
                     start = Stopwatch.GetTimestamp();
 
+                long stageStart = measureElapsed ? Stopwatch.GetTimestamp() : 0L;
                 var ridgedParams = new SpaceEngine098RidgedMultifractalParams
                 {
                     Frequency = 0.00042f,
@@ -148,16 +175,23 @@ namespace Hecton8.Dev
                     InputHeights01 = input,
                     OutputHeights01 = ridged,
                     Width = width,
-                    WorldOriginXZ = new double2(AbsoluteUniversePosition.CellSizeMeters * 2.0, -AbsoluteUniversePosition.CellSizeMeters),
+                    WorldOriginXZ = new double2(AupCellSizeMeters * 2.0, -AupCellSizeMeters),
                     CellSizeMeters = CellSizeMeters,
                     Parameters = ridgedParams,
                     Seed = SpaceEngine098TerrainMath.MixSeed(Seed, 2, -1)
                 }.Schedule(sampleCount, ResolveBatchCount(sampleCount));
+                scheduled = true;
 
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                scheduled = false;
+                if (measureElapsed)
+                    ridgedMs = ElapsedMsSince(stageStart);
+
+                stageStart = measureElapsed ? Stopwatch.GetTimestamp() : 0L;
                 handle = new SpaceEngine098CraterPlacementJob
                 {
                     CraterAupCenters = craterCenters,
-                    WorldOriginXZ = new double2(AbsoluteUniversePosition.CellSizeMeters * 2.0, -AbsoluteUniversePosition.CellSizeMeters),
+                    WorldOriginXZ = new double2(AupCellSizeMeters * 2.0, -AupCellSizeMeters),
                     WorldSizeXZ = new double2(width * CellSizeMeters, width * CellSizeMeters),
                     RadiusMeters = 220f,
                     Seed = SpaceEngine098TerrainMath.MixSeed(Seed ^ 0x43525452u, 2, -1)
@@ -169,13 +203,20 @@ namespace Hecton8.Dev
                     OutputHeights01 = crater,
                     CraterAupCenters = craterCenters,
                     Width = width,
-                    WorldOriginXZ = new double2(AbsoluteUniversePosition.CellSizeMeters * 2.0, -AbsoluteUniversePosition.CellSizeMeters),
+                    WorldOriginXZ = new double2(AupCellSizeMeters * 2.0, -AupCellSizeMeters),
                     CellSizeMeters = CellSizeMeters,
                     RadiusMeters = 220f,
                     Amplitude01 = 0.045f,
                     Profile = SpaceEngine098CraterProfile.OldDefault()
                 }.Schedule(sampleCount, ResolveBatchCount(sampleCount), handle);
+                scheduled = true;
 
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                scheduled = false;
+                if (measureElapsed)
+                    craterMs = ElapsedMsSince(stageStart);
+
+                stageStart = measureElapsed ? Stopwatch.GetTimestamp() : 0L;
                 var rilleParams = new SpaceEngine098RilleParams
                 {
                     CellFrequency = 0.004f,
@@ -192,7 +233,7 @@ namespace Hecton8.Dev
                     InputHeights01 = crater,
                     OutputHeights01 = rille,
                     Width = width,
-                    WorldOriginXZ = new double2(AbsoluteUniversePosition.CellSizeMeters * 2.0, -AbsoluteUniversePosition.CellSizeMeters),
+                    WorldOriginXZ = new double2(AupCellSizeMeters * 2.0, -AupCellSizeMeters),
                     CellSizeMeters = CellSizeMeters,
                     Parameters = rilleParams,
                     Seed = SpaceEngine098TerrainMath.MixSeed(Seed ^ 0x52494C4Cu, 2, -1)
@@ -201,31 +242,44 @@ namespace Hecton8.Dev
 
                 DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
                 scheduled = false;
+                if (measureElapsed)
+                    rilleMs = ElapsedMsSince(stageStart);
+
+                stageStart = measureElapsed ? Stopwatch.GetTimestamp() : 0L;
+                int checksumStride = math.max(1, sampleCount / 32);
+                handle = new SpaceEngine098PipelineMetricsJob
+                {
+                    InputHeights01 = input,
+                    RidgedHeights01 = ridged,
+                    CraterHeights01 = crater,
+                    RilleHeights01 = rille,
+                    Metrics = metrics,
+                    ChecksumStride = checksumStride
+                }.Schedule(sampleCount, ResolveBatchCount(sampleCount), handle);
+                scheduled = true;
+
+                DispatcherJobSwap.TryComplete(ref handle, forceComplete: true);
+                scheduled = false;
+                if (measureElapsed)
+                    metricsMs = ElapsedMsSince(stageStart);
 
                 if (measureElapsed)
                 {
-                    elapsedMs = (float)((Stopwatch.GetTimestamp() - start) * 1000.0 / Stopwatch.Frequency);
+                    elapsedMs = ElapsedMsSince(start);
                 }
 
-                int checksumStride = math.max(1, sampleCount / 32);
                 for (int i = 0; i < sampleCount; i++)
                 {
-                    float inputHeight = input[i];
-                    float ridgedHeight = ridged[i];
-                    float craterHeight = crater[i];
-                    float rilleHeight = rille[i];
-                    finite &= math.isfinite(inputHeight) &&
-                              math.isfinite(ridgedHeight) &&
-                              math.isfinite(craterHeight) &&
-                              math.isfinite(rilleHeight);
-                    ridgedDelta = math.max(ridgedDelta, math.abs(ridgedHeight - inputHeight));
-                    craterDelta = math.max(craterDelta, math.abs(craterHeight - ridgedHeight));
-                    rilleDelta = math.max(rilleDelta, math.abs(rilleHeight - craterHeight));
-                    minHeight = math.min(minHeight, rilleHeight);
-                    maxHeight = math.max(maxHeight, rilleHeight);
+                    SpaceEngine098PipelineMetricSample sample = metrics[i];
+                    finite &= sample.IsFinite != 0;
+                    ridgedDelta = math.max(ridgedDelta, sample.RidgedDelta);
+                    craterDelta = math.max(craterDelta, sample.CraterDelta);
+                    rilleDelta = math.max(rilleDelta, sample.RilleDelta);
+                    minHeight = math.min(minHeight, sample.MinHeight);
+                    maxHeight = math.max(maxHeight, sample.MaxHeight);
 
-                    if (i % checksumStride == 0)
-                        checksum = unchecked(checksum * 31 + (int)math.round(rilleHeight * 100000f));
+                    if (sample.HasChecksumContribution != 0)
+                        checksum = unchecked(checksum * 31 + sample.ChecksumContribution);
                 }
             }
             finally
@@ -238,6 +292,7 @@ namespace Hecton8.Dev
                 DisposeTracked(ref crater);
                 DisposeTracked(ref rille);
                 DisposeTracked(ref craterCenters);
+                DisposeTracked(ref metrics);
             }
 
             int nativeDelta = NativeMemorySentinel.ActiveAllocationCount - nativeBefore;
@@ -247,7 +302,8 @@ namespace Hecton8.Dev
                            rilleDelta > 0.000001f;
             bool bounded = minHeight >= 0f && maxHeight <= 1f;
             bool memoryBalanced = nativeDelta == 0 && byteDelta == 0L;
-            bool passed = finite && changed && bounded && memoryBalanced;
+            bool nodeBudgetPassed = !measureElapsed || (ridgedMs <= 2f && craterMs <= 2f && rilleMs <= 2f);
+            bool passed = finite && changed && bounded && memoryBalanced && nodeBudgetPassed;
 
             return new PipelineResult(
                 passed,
@@ -258,6 +314,10 @@ namespace Hecton8.Dev
                 ridgedDelta,
                 craterDelta,
                 rilleDelta,
+                ridgedMs,
+                craterMs,
+                rilleMs,
+                metricsMs,
                 checksum,
                 nativeDelta,
                 byteDelta);
@@ -293,6 +353,11 @@ namespace Hecton8.Dev
         private static int HundredK(float value)
         {
             return (int)math.round(value * 100000f);
+        }
+
+        private static float ElapsedMsSince(long startTimestamp)
+        {
+            return (float)((Stopwatch.GetTimestamp() - startTimestamp) * 1000.0 / Stopwatch.Frequency);
         }
     }
 }

@@ -8,6 +8,12 @@ float4 _HectonCausticsSimulationParamsC;
 float4 _HectonCausticsTexelSize;
 float4 _HectonProjectedCausticsWorldRect;
 float4 _AbyssalFlowWeatherCurrent;
+float4 _HectonEclipseWaterShadowParams;
+float4 _HectonEclipseWaterShadowDirection;
+float4 _HectonRingCausticsParams;
+float4 _HectonRingCausticsDirection;
+float4 _MeteorWaterImpactPosition;
+float4 _MeteorWaterImpactParams;
 float4 _HectonCaveVoxelHalfExtents;
 float4x4 _HectonCaveVoxelWorldToLocal;
 float _HectonCaveVoxelActive;
@@ -133,6 +139,66 @@ float SampleProjectedFloorMask(float2 worldXZ)
     return saturate(dot(normalWS, float3(0.0, 1.0, 0.0)));
 }
 
+float EvaluateEclipseWaterShadow(float2 worldXZ)
+{
+    float strength = saturate(_HectonEclipseWaterShadowParams.w);
+    if (strength <= 0.0001)
+        return 1.0;
+
+    float radius = max(_HectonEclipseWaterShadowParams.z, 1.0);
+    float softness = saturate(_HectonEclipseWaterShadowDirection.z);
+    float innerRadius = radius * saturate(1.0 - softness);
+    float distanceToShadow = distance(worldXZ, _HectonEclipseWaterShadowParams.xy);
+    float shadowMask = 1.0 - smoothstep(innerRadius, radius, distanceToShadow);
+    return saturate(1.0 - shadowMask * strength);
+}
+
+float EvaluateRingCausticShadow(float2 worldXZ)
+{
+    float strength = saturate(_HectonRingCausticsParams.x * _HectonRingCausticsDirection.z);
+    if (strength <= 0.0001)
+        return 1.0;
+
+    float2 direction = _HectonRingCausticsDirection.xy;
+    float lenSq = dot(direction, direction);
+    direction = lenSq > 0.0001 ? direction * rsqrt(lenSq) : float2(1.0, 0.0);
+
+    float stripeScale = max(_HectonRingCausticsParams.y, 0.0001);
+    float phase = _HectonRingCausticsParams.z;
+    float softness = max(_HectonRingCausticsParams.w, 0.001);
+    float stripePhase = dot(worldXZ, direction) * stripeScale + phase;
+    float stripeWave = abs(sin(stripePhase * 6.2831853));
+    float darkBand = 1.0 - smoothstep(softness, softness + 0.18, stripeWave);
+    return saturate(1.0 - darkBand * strength);
+}
+
+float EvaluateMeteorWaterRipple(float2 worldXZ, float timeValue, out float2 rippleDirection)
+{
+    rippleDirection = float2(0.0, 0.0);
+
+    float radius = max(_MeteorWaterImpactParams.x, 0.0);
+    float duration = max(_MeteorWaterImpactParams.y, 0.0);
+    float intensity = saturate(_MeteorWaterImpactParams.w * _MeteorWaterImpactPosition.w);
+    if (radius <= 0.001 || duration <= 0.001 || intensity <= 0.0001)
+        return 0.0;
+
+    float age = timeValue - _MeteorWaterImpactParams.z;
+    if (age < 0.0 || age > duration)
+        return 0.0;
+
+    float2 delta = worldXZ - _MeteorWaterImpactPosition.xz;
+    float distanceToImpact = length(delta);
+    rippleDirection = distanceToImpact > 0.001 ? delta / distanceToImpact : float2(1.0, 0.0);
+
+    float life01 = saturate(age / duration);
+    float waveRadius = lerp(radius * 0.08, radius, life01);
+    float bandWidth = max(1.5, radius * 0.045);
+    float ring = 1.0 - smoothstep(bandWidth, bandWidth * 2.0, abs(distanceToImpact - waveRadius));
+    float splashCore = 1.0 - smoothstep(0.0, max(1.0, radius * 0.18), distanceToImpact);
+    float decay = (1.0 - life01) * (1.0 - life01);
+    return saturate((ring * 0.78 + splashCore * 0.22) * decay * intensity);
+}
+
 [numthreads(8, 8, 1)]
 void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
 {
@@ -144,6 +210,9 @@ void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
 
     float2 texelSize = _HectonCausticsTexelSize.xy;
     float2 surfaceUv = (float2(dispatchThreadId.xy) + 0.5) * texelSize;
+    float2 worldXZ = float2(
+        lerp(_HectonProjectedCausticsWorldRect.x, _HectonProjectedCausticsWorldRect.x + rcp(max(_HectonProjectedCausticsWorldRect.z, 0.0001)), surfaceUv.x),
+        lerp(_HectonProjectedCausticsWorldRect.y, _HectonProjectedCausticsWorldRect.y + rcp(max(_HectonProjectedCausticsWorldRect.w, 0.0001)), surfaceUv.y));
     float2 uv = surfaceUv;
 
     float primaryDensity = max(_HectonCausticsSimulationParamsA.x, 0.5);
@@ -156,8 +225,11 @@ void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
     float waveDisplacement = _HectonCausticsSimulationParamsC.x;
     float2 waveFlow = _HectonCausticsSimulationParamsC.yz;
     float wavePhase = _HectonCausticsSimulationParamsC.w;
+    float2 meteorRippleDirection;
+    float meteorRipple = EvaluateMeteorWaterRipple(worldXZ, timeValue, meteorRippleDirection);
     float waveDisplacementAbs = abs(waveDisplacement);
     float2 waveOffset = waveFlow * 0.0125 + float2(waveDisplacement * 0.018, -waveDisplacement * 0.013);
+    waveOffset += meteorRippleDirection * (meteorRipple * 0.018);
     uv += waveOffset;
 
     float3 abyssalFlow = clamp(_AbyssalFlowWeatherCurrent.xyz, -20.0, 20.0);
@@ -179,15 +251,14 @@ void ProjectCaustics(uint3 dispatchThreadId : SV_DispatchThreadID)
     float combined = lerp(primaryLayer, max(primaryLayer, secondaryLayer), secondaryWeight);
     combined = pow(saturate(combined * 2.3), sharpness);
     combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035 + flowMagnitude * 0.22));
+    combined += meteorRipple * 0.28;
     combined = saturate(combined * 1.35);
 
-    float2 worldXZ = float2(
-        lerp(_HectonProjectedCausticsWorldRect.x, _HectonProjectedCausticsWorldRect.x + rcp(max(_HectonProjectedCausticsWorldRect.z, 0.0001)), surfaceUv.x),
-        lerp(_HectonProjectedCausticsWorldRect.y, _HectonProjectedCausticsWorldRect.y + rcp(max(_HectonProjectedCausticsWorldRect.w, 0.0001)), surfaceUv.y));
     float3 projectedWorldPosition = float3(worldXZ.x, _HectonCausticsSimulationParamsB.w, worldXZ.y);
     if (SampleCaveSignedDistance(projectedWorldPosition) <= 0.0)
         combined = 0.0;
 
+    combined *= EvaluateEclipseWaterShadow(worldXZ) * EvaluateRingCausticShadow(worldXZ);
     combined *= SampleProjectedFloorMask(worldXZ);
 
     _HectonCausticsOutput[dispatchThreadId.xy] = combined;

@@ -1,6 +1,7 @@
 using System;
 using Unity.Burst;
 using Unity.Collections;
+using Unity.Collections.LowLevel.Unsafe;
 using Unity.Jobs;
 using Unity.Mathematics;
 
@@ -134,7 +135,6 @@ namespace Hecton8.World
                 Settings = safeSettings
             };
 
-            JobHandle scanHandle = scanJob.Schedule(cellCount, 64, dependency);
             var floodJob = new ClosedBasinFloodFillJob
             {
                 Heightmap = heightmap,
@@ -147,6 +147,15 @@ namespace Hecton8.World
                 Settings = safeSettings
             };
 
+#if UNITY_EDITOR
+            if (ShouldUseEditorDirectExecution(dependency))
+            {
+                ExecuteClosedBasinDetectionDirect(ref scanJob, ref floodJob, cellCount);
+                return default;
+            }
+#endif
+
+            JobHandle scanHandle = scanJob.Schedule(cellCount, 64, dependency);
             return floodJob.Schedule(1, 1, scanHandle);
         }
 
@@ -235,6 +244,14 @@ namespace Hecton8.World
                 FissureMask = fissureMask,
                 Settings = safeSettings
             };
+
+#if UNITY_EDITOR
+            if (ShouldUseEditorDirectExecution(dependency))
+            {
+                ExecuteRidgeFeatureDetectionDirect(ref job, cellCount);
+                return default;
+            }
+#endif
 
             return job.Schedule(cellCount, 64, dependency);
         }
@@ -434,12 +451,42 @@ namespace Hecton8.World
             if (sdf.Length < count)
                 throw new ArgumentException("SDF array is smaller than sdfWidth * sdfHeight * sdfDepth.", nameof(sdf));
         }
+
+#if UNITY_EDITOR
+        private static bool ShouldUseEditorDirectExecution(JobHandle dependency)
+        {
+            if (!dependency.IsCompleted)
+                return false;
+
+            return UnityEditor.EditorApplication.isCompiling ||
+                   UnityEditor.EditorApplication.isUpdating;
+        }
+
+        private static void ExecuteClosedBasinDetectionDirect(
+            ref ClosedBasinDetectionJob scanJob,
+            ref ClosedBasinFloodFillJob floodJob,
+            int cellCount)
+        {
+            for (int i = 0; i < cellCount; i++)
+                scanJob.Execute(i);
+
+            floodJob.Execute(0);
+        }
+
+        private static void ExecuteRidgeFeatureDetectionDirect(
+            ref AnomalyRidgeFeatureDetectionJob job,
+            int cellCount)
+        {
+            for (int i = 0; i < cellCount; i++)
+                job.Execute(i);
+        }
+#endif
     }
 
     /// <summary>
     /// Burst parallel kernel that scans the heightmap, clears outputs, and marks local minimum candidates.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct ClosedBasinDetectionJob : IJobParallelFor
     {
         /// <summary>Input heightmap in meters.</summary>
@@ -510,28 +557,37 @@ namespace Hecton8.World
     /// <summary>
     /// Burst flood-fill kernel that expands candidate minima to their spill lip and writes basin extents.
     /// </summary>
-    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic, CompileSynchronously = true)]
+    [BurstCompile(FloatPrecision.Standard, FloatMode.Deterministic)]
     public struct ClosedBasinFloodFillJob : IJobParallelFor
     {
         /// <summary>Input heightmap in meters.</summary>
-        [ReadOnly] public NativeArray<float> Heightmap;
+        [ReadOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<float> Heightmap;
 
         /// <summary>Candidate minima mask.</summary>
-        [ReadOnly] public NativeArray<byte> CandidateMask;
+        [ReadOnly]
+        [NativeDisableParallelForRestriction]
+        public NativeArray<byte> CandidateMask;
 
         /// <summary>Output basin mask.</summary>
+        [NativeDisableParallelForRestriction]
         public NativeArray<byte> BasinMask;
 
         /// <summary>Output records indexed by candidate cell.</summary>
+        [NativeDisableParallelForRestriction]
         public NativeArray<AnomalyBasinRecord> BasinRecords;
 
         /// <summary>Binary min-heap scratch. Caller owns storage.</summary>
+        [NativeDisableParallelForRestriction]
         public NativeArray<int> FloodHeap;
 
         /// <summary>Visited stamp scratch. Caller owns storage.</summary>
+        [NativeDisableParallelForRestriction]
         public NativeArray<int> VisitedStamp;
 
         /// <summary>Accepted cell scratch. Caller owns storage.</summary>
+        [NativeDisableParallelForRestriction]
         public NativeArray<int> AcceptedCells;
 
         /// <summary>Detection settings.</summary>

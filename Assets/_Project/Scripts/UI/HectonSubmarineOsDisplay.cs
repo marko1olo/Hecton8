@@ -41,6 +41,7 @@ namespace Hecton8.UI
         private static readonly char[] s_iconLifeSupport = "AIR".ToCharArray();
         private static readonly char[] s_iconLights = "LGT".ToCharArray();
         private static readonly char[] s_iconSonar = "SNR".ToCharArray();
+        private static readonly char[] s_activeDrones512 = "Active Drones: 512".ToCharArray();
         private static readonly char[] s_logReactorStable = "[OK] REACTOR STABLE".ToCharArray();
         private static readonly char[] s_logLowPowerEngaged = "[WARN] LOW POWER MODE ENGAGED".ToCharArray();
         private static readonly char[] s_logLowPowerCleared = "[OK] LOW POWER MODE CLEARED".ToCharArray();
@@ -81,6 +82,7 @@ namespace Hecton8.UI
         private RectTransform _root;
         private TMP_Text _statusLabel;
         private TMP_Text _metricLabel;
+        private TMP_Text _droneFleetLabel;
         private TMP_Text _logLabel;
         private Image[] _subsystemIconImages;
         private TMP_Text[] _subsystemIconLabels;
@@ -89,6 +91,7 @@ namespace Hecton8.UI
         private int _historyLineCount;
         private int _typingVisibleLength;
         private int _typingSourceLength;
+        private int _typingRenderBaseLength;
         private float _typingAccumulator;
 
         private bool _typingActive;
@@ -136,6 +139,7 @@ namespace Hecton8.UI
             TryRegister();
             RefreshStatusLabels();
             RefreshMetricsLabel();
+            RefreshDroneFleetLabel();
             RefreshLogLabel();
         }
 
@@ -184,7 +188,7 @@ namespace Hecton8.UI
                 return;
 
             _typingVisibleLength = nextVisibleLength;
-            RefreshLogLabel();
+            ApplyTypingVisibleCharacters();
             if (_typingVisibleLength >= _typingSourceLength)
             {
                 CommitTypedLine();
@@ -192,6 +196,8 @@ namespace Hecton8.UI
                 _typingAccumulator = 0f;
                 _typingVisibleLength = 0;
                 _typingSourceLength = 0;
+                _typingRenderBaseLength = 0;
+                RefreshLogLabel();
                 TryStartNextTypedEntry();
             }
         }
@@ -289,7 +295,6 @@ namespace Hecton8.UI
             _historyLineWriteIndex = (_historyLineWriteIndex + 1) % HistoryLineCount;
             if (_historyLineCount < HistoryLineCount)
                 _historyLineCount++;
-            RefreshLogLabel();
         }
 
         private void RefreshStatusLabels()
@@ -326,6 +331,14 @@ namespace Hecton8.UI
             _metricLabel.SetCharArray(_metricBuffer, 0, Mathf.Max(0, cursor));
         }
 
+        private void RefreshDroneFleetLabel()
+        {
+            if (_droneFleetLabel == null)
+                return;
+
+            _droneFleetLabel.SetCharArray(s_activeDrones512, 0, s_activeDrones512.Length);
+        }
+
         private void RefreshLogLabel()
         {
             if (_logLabel == null)
@@ -348,10 +361,37 @@ namespace Hecton8.UI
             }
 
             if (_typingActive)
-                cursor = AppendRange(_renderBuffer, cursor, _typingBuffer, 0, _typingVisibleLength);
+            {
+                _typingRenderBaseLength = cursor;
+                cursor = AppendRange(_renderBuffer, cursor, _typingBuffer, 0, _typingSourceLength);
+            }
 
             int safeLength = Mathf.Clamp(cursor, 0, _renderBuffer.Length);
             _logLabel.SetCharArray(_renderBuffer, 0, safeLength);
+            ApplyTypingVisibleCharacters(safeLength);
+        }
+
+        private void ApplyTypingVisibleCharacters()
+        {
+            ApplyTypingVisibleCharacters(_renderBuffer.Length);
+        }
+
+        private void ApplyTypingVisibleCharacters(int renderedLength)
+        {
+            if (_logLabel == null)
+                return;
+
+            if (!_typingActive)
+            {
+                if (_logLabel.maxVisibleCharacters != int.MaxValue)
+                    _logLabel.maxVisibleCharacters = int.MaxValue;
+                return;
+            }
+
+            int safeRenderedLength = renderedLength > 0 ? renderedLength : _typingRenderBaseLength + _typingSourceLength;
+            int visibleCharacters = Mathf.Clamp(_typingRenderBaseLength + _typingVisibleLength, 0, safeRenderedLength);
+            if (_logLabel.maxVisibleCharacters != visibleCharacters)
+                _logLabel.maxVisibleCharacters = visibleCharacters;
         }
 
         private void RefreshSubsystemIcons()
@@ -399,12 +439,14 @@ namespace Hecton8.UI
 
             _statusLabel = CreateText("Status", _root, new Vector2(14f, -12f), new Vector2(280f, 24f), 19f);
             _metricLabel = CreateText("Metrics", _root, new Vector2(14f, -38f), new Vector2(320f, 20f), 16f);
-            _logLabel = CreateText("Log", _root, new Vector2(14f, -70f), new Vector2(356f, 286f), 15f);
+            _droneFleetLabel = CreateText("DroneFleet", _root, new Vector2(14f, -60f), new Vector2(320f, 20f), 16f);
+            _logLabel = CreateText("Log", _root, new Vector2(14f, -92f), new Vector2(356f, 264f), 15f);
             _logLabel.alignment = TextAlignmentOptions.TopLeft;
             _logLabel.textWrappingMode = TextWrappingModes.NoWrap;
             _logLabel.overflowMode = TextOverflowModes.Overflow;
             _statusLabel.textWrappingMode = TextWrappingModes.NoWrap;
             _metricLabel.textWrappingMode = TextWrappingModes.NoWrap;
+            _droneFleetLabel.textWrappingMode = TextWrappingModes.NoWrap;
 
             _subsystemIconImages = new Image[4]; // COLD ALLOC: Image[4] — subsystem monochrome icon image refs — owner: HectonSubmarineOsDisplay
             _subsystemIconLabels = new TMP_Text[4]; // COLD ALLOC: TMP_Text[4] — subsystem icon labels — owner: HectonSubmarineOsDisplay
@@ -415,6 +457,7 @@ namespace Hecton8.UI
 
             RefreshStatusLabels();
             RefreshMetricsLabel();
+            RefreshDroneFleetLabel();
             RefreshLogLabel();
         }
 

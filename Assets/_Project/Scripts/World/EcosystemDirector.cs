@@ -23,7 +23,7 @@ namespace Hecton8.World
     }
 
     /// <summary>
-    /// Cold-path sector ecosystem simulator that evolves predator/prey counts with a Lotka-Volterra solve.
+    /// Cold-path sector ecosystem table. Population is a deterministic cinematic roll per 1 km sector.
     /// </summary>
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-4037)]
@@ -32,11 +32,12 @@ namespace Hecton8.World
         internal static EcosystemDirector ActiveRuntimeInstance { get; private set; }
 
         private const float DefaultSlowTickIntervalSeconds = 0.5f;
-        private const float DefaultDiffusionTickIntervalSeconds = 5f;
         private const float DefaultFloraGrazingSearchRadiusMeters = 2.75f;
         private const float SectorEdgeLengthMeters = 1000f;
+        private const float DefaultLeviathanSectorSpawnChance = 0.15f;
+        private const int DefaultGrazerPopulationPerSector = 10;
+        private const int DefaultLeviathanPopulationPerSector = 1;
         private const int MinimumSectorCapacity = 16;
-        private const int MinimumPredationEventCapacity = 32;
         private const float DefaultHostilityPeakHoldSeconds = 18f;
         private const float LogicalLodFullSimDistanceMeters = 40f;
         private const float LogicalLodDataOnlyDistanceMeters = 150f;
@@ -90,13 +91,6 @@ namespace Hecton8.World
             public int PreyPopulationRounded;
             public int PredatorPopulationRounded;
             public int BiomeId;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct PredationEvent
-        {
-            public long SectorKey;
-            public int PreyConsumed;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -212,309 +206,64 @@ namespace Hecton8.World
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct LotkaVolterraSolveJob : IJobParallelFor
+        private struct ProbabilityTablePopulationJob : IJobParallelFor
         {
             [ReadOnly] public NativeArray<SectorPopulationState> FrontStates;
-            [ReadOnly] public NativeHashMap<long, int> SectorIndexByKey;
             public NativeArray<SectorPopulationState> BackStates;
-            public float DeltaTimeSeconds;
-            public float Alpha;
-            public float Beta;
-            public float Delta;
-            public float Gamma;
-            public float PredatorGainPerPrey;
-            public float HarvestPressureDecay;
-            public float HarvestCrashRate;
-            public float PreyMigrationRate;
-            public float PredatorMigrationRate;
-            public float DiagonalMigrationWeight;
-            public float BorderBleedEqualizationRate;
-            public float PreyOverflowThreshold;
-            public float PredatorOverflowThreshold;
-            public float DepletedSectorBias;
-            public float OverflowRedistributionRate;
+            public float LeviathanChance01;
             public float BaselineFitness;
-            public float FitnessAdaptationRate;
-            public float FitnessRecoveryRate;
-            public float FitnessHarvestScale;
-            public float MaximumSpeedMultiplier;
-            public float MaximumCamouflageIndex;
-            public int MaxPreyPopulation;
-            public int MaxPredatorPopulation;
-            public float PreyMassUnits;
-            public float PredatorMassUnits;
-            public float BiomassHardCapTemperate;
-            public float BiomassHardCapThermal;
-            public float BiomassHardCapHadal;
-
-            public void Execute(int index)
-            {
-                SectorPopulationState state = FrontStates[index];
-                float prey = math.max(0f, state.PreyPopulation);
-                float predator = math.max(0f, state.PredatorPopulation);
-                float harvestPressure = math.max(0f, state.HarvestPressure) * math.exp(-HarvestPressureDecay * DeltaTimeSeconds);
-                float growthSuppression = math.saturate(1f - harvestPressure);
-                growthSuppression *= growthSuppression;
-                float harvestPressureSq = harvestPressure * harvestPressure;
-                float interaction = prey * predator;
-                float preyDelta = (Alpha * growthSuppression * prey) - (Beta * interaction) - (HarvestCrashRate * (harvestPressure + harvestPressureSq) * prey);
-                float predatorDelta = (Delta * interaction * PredatorGainPerPrey) - (Gamma * predator);
-                float preyMigration = ComputeNeighborMigration(index, prey, true, PreyOverflowThreshold);
-                float predatorMigration = ComputeNeighborMigration(index, predator, false, PredatorOverflowThreshold);
-
-                prey = math.clamp(prey + (preyDelta * DeltaTimeSeconds), 0f, MaxPreyPopulation);
-                predator = math.clamp(predator + (predatorDelta * DeltaTimeSeconds), 0f, MaxPredatorPopulation);
-                prey = math.clamp(prey + (preyMigration * PreyMigrationRate * DeltaTimeSeconds), 0f, MaxPreyPopulation);
-                predator = math.clamp(predator + (predatorMigration * PredatorMigrationRate * DeltaTimeSeconds), 0f, MaxPredatorPopulation);
-                ApplyBiomassHardCap(state.BiomeId, ref prey, ref predator);
-
-                float currentFitness = math.saturate(state.Fitness);
-                float fitnessTarget = math.clamp(
-                    BaselineFitness + math.saturate(harvestPressure * FitnessHarvestScale) * (1f - BaselineFitness),
-                    0f,
-                    1f);
-                float adaptationRate = math.select(FitnessRecoveryRate, FitnessAdaptationRate, fitnessTarget > currentFitness);
-                float fitnessBlend = 1f - math.exp(-math.max(0f, adaptationRate) * DeltaTimeSeconds);
-                float fitness = math.lerp(currentFitness, fitnessTarget, fitnessBlend);
-                float speedMultiplier = math.lerp(1f, MaximumSpeedMultiplier, fitness);
-                float camouflageIndex = math.saturate(math.lerp(0f, MaximumCamouflageIndex, math.sqrt(fitness)));
-
-                state.PreyPopulation = prey;
-                state.PredatorPopulation = predator;
-                state.HarvestPressure = harvestPressure;
-                state.Fitness = fitness;
-                state.SpeedMultiplier = speedMultiplier;
-                state.CamouflageIndex = camouflageIndex;
-                state.PreyPopulationRounded = (int)math.round(prey);
-                state.PredatorPopulationRounded = (int)math.round(predator);
-                BackStates[index] = state;
-            }
-
-            private float ComputeNeighborMigration(int index, float sectorPopulation, bool samplePrey, float overflowThreshold)
-            {
-                int2 sectorCoord = FrontStates[index].SectorCoord;
-                float gradient = 0f;
-                float totalWeight = 0f;
-                int lowerNeighborCount = 0;
-                gradient += SampleNeighborDelta(sectorCoord + new int2(1, 0), sectorPopulation, samplePrey, 1f, ref totalWeight, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(-1, 0), sectorPopulation, samplePrey, 1f, ref totalWeight, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(0, 1), sectorPopulation, samplePrey, 1f, ref totalWeight, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(0, -1), sectorPopulation, samplePrey, 1f, ref totalWeight, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(1, 1), sectorPopulation, samplePrey, DiagonalMigrationWeight, ref totalWeight, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(1, -1), sectorPopulation, samplePrey, DiagonalMigrationWeight, ref totalWeight, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(-1, 1), sectorPopulation, samplePrey, DiagonalMigrationWeight, ref totalWeight, ref lowerNeighborCount);
-                gradient += SampleNeighborDelta(sectorCoord + new int2(-1, -1), sectorPopulation, samplePrey, DiagonalMigrationWeight, ref totalWeight, ref lowerNeighborCount);
-
-                float safeOverflowThreshold = math.max(1f, overflowThreshold);
-                float depletion01 = math.saturate(1f - (sectorPopulation / safeOverflowThreshold));
-                float equalization = totalWeight > 0f
-                    ? (gradient / totalWeight) * math.max(0f, BorderBleedEqualizationRate)
-                    : 0f;
-                equalization *= 1f + (depletion01 * DepletedSectorBias);
-
-                float overflow = math.max(0f, sectorPopulation - safeOverflowThreshold);
-                if (overflow > 0f && lowerNeighborCount > 0)
-                {
-                    equalization -= overflow * OverflowRedistributionRate * (lowerNeighborCount * 0.125f);
-                }
-
-                return equalization;
-            }
-
-            private float SampleNeighborDelta(
-                int2 neighborCoord,
-                float sectorPopulation,
-                bool samplePrey,
-                float weight,
-                ref float totalWeight,
-                ref int lowerNeighborCount)
-            {
-                if (!SectorIndexByKey.TryGetValue(PackSectorKey(neighborCoord), out int neighborIndex))
-                    return 0f;
-
-                SectorPopulationState neighbor = FrontStates[neighborIndex];
-                float neighborPopulation = samplePrey ? neighbor.PreyPopulation : neighbor.PredatorPopulation;
-                if (neighborPopulation < sectorPopulation)
-                    lowerNeighborCount++;
-
-                totalWeight += weight;
-                return (neighborPopulation - sectorPopulation) * weight;
-            }
-
-            private static long PackSectorKey(int2 sectorCoord)
-            {
-                return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
-            }
-
-            private void ApplyBiomassHardCap(int biomeId, ref float prey, ref float predator)
-            {
-                float cap = ResolveBiomeBiomassHardCap(biomeId);
-                if (cap <= 0f)
-                    return;
-
-                float preyMass = math.max(0.001f, PreyMassUnits);
-                float predatorMass = math.max(0.001f, PredatorMassUnits);
-                float biomass = (prey * preyMass) + (predator * predatorMass);
-                if (biomass <= cap)
-                    return;
-
-                float scale = cap / math.max(0.001f, biomass);
-                prey = math.clamp(prey * scale, 0f, MaxPreyPopulation);
-                predator = math.clamp(predator * scale, 0f, MaxPredatorPopulation);
-            }
-
-            private float ResolveBiomeBiomassHardCap(int biomeId)
-            {
-                if (biomeId == 1)
-                    return math.max(1f, BiomassHardCapThermal);
-                if (biomeId == 2)
-                    return math.max(1f, BiomassHardCapHadal);
-
-                return math.max(1f, BiomassHardCapTemperate);
-            }
-        }
-
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct PopulationDiffusionJob : IJobParallelFor
-        {
-            [ReadOnly] public NativeArray<SectorPopulationState> FrontStates;
-            [ReadOnly] public NativeHashMap<long, int> SectorIndexByKey;
-            public NativeArray<SectorPopulationState> BackStates;
-            public float PreyDiffusionFraction;
-            public float PredatorFollowPreyDiffusionFraction;
-            public float PredatorPerPreyRatio;
+            public int GrazerPopulationPerSector;
+            public int LeviathanPopulationPerSector;
             public int MaxPreyPopulation;
             public int MaxPredatorPopulation;
 
             public void Execute(int index)
             {
                 SectorPopulationState state = FrontStates[index];
-                float prey = math.max(0f, state.PreyPopulation);
-                float predator = math.max(0f, state.PredatorPopulation);
-                float preyNet = 0f;
-                float predatorNet = 0f;
-                int2 sectorCoord = state.SectorCoord;
+                ResolveProbabilityTablePopulation(
+                    state.SectorCoord,
+                    state.BiomeId,
+                    LeviathanChance01,
+                    GrazerPopulationPerSector,
+                    LeviathanPopulationPerSector,
+                    out int preyPopulation,
+                    out int predatorPopulation);
 
-                AccumulateNeighborDiffusion(sectorCoord + new int2(1, 0), prey, ref preyNet, ref predatorNet);
-                AccumulateNeighborDiffusion(sectorCoord + new int2(-1, 0), prey, ref preyNet, ref predatorNet);
-                AccumulateNeighborDiffusion(sectorCoord + new int2(0, 1), prey, ref preyNet, ref predatorNet);
-                AccumulateNeighborDiffusion(sectorCoord + new int2(0, -1), prey, ref preyNet, ref predatorNet);
-
-                prey = math.clamp(prey + preyNet, 0f, MaxPreyPopulation);
-                predator = math.clamp(predator + predatorNet, 0f, MaxPredatorPopulation);
-                state.PreyPopulation = prey;
-                state.PredatorPopulation = predator;
-                state.PreyPopulationRounded = (int)math.round(prey);
-                state.PredatorPopulationRounded = (int)math.round(predator);
+                preyPopulation = math.clamp(preyPopulation, 0, math.max(0, MaxPreyPopulation));
+                predatorPopulation = math.clamp(predatorPopulation, 0, math.max(0, MaxPredatorPopulation));
+                state.PreyPopulation = preyPopulation;
+                state.PredatorPopulation = predatorPopulation;
+                state.HarvestPressure = 0f;
+                state.Fitness = math.saturate(BaselineFitness);
+                state.SpeedMultiplier = 1f;
+                state.CamouflageIndex = 0f;
+                state.PreyPopulationRounded = preyPopulation;
+                state.PredatorPopulationRounded = predatorPopulation;
                 BackStates[index] = state;
-            }
-
-            private void AccumulateNeighborDiffusion(
-                int2 neighborCoord,
-                float localPrey,
-                ref float preyNet,
-                ref float predatorNet)
-            {
-                if (!SectorIndexByKey.TryGetValue(PackSectorKey(neighborCoord), out int neighborIndex))
-                    return;
-
-                SectorPopulationState neighbor = FrontStates[neighborIndex];
-                float preyDelta = neighbor.PreyPopulation - localPrey;
-                preyNet += preyDelta * PreyDiffusionFraction;
-                predatorNet += preyDelta * PredatorPerPreyRatio * PredatorFollowPreyDiffusionFraction;
-            }
-
-            private static long PackSectorKey(int2 sectorCoord)
-            {
-                return ((long)sectorCoord.x << 32) | (uint)sectorCoord.y;
             }
         }
 
         [Header("Sector Runtime")]
         [Tooltip("Maximum number of active 1 km sectors tracked in the cold-path population model.")]
         [SerializeField, Min(MinimumSectorCapacity)] private int maxTrackedSectors = 128;
-        [Tooltip("Maximum predation events buffered between 10-second cold solves.")]
-        [SerializeField, Min(MinimumPredationEventCapacity)] private int maxBufferedPredationEvents = 256;
         [Tooltip("Seconds between ecosystem solves. 10 seconds = 0.1 Hz.")]
         [SerializeField, Min(1f)] private float coldTickIntervalSeconds = 60f;
 
-        [Header("Initial Populations")]
-        [Tooltip("Minimum deterministic prey population seeded into a new 1 km sector.")]
-        [SerializeField, Min(0)] private int initialPreyPopulationMin = 192;
-        [Tooltip("Maximum deterministic prey population seeded into a new 1 km sector.")]
-        [SerializeField, Min(1)] private int initialPreyPopulationMax = 768;
-        [Tooltip("Minimum deterministic predator population seeded into a new 1 km sector.")]
-        [SerializeField, Min(0)] private int initialPredatorPopulationMin = 8;
-        [Tooltip("Maximum deterministic predator population seeded into a new 1 km sector.")]
-        [SerializeField, Min(1)] private int initialPredatorPopulationMax = 48;
-
-        [Header("Lotka-Volterra Coefficients")]
-        [Tooltip("Prey natural growth coefficient alpha in dPrey/dt = alpha*Prey - beta*Prey*Predator.")]
-        [SerializeField, Min(0f)] private float preyGrowthAlpha = 0.0035f;
-        [Tooltip("Predation coefficient beta in dPrey/dt = alpha*Prey - beta*Prey*Predator.")]
-        [SerializeField, Min(0f)] private float predationBeta = 0.00003f;
-        [Tooltip("Predator reproduction coefficient delta in dPredator/dt = delta*Prey*Predator - gamma*Predator.")]
-        [SerializeField, Min(0f)] private float predatorGrowthDelta = 0.000012f;
-        [Tooltip("Predator decay coefficient gamma in dPredator/dt = delta*Prey*Predator - gamma*Predator.")]
-        [SerializeField, Min(0f)] private float predatorDecayGamma = 0.004f;
-        [Tooltip("Additional predator gain factor applied when prey are consumed by runtime attacks.")]
-        [SerializeField, Min(0f)] private float predatorGainPerPrey = 0.2f;
-        [Tooltip("Upper clamp for prey population values after each solve.")]
-        [SerializeField, Min(1)] private int maxPreyPopulation = 1024;
-        [Tooltip("Upper clamp for predator population values after each solve.")]
-        [SerializeField, Min(1)] private int maxPredatorPopulation = 128;
-        [Tooltip("Mass units per prey used by sector biomass conservation.")]
-        [SerializeField, Min(0.001f)] private float preyMassUnits = 1f;
-        [Tooltip("Mass units per predator used by sector biomass conservation.")]
-        [SerializeField, Min(0.001f)] private float predatorMassUnits = 12f;
-        [Tooltip("Default biomass hardcap for a 1 km sector.")]
-        [SerializeField, Min(1f)] private float temperateSectorBiomassHardCap = 1600f;
-        [Tooltip("Thermal-vent biome biomass hardcap for a 1 km sector.")]
-        [SerializeField, Min(1f)] private float thermalSectorBiomassHardCap = 2600f;
-        [Tooltip("Hadal biome biomass hardcap for a 1 km sector.")]
-        [SerializeField, Min(1f)] private float hadalSectorBiomassHardCap = 1200f;
-        [Tooltip("Exponential decay applied to harvest pressure each cold solve.")]
-        [SerializeField, Min(0f)] private float harvestPressureDecay = 0.18f;
-        [Tooltip("Additional prey loss applied while harvest pressure remains elevated.")]
-        [SerializeField, Min(0f)] private float harvestCrashRate = 0.012f;
-        [Tooltip("Harvest pressure added per prey consumed by runtime attacks.")]
-        [SerializeField, Min(0f)] private float harvestPressurePerPrey = 0.08f;
-        [Tooltip("Sector-to-sector prey migration rate along local population gradients.")]
-        [SerializeField, Min(0f)] private float preyMigrationRate = 0.00085f;
-        [Tooltip("Sector-to-sector predator migration rate along local population gradients.")]
-        [SerializeField, Min(0f)] private float predatorMigrationRate = 0.00018f;
-        [Tooltip("Seconds between explicit diffusion passes that bleed prey and predators across adjacent 1 km sector borders.")]
-        [SerializeField, Min(1f)] private float diffusionTickIntervalSeconds = DefaultDiffusionTickIntervalSeconds;
-        [Tooltip("Fraction of prey density differential moved across each adjacent sector edge on a diffusion tick.")]
-        [SerializeField, Range(0f, 1f)] private float preyDiffusionFraction = 0.05f;
-        [Tooltip("Fraction of prey density differential converted into predator movement pressure on a diffusion tick.")]
-        [SerializeField, Range(0f, 1f)] private float predatorFollowPreyDiffusionFraction = 0.05f;
-        [Tooltip("Relative weight applied to diagonal 1 km sector bleed so cross-border diffusion is not restricted to four cardinal neighbors.")]
-        [SerializeField, Min(0f)] private float diagonalMigrationWeight = 0.7071f;
-        [Tooltip("Additional equalization scalar applied to the weighted neighbor differential before migration rates are integrated.")]
-        [SerializeField, Min(0f)] private float borderBleedEqualizationRate = 1f;
-        [Tooltip("Prey population above this threshold is treated as overflow and bleeds toward depleted adjacent sectors.")]
-        [SerializeField, Min(1f)] private float preyOverflowThreshold = 384f;
-        [Tooltip("Predator population above this threshold is treated as overflow and bleeds toward depleted adjacent sectors.")]
-        [SerializeField, Min(1f)] private float predatorOverflowThreshold = 28f;
-        [Tooltip("Extra pull applied to depleted sectors so empty neighbors refill instead of remaining mathematically dead.")]
-        [SerializeField, Min(0f)] private float depletedSectorBias = 1.35f;
-        [Tooltip("Fraction of local overflow converted into outward migration pressure when adjacent sectors are less populated.")]
-        [SerializeField, Min(0f)] private float overflowRedistributionRate = 0.85f;
-
-        [Header("Adaptive Genetics")]
-        [Tooltip("Minimum prey fitness retained by calm sectors so adaptation never fully collapses to zero.")]
+        [Header("Probability Table")]
+        [Tooltip("Deterministic 1 km sector roll chance that the sector presents one leviathan instead of a grazer pod.")]
+        [SerializeField, Range(0f, 1f)] private float leviathanSectorSpawnChance = DefaultLeviathanSectorSpawnChance;
+        [Tooltip("Fixed grazer count presented when the sector roll is not leviathan.")]
+        [SerializeField, Min(0)] private int grazerPopulationPerSector = DefaultGrazerPopulationPerSector;
+        [Tooltip("Fixed leviathan count presented when the sector roll hits the apex bucket.")]
+        [SerializeField, Min(0)] private int leviathanPopulationPerSector = DefaultLeviathanPopulationPerSector;
+        [Tooltip("Upper clamp for prey population values exposed to hibernation and spawn reconciliation.")]
+        [SerializeField, Min(1)] private int maxPreyPopulation = DefaultGrazerPopulationPerSector;
+        [Tooltip("Upper clamp for predator population values exposed to hibernation and spawn reconciliation.")]
+        [SerializeField, Min(1)] private int maxPredatorPopulation = DefaultLeviathanPopulationPerSector;
+        [Tooltip("Baseline prey fitness retained only for serialized compatibility; the purge table does not evolve it over time.")]
         [SerializeField, Range(0f, 1f)] private float baselineFitness = 0.08f;
-        [Tooltip("Rate constant driving prey adaptation upward in highly hunted sectors.")]
-        [SerializeField, Min(0f)] private float fitnessAdaptationRate = 0.32f;
-        [Tooltip("Rate constant driving prey adaptation back toward baseline after pressure fades.")]
-        [SerializeField, Min(0f)] private float fitnessRecoveryRate = 0.05f;
-        [Tooltip("Multiplier mapping harvest pressure into prey fitness gain.")]
-        [SerializeField, Min(0f)] private float fitnessHarvestScale = 0.85f;
-        [Tooltip("Maximum boid speed multiplier produced by sector adaptation.")]
+        [Tooltip("Legacy save decode clamp for pre-purge sector adaptation payloads.")]
         [SerializeField, Min(1f)] private float maximumSpeedMultiplier = 1.35f;
-        [Tooltip("Maximum camouflage bias produced by sector adaptation.")]
-        [SerializeField, Range(0f, 1f)] private float maximumCamouflageIndex = 0.9f;
 
         [Header("Biome Hostility")]
         [Tooltip("Normalized hostility applied when the player kills one standard apex predator.")]
@@ -578,25 +327,20 @@ namespace Hecton8.World
         private NativeArray<SectorPopulationState> _sectorFrontStates;
         private NativeArray<SectorPopulationState> _sectorBackStates;
         private NativeHashMap<long, int> _sectorIndexByKey;
-        private NativeArray<PredationEvent> _pendingPredationEvents;
         private NativeArray<ApexTerritorySample> _apexTerritorySamples;
         private NativeArray<ApexTerritoryOverlapResult> _apexTerritoryOverlapResults;
         private NativeArray<float4> _floraPredatorAupUpload;
         private NativeList<EcosystemSectorSaveRecord> _saveSnapshotSectors;
         private FaunaBrain[] _apexTerritoryBrains;
         private GraphicsBuffer _floraPredatorAupBuffer;
-        private JobHandle _scheduledDiffusionHandle;
         private JobHandle _scheduledSolveHandle;
         private JobHandle _scheduledApexTerritoryOverlapHandle;
         private float _coldTickAccumulator;
-        private float _diffusionTickAccumulator;
         private int _activeSectorCount;
-        private int _pendingPredationEventCount;
         private int _scheduledApexTerritoryOverlapCount;
         private bool _registeredService;
         private bool _registeredSlowTickable;
         private bool _registeredLateFrameTickable;
-        private bool _diffusionScheduled;
         private bool _solveScheduled;
         private bool _apexTerritoryOverlapScheduled;
         private bool _populationSolvePendingHibernationSync;
@@ -1028,11 +772,7 @@ namespace Hecton8.World
 
             CompleteScheduledSimulation(forceComplete: true);
             _sectorIndexByKey.Clear();
-            _pendingPredationEventCount = 0;
             _coldTickAccumulator = 0f;
-            _diffusionTickAccumulator = 0f;
-            _diffusionScheduled = false;
-            _scheduledDiffusionHandle = default;
             _solveScheduled = false;
             _scheduledSolveHandle = default;
 
@@ -1053,7 +793,15 @@ namespace Hecton8.World
             for (int sectorIndex = 0; sectorIndex < recordCount; sectorIndex++)
             {
                 EcosystemSectorSaveRecord saveRecord = loadedRecords[sectorIndex];
-                UnpackPopulationCounts(saveRecord.PackedPopulations, out int preyPopulation, out int predatorPopulation);
+                int biomeId = ResolveBiomeIdForSector(saveRecord.SectorCoord);
+                ResolveProbabilityTablePopulation(
+                    saveRecord.SectorCoord,
+                    biomeId,
+                    leviathanSectorSpawnChance,
+                    grazerPopulationPerSector,
+                    leviathanPopulationPerSector,
+                    out int preyPopulation,
+                    out int predatorPopulation);
                 SectorPopulationState restoredState = new SectorPopulationState
                 {
                     SectorCoord = saveRecord.SectorCoord,
@@ -1065,15 +813,8 @@ namespace Hecton8.World
                     CamouflageIndex = 0f,
                     PreyPopulationRounded = preyPopulation,
                     PredatorPopulationRounded = predatorPopulation,
-                    BiomeId = ResolveBiomeIdForSector(saveRecord.SectorCoord)
+                    BiomeId = biomeId
                 };
-
-                UnpackAdaptationTraits(
-                    saveRecord.PackedAdaptation,
-                    maximumSpeedMultiplier,
-                    out restoredState.Fitness,
-                    out restoredState.SpeedMultiplier,
-                    out restoredState.CamouflageIndex);
 
                 _sectorFrontStates[sectorIndex] = restoredState;
                 _sectorBackStates[sectorIndex] = restoredState;
@@ -1134,7 +875,6 @@ namespace Hecton8.World
             DecayBiomeHostility();
             SyncPendingHibernatedFaunaPopulationRecords();
             EnsurePlayerSectorRegistered();
-            EnsureMigrationNeighborSectorsRegistered();
             TickEclipsePredatorShallowMigration(DefaultSlowTickIntervalSeconds);
             if (TryResolvePlayerRuntimePosition(out Vector3 playerPosition))
             {
@@ -1147,30 +887,15 @@ namespace Hecton8.World
             }
 
             _coldTickAccumulator += DefaultSlowTickIntervalSeconds;
-            _diffusionTickAccumulator += DefaultSlowTickIntervalSeconds;
             if (_coldTickAccumulator >= coldTickIntervalSeconds)
             {
                 if (HasPendingSimulationJob())
                     return;
 
                 _coldTickAccumulator -= coldTickIntervalSeconds;
-                _diffusionTickAccumulator = 0f;
                 SyncPendingHibernatedFaunaPopulationRecords();
-                ApplyPendingPredationEvents();
                 ScheduleSectorSolve();
-                return;
             }
-
-            if (_diffusionTickAccumulator < diffusionTickIntervalSeconds)
-                return;
-
-            if (HasPendingSimulationJob())
-                return;
-
-            _diffusionTickAccumulator -= diffusionTickIntervalSeconds;
-            SyncPendingHibernatedFaunaPopulationRecords();
-            ApplyPendingPredationEvents();
-            SchedulePopulationDiffusion();
         }
 
         public void LateFrameTick()
@@ -1208,7 +933,7 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Registers prey consumption so the next cold solve reflects predator feeding pressure.
+        /// Registers visible prey consumption for strain only. Sector population is fixed by the cinematic table.
         /// </summary>
         public void ReportPredation(Vector3 worldPosition, int preyConsumed)
         {
@@ -1216,30 +941,6 @@ namespace Hecton8.World
                 return;
 
             GlobalRegistry.EnvironmentalStrain?.AccumulatePredationStrain(worldPosition, preyConsumed);
-
-            int2 sectorCoord = QuantizeSector(worldPosition);
-            long packedSectorKey = PackSectorKey(sectorCoord);
-            int slotIndex;
-            if (_sectorIndexByKey.TryGetValue(packedSectorKey, out int existingSlotIndex))
-            {
-                slotIndex = existingSlotIndex;
-            }
-            else
-            {
-                if (HasPendingSimulationJob())
-                    return;
-
-                slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
-            }
-
-            if (slotIndex < 0 || _pendingPredationEventCount >= _pendingPredationEvents.Length)
-                return;
-
-            PredationEvent predationEvent = default;
-            predationEvent.SectorKey = packedSectorKey;
-            predationEvent.PreyConsumed = preyConsumed;
-            _pendingPredationEvents[_pendingPredationEventCount] = predationEvent;
-            _pendingPredationEventCount++;
         }
 
         /// <summary>
@@ -1270,20 +971,6 @@ namespace Hecton8.World
                 return;
 
             float appliedDelta = math.max(hostilityPerApexKill, hostilityDelta);
-            int2 sectorCoord = QuantizeSector(worldPosition);
-            if (!HasPendingSimulationJob())
-            {
-                int slotIndex = ResolveOrCreateSectorSlot(sectorCoord, seedWithBaseline: true);
-                if (slotIndex >= 0)
-                {
-                    SectorPopulationState state = _sectorFrontStates[slotIndex];
-                    state.PredatorPopulation = math.max(0f, state.PredatorPopulation - 1f);
-                    state.PredatorPopulationRounded = (int)math.round(state.PredatorPopulation);
-                    _sectorFrontStates[slotIndex] = state;
-                    _sectorBackStates[slotIndex] = state;
-                }
-            }
-
             SetBiomeHostility(_biomeHostility01 + appliedDelta);
             ApplyDirectorHostilityPressure();
         }
@@ -1337,22 +1024,14 @@ namespace Hecton8.World
         private void SanitizeSettings()
         {
             maxTrackedSectors = math.max(MinimumSectorCapacity, maxTrackedSectors);
-            maxBufferedPredationEvents = math.max(MinimumPredationEventCapacity, maxBufferedPredationEvents);
             coldTickIntervalSeconds = math.max(1f, coldTickIntervalSeconds);
-            initialPreyPopulationMax = math.max(initialPreyPopulationMin, initialPreyPopulationMax);
-            initialPredatorPopulationMax = math.max(initialPredatorPopulationMin, initialPredatorPopulationMax);
-            maxPreyPopulation = math.max(initialPreyPopulationMax, maxPreyPopulation);
-            maxPredatorPopulation = math.max(initialPredatorPopulationMax, maxPredatorPopulation);
-            diffusionTickIntervalSeconds = math.max(1f, diffusionTickIntervalSeconds);
-            preyDiffusionFraction = math.clamp(preyDiffusionFraction, 0f, 1f);
-            predatorFollowPreyDiffusionFraction = math.clamp(predatorFollowPreyDiffusionFraction, 0f, 1f);
-            diagonalMigrationWeight = math.max(0f, diagonalMigrationWeight);
-            borderBleedEqualizationRate = math.max(0f, borderBleedEqualizationRate);
-            preyOverflowThreshold = math.clamp(preyOverflowThreshold, 1f, maxPreyPopulation);
-            predatorOverflowThreshold = math.clamp(predatorOverflowThreshold, 1f, maxPredatorPopulation);
+            leviathanSectorSpawnChance = math.saturate(leviathanSectorSpawnChance);
+            grazerPopulationPerSector = math.max(0, grazerPopulationPerSector);
+            leviathanPopulationPerSector = math.max(0, leviathanPopulationPerSector);
+            maxPreyPopulation = math.max(math.max(1, grazerPopulationPerSector), maxPreyPopulation);
+            maxPredatorPopulation = math.max(math.max(1, leviathanPopulationPerSector), maxPredatorPopulation);
             baselineFitness = math.clamp(baselineFitness, 0f, 1f);
             maximumSpeedMultiplier = math.max(1f, maximumSpeedMultiplier);
-            maximumCamouflageIndex = math.clamp(maximumCamouflageIndex, 0f, 1f);
             hostilityPerApexKill = math.clamp(hostilityPerApexKill, 0.01f, 1f);
             hostilityDecayPerSlowTick = math.clamp(hostilityDecayPerSlowTick, 0.001f, 0.2f);
             hostilityPeakHoldSeconds = math.max(0f, hostilityPeakHoldSeconds);
@@ -1516,36 +1195,7 @@ namespace Hecton8.World
 
         private void RefreshStarvationPressure()
         {
-            if (!IsInitialized || _activeSectorCount <= 0)
-            {
-                _starvationAggressionPressure01 = 0f;
-                RefreshHostilityTier();
-                return;
-            }
-
-            float weightedPressureSum = 0f;
-            float totalPredatorWeight = 0f;
-            float safeComfortRatio = math.max(1f, starvationComfortPreyPerPredator);
-            float safeHarvestNormalizer = math.max(1f, preyOverflowThreshold * harvestPressurePerPrey);
-            for (int sectorIndex = 0; sectorIndex < _activeSectorCount; sectorIndex++)
-            {
-                SectorPopulationState state = _sectorFrontStates[sectorIndex];
-                float predatorPopulation = math.max(0f, state.PredatorPopulation);
-                if (predatorPopulation <= 0f)
-                    continue;
-
-                float preyPopulation = math.max(0f, state.PreyPopulation);
-                float preyPerPredator = preyPopulation / math.max(1f, predatorPopulation);
-                float scarcity01 = math.saturate(1f - (preyPerPredator / safeComfortRatio));
-                float harvest01 = math.saturate(state.HarvestPressure / safeHarvestNormalizer);
-                float sectorPressure01 = math.saturate(scarcity01 + (harvest01 * starvationHarvestWeight));
-                weightedPressureSum += sectorPressure01 * predatorPopulation;
-                totalPredatorWeight += predatorPopulation;
-            }
-
-            _starvationAggressionPressure01 = totalPredatorWeight > 0f
-                ? math.saturate((weightedPressureSum / totalPredatorWeight) * starvationHostilityWeight)
-                : 0f;
+            _starvationAggressionPressure01 = 0f;
             RefreshHostilityTier();
         }
 
@@ -1599,8 +1249,6 @@ namespace Hecton8.World
             _sectorBackStates = new NativeArray<SectorPopulationState>(maxTrackedSectors, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeHashMap<long,int>[maxTrackedSectors] - packed sector-key to slot lookup for O(1) cold-path classification - owner: EcosystemDirector
             _sectorIndexByKey = new NativeHashMap<long, int>(maxTrackedSectors, Allocator.Persistent);
-            // COLD ALLOC: NativeArray<PredationEvent>[maxBufferedPredationEvents] - predation event ring for next cold solve consumption - owner: EcosystemDirector
-            _pendingPredationEvents = new NativeArray<PredationEvent>(maxBufferedPredationEvents, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<ApexTerritorySample>[16] - active Apex territory overlap job inputs - owner: EcosystemDirector
             _apexTerritorySamples = new NativeArray<ApexTerritorySample>(ApexTerritoryOverlapCandidateCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<ApexTerritoryOverlapResult>[16] - active Apex territory overlap job outputs - owner: EcosystemDirector
@@ -1617,14 +1265,10 @@ namespace Hecton8.World
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
             Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(FloraPredatorStealthRadiusMeters, FloraPredatorStealthDimStrength, 0f, 0f));
             _activeSectorCount = 0;
-            _pendingPredationEventCount = 0;
             _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
-            _diffusionTickAccumulator = 0f;
-            _scheduledDiffusionHandle = default;
             _scheduledSolveHandle = default;
             _scheduledApexTerritoryOverlapHandle = default;
-            _diffusionScheduled = false;
             _solveScheduled = false;
             _apexTerritoryOverlapScheduled = false;
             _populationSolvePendingHibernationSync = false;
@@ -1641,13 +1285,7 @@ namespace Hecton8.World
 
         private void DisposeRuntimeState()
         {
-            JobHandle disposeDependency = default;
-            if (_solveScheduled && _diffusionScheduled)
-                disposeDependency = JobHandle.CombineDependencies(_scheduledSolveHandle, _scheduledDiffusionHandle);
-            else if (_solveScheduled)
-                disposeDependency = _scheduledSolveHandle;
-            else if (_diffusionScheduled)
-                disposeDependency = _scheduledDiffusionHandle;
+            JobHandle disposeDependency = _solveScheduled ? _scheduledSolveHandle : default;
             if (_apexTerritoryOverlapScheduled)
                 disposeDependency = JobHandle.CombineDependencies(disposeDependency, _scheduledApexTerritoryOverlapHandle);
 
@@ -1659,8 +1297,6 @@ namespace Hecton8.World
                 _sectorBackStates.Dispose(disposeDependency);
             if (_sectorIndexByKey.IsCreated)
                 _sectorIndexByKey.Dispose(disposeDependency);
-            if (_pendingPredationEvents.IsCreated)
-                _pendingPredationEvents.Dispose(disposeDependency);
             if (_apexTerritorySamples.IsCreated)
                 _apexTerritorySamples.Dispose(disposeDependency);
             if (_apexTerritoryOverlapResults.IsCreated)
@@ -1675,21 +1311,16 @@ namespace Hecton8.World
             _sectorFrontStates = default;
             _sectorBackStates = default;
             _sectorIndexByKey = default;
-            _pendingPredationEvents = default;
             _apexTerritorySamples = default;
             _apexTerritoryOverlapResults = default;
             _floraPredatorAupUpload = default;
             _saveSnapshotSectors = default;
             _apexTerritoryBrains = null;
             _activeSectorCount = 0;
-            _pendingPredationEventCount = 0;
             _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
-            _diffusionTickAccumulator = 0f;
-            _scheduledDiffusionHandle = default;
             _scheduledSolveHandle = default;
             _scheduledApexTerritoryOverlapHandle = default;
-            _diffusionScheduled = false;
             _solveScheduled = false;
             _apexTerritoryOverlapScheduled = false;
             _biomeHostility01 = 0f;
@@ -1703,7 +1334,6 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeArray(_sectorFrontStates, NativeMemoryOwner, nameof(_sectorFrontStates), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_sectorBackStates, NativeMemoryOwner, nameof(_sectorBackStates), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeHashMap(_sectorIndexByKey, NativeMemoryOwner, nameof(_sectorIndexByKey), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_pendingPredationEvents, NativeMemoryOwner, nameof(_pendingPredationEvents), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_apexTerritorySamples, NativeMemoryOwner, nameof(_apexTerritorySamples), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_apexTerritoryOverlapResults, NativeMemoryOwner, nameof(_apexTerritoryOverlapResults), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeArray(_floraPredatorAupUpload, NativeMemoryOwner, nameof(_floraPredatorAupUpload), NativeMemoryLifetime);
@@ -1715,7 +1345,6 @@ namespace Hecton8.World
             NativeMemorySentinel.UnregisterNativeArray(_sectorFrontStates);
             NativeMemorySentinel.UnregisterNativeArray(_sectorBackStates);
             NativeMemorySentinel.UnregisterNativeHashMap(NativeMemoryOwner, nameof(_sectorIndexByKey));
-            NativeMemorySentinel.UnregisterNativeArray(_pendingPredationEvents);
             NativeMemorySentinel.UnregisterNativeArray(_apexTerritorySamples);
             NativeMemorySentinel.UnregisterNativeArray(_apexTerritoryOverlapResults);
             NativeMemorySentinel.UnregisterNativeArray(_floraPredatorAupUpload);
@@ -1908,131 +1537,35 @@ namespace Hecton8.World
             return worldPosition.y;
         }
 
-        private void ApplyPendingPredationEvents()
-        {
-            if (_pendingPredationEventCount <= 0)
-                return;
-
-            for (int eventIndex = 0; eventIndex < _pendingPredationEventCount; eventIndex++)
-            {
-                PredationEvent predationEvent = _pendingPredationEvents[eventIndex];
-                if (!_sectorIndexByKey.TryGetValue(predationEvent.SectorKey, out int slotIndex))
-                    continue;
-
-                SectorPopulationState state = _sectorFrontStates[slotIndex];
-                float preyRemoved = math.max(0f, predationEvent.PreyConsumed);
-                float originalPreyPopulation = math.max(1f, state.PreyPopulation);
-                float mortality01 = math.saturate(preyRemoved / originalPreyPopulation);
-                state.PreyPopulation = math.max(0f, state.PreyPopulation - preyRemoved);
-                state.PredatorPopulation = math.min(maxPredatorPopulation, state.PredatorPopulation + (preyRemoved * predatorGainPerPrey));
-                state.HarvestPressure = math.max(0f, state.HarvestPressure + (preyRemoved * harvestPressurePerPrey));
-                state.Fitness = math.max(state.Fitness, math.clamp(baselineFitness + mortality01 * fitnessHarvestScale, 0f, 1f));
-                state.SpeedMultiplier = math.lerp(1f, maximumSpeedMultiplier, state.Fitness);
-                state.CamouflageIndex = math.saturate(math.lerp(0f, maximumCamouflageIndex, math.sqrt(state.Fitness)));
-                state.PreyPopulationRounded = (int)math.round(state.PreyPopulation);
-                state.PredatorPopulationRounded = (int)math.round(state.PredatorPopulation);
-                _sectorFrontStates[slotIndex] = state;
-                _sectorBackStates[slotIndex] = state;
-            }
-
-            _pendingPredationEventCount = 0;
-            RefreshStarvationPressure();
-        }
-
         private void ScheduleSectorSolve()
         {
-            if (_activeSectorCount <= 0 || _solveScheduled || _diffusionScheduled)
+            if (_activeSectorCount <= 0 || _solveScheduled)
                 return;
 
-            var solveJob = new LotkaVolterraSolveJob
+            var solveJob = new ProbabilityTablePopulationJob
             {
                 FrontStates = _sectorFrontStates,
-                SectorIndexByKey = _sectorIndexByKey,
                 BackStates = _sectorBackStates,
-                DeltaTimeSeconds = coldTickIntervalSeconds,
-                Alpha = preyGrowthAlpha,
-                Beta = predationBeta,
-                Delta = predatorGrowthDelta,
-                Gamma = predatorDecayGamma,
-                PredatorGainPerPrey = predatorGainPerPrey,
-                HarvestPressureDecay = harvestPressureDecay,
-                HarvestCrashRate = harvestCrashRate,
-                PreyMigrationRate = preyMigrationRate,
-                PredatorMigrationRate = predatorMigrationRate,
-                DiagonalMigrationWeight = diagonalMigrationWeight,
-                BorderBleedEqualizationRate = borderBleedEqualizationRate,
-                PreyOverflowThreshold = preyOverflowThreshold,
-                PredatorOverflowThreshold = predatorOverflowThreshold,
-                DepletedSectorBias = depletedSectorBias,
-                OverflowRedistributionRate = overflowRedistributionRate,
+                LeviathanChance01 = leviathanSectorSpawnChance,
                 BaselineFitness = baselineFitness,
-                FitnessAdaptationRate = fitnessAdaptationRate,
-                FitnessRecoveryRate = fitnessRecoveryRate,
-                FitnessHarvestScale = fitnessHarvestScale,
-                MaximumSpeedMultiplier = maximumSpeedMultiplier,
-                MaximumCamouflageIndex = maximumCamouflageIndex,
+                GrazerPopulationPerSector = grazerPopulationPerSector,
+                LeviathanPopulationPerSector = leviathanPopulationPerSector,
                 MaxPreyPopulation = maxPreyPopulation,
-                MaxPredatorPopulation = maxPredatorPopulation,
-                PreyMassUnits = preyMassUnits,
-                PredatorMassUnits = predatorMassUnits,
-                BiomassHardCapTemperate = temperateSectorBiomassHardCap,
-                BiomassHardCapThermal = thermalSectorBiomassHardCap,
-                BiomassHardCapHadal = hadalSectorBiomassHardCap
+                MaxPredatorPopulation = maxPredatorPopulation
             };
 
             _scheduledSolveHandle = solveJob.Schedule(_activeSectorCount, 16);
             _solveScheduled = true;
         }
 
-        private void SchedulePopulationDiffusion()
-        {
-            if (_activeSectorCount <= 0 || _solveScheduled || _diffusionScheduled)
-                return;
-
-            float predatorPerPreyRatio = maxPreyPopulation > 0
-                ? (float)maxPredatorPopulation / math.max(1f, maxPreyPopulation)
-                : 0f;
-
-            var diffusionJob = new PopulationDiffusionJob
-            {
-                FrontStates = _sectorFrontStates,
-                SectorIndexByKey = _sectorIndexByKey,
-                BackStates = _sectorBackStates,
-                PreyDiffusionFraction = preyDiffusionFraction,
-                PredatorFollowPreyDiffusionFraction = predatorFollowPreyDiffusionFraction,
-                PredatorPerPreyRatio = predatorPerPreyRatio,
-                MaxPreyPopulation = maxPreyPopulation,
-                MaxPredatorPopulation = maxPredatorPopulation
-            };
-
-            _scheduledDiffusionHandle = diffusionJob.Schedule(_activeSectorCount, 16);
-            _diffusionScheduled = true;
-        }
-
         private bool HasPendingSimulationJob()
         {
-            return _solveScheduled || _diffusionScheduled;
+            return _solveScheduled;
         }
 
         private void CompleteScheduledSimulation(bool forceComplete)
         {
-            CompleteScheduledDiffusion(forceComplete);
             CompleteScheduledSolve(forceComplete);
-        }
-
-        private void CompleteScheduledDiffusion(bool forceComplete)
-        {
-            if (!_diffusionScheduled)
-                return;
-
-            if (!DispatcherJobSwap.TryComplete(ref _scheduledDiffusionHandle, forceComplete))
-                return;
-
-            NativeArray<SectorPopulationState> swap = _sectorFrontStates;
-            _sectorFrontStates = _sectorBackStates;
-            _sectorBackStates = swap;
-            _diffusionScheduled = false;
-            RefreshStarvationPressure();
         }
 
         private void CompleteScheduledSolve(bool forceComplete)
@@ -2264,16 +1797,15 @@ namespace Hecton8.World
 
         private SectorPopulationState SeedSectorState(int2 sectorCoord, bool seedWithBaseline)
         {
-            int preyPopulation = 0;
-            int predatorPopulation = 0;
-            if (seedWithBaseline)
-            {
-                uint hash = math.hash(new uint2((uint)sectorCoord.x, (uint)sectorCoord.y));
-                float prey01 = (hash & 0xFFFFu) / 65535f;
-                float predator01 = ((hash >> 16) & 0xFFFFu) / 65535f;
-                preyPopulation = (int)math.round(math.lerp(initialPreyPopulationMin, initialPreyPopulationMax, prey01));
-                predatorPopulation = (int)math.round(math.lerp(initialPredatorPopulationMin, initialPredatorPopulationMax, predator01));
-            }
+            int biomeId = ResolveBiomeIdForSector(sectorCoord);
+            ResolveProbabilityTablePopulation(
+                sectorCoord,
+                biomeId,
+                leviathanSectorSpawnChance,
+                grazerPopulationPerSector,
+                leviathanPopulationPerSector,
+                out int preyPopulation,
+                out int predatorPopulation);
 
             SectorPopulationState state = default;
             state.SectorCoord = sectorCoord;
@@ -2285,8 +1817,32 @@ namespace Hecton8.World
             state.CamouflageIndex = 0f;
             state.PreyPopulationRounded = preyPopulation;
             state.PredatorPopulationRounded = predatorPopulation;
-            state.BiomeId = ResolveBiomeIdForSector(sectorCoord);
+            state.BiomeId = biomeId;
             return state;
+        }
+
+        private static void ResolveProbabilityTablePopulation(
+            int2 sectorCoord,
+            int biomeId,
+            float leviathanChance01,
+            int grazerPopulationPerSector,
+            int leviathanPopulationPerSector,
+            out int preyPopulation,
+            out int predatorPopulation)
+        {
+            float roll01 = StableSectorRandom01(sectorCoord, biomeId);
+            bool spawnLeviathan = roll01 < math.saturate(leviathanChance01);
+            preyPopulation = spawnLeviathan ? 0 : math.max(0, grazerPopulationPerSector);
+            predatorPopulation = spawnLeviathan ? math.max(0, leviathanPopulationPerSector) : 0;
+        }
+
+        private static float StableSectorRandom01(int2 sectorCoord, int biomeId)
+        {
+            uint hash = math.hash(new uint3(
+                (uint)sectorCoord.x ^ 0x9E3779B9u,
+                (uint)sectorCoord.y ^ 0x85EBCA6Bu,
+                (uint)biomeId ^ 0xC2B2AE35u));
+            return (hash & 0x00FFFFFFu) * (1f / 16777215f);
         }
 
         private static int2 QuantizeSector(Vector3 worldPosition)
@@ -2343,18 +1899,5 @@ namespace Hecton8.World
             return packedFitness | (packedSpeed << 8) | (packedCamouflage << 16);
         }
 
-        private static void UnpackPopulationCounts(uint packedCounts, out int preyPopulation, out int predatorPopulation)
-        {
-            preyPopulation = (int)(packedCounts & 0xFFFFu);
-            predatorPopulation = (int)((packedCounts >> 16) & 0xFFFFu);
-        }
-
-        private static void UnpackAdaptationTraits(uint packedTraits, float maximumSpeedMultiplier, out float fitness, out float speedMultiplier, out float camouflageIndex)
-        {
-            fitness = ((packedTraits >> 0) & 0xFFu) / 255f;
-            float speed01 = ((packedTraits >> 8) & 0xFFu) / 255f;
-            camouflageIndex = ((packedTraits >> 16) & 0xFFu) / 255f;
-            speedMultiplier = math.lerp(1f, math.max(1f, maximumSpeedMultiplier), speed01);
-        }
     }
 }

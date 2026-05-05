@@ -1,4 +1,5 @@
 using Hecton8.Crafting;
+using Hecton8.Core;
 using Unity.Collections;
 using UnityEngine;
 
@@ -8,6 +9,9 @@ namespace Hecton8.Debugging
     [AddComponentMenu("Hecton8/Debug/Crafting Runtime Smoke Tester")]
     public sealed class CraftingRuntimeSmokeTester : MonoBehaviour
     {
+        private const string NativeMemoryOwner = nameof(CraftingRuntimeSmokeTester);
+        private const int SmokeQueueExpectedCapacity = 1;
+
         [SerializeField] private bool runOnStart;
         [SerializeField, Min(0.001f)] private float taskDurationSeconds = 1f;
         [SerializeField, Range(0.05f, 1f)] private float thermalThrottleMultiplier = 1f;
@@ -49,6 +53,12 @@ namespace Hecton8.Debugging
 
             float safeDuration = Mathf.Max(0.001f, durationSeconds);
             NativeQueue<Fabricator.CraftingTask> queue = new NativeQueue<Fabricator.CraftingTask>(Allocator.Temp);
+            NativeMemorySentinel.RegisterNativeQueue(
+                queue,
+                SmokeQueueExpectedCapacity,
+                NativeMemoryOwner,
+                nameof(queue),
+                NativeAllocationLifetime.Temp);
             try
             {
                 queue.Enqueue(new Fabricator.CraftingTask
@@ -104,6 +114,7 @@ namespace Hecton8.Debugging
             }
             finally
             {
+                NativeMemorySentinel.UnregisterNativeQueue(NativeMemoryOwner, nameof(queue));
                 queue.Dispose();
             }
         }

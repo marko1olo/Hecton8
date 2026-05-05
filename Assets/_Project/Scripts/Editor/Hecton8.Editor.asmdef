@@ -11,6 +11,7 @@
         "Unity.Addressables.Editor",
         "Unity.InputSystem",
         "Unity.Mathematics",
+        "Unity.Burst",
         "Unity.TextMeshPro",
         "UnityEngine.UI",
         "GPUInstancer",

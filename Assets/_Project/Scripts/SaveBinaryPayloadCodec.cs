@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Hecton8.Core;
 using Hecton8.World;
 using Hecton.Localization;
@@ -12,67 +11,26 @@ namespace Hecton8.SaveSystem
     internal static unsafe class SaveBinaryPayloadCodec
     {
         internal const int ProtectedLz4BlockSizeBytes = 16 * 1024;
-        internal const int Lz4CompressionDictionarySizeBytes = 64 * 1024;
         private const ushort BiologicalItemStateMask = 1 << 6;
         private const ushort DefaultQualityMilli = 1000;
+        private const byte ItemGeneticsGlowFlag = 1 << 0;
+        private const byte ItemGeneticsToxicFlag = 1 << 1;
+        private const byte ItemGeneticsEdibleFlag = 1 << 2;
+        private const byte ItemGeneticsHarvestableFlag = 1 << 3;
+        private const byte ItemGeneticsSupportedFlagsMask = ItemGeneticsGlowFlag |
+                                                            ItemGeneticsToxicFlag |
+                                                            ItemGeneticsEdibleFlag |
+                                                            ItemGeneticsHarvestableFlag;
+        private const ulong LegacyGlowGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Bioluminescent;
+        private const ulong LegacyToxicGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Toxic;
+        private const ulong LegacyEdibleGeneMask = (ulong)GeneticTraitProfile.GeneticTraitMask.Medicinal;
+        private const ulong LegacyHarvestableGeneMask = (ulong)(
+            GeneticTraitProfile.GeneticTraitMask.OxygenProducing |
+            GeneticTraitProfile.GeneticTraitMask.FastGrowing |
+            GeneticTraitProfile.GeneticTraitMask.Aquatic);
         private const float BiologicalReferenceTemperatureCelsius = 4f;
         private const float BiologicalDecayRatePerSecond = 0.001f;
         private const int NullCollectionCount = -1;
-        private static readonly byte[] s_lz4CompressionDictionary = SaveCompressionDictionary.Bytes;
-        private static GCHandle s_lz4CompressionDictionaryHandle;
-        private static IntPtr s_lz4CompressionDictionaryPtr;
-
-        internal static int Lz4CompressionDictionaryLength => Lz4CompressionDictionarySizeBytes;
-        internal static bool HasLz4CompressionDictionary =>
-            EnsureLz4CompressionDictionaryPinned() &&
-            s_lz4CompressionDictionary != null &&
-            s_lz4CompressionDictionary.Length >= Lz4CompressionDictionarySizeBytes &&
-            s_lz4CompressionDictionaryHandle.IsAllocated &&
-            s_lz4CompressionDictionaryPtr != IntPtr.Zero;
-
-        [UnityEngine.RuntimeInitializeOnLoadMethod(UnityEngine.RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStaticState()
-        {
-            if (s_lz4CompressionDictionaryHandle.IsAllocated)
-                s_lz4CompressionDictionaryHandle.Free();
-
-            s_lz4CompressionDictionaryPtr = IntPtr.Zero;
-        }
-
-        [Unity.Burst.BurstDiscard]
-        internal static void CopyLz4CompressionDictionary(byte* destinationPtr, int destinationCapacity)
-        {
-            if (destinationPtr == null || destinationCapacity < Lz4CompressionDictionarySizeBytes)
-                return;
-
-            if (!EnsureLz4CompressionDictionaryPinned())
-                return;
-
-            if (!UnsafeMemoryCopyGuard.TryMemCpy(
-                    destinationPtr,
-                    destinationCapacity,
-                    (void*)s_lz4CompressionDictionaryPtr,
-                    Lz4CompressionDictionarySizeBytes))
-            {
-                UnsafeMemoryCopyGuard.ReportRejectedCopy(nameof(SaveBinaryPayloadCodec));
-            }
-        }
-
-        private static bool EnsureLz4CompressionDictionaryPinned()
-        {
-            if (s_lz4CompressionDictionaryHandle.IsAllocated && s_lz4CompressionDictionaryPtr != IntPtr.Zero)
-                return true;
-
-            if (s_lz4CompressionDictionary == null || s_lz4CompressionDictionary.Length < Lz4CompressionDictionarySizeBytes)
-                return false;
-
-            if (s_lz4CompressionDictionaryHandle.IsAllocated)
-                s_lz4CompressionDictionaryHandle.Free();
-
-            s_lz4CompressionDictionaryHandle = GCHandle.Alloc(s_lz4CompressionDictionary, GCHandleType.Pinned);
-            s_lz4CompressionDictionaryPtr = s_lz4CompressionDictionaryHandle.AddrOfPinnedObject();
-            return s_lz4CompressionDictionaryPtr != IntPtr.Zero;
-        }
 
         internal static ulong BuildSectorEntitySpatialSortKey(in AbsoluteUniversePosition position, int chunkSizeMeters)
         {
@@ -251,7 +209,7 @@ namespace Hecton8.SaveSystem
                 || !ReadRunModifiers(ref reader, out data.runModifiers)
                 || !ReadResourceScarcity(ref reader, out data.resourceScarcity)
                 || !reader.ReadStruct(out data.environmentalStrain)
-                || !ReadEcosystemState(ref reader, out data.ecosystemState)
+                || !ReadEcosystemState(ref reader, data.version, out data.ecosystemState)
                 || !ReadExternalScavengerSites(ref reader, data.version, out data.externalScavengerSites)
                 || !ReadStringFloatDictionary(ref reader, out data.toolDurabilityMap)
                 || !ReadStringBoolDictionary(ref reader, out data.toolBrokenMap)
@@ -511,7 +469,7 @@ namespace Hecton8.SaveSystem
 
         private static bool ReadInventoryStateArrays(ref BufferReader reader, int version, ref InventoryDTO value)
         {
-            if (version >= 53)
+            if (version >= 59)
             {
                 return reader.ReadStructArray(out value.itemStateFlags)
                     && reader.ReadStructArray(out value.itemGeneticsWords)
@@ -519,10 +477,18 @@ namespace Hecton8.SaveSystem
                     && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
             }
 
+            if (version >= 53)
+            {
+                return reader.ReadStructArray(out value.itemStateFlags)
+                    && ReadLegacyUInt64ArrayAsByte(ref reader, out value.itemGeneticsWords)
+                    && reader.ReadStructArray(out value.qualityMilli)
+                    && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
+            }
+
             if (version >= 48)
             {
                 return reader.ReadStructArray(out value.itemStateFlags)
-                    && ReadLegacyUInt32ArrayAsUInt64(ref reader, out value.itemGeneticsWords)
+                    && ReadLegacyUInt32ArrayAsByte(ref reader, out value.itemGeneticsWords)
                     && reader.ReadStructArray(out value.qualityMilli)
                     && reader.ReadStructArray(out value.lastUpdateUnixSeconds);
             }
@@ -566,6 +532,65 @@ namespace Hecton8.SaveSystem
                 value[i] = legacyValues[i];
 
             return true;
+        }
+
+        private static bool ReadLegacyUInt32ArrayAsByte(ref BufferReader reader, out byte[] value)
+        {
+            value = null;
+            if (!reader.ReadStructArray(out uint[] legacyValues))
+                return false;
+
+            if (legacyValues == null)
+                return true;
+
+            if (legacyValues.Length == 0)
+            {
+                value = Array.Empty<byte>();
+                return true;
+            }
+
+            value = new byte[legacyValues.Length];
+            for (int i = 0; i < legacyValues.Length; i++)
+                value[i] = CompressLegacyItemGenetics(legacyValues[i]);
+
+            return true;
+        }
+
+        private static bool ReadLegacyUInt64ArrayAsByte(ref BufferReader reader, out byte[] value)
+        {
+            value = null;
+            if (!reader.ReadStructArray(out ulong[] legacyValues))
+                return false;
+
+            if (legacyValues == null)
+                return true;
+
+            if (legacyValues.Length == 0)
+            {
+                value = Array.Empty<byte>();
+                return true;
+            }
+
+            value = new byte[legacyValues.Length];
+            for (int i = 0; i < legacyValues.Length; i++)
+                value[i] = CompressLegacyItemGenetics(legacyValues[i]);
+
+            return true;
+        }
+
+        private static byte CompressLegacyItemGenetics(ulong geneticsMask)
+        {
+            byte flags = 0;
+            if ((geneticsMask & LegacyGlowGeneMask) != 0UL)
+                flags |= ItemGeneticsGlowFlag;
+            if ((geneticsMask & LegacyToxicGeneMask) != 0UL)
+                flags |= ItemGeneticsToxicFlag;
+            if ((geneticsMask & LegacyEdibleGeneMask) != 0UL)
+                flags |= ItemGeneticsEdibleFlag;
+            if ((geneticsMask & LegacyHarvestableGeneMask) != 0UL)
+                flags |= ItemGeneticsHarvestableFlag;
+
+            return (byte)(flags & ItemGeneticsSupportedFlagsMask);
         }
 
         private static void ApplyInventoryBiologicalDecay(ref InventoryDTO value, float ambientTemperature)
@@ -970,16 +995,22 @@ namespace Hecton8.SaveSystem
         private static bool WriteEcosystemState(ref BufferWriter writer, EcosystemStateDTO value)
         {
             return writer.WriteInt(value.worldSeed)
+                && writer.WriteInt(value.worldGenerationVersionId)
                 && writer.WriteInt(value.infectedZoneCount)
                 && writer.WriteStructArray(value.infectedChunkKeys)
                 && writer.WriteStructArray(value.infectedSeverities);
         }
 
-        private static bool ReadEcosystemState(ref BufferReader reader, out EcosystemStateDTO value)
+        private static bool ReadEcosystemState(ref BufferReader reader, int saveDataVersion, out EcosystemStateDTO value)
         {
             value = default;
-            return reader.ReadInt(out value.worldSeed)
-                && reader.ReadInt(out value.infectedZoneCount)
+            if (!reader.ReadInt(out value.worldSeed))
+                return false;
+
+            if (saveDataVersion >= 58 && !reader.ReadInt(out value.worldGenerationVersionId))
+                return false;
+
+            return reader.ReadInt(out value.infectedZoneCount)
                 && reader.ReadStructArray(out value.infectedChunkKeys)
                 && reader.ReadStructArray(out value.infectedSeverities);
         }

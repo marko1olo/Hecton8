@@ -32,6 +32,12 @@ namespace Hecton8.Progression
             if (playerObject.GetComponent<SonarHoloCompass>() == null)
                 playerObject.AddComponent<SonarHoloCompass>();
 
+            if (playerObject.GetComponent<Hecton8.UI.FakeRadarBlipController>() == null)
+                playerObject.AddComponent<Hecton8.UI.FakeRadarBlipController>();
+
+            if (playerObject.GetComponent<Hecton8.UI.ShaderCompassRibbon>() == null)
+                playerObject.AddComponent<Hecton8.UI.ShaderCompassRibbon>();
+
             if (playerObject.GetComponent<AcousticEcholocationTranslator>() == null)
                 playerObject.AddComponent<AcousticEcholocationTranslator>();
 

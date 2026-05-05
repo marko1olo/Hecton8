@@ -415,14 +415,6 @@ namespace Hecton8.Atmosphere
         [SerializeField, ColorUsage(false, true)] private Color _giantAbyssBiolumeColor = new Color(0f, 0.38f, 0.55f, 1f);
         [Tooltip("Maximum biolume fill added to the final giant abyss light at depth.")]
         [SerializeField, Range(0f, 0.25f)] private float _giantAbyssBiolumeIntensity = 0.055f;
-        [Tooltip("Darkens Aegir planet-shine when sunlight intersects the gas-giant ring plane before reaching Hecton.")]
-        [SerializeField] private bool _enableAegirRingShadow = true;
-        [Tooltip("Maximum fractional darkening applied to _FinalGiantAbyssLight by Aegir ring shadows.")]
-        [SerializeField, Range(0f, 0.65f)] private float _aegirRingShadowStrength = 0.18f;
-        [Tooltip("Angular band width, in normalized dot units, used to detect sunlight crossing the ring plane.")]
-        [SerializeField, Range(0.01f, 0.5f)] private float _aegirRingShadowPlaneWidth = 0.16f;
-        [Tooltip("Soft penumbra width for Aegir ring shadow transitions.")]
-        [SerializeField, Range(0.01f, 0.5f)] private float _aegirRingShadowSoftness = 0.1f;
 
         [Header("═══ Vertical Runtime ═══")]
         [SerializeField] private BiomeMatrixDirector _biomeMatrixDirector;
@@ -1247,36 +1239,7 @@ namespace Hecton8.Atmosphere
 
         private float ResolveAegirRingShadowMultiplier(HectonCelestialEngine celestial, float3 aegirDirection)
         {
-            if (!_enableAegirRingShadow || celestial == null || _aegirRingShadowStrength <= 0f)
-                return 1f;
-
-            float3 toSun = math.normalizesafe(
-                new float3(
-                    celestial.ResolvedSunDirection.x,
-                    celestial.ResolvedSunDirection.y,
-                    celestial.ResolvedSunDirection.z),
-                new float3(0f, 1f, 0f));
-            float3 normalizedAegir = math.normalizesafe(aegirDirection, new float3(0f, 0f, 1f));
-            float sunAegirAlignment = math.saturate((math.dot(toSun, normalizedAegir) - 0.72f) / 0.28f);
-            sunAegirAlignment = sunAegirAlignment * sunAegirAlignment * (3f - 2f * sunAegirAlignment);
-
-            float3 ringPlaneNormal = math.normalizesafe(
-                math.cross(normalizedAegir, new float3(0f, 1f, 0f)),
-                new float3(1f, 0f, 0f));
-            float planeDistance = math.abs(math.dot(toSun, ringPlaneNormal));
-            float edge0 = math.max(0.001f, _aegirRingShadowPlaneWidth);
-            float edge1 = edge0 + math.max(0.001f, _aegirRingShadowSoftness);
-            float planeBand = 1f - SmoothStep(edge0, edge1, planeDistance);
-
-            float shadow = math.saturate(sunAegirAlignment * planeBand) * math.saturate(_aegirRingShadowStrength);
-            return math.saturate(1f - shadow);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static float SmoothStep(float edge0, float edge1, float value)
-        {
-            float t = math.saturate((value - edge0) / math.max(edge1 - edge0, 0.0001f));
-            return t * t * (3f - 2f * t);
+            return 1f;
         }
 
         #endregion

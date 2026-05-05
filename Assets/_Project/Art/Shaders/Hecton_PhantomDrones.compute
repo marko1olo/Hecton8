@@ -1,0 +1,79 @@
+#pragma kernel CS_UpdatePhantomDrones
+
+RWStructuredBuffer<float4x4> _PhantomMatrices;
+RWStructuredBuffer<float4> _PhantomColors;
+
+float4 _PhantomAnchorWS;
+float _PhantomTime;
+float _PhantomBaseRadius;
+float _PhantomVerticalAmplitude;
+float _PhantomScale;
+int _PhantomCount;
+
+#define HECTON_PHANTOM_THREADS 64
+#define HECTON_TWO_PI 6.28318530718
+#define HECTON_GOLDEN_RATIO 0.61803398875
+
+float Hash01(uint value)
+{
+    value ^= value >> 16;
+    value *= 0x7feb352d;
+    value ^= value >> 15;
+    value *= 0x846ca68b;
+    value ^= value >> 16;
+    return (value & 0x00ffffffu) * (1.0 / 16777215.0);
+}
+
+float4x4 BuildMatrix(float3 positionWS, float angleRadians, float scaleMeters)
+{
+    float s;
+    float c;
+    sincos(angleRadians, s, c);
+
+    float3 rightWS = float3(c, 0.0, -s) * scaleMeters;
+    float3 upWS = float3(0.0, 1.0, 0.0) * scaleMeters;
+    float3 forwardWS = float3(s, 0.0, c) * scaleMeters;
+
+    return float4x4(
+        rightWS.x, upWS.x, forwardWS.x, positionWS.x,
+        rightWS.y, upWS.y, forwardWS.y, positionWS.y,
+        rightWS.z, upWS.z, forwardWS.z, positionWS.z,
+        0.0, 0.0, 0.0, 1.0);
+}
+
+[numthreads(HECTON_PHANTOM_THREADS, 1, 1)]
+void CS_UpdatePhantomDrones(uint3 id : SV_DispatchThreadID)
+{
+    uint index = id.x;
+    if (index >= (uint)_PhantomCount)
+        return;
+
+    float seed = Hash01(index + 17u);
+    float layer = (float)(index % 5u);
+    float radius = _PhantomBaseRadius + layer * 2.15 + seed * 1.35;
+    float phase = frac(seed + (float)index * HECTON_GOLDEN_RATIO + _PhantomTime * (0.035 + layer * 0.003));
+    float theta = phase * HECTON_TWO_PI;
+
+    float sinTheta;
+    float cosTheta;
+    sincos(theta, sinTheta, cosTheta);
+
+    float sinDoubleTheta;
+    float cosDoubleTheta;
+    sincos(theta * 2.0 + seed * HECTON_TWO_PI, sinDoubleTheta, cosDoubleTheta);
+
+    float verticalBob = sin(theta * 1.5 + seed * HECTON_TWO_PI) * 0.35;
+    float3 offsetWS;
+    offsetWS.x = sinTheta * radius;
+    offsetWS.z = sinDoubleTheta * radius * 0.45;
+    offsetWS.y = cosDoubleTheta * _PhantomVerticalAmplitude + verticalBob;
+
+    float3 positionWS = _PhantomAnchorWS.xyz + offsetWS;
+    float tangentAngle = atan2(cosTheta * radius, cosDoubleTheta * radius * 0.9);
+    float scaleMeters = _PhantomScale * lerp(0.75, 1.35, seed);
+
+    _PhantomMatrices[index] = BuildMatrix(positionWS, tangentAngle, scaleMeters);
+
+    float pulse = 0.62 + 0.38 * sin(theta * 3.0 + seed * 11.0);
+    _PhantomColors[index] = float4(0.13 + pulse * 0.12, 0.78 + pulse * 0.16, 1.0, 0.72 + pulse * 0.28);
+}

@@ -38,7 +38,6 @@ namespace Hecton8.Gameplay
         private const float ScientificDeepSalinityPpt = 35.8f;
         private const float ScientificSalinityDepthRangeMeters = 1800f;
         private const float ScientificAttractantTraceThreshold01 = 0.1f;
-        private const float ScientificGradientSampleStepMultiplier = 0.75f;
         // COLD ALLOC: Vector3[4] - shared scanner pulse quad vertices - owner: ScannerTool
         internal static readonly Vector3[] s_pulseQuadVertices =
         {
@@ -354,6 +353,7 @@ namespace Hecton8.Gameplay
         [SerializeField] private float cooldownFeedbackInterval = 0.75f;
         [SerializeField] private float resultFeedbackInterval = 0.5f;
         [SerializeField] private float modeFeedbackInterval = 0.4f;
+        [SerializeField, Min(1f)] private float bloodWaypointWarningRadius = 100f;
         [SerializeField] private Shader scannerMarkerShader;
         [SerializeField] private Shader scannerPulseShader;
 
@@ -373,6 +373,7 @@ namespace Hecton8.Gameplay
         private float _nextCooldownFeedbackAt;
         private float _nextResultFeedbackAt;
         private float _nextModeFeedbackAt;
+        private float _nextBloodWaypointWarningAt;
         private Transform _cachedTransform;
         private ScanMode _scanMode = ScanMode.Expedition;
         private ScanResultSummary _lastResult;
@@ -584,6 +585,7 @@ namespace Hecton8.Gameplay
             }
 
             ScanEvents.RaiseScanTriggered(origin, effectiveScanRadius);
+            TryShowBloodWaypointWarning(_cachedTransform.position, now);
 
             if (now >= _nextResultFeedbackAt)
             {
@@ -787,6 +789,28 @@ namespace Hecton8.Gameplay
             }
 
             base.WriteOperationalSummary(buffer);
+        }
+
+        private void TryShowBloodWaypointWarning(Vector3 scannerPosition, float now)
+        {
+            if (now < _nextBloodWaypointWarningAt || bloodWaypointWarningRadius <= 0f)
+                return;
+
+            if (!ChemicalInfluenceGrid.TryFindNearestScentWaypoint(
+                    scannerPosition,
+                    ChemicalInfluenceGrid.ChemicalChannel.Blood,
+                    out _,
+                    out float distanceMeters,
+                    out float intensity01))
+            {
+                return;
+            }
+
+            if (distanceMeters > bloodWaypointWarningRadius || intensity01 <= ScientificAttractantTraceThreshold01)
+                return;
+
+            ToolHitUtility.ShowWarning("SCANNER - BLOOD DETECTED");
+            _nextBloodWaypointWarningAt = now + resultFeedbackInterval;
         }
 
         private float ResolveEffectiveScanCooldown()
@@ -1919,93 +1943,8 @@ namespace Hecton8.Gameplay
         private static bool TrySampleScientificChemicalSignal(Vector3 worldPosition, out float4 chemicalSignal)
         {
             chemicalSignal = float4.zero;
-            if (!TryResolveScientificChemicalSnapshot(
-                    out NativeArray<float4> frontGrid,
-                    out NativeArray<float4> overlayGrid,
-                    out int3 dimensions,
-                    out float3 origin,
-                    out float3 cellSize))
-            {
-                return false;
-            }
-
-            return TryReadScientificChemicalSignal(
-                frontGrid,
-                overlayGrid,
-                dimensions,
-                origin,
-                cellSize,
-                new float3(worldPosition.x, worldPosition.y, worldPosition.z),
-                out chemicalSignal) &&
+            return ChemicalInfluenceGrid.TrySampleNormalizedChannels(worldPosition, out chemicalSignal) &&
                 math.cmax(math.abs(chemicalSignal)) > 0.0001f;
-        }
-
-        private static bool TryResolveScientificChemicalSnapshot(
-            out NativeArray<float4> frontGrid,
-            out NativeArray<float4> overlayGrid,
-            out int3 dimensions,
-            out float3 origin,
-            out float3 cellSize)
-        {
-            if (!ChemicalInfluenceGrid.TryGetPublishedSnapshot(
-                    out frontGrid,
-                    out overlayGrid,
-                    out dimensions,
-                    out origin,
-                    out cellSize) ||
-                !frontGrid.IsCreated ||
-                !overlayGrid.IsCreated ||
-                dimensions.x <= 0 ||
-                dimensions.y <= 0 ||
-                dimensions.z <= 0)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool TryReadScientificChemicalSignal(
-            NativeArray<float4> frontGrid,
-            NativeArray<float4> overlayGrid,
-            int3 dimensions,
-            float3 origin,
-            float3 cellSize,
-            float3 worldPosition,
-            out float4 chemicalSignal)
-        {
-            chemicalSignal = float4.zero;
-            if (!TryResolveScientificChemicalCoordinates(worldPosition, dimensions, origin, cellSize, out float sampleX, out float sampleY, out float sampleZ))
-                return false;
-
-            float4 frontSample = SampleScientificChemicalField(frontGrid, dimensions, sampleX, sampleY, sampleZ);
-            float4 overlaySample = SampleScientificChemicalField(overlayGrid, dimensions, sampleX, sampleY, sampleZ);
-            chemicalSignal = frontSample + overlaySample;
-            return true;
-        }
-
-        private static bool TryResolveScientificChemicalCoordinates(
-            float3 worldPosition,
-            int3 dimensions,
-            float3 origin,
-            float3 cellSize,
-            out float sampleX,
-            out float sampleY,
-            out float sampleZ)
-        {
-            sampleX = 0f;
-            sampleY = 0f;
-            sampleZ = 0f;
-            if (dimensions.x <= 0 || dimensions.y <= 0 || dimensions.z <= 0)
-                return false;
-
-            float cellSizeX = math.max(0.0001f, cellSize.x);
-            float cellSizeY = math.max(0.0001f, cellSize.y);
-            float cellSizeZ = math.max(0.0001f, cellSize.z);
-            sampleX = math.clamp((worldPosition.x - origin.x) / cellSizeX, 0f, math.max(0f, dimensions.x - 1.001f));
-            sampleY = math.clamp((worldPosition.y - origin.y) / cellSizeY, 0f, math.max(0f, dimensions.y - 1.001f));
-            sampleZ = math.clamp((worldPosition.z - origin.z) / cellSizeZ, 0f, math.max(0f, dimensions.z - 1.001f));
-            return true;
         }
 
         private static bool TrySampleScientificAttractantGradient(
@@ -2019,50 +1958,64 @@ namespace Hecton8.Gameplay
             exhaustSignal01 = 0f;
             bloodGradient = float3.zero;
             exhaustGradient = float3.zero;
-            if (!TryResolveScientificChemicalSnapshot(
-                    out NativeArray<float4> frontGrid,
-                    out NativeArray<float4> overlayGrid,
-                    out int3 dimensions,
-                    out float3 origin,
-                    out float3 cellSize))
+            if (!ChemicalInfluenceGrid.TryGetPublishedBreadcrumbs(
+                    out NativeArray<ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint> breadcrumbs,
+                    out int breadcrumbCount,
+                    out _))
             {
                 return false;
             }
 
             float3 center = new float3(worldPosition.x, worldPosition.y, worldPosition.z);
-            if (!TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center, out float4 centerSignal))
-                return false;
-
-            bloodSignal01 = math.saturate(centerSignal.x);
-            exhaustSignal01 = math.saturate(centerSignal.y);
-
-            float3 step = math.max(cellSize * ScientificGradientSampleStepMultiplier, new float3(0.25f, 0.25f, 0.25f));
-            float3 offsetX = new float3(step.x, 0f, 0f);
-            float3 offsetY = new float3(0f, step.y, 0f);
-            float3 offsetZ = new float3(0f, 0f, step.z);
-
-            if (TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center + offsetX, out float4 xp) &&
-                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center - offsetX, out float4 xn) &&
-                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center + offsetY, out float4 yp) &&
-                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center - offsetY, out float4 yn) &&
-                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center + offsetZ, out float4 zp) &&
-                TryReadScientificChemicalSignal(frontGrid, overlayGrid, dimensions, origin, cellSize, center - offsetZ, out float4 zn))
+            float now = Time.time;
+            int safeCount = math.min(breadcrumbCount, breadcrumbs.Length);
+            float3 bloodGradientWeighted = float3.zero;
+            float3 exhaustGradientWeighted = float3.zero;
+            float bloodWeight = 0f;
+            float exhaustWeight = 0f;
+            for (int i = 0; i < safeCount; i++)
             {
-                bloodGradient = new float3(xp.x - xn.x, yp.x - yn.x, zp.x - zn.x);
-                exhaustGradient = new float3(xp.y - xn.y, yp.y - yn.y, zp.y - zn.y);
+                ChemicalInfluenceGrid.ChemicalBreadcrumbWaypoint waypoint = breadcrumbs[i];
+                if (waypoint.ExpiresAt <= now || waypoint.RadiusMeters <= 0f)
+                    continue;
 
-                if (math.lengthsq(bloodGradient) > 0.000001f)
-                    bloodGradient = math.normalize(bloodGradient);
-                else
-                    bloodGradient = float3.zero;
+                float radius = math.max(1f, waypoint.RadiusMeters);
+                float3 delta = waypoint.RuntimePosition - center;
+                float distanceSq = math.lengthsq(delta);
+                if (distanceSq > radius * radius)
+                    continue;
 
-                if (math.lengthsq(exhaustGradient) > 0.000001f)
-                    exhaustGradient = math.normalize(exhaustGradient);
-                else
-                    exhaustGradient = float3.zero;
+                float falloff = SmoothStep01(1f - math.saturate(math.sqrt(distanceSq) / radius));
+                float blood = math.saturate(waypoint.Channels.x * falloff);
+                float exhaust = math.saturate(waypoint.Channels.y * falloff);
+                float3 direction = math.normalizesafe(delta, float3.zero);
+                bloodSignal01 = math.max(bloodSignal01, blood);
+                exhaustSignal01 = math.max(exhaustSignal01, exhaust);
+                if (blood > 0.0001f)
+                {
+                    bloodGradientWeighted += direction * blood;
+                    bloodWeight += blood;
+                }
+
+                if (exhaust > 0.0001f)
+                {
+                    exhaustGradientWeighted += direction * exhaust;
+                    exhaustWeight += exhaust;
+                }
             }
 
+            if (bloodWeight > 0f)
+                bloodGradient = math.normalizesafe(bloodGradientWeighted / bloodWeight, float3.zero);
+            if (exhaustWeight > 0f)
+                exhaustGradient = math.normalizesafe(exhaustGradientWeighted / exhaustWeight, float3.zero);
+
             return bloodSignal01 > 0.0001f || exhaustSignal01 > 0.0001f;
+        }
+
+        private static float SmoothStep01(float value)
+        {
+            float t = math.saturate(value);
+            return t * t * (3f - 2f * t);
         }
 
         private static void ResolveScientificAttractantTrace(
@@ -2108,54 +2061,6 @@ namespace Hecton8.Gameplay
                         scentDirection = math.normalize(direction);
                 }
             }
-        }
-
-        private static float4 SampleScientificChemicalField(
-            NativeArray<float4> grid,
-            int3 dimensions,
-            float sampleX,
-            float sampleY,
-            float sampleZ)
-        {
-            int x0 = Mathf.FloorToInt(sampleX);
-            int y0 = Mathf.FloorToInt(sampleY);
-            int z0 = Mathf.FloorToInt(sampleZ);
-            int x1 = Mathf.Min(x0 + 1, dimensions.x - 1);
-            int y1 = Mathf.Min(y0 + 1, dimensions.y - 1);
-            int z1 = Mathf.Min(z0 + 1, dimensions.z - 1);
-            float tx = sampleX - x0;
-            float ty = sampleY - y0;
-            float tz = sampleZ - z0;
-
-            float4 c000 = SampleScientificChemicalFieldAt(grid, dimensions, x0, y0, z0);
-            float4 c100 = SampleScientificChemicalFieldAt(grid, dimensions, x1, y0, z0);
-            float4 c010 = SampleScientificChemicalFieldAt(grid, dimensions, x0, y1, z0);
-            float4 c110 = SampleScientificChemicalFieldAt(grid, dimensions, x1, y1, z0);
-            float4 c001 = SampleScientificChemicalFieldAt(grid, dimensions, x0, y0, z1);
-            float4 c101 = SampleScientificChemicalFieldAt(grid, dimensions, x1, y0, z1);
-            float4 c011 = SampleScientificChemicalFieldAt(grid, dimensions, x0, y1, z1);
-            float4 c111 = SampleScientificChemicalFieldAt(grid, dimensions, x1, y1, z1);
-
-            float4 c00 = math.lerp(c000, c100, tx);
-            float4 c10 = math.lerp(c010, c110, tx);
-            float4 c01 = math.lerp(c001, c101, tx);
-            float4 c11 = math.lerp(c011, c111, tx);
-            float4 c0 = math.lerp(c00, c10, ty);
-            float4 c1 = math.lerp(c01, c11, ty);
-            return math.lerp(c0, c1, tz);
-        }
-
-        private static float4 SampleScientificChemicalFieldAt(
-            NativeArray<float4> grid,
-            int3 dimensions,
-            int x,
-            int y,
-            int z)
-        {
-            int index = x + (dimensions.x * (y + (dimensions.y * z)));
-            return (uint)index < (uint)grid.Length
-                ? grid[index]
-                : float4.zero;
         }
 
         private static bool TrySampleScientificDensity(

@@ -36,13 +36,13 @@ namespace Hecton8.Visor
         [Serializable]
         private sealed class FeatureSettings
         {
-            [Tooltip("Hidden multi-pass shader used for the shaft raymarch, bilateral upsample, lens ghosts, and final composite.")]
+            [Tooltip("Hidden multi-pass shader used for screen-space bright-pass shafts, bilateral upsample, lens ghosts, and final composite.")]
             public Shader shader = null;
 
             [Tooltip("GPU histogram compute shader used to resolve weighted EV and temporal exposure smoothing.")]
             public ComputeShader autoExposureComputeShader = null;
 
-            [Tooltip("Optional blue-noise texture used to jitter raymarch steps. Leave null to fall back to procedural noise.")]
+            [Tooltip("Optional blue-noise texture used to jitter screen-space radial taps. Leave null to fall back to procedural noise.")]
             public Texture2D blueNoiseTexture = null;
 
             [Tooltip("Where the volumetric shaft pass is injected into URP. Before transparents keeps Crest water and camera-space UI on top of the shaft composite.")]
@@ -51,19 +51,19 @@ namespace Hecton8.Visor
             [Tooltip("Internal render scale for the shaft target. Lower values save MX350 fill-rate.")]
             [Range(0.25f, 1f)] public float renderScale = 0.5f;
 
-            [Tooltip("Raymarch step count for the underwater shaft volume. Fixed to the MX350-safe 8-step path.")]
-            [Range(8, 8)] public int raymarchSteps = 8;
+            [Tooltip("Compatibility field. Shaft generation performs zero world raymarch steps; shader uses fixed 2D radial taps.")]
+            [Range(0, 0)] public int raymarchSteps = 0;
 
-            [Tooltip("Maximum volumetric march distance in meters.")]
+            [Tooltip("Legacy compatibility clamp. Screen-space shaft generation does not march through world volume.")]
             [Range(8f, 120f)] public float maxRayDistance = 56f;
 
-            [Tooltip("Forward-scattering anisotropy for the shaft phase function.")]
+            [Tooltip("Legacy compatibility value retained for material layout.")]
             [Range(0f, 0.95f)] public float scatteringAnisotropy = 0.68f;
 
             [Tooltip("Base water density used for light accumulation.")]
             [Range(0f, 4f)] public float density = 1.05f;
 
-            [Tooltip("Amount of blue-noise jitter applied to the raymarch start position.")]
+            [Tooltip("Amount of blue-noise jitter applied to the screen-space radial taps.")]
             [Range(0f, 1f)] public float blueNoiseJitter = 0.85f;
 
             [Tooltip("Edge-preserving bilateral depth falloff used during blur and upsample.")]
@@ -608,7 +608,7 @@ namespace Hecton8.Visor
             material.SetFloat(ShaderConstants.PassModeId, passMode);
             material.SetFloat(ShaderConstants.FrameCountId, Time.frameCount);
             material.SetFloat(ShaderConstants.RenderScaleId, Mathf.Clamp(settings.renderScale, 0.25f, 1f));
-            material.SetFloat(ShaderConstants.RaymarchStepsId, 8f);
+            material.SetFloat(ShaderConstants.RaymarchStepsId, 0f);
             material.SetFloat(ShaderConstants.MaxRayDistanceId, Mathf.Max(1f, settings.maxRayDistance));
                 material.SetFloat(ShaderConstants.ScatteringAnisotropyId, Mathf.Clamp(settings.scatteringAnisotropy, 0f, 0.95f));
                 material.SetFloat(ShaderConstants.DensityId, Mathf.Max(0f, settings.density));

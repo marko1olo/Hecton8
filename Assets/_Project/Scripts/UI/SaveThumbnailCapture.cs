@@ -25,13 +25,10 @@ namespace Hecton8.UI
 
         public void OnSaveEvent(in SaveEventPayload payload)
         {
-            if (payload.Type != SaveEventType.SaveCompleted)
+            if (payload.Type != SaveEventType.SaveStarted || payload.SlotName.Length == 0)
                 return;
 
             string slotName = payload.SlotName.ToString();
-            if (string.IsNullOrEmpty(slotName))
-                return;
-
             SaveThumbnailSystem.CaptureThumbnail(slotName, captureCamera);
         }
     }

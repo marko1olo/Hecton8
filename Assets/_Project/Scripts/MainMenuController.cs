@@ -7,6 +7,7 @@ using Hecton8.UI;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -105,6 +106,7 @@ namespace Hecton.UI.MainMenu
         private UnityAction _backFromSaveLoadClickAction;
         private UnityAction _backFromSettingsClickAction;
         private bool _runtimeBindingsReady;
+        private bool _inputRoutingReady;
 
 
         private void Awake()
@@ -146,6 +148,7 @@ namespace Hecton.UI.MainMenu
             BlockCancelInputBriefly();
             MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
             BindMenuInput();
+            _inputRoutingReady = false;
             LocalizationEvents.RegisterLanguageListener(this);
             
             // Subscribe to save/load events for UI feedback
@@ -774,10 +777,18 @@ namespace Hecton.UI.MainMenu
 #endif
 
             TryRegisterToTickManager();
-            SetPanelImmediate(mainMenuGroup, false);
-            SetPanelImmediate(saveLoadGroup, false);
-            SetPanelImmediate(settingsGroup, false);
-            SetPanelImmediate(loadingGroup, false);
+            CanvasGroup cinematicPanel = _currentPanel != null && _currentPanel != loadingGroup
+                ? _currentPanel
+                : mainMenuGroup;
+            PreparePanelForCinematicSubmerge(cinematicPanel);
+            if (mainMenuGroup != cinematicPanel)
+                SetPanelImmediate(mainMenuGroup, false);
+            if (saveLoadGroup != cinematicPanel)
+                SetPanelImmediate(saveLoadGroup, false);
+            if (settingsGroup != cinematicPanel)
+                SetPanelImmediate(settingsGroup, false);
+            if (loadingGroup != cinematicPanel)
+                SetPanelImmediate(loadingGroup, false);
             _currentPanel = null;
             RequestSelectionRefresh();
 
@@ -829,7 +840,7 @@ namespace Hecton.UI.MainMenu
             }
 
             if (runtimeSceneService != null)
-                runtimeSceneService.ConfigureMainMenuCinematic(mainMenuCamera, transitionBlueNoiseTexture);
+                runtimeSceneService.ConfigureMainMenuCinematic(mainMenuCamera, transitionBlueNoiseTexture, cinematicPanel);
 
             sceneService.LoadScene(targetSceneName);
         }
@@ -870,10 +881,34 @@ namespace Hecton.UI.MainMenu
             if (unscaledDeltaTime <= 0f)
                 return;
 
+            EnsureMenuInputRoutingReady();
             HandleCancelInput();
             UpdatePanelTransition(unscaledDeltaTime);
             UpdateSceneLoad();
             RefreshSelectionIfNeeded();
+        }
+
+        private void EnsureMenuInputRoutingReady()
+        {
+            if (_inputRoutingReady)
+                return;
+
+            MainMenuInputRoutingGuard.EnsureInputSystemEventRouting();
+            InputManager inputManager = GlobalRegistry.NativeInputManager;
+            if (!ReferenceEquals(_inputManager, inputManager))
+                BindMenuInput();
+
+            EventSystem eventSystem = EventSystem.current;
+            if (eventSystem == null || !eventSystem.enabled)
+                return;
+
+            InputSystemUIInputModule inputModule = eventSystem.GetComponent<InputSystemUIInputModule>();
+            if (inputModule == null || !inputModule.enabled)
+                return;
+
+            _inputRoutingReady = MainMenuInputRoutingGuard.HasUsableUiModuleActions(inputModule);
+            if (_inputRoutingReady)
+                RequestSelectionRefresh();
         }
 
         private void HandleCancelInput()
@@ -1435,6 +1470,17 @@ namespace Hecton.UI.MainMenu
             group.blocksRaycasts = visible;
             if (visible)
                 _currentPanel = group;
+        }
+
+        private static void PreparePanelForCinematicSubmerge(CanvasGroup group)
+        {
+            if (group == null)
+                return;
+
+            EnsurePanelHierarchyActive(group);
+            group.alpha = 1f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
         }
 
         private static void EnsurePanelHierarchyActive(CanvasGroup group)

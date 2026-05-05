@@ -10,6 +10,7 @@ using Hecton8.Meta;
 using Hecton8.Modding;
 using Hecton8.SaveSystem;
 using Hecton8.Tools;
+using Hecton8.UI;
 using Hecton8.World;
 using UnityEngine;
 using Unity.Mathematics;
@@ -276,6 +277,7 @@ namespace Hecton8.Gameplay
         private float _nitrogenBuildUp;
         private float _nitrogenNarcosis01;
         private float _airPocketNitrogenPauseTimer;
+        private bool _nitrogenLoadWarningIssued;
         private float _nutritionalToxicitySecondsRemaining;
         private float _nutritionalToxicitySeverity01;
         private float _decompressionVomitToolDropCooldown;
@@ -335,6 +337,10 @@ namespace Hecton8.Gameplay
         private const float NitrogenStaminaPenaltyMultiplier = 0.8f;
         private const float NitrogenAirPocketPauseSeconds = 2f;
         private const float NitrogenAirPocketRecoveryMultiplier = 2.5f;
+        private const float NitrogenLoadWarningThreshold01 = 0.5f;
+        private const float NitrogenLoadWarningResetThreshold01 = 0.35f;
+        private const float NitrogenRingingThreshold01 = 0.75f;
+        private const string NitrogenLoadWarningMessage = "ASCENT RATE WARNING // NITROGEN LOAD";
         private const float DecompressionVomitThreshold = 150f;
         private const float DecompressionVomitToolDropCooldownSeconds = 5f;
         private const float DecompressionVomitConvulsionDurationSeconds = 0.65f;
@@ -367,6 +373,7 @@ namespace Hecton8.Gameplay
         private static readonly uint _ThermalShockNonFiniteWarningHash = unchecked((uint)LocHash.Compute("Survival.ThermalShock.NonFinite"));
         private static readonly uint _AirPocketInvalidRefillWarningHash = unchecked((uint)LocHash.Compute("Survival.AirPocket.InvalidRefill"));
         private static readonly uint _SurvivalRuntimeContextHash = unchecked((uint)LocHash.Compute(nameof(HectonSurvivalSystem)));
+        private static readonly uint _NitrogenLoadWarningMessageHash = unchecked((uint)LocHash.Compute(NitrogenLoadWarningMessage));
 
         private const float Epsilon       = 0.1f;
         private const float DirtySentinel = -9999f;
@@ -469,6 +476,8 @@ namespace Hecton8.Gameplay
         public float NitrogenBuildUp => _nitrogenBuildUp;
         /// <summary>Normalized nitrogen build-up against the narcosis activation threshold.</summary>
         public float NitrogenBuildUp01 => Mathf.Clamp01(_nitrogenBuildUp / NitrogenCriticalBuildUp);
+        /// <summary>Pre-narcosis high-frequency ring intensity used by the helmet DSP layer.</summary>
+        public float NitrogenWarningRinging01 => ResolveNitrogenWarningRinging01(_nitrogenBuildUp);
         /// <summary>True when cumulative nitrogen build-up has crossed the sickness threshold.</summary>
         public bool IsNitrogenNarcosisActive => _nitrogenBuildUp > NitrogenCriticalBuildUp;
         /// <summary>Normalized narcosis severity used by visor and movement penalty systems.</summary>
@@ -499,6 +508,7 @@ namespace Hecton8.Gameplay
             int statsId = stats != null ? unchecked((int)EntityId.ToULong(stats.GetEntityId())) : 0;
             _traumaRandom = CreateDeterministicRandom(ownerId, statsId);
             TryBootstrapInjectedSurvivalDatabase();
+            NotificationEvents.RegisterMessage(NitrogenLoadWarningMessage);
             ResetToMax();
             PublishRuntimeContextState();
         }
@@ -1023,6 +1033,7 @@ namespace Hecton8.Gameplay
                 float recovery = NitrogenRecoveryPerSecond * NitrogenAirPocketRecoveryMultiplier * math.max(0f, deltaTime);
                 _nitrogenBuildUp = math.max(0f, _nitrogenBuildUp - recovery);
                 _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+                UpdateNitrogenPreNarcosisWarningState();
                 ApplyNitrogenMovementPenalty();
                 return;
             }
@@ -1042,6 +1053,7 @@ namespace Hecton8.Gameplay
             }
 
             _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+            UpdateNitrogenPreNarcosisWarningState();
             ApplyNitrogenMovementPenalty();
         }
 
@@ -1056,6 +1068,12 @@ namespace Hecton8.Gameplay
         internal static float ResolveNitrogenNarcosis01(float nitrogenBuildUp)
         {
             return SomaticSurvivalMath.ResolveNitrogenNarcosis01(nitrogenBuildUp);
+        }
+
+        internal static float ResolveNitrogenWarningRinging01(float nitrogenBuildUp)
+        {
+            float buildUp01 = math.saturate(nitrogenBuildUp / NitrogenCriticalBuildUp);
+            return math.saturate((buildUp01 - NitrogenRingingThreshold01) / math.max(1f - NitrogenRingingThreshold01, 0.0001f));
         }
 
         internal static float ResolveNitrogenStaminaMultiplier(float nitrogenBuildUp)
@@ -1098,8 +1116,25 @@ namespace Hecton8.Gameplay
                 0f,
                 _nitrogenBuildUp - NitrogenRecoveryPerSecond * NitrogenAirPocketRecoveryMultiplier * _slowTickDt);
             _nitrogenNarcosis01 = ResolveNitrogenNarcosis01(_nitrogenBuildUp);
+            UpdateNitrogenPreNarcosisWarningState();
             ApplyNitrogenMovementPenalty();
             ForceDirty(ref lastPubOxygen);
+        }
+
+        private void UpdateNitrogenPreNarcosisWarningState()
+        {
+            float buildUp01 = NitrogenBuildUp01;
+            if (buildUp01 < NitrogenLoadWarningResetThreshold01)
+            {
+                _nitrogenLoadWarningIssued = false;
+                return;
+            }
+
+            if (_nitrogenLoadWarningIssued || buildUp01 < NitrogenLoadWarningThreshold01)
+                return;
+
+            _nitrogenLoadWarningIssued = true;
+            NotificationEvents.PushRegisteredWarning(_NitrogenLoadWarningMessageHash);
         }
 
         private bool TrySamplePlayerAupAirPocket(out float oxygenRefillFraction)
@@ -2407,6 +2442,7 @@ namespace Hecton8.Gameplay
         {
             _nitrogenBuildUp = 0f;
             _nitrogenNarcosis01 = 0f;
+            _nitrogenLoadWarningIssued = false;
             ApplyNitrogenMovementPenalty();
         }
 

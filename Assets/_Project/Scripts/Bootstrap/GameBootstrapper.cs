@@ -370,8 +370,10 @@ namespace Hecton8.Bootstrap
                 return;
 
             EnsureCrashTelemetryBufferRegistered();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureRuntimeWatchdogRegistered();
             EnsureGCMonitorRegistered();
+#endif
             _bootstrapRunInProgress = true;
             _ = RunBootstrapStateMachineAsync(destroyCancellationToken);
         }
@@ -768,9 +770,9 @@ namespace Hecton8.Bootstrap
         private bool InitializeCoreLayer()
         {
             EnsureCrashTelemetryBufferRegistered();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureRuntimeWatchdogRegistered();
             EnsureGCMonitorRegistered();
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureRuntimePerformanceProfilerRegistered();
 #endif
             ThreadSafeCommandQueue.Initialize();
@@ -1303,8 +1305,10 @@ namespace Hecton8.Bootstrap
             PersistRuntimeService(dispatcher);
 
             dispatcher.InitializeService();
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
             EnsureRuntimeWatchdogRegistered();
             EnsureGCMonitorRegistered();
+#endif
             return dispatcher;
         }
 

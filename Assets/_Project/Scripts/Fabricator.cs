@@ -30,6 +30,7 @@
 //   • PowerNode кэширован в Awake — zero TryGetComponent в горячем пути
 // ============================================================================
 
+using System;
 using System.Collections.Generic;
 using Hecton.Localization;
 using Hecton8.Audio;
@@ -58,8 +59,10 @@ namespace Hecton8.Crafting
     {
         // COLD ALLOC: List<Fabricator>[8] - active fabricator registry for cold-path recipe lookups - owner: Fabricator
         private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(8);
+        private static readonly int _uiFabricatorLocalizationHash = LocHash.Compute(LocalizationKeys.UI_FABRICATOR);
+        private static readonly int _interactUseFabricatorLocalizationHash = LocHash.Compute(LocalizationKeys.INTERACT_USE_FABRICATOR);
         private static bool s_emergencyPowerLockActive;
-        private const ushort ScrapYieldQualityMilliThreshold = 200;
+        private const int InteractTextBufferCapacity = 96;
 
         // ══════════════════════════════════════════════════════════
         //  INSPECTOR
@@ -148,6 +151,9 @@ namespace Hecton8.Crafting
 
         /// <summary>Кэшированный текст промпта. Строится один раз.</summary>
         private string _interactText;
+        // COLD ALLOC: char[96] - cached IInteractable prompt staging buffer - owner: Fabricator
+        private readonly char[] _interactTextBuffer = new char[InteractTextBufferCapacity];
+        private int _interactTextLength;
 
         /// <summary>Ссылка на инвентарь текущего игрока.</summary>
         private PlayerInventory _playerInventory;
@@ -211,7 +217,6 @@ namespace Hecton8.Crafting
         private NativeParallelHashMap<int, int> _craftInventoryCounts;
         private NativeArray<int2> _craftRecipeCosts;
         private NativeArray<byte> _craftRecipeEvaluationResult;
-        private NativeArray<int2> _deconstructionFlattenedCosts;
         private NativeArray<int2> _deconstructionRecipeOutputs;
         private NativeArray<int> _deconstructionOutputCount;
         private NativeQueue<CraftingTask> _craftingTaskQueue;
@@ -1072,13 +1077,6 @@ namespace Hecton8.Crafting
                 RegisterTrackedNativeArray(_craftRecipeEvaluationResult, nameof(_craftRecipeEvaluationResult));
             }
 
-            if (!_deconstructionFlattenedCosts.IsCreated)
-            {
-                // COLD ALLOC: NativeArray<int2>[64] — recursive deconstruction flattened ingredient scratch — owner: Fabricator
-                _deconstructionFlattenedCosts = new NativeArray<int2>(CraftingSystem.MaxRecursiveDeconstructionNodeCount, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-                RegisterTrackedNativeArray(_deconstructionFlattenedCosts, nameof(_deconstructionFlattenedCosts));
-            }
-
             if (!_deconstructionRecipeOutputs.IsCreated)
             {
                 // COLD ALLOC: NativeArray<int2>[32] — deconstruction output yield scratch — owner: Fabricator
@@ -1174,7 +1172,6 @@ namespace Hecton8.Crafting
 
             DisposeTrackedNativeArray(ref _craftRecipeCosts);
             DisposeTrackedNativeArray(ref _craftRecipeEvaluationResult);
-            DisposeTrackedNativeArray(ref _deconstructionFlattenedCosts);
             DisposeTrackedNativeArray(ref _deconstructionRecipeOutputs);
             DisposeTrackedNativeArray(ref _deconstructionOutputCount);
             if (_craftingTaskQueue.IsCreated)
@@ -1237,7 +1234,7 @@ namespace Hecton8.Crafting
         }
 
         /// <summary>
-        /// Grinds one crafted item back into reclaimed ingredient stacks using the reverse recipe path.
+        /// Grinds one crafted item back into authored salvage stacks.
         /// </summary>
         public bool TryDeconstructItem(int itemHashId)
         {
@@ -1249,35 +1246,22 @@ namespace Hecton8.Crafting
                 return false;
 
             ItemData targetItem = itemCatalog.FindByHash(itemHashId);
-            if (targetItem == null || !TryResolveRecipeForResultItem(targetItem, out RecipeData sourceRecipe))
+            if (targetItem == null || targetItem.DeconstructYieldCount <= 0)
                 return false;
 
-            if (!_playerInventory.TryConsumeFirstMatchingItemByHash(itemHashId, out ushort stateFlags, out ushort qualityMilli))
+            if (!_playerInventory.TryRemoveFirstMatchingItemByHash(itemHashId))
                 return false;
 
             EnsureCraftingScratch();
-            int normalizedQualityMilli = qualityMilli > 0 ? qualityMilli : 1000;
-            bool isDegraded = (stateFlags & PlayerInventory.DegradedItemStateMask) != 0 ||
-                              normalizedQualityMilli < PlayerInventory.DegradedQualityMilliThreshold;
-            bool forceScrapYield = normalizedQualityMilli < ScrapYieldQualityMilliThreshold;
-            int reclaimPercent = isDegraded ? 30 : 80;
             if (!CraftingSystem.TryBuildDeconstructionYieldBuffer(
-                    sourceRecipe,
-                    this,
-                    itemCatalog,
-                    forceScrapYield,
-                    reclaimPercent,
-                    _craftRecipeCosts,
-                    _deconstructionFlattenedCosts,
+                    targetItem,
                     _deconstructionRecipeOutputs,
-                    _deconstructionOutputCount,
-                    ResolveScrapMetalHashId(itemCatalog)))
+                    _deconstructionOutputCount))
             {
                 _playerInventory.TryAddItem(itemHashId, 1);
                 return false;
             }
 
-            ClampDeconstructionYieldToSourceMass(targetItem, itemCatalog);
             int outputCount = _deconstructionOutputCount[0];
             if (outputCount <= 0)
             {
@@ -1310,46 +1294,6 @@ namespace Hecton8.Crafting
                 _playerInventory.TryAddItem(itemHashId, 1);
 
             return emittedAny;
-        }
-
-        private void ClampDeconstructionYieldToSourceMass(ItemData sourceItem, Hecton8.SaveSystem.ItemCatalog itemCatalog)
-        {
-            if (sourceItem == null ||
-                itemCatalog == null ||
-                !_deconstructionRecipeOutputs.IsCreated ||
-                !_deconstructionOutputCount.IsCreated ||
-                _deconstructionOutputCount.Length <= 0)
-            {
-                return;
-            }
-
-            float remainingMassKg = Mathf.Max(0f, sourceItem.MassKg);
-            int outputCount = Mathf.Clamp(_deconstructionOutputCount[0], 0, _deconstructionRecipeOutputs.Length);
-            int writeIndex = 0;
-            for (int outputIndex = 0; outputIndex < outputCount; outputIndex++)
-            {
-                int2 output = _deconstructionRecipeOutputs[outputIndex];
-                if (output.x == 0 || output.y <= 0 || remainingMassKg <= 0.0001f)
-                    continue;
-
-                ItemData outputItem = itemCatalog.FindByHash(output.x);
-                if (outputItem == null)
-                    continue;
-
-                float unitMassKg = Mathf.Max(0.0001f, outputItem.MassKg);
-                int maxQuantityByMass = Mathf.FloorToInt((remainingMassKg + 0.0001f) / unitMassKg);
-                int clampedQuantity = Mathf.Min(output.y, maxQuantityByMass);
-                if (clampedQuantity <= 0)
-                    continue;
-
-                remainingMassKg -= clampedQuantity * unitMassKg;
-                _deconstructionRecipeOutputs[writeIndex++] = new int2(output.x, clampedQuantity);
-            }
-
-            for (int clearIndex = writeIndex; clearIndex < outputCount; clearIndex++)
-                _deconstructionRecipeOutputs[clearIndex] = int2.zero;
-
-            _deconstructionOutputCount[0] = writeIndex;
         }
 
         private bool TryEmitDeconstructionYield(
@@ -1609,6 +1553,7 @@ namespace Hecton8.Crafting
         {
             _errorFlashRemainingSeconds = Mathf.Max(_errorFlashRemainingSeconds, errorFlashDurationSeconds);
             ApplyErrorFeedback(1f);
+            CraftingEvents.RaiseCraftFailed(this);
             PlaySound(fabricationErrorBuzzerSound);
             ProceduralAudioEvents.RaiseAudioPingTriggered(
                 transform.position,
@@ -1950,15 +1895,6 @@ namespace Hecton8.Crafting
             return false;
         }
 
-        private static int ResolveScrapMetalHashId(ItemCatalog itemCatalog)
-        {
-            int scrapMetalHashId = LocHash.Compute("Data_ScrapMetal");
-            if (itemCatalog != null && itemCatalog.FindByHash(scrapMetalHashId) != null)
-                return scrapMetalHashId;
-
-            return LocHash.Compute("Data_TitaniumScrap");
-        }
-
         private static bool TryResolveRecipeForResultItem(List<RecipeData> recipes, ItemData resultItem, out RecipeData recipe)
         {
             if (recipes != null && resultItem != null)
@@ -2060,11 +1996,18 @@ namespace Hecton8.Crafting
 
         private void RebuildInteractText()
         {
-            string fallbackName = string.IsNullOrWhiteSpace(fabricatorName)
-                ? ResolveLocalized(LocalizationKeys.UI_FABRICATOR, "FABRICATOR")
-                : fabricatorName;
-            string pattern = ResolveLocalized(LocalizationKeys.INTERACT_USE_FABRICATOR, "Use {0}");
-            _interactText = string.Format(pattern, fallbackName);
+            ReadOnlySpan<char> fallbackName = string.IsNullOrWhiteSpace(fabricatorName)
+                ? ResolveLocalizedSpan(_uiFabricatorLocalizationHash, "FABRICATOR".AsSpan())
+                : fabricatorName.AsSpan();
+            ReadOnlySpan<char> pattern = ResolveLocalizedSpan(_interactUseFabricatorLocalizationHash, "Use {0}".AsSpan());
+
+            _interactTextLength = WriteInteractTemplate(pattern, fallbackName, _interactTextBuffer);
+            ReadOnlySpan<char> cachedPrompt = _interactText == null ? ReadOnlySpan<char>.Empty : _interactText.AsSpan();
+            ReadOnlySpan<char> nextPrompt = _interactTextBuffer.AsSpan(0, _interactTextLength);
+            if (cachedPrompt.SequenceEqual(nextPrompt))
+                return;
+
+            _interactText = new string(_interactTextBuffer, 0, _interactTextLength); // COLD ALLOC: string[<=96] - cached IInteractable compatibility prompt rebuilt on localization change - owner: Fabricator
         }
 
         public void OnLocalizationLanguageChanged(in LocalizationEventPayload payload)
@@ -2081,14 +2024,47 @@ namespace Hecton8.Crafting
             RebuildInteractText();
         }
 
-        private static string ResolveLocalized(string key, string fallback)
+        private static ReadOnlySpan<char> ResolveLocalizedSpan(int keyHash, ReadOnlySpan<char> fallback)
         {
             LocalizationManager manager = Hecton8.Core.GlobalRegistry.Localization;
             if (manager == null)
                 return fallback;
 
-            string localized = manager.Get(key);
-            return string.IsNullOrWhiteSpace(localized) ? fallback : localized;
+            ReadOnlySpan<char> localized = manager.GetRawSpanOrFallback(keyHash, fallback);
+            return localized.IsEmpty ? fallback : localized;
+        }
+
+        private static int WriteInteractTemplate(ReadOnlySpan<char> template, ReadOnlySpan<char> value, char[] destination)
+        {
+            if (destination == null || destination.Length == 0)
+                return 0;
+
+            int cursor = 0;
+            int placeholderIndex = template.IndexOf("{0}".AsSpan());
+            if (placeholderIndex < 0)
+            {
+                cursor = AppendSpan(template, destination, cursor);
+                if (cursor < destination.Length)
+                    destination[cursor++] = ' ';
+                return AppendSpan(value, destination, cursor);
+            }
+
+            cursor = AppendSpan(template.Slice(0, placeholderIndex), destination, cursor);
+            cursor = AppendSpan(value, destination, cursor);
+            return AppendSpan(template.Slice(placeholderIndex + 3), destination, cursor);
+        }
+
+        private static int AppendSpan(ReadOnlySpan<char> source, char[] destination, int cursor)
+        {
+            if (destination == null || destination.Length == 0)
+                return 0;
+
+            if (cursor >= destination.Length || source.IsEmpty)
+                return Mathf.Clamp(cursor, 0, destination.Length);
+
+            int writable = Mathf.Min(source.Length, destination.Length - cursor);
+            source.Slice(0, writable).CopyTo(destination.AsSpan(cursor));
+            return cursor + writable;
         }
 
 #if UNITY_EDITOR

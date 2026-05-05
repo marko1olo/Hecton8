@@ -35,6 +35,12 @@ namespace Hecton8.Construction
         [Tooltip("Optional drone visual source used for headless indirect rendering mesh and material extraction.")]
         [SerializeField] private GameObject dronePrefab;
 
+        [Tooltip("Optional compute shader for GPU-only phantom drone swarm visuals.")]
+        [SerializeField] private ComputeShader phantomDroneCompute;
+
+        [Tooltip("Optional material for GPU-only phantom drone swarm visuals.")]
+        [SerializeField] private Material phantomDroneMaterial;
+
         [Tooltip("Optional launch socket. Falls back to this transform when omitted.")]
         [SerializeField] private Transform launchPoint;
 
@@ -155,6 +161,7 @@ namespace Hecton8.Construction
             _activeDroneIds = new int[capacity]; // COLD ALLOC: int[capacity] - active headless drone ids by hub slot - owner: RepairDroneHub
             _activeTargetIds = new int[capacity]; // COLD ALLOC: int[capacity] — claimed target ids by slot — owner: RepairDroneHub
             DroneFleetManager.ConfigureHeadlessRenderSource(dronePrefab);
+            DroneFleetManager.ConfigurePhantomSwarm(phantomDroneCompute, phantomDroneMaterial);
             ResolveRepairSupplyItem();
         }
 
@@ -176,6 +183,7 @@ namespace Hecton8.Construction
             _hasPower = true;
             _debugHasPower = true;
             DroneFleetManager.ConfigureHeadlessRenderSource(dronePrefab);
+            DroneFleetManager.ConfigurePhantomSwarm(phantomDroneCompute, phantomDroneMaterial);
             ResolveRepairSupplyItem();
             ClearSupplyLookupCache();
             RefreshSupplyCrates(true);

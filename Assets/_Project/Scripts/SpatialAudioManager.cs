@@ -76,11 +76,8 @@ namespace Hecton8.Audio
     {
         private const float SoundSpeedWaterMetersPerSecond = 1480f;
         private const float SoundSpeedAirMetersPerSecond = 343f;
-        private const float ThermalSoundSpeedMinimumMetersPerSecond = 1360f;
-        private const float ThermalSoundSpeedMaximumMetersPerSecond = 1565f;
-        private const float ThermalSoundSpeedSampleRadiusMeters = 12f;
-        private const float ThermalFlowHeatReferenceCelsius = 60f;
-        private const float ThermalFlowTemperatureBoostCelsius = 18f;
+        private const float MassiveDistanceFixedAudioDelayMeters = 740f;
+        private const float MassiveDistanceFixedAudioDelaySeconds = 0.5f;
         private const float ThermalShimmerMaximumPitchRatio = 0.018f;
         private const float HaasArrivalWindowSeconds = 0.035f;
         private const float HaasReleaseThresholdSeconds = 0.04f;
@@ -251,8 +248,17 @@ namespace Hecton8.Audio
         [Tooltip("Optional mixer override for threat-driven bed ducking. If null, the bed or ambient mixer is used.")]
         [SerializeField] private AudioMixer _routingMixer;
 
+        [Tooltip("Optional authored looping world-drone source used during menu-to-world transition. Runtime source creation is forbidden.")]
+        [SerializeField] private AudioSource _worldDroneSource;
+
+        [Tooltip("Optional authored world-drone clip assigned to the authored source if the source has no clip.")]
+        [SerializeField] private AudioClip _worldDroneClip;
+
         [Tooltip("Exposed mixer parameter that attenuates the Bed bus in dB while Threat is active.")]
         [SerializeField] private string _bedDuckDbParameter = "BedDuckDb";
+
+        [Tooltip("Exposed mixer parameter for the menu-to-world ambient drone gain in dB.")]
+        [SerializeField] private string _worldDroneVolumeDbParameter = "WorldDroneDb";
 
         [Tooltip("Exposed mixer parameter for room low-pass cutoff while parasite growth is active.")]
         [SerializeField] private string _parasiteRoomLowPassCutoffParameter = "ParasiteRoomLowPassCutoffHz";
@@ -356,6 +362,10 @@ namespace Hecton8.Audio
         private float _lastParasiteRoomLowPassCutoffHz = -1f;
         private float _lastParasiteOrganicLayerGainDb = float.PositiveInfinity;
         private int _parasiteRoomAcousticCount;
+        private float _worldDroneCrossfadeStartDb = -40f;
+        private float _worldDroneCrossfadeTargetDb = -5f;
+        private float _worldDroneCrossfadeDuration = 2.5f;
+        private bool _worldDroneCrossfadeActive;
         private float _eclipseAcousticPitchShiftCents;
         private float _eclipseAcousticPitchRatio = 1f;
         private float _listenerWaterDensityMul;
@@ -419,6 +429,7 @@ namespace Hecton8.Audio
             _listenerWaterDensityMul = 0f;
             SetParasiteRoomAcousticLoad(0);
             SetEclipseAcousticPitchShiftCents(0f);
+            _worldDroneCrossfadeActive = false;
             ApplyThreatBusDucking(0f, 0f);
             ApplyParasiteRoomAcousticState(0f);
             _radarDecayAccumulator = 0f;
@@ -462,6 +473,34 @@ namespace Hecton8.Audio
             _eclipseAcousticPitchShiftCents = clampedCents;
             _eclipseAcousticPitchRatio = math.pow(2f, clampedCents / 1200f);
             ApplyEclipsePitchShiftToActiveWorldSources();
+        }
+
+        /// <summary>
+        /// Arms the authored ambient world-drone layer for a menu-to-world transition.
+        /// </summary>
+        public void BeginWorldDroneTransition(float startDb, float targetDb, float durationSeconds)
+        {
+            _worldDroneCrossfadeStartDb = math.clamp(startDb, -80f, 20f);
+            _worldDroneCrossfadeTargetDb = math.clamp(targetDb, -80f, 20f);
+            _worldDroneCrossfadeDuration = math.max(0.0001f, durationSeconds);
+            _worldDroneCrossfadeActive = true;
+            PrepareWorldDroneSource();
+            ApplyWorldDroneGainDb(_worldDroneCrossfadeStartDb);
+        }
+
+        /// <summary>
+        /// Locks ambient drone gain to the visual dither dissolve progress.
+        /// </summary>
+        public void SetWorldDroneTransitionProgress(float normalized)
+        {
+            if (!_worldDroneCrossfadeActive)
+                return;
+
+            float clamped = math.saturate(normalized);
+            float eased = clamped * clamped * (3f - (2f * clamped));
+            ApplyWorldDroneGainDb(math.lerp(_worldDroneCrossfadeStartDb, _worldDroneCrossfadeTargetDb, eased));
+            if (clamped >= 1f)
+                _worldDroneCrossfadeActive = false;
         }
 
         /// <summary>
@@ -1512,10 +1551,6 @@ private int AcquireSourceIndex()
                 ? HectonFloatingOrigin.ToAbsoluteUniversePosition(_listenerTransform.position)
                 : implosionEvent.RuntimePosition;
             float distanceMeters = math.length(implosionEvent.RuntimePosition - listenerAbsolutePosition);
-            float soundSpeedMetersPerSecond = ResolveThermalSoundSpeedMetersPerSecond(
-                implosionEvent.RuntimePosition,
-                listenerAbsolutePosition,
-                out float thermalShimmer01);
             ResolveDelayedAcousticPath(
                 implosionEvent.RuntimePosition,
                 listenerAbsolutePosition,
@@ -1526,12 +1561,12 @@ private int AcquireSourceIndex()
                 Kind = DelayedAudioEventKind.FatalPressureImplosion,
                 Position = implosionEvent.RuntimePosition,
                 EventTimeSeconds = Time.time,
-                DelaySeconds = distanceMeters / soundSpeedMetersPerSecond,
+                DelaySeconds = ResolveFixedUnderwaterArrivalDelaySeconds(distanceMeters),
                 Volume = FatalPressureImplosionEventVolume,
                 Pitch = FatalPressureImplosionEventPitch,
                 AcousticTransmission01 = acousticTransmission01,
                 LowPassCutoffHz = lowPassCutoffHz,
-                ThermalShimmer01 = thermalShimmer01,
+                ThermalShimmer01 = 0f,
                 TraumaRangeMeters = FatalPressureImplosionTraumaRangeMeters,
                 TraumaImpulse = FatalPressureImplosionTraumaImpulse,
                 TraumaWeight = FatalPressureImplosionTraumaWeight
@@ -1557,10 +1592,6 @@ private int AcquireSourceIndex()
                 ? HectonFloatingOrigin.ToAbsoluteUniversePosition(_listenerTransform.position)
                 : absolutePosition;
             float distanceMeters = math.length(absolutePosition - listenerAbsolutePosition);
-            float soundSpeedMetersPerSecond = ResolveThermalSoundSpeedMetersPerSecond(
-                absolutePosition,
-                listenerAbsolutePosition,
-                out float thermalShimmer01);
             ResolveDelayedAcousticPath(
                 absolutePosition,
                 listenerAbsolutePosition,
@@ -1571,12 +1602,12 @@ private int AcquireSourceIndex()
                 Kind = DelayedAudioEventKind.InventoryRunawayExplosion,
                 Position = absolutePosition,
                 EventTimeSeconds = Time.time,
-                DelaySeconds = distanceMeters / soundSpeedMetersPerSecond,
+                DelaySeconds = ResolveFixedUnderwaterArrivalDelaySeconds(distanceMeters),
                 Volume = math.saturate(volume01),
                 Pitch = 0.72f,
                 AcousticTransmission01 = acousticTransmission01,
                 LowPassCutoffHz = lowPassCutoffHz,
-                ThermalShimmer01 = thermalShimmer01,
+                ThermalShimmer01 = 0f,
                 TraumaRangeMeters = 0f,
                 TraumaImpulse = 0f,
                 TraumaWeight = 0f
@@ -1700,36 +1731,11 @@ private int AcquireSourceIndex()
             return math.clamp(delayedEvent.Pitch * (1f + shimmer), 0.1f, 3f);
         }
 
-        private static float ResolveThermalSoundSpeedMetersPerSecond(
-            Vector3 sourceAbsolutePosition,
-            Vector3 listenerAbsolutePosition,
-            out float thermalShimmer01)
+        private static float ResolveFixedUnderwaterArrivalDelaySeconds(float distanceMeters)
         {
-            Vector3 samplePosition = (sourceAbsolutePosition + listenerAbsolutePosition) * 0.5f;
-            float temperatureCelsius = 2f;
-            HectonMapMagicVegetationBridge vegetationBridge = HectonMapMagicVegetationBridge.ActiveRuntimeInstance;
-            if (vegetationBridge != null)
-                temperatureCelsius = vegetationBridge.GetWaterTemperature(samplePosition);
-
-            thermalShimmer01 = 0f;
-            IThermodynamicsService thermodynamicsService = GlobalRegistry.ThermodynamicsService;
-            if (thermodynamicsService != null &&
-                thermodynamicsService.IsInitialized &&
-                thermodynamicsService.SampleThermalFlow(
-                    samplePosition,
-                    ThermalSoundSpeedSampleRadiusMeters,
-                    out AbyssalThermalManager.ThermalFlowSample thermalFlowSample))
-            {
-                float heat01 = math.saturate(thermalFlowSample.Heat01 / math.max(ThermalFlowHeatReferenceCelsius, 0.001f));
-                temperatureCelsius += heat01 * ThermalFlowTemperatureBoostCelsius;
-                thermalShimmer01 = heat01;
-            }
-
-            float soundSpeed = 1440f + (4.6f * temperatureCelsius) - (0.05f * temperatureCelsius * temperatureCelsius);
-            return math.clamp(
-                soundSpeed,
-                ThermalSoundSpeedMinimumMetersPerSecond,
-                ThermalSoundSpeedMaximumMetersPerSecond);
+            return distanceMeters >= MassiveDistanceFixedAudioDelayMeters
+                ? MassiveDistanceFixedAudioDelaySeconds
+                : 0f;
         }
 
         private static void ResolveDelayedAcousticPath(
@@ -2432,6 +2438,37 @@ private int AcquireSourceIndex()
 
                 source.pitch = ResolveSourcePitch(sourceIndex, source, _smoothedDopplerRatios[sourceIndex]);
             }
+        }
+
+        private void PrepareWorldDroneSource()
+        {
+            if (_worldDroneSource == null)
+                return;
+
+            if (_worldDroneSource.clip == null && _worldDroneClip != null)
+                _worldDroneSource.clip = _worldDroneClip;
+
+            _worldDroneSource.loop = true;
+            if (_worldDroneSource.outputAudioMixerGroup == null)
+                _worldDroneSource.outputAudioMixerGroup = ResolvedBedBusGroup;
+
+            if (!_worldDroneSource.isPlaying && _worldDroneSource.clip != null)
+                _worldDroneSource.Play();
+        }
+
+        private void ApplyWorldDroneGainDb(float gainDb)
+        {
+            AudioMixer mixer = ResolveThreatDuckingMixer();
+            if (mixer != null && !string.IsNullOrWhiteSpace(_worldDroneVolumeDbParameter))
+                mixer.SetFloat(_worldDroneVolumeDbParameter, gainDb);
+
+            if (_worldDroneSource != null)
+                _worldDroneSource.volume = DbToLinearVolume(gainDb);
+        }
+
+        private static float DbToLinearVolume(float gainDb)
+        {
+            return math.pow(10f, math.clamp(gainDb, -80f, 20f) * 0.05f);
         }
 
         private void ApplyThreatBusDucking(float threatActivity, float deltaTime)

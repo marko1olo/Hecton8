@@ -6,7 +6,7 @@ namespace Hecton8.World
     /// Neutral registry for optional scatter simulation backends that live outside the main runtime assembly.
     /// Prevents a direct compile-time dependency from the owner assembly into DOTS-specific assemblies.
     /// </summary>
-    internal static class ScatterSimulationBackendRegistry
+    public static class ScatterSimulationBackendRegistry
     {
         private static IScatterSimulationBackendProvider _provider;
 
@@ -34,7 +34,7 @@ namespace Hecton8.World
     /// <summary>
     /// Factory provider for optional scatter simulation backends outside the owner assembly.
     /// </summary>
-    internal interface IScatterSimulationBackendProvider
+    public interface IScatterSimulationBackendProvider
     {
         bool TryCreateBackend(ScatterSimulationBackendKind backendKind, out IScatterSimulationBackend backend);
     }

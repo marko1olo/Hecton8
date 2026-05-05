@@ -1028,19 +1028,7 @@ public struct VoxelDensityJob : IJobParallelFor
             entrance.radius * 1.3f,
             math.max(entrance.innerRadius, entrance.radius * 0.85f));
 
-        float mouth = SmoothMinExp(core, flare, caveParams.entranceBlendK * 0.4f);
-        float normalBlend = math.saturate(entrance.terrainNormalBlend);
-        if (normalBlend <= 0f)
-            return mouth;
-
-        float3 terrainNormal = math.normalizesafe(entrance.terrainNormal, new float3(0f, 1f, 0f));
-        return mouth + VoxelSeamDirector.ComputeCaveMouthDensityPerturbation(
-            warpedPos,
-            entrance.surfacePosition,
-            terrainNormal,
-            normalBlend,
-            entrance.radius,
-            voxelStep);
+        return SmoothMinExp(core, flare, caveParams.entranceBlendK * 0.4f);
     }
 
     void EvaluateStructuresSDF(float3 wp, out float smoothStructDist, out float finalStructDist)
@@ -1564,6 +1552,40 @@ struct VoxelColliderChunkClassifyJob : IJobParallelFor
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+[BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+public struct VoxelChunkBoundsContentJob : IJob
+{
+    public int ptsX, ptsY, ptsZ;
+    [ReadOnly] public NativeArray<float> density;
+    public NativeArray<int> hasContent;
+
+    public void Execute()
+    {
+        if (hasContent.Length <= 0 || density.Length <= 0 || ptsX <= 0 || ptsY <= 0 || ptsZ <= 0)
+            return;
+
+        int maxX = ptsX - 1;
+        int maxY = ptsY - 1;
+        int maxZ = ptsZ - 1;
+        bool allCornersVoid =
+            ReadDensity(0, 0, 0) < 0f &&
+            ReadDensity(maxX, 0, 0) < 0f &&
+            ReadDensity(0, maxY, 0) < 0f &&
+            ReadDensity(maxX, maxY, 0) < 0f &&
+            ReadDensity(0, 0, maxZ) < 0f &&
+            ReadDensity(maxX, 0, maxZ) < 0f &&
+            ReadDensity(0, maxY, maxZ) < 0f &&
+            ReadDensity(maxX, maxY, maxZ) < 0f;
+
+        hasContent[0] = allCornersVoid ? 0 : 1;
+    }
+
+    float ReadDensity(int x, int y, int z)
+    {
+        return density[x + y * ptsX + z * ptsX * ptsY];
+    }
+}
+
 //  JOB 2: Marching Cubes exact count pass
 // ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -1916,7 +1938,7 @@ public unsafe struct VoxelWeldJob : IJob
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-//  JOB 3: Normals from density gradient (UNCHANGED from v3.2)
+//  JOB 3: Normals from SDF central-difference gradient
 // ═══════════════════════════════════════════════════════════════════════════════
 [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
 public struct VoxelNormalJob : IJobParallelFor
@@ -1934,12 +1956,12 @@ public struct VoxelNormalJob : IJobParallelFor
     public void Execute(int idx)
     {
         float3 wp = positions[idx];
-        float epsilon = math.max(voxelStep, 0.1f);
+        float epsilon = math.max(voxelStep * 0.5f, 0.05f);
         float3 offsetX = new float3(epsilon, 0f, 0f);
         float3 offsetY = new float3(0f, epsilon, 0f);
         float3 offsetZ = new float3(0f, 0f, epsilon);
 
-        float3 gradient = SampleInterpolatedGridGradient(densityField, wp);
+        float3 gradient = SampleInterpolatedCentralDifferenceGradient(densityField, wp);
         float3 normal = math.normalizesafe(-gradient, new float3(0f, 1f, 0f));
         normals[idx] = normal;
 
@@ -1964,11 +1986,11 @@ public struct VoxelNormalJob : IJobParallelFor
         float outwardDensity = SampleField(smoothDensityField, wp + normal * epsilon);
         float gradientMagnitude = math.length(gradient) / math.max(epsilon * 2f, 0.0001f);
         float solidBackfill = math.saturate(inwardDensity / math.max(epsilon, 0.0001f));
-        float openForward = math.saturate((-outwardDensity) / math.max(epsilon, 0.0001f));
+        float nearSolidForward = math.saturate(outwardDensity / math.max(epsilon, 0.0001f));
         float cavityFold = math.saturate((0.5f - curvature01) * 2f);
         float gradientOcclusion = math.saturate(1f - gradientMagnitude * 0.18f);
-        float baseOcclusion = math.saturate(1f - solidBackfill * 0.42f - cavityFold * 0.26f - openForward * gradientOcclusion * 0.14f);
-        ambientOcclusionValues[idx] = math.saturate(baseOcclusion - ResolveNormalRaymarchOcclusion(wp, normal, epsilon) * 0.58f);
+        float baseOcclusion = math.saturate(1f - solidBackfill * 0.42f - cavityFold * 0.26f - nearSolidForward * gradientOcclusion * 0.14f);
+        ambientOcclusionValues[idx] = math.saturate(baseOcclusion - ResolveNormalRaymarchOcclusion(wp, normal, epsilon) * 0.72f);
     }
 
     float ResolveNormalRaymarchOcclusion(float3 worldPosition, float3 normal, float epsilon)
@@ -1978,15 +2000,17 @@ public struct VoxelNormalJob : IJobParallelFor
         for (int stepIndex = 1; stepIndex <= 3; stepIndex++)
         {
             float3 samplePosition = worldPosition + normal * (sampleStep * stepIndex);
-            float density = SampleField(smoothDensityField, samplePosition);
+            float density = math.max(
+                SampleField(densityField, samplePosition),
+                SampleField(smoothDensityField, samplePosition));
             float earlyWeight = 1f - (stepIndex - 1) * 0.24f;
-            rayOcclusion = math.max(rayOcclusion, math.saturate(-density / math.max(epsilon, 0.0001f)) * earlyWeight);
+            rayOcclusion = math.max(rayOcclusion, math.saturate(density / math.max(epsilon, 0.0001f)) * earlyWeight);
         }
 
         return math.saturate(rayOcclusion);
     }
 
-    float3 SampleInterpolatedGridGradient(NativeArray<float> field, float3 worldPosition)
+    float3 SampleInterpolatedCentralDifferenceGradient(NativeArray<float> field, float3 worldPosition)
     {
         float sampleX = math.clamp((worldPosition.x - volumeOrigin.x) / voxelStep, 0f, ptsX - 1.001f);
         float sampleY = math.clamp((worldPosition.y - volumeOrigin.y) / voxelStep, 0f, ptsY - 1.001f);
@@ -2816,6 +2840,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<float> GridBiome;
         public NativeArray<float> DensityField;
         public NativeArray<float> SmoothDensityField;
+        public NativeArray<int> ChunkContentFlags;
         public NativeArray<int> CellVertexCounts;
         public NativeArray<int> CellVertexOffsets;
         public bool InUse;
@@ -2826,6 +2851,7 @@ public class HectonVoxelEngine : MonoBehaviour
             HectonVoxelEngine.DisposeTrackedNativeArray(ref GridBiome);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref DensityField);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref SmoothDensityField);
+            HectonVoxelEngine.DisposeTrackedNativeArray(ref ChunkContentFlags);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref CellVertexCounts);
             HectonVoxelEngine.DisposeTrackedNativeArray(ref CellVertexOffsets);
             InUse = false;
@@ -2841,6 +2867,7 @@ public class HectonVoxelEngine : MonoBehaviour
         public NativeArray<float> GridBiome;
         public NativeArray<float> DensityField;
         public NativeArray<float> SmoothDensityField;
+        public NativeArray<int> ChunkContentFlags;
         public NativeArray<int> CellVertexCounts;
         public NativeArray<int> CellVertexOffsets;
 
@@ -2853,6 +2880,7 @@ public class HectonVoxelEngine : MonoBehaviour
             NativeArray<float> gridBiome,
             NativeArray<float> densityField,
             NativeArray<float> smoothDensityField,
+            NativeArray<int> chunkContentFlags,
             NativeArray<int> cellVertexCounts,
             NativeArray<int> cellVertexOffsets)
         {
@@ -2862,6 +2890,7 @@ public class HectonVoxelEngine : MonoBehaviour
             GridBiome = gridBiome;
             DensityField = densityField;
             SmoothDensityField = smoothDensityField;
+            ChunkContentFlags = chunkContentFlags;
             CellVertexCounts = cellVertexCounts;
             CellVertexOffsets = cellVertexOffsets;
         }
@@ -4274,6 +4303,7 @@ public class HectonVoxelEngine : MonoBehaviour
         NativeArray<float> gridBiome = data.ScratchLease.GridBiome;
         NativeArray<float> densityField = data.ScratchLease.DensityField;
         NativeArray<float> smoothDensityField = data.ScratchLease.SmoothDensityField;
+        NativeArray<int> chunkContentFlags = data.ScratchLease.ChunkContentFlags;
         NativeArray<int> cellVertexCounts = data.ScratchLease.CellVertexCounts;
         NativeArray<int> cellVertexOffsets = data.ScratchLease.CellVertexOffsets;
 
@@ -4355,6 +4385,26 @@ public class HectonVoxelEngine : MonoBehaviour
             density = densityField,
             smoothDensity = smoothDensityField
         }.Schedule(data.TotalPts, JOB_BATCH);
+
+        chunkContentFlags[0] = 1;
+        JobHandle chunkContentHandle = new VoxelChunkBoundsContentJob
+        {
+            ptsX = data.PtsX,
+            ptsY = data.PtsY,
+            ptsZ = data.PtsZ,
+            density = densityField,
+            hasContent = chunkContentFlags
+        }.Schedule(densityHandle);
+
+        await AwaitForJobCompletionAsync(chunkContentHandle, ct, "density/content bounds phase");
+        ct.ThrowIfCancellationRequested();
+        if (chunkContentFlags[0] == 0)
+        {
+            data.RawCount = 0;
+            return false;
+        }
+
+        densityHandle = chunkContentHandle;
 
         if (data.SourceVolume != null &&
             VoxelDynamicNavGridRuntime.TryPrepareBuild(
@@ -4772,6 +4822,7 @@ public class HectonVoxelEngine : MonoBehaviour
                     slot.GridBiome,
                     slot.DensityField,
                     slot.SmoothDensityField,
+                    slot.ChunkContentFlags,
                     slot.CellVertexCounts,
                     slot.CellVertexOffsets);
                 return true;
@@ -4857,6 +4908,7 @@ public class HectonVoxelEngine : MonoBehaviour
         EnsureNativeArrayCapacity(ref slot.GridBiome, heightCount, nameof(VoxelStreamingScratchSlot.GridBiome));
         EnsureNativeArrayCapacity(ref slot.DensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.DensityField));
         EnsureNativeArrayCapacity(ref slot.SmoothDensityField, totalPointCount, nameof(VoxelStreamingScratchSlot.SmoothDensityField));
+        EnsureNativeArrayCapacity(ref slot.ChunkContentFlags, 1, nameof(VoxelStreamingScratchSlot.ChunkContentFlags), true);
         EnsureNativeArrayCapacity(ref slot.CellVertexCounts, totalCellCount, nameof(VoxelStreamingScratchSlot.CellVertexCounts));
         EnsureNativeArrayCapacity(ref slot.CellVertexOffsets, totalCellCount, nameof(VoxelStreamingScratchSlot.CellVertexOffsets));
     }

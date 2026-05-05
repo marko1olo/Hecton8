@@ -42,6 +42,9 @@ float4 _HectonRingCausticsDirection;       // xy=band direction, z=sun alignment
 float4 _HectonCausticsSimulationParamsA;
 float4 _HectonCausticsSimulationParamsB;
 float4 _HectonCausticsSimulationParamsC;
+float4 _AbyssalFlowWeatherCurrent;
+float4 _HectonPhotophobiaFieldOriginScale;
+float4 _HectonPhotophobiaFieldState;
 float4 _SonarRevealOriginWS;
 float4 _SonarRevealWaveParams;
 float _HectonContactShadowStrength;
@@ -62,10 +65,8 @@ TEXTURE3D(_HectonBiolumVolumeTex);
 SAMPLER(sampler_HectonBiolumVolumeTex);
 TEXTURE2D(_NoirFogLUT);
 SAMPLER(sampler_NoirFogLUT);
-TEXTURE2D(_HectonProjectedCausticsTex);
-SAMPLER(sampler_HectonProjectedCausticsTex);
-TEXTURE2D(_HectonSedimentMaskTex);
-SAMPLER(sampler_HectonSedimentMaskTex);
+TEXTURE2D(_HectonPhotophobiaFieldTex);
+SAMPLER(sampler_HectonPhotophobiaFieldTex);
 float4 _HectonNoirFogLutParams;
 float _HectonNoirFogLutBlend;
 float4 _HectonNoirFogStratification;
@@ -119,18 +120,13 @@ float HectonCoreLitSedimentRippleHeight(float2 uv)
     return layerA * 0.5 + layerB * 0.35 + layerC * 0.15;
 }
 
-float HectonCoreLitSampleSedimentMask(float3 positionWS)
+float HectonCoreLitSampleSedimentMask(float3 normalWS)
 {
     if (_HectonSedimentOverlayParamsA.x <= 0.5)
         return 0.0;
 
-    float2 uv = float2(
-        (positionWS.x - _HectonSedimentWorldRect.x) * _HectonSedimentWorldRect.z,
-        (positionWS.z - _HectonSedimentWorldRect.y) * _HectonSedimentWorldRect.w);
-    if (any(uv < 0.0) || any(uv > 1.0))
-        return 0.0;
-
-    return SAMPLE_TEXTURE2D_LOD(_HectonSedimentMaskTex, sampler_HectonSedimentMaskTex, uv, 0).r * _HectonSedimentOverlayParamsB.w;
+    float upFacing = saturate((normalWS.y - _HectonSedimentOverlayParamsA.y) * _HectonSedimentOverlayParamsA.z);
+    return saturate(dot(HectonCoreLitSafeNormalize(normalWS), float3(0.0, 1.0, 0.0)) * upFacing * _HectonSedimentOverlayParamsB.w);
 }
 
 void HectonCoreLitApplySedimentOverlay(
@@ -140,9 +136,7 @@ void HectonCoreLitApplySedimentOverlay(
     inout half metallic,
     inout half smoothness)
 {
-    float sedimentMask = HectonCoreLitSampleSedimentMask(positionWS);
-    float upFacing = saturate((normalWS.y - _HectonSedimentOverlayParamsA.y) * _HectonSedimentOverlayParamsA.z);
-    float strength = saturate(sedimentMask * upFacing);
+    float strength = HectonCoreLitSampleSedimentMask(normalWS);
     if (strength <= 0.0001)
         return;
 
@@ -253,42 +247,12 @@ float HectonCoreLitEvaluateParasiteField(float3 positionWS, out float pulseMulti
     return saturate(bestMask);
 }
 
-float HectonCoreLitVoronoiRidge(float2 uv, float cellDensity, float timePhase)
+float HectonCoreLitCheapCausticRidge(float2 uv, float cellDensity, float timePhase)
 {
-    float2 domain = uv * cellDensity;
-    float2 baseCell = floor(domain);
-    float2 fracCell = frac(domain);
-    float nearest = 9999.0;
-    float secondNearest = 9999.0;
-
-    [unroll]
-    for (int y = -1; y <= 1; y++)
-    {
-        [unroll]
-        for (int x = -1; x <= 1; x++)
-        {
-            float2 offset = float2(x, y);
-            float2 cell = baseCell + offset;
-            float2 jitter = HectonCoreLitHash22(cell);
-            float2 animatedPoint = offset + jitter - fracCell;
-            animatedPoint += float2(
-                sin((jitter.x + timePhase) * 6.2831853),
-                cos((jitter.y + timePhase * 1.37) * 6.2831853)) * 0.12;
-
-            float distanceSq = dot(animatedPoint, animatedPoint);
-            if (distanceSq < nearest)
-            {
-                secondNearest = nearest;
-                nearest = distanceSq;
-            }
-            else if (distanceSq < secondNearest)
-            {
-                secondNearest = distanceSq;
-            }
-        }
-    }
-
-    return saturate(sqrt(secondNearest) - sqrt(nearest));
+    float2 animatedUv = uv * cellDensity + float2(timePhase, -timePhase * 0.73);
+    float broad = HectonCoreLitValueNoise2(animatedUv);
+    float tight = HectonCoreLitValueNoise2(animatedUv * 2.13 + 19.17);
+    return saturate(abs(broad - tight) * 2.8);
 }
 
 float HectonCoreLitEvaluateProceduralCaustics(float2 uv)
@@ -305,15 +269,16 @@ float HectonCoreLitEvaluateProceduralCaustics(float2 uv)
     float wavePhase = _HectonCausticsSimulationParamsC.w;
     float waveDisplacementAbs = abs(waveDisplacement);
     float2 waveOffset = waveFlow * 0.0125 + float2(waveDisplacement * 0.018, -waveDisplacement * 0.013);
-    float2 animatedUv = uv + waveOffset;
+    float2 currentOffset = clamp(_AbyssalFlowWeatherCurrent.xz, -20.0, 20.0) * (timeValue * 0.0025);
+    float2 animatedUv = uv + waveOffset + currentOffset;
 
     primaryDensity *= lerp(0.94, 1.08, saturate(waveDisplacementAbs * 0.2));
     secondaryDensity *= lerp(0.92, 1.12, saturate(length(waveFlow) * 0.08));
 
     float primaryTime = timeValue * primarySpeed + wavePhase;
     float secondaryTime = timeValue * secondarySpeed + wavePhase * 1.37 + 17.0;
-    float primaryLayer = HectonCoreLitVoronoiRidge(animatedUv + float2(primaryTime, -primaryTime * 0.61), primaryDensity, primaryTime);
-    float secondaryLayer = HectonCoreLitVoronoiRidge(animatedUv + float2(-secondaryTime * 0.73, secondaryTime), secondaryDensity, secondaryTime);
+    float primaryLayer = HectonCoreLitCheapCausticRidge(animatedUv, primaryDensity, primaryTime);
+    float secondaryLayer = HectonCoreLitCheapCausticRidge(animatedUv + 0.37, secondaryDensity, secondaryTime);
     float combined = lerp(primaryLayer, max(primaryLayer, secondaryLayer), secondaryWeight);
     combined = pow(saturate(combined * 2.3), sharpness);
     combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035));
@@ -327,8 +292,25 @@ float HectonCoreLitResolveFlashlightShadowFloor()
 
 half HectonCoreLitResolveFlashlightPhotophobia(float3 positionWS)
 {
+    half fieldPhotophobia = 1.0h;
+    if (_HectonPhotophobiaFieldState.x > 0.5 && _HectonPhotophobiaFieldOriginScale.w > 0.000001)
+    {
+        float2 fieldUv = (positionWS.xz - _HectonPhotophobiaFieldOriginScale.xz) *
+            _HectonPhotophobiaFieldOriginScale.w + 0.5;
+        float insideField =
+            step(0.0, fieldUv.x) *
+            step(0.0, fieldUv.y) *
+            step(fieldUv.x, 1.0) *
+            step(fieldUv.y, 1.0);
+        float fieldValue = SAMPLE_TEXTURE2D(
+            _HectonPhotophobiaFieldTex,
+            sampler_HectonPhotophobiaFieldTex,
+            saturate(fieldUv)).r;
+        fieldPhotophobia = (half)lerp(1.0, saturate(fieldValue), insideField);
+    }
+
     if (_HectonFlashlightActive <= 0.5)
-        return 1.0h;
+        return fieldPhotophobia;
 
     float3 lightPositionWS = _HectonFlashlightPositionWS.xyz;
     float lightRange = max(_HectonFlashlightPositionWS.w, 0.1);
@@ -347,7 +329,7 @@ half HectonCoreLitResolveFlashlightPhotophobia(float3 positionWS)
     rangeMask *= rangeMask;
     float lightEnergy = saturate(_HectonFlashlightColor.w * 0.12);
     float photophobia = coneMask * rangeMask * lightEnergy;
-    return (half)lerp(1.0, 0.0, saturate(photophobia));
+    return (half)(lerp(1.0, 0.0, saturate(photophobia)) * fieldPhotophobia);
 }
 
 bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon);
@@ -384,21 +366,7 @@ float HectonCoreLitEvaluateEclipseWaterShadow(float3 positionWS)
 
 float HectonCoreLitEvaluateRingCausticShadow(float3 positionWS)
 {
-    float strength = saturate(_HectonRingCausticsParams.x * _HectonRingCausticsDirection.z);
-    if (strength <= 0.0001)
-        return 1.0;
-
-    float2 direction = _HectonRingCausticsDirection.xy;
-    float lenSq = dot(direction, direction);
-    direction = lenSq > 0.0001 ? direction * rsqrt(lenSq) : float2(1.0, 0.0);
-
-    float stripeScale = max(_HectonRingCausticsParams.y, 0.0001);
-    float phase = _HectonRingCausticsParams.z;
-    float softness = max(_HectonRingCausticsParams.w, 0.001);
-    float stripePhase = dot(positionWS.xz, direction) * stripeScale + phase;
-    float stripeWave = abs(sin(stripePhase * 6.2831853));
-    float darkBand = 1.0 - smoothstep(softness, softness + 0.18, stripeWave);
-    return saturate(1.0 - darkBand * strength);
+    return 1.0;
 }
 
 float HectonCoreLitEvaluateCelestialWaterShadow(float3 positionWS)
@@ -428,7 +396,7 @@ float HectonCoreLitEvaluateProjectedCausticsMask(float3 positionWS, float3 norma
 
     float upFacing = saturate(normalWS.y * 1.25);
     float directionalWeight = HectonCoreLitEvaluateDirectionalCausticsWeight(normalWS);
-    float caustics = SAMPLE_TEXTURE2D_LOD(_HectonProjectedCausticsTex, sampler_HectonProjectedCausticsTex, uv, 0).r;
+    float caustics = HectonCoreLitEvaluateProceduralCaustics(uv);
     float shadowTerm = HectonCoreLitEvaluateCaveAmbientFactor(positionWS, normalWS);
     float celestialShadow = HectonCoreLitEvaluateCelestialWaterShadow(positionWS);
     return caustics * depthFade * upFacing * directionalWeight * shadowTerm * celestialShadow * _HectonProjectedCausticsParams.x;
@@ -446,15 +414,14 @@ half HectonCoreLitEvaluateNoirFog(half fogRaw)
     return pow(saturate(fogRaw), 2.2h);
 }
 
-float3 HectonCoreLitSampleNoirFogLutRow(float rowIndex, float sample01)
+float3 HectonCoreLitSampleNoirFogLut(float sample01)
 {
     if (_HectonNoirFogLutParams.w <= 0.5)
         return 0.0;
 
-    float rowCount = max(_HectonNoirFogLutParams.y, 1.0);
     float2 uv = float2(
         saturate(sample01),
-        (rowIndex + 0.5) / rowCount);
+        0.5);
     return SAMPLE_TEXTURE2D_LOD(_NoirFogLUT, sampler_NoirFogLUT, uv, 0).rgb;
 }
 
@@ -474,18 +441,10 @@ half3 HectonCoreLitApplyNoirFog(half3 color, half fogRaw, float3 positionWS)
     half fogFactor = HectonCoreLitEvaluateNoirFog(fogRaw);
     float densityMultiplier = HectonCoreLitEvaluateThermoclineFogMultiplier(positionWS);
     float lutSample = saturate(fogFactor * densityMultiplier);
-    float lutBlend = saturate(_HectonNoirFogLutBlend);
 
-    float3 sourceFog = HectonCoreLitSampleNoirFogLutRow(0.0, lutSample);
-    float3 sourceAbsorption = HectonCoreLitSampleNoirFogLutRow(1.0, lutSample);
-    float3 sourceAmbient = HectonCoreLitSampleNoirFogLutRow(2.0, lutSample);
-    float3 targetFog = HectonCoreLitSampleNoirFogLutRow(3.0, lutSample);
-    float3 targetAbsorption = HectonCoreLitSampleNoirFogLutRow(4.0, lutSample);
-    float3 targetAmbient = HectonCoreLitSampleNoirFogLutRow(5.0, lutSample);
-
-    float3 fogColor = lerp(sourceFog, targetFog, lutBlend);
-    float3 absorption = max(lerp(sourceAbsorption, targetAbsorption, lutBlend), float3(0.0, 0.0, 0.0));
-    float3 ambientTint = lerp(sourceAmbient, targetAmbient, lutBlend);
+    float3 fogColor = HectonCoreLitSampleNoirFogLut(lutSample);
+    float3 absorption = max(fogColor * float3(0.72, 0.52, 0.36), float3(0.0, 0.0, 0.0));
+    float3 ambientTint = fogColor * 0.42;
     float3 attenuatedColor = color * exp(-absorption * lutSample);
     float3 fogTarget = fogColor + ambientTint * 0.35 + _FinalGiantAbyssLight.rgb * (0.18 * saturate(lutSample));
     return (half3)lerp(attenuatedColor, fogTarget, saturate(lutSample));

@@ -11,6 +11,7 @@ namespace Hecton8.World
         [ReadOnly] public NativeArray<float> Heights01;
         [ReadOnly] public NativeArray<float> Sediment01;
         [WriteOnly] public NativeArray<float4> Weights;
+        [WriteOnly] public NativeArray<float> SlopeWeights01;
 
         public int Width;
         public int Height;
@@ -50,6 +51,7 @@ namespace Hecton8.World
                 RockSlopeThresholdDegrees - halfBlend,
                 RockSlopeThresholdDegrees + halfBlend,
                 slopeDegrees);
+            float slopeWeight = math.smoothstep(15f, math.max(15.001f, RockSlopeThresholdDegrees), slopeDegrees);
 
             float neighborAverage = (west + east + south + north) * 0.25f;
             float cavity = math.saturate((neighborAverage - center) * safeHeightScale * math.max(0f, CavityStrength));
@@ -59,6 +61,9 @@ namespace Hecton8.World
 
             float total = math.max(0.0001f, sand + rock + silt);
             Weights[index] = new float4(sand / total, rock / total, silt / total, cavity);
+
+            if (SlopeWeights01.IsCreated && (uint)index < (uint)SlopeWeights01.Length)
+                SlopeWeights01[index] = slopeWeight;
         }
 
         private float ReadHeight(int x, int z, int width)

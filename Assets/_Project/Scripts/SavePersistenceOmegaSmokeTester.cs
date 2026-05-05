@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using Hecton8.Core;
 using Hecton8.SaveSystem;
+using Hecton8.World;
 using Unity.Collections;
 using Unity.Jobs;
 using Unity.Mathematics;
@@ -34,13 +35,6 @@ namespace Hecton8.Dev
 
         private static bool RunSmokeAndWriteArtifact()
         {
-            bool predictiveProjectionPass = TryRunPredictiveProjectionCase(out PredictiveIndexedPagingProjection projection);
-            bool nanRejectionPass = !SavePredictivePagingMath.TryComputeIndexedSectorProjection(
-                new Vector3(float.NaN, 0f, 0f),
-                new Vector3(2f, 0f, 0f),
-                20f,
-                SaveBinaryStorage.DefaultIndexedPersistentWorldChunkSizeMeters,
-                out _);
             bool subtractionBoundsValidPass = SaveIndexedSectorBoundsMath.IsIndexedSectorBlockWithinFileBounds(
                 128L,
                 32,
@@ -51,31 +45,27 @@ namespace Hecton8.Dev
                 16,
                 64L,
                 long.MaxValue);
-            bool modSectorPrefixPass = HasModPayloadPrefix(SaveBinaryStorage.ComputeModPayloadSectorHash(0xC0DEC0DEu, projection.ProjectedSectorHash));
+            bool modSectorPrefixPass = HasModPayloadPrefix(SaveBinaryStorage.ComputeModPayloadSectorHash(0xC0DEC0DEu, 12345L));
             bool burstSubtractionBoundsStressPass = TryRunBurstSubtractionBoundsStress();
             bool nativeSentinelSourceAuditPass = TryRunNativeSentinelSourceAudit();
             bool runtimeBarrierSourceAuditPass = TryRunRuntimeBarrierSourceAudit();
             bool staticResidueSourceAuditPass = TryRunStaticResidueSourceAudit();
-            bool predictivePrewarmTelemetryAuditPass = TryRunPredictivePrewarmTelemetrySourceAudit();
+            bool purgeSourceAuditPass = TryRunPurgeSourceAudit();
             bool hotPathStringSourceAuditPass = TryRunHotPathStringSourceAudit();
             bool indexedBoundsDecompositionAuditPass = TryRunIndexedBoundsDecompositionAudit();
-            bool pass = predictiveProjectionPass &&
-                        nanRejectionPass &&
-                        subtractionBoundsValidPass &&
+            bool pass = subtractionBoundsValidPass &&
                         subtractionBoundsOverflowPass &&
                         modSectorPrefixPass &&
                         burstSubtractionBoundsStressPass &&
                         nativeSentinelSourceAuditPass &&
                         runtimeBarrierSourceAuditPass &&
                         staticResidueSourceAuditPass &&
-                        predictivePrewarmTelemetryAuditPass &&
+                        purgeSourceAuditPass &&
                         hotPathStringSourceAuditPass &&
                         indexedBoundsDecompositionAuditPass;
 
             WriteArtifact(
                 pass,
-                predictiveProjectionPass,
-                nanRejectionPass,
                 subtractionBoundsValidPass,
                 subtractionBoundsOverflowPass,
                 modSectorPrefixPass,
@@ -83,10 +73,9 @@ namespace Hecton8.Dev
                 nativeSentinelSourceAuditPass,
                 runtimeBarrierSourceAuditPass,
                 staticResidueSourceAuditPass,
-                predictivePrewarmTelemetryAuditPass,
+                purgeSourceAuditPass,
                 hotPathStringSourceAuditPass,
-                indexedBoundsDecompositionAuditPass,
-                in projection);
+                indexedBoundsDecompositionAuditPass);
 
             if (pass)
                 Debug.Log("[SavePersistenceOmegaSmokeTester] PASS artifact=CodexArtifacts/save-persistence-omega-smoke.json");
@@ -94,22 +83,6 @@ namespace Hecton8.Dev
                 Debug.LogError("[SavePersistenceOmegaSmokeTester] FAIL artifact=CodexArtifacts/save-persistence-omega-smoke.json");
 
             return pass;
-        }
-
-        private static bool TryRunPredictiveProjectionCase(out PredictiveIndexedPagingProjection projection)
-        {
-            if (!SavePredictivePagingMath.TryComputeIndexedSectorProjection(
-                    new Vector3(990f, -25f, 0f),
-                    new Vector3(2f, 0f, 0f),
-                    20f,
-                    SaveBinaryStorage.DefaultIndexedPersistentWorldChunkSizeMeters,
-                    out projection))
-            {
-                return false;
-            }
-
-            return projection.CurrentSectorHash != projection.ProjectedSectorHash &&
-                   !math.all(projection.CurrentChunkId == projection.ProjectedChunkId);
         }
 
         private static bool TryRunBurstSubtractionBoundsStress()
@@ -185,10 +158,13 @@ namespace Hecton8.Dev
                        "NativeAllocationLifetime.TransientArena") &&
                    ContainsAll(
                        saveBinaryStorage,
-                       "EntityStateWriteDictionaryScratchLabel",
                        "RegisterNativeMemorySentinel();",
                        "UnregisterNativeMemorySentinel();",
                        "NativeAllocationLifetime.TempJob") &&
+                   ContainsNone(
+                       saveBinaryStorage,
+                       "EntityStateWrite" + "Dictionary" + "ScratchLabel",
+                       "Dictionary" + "Scratch") &&
                    ContainsAll(
                        persistentRegistry,
                        "IndexedSectorPagingDesiredHashesLabel",
@@ -209,8 +185,6 @@ namespace Hecton8.Dev
             return ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveManager.cs"), ".Complete(", ".Run(") &&
                    ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs"), ".Complete(", ".Run(") &&
                    ContainsNone(ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs"), ".Complete(", ".Run(") &&
-                   ContainsNone(ReadProjectFile("Assets/_Project/Scripts/PredictivePagingSmokeTester.cs"), ".Complete(", ".Run(") &&
-                   ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SavePredictivePagingMath.cs"), ".Complete(", ".Run(") &&
                    ContainsNone(ReadProjectFile("Assets/_Project/Scripts/SaveIndexedSectorBoundsMath.cs"), ".Complete(", ".Run(");
         }
 
@@ -227,17 +201,23 @@ namespace Hecton8.Dev
                    ContainsAll(globalRegistry, "WorldSeedProvider", "RegisterWorldSeedProvider", "UnregisterWorldSeedProvider");
         }
 
-        private static bool TryRunPredictivePrewarmTelemetrySourceAudit()
+        private static bool TryRunPurgeSourceAudit()
         {
             string saveManager = ReadProjectFile("Assets/_Project/Scripts/SaveManager.cs");
+            string saveBinaryStorage = ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs");
 
-            return ContainsAll(
+            return ContainsNone(
                 saveManager,
-                "_predictiveIndexedSectorPrewarmFailedWarningHash",
-                "_predictiveIndexedSectorPrewarmBackupWarningHash",
-                "_predictiveIndexedSectorPrewarmExceptionWarningHash",
-                "PublishPredictiveIndexedSectorPrewarmWarning(",
-                "GlobalTelemetryBus.PublishPerformanceWarning");
+                "TrySchedule" + "Predictive" + "IndexedSectorPrewarm",
+                "Run" + "Predictive" + "IndexedSectorPrewarmAsync",
+                "RunIndexedSaveDefragAsync",
+                "WaitForIndexedSaveMaintenanceIdleAsync") &&
+                   ContainsNone(
+                       saveBinaryStorage,
+                       "TryDefragment" + "IndexedPersistentWorldSectors",
+                       "TryPrewarm" + "IndexedPersistentWorldSector",
+                       "LZ4" + "CompressHigh",
+                       "ComputeIndexed" + "SectorChecksum(");
         }
 
         private static bool TryRunHotPathStringSourceAudit()
@@ -246,7 +226,6 @@ namespace Hecton8.Dev
             string persistentRegistry = ReadProjectFile("Assets/_Project/Scripts/World/PersistentWorldRegistry.cs");
 
             return MethodBodyContainsNone(saveManager, "public void Tick(float deltaTime)", "$\"", ".ToString(", "string.Format", "Debug.Log") &&
-                   MethodBodyContainsNone(saveManager, "private void TrySchedulePredictiveIndexedSectorPrewarm()", "$\"", ".ToString(", "string.Format", "Debug.Log") &&
                    MethodBodyContainsNone(persistentRegistry, "public void Tick(float dt)", "$\"", ".ToString(", "string.Format", "Debug.Log") &&
                    MethodBodyContainsNone(persistentRegistry, "public void LateFrameTick()", "$\"", ".ToString(", "string.Format", "Debug.Log") &&
                    MethodBodyContainsNone(persistentRegistry, "public void SlowTick()", "$\"", ".ToString(", "string.Format", "Debug.Log");
@@ -255,7 +234,6 @@ namespace Hecton8.Dev
         private static bool TryRunIndexedBoundsDecompositionAudit()
         {
             string boundsMath = ReadProjectFile("Assets/_Project/Scripts/SaveIndexedSectorBoundsMath.cs");
-            string predictiveMath = ReadProjectFile("Assets/_Project/Scripts/SavePredictivePagingMath.cs");
             string saveBinaryStorage = ReadProjectFile("Assets/_Project/Scripts/SaveBinaryStorage.cs");
 
             return ContainsAll(
@@ -264,9 +242,6 @@ namespace Hecton8.Dev
                        "byteOffset <= fileLength - compressedSize",
                        "[BurstCompile]",
                        "ValidateIndexedSectorBoundsProbeJob") &&
-                   ContainsAll(
-                       predictiveMath,
-                       "SaveIndexedSectorBoundsMath.IsIndexedSectorBlockWithinFileBounds") &&
                    ContainsAll(
                        saveBinaryStorage,
                        "SaveIndexedSectorBoundsMath.IsIndexedSectorBlockWithinFileBounds");
@@ -281,8 +256,6 @@ namespace Hecton8.Dev
 
         private static void WriteArtifact(
             bool pass,
-            bool predictiveProjectionPass,
-            bool nanRejectionPass,
             bool subtractionBoundsValidPass,
             bool subtractionBoundsOverflowPass,
             bool modSectorPrefixPass,
@@ -290,10 +263,9 @@ namespace Hecton8.Dev
             bool nativeSentinelSourceAuditPass,
             bool runtimeBarrierSourceAuditPass,
             bool staticResidueSourceAuditPass,
-            bool predictivePrewarmTelemetryAuditPass,
+            bool purgeSourceAuditPass,
             bool hotPathStringSourceAuditPass,
-            bool indexedBoundsDecompositionAuditPass,
-            in PredictiveIndexedPagingProjection projection)
+            bool indexedBoundsDecompositionAuditPass)
         {
             string projectRoot = Directory.GetCurrentDirectory();
             string absolutePath = Path.Combine(projectRoot, ArtifactRelativePath);
@@ -306,8 +278,6 @@ namespace Hecton8.Dev
             AppendJsonField(builder, "tester", "SavePersistenceOmegaSmokeTester", trailingComma: true);
             AppendJsonField(builder, "utc", DateTime.UtcNow.ToString("O"), trailingComma: true);
             AppendJsonField(builder, "pass", pass, trailingComma: true);
-            AppendJsonField(builder, "predictiveProjectionPass", predictiveProjectionPass, trailingComma: true);
-            AppendJsonField(builder, "nanRejectionPass", nanRejectionPass, trailingComma: true);
             AppendJsonField(builder, "subtractionBoundsValidPass", subtractionBoundsValidPass, trailingComma: true);
             AppendJsonField(builder, "subtractionBoundsOverflowPass", subtractionBoundsOverflowPass, trailingComma: true);
             AppendJsonField(builder, "modSectorPrefixPass", modSectorPrefixPass, trailingComma: true);
@@ -315,14 +285,10 @@ namespace Hecton8.Dev
             AppendJsonField(builder, "nativeSentinelSourceAuditPass", nativeSentinelSourceAuditPass, trailingComma: true);
             AppendJsonField(builder, "runtimeBarrierSourceAuditPass", runtimeBarrierSourceAuditPass, trailingComma: true);
             AppendJsonField(builder, "staticResidueSourceAuditPass", staticResidueSourceAuditPass, trailingComma: true);
-            AppendJsonField(builder, "predictivePrewarmTelemetryAuditPass", predictivePrewarmTelemetryAuditPass, trailingComma: true);
+            AppendJsonField(builder, "purgeSourceAuditPass", purgeSourceAuditPass, trailingComma: true);
             AppendJsonField(builder, "hotPathStringSourceAuditPass", hotPathStringSourceAuditPass, trailingComma: true);
             AppendJsonField(builder, "indexedBoundsDecompositionAuditPass", indexedBoundsDecompositionAuditPass, trailingComma: true);
-            AppendJsonField(builder, "burstBoundsProbeCount", 8, trailingComma: true);
-            AppendJsonField(builder, "currentSectorHash", projection.CurrentSectorHash, trailingComma: true);
-            AppendJsonField(builder, "projectedSectorHash", projection.ProjectedSectorHash, trailingComma: true);
-            AppendJsonVector(builder, "currentChunkId", projection.CurrentChunkId, trailingComma: true);
-            AppendJsonVector(builder, "projectedChunkId", projection.ProjectedChunkId, trailingComma: false);
+            AppendJsonField(builder, "burstBoundsProbeCount", 8, trailingComma: false);
             builder.Append('}');
             File.WriteAllText(absolutePath, builder.ToString());
         }

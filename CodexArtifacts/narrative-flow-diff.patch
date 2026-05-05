@@ -1,115 +1,293 @@
-﻿diff --git a/Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs b/Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
-index 6064d7d7..c2bb1a1d 100644
+﻿diff --git a/Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs b/Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs
+index 3e7fe34e..2523d219 100644
+--- a/Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs
++++ b/Assets/_Project/Scripts/AtlasSignal/AtlasSignalSystem.cs
+@@ -113,6 +113,10 @@ namespace Hecton8.AtlasSignal
+         private const int FullDecodeRevealStage = 4;
+         private const string SignalIdentityDiscoveryId = "atlas6_signal_identified";
+         private const string SignalFullyDecodedDiscoveryId = "atlas6_signal_fully_decoded";
++        private const string SignalFirstDetectedLog = "[AtlasSignal] Signal first detected.";
++        private const string SignalPulseLog = "[AtlasSignal] Pulse emitted.";
++        private const string SignalDecodedLog = "[AtlasSignal] Signal decoded.";
++        private const string RevealStageUnlockedLog = "[AtlasSignal] Reveal stage unlocked.";
+         private static readonly uint _AudioLogRuntimeMissingWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.AudioLogRuntimeMissing"));
+         private static readonly uint _EncryptedLogFallbackWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.EncryptedLogFallback"));
+         private static readonly uint _DuplicateRuntimeWarningHash = unchecked((uint)LocHash.Compute("AtlasSignal.DuplicateRuntime"));
+@@ -224,7 +228,7 @@ namespace Hecton8.AtlasSignal
+                 {
+                     _signalEverDetected = true;
+                     AtlasSignalEvents.RaiseDetected(atlasCorePosWorld);
+-                    LogSignalFirstDetected(newStrength);
++                    LogSignalFirstDetected();
+                 }
+
+                 // Шейдер
+@@ -248,8 +252,7 @@ namespace Hecton8.AtlasSignal
+             float pulseIntensity = _currentStrength;
+             AtlasSignalEvents.RaisePulse(pulseIntensity);
+
+-            LogSignalPulse(pulseIntensity,
+-                SignalStrengthSystem.CalculateDistanceMeters(_playerTransform.position, atlasCorePosWorld));
++            LogSignalPulse();
+         }
+
+         // ══════════════════════════════════════════════════════════
+@@ -270,7 +273,7 @@ namespace Hecton8.AtlasSignal
+                 TryEnsureFullDecodeDiscoveryPublished();
+             }
+
+-            LogSignalDecoded(messageId);
++            LogSignalDecoded();
+         }
+
+         // ══════════════════════════════════════════════════════════
+@@ -446,7 +449,7 @@ namespace Hecton8.AtlasSignal
+                     break;
+             }
+
+-            LogRevealStageUnlocked(revealStage, manifestedStrength);
++            LogRevealStageUnlocked();
+         }
+
+         private void TryEnsureIdentityDiscoveryPublished()
+@@ -525,31 +528,31 @@ namespace Hecton8.AtlasSignal
+         }
+
+         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+-        private static void LogSignalFirstDetected(float strength)
++        private static void LogSignalFirstDetected()
+         {
+-            Debug.Log($"[AtlasSignal] Signal first detected. Strength: {strength:F2}");
++            Debug.Log(SignalFirstDetectedLog);
+         }
+
+         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+-        private static void LogSignalPulse(float pulseIntensity, float distanceToCore)
++        private static void LogSignalPulse()
+         {
+             if (Time.time < _nextSignalLogTime)
+                 return;
+
+             _nextSignalLogTime = Time.time + 5f;
+-            Debug.Log($"[AtlasSignal] Pulse intensity: {pulseIntensity:F2} (dist to core: {distanceToCore:F0}m)");
++            Debug.Log(SignalPulseLog);
+         }
+
+         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+-        private static void LogSignalDecoded(string messageId)
++        private static void LogSignalDecoded()
+         {
+-            Debug.Log($"[AtlasSignal] Signal decoded: {messageId}");
++            Debug.Log(SignalDecodedLog);
+         }
+
+         [Conditional("UNITY_EDITOR"), Conditional("DEVELOPMENT_BUILD")]
+-        private static void LogRevealStageUnlocked(int revealStage, float manifestedStrength)
++        private static void LogRevealStageUnlocked()
+         {
+-            Debug.Log($"[AtlasSignal] Reveal stage {revealStage} unlocked. Manifested strength: {manifestedStrength:F2}");
++            Debug.Log(RevealStageUnlockedLog);
+         }
+
+         private static string ResolveLocalized(string key, string fallback)
+diff --git a/Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs b/Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
+index c2bb1a1d..8ee17be0 100644
 --- a/Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
 +++ b/Assets/_Project/Scripts/World/SargassumMicroFaunaBoids.cs
-@@ -30,6 +30,7 @@ namespace Hecton8.World
-         private const float FullSimulationDistanceMeters = 50f;
-         private const float SleepSimulationDistanceMeters = 200f;
-         private const float MinimumPopulationBudgetScale = 0.35f;
-+        private const string NativeMemoryOwner = nameof(SargassumMicroFaunaBoids);
- #if UNITY_EDITOR
-         private const int MaxEditorValidateDepth = 4;
+@@ -36,7 +36,7 @@ namespace Hecton8.World
          private static int _editorValidateDepth;
-@@ -1862,14 +1863,14 @@ namespace Hecton8.World
-             EnsureBuffer(ref _spatialGridCountBuffer, SpatialGridMaxCellCount, SpatialGridCountStride);
-             EnsureBuffer(ref _spatialGridCellBuffer, SpatialGridMaxCellCount * SpatialGridMaxBoidsPerCell, SpatialGridCellEntryStride);
-             EnsureBuffer(ref _simulationFrameBuffer, 1, SimulationFrameConstantsStride);
--            EnsureNativeArrayCapacity(ref _staticObstacleCache, Mathf.Max(formationObstacleCapacity * 8, formationObstacleCapacity));
--            EnsureNativeArrayCapacity(ref _leviathanNodeFrontNative, leviathanNodeCapacity);
--            EnsureNativeArrayCapacity(ref _leviathanNodeBackNative, leviathanNodeCapacity);
--            EnsureNativeArrayCapacity(ref _leviathanNodeCountNative, 1);
--            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1);
--            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1);
--            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1);
--            EnsureNativeArrayCapacity(ref _simulationFrameNative, 1);
-+            EnsureNativeArrayCapacity(ref _staticObstacleCache, Mathf.Max(formationObstacleCapacity * 8, formationObstacleCapacity), nameof(_staticObstacleCache));
-+            EnsureNativeArrayCapacity(ref _leviathanNodeFrontNative, leviathanNodeCapacity, nameof(_leviathanNodeFrontNative));
-+            EnsureNativeArrayCapacity(ref _leviathanNodeBackNative, leviathanNodeCapacity, nameof(_leviathanNodeBackNative));
-+            EnsureNativeArrayCapacity(ref _leviathanNodeCountNative, 1, nameof(_leviathanNodeCountNative));
-+            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1, nameof(_foveatedSimulationInputNative));
-+            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1, nameof(_foveatedSimulationFrontNative));
-+            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1, nameof(_foveatedSimulationBackNative));
-+            EnsureNativeArrayCapacity(ref _simulationFrameNative, 1, nameof(_simulationFrameNative));
- 
-             if (!ValidateGpuStructLayouts())
-                 return;
-@@ -2043,7 +2044,7 @@ namespace Hecton8.World
- 
-             int cellCount = (int)cellCountLong;
-             EnsureBuffer(ref _threatVoxelBuffer, cellCount, ThreatVoxelStride);
--            EnsureNativeArrayCapacity(ref _threatVoxelUploadNative, cellCount);
-+            EnsureNativeArrayCapacity(ref _threatVoxelUploadNative, cellCount, nameof(_threatVoxelUploadNative));
- 
-             // Expand the byte-compressed voxel payload into uint lanes to match the structured buffer contract.
-             for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
-@@ -2087,7 +2088,7 @@ namespace Hecton8.World
- 
-             int cellCount = (int)cellCountLong;
-             EnsureBuffer(ref _threatGridBuffer, cellCount, ThreatGridStride);
--            EnsureNativeArrayCapacity(ref _threatGridUploadNative, cellCount);
-+            EnsureNativeArrayCapacity(ref _threatGridUploadNative, cellCount, nameof(_threatGridUploadNative));
- 
-             for (int cellIndex = 0; cellIndex < cellCount; cellIndex++)
-                 _threatGridUploadNative[cellIndex] = threatGrid[cellIndex];
-@@ -2474,7 +2475,7 @@ namespace Hecton8.World
-             if (_leviathanNodeBuildScheduled)
-                 return;
- 
--            EnsureNativeArrayCapacity(ref _leviathanPathScratchNative, safePathCount);
-+            EnsureNativeArrayCapacity(ref _leviathanPathScratchNative, safePathCount, nameof(_leviathanPathScratchNative));
-             for (int i = 0; i < safePathCount; i++)
-                 _leviathanPathScratchNative[i] = path[i];
- 
-@@ -4224,9 +4225,9 @@ namespace Hecton8.World
- 
-         private void PrimeFoveatedSimulationDecision(float frameDeltaTime, float cameraDistanceSq)
+ #endif
+
+-        internal static SargassumMicroFaunaBoids ActiveRuntimeInstance { get; private set; }
++        internal static SargassumMicroFaunaBoids ActiveRuntimeInstance => GlobalRegistry.SargassumMicroFauna;
+
+         [StructLayout(LayoutKind.Sequential, Pack = 4, Size = 32)]
+         internal struct BoidData
+@@ -1243,6 +1243,7 @@ namespace Hecton8.World
+         private bool _registeredFixedTick;
+         private bool _registeredSlowTick;
+         private bool _registeredLateFrameTick;
++        private bool _serviceRegistered;
+         private bool _hasSpawnData;
+         private bool _computeKernelBindingsValid;
+         private bool _computeDispatchDisabled;
+@@ -1340,7 +1341,6 @@ namespace Hecton8.World
+
+         private void Awake()
          {
--            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1);
--            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1);
--            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1);
-+            EnsureNativeArrayCapacity(ref _foveatedSimulationInputNative, 1, nameof(_foveatedSimulationInputNative));
-+            EnsureNativeArrayCapacity(ref _foveatedSimulationFrontNative, 1, nameof(_foveatedSimulationFrontNative));
-+            EnsureNativeArrayCapacity(ref _foveatedSimulationBackNative, 1, nameof(_foveatedSimulationBackNative));
-             PopulateFoveatedSimulationInput(frameDeltaTime, cameraDistanceSq, previousAccumulator: 0f);
-             var primeJob = new EvaluateSimulationLodJob
+-            ActiveRuntimeInstance = this;
+             _computeDispatchDisabled = false;
+             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
+             SanitizeSettings();
+@@ -1353,7 +1353,6 @@ namespace Hecton8.World
+
+         private void OnEnable()
+         {
+-            ActiveRuntimeInstance = this;
+             _computeDispatchDisabled = false;
+             _materialPropertyBlock ??= new MaterialPropertyBlock(); // COLD ALLOC: MaterialPropertyBlock[1] - indirect boid render properties - owner: SargassumMicroFaunaBoids
+             ResolveDependencies();
+@@ -1365,14 +1364,13 @@ namespace Hecton8.World
+             FlashlightEvents.Register(this);
+             SpectrumEvents.RegisterSonarPingListener(this);
+             HectonFloatingOrigin.RegisterListener(this);
++            TryRegisterService();
+             TryRegister();
+         }
+
+         private void OnDisable()
+         {
+-            if (ReferenceEquals(ActiveRuntimeInstance, this))
+-                ActiveRuntimeInstance = null;
+-
++            TryUnregisterService();
+             SargassumGlobalDragManager.Unregister(this);
+             FlashlightEvents.Unregister(this);
+             SpectrumEvents.UnregisterSonarPingListener(this);
+@@ -1435,9 +1433,7 @@ namespace Hecton8.World
+
+         private void OnDestroy()
+         {
+-            if (ReferenceEquals(ActiveRuntimeInstance, this))
+-                ActiveRuntimeInstance = null;
+-
++            TryUnregisterService();
+             SargassumGlobalDragManager.Unregister(this);
+             FlashlightEvents.Unregister(this);
+             SpectrumEvents.UnregisterSonarPingListener(this);
+@@ -2328,12 +2324,14 @@ namespace Hecton8.World
+                 return;
+
+             Vector3 origin = playerTransform.position;
++            AbsoluteUniversePosition originAup = AbsoluteUniversePosition.FromRuntimePosition(origin);
+             int formationCount = 0;
+             for (int i = 0; i < snapshotCount && formationCount < _formationBeacons.Length; i++)
              {
-@@ -4392,7 +4393,7 @@ namespace Hecton8.World
-             _debugLeviathanNodeCount = 0;
+                 BeaconNetworkSystem.BeaconSnapshot snapshot = _formationBeaconSnapshots[i];
+                 Vector3 beaconPosition = snapshot.Position;
+-                if ((beaconPosition - origin).sqrMagnitude > formationBeaconSearchRadius * formationBeaconSearchRadius)
++                AbsoluteUniversePosition beaconAup = AbsoluteUniversePosition.FromRuntimePosition(beaconPosition);
++                if (AbsoluteUniversePosition.DistanceSq(in beaconAup, in originAup) > (double)formationBeaconSearchRadius * formationBeaconSearchRadius)
+                     continue;
+
+                 float beaconRadius = Mathf.Clamp(snapshot.LightRange * 2.2f, 4f, formationBeaconSearchRadius * 0.35f);
+@@ -3186,7 +3184,7 @@ namespace Hecton8.World
+             }
+             catch (Exception exception)
+             {
+-                DisableComputeDispatch($"Compute binding failure on '{boidCompute.name}'. {exception.Message}");
++                DisableComputeDispatch("Compute binding failure.");
+                 return false;
+             }
+
+@@ -3255,8 +3253,9 @@ namespace Hecton8.World
+                 playerTransform != null &&
+                 playerTransform.gameObject.activeInHierarchy)
+             {
+-                Vector3 playerDelta = signal.PositionWS - playerTransform.position;
+-                if (playerDelta.sqrMagnitude <= panicRadius * panicRadius &&
++                AbsoluteUniversePosition signalAup = AbsoluteUniversePosition.FromRuntimePosition(signal.PositionWS);
++                AbsoluteUniversePosition playerAup = AbsoluteUniversePosition.FromRuntimePosition(playerTransform.position);
++                if (AbsoluteUniversePosition.DistanceSq(in signalAup, in playerAup) <= (double)panicRadius * panicRadius &&
+                     playerTransform.TryGetComponent(out Rigidbody playerRigidbody) &&
+                     playerRigidbody.linearVelocity.sqrMagnitude > 0.0001f)
+                 {
+@@ -4010,8 +4009,10 @@ namespace Hecton8.World
+                     return 0f;
+             }
+
+-            Vector3 cameraPosition = viewCamera.transform.position;
+-            return (_renderBounds.center - cameraPosition).sqrMagnitude;
++            AbsoluteUniversePosition boundsAup = AbsoluteUniversePosition.FromRuntimePosition(_renderBounds.center);
++            AbsoluteUniversePosition cameraAup = AbsoluteUniversePosition.FromRuntimePosition(viewCamera.transform.position);
++            double distanceSq = AbsoluteUniversePosition.DistanceSq(in boundsAup, in cameraAup);
++            return distanceSq >= float.MaxValue ? float.MaxValue : (float)math.max(0d, distanceSq);
          }
- 
--        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredLength) where T : struct
-+        private static void EnsureNativeArrayCapacity<T>(ref NativeArray<T> array, int requiredLength, string label) where T : struct
+
+         private bool TryConsumeSimulationStep(
+@@ -4138,6 +4139,24 @@ namespace Hecton8.World
+             }
+         }
+
++        private void TryRegisterService()
++        {
++            if (_serviceRegistered)
++                return;
++
++            GlobalRegistry.RegisterSargassumMicroFaunaRuntime(this);
++            _serviceRegistered = ReferenceEquals(GlobalRegistry.SargassumMicroFauna, this);
++        }
++
++        private void TryUnregisterService()
++        {
++            if (!_serviceRegistered)
++                return;
++
++            GlobalRegistry.UnregisterSargassumMicroFaunaRuntime(this);
++            _serviceRegistered = false;
++        }
++
+         private void TryUnregister()
          {
-             if (requiredLength <= 0)
-                 return;
-@@ -4401,9 +4402,13 @@ namespace Hecton8.World
-                 return;
- 
-             if (array.IsCreated)
-+            {
-+                NativeMemorySentinel.UnregisterNativeArray(array);
-                 array.Dispose();
-+            }
- 
--            array = new NativeArray<T>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-+            array = new NativeArray<T>(requiredLength, Allocator.Persistent, NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<T>[requiredLength] - persistent sargassum job/GPU staging buffer - owner: SargassumMicroFaunaBoids
-+            NativeMemorySentinel.RegisterNativeArray(array, NativeMemoryOwner, label, NativeAllocationLifetime.Scene);
+
+@@ -4440,14 +4459,13 @@ namespace Hecton8.World
+                 Marshal.OffsetOf<BoidData>(nameof(BoidData.Panic)).ToInt32() != BoidDataPanicOffsetBytes ||
+                 Marshal.OffsetOf<BoidData>(nameof(BoidData.StateFlags)).ToInt32() != BoidDataStateFlagsOffsetBytes)
+             {
+-                DisableComputeDispatch(
+-                    $"BoidData layout mismatch. Expected stride {BoidDataStrideBytes}, align {BoidDataAlignmentBytes}, offsets Position={BoidDataPositionOffsetBytes}, Velocity={BoidDataVelocityOffsetBytes}, Panic={BoidDataPanicOffsetBytes}, StateFlags={BoidDataStateFlagsOffsetBytes}.");
++                DisableComputeDispatch("BoidData layout mismatch.");
+                 return false;
+             }
+
+             if (UnsafeUtility.SizeOf<SimulationFrameConstants>() != SimulationFrameConstantsStride)
+             {
+-                DisableComputeDispatch($"SimulationFrameConstants layout mismatch. Expected stride {SimulationFrameConstantsStride} bytes.");
++                DisableComputeDispatch("SimulationFrameConstants layout mismatch.");
+                 return false;
+             }
+
+@@ -4517,7 +4535,7 @@ namespace Hecton8.World
+         {
+             if (!boidCompute.HasKernel(kernelName))
+             {
+-                DisableComputeDispatch($"Missing kernel '{kernelName}' on '{boidCompute.name}'.");
++                DisableComputeDispatch("Missing compute kernel.");
+                 return false;
+             }
+
+@@ -4526,7 +4544,7 @@ namespace Hecton8.World
+                 boidCompute.GetKernelThreadGroupSizes(kernelIndex, out uint groupSizeX, out _, out _);
+                 if (groupSizeX == 0u)
+                 {
+-                    DisableComputeDispatch($"Kernel '{kernelName}' on '{boidCompute.name}' manual index {kernelIndex} reported thread group size 0.");
++                    DisableComputeDispatch("Compute kernel reported thread group size 0.");
+                     return false;
+                 }
+
+@@ -4534,7 +4552,7 @@ namespace Hecton8.World
+             }
+             catch (Exception exception)
+             {
+-                DisableComputeDispatch($"Kernel '{kernelName}' on '{boidCompute.name}' manual index {kernelIndex} failed validation. {exception.Message}");
++                DisableComputeDispatch("Compute kernel validation failure.");
+                 return false;
+             }
          }
- 
-         private static void DisposeNativeArray<T>(ref NativeArray<T> array) where T : struct
-@@ -4411,6 +4416,7 @@ namespace Hecton8.World
-             if (!array.IsCreated)
-                 return;
- 
-+            NativeMemorySentinel.UnregisterNativeArray(array);
-             array.Dispose();
-             array = default;
+@@ -4578,7 +4596,7 @@ namespace Hecton8.World
+         private static void LogComputeDispatchDisabled(string message, UnityEngine.Object context)
+         {
+ #if UNITY_EDITOR || DEVELOPMENT_BUILD
+-            Debug.LogError($"SargassumMicroFaunaBoids compute dispatch disabled: {message}", context);
++            Debug.LogError(message, context);
+ #endif
          }
-@@ -4420,6 +4426,7 @@ namespace Hecton8.World
-             if (!array.IsCreated)
-                 return;
- 
-+            NativeMemorySentinel.UnregisterNativeArray(array);
-             array.Dispose(dependency);
-             array = default;
+
+@@ -4620,7 +4638,7 @@ namespace Hecton8.World
+             }
+             catch (Exception exception)
+             {
+-                DisableComputeDispatch($"Origin-shift dispatch failure on '{boidCompute.name}'. {exception.Message}");
++                DisableComputeDispatch("Origin-shift dispatch failure.");
+             }
          }

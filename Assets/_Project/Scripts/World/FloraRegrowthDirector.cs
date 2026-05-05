@@ -32,8 +32,8 @@ namespace Hecton8.World
         private const float CanopyMinHeightScale = 0.45f;
         private const float LightStarvationStrength = 0.85f;
         private const int MaxSymbioticFungalNodes = 128;
-        private const float SymbioticFungalMaxEdgeDistanceMeters = 1000f;
-        private const float DefaultSymbioticGrowthMultiplier = 1.35f;
+        private const float SymbioticFungalRootRadiusMeters = 15f;
+        private const float DefaultSymbioticGrowthMultiplier = 2f;
         private const float DefaultSymbioticBuffDurationSeconds = 900f;
         private const ulong FungalStalkTemplateHash = 0xFD5A46CCUL;
         private const ulong AcidShroomTemplateHash = 0xB796CF49UL;
@@ -114,17 +114,6 @@ namespace Hecton8.World
             public float ExpirePlayTimeSeconds;
             public float GrowthMultiplier;
             public float Reserved0;
-        }
-
-        [StructLayout(LayoutKind.Sequential, Pack = 4)]
-        private struct SymbioticFungalMstResult
-        {
-            public uint InstanceUid;
-            public float ExpirePlayTimeSeconds;
-            public float GrowthMultiplier;
-            public byte Connected;
-            public byte Reserved0;
-            public ushort Reserved1;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -252,94 +241,6 @@ namespace Hecton8.World
             }
         }
 
-        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
-        private struct BuildSymbioticFungalMstJob : IJob
-        {
-            [ReadOnly] public NativeArray<SymbioticFungalNodeState> Nodes;
-            public NativeArray<byte> Visited;
-            public NativeArray<int> Parent;
-            public NativeArray<float> BestDistanceSq;
-            public NativeArray<SymbioticFungalMstResult> Results;
-            public uint RootInstanceUid;
-            public int NodeCount;
-            public float MaxEdgeDistanceSq;
-            public float ExpirePlayTimeSeconds;
-            public float GrowthMultiplier;
-
-            public void Execute()
-            {
-                int safeNodeCount = math.min(NodeCount, math.min(Nodes.Length, Results.Length));
-                for (int i = 0; i < safeNodeCount; i++)
-                {
-                    Visited[i] = 0;
-                    Parent[i] = -1;
-                    BestDistanceSq[i] = float.MaxValue;
-                    Results[i] = default;
-                }
-
-                int rootIndex = -1;
-                for (int i = 0; i < safeNodeCount; i++)
-                {
-                    SymbioticFungalNodeState node = Nodes[i];
-                    if (node.Active == 0 || node.InstanceUid != RootInstanceUid)
-                        continue;
-
-                    rootIndex = i;
-                    break;
-                }
-
-                if (rootIndex < 0)
-                    return;
-
-                BestDistanceSq[rootIndex] = 0f;
-                for (int step = 0; step < safeNodeCount; step++)
-                {
-                    int currentIndex = -1;
-                    float currentBestSq = float.MaxValue;
-                    for (int i = 0; i < safeNodeCount; i++)
-                    {
-                        if (Visited[i] != 0 || BestDistanceSq[i] >= currentBestSq)
-                            continue;
-
-                        currentBestSq = BestDistanceSq[i];
-                        currentIndex = i;
-                    }
-
-                    if (currentIndex < 0 || (currentIndex != rootIndex && currentBestSq > MaxEdgeDistanceSq))
-                        break;
-
-                    Visited[currentIndex] = 1;
-                    SymbioticFungalNodeState currentNode = Nodes[currentIndex];
-                    Results[currentIndex] = new SymbioticFungalMstResult
-                    {
-                        InstanceUid = currentNode.InstanceUid,
-                        ExpirePlayTimeSeconds = ExpirePlayTimeSeconds,
-                        GrowthMultiplier = math.max(1f, GrowthMultiplier),
-                        Connected = 1,
-                        Reserved0 = 0,
-                        Reserved1 = 0
-                    };
-
-                    for (int candidateIndex = 0; candidateIndex < safeNodeCount; candidateIndex++)
-                    {
-                        if (Visited[candidateIndex] != 0)
-                            continue;
-
-                        SymbioticFungalNodeState candidate = Nodes[candidateIndex];
-                        if (candidate.Active == 0)
-                            continue;
-
-                        float distanceSq = math.distancesq(currentNode.RuntimePosition, candidate.RuntimePosition);
-                        if (distanceSq > MaxEdgeDistanceSq || distanceSq >= BestDistanceSq[candidateIndex])
-                            continue;
-
-                        BestDistanceSq[candidateIndex] = distanceSq;
-                        Parent[candidateIndex] = currentIndex;
-                    }
-                }
-            }
-        }
-
         [SerializeField]
         [Tooltip("Runtime owner that mutates streamed flora metadata and harvest health state.")]
         private DestructibleOrganicManager destructibleOrganicManager;
@@ -360,15 +261,8 @@ namespace Hecton8.World
         private NativeArray<FloraMaturationResult> _maturationResults;
         private NativeList<SymbioticFungalNodeState> _symbioticFungalNodes;
         private NativeList<SymbioticFungalBuffState> _symbioticFungalBuffs;
-        private NativeArray<SymbioticFungalMstResult> _symbioticMstResults;
-        private NativeArray<byte> _symbioticMstVisited;
-        private NativeArray<int> _symbioticMstParent;
-        private NativeArray<float> _symbioticMstBestDistanceSq;
         private JobHandle _maturationJobHandle;
-        private JobHandle _symbioticMstJobHandle;
         private bool _maturationJobScheduled;
-        private bool _symbioticMstJobScheduled;
-        private int _symbioticMstResultCount;
         private float _lunarResonanceExpirePlayTimeSeconds;
         private float _lunarResonanceGrowthMultiplier = 1f;
         private float _lastSeedPlayTime;
@@ -410,26 +304,10 @@ namespace Hecton8.World
                 Allocator.Persistent); // COLD ALLOC: NativeHashMap<uint,int>[2048] - maturation state lookup keyed by deterministic flora uid - owner: FloraRegrowthDirector
             _symbioticFungalNodes = new NativeList<SymbioticFungalNodeState>(
                 MaxSymbioticFungalNodes,
-                Allocator.Persistent); // COLD ALLOC: NativeList<SymbioticFungalNodeState>[128] - bounded fungal graph nodes for MST nutrient sharing - owner: FloraRegrowthDirector
+                Allocator.Persistent); // COLD ALLOC: NativeList<SymbioticFungalNodeState>[128] - bounded fungal root-radius nodes - owner: FloraRegrowthDirector
             _symbioticFungalBuffs = new NativeList<SymbioticFungalBuffState>(
                 MaxSymbioticFungalNodes,
                 Allocator.Persistent); // COLD ALLOC: NativeList<SymbioticFungalBuffState>[128] - active fungal growth buffs consumed by maturation Burst job - owner: FloraRegrowthDirector
-            _symbioticMstResults = new NativeArray<SymbioticFungalMstResult>(
-                MaxSymbioticFungalNodes,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<SymbioticFungalMstResult>[128] - MST connected-component results - owner: FloraRegrowthDirector
-            _symbioticMstVisited = new NativeArray<byte>(
-                MaxSymbioticFungalNodes,
-                Allocator.Persistent,
-                NativeArrayOptions.ClearMemory); // COLD ALLOC: NativeArray<byte>[128] - MST visited flags - owner: FloraRegrowthDirector
-            _symbioticMstParent = new NativeArray<int>(
-                MaxSymbioticFungalNodes,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<int>[128] - MST parent indices for nutrient graph solve - owner: FloraRegrowthDirector
-            _symbioticMstBestDistanceSq = new NativeArray<float>(
-                MaxSymbioticFungalNodes,
-                Allocator.Persistent,
-                NativeArrayOptions.UninitializedMemory); // COLD ALLOC: NativeArray<float>[128] - MST best squared edge distances - owner: FloraRegrowthDirector
             _lastSeedPlayTime = GetCurrentPlayTimeSeconds();
             RegisterNativeMemorySentinel();
         }
@@ -520,7 +398,6 @@ namespace Hecton8.World
             }
 
             JobHandle disposeHandle = _maturationJobScheduled ? _maturationJobHandle : default;
-            JobHandle symbioticDisposeHandle = _symbioticMstJobScheduled ? _symbioticMstJobHandle : default;
             DisposeNativeList(ref _destroyedFloraScratch, nameof(_destroyedFloraScratch));
             DisposeNativeList(ref _pendingSeedScratch, nameof(_pendingSeedScratch));
             DisposeNativeList(ref _regrowthStates, nameof(_regrowthStates));
@@ -532,11 +409,7 @@ namespace Hecton8.World
             DisposeNativeList(ref _maturationStates, nameof(_maturationStates), disposeHandle, _maturationJobScheduled);
             DisposeNativeHashMap(ref _maturationIndexByInstanceUid, nameof(_maturationIndexByInstanceUid), disposeHandle, _maturationJobScheduled);
             DisposeNativeList(ref _symbioticFungalBuffs, nameof(_symbioticFungalBuffs), disposeHandle, _maturationJobScheduled);
-            DisposeNativeList(ref _symbioticFungalNodes, nameof(_symbioticFungalNodes), symbioticDisposeHandle, _symbioticMstJobScheduled);
-            DisposeNativeArray(ref _symbioticMstResults, symbioticDisposeHandle, _symbioticMstJobScheduled);
-            DisposeNativeArray(ref _symbioticMstVisited, symbioticDisposeHandle, _symbioticMstJobScheduled);
-            DisposeNativeArray(ref _symbioticMstParent, symbioticDisposeHandle, _symbioticMstJobScheduled);
-            DisposeNativeArray(ref _symbioticMstBestDistanceSq, symbioticDisposeHandle, _symbioticMstJobScheduled);
+            DisposeNativeList(ref _symbioticFungalNodes, nameof(_symbioticFungalNodes));
         }
 
         private void SyncMaturationStates(PersistentWorldRegistry registry, float currentPlayTime)
@@ -730,60 +603,60 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Schedules a bounded Burst MST solve from the fertilized fungal node and applies connected growth buffs when the job completes.
+        /// Applies a simple root-radius fungal growth buff around the fertilized node.
         /// </summary>
         /// <param name="instanceUid">Stable flora instance uid of the fertilized fungal node.</param>
         /// <param name="growthMultiplier">Maturation-rate multiplier applied to connected fungal nodes.</param>
         /// <param name="durationSeconds">Buff duration in play-time seconds.</param>
-        /// <returns>True when a graph solve was scheduled.</returns>
+        /// <returns>True when at least one fungal node received a radius buff.</returns>
         public bool TryApplySymbioticFungalFertilizer(uint instanceUid, float growthMultiplier = DefaultSymbioticGrowthMultiplier, float durationSeconds = DefaultSymbioticBuffDurationSeconds)
         {
-            CompleteSymbioticMstJobIfReady();
             if (instanceUid == 0u ||
-                _symbioticMstJobScheduled ||
                 !_symbioticFungalNodes.IsCreated ||
                 _symbioticFungalNodes.Length <= 0)
             {
                 return false;
             }
 
-            bool found = false;
+            float3 rootPosition = float3.zero;
+            bool foundRoot = false;
             for (int i = 0; i < _symbioticFungalNodes.Length; i++)
             {
-                if (_symbioticFungalNodes[i].InstanceUid != instanceUid)
+                SymbioticFungalNodeState node = _symbioticFungalNodes[i];
+                if (node.Active == 0 || node.InstanceUid != instanceUid)
                     continue;
 
-                found = true;
+                rootPosition = node.RuntimePosition;
+                foundRoot = true;
                 break;
             }
 
-            if (!found)
+            if (!foundRoot)
                 return false;
 
-            ScheduleSymbioticMstJob(
-                instanceUid,
+            return ApplySymbioticRadiusBuff(
+                rootPosition,
                 Mathf.Max(1f, growthMultiplier),
                 Mathf.Max(0.1f, durationSeconds));
-            return true;
         }
 
         /// <summary>
-        /// Resolves the nearest fungal node in a runtime radius and schedules the symbiotic MST fertilizer solve.
+        /// Resolves the nearest fungal root node in a runtime radius and applies a fixed 15 m growth buff.
         /// </summary>
         /// <param name="runtimePosition">Runtime-space fertilization point.</param>
         /// <param name="radiusMeters">Search radius for the nearest fungal node.</param>
         /// <param name="growthMultiplier">Maturation-rate multiplier applied to connected fungal nodes.</param>
         /// <param name="durationSeconds">Buff duration in play-time seconds.</param>
-        /// <returns>True when a graph solve was scheduled.</returns>
+        /// <returns>True when at least one fungal node received a radius buff.</returns>
         public bool TryApplySymbioticFungalFertilizer(Vector3 runtimePosition, float radiusMeters, float growthMultiplier = DefaultSymbioticGrowthMultiplier, float durationSeconds = DefaultSymbioticBuffDurationSeconds)
         {
-            CompleteSymbioticMstJobIfReady();
             if (radiusMeters <= 0f || !_symbioticFungalNodes.IsCreated || _symbioticFungalNodes.Length <= 0)
                 return false;
 
             float3 origin = new float3(runtimePosition.x, runtimePosition.y, runtimePosition.z);
             float bestDistanceSq = radiusMeters * radiusMeters;
-            uint bestInstanceUid = 0u;
+            float3 rootPosition = float3.zero;
+            bool foundRoot = false;
             for (int i = 0; i < _symbioticFungalNodes.Length; i++)
             {
                 SymbioticFungalNodeState node = _symbioticFungalNodes[i];
@@ -795,11 +668,12 @@ namespace Hecton8.World
                     continue;
 
                 bestDistanceSq = distanceSq;
-                bestInstanceUid = node.InstanceUid;
+                rootPosition = node.RuntimePosition;
+                foundRoot = true;
             }
 
-            return bestInstanceUid != 0u &&
-                   TryApplySymbioticFungalFertilizer(bestInstanceUid, growthMultiplier, durationSeconds);
+            return foundRoot &&
+                   ApplySymbioticRadiusBuff(rootPosition, Mathf.Max(1f, growthMultiplier), Mathf.Max(0.1f, durationSeconds));
         }
 
         public void ApplyLunarResonance(float growthMultiplier, float durationSeconds)
@@ -830,75 +704,36 @@ namespace Hecton8.World
             return Mathf.Max(1f, _lunarResonanceGrowthMultiplier);
         }
 
-        private void ScheduleSymbioticMstJob(uint rootInstanceUid, float growthMultiplier, float durationSeconds)
+        private bool ApplySymbioticRadiusBuff(float3 rootPosition, float growthMultiplier, float durationSeconds)
         {
-            if (!_symbioticFungalNodes.IsCreated ||
-                !_symbioticMstResults.IsCreated ||
-                !_symbioticMstVisited.IsCreated ||
-                !_symbioticMstParent.IsCreated ||
-                !_symbioticMstBestDistanceSq.IsCreated)
-            {
-                return;
-            }
+            if (!_symbioticFungalNodes.IsCreated || !_symbioticFungalBuffs.IsCreated)
+                return false;
 
-            _symbioticMstResultCount = math.min(_symbioticFungalNodes.Length, MaxSymbioticFungalNodes);
-            float edgeDistance = Mathf.Max(1f, SymbioticFungalMaxEdgeDistanceMeters);
-            _symbioticMstJobHandle = new BuildSymbioticFungalMstJob
-            {
-                Nodes = _symbioticFungalNodes.AsArray(),
-                Visited = _symbioticMstVisited,
-                Parent = _symbioticMstParent,
-                BestDistanceSq = _symbioticMstBestDistanceSq,
-                Results = _symbioticMstResults,
-                RootInstanceUid = rootInstanceUid,
-                NodeCount = _symbioticMstResultCount,
-                MaxEdgeDistanceSq = edgeDistance * edgeDistance,
-                ExpirePlayTimeSeconds = GetCurrentPlayTimeSeconds() + durationSeconds,
-                GrowthMultiplier = growthMultiplier
-            }.Schedule();
-            _symbioticMstJobScheduled = true;
-        }
-
-        private void CompleteSymbioticMstJobIfReady(bool forceComplete = false)
-        {
-            if (!_symbioticMstJobScheduled)
-                return;
-
-            if (_maturationJobScheduled)
-            {
-                CompleteMaturationJobIfNeeded(forceComplete);
-                if (_maturationJobScheduled)
-                    return;
-            }
-
-            if (!TryCompleteVegetationJob(ref _symbioticMstJobHandle, forceComplete))
-                return;
-
-            _symbioticMstJobScheduled = false;
-            ApplySymbioticMstResults(GetCurrentPlayTimeSeconds());
-        }
-
-        private void ApplySymbioticMstResults(float currentPlayTime)
-        {
-            if (!_symbioticMstResults.IsCreated || !_symbioticFungalBuffs.IsCreated)
-                return;
-
+            float currentPlayTime = GetCurrentPlayTimeSeconds();
+            float expireTime = currentPlayTime + durationSeconds;
+            float radiusSq = SymbioticFungalRootRadiusMeters * SymbioticFungalRootRadiusMeters;
+            int appliedCount = 0;
             PruneExpiredSymbioticBuffs(currentPlayTime);
-            int resultCount = math.min(_symbioticMstResultCount, _symbioticMstResults.Length);
-            for (int i = 0; i < resultCount; i++)
+            for (int i = 0; i < _symbioticFungalNodes.Length; i++)
             {
-                SymbioticFungalMstResult result = _symbioticMstResults[i];
-                if (result.Connected == 0 || result.InstanceUid == 0u)
+                SymbioticFungalNodeState node = _symbioticFungalNodes[i];
+                if (node.Active == 0 || node.InstanceUid == 0u)
+                    continue;
+
+                if (math.distancesq(rootPosition, node.RuntimePosition) > radiusSq)
                     continue;
 
                 UpsertSymbioticFungalBuff(new SymbioticFungalBuffState
                 {
-                    InstanceUid = result.InstanceUid,
-                    ExpirePlayTimeSeconds = result.ExpirePlayTimeSeconds,
-                    GrowthMultiplier = result.GrowthMultiplier,
+                    InstanceUid = node.InstanceUid,
+                    ExpirePlayTimeSeconds = expireTime,
+                    GrowthMultiplier = growthMultiplier,
                     Reserved0 = 0f
                 });
+                appliedCount++;
             }
+
+            return appliedCount > 0;
         }
 
         private static bool TryCompleteVegetationJob(ref JobHandle handle, bool forceComplete)
@@ -1037,11 +872,10 @@ namespace Hecton8.World
         }
 
         /// <summary>
-        /// Recovers completed flora maturation and symbiotic graph jobs inside the dispatcher late-frame swap window.
+        /// Recovers completed flora maturation jobs inside the dispatcher late-frame swap window.
         /// </summary>
         public void LateFrameTick()
         {
-            CompleteSymbioticMstJobIfReady();
             CompleteMaturationJobIfNeeded();
         }
 
@@ -1054,7 +888,6 @@ namespace Hecton8.World
             if (!isActiveAndEnabled || shiftData.ShiftOffset.sqrMagnitude <= 0.000001f)
                 return;
 
-            CompleteSymbioticMstJobIfReady(forceComplete: true);
             CompleteMaturationJobIfNeeded(forceComplete: true);
             float3 runtimeOffset = new float3(-shiftData.ShiftOffset.x, -shiftData.ShiftOffset.y, -shiftData.ShiftOffset.z);
             ApplyOriginShiftToCachedFloraState(runtimeOffset);
@@ -1072,7 +905,7 @@ namespace Hecton8.World
             if (registry == null || destructibleOrganicManager == null)
                 return;
 
-            if (_symbioticMstJobScheduled || _maturationJobScheduled)
+            if (_maturationJobScheduled)
                 return;
 
             float currentPlayTime = GetCurrentPlayTimeSeconds();
@@ -1422,10 +1255,6 @@ namespace Hecton8.World
             NativeMemorySentinel.RegisterNativeHashMap(_maturationIndexByInstanceUid, NativeMemoryOwner, nameof(_maturationIndexByInstanceUid), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeList(_symbioticFungalNodes, NativeMemoryOwner, nameof(_symbioticFungalNodes), NativeMemoryLifetime);
             NativeMemorySentinel.RegisterNativeList(_symbioticFungalBuffs, NativeMemoryOwner, nameof(_symbioticFungalBuffs), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_symbioticMstResults, NativeMemoryOwner, nameof(_symbioticMstResults), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_symbioticMstVisited, NativeMemoryOwner, nameof(_symbioticMstVisited), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_symbioticMstParent, NativeMemoryOwner, nameof(_symbioticMstParent), NativeMemoryLifetime);
-            NativeMemorySentinel.RegisterNativeArray(_symbioticMstBestDistanceSq, NativeMemoryOwner, nameof(_symbioticMstBestDistanceSq), NativeMemoryLifetime);
         }
 
         private static void DisposeNativeArray<T>(ref NativeArray<T> array, JobHandle dependency = default, bool deferDisposal = false) where T : struct

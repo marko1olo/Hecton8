@@ -562,11 +562,6 @@ namespace Hecton8.AI
                 PredatorCognitionDomain.ReduceFatigue(_slot, amount);
         }
 
-        public bool ApplyHibernationCatchUp(float sleepSeconds, float currentTime)
-        {
-            return _initialized && PredatorCognitionDomain.ApplyHibernationCatchUp(_slot, sleepSeconds, currentTime);
-        }
-
         public void SetHunger01(float hunger01)
         {
             float clampedHunger = math.saturate(hunger01);

@@ -150,6 +150,21 @@ namespace Hecton8.Gameplay
             LogChoiceUiOpened();
         }
 
+        public void ChooseStay()
+        {
+            SubmitTerminalChoice(EndingChoice.Leave);
+        }
+
+        public void ChooseLeave()
+        {
+            SubmitTerminalChoice(EndingChoice.ShutDown);
+        }
+
+        public void ChooseAmplify()
+        {
+            SubmitTerminalChoice(EndingChoice.Amplify);
+        }
+
         public void OnEndingEvent(in EndingEventPayload payload)
         {
             switch ((EndingEventType)payload.EventType)
@@ -164,6 +179,18 @@ namespace Hecton8.Gameplay
                     HandleEndingChosen((EndingChoice)payload.Choice);
                     break;
             }
+        }
+
+        private void SubmitTerminalChoice(EndingChoice choice)
+        {
+            if (!_choiceOpen || choice == EndingChoice.None)
+                return;
+
+            EndingSystem ending = GlobalRegistry.Ending;
+            if (ending == null || !ending.CanChooseEnding || !HasAllAtlasKeys())
+                return;
+
+            ending.ChooseEnding(choice);
         }
 
         /// <inheritdoc />
