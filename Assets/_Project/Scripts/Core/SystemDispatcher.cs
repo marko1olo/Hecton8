@@ -65,6 +65,7 @@ namespace Hecton8.Core
         private const int PdaCongestionWarningFrameThreshold = 5;
         private const int LateFrameCircuitBreakerLaneCapacity = 32;
         private const double LateFrameEventFlushBudgetMilliseconds = 2.0;
+        private const double LateFrameFlushPassSpikeMilliseconds = 0.5;
         private const float PauseDepthOfFieldBlendSeconds = 0.15f;
         private const float AupNanInquisitorLogIntervalSeconds = 5f;
         private const float DispatcherPhaseWarningLogIntervalSeconds = 5f;
@@ -89,6 +90,9 @@ namespace Hecton8.Core
         private static readonly uint _PdaEventsQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("PDAEvents"));
         private static readonly uint _LateFrameTickablesQueueHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SystemDispatcher.LateFrameTickables"));
         private static readonly uint _LateFrameBudgetWarningHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SystemDispatcher.LateFrameEventBudget"));
+        private static readonly uint _AmbientEventsDropHash = unchecked((uint)Hecton.Localization.LocHash.Compute("SystemDispatcher.AmbientEventsDropped"));
+        private static readonly uint _CriticalPerformanceSpikeHash = unchecked((uint)Hecton.Localization.LocHash.Compute("CRITICAL_PERF_SPIKE"));
+        private static readonly int _HectonFreezeFrameDitherId = Shader.PropertyToID("_HectonFreezeFrameDither");
         private static readonly ProfilerMarker[] _updateLaneProfilerMarkers =
         {
             new ProfilerMarker("H8.Dispatcher.Update.Core"),
@@ -171,6 +175,8 @@ namespace Hecton8.Core
         private static uint _activeLateFrameEventLaneHash;
         private static uint _dominantLateFrameCircuitBreakerLaneHash;
         private static long _lateFrameEventBudgetStartTimestamp;
+        private static bool _criticalPerformanceSpikeReported;
+        private static bool _pauseFreezeFrameDitherActive;
 
         internal static float CurrentFrameDeltaTime { get; private set; }
 
@@ -648,6 +654,7 @@ namespace Hecton8.Core
             try
             {
                 CompleteDispatcherRaycasts();
+                UpdatePauseFreezeFrameDitherState();
                 completeDispatcherTimestamp = BeginDispatcherPhaseTiming();
                 dispatcherPhaseTimingStarted = true;
                 CompleteFoveatedFrameJobs();
@@ -718,152 +725,207 @@ namespace Hecton8.Core
 
         private static void FlushCoreEventsArtery()
         {
-            SetActiveLateFrameEventLane(_CoreEventsArteryHash);
-            ReportLateFrameQueueDepth(
-                _CoreEventsArteryHash,
-                Hecton8.Modding.ModRegistryEvents.PendingCount +
-                BootstrapEvents.PendingCount +
-                Hecton.Localization.LocalizationEvents.PendingCount +
-                NarrativeEvents.PendingCount +
-                SaveEvents.PendingCount +
-                QuestEvents.PendingCount +
-                Hecton8.Bootstrap.SceneBootstrap.PendingEventCount +
-                ObjectPoolDiagnostics.PendingCount +
-                PerformanceEvents.PendingCount +
-                GlobalRegistry.PendingServiceReboundCount);
+            long passStartTimestamp = BeginLateFrameFlushPass();
+            try
+            {
+                SetActiveLateFrameEventLane(_CoreEventsArteryHash);
+                ReportLateFrameQueueDepth(
+                    _CoreEventsArteryHash,
+                    Hecton8.Modding.ModRegistryEvents.PendingCount +
+                    BootstrapEvents.PendingCount +
+                    Hecton.Localization.LocalizationEvents.PendingCount +
+                    NarrativeEvents.PendingCount +
+                    SaveEvents.PendingCount +
+                    QuestEvents.PendingCount +
+                    Hecton8.Bootstrap.SceneBootstrap.PendingEventCount +
+                    ObjectPoolDiagnostics.PendingCount +
+                    PerformanceEvents.PendingCount +
+                    GlobalRegistry.PendingServiceReboundCount);
 
-            Hecton8.Modding.ModRegistryEvents.FlushPending();
-            BootstrapEvents.FlushPending();
-            Hecton.Localization.LocalizationEvents.FlushPending();
-            NarrativeEvents.FlushPending();
-            SaveEvents.FlushPending();
-            QuestEvents.FlushPending();
-            Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents();
-            ObjectPoolDiagnostics.FlushPending();
-            PerformanceEvents.FlushPending();
-            GlobalRegistry.FlushPendingServiceReboundEvents();
+                BootstrapEvents.FlushPending();
+                Hecton8.Bootstrap.SceneBootstrap.FlushPendingEvents();
+                PerformanceEvents.FlushPending();
+                ObjectPoolDiagnostics.FlushPending();
+                GlobalRegistry.FlushPendingServiceReboundEvents();
+                Hecton8.Modding.ModRegistryEvents.FlushPending();
+                Hecton.Localization.LocalizationEvents.FlushPending();
+                NarrativeEvents.FlushPending();
+                SaveEvents.FlushPending();
+                QuestEvents.FlushPending();
+            }
+            finally
+            {
+                EndLateFrameFlushPass(_CoreEventsArteryHash, passStartTimestamp);
+            }
         }
 
         private static void FlushEnvironmentEventsArtery()
         {
-            SetActiveLateFrameEventLane(_EnvironmentEventsArteryHash);
-            ReportLateFrameQueueDepth(
-                _EnvironmentEventsArteryHash,
-                AtmosphereEvents.PendingCount +
-                HighPressureEvents.PendingCount +
-                FatalPressureImplosionEvents.PendingCount +
-                CelestialEvents.PendingCount +
-                EclipseGameplayEvents.PendingCount +
-                AcousticZoneEvents.PendingCount +
-                PhysicsEventBus.PendingCount +
-                FluidFeedbackEvents.PendingCount +
-                ElectrolysisAcousticEvents.PendingCount +
-                AudioCaptionEvents.PendingCount +
-                SpectrumEvents.PendingCount +
-                ProceduralAudioEvents.PendingCount +
-                MapMagicBiomeEvents.PendingCount +
-                BiomeMatrixEvents.PendingCount +
-                WeatherEvents.PendingCount +
-                RandomEventEvents.PendingCount +
-                DepthZoneEvents.PendingCount +
-                SoundscapeEvents.PendingCount +
-                SargassumGlobalDragManager.PendingEventCount +
-                Hecton8.AtlasSignal.AtlasSignalEvents.PendingCount +
-                Hecton8.AtlasSignal.Atlas6Events.PendingCount);
+            long passStartTimestamp = BeginLateFrameFlushPass();
+            try
+            {
+                SetActiveLateFrameEventLane(_EnvironmentEventsArteryHash);
+                ReportLateFrameQueueDepth(
+                    _EnvironmentEventsArteryHash,
+                    AtmosphereEvents.PendingCount +
+                    HighPressureEvents.PendingCount +
+                    FatalPressureImplosionEvents.PendingCount +
+                    CelestialEvents.PendingCount +
+                    EclipseGameplayEvents.PendingCount +
+                    AcousticZoneEvents.PendingCount +
+                    PhysicsEventBus.PendingCount +
+                    FluidFeedbackEvents.PendingCount +
+                    ElectrolysisAcousticEvents.PendingCount +
+                    AudioCaptionEvents.PendingCount +
+                    SpectrumEvents.PendingCount +
+                    ProceduralAudioEvents.PendingCount +
+                    MapMagicBiomeEvents.PendingCount +
+                    BiomeMatrixEvents.PendingCount +
+                    WeatherEvents.PendingCount +
+                    RandomEventEvents.PendingCount +
+                    DepthZoneEvents.PendingCount +
+                    SoundscapeEvents.PendingCount +
+                    SargassumGlobalDragManager.PendingEventCount +
+                    Hecton8.AtlasSignal.AtlasSignalEvents.PendingCount +
+                    Hecton8.AtlasSignal.Atlas6Events.PendingCount);
 
-            AtmosphereEvents.FlushPending();
-            HighPressureEvents.FlushPending();
-            FatalPressureImplosionEvents.FlushPending();
-            CelestialEvents.FlushPending();
-            EclipseGameplayEvents.FlushPending();
-            AcousticZoneEvents.FlushPending();
-            PhysicsEventBus.FlushPending();
-            FluidFeedbackEvents.FlushPending();
-            ElectrolysisAcousticEvents.FlushPending();
-            AudioCaptionEvents.FlushPending();
-            SpectrumEvents.FlushPending();
-            ProceduralAudioEvents.FlushPending();
-            MapMagicBiomeEvents.FlushPending();
-            BiomeMatrixEvents.FlushPending();
-            WeatherEvents.FlushPending();
-            RandomEventEvents.FlushPending();
-            DepthZoneEvents.FlushPending();
-            SoundscapeEvents.FlushPending();
-            SargassumGlobalDragManager.FlushPendingEvents();
-            Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending();
-            Hecton8.AtlasSignal.Atlas6Events.FlushPending();
+                AtmosphereEvents.FlushPending();
+                HighPressureEvents.FlushPending();
+                FatalPressureImplosionEvents.FlushPending();
+                PhysicsEventBus.FlushPending();
+                FluidFeedbackEvents.FlushPending();
+
+                if (ShouldDropAmbientLateFrameEvents(_EnvironmentEventsArteryHash))
+                {
+                    DropAmbientEnvironmentEvents();
+                    return;
+                }
+
+                CelestialEvents.FlushPending();
+                EclipseGameplayEvents.FlushPending();
+                AcousticZoneEvents.FlushPending();
+                ElectrolysisAcousticEvents.FlushPending();
+                AudioCaptionEvents.FlushPending();
+                SpectrumEvents.FlushPending();
+                ProceduralAudioEvents.FlushPending();
+                MapMagicBiomeEvents.FlushPending();
+                BiomeMatrixEvents.FlushPending();
+                WeatherEvents.FlushPending();
+                RandomEventEvents.FlushPending();
+                DepthZoneEvents.FlushPending();
+                SoundscapeEvents.FlushPending();
+                SargassumGlobalDragManager.FlushPendingEvents();
+                Hecton8.AtlasSignal.AtlasSignalEvents.FlushPending();
+                Hecton8.AtlasSignal.Atlas6Events.FlushPending();
+            }
+            finally
+            {
+                EndLateFrameFlushPass(_EnvironmentEventsArteryHash, passStartTimestamp);
+            }
         }
 
         private static void FlushPlayerEventsArtery()
         {
-            SetActiveLateFrameEventLane(_PlayerEventsArteryHash);
-            int pdaPendingBeforeFlush = Hecton8.UI.PDAEvents.PendingCount;
-            ReportLateFrameQueueDepth(
-                _PlayerEventsArteryHash,
-                Hecton8.Interaction.InteractionEvents.PendingCount +
-                Hecton8.Crafting.CraftingEvents.PendingCount +
-                ScanEvents.PendingCount +
-                FirstHourEvents.PendingCount +
-                EndingEvents.PendingCount +
-                AudioLogEvents.PendingCount +
-                HectonSubmarineOsEvents.PendingCount +
-                FlashlightEvents.PendingCount +
-                LaserCutterEvents.PendingCount +
-                PlayerSignalEvents.PendingCount +
-                InventoryEvents.PendingCount +
-                PlayerExpressionEvents.PendingCount +
-                Hecton8.UI.BaseIntegrityEvents.PendingCount +
-                Hecton8.UI.NotificationEvents.PendingCount +
-                Hecton8.UI.PDAIntrusionEvents.PendingCount +
-                pdaPendingBeforeFlush);
+            long passStartTimestamp = BeginLateFrameFlushPass();
+            try
+            {
+                SetActiveLateFrameEventLane(_PlayerEventsArteryHash);
+                int pdaPendingBeforeFlush = Hecton8.UI.PDAEvents.PendingCount;
+                ReportLateFrameQueueDepth(
+                    _PlayerEventsArteryHash,
+                    Hecton8.Interaction.InteractionEvents.PendingCount +
+                    Hecton8.Crafting.CraftingEvents.PendingCount +
+                    ScanEvents.PendingCount +
+                    FirstHourEvents.PendingCount +
+                    EndingEvents.PendingCount +
+                    AudioLogEvents.PendingCount +
+                    HectonSubmarineOsEvents.PendingCount +
+                    FlashlightEvents.PendingCount +
+                    LaserCutterEvents.PendingCount +
+                    PlayerSignalEvents.PendingCount +
+                    InventoryEvents.PendingCount +
+                    PlayerExpressionEvents.PendingCount +
+                    Hecton8.UI.BaseIntegrityEvents.PendingCount +
+                    Hecton8.UI.NotificationEvents.PendingCount +
+                    Hecton8.UI.PDAIntrusionEvents.PendingCount +
+                    pdaPendingBeforeFlush);
 
-            Hecton8.Interaction.InteractionEvents.FlushPending();
-            Hecton8.Crafting.CraftingEvents.FlushPending();
-            ScanEvents.FlushPending();
-            FirstHourEvents.FlushPending();
-            EndingEvents.FlushPending();
-            AudioLogEvents.FlushPending();
-            HectonSubmarineOsEvents.FlushPending();
-            FlashlightEvents.FlushPending();
-            LaserCutterEvents.FlushPending();
-            PlayerSignalEvents.FlushPending();
-            InventoryEvents.FlushPending();
-            PlayerExpressionEvents.FlushPending();
-            Hecton8.UI.BaseIntegrityEvents.FlushPending();
-            Hecton8.UI.NotificationEvents.FlushPending();
-            Hecton8.UI.PDAIntrusionEvents.FlushPending();
-            Hecton8.UI.PDAEvents.FlushPending(MaxPdaEventsPerFrame);
-            TrackPdaBusCongestion(pdaPendingBeforeFlush, Hecton8.UI.PDAEvents.PendingCount);
+                PlayerSignalEvents.FlushPending();
+                Hecton8.UI.BaseIntegrityEvents.FlushPending();
+                FlashlightEvents.FlushPending();
+                LaserCutterEvents.FlushPending();
+                InventoryEvents.FlushPending();
+                Hecton8.Interaction.InteractionEvents.FlushPending();
+                Hecton8.Crafting.CraftingEvents.FlushPending();
+                ScanEvents.FlushPending();
+
+                if (ShouldDropAmbientLateFrameEvents(_PlayerEventsArteryHash))
+                    return;
+
+                FirstHourEvents.FlushPending();
+                EndingEvents.FlushPending();
+                AudioLogEvents.FlushPending();
+                HectonSubmarineOsEvents.FlushPending();
+                PlayerExpressionEvents.FlushPending();
+                Hecton8.UI.NotificationEvents.FlushPending();
+                Hecton8.UI.PDAIntrusionEvents.FlushPending();
+                Hecton8.UI.PDAEvents.FlushPending(MaxPdaEventsPerFrame);
+                TrackPdaBusCongestion(pdaPendingBeforeFlush, Hecton8.UI.PDAEvents.PendingCount);
+            }
+            finally
+            {
+                EndLateFrameFlushPass(_PlayerEventsArteryHash, passStartTimestamp);
+            }
         }
 
         private static void FlushBaseEventsArtery()
         {
-            SetActiveLateFrameEventLane(_BaseEventsArteryHash);
-            ReportLateFrameQueueDepth(
-                _BaseEventsArteryHash,
-                PowerGridTelemetryEvents.PendingCount +
-                ModuleStatusEvents.PendingCount +
-                BaseAirlockEvents.PendingCount +
-                EmergencyServiceRelayEvents.PendingCount);
+            long passStartTimestamp = BeginLateFrameFlushPass();
+            try
+            {
+                SetActiveLateFrameEventLane(_BaseEventsArteryHash);
+                ReportLateFrameQueueDepth(
+                    _BaseEventsArteryHash,
+                    PowerGridTelemetryEvents.PendingCount +
+                    ModuleStatusEvents.PendingCount +
+                    BaseAirlockEvents.PendingCount +
+                    EmergencyServiceRelayEvents.PendingCount);
 
-            PowerGridTelemetryEvents.FlushPending();
-            ModuleStatusEvents.FlushPending();
-            BaseAirlockEvents.FlushPending();
-            EmergencyServiceRelayEvents.FlushPending();
+                BaseAirlockEvents.FlushPending();
+                EmergencyServiceRelayEvents.FlushPending();
+
+                if (ShouldDropAmbientLateFrameEvents(_BaseEventsArteryHash))
+                    return;
+
+                PowerGridTelemetryEvents.FlushPending();
+                ModuleStatusEvents.FlushPending();
+            }
+            finally
+            {
+                EndLateFrameFlushPass(_BaseEventsArteryHash, passStartTimestamp);
+            }
         }
 
         private static void FlushAIEventsArtery()
         {
-            SetActiveLateFrameEventLane(_AIEventsArteryHash);
-            ReportLateFrameQueueDepth(
-                _AIEventsArteryHash,
-                DirectorAIEvents.PendingCount +
-                HectonDroneFleetEvents.PendingCount +
-                RepairDroneTorchAcousticEvents.PendingCount);
+            long passStartTimestamp = BeginLateFrameFlushPass();
+            try
+            {
+                SetActiveLateFrameEventLane(_AIEventsArteryHash);
+                ReportLateFrameQueueDepth(
+                    _AIEventsArteryHash,
+                    DirectorAIEvents.PendingCount +
+                    HectonDroneFleetEvents.PendingCount +
+                    RepairDroneTorchAcousticEvents.PendingCount);
 
-            DirectorAIEvents.FlushPending();
-            HectonDroneFleetEvents.FlushPending();
-            RepairDroneTorchAcousticEvents.FlushPending();
+                DirectorAIEvents.FlushPending();
+                HectonDroneFleetEvents.FlushPending();
+                RepairDroneTorchAcousticEvents.FlushPending();
+            }
+            finally
+            {
+                EndLateFrameFlushPass(_AIEventsArteryHash, passStartTimestamp);
+            }
         }
 
         /// <summary>
@@ -937,6 +999,75 @@ namespace Hecton8.Core
         private static void ReportLateFrameQueueDepth(uint queueHash, int pendingCount)
         {
             ObjectPoolDiagnostics.PublishDataBusDepth(queueHash, pendingCount);
+        }
+
+        private static long BeginLateFrameFlushPass()
+        {
+            return System.Diagnostics.Stopwatch.GetTimestamp();
+        }
+
+        private static void EndLateFrameFlushPass(uint laneHash, long passStartTimestamp)
+        {
+            if (passStartTimestamp == 0L)
+                return;
+
+            long elapsedTicks = System.Diagnostics.Stopwatch.GetTimestamp() - passStartTimestamp;
+            double elapsedMilliseconds = elapsedTicks * 1000.0 / System.Diagnostics.Stopwatch.Frequency;
+            if (elapsedMilliseconds <= LateFrameFlushPassSpikeMilliseconds || _criticalPerformanceSpikeReported)
+                return;
+
+            _criticalPerformanceSpikeReported = true;
+            uint stackHash = CaptureCriticalPerformanceStackHash(laneHash);
+            CrashTelemetryBuffer.ReportCriticalPerformanceSpike(laneHash, elapsedMilliseconds, stackHash);
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _CriticalPerformanceSpikeHash,
+                laneHash,
+                (float)elapsedMilliseconds);
+        }
+
+        private static bool ShouldDropAmbientLateFrameEvents(uint laneHash)
+        {
+            if (!_lateFrameEventBudgetActive || !IsLateFrameEventFlushTimeBudgetExhausted())
+                return false;
+
+            _lateFrameCircuitBreakerTripped = true;
+            RecordLateFrameCircuitBreakerLane(laneHash);
+            if (!_lateFrameTimeBudgetExhausted)
+            {
+                _lateFrameTimeBudgetExhausted = true;
+                CrashTelemetryBuffer.ReportLateFrameLoadShedding(laneHash, _lateFrameEventDispatchBudget);
+            }
+
+            GlobalTelemetryBus.PublishPerformanceWarning(
+                _AmbientEventsDropHash,
+                laneHash,
+                _lateFrameEventDispatchBudget);
+            return true;
+        }
+
+        private static void DropAmbientEnvironmentEvents()
+        {
+            SoundscapeEvents.DropPendingAmbient();
+        }
+
+        private static void UpdatePauseFreezeFrameDitherState()
+        {
+            bool paused = Time.timeScale <= 0.0001f;
+            if (_pauseFreezeFrameDitherActive == paused)
+                return;
+
+            _pauseFreezeFrameDitherActive = paused;
+            Shader.SetGlobalFloat(_HectonFreezeFrameDitherId, paused ? 1f : 0f);
+        }
+
+        private static uint CaptureCriticalPerformanceStackHash(uint laneHash)
+        {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            string stackTrace = System.Environment.StackTrace;
+            return unchecked((uint)Hecton.Localization.LocHash.Compute(stackTrace));
+#else
+            return laneHash ^ _CriticalPerformanceSpikeHash;
+#endif
         }
 
         private static void TrackPdaBusCongestion(int pendingBeforeFlush, int pendingAfterFlush)

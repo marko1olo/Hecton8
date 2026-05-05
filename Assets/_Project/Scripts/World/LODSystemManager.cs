@@ -77,6 +77,7 @@ namespace Hecton8.World
     public sealed class LODSystemManager : MonoBehaviour, ITickable, ILateFrameTickable, ISaveable
     {
         private const float CameraResolveRetryInterval = 1f;
+        private const int MaxHotPathLODGroupsPerFrame = 64;
 
         // ══════════════════════════════════════════════════════════
         //  SINGLETON
@@ -101,7 +102,7 @@ namespace Hecton8.World
         private float _crossfadeDistanceThreshold = 50f;
 
         [Header("── Performance ──────────────────")]
-        [SerializeField, Tooltip("Max LOD groups to process per frame")]
+        [SerializeField, Tooltip("Authoring cap for registered LOD groups. Runtime Tick applies a hard 64-group hot-path batch.")]
         private int _maxLODGroupsPerFrame = 500;
 
         [SerializeField, Tooltip("Enable performance monitoring")]
@@ -140,6 +141,10 @@ namespace Hecton8.World
         private float _cameraResolveRetryTimer;
         private float _defaultLODBias = 1f;
         private float _nextNullCleanupTime;
+        private int _nullCleanupCursor;
+        private int _lodHotPathCursor;
+        private int _lodBatchStartIndex;
+        private int _scheduledLODGroupBatchCount;
 
         private float _lodSystemCPUTime;
 
@@ -551,11 +556,17 @@ namespace Hecton8.World
 
             // Copy LOD group positions to NativeArray
             float3 camPos = _cameraTransform.position;
-            int count = Mathf.Min(_registeredLODGroups.Count, _maxLODGroupsPerFrame);
+            int count = ResolveHotPathLODGroupBatchCount();
+            if (_lodHotPathCursor >= _registeredLODGroups.Count)
+                _lodHotPathCursor = 0;
+
+            _lodBatchStartIndex = _lodHotPathCursor;
+            _scheduledLODGroupBatchCount = count;
 
             for (int i = 0; i < count; i++)
             {
-                _lodGroupPositions[i] = _lodGroupTransforms[i].position;
+                int lodGroupIndex = ResolveHotPathLODGroupIndex(_lodBatchStartIndex, i);
+                _lodGroupPositions[i] = _lodGroupTransforms[lodGroupIndex].position;
             }
 
             // Schedule Burst-compiled job
@@ -566,18 +577,19 @@ namespace Hecton8.World
                 SquaredDistances = _lodGroupSquaredDistances
             };
 
-            _distanceJobHandle = job.Schedule(count, 64);
+            _distanceJobHandle = job.Schedule(count, MaxHotPathLODGroupsPerFrame);
             _jobScheduled = true;
         }
 
         private void ApplyLODTransitions()
         {
-            int count = Mathf.Min(_registeredLODGroups.Count, _maxLODGroupsPerFrame);
+            int count = Mathf.Min(_scheduledLODGroupBatchCount, _registeredLODGroups.Count);
             float crossfadeThresholdSqr = _crossfadeDistanceThreshold * _crossfadeDistanceThreshold;
 
             for (int i = 0; i < count; i++)
             {
-                LODGroup lodGroup = _registeredLODGroups[i];
+                int lodGroupIndex = ResolveHotPathLODGroupIndex(_lodBatchStartIndex, i);
+                LODGroup lodGroup = _registeredLODGroups[lodGroupIndex];
                 if (lodGroup == null) continue;
 
                 float sqrDist = _lodGroupSquaredDistances[i];
@@ -601,11 +613,32 @@ namespace Hecton8.World
                     }
                 }
             }
+
+            _lodHotPathCursor = count > 0
+                ? ResolveHotPathLODGroupIndex(_lodBatchStartIndex, count)
+                : 0;
+            _scheduledLODGroupBatchCount = 0;
         }
 
         // ══════════════════════════════════════════════════════════
         //  BURST-COMPILED JOB
         // ══════════════════════════════════════════════════════════
+
+        private int ResolveHotPathLODGroupBatchCount()
+        {
+            int authoringCap = Mathf.Max(1, _maxLODGroupsPerFrame);
+            return Mathf.Min(_registeredLODGroups.Count, Mathf.Min(authoringCap, MaxHotPathLODGroupsPerFrame));
+        }
+
+        private int ResolveHotPathLODGroupIndex(int startIndex, int offset)
+        {
+            int groupCount = _registeredLODGroups.Count;
+            if (groupCount <= 0)
+                return 0;
+
+            int index = startIndex + offset;
+            return index < groupCount ? index : index % groupCount;
+        }
 
         private bool TryResolveMainCamera(float dt = 0f)
         {
@@ -757,14 +790,21 @@ namespace Hecton8.World
 
         private void CleanupNullRegistrations()
         {
-            bool removedAny = false;
+            int cleanupCount = Mathf.Min(_registeredLODGroups.Count, MaxHotPathLODGroupsPerFrame);
 
-            for (int i = _registeredLODGroups.Count - 1; i >= 0; i--)
+            for (int processed = 0; processed < cleanupCount && _registeredLODGroups.Count > 0; processed++)
             {
+                if (_nullCleanupCursor >= _registeredLODGroups.Count)
+                    _nullCleanupCursor = 0;
+
+                int i = _nullCleanupCursor;
                 if (_registeredLODGroups[i] != null && _lodGroupTransforms[i] != null)
                 {
+                    _nullCleanupCursor++;
                     continue;
                 }
+
+                _registeredLODGroupsSet.Remove(_registeredLODGroups[i]);
 
                 int lastIndex = _registeredLODGroups.Count - 1;
                 if (i != lastIndex)
@@ -775,22 +815,8 @@ namespace Hecton8.World
 
                 _registeredLODGroups.RemoveAt(lastIndex);
                 _lodGroupTransforms.RemoveAt(lastIndex);
-                removedAny = true;
-            }
-
-            if (!removedAny)
-            {
-                return;
-            }
-
-            _registeredLODGroupsSet.Clear();
-            for (int i = 0; i < _registeredLODGroups.Count; i++)
-            {
-                LODGroup lodGroup = _registeredLODGroups[i];
-                if (lodGroup != null)
-                {
-                    _registeredLODGroupsSet.Add(lodGroup);
-                }
+                if (_nullCleanupCursor >= _registeredLODGroups.Count)
+                    _nullCleanupCursor = 0;
             }
         }
 

@@ -260,6 +260,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
             float4 _HectonSkyOccluders[8];
             float4 _MeteorShowerParams;     // x=intensity, y=seed, z=synced flash, w=event age
             float4 _MeteorShowerDirection;  // xy=sky UV travel direction, z=streak length, w=streak width
+            float _HectonFreezeFrameDither;
 
             static const half  HALF_ZERO = 0.0h;
             static const half  HALF_ONE  = 1.0h;
@@ -473,6 +474,19 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 int idx = pixel.y * 4 + pixel.x;
                 half threshold = BAYER_MATRIX[idx];
                 clip(alpha - threshold);
+            }
+
+            half3 ApplyFreezeFrameDither(half3 color, float4 positionCS)
+            {
+                half freeze = (half)saturate(_HectonFreezeFrameDither);
+                float2 pixel = floor(positionCS.xy);
+                half noise = (half)frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+                half scanline = (half)step(0.5, frac(positionCS.y * 0.5));
+                half ditherMask = (half)step(noise, freeze);
+                half3 frozenTint = color * 0.74h + half3(0.015h, 0.050h, 0.070h) * 0.26h;
+                frozenTint += ((noise - 0.5h) * 0.052h) + (scanline * 0.018h);
+                frozenTint *= lerp(1.0h, 0.82h + ditherMask * 0.18h, freeze);
+                return lerp(color, frozenTint, freeze);
             }
 
             Varyings SkyVert(Attributes input)
@@ -869,6 +883,7 @@ Shader "HECTON/Sky/Hecton_AlienSky_Master"
                 aegirHalo *= (1.0h - finalCloudMask * 0.5h);
                 aegirHalo *= lerp(1.0h, celestialTransmittance, _CelestialHaloFade);
                 skyColor += _AegirHaloColor.rgb * aegirHalo;
+                skyColor = ApplyFreezeFrameDither(skyColor, input.positionCS);
 
                 return half4(skyColor, 1.0h);
             }

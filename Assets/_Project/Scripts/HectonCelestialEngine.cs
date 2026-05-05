@@ -395,7 +395,6 @@ namespace Hecton8.Celestial
 public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiomeMatrixEventListener
     {
         private const string MandatedSkyMaterialName = "Mat_HectonSky";
-        private const int SurfaceCloudShadowCookieResolution = 64;
         private const float SurfaceCloudShadowCookieEpsilon = 0.0001f;
         public static HectonCelestialEngine ActiveRuntimeInstance { get; private set; }
         private static AtmosphericLightingState _currentAtmosphericLightingState = AtmosphericLightingState.Default;
@@ -427,7 +426,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         [SerializeField] private float _cloudSpeed = 0.01f;
 
         [Header("Surface Cloud Shadow Cookie")]
-        [Tooltip("Optional authored Perlin cloud-shadow cookie. If empty, a 64x64 procedural cookie is generated once at runtime.")]
+        [Tooltip("Authored Perlin cloud-shadow cookie. Runtime procedural texture generation is forbidden in the celestial tick path.")]
         [SerializeField] private Texture2D _surfaceCloudShadowCookie;
         [SerializeField, Min(8f)] private float _surfaceCloudShadowCookieSize = 420f;
         [SerializeField, Min(0f)] private float _surfaceCloudShadowCookieScrollSpeed = 8f;
@@ -681,7 +680,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private Vector2 _cachedSunCookieSize = Vector2.one;
         private Vector2 _cachedSunCookieOffset;
         private bool _sunCookieDefaultsCaptured;
-        private Texture2D _generatedSurfaceCloudShadowCookie;
         private Vector2 _surfaceCloudShadowCookieOffset;
 
         private float3 _resolvedSunDirection;
@@ -772,7 +770,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private AtmosphericLightingState _surfaceAtmosphericLightingState = AtmosphericLightingState.Default;
         private const int CelestialBodyCacheCapacity = 8;
         private const float AtmosphereWeightBlendThreshold = 0.01f;
-        private const int CelestialAtmosphereLutResolution = 512;
+        private const int CelestialAtmosphereLutResolution = 64;
         private const int FirmamentStartupStarCount = 100000;
         private const int FirmamentMinResolution = 256;
         private const int FirmamentMx350ResolutionCap = 2048;
@@ -788,7 +786,7 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
         private bool _editorPreviewDirty;
         private readonly List<ObserverRelativeCelestialBody> _observerBodyCache = new List<ObserverRelativeCelestialBody>(CelestialBodyCacheCapacity); // COLD ALLOC: List<ObserverRelativeCelestialBody>[8] - cold observer-body cache for moon renderer discovery - owner: HectonCelestialEngine
         private readonly List<Renderer> _moonRenderers = new List<Renderer>(CelestialBodyCacheCapacity); // COLD ALLOC: List<Renderer>[8] - cached moon renderers for shared atmosphere overrides - owner: HectonCelestialEngine
-        private readonly Color[] _celestialAtmosphereLutPixels = new Color[CelestialAtmosphereLutResolution]; // COLD ALLOC: Color[512] — celestial atmosphere LUT bake buffer — owner: HectonCelestialEngine
+        private readonly Color[] _celestialAtmosphereLutPixels = new Color[CelestialAtmosphereLutResolution]; // COLD ALLOC: Color[64] — celestial atmosphere LUT bake buffer — owner: HectonCelestialEngine
 
         // ─────────────────────────────────────────────
         // SHADER PROPERTY IDs
@@ -1104,7 +1102,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             ReleaseCelestialAtmosphereLut();
             ReleaseFirmamentBakeResources();
             RestoreSurfaceCloudShadowCookie();
-            ReleaseGeneratedSurfaceCloudShadowCookie();
             TryUnregisterFromTickManager();
         }
 
@@ -1379,14 +1376,13 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             if (!TryResolveSunAdditionalLightData(out UniversalAdditionalLightData lightData))
                 return;
 
-            Texture cookie = ResolveSurfaceCloudShadowCookie();
-            if (cookie == null)
+            if (_surfaceCloudShadowCookie == null)
                 return;
 
             CaptureSunCookieDefaults(lightData);
 
-            if (!ReferenceEquals(sunLight.cookie, cookie))
-                sunLight.cookie = cookie;
+            if (!ReferenceEquals(sunLight.cookie, _surfaceCloudShadowCookie))
+                sunLight.cookie = _surfaceCloudShadowCookie;
 
             float cookieSize = Mathf.Max(8f, _surfaceCloudShadowCookieSize);
             Vector2 targetCookieSize = new Vector2(cookieSize, cookieSize);
@@ -1433,56 +1429,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             _sunCookieDefaultsCaptured = true;
         }
 
-        private Texture ResolveSurfaceCloudShadowCookie()
-        {
-            if (_surfaceCloudShadowCookie != null)
-                return _surfaceCloudShadowCookie;
-
-            if (_generatedSurfaceCloudShadowCookie != null)
-                return _generatedSurfaceCloudShadowCookie;
-
-            _generatedSurfaceCloudShadowCookie = BuildSurfaceCloudShadowCookie();
-            return _generatedSurfaceCloudShadowCookie;
-        }
-
-        private static Texture2D BuildSurfaceCloudShadowCookie()
-        {
-            // COLD ALLOC: Texture2D[64x64 Alpha8] - procedural Perlin light cookie fallback - owner: HectonCelestialEngine
-            Texture2D texture = new Texture2D(
-                SurfaceCloudShadowCookieResolution,
-                SurfaceCloudShadowCookieResolution,
-                TextureFormat.Alpha8,
-                false,
-                true)
-            {
-                name = "GEN_SurfaceCloudShadowCookie",
-                wrapMode = TextureWrapMode.Repeat,
-                filterMode = FilterMode.Bilinear,
-                hideFlags = HideFlags.DontSave
-            };
-
-            // COLD ALLOC: Color32[4096] - one-shot cloud cookie staging pixels - owner: HectonCelestialEngine
-            Color32[] pixels = new Color32[SurfaceCloudShadowCookieResolution * SurfaceCloudShadowCookieResolution];
-            for (int y = 0; y < SurfaceCloudShadowCookieResolution; y++)
-            {
-                for (int x = 0; x < SurfaceCloudShadowCookieResolution; x++)
-                {
-                    float u = x / (float)SurfaceCloudShadowCookieResolution;
-                    float v = y / (float)SurfaceCloudShadowCookieResolution;
-                    float coarse = Mathf.PerlinNoise(u * 3.2f + 13.17f, v * 3.2f + 7.91f);
-                    float mid = Mathf.PerlinNoise(u * 7.4f + 41.31f, v * 7.4f + 19.07f);
-                    float detail = Mathf.PerlinNoise(u * 15.8f + 5.73f, v * 15.8f + 83.2f);
-                    float cloud = Mathf.SmoothStep(0.18f, 0.92f, coarse * 0.62f + mid * 0.28f + detail * 0.1f);
-                    byte value = (byte)Mathf.Clamp(Mathf.RoundToInt(Mathf.Lerp(108f, 255f, cloud)), 0, 255);
-                    pixels[x + y * SurfaceCloudShadowCookieResolution] = new Color32(value, value, value, value);
-                }
-            }
-
-            texture.SetPixels32(pixels);
-            texture.Apply(false, true);
-            return texture;
-        }
-
         private Vector2 ResolveSurfaceCloudShadowScrollDirection()
         {
             Vector2 wind = new Vector2(_surfaceWeatherWindDirection.x, _surfaceWeatherWindDirection.y);
@@ -1523,19 +1469,6 @@ public class HectonCelestialEngine : MonoBehaviour, ITickable, IUpdatable, IBiom
             }
 
             _sunCookieDefaultsCaptured = false;
-        }
-
-        private void ReleaseGeneratedSurfaceCloudShadowCookie()
-        {
-            if (_generatedSurfaceCloudShadowCookie == null)
-                return;
-
-            if (Application.isPlaying)
-                Destroy(_generatedSurfaceCloudShadowCookie);
-            else
-                DestroyImmediate(_generatedSurfaceCloudShadowCookie);
-
-            _generatedSurfaceCloudShadowCookie = null;
         }
 
         private void EnsureCelestialAtmosphereLutReady()

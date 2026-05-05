@@ -16,6 +16,7 @@ using Hecton8.Bootstrap;
 using Hecton8.Caves;
 using Hecton8.Core;
 using Hecton8.Gameplay;
+using Hecton8.Inventory;
 using Hecton8.Modding;
 using Hecton8.Quest;
 using Hecton8.UI;
@@ -32,7 +33,7 @@ namespace Hecton8.SaveSystem
 {
     [DisallowMultipleComponent]
     [DefaultExecutionOrder(-8000)]
-    public sealed class SaveManager : MonoBehaviour, ISaveService, IUpdatable, ILateFrameTickable
+    public sealed class SaveManager : MonoBehaviour, ISaveService, IUpdatable, ISlowTickable, ILateFrameTickable
     {
         private const long MainThreadSnapshotBudgetMs = 50L;
         private static readonly long PreCompressionYieldBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 500L);
@@ -44,8 +45,9 @@ namespace Hecton8.SaveSystem
         private const float SafeAupSnapMinimumLiftMeters = 0.35f;
         private const int SafeAupSnapHitCapacity = 8;
         private const string CriticalSectorCorruptionMessage = "CRITICAL ERROR: SECTOR CORRUPTION DETECTED. TERRAIN RE-INITIALIZED.";
-        private const string GeologicalAnomalyDetectedMessage = "Geological Anomaly Detected";
+        private const string GeologicalAnomalyDetectedMessage = "UNSTABLE REALITY";
         private const int MaxRegisteredSaveables = 256;
+        private static readonly long CompressionThrottleBudgetTicks = Math.Max(1L, Stopwatch.Frequency / 100L);
         private const string NativeMemoryOwner = nameof(SaveManager);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private const NativeAllocationLifetime NativeTransientMemoryLifetime = NativeAllocationLifetime.TransientArena;
@@ -125,8 +127,13 @@ namespace Hecton8.SaveSystem
         private ulong _expectedIntegrityPayloadHash64;
         private int _integrityPayloadLength;
         private bool _updatableRegistered;
+        private bool _slowTickRegistered;
         private bool _lateFrameRegistered;
         private bool _serviceRegistered;
+        private bool _compressionThrottleArmed;
+        private int _compressionThrottleReleaseSlowTick;
+        private int _slowTickSequence;
+        private long _lastSaveCompressionPipelineTicks;
         private LoadingScreenController _cachedLoadingScreenController;
         private string _integritySlotName;
 
@@ -243,6 +250,12 @@ namespace Hecton8.SaveSystem
                 _updatableRegistered = false;
             }
 
+            if (_slowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                _slowTickRegistered = false;
+            }
+
             if (_lateFrameRegistered)
             {
                 GlobalRegistry.UnregisterLateFrameTickable(this, PriorityLayer.Core);
@@ -259,6 +272,12 @@ namespace Hecton8.SaveSystem
             {
                 GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Core);
                 _updatableRegistered = false;
+            }
+
+            if (_slowTickRegistered)
+            {
+                GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Core);
+                _slowTickRegistered = false;
             }
 
             if (_lateFrameRegistered)
@@ -300,6 +319,12 @@ namespace Hecton8.SaveSystem
                 _updatableRegistered = GlobalRegistry.Updatables.Contains(this);
             }
 
+            if (!_slowTickRegistered)
+            {
+                GlobalRegistry.RegisterSlowTickable(this, PriorityLayer.Core);
+                _slowTickRegistered = GlobalRegistry.SlowTickables.Contains(this);
+            }
+
             if (!_lateFrameRegistered)
             {
                 GlobalRegistry.RegisterLateFrameTickable(this, PriorityLayer.Core);
@@ -326,6 +351,16 @@ namespace Hecton8.SaveSystem
 
         public void Tick(float deltaTime)
         {
+        }
+
+        public void SlowTick()
+        {
+            unchecked
+            {
+                _slowTickSequence++;
+                if (_slowTickSequence == int.MinValue)
+                    _slowTickSequence = 0;
+            }
         }
 
         public void LateFrameTick()

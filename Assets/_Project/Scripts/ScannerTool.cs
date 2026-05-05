@@ -337,10 +337,10 @@ namespace Hecton8.Gameplay
         [SerializeField] private Shader scannerMarkerShader;
         [SerializeField] private Shader scannerPulseShader;
 
-        // COLD ALLOC: SpatialQueryHit[128] — scanner spatial contact buffer — owner: ScannerTool
-        private static readonly SpatialQueryHit[] s_SpatialHitBuffer = new SpatialQueryHit[128];
-        // COLD ALLOC: ScanAggregate[128] — scanner transform aggregate buffer — owner: ScannerTool
-        private static readonly ScanAggregate[] s_ScanAggregateBuffer = new ScanAggregate[128];
+        // COLD ALLOC: SpatialQueryHit[64] — scanner spatial contact cap — owner: ScannerTool
+        private static readonly SpatialQueryHit[] s_SpatialHitBuffer = new SpatialQueryHit[64];
+        // COLD ALLOC: ScanAggregate[64] — scanner transform aggregate cap — owner: ScannerTool
+        private static readonly ScanAggregate[] s_ScanAggregateBuffer = new ScanAggregate[64];
         private static readonly SpatialTargetKind s_ScannerSpatialKinds =
             SpatialTargetKind.Resource |
             SpatialTargetKind.Bioform |

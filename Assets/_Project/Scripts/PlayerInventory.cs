@@ -523,6 +523,13 @@ namespace Hecton8.Inventory
         private ulong _playerImpactBodyId;
         private TraumaDispatcher _traumaDispatcher;
         private int _pressurizedContainerProtectionCount;
+        private InventoryDTO _lastCommittedInventoryDto;
+        private InventoryDTO _pendingInventoryDto;
+        private uint _inventoryDirtyRevision = 1u;
+        private uint _pendingInventorySaveRevision;
+        private bool _isDirty = true;
+        private bool _hasCommittedInventoryDto;
+        private bool _hasPendingInventoryCommit;
 
         public float TotalWeight { get; private set; }
         public float TotalMassKg { get; private set; }
@@ -1214,8 +1221,22 @@ namespace Hecton8.Inventory
                 return;
 
             ref InventoryDTO dto = ref data.inventory;
-            dto.EnsureCapacity();
+            if (!_isDirty && _hasCommittedInventoryDto)
+            {
+                dto = _lastCommittedInventoryDto;
+                _hasPendingInventoryCommit = false;
+                return;
+            }
 
+            PopulateInventoryDtoFromRuntime(ref dto);
+            _pendingInventoryDto = dto;
+            _pendingInventorySaveRevision = _inventoryDirtyRevision;
+            _hasPendingInventoryCommit = true;
+        }
+
+        private void PopulateInventoryDtoFromRuntime(ref InventoryDTO dto)
+        {
+            dto.EnsureCapacity();
             if (_grid == null)
             {
                 dto.gridColumns = columns;
@@ -1250,12 +1271,30 @@ namespace Hecton8.Inventory
             dto.cellCount = cellIndex;
         }
 
+        public void NotifyMappedInventoryWriteCommitted()
+        {
+            if (!_hasPendingInventoryCommit)
+                return;
+
+            if (_pendingInventorySaveRevision == _inventoryDirtyRevision)
+            {
+                _lastCommittedInventoryDto = _pendingInventoryDto;
+                _hasCommittedInventoryDto = true;
+                _isDirty = false;
+            }
+
+            _pendingInventoryDto = default;
+            _pendingInventorySaveRevision = 0u;
+            _hasPendingInventoryCommit = false;
+        }
+
         public void LoadFromSaveData(SaveData data)
         {
             if (data == null || itemCatalog == null || _grid == null)
                 return;
 
             InventoryDTO dto = data.inventory;
+            dto.EnsureCapacity();
             _grid.Clear();
             ClearNativeArray(_stackCounts);
             ClearCraftReservationState();
@@ -1270,6 +1309,11 @@ namespace Hecton8.Inventory
                 dto.stackCounts == null ||
                 dto.cellCount <= 0)
             {
+                PopulateInventoryDtoFromRuntime(ref _lastCommittedInventoryDto);
+                _hasCommittedInventoryDto = true;
+                _hasPendingInventoryCommit = false;
+                _isDirty = false;
+                NotifyInventoryChanged(markDirty: false);
                 return;
             }
 
@@ -1317,7 +1361,11 @@ namespace Hecton8.Inventory
                 }
             }
 
-            NotifyInventoryChanged();
+            PopulateInventoryDtoFromRuntime(ref _lastCommittedInventoryDto);
+            _hasCommittedInventoryDto = true;
+            _hasPendingInventoryCommit = false;
+            _isDirty = false;
+            NotifyInventoryChanged(markDirty: false);
         }
 
         public void SortInventory()
@@ -1895,13 +1943,27 @@ namespace Hecton8.Inventory
             };
         }
 
-        private void NotifyInventoryChanged()
+        private void NotifyInventoryChanged(bool markDirty = true)
         {
+            if (markDirty)
+                MarkInventoryDirty();
+
             RefreshDerivedMassAndSurvivalLoad();
             PublishEncumbranceChanged();
             InventoryVersion++;
             InventoryEvents.NotifyInventoryChanged();
             InventoryChanged?.Invoke();
+        }
+
+        private void MarkInventoryDirty()
+        {
+            _isDirty = true;
+            unchecked
+            {
+                _inventoryDirtyRevision++;
+                if (_inventoryDirtyRevision == 0u)
+                    _inventoryDirtyRevision = 1u;
+            }
         }
 
         private void PublishEncumbranceChanged()

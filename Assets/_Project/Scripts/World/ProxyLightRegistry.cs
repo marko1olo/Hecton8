@@ -71,6 +71,33 @@ namespace Hecton8.World
                 Lod = 0
             };
         }
+
+        public static ProxyLightData CreateTransientPoint(
+            in AbsoluteUniversePosition positionAup,
+            float3 runtimePosition,
+            Color colorLinear,
+            float rangeMeters,
+            float intensity,
+            float unscaledTimeSeconds)
+        {
+            return new ProxyLightData
+            {
+                PositionAup = positionAup,
+                RuntimePosition = runtimePosition,
+                RangeMeters = math.max(0.01f, rangeMeters),
+                ColorLinear = new float3(colorLinear.r, colorLinear.g, colorLinear.b),
+                Intensity = math.saturate(intensity),
+                Forward = new float3(0f, 0f, 1f),
+                SpotCosine = 0f,
+                ShadowPhase01 = 0f,
+                PowerFlicker01 = 1f,
+                OxygenStress01 = 0f,
+                LastUpdateUnscaledTime = math.max(0f, unscaledTimeSeconds),
+                Flags = (uint)(ProxyLightFlags.Visible | ProxyLightFlags.Powered),
+                Type = (byte)ProxyLightType.Point,
+                Lod = 0
+            };
+        }
     }
 
     /// <summary>

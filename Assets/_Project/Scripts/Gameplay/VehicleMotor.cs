@@ -947,7 +947,7 @@ namespace Hecton8.Gameplay
             if (_submarineState.IsCreated)
                 return;
 
-            // COLD ALLOC: NativeArray<SubmarineState>[1] - authoritative headless submarine kinematic state lane - owner: VehicleMotor
+            // COLD ALLOC: NativeArray<SubmarineState>[1] — authoritative headless submarine kinematic state lane — owner: VehicleMotor
             _submarineState = new NativeArray<SubmarineState>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
         }
 

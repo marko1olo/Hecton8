@@ -6,6 +6,7 @@ Shader "Hecton8/VFX/PhantomDrones"
         _EdgeBoost ("Edge Boost", Range(0, 4)) = 1.7
         _SignalGlitch ("Signal Glitch", Range(0, 1)) = 0.28
         _SignalBandStrength ("Signal Band Strength", Range(0, 1)) = 0.22
+        _SignalShearStrength ("Signal Shear Strength", Range(0, 0.5)) = 0.08
         _DistanceFadeStart ("Distance Fade Start", Float) = 45.0
         _DistanceFadeEnd ("Distance Fade End", Float) = 92.0
     }
@@ -46,6 +47,7 @@ Shader "Hecton8/VFX/PhantomDrones"
                 float _EdgeBoost;
                 float _SignalGlitch;
                 float _SignalBandStrength;
+                float _SignalShearStrength;
                 float _DistanceFadeStart;
                 float _DistanceFadeEnd;
             CBUFFER_END
@@ -72,13 +74,17 @@ Shader "Hecton8/VFX/PhantomDrones"
                 float4x4 instanceMatrix = _PhantomMatrices[input.instanceID];
                 float4 positionWS = mul(instanceMatrix, input.positionOS);
                 float3 normalWS = normalize(mul((float3x3)instanceMatrix, input.normalOS));
-                float distanceToCamera = distance(positionWS.xyz, _WorldSpaceCameraPos);
-                float distanceFade = 1.0 - smoothstep(_DistanceFadeStart, max(_DistanceFadeEnd, _DistanceFadeStart + 0.001), distanceToCamera);
                 float signalPhase = frac((float)input.instanceID * 0.01713 + _Time.y * 0.071);
                 float signalHash = frac(sin(signalPhase * HECTON_TWO_PI) * 43758.5453);
                 float signalGlitch = step(0.93, signalHash) * _SignalGlitch;
                 float bandPhase = frac(positionWS.y * 0.073 + _Time.y * 0.21 + (float)input.instanceID * 0.0031);
                 float signalBand = smoothstep(0.46, 0.50, bandPhase) * (1.0 - smoothstep(0.50, 0.56, bandPhase));
+                float shearPhase = frac((float)input.instanceID * 0.031 + _Time.y * 0.43);
+                float shearPulse = smoothstep(0.87, 0.91, shearPhase) * (1.0 - smoothstep(0.91, 0.98, shearPhase));
+                float2 shearDir = float2(sin(signalPhase * HECTON_TWO_PI), cos(signalPhase * HECTON_TWO_PI));
+                positionWS.xz += shearDir * shearPulse * _SignalShearStrength;
+                float distanceToCamera = distance(positionWS.xyz, _WorldSpaceCameraPos);
+                float distanceFade = 1.0 - smoothstep(_DistanceFadeStart, max(_DistanceFadeEnd, _DistanceFadeStart + 0.001), distanceToCamera);
 
                 output.positionCS = TransformWorldToHClip(positionWS.xyz);
                 output.normalWS = normalWS;

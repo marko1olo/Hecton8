@@ -46,6 +46,8 @@ using Hecton8.Inventory;
 using Hecton8.Items;
 using Hecton8.Modding;
 using Hecton8.Power;
+using Hecton8.Tools;
+using Hecton8.UI;
 using Hecton8.World;
 using Unity.Collections;
 using Unity.Mathematics;
@@ -55,7 +57,7 @@ namespace Hecton8.Crafting
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Collider))]
-    public sealed class Fabricator : MonoBehaviour, IInteractable, ISlowTickable, IPowerComponent, IFabricator, IModRegistryEventListener, ILocalizationLanguageChangedListener
+    public sealed class Fabricator : MonoBehaviour, IInteractable, ISlowTickable, IUpdatable, IPowerComponent, IFabricator, IModRegistryEventListener, ILocalizationLanguageChangedListener
     {
         // COLD ALLOC: List<Fabricator>[8] - active fabricator registry for cold-path recipe lookups - owner: Fabricator
         private static readonly List<Fabricator> _activeFabricators = new List<Fabricator>(8);
@@ -109,6 +111,10 @@ namespace Hecton8.Crafting
         [SerializeField] private Renderer[] errorFeedbackRenderers;
         [SerializeField] private Color errorEmissionColor = new Color(1f, 0.04f, 0.02f, 1f);
         [SerializeField, Min(0.05f)] private float errorFlashDurationSeconds = 0.55f;
+        [SerializeField] private Color sparkProxyLightColor = new Color(1f, 0.48f, 0.12f, 1f);
+        [SerializeField, Min(0.01f)] private float sparkProxyLightDurationSeconds = 0.1f;
+        [SerializeField, Min(0.01f)] private float sparkProxyLightRangeMeters = 2.4f;
+        [SerializeField, Min(0f)] private float sparkProxyLightIntensity = 0.72f;
 
         [Header("── Physical Output ──────────────────────────")]
         [Tooltip("Optional socket used as the fabrication output origin.")]
@@ -179,6 +185,10 @@ namespace Hecton8.Crafting
         private float _errorFlashRemainingSeconds;
         private bool _fabricationSparksPlaying;
         private bool _errorFeedbackApplied;
+        private int _sparkProxyLightKey;
+        private float _sparkProxyLightRemainingSeconds;
+        private bool _sparkProxyLightRegistered;
+        private bool _sparkLightTickRegistered;
 
         // ── Craft State ──
         private bool       _isCrafting;
@@ -209,6 +219,9 @@ namespace Hecton8.Crafting
         private const float SlowTickDeltaSeconds = 0.5f;
         private const float ThermalThrottleTemperatureCelsius = 50f;
         private const float ThermalThrottleProgressMultiplier = 0.5f;
+        private const byte FabricatorHapticMotorMask = 0b0001;
+        private const byte FabricatorHapticPriority = 2;
+        private const byte FabricatorFinalHapticPriority = 3;
         private readonly PlayerInventory.CraftReservation[] _localCraftReservations = new PlayerInventory.CraftReservation[MaxLocalCraftReservations];
         private readonly int[] _networkCostItemHashes = new int[MaxNetworkCraftCosts];
         private readonly int[] _networkCostAmounts = new int[MaxNetworkCraftCosts];
@@ -375,6 +388,8 @@ namespace Hecton8.Crafting
             EnsureScanLogSystem();
             MarkRecipeCacheDirty();
             _activeCraftPowerMultiplier = 1f;
+            _sparkProxyLightKey = unchecked(GetInstanceID() ^ 0x4641424C);
+            ToolHapticsRuntime.EnsureRuntimeInstance();
             EnsureCraftingScratch();
         }
 
@@ -409,6 +424,8 @@ namespace Hecton8.Crafting
                 CancelCraft();
 
             SetFabricationSparksActive(false);
+            UnregisterSparkProxyLight();
+            TryUnregisterSparkLightTick();
             TryUnregister();
         }
 
@@ -418,6 +435,8 @@ namespace Hecton8.Crafting
             BaseLogisticsNetwork.UnregisterFabricator(this);
             TryUnregister();
             SetFabricationSparksActive(false);
+            UnregisterSparkProxyLight();
+            TryUnregisterSparkLightTick();
             DisposeCraftingScratch();
         }
 
@@ -638,6 +657,26 @@ namespace Hecton8.Crafting
         ///   • Крафт НЕ отменяется.
         ///   • Проверка дистанции продолжается (игрок может отойти).
         /// </summary>
+        public void Tick(float deltaTime)
+        {
+            if (!(_sparkProxyLightRemainingSeconds > 0f))
+            {
+                UnregisterSparkProxyLight();
+                TryUnregisterSparkLightTick();
+                return;
+            }
+
+            _sparkProxyLightRemainingSeconds = Mathf.Max(0f, _sparkProxyLightRemainingSeconds - Mathf.Max(0f, deltaTime));
+            if (_sparkProxyLightRemainingSeconds > 0f)
+            {
+                UpdateSparkProxyLightRegistration();
+                return;
+            }
+
+            UnregisterSparkProxyLight();
+            TryUnregisterSparkLightTick();
+        }
+
         public void SlowTick()
         {
             UpdateErrorFeedback(SlowTickDeltaSeconds);
@@ -694,7 +733,11 @@ namespace Hecton8.Crafting
                 out float progress);
             _craftTimer = task.Progress * durationSeconds;
             if (progress > previousProgress)
+            {
                 RaiseFabricatorProgressAudioPing();
+                RaiseFabricatorProgressHaptics(progress);
+                TriggerSparkProxyLight();
+            }
 
             if (progress - _lastPublishedProgress > ProgressPublishThreshold
                 || progress >= 1f)
@@ -863,11 +906,12 @@ namespace Hecton8.Crafting
                 {
                     if (resultHashId == 0 || !_playerInventory.TryAddItem(resultHashId, 1))
                     {
+                        int remainingQuantity = outputQuantity - i;
+                        TryEmitCraftOverflowStack(result, remainingQuantity);
+                        RaiseStorageCapacityExceededBark();
+                        TriggerCraftFailureFeedback();
 #if UNITY_EDITOR || DEVELOPMENT_BUILD
-                        Debug.LogWarning(
-                            $"[Fabricator] Инвентарь полон! " +
-                            $"Не удалось добавить: {result.itemName} " +
-                            $"(потеряно {outputQuantity - i} шт.)");
+                        Debug.LogWarning("[Fabricator] Craft output overflow; routed to diegetic bark/drop fallback.");
 #endif
                         break;
                     }
@@ -1233,6 +1277,25 @@ namespace Hecton8.Crafting
             return true;
         }
 
+        private bool TryEmitCraftOverflowStack(ItemData result, int quantity)
+        {
+            if (result == null || quantity <= 0)
+                return false;
+
+            PersistentWorldRegistry registry = GlobalRegistry.PersistentWorldRegistry;
+            if (registry == null)
+                return false;
+
+            ResolveCraftOutputPose(out Vector3 spawnPosition, out Vector3 velocityChange);
+            bool synthesized = registry.TryRegisterDroppedItem(result, quantity, spawnPosition, Vector3.zero, velocityChange);
+            if (!synthesized)
+                return false;
+
+            CraftingEvents.RaiseCraftOutputSynthesized(
+                new CraftedItemSynthesisEvent(result, quantity, spawnPosition, velocityChange));
+            return true;
+        }
+
         /// <summary>
         /// Grinds one crafted item back into authored salvage stacks.
         /// </summary>
@@ -1549,6 +1612,26 @@ namespace Hecton8.Crafting
                 ProceduralAudioPingKind.MechanicalWhirr);
         }
 
+        private static void RaiseStorageCapacityExceededBark()
+        {
+            AcousticEcholocationBarkEvents.RaiseStorageCapacityExceeded();
+        }
+
+        private static void RaiseFabricatorProgressHaptics(float progress)
+        {
+            float finalPulse01 = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(0.9f, 1f, progress));
+            float lowFrequencyIntensity = Mathf.Clamp01(Mathf.Lerp(0.12f, 0.3f, progress) + finalPulse01 * 0.35f);
+            float highFrequencyIntensity = Mathf.Clamp01(0.025f + finalPulse01 * 0.05f);
+            float pulseFrequencyHz = Mathf.Lerp(18f, 30f, finalPulse01);
+            ToolHapticsRuntime.EnqueueSinusoidalCommand(
+                lowFrequencyIntensity,
+                highFrequencyIntensity,
+                0.18f,
+                pulseFrequencyHz,
+                finalPulse01 > 0f ? FabricatorFinalHapticPriority : FabricatorHapticPriority,
+                FabricatorHapticMotorMask);
+        }
+
         private void TriggerCraftFailureFeedback()
         {
             _errorFlashRemainingSeconds = Mathf.Max(_errorFlashRemainingSeconds, errorFlashDurationSeconds);
@@ -1562,6 +1645,46 @@ namespace Hecton8.Crafting
                 1f,
                 180f,
                 ProceduralAudioPingKind.MechanicalWhirr);
+        }
+
+        private void TriggerSparkProxyLight()
+        {
+            _sparkProxyLightRemainingSeconds = Mathf.Max(_sparkProxyLightRemainingSeconds, Mathf.Max(0.01f, sparkProxyLightDurationSeconds));
+            UpdateSparkProxyLightRegistration();
+            TryRegisterSparkLightTick();
+        }
+
+        private void UpdateSparkProxyLightRegistration()
+        {
+            if (_sparkProxyLightKey == 0 || !(_sparkProxyLightRemainingSeconds > 0f))
+                return;
+
+            Transform origin = outputSocket != null ? outputSocket : transform;
+            if (origin == null)
+                return;
+
+            Vector3 position = origin.position;
+            AbsoluteUniversePosition positionAup = AbsoluteUniversePosition.FromRuntimePosition(position);
+            float normalizedLifetime = Mathf.Clamp01(_sparkProxyLightRemainingSeconds / Mathf.Max(0.01f, sparkProxyLightDurationSeconds));
+            float intensity = sparkProxyLightIntensity * normalizedLifetime * Mathf.Max(1f, _activeCraftPowerMultiplier);
+            ProxyLightData lightData = ProxyLightData.CreateTransientPoint(
+                positionAup,
+                position,
+                sparkProxyLightColor.linear,
+                sparkProxyLightRangeMeters,
+                intensity,
+                Time.unscaledTime);
+
+            _sparkProxyLightRegistered = ProxyLightRegistry.RegisterOrUpdate(_sparkProxyLightKey, in lightData) || _sparkProxyLightRegistered;
+        }
+
+        private void UnregisterSparkProxyLight()
+        {
+            if (!_sparkProxyLightRegistered || _sparkProxyLightKey == 0)
+                return;
+
+            ProxyLightRegistry.Unregister(_sparkProxyLightKey);
+            _sparkProxyLightRegistered = false;
         }
 
         private void SetFabricationSparksActive(bool active)
@@ -1584,6 +1707,9 @@ namespace Hecton8.Crafting
                 return;
             }
 
+            _sparkProxyLightRemainingSeconds = 0f;
+            UnregisterSparkProxyLight();
+            TryUnregisterSparkLightTick();
             if (_fabricationSparksPlaying)
             {
                 fabricationSparks.Stop(false, ParticleSystemStopBehavior.StopEmitting);
@@ -1992,6 +2118,27 @@ namespace Hecton8.Crafting
 
             GlobalRegistry.UnregisterSlowTickable(this, PriorityLayer.Environment);
             _tickRegistered = false;
+        }
+
+        private void TryRegisterSparkLightTick()
+        {
+            if (_sparkLightTickRegistered || !Application.isPlaying)
+                return;
+
+            if (GlobalRegistry.Dispatcher == null)
+                return;
+
+            GlobalRegistry.RegisterUpdatable(this, PriorityLayer.Environment);
+            _sparkLightTickRegistered = GlobalRegistry.Updatables.Contains(this);
+        }
+
+        private void TryUnregisterSparkLightTick()
+        {
+            if (!_sparkLightTickRegistered)
+                return;
+
+            GlobalRegistry.UnregisterUpdatable(this, PriorityLayer.Environment);
+            _sparkLightTickRegistered = false;
         }
 
         private void RebuildInteractText()

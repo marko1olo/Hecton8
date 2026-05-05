@@ -124,6 +124,11 @@ Shader "Hecton8/UI/DiegeticPanelUnlit"
                 float scanline = lerp(1.0, lerp(0.72, 1.08, step(0.5, scanCoord)), inventoryMask * _InventoryScanlineStrength);
                 emissive *= scanline;
                 alpha *= lerp(1.0, 0.92 + scanline * 0.08, inventoryMask);
+                float2 edgeDistance = min(input.uv, 1.0 - input.uv);
+                float edgePulseMask = (1.0 - smoothstep(0.012, 0.075, min(edgeDistance.x, edgeDistance.y))) * inventoryMask * powerLevel;
+                float edgePulse = 0.74 + 0.26 * sin(_Time.y * 4.7 + input.uv.x * 13.0 - input.uv.y * 9.0);
+                emissive += _Color.rgb * edgePulseMask * edgePulse * 0.085;
+                alpha = saturate(alpha + edgePulseMask * edgePulse * 0.035);
 
                 if (powerLevel < 0.1)
                 {

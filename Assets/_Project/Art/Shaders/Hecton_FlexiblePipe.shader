@@ -41,6 +41,7 @@ Shader "Hecton/FlexiblePipe"
             };
 
             StructuredBuffer<FlexiblePipeInstance> _HectonFlexiblePipeInstances;
+            float _HectonLogisticsPathHighlight;
 
             CBUFFER_START(UnityPerMaterial)
                 float4 _BaseColor;
@@ -61,6 +62,10 @@ Shader "Hecton/FlexiblePipe"
                 float4 positionCS : SV_POSITION;
                 half4 color : COLOR0;
                 half3 normalWS : TEXCOORD0;
+                half rupture01 : TEXCOORD1;
+                half pipeT : TEXCOORD2;
+                half rust01 : TEXCOORD3;
+                half flow01 : TEXCOORD4;
             };
 
             float3 SafeNormalize(float3 value, float3 fallback)
@@ -104,24 +109,36 @@ Shader "Hecton/FlexiblePipe"
                 float3 p3 = instanceData.P3.xyz;
                 float radius = max(instanceData.P0Radius.w, 0.001);
                 uint flags = (uint)round(instanceData.P1Flags.w);
+                float ruptureStartTime = instanceData.P2.w;
+                float flowEligible = instanceData.P3.w;
 
-                float t = saturate(input.positionOS.z);
+                float t = saturate(input.positionOS.y * 0.5 + 0.5);
                 float3 center = EvaluateBezier(p0, p1, p2, p3, t);
                 float3 tangent = SafeNormalize(EvaluateBezierTangent(p0, p1, p2, p3, t), float3(0.0, 0.0, 1.0));
                 float3 normal;
                 float3 binormal;
                 ResolveFrame(tangent, normal, binormal);
 
-                float2 radialLocal = SafeNormalize(float3(input.positionOS.xy, 0.0), float3(1.0, 0.0, 0.0)).xy;
+                float2 radialSource = input.positionOS.xz;
+                float radialSourceLength = length(radialSource);
+                float radialScale = saturate(radialSourceLength * 2.0);
+                float2 radialLocal = radialSourceLength > 1e-6 ? radialSource / radialSourceLength : float2(1.0, 0.0);
                 float3 radialDirection = SafeNormalize(normal * radialLocal.x + binormal * radialLocal.y, normal);
-                float3 positionWS = center + radialDirection * radius;
+                float3 positionWS = center + radialDirection * radius * radialScale;
                 if ((flags & 1u) != 0u)
                     positionWS += radialDirection * (sin(positionWS.z * 15.0) * 0.15);
 
                 Varyings output;
                 output.positionCS = TransformWorldToHClip(positionWS);
                 output.normalWS = (half3)radialDirection;
+                float ruptured01 = ((flags & 1u) != 0u) ? 1.0 : 0.0;
                 output.color = (half4)_BaseColor;
+                output.rupture01 = (half)ruptured01;
+                output.pipeT = (half)t;
+                output.rust01 = (half)(ruptured01 > 0.5 && ruptureStartTime > 0.0
+                    ? saturate((_Time.y - ruptureStartTime) * (1.0 / 300.0))
+                    : 0.0);
+                output.flow01 = (half)(saturate(flowEligible * _HectonLogisticsPathHighlight) * (1.0 - ruptured01));
                 return output;
             }
 
@@ -131,6 +148,12 @@ Shader "Hecton/FlexiblePipe"
                 half3 lightDir = normalize(half3(0.25h, 0.70h, 0.35h));
                 half diffuse = saturate(dot(normalWS, lightDir)) * 0.55h + 0.45h;
                 half3 color = input.color.rgb * diffuse;
+                half ruptureStripe = (sin(input.pipeT * 80.0h) * 0.5h + 0.5h) * input.rupture01;
+                color = lerp(color, color * half3(1.35h, 0.78h, 0.58h), ruptureStripe * 0.22h);
+                color = lerp(color, half3(0.88h, 0.31h, 0.07h) * diffuse, input.rust01 * 0.72h);
+                half flowPulse = sin((input.pipeT * 18.0h - _Time.y * 2.4h) * 6.28318h) * 0.5h + 0.5h;
+                flowPulse = smoothstep(0.62h, 1.0h, flowPulse) * input.flow01;
+                color += half3(0.0h, 0.52h, 0.82h) * flowPulse * 0.75h;
                 return half4(color, input.color.a);
             }
             ENDHLSL

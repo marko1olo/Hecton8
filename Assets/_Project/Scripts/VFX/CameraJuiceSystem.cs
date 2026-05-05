@@ -103,7 +103,18 @@ namespace Hecton8.VFX
         private const float DEFAULT_SHAKE_CLIP_SAFE_DISPLACEMENT = 0.05f;
         private const float LOW_FREQUENCY_HEAVE_NOISE_SCALE = 0.28f;
         private const float LOW_FREQUENCY_HEAVE_DISPLACEMENT_SCALE = 0.35f;
+        private const float SUBMARINE_IMPACT_SHAKE_DURATION_SECONDS = 0.5f;
+        private const float SUBMARINE_IMPACT_SHAKE_RECOVERY_SHARPNESS = 24f;
+        private const float SUBMARINE_IMPACT_SHAKE_MAX_DISPLACEMENT = 0.085f;
+        private const float SUBMARINE_IMPACT_SHAKE_KICK_DISPLACEMENT = 0.09f;
+        private const float SUBMARINE_IMPACT_SHAKE_EPSILON_SQ = 0.0000001f;
         private float _shakeNoiseTime;
+        private float _submarineImpactShakeTimer;
+        private float _submarineImpactShakeSeverity;
+        private float _submarineImpactShakeSign = 1f;
+        private Vector3 _submarineImpactShakeOffset;
+        private Vector3 _submarineImpactShakeKickOffset;
+        private bool _submarineImpactShakeKickPending;
         private NativeArray<ShakeJobInput> _shakeJobInputs;
         private NativeArray<ShakeJobResult> _shakeJobResults;
         private JobHandle _shakeJobHandle;
@@ -447,6 +458,7 @@ namespace Hecton8.VFX
             _pauseDofDefaultsCaptured = false;
             _shakeOffset = Vector3.zero;
             _shakeJobApplyResult = false;
+            ClearSubmarineImpactShakeState();
             ReleaseFocusRaycastBuffers();
             ReleaseShakeJobBuffers();
             StopCameraSpeedLineParticles();
@@ -1197,7 +1209,7 @@ namespace Hecton8.VFX
                 return;
 
             int maxParticles = Mathf.Max(1, _speedLineMaxParticles);
-            // COLD ALLOC: GameObject[1] + ParticleSystem[1] - camera-local cinematic speed-line emitter - owner: CameraJuiceSystem
+            // COLD ALLOC: GameObject[1] + ParticleSystem[1] — camera-local cinematic speed-line emitter — owner: CameraJuiceSystem
             GameObject speedLineObject = new GameObject("PFX_Camera_SpeedLines");
             speedLineObject.layer = TransparentFxLayerIndex;
             speedLineObject.transform.SetParent(_cameraTransform, false);
@@ -1250,8 +1262,6 @@ namespace Hecton8.VFX
 
         private void UpdateCameraSpeedLines(float dt)
         {
-            if (_speedLineParticles == null)
-                EnsureCameraSpeedLineParticles();
             if (_speedLineParticles == null)
                 return;
 

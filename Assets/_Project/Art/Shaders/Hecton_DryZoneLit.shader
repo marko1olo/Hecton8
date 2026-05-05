@@ -106,8 +106,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
             #include "Assets/_Project/Art/Shaders/Hecton_CoreLit.hlsl"
 
-            float4 _ModuleAmbienceData[256];
-            float4 _ModuleFloodAndFlickerData[256];
+            float4 _ModuleAmbienceData[64];
+            float4 _ModuleFloodAndFlickerData[64];
             int _ModuleWaterLevelCount;
 
             CBUFFER_START(UnityPerMaterial)
@@ -140,6 +140,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
             SAMPLER(sampler_OcclusionMap);
             TEXTURE2D(_EmissionMap);
             SAMPLER(sampler_EmissionMap);
+            TEXTURE2D(_DetailMask);
+            SAMPLER(sampler_DetailMask);
             TEXTURE2D(_ParasiteOverlayMap);
             SAMPLER(sampler_ParasiteOverlayMap);
             TEXTURE2D(_ParasiteNormalMap);
@@ -185,9 +187,16 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     baseNormal * parasiteNormalTS.z);
             }
 
-            void ApplyInteriorCondensation(float3 positionWS, half3 normalWS, inout half3 albedo, inout half smoothness)
+            void ApplyInteriorCondensation(
+                float3 positionWS,
+                float2 uv,
+                half3 normalWS,
+                half depthCondensation01,
+                inout half3 albedo,
+                inout half smoothness)
             {
-                half strength = saturate((half)_InteriorCondensationStrength);
+                half depthStrength = saturate(depthCondensation01);
+                half strength = saturate((half)_InteriorCondensationStrength) * depthStrength;
                 if (strength <= 0.0001h)
                     return;
 
@@ -201,18 +210,29 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half filmNoise = (half)HectonCoreLitValueNoise2(wallUv * 3.1 + slowTime);
                 half dripNoise = (half)HectonCoreLitValueNoise2(float2(wallUv.x * 8.7, wallUv.y * 0.52 - slowTime * 3.4));
                 half dripLines = smoothstep(0.76h, 0.98h, dripNoise) * smoothstep(0.18h, 0.92h, filmNoise);
-                half condensation = saturate((filmNoise * 0.34h + dripLines * _InteriorCondensationRunoff) * wallMask * strength);
+                half detailMask = SAMPLE_TEXTURE2D(_DetailMask, sampler_DetailMask, uv).r;
+                half condensation = saturate(
+                    (filmNoise * 0.34h + dripLines * _InteriorCondensationRunoff) *
+                    wallMask *
+                    strength *
+                    lerp(0.35h, 1.0h, detailMask));
 
-                albedo = lerp(albedo, _InteriorCondensationTint.rgb, condensation * 0.16h);
-                smoothness = lerp(smoothness, 0.94h, condensation);
+                albedo = lerp(albedo, _InteriorCondensationTint.rgb, condensation * lerp(0.10h, 0.24h, depthStrength));
+                smoothness = lerp(smoothness, lerp(0.72h, 0.96h, depthStrength), condensation);
             }
 
-            void ResolveModuleAmbience(float3 positionWS, out half level01, out float waterY, out half flicker01)
+            void ResolveModuleAmbience(
+                float3 positionWS,
+                out half level01,
+                out float waterY,
+                out half flicker01,
+                out half condensationDepth01)
             {
                 level01 = 0.0h;
                 waterY = -100000.0;
                 flicker01 = 1.0h;
-                int count = min(max(_ModuleWaterLevelCount, 0), 256);
+                condensationDepth01 = 0.0h;
+                int count = min(max(_ModuleWaterLevelCount, 0), 64);
                 float bestDistanceSq = 1.0e20;
 
                 [loop]
@@ -230,6 +250,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                     waterY = floodAndFlicker.x;
                     level01 = (half)saturate(floodAndFlicker.y);
                     flicker01 = (half)saturate(floodAndFlicker.z);
+                    condensationDepth01 = (half)saturate(floodAndFlicker.w);
                 }
             }
 
@@ -318,7 +339,8 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half moduleFloodLevel01;
                 float moduleWaterY;
                 half moduleFlicker01;
-                ResolveModuleAmbience(input.positionWS, moduleFloodLevel01, moduleWaterY, moduleFlicker01);
+                half moduleCondensationDepth01;
+                ResolveModuleAmbience(input.positionWS, moduleFloodLevel01, moduleWaterY, moduleFlicker01, moduleCondensationDepth01);
                 half moduleSubmerged01 = ResolveModuleSubmerged01(input.positionWS, moduleFloodLevel01, moduleWaterY);
                 float2 baseUv = input.uv + ResolveModuleWaterlineWarp(input.positionWS, moduleSubmerged01);
                 half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, baseUv) * _BaseColor;
@@ -333,7 +355,7 @@ Shader "Hecton8/Environment/Hecton_DryZoneLit"
                 half3 normalWS = SafeNormalize3(input.normalWS);
                 half3 albedo = albedoSample.rgb;
                 HectonCoreLitApplySedimentOverlay(input.positionWS, normalWS, albedo, metallic, smoothness);
-                ApplyInteriorCondensation(input.positionWS, normalWS, albedo, smoothness);
+                ApplyInteriorCondensation(input.positionWS, input.uv, normalWS, moduleCondensationDepth01, albedo, smoothness);
                 ApplyModuleWaterline(moduleFloodLevel01, moduleSubmerged01, albedo, smoothness);
                 float parasitePulse = 1.0;
                 float thermalGrowthMask = 0.0;

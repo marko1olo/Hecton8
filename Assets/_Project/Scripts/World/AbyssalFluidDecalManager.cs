@@ -19,6 +19,7 @@ namespace Hecton8.World
 #if UNITY_EDITOR
         private const string DecalMaterialAssetPath = "Assets/_Project/Art/Materials/VFX/MAT_AbyssalFluidDecal.mat";
 #endif
+        private const string BuiltinQuadMeshName = "Quad.fbx";
 
         private struct FluidDecalState
         {
@@ -52,35 +53,7 @@ namespace Hecton8.World
         private static readonly int _WakeDistortionId = Shader.PropertyToID("_WakeDistortion");
         private static readonly int _WakeTearStrengthId = Shader.PropertyToID("_WakeTearStrength");
         private static readonly int _WakeThresholdId = Shader.PropertyToID("_WakeThreshold");
-        // COLD ALLOC: Vector3[4] - shared abyssal fluid decal quad vertices - owner: AbyssalFluidDecalManager
-        private static readonly Vector3[] _quadVertices =
-        {
-            new Vector3(-0.5f, -0.5f, 0f),
-            new Vector3(0.5f, -0.5f, 0f),
-            new Vector3(0.5f, 0.5f, 0f),
-            new Vector3(-0.5f, 0.5f, 0f)
-        };
-
-        // COLD ALLOC: Vector2[4] - shared abyssal fluid decal quad UVs - owner: AbyssalFluidDecalManager
-        private static readonly Vector2[] _quadUvs =
-        {
-            new Vector2(0f, 0f),
-            new Vector2(1f, 0f),
-            new Vector2(1f, 1f),
-            new Vector2(0f, 1f)
-        };
-
-        // COLD ALLOC: int[6] - shared abyssal fluid decal quad indices - owner: AbyssalFluidDecalManager
-        private static readonly int[] _quadTriangles = { 0, 1, 2, 0, 2, 3 };
-
-        // COLD ALLOC: Vector3[4] - shared abyssal fluid decal quad normals - owner: AbyssalFluidDecalManager
-        private static readonly Vector3[] _quadNormals =
-        {
-            Vector3.forward,
-            Vector3.forward,
-            Vector3.forward,
-            Vector3.forward
-        };
+        private static Mesh s_sharedQuadMesh;
 
         [Header("── Runtime Wiring ──────────────────")]
         [SerializeField]
@@ -166,6 +139,7 @@ namespace Hecton8.World
 
         private FluidDecalState[] _decalStates;
         private PressureSprayState[] _pressureSprayStates;
+        private Matrix4x4[] _pressureSprayMatrices;
         private Mesh _quadMesh;
         private Material _runtimeMaterial;
         private MaterialPropertyBlock _drawPropertyBlock;
@@ -209,9 +183,13 @@ namespace Hecton8.World
             _drawPropertyBlock = null;
             MaterialPropertyBlockRegistry.ReleaseLegacyBlock(this);
 
-            if (_quadMesh != null)
+            if (_quadMesh != null && !ReferenceEquals(_quadMesh, s_sharedQuadMesh))
             {
                 Destroy(_quadMesh);
+                _quadMesh = null;
+            }
+            else
+            {
                 _quadMesh = null;
             }
 
@@ -431,6 +409,8 @@ namespace Hecton8.World
             if (_pressureSprayStates == null)
                 return;
 
+            Transform cameraTransform = ResolvePlayerCameraTransform();
+            int matrixCount = 0;
             for (int i = 0; i < _pressureSprayStates.Length; i++)
             {
                 if (!_pressureSprayStates[i].Active)
@@ -447,53 +427,73 @@ namespace Hecton8.World
 
                 spray.PositionWS += driftDelta + spray.DirectionWS * (deltaTime * spray.Speed);
                 _pressureSprayStates[i] = spray;
-                DrawPressureSpray(spray);
+                AppendPressureSprayMatrix(in spray, cameraTransform, ref matrixCount);
             }
+
+            DrawPressureSprayBatch(matrixCount);
         }
 
-        private void DrawPressureSpray(in PressureSprayState spray)
+        private void AppendPressureSprayMatrix(in PressureSprayState spray, Transform cameraTransform, ref int matrixCount)
         {
+            if (_pressureSprayMatrices == null || matrixCount >= _pressureSprayMatrices.Length)
+                return;
+
+            float alphaT = spray.TotalLifetime > 0.0001f ? Mathf.Clamp01(spray.RemainingLifetime / spray.TotalLifetime) : 0f;
+            if (spray.Color.a * alphaT <= 0.0001f)
+                return;
+
+            Vector3 center = spray.PositionWS + spray.DirectionWS * (spray.Length * 0.5f);
+            Quaternion rotation;
+            if (cameraTransform != null)
+            {
+                Vector3 toCamera = cameraTransform.position - center;
+                if (toCamera.sqrMagnitude <= 0.0001f)
+                    toCamera = -cameraTransform.forward;
+                rotation = Quaternion.LookRotation(toCamera.normalized, cameraTransform.up);
+            }
+            else
+            {
+                rotation = Quaternion.LookRotation(-spray.DirectionWS, Vector3.up);
+            }
+
+            _pressureSprayMatrices[matrixCount] = Matrix4x4.TRS(
+                center,
+                rotation,
+                new Vector3(
+                    spray.Width * Mathf.Lerp(0.55f, 1f, alphaT),
+                    spray.Length * Mathf.Lerp(0.70f, 1f, alphaT),
+                    1f));
+            matrixCount++;
+        }
+
+        private void DrawPressureSprayBatch(int matrixCount)
+        {
+            if (matrixCount <= 0 || _quadMesh == null || _runtimeMaterial == null)
+                return;
+
             if (_drawPropertyBlock == null)
                 _drawPropertyBlock = MaterialPropertyBlockRegistry.GetOrCreateLegacyBlock(this);
             if (_drawPropertyBlock == null)
                 return;
 
-            float alphaT = spray.TotalLifetime > 0.0001f ? Mathf.Clamp01(spray.RemainingLifetime / spray.TotalLifetime) : 0f;
-            Color drawColor = spray.Color;
-            drawColor.a *= alphaT;
-            if (drawColor.a <= 0.0001f)
-                return;
-
-            Vector3 planarDirection = new Vector3(spray.DirectionWS.x, 0f, spray.DirectionWS.z);
-            if (planarDirection.sqrMagnitude <= 0.0001f)
-                planarDirection = Vector3.forward;
-            planarDirection.Normalize();
-            float yawDegrees = Mathf.Atan2(planarDirection.x, planarDirection.z) * Mathf.Rad2Deg;
-            Quaternion rotation = Quaternion.Euler(90f, yawDegrees, 0f);
-            Vector3 center = spray.PositionWS + spray.DirectionWS * (spray.Length * 0.5f);
-            Matrix4x4 matrix = Matrix4x4.TRS(
-                center,
-                rotation,
-                new Vector3(spray.Width, spray.Length, 1f));
-
             _drawPropertyBlock.Clear();
-            _drawPropertyBlock.SetColor(_TintColorId, drawColor);
-            _drawPropertyBlock.SetFloat(_RadiusId, Mathf.Max(spray.Width, spray.Length));
+            _drawPropertyBlock.SetColor(_TintColorId, pressureSprayColor);
+            _drawPropertyBlock.SetFloat(_RadiusId, 1f);
             _drawPropertyBlock.SetFloat(_SoftnessId, edgeSoftness * 0.5f);
             _drawPropertyBlock.SetFloat(_WakeDistortionId, wakeDistortion);
             _drawPropertyBlock.SetFloat(_WakeTearStrengthId, wakeTearStrength);
             _drawPropertyBlock.SetFloat(_WakeThresholdId, wakeThreshold);
 
-            Graphics.DrawMesh(
+            Graphics.DrawMeshInstanced(
                 _quadMesh,
-                matrix,
-                _runtimeMaterial,
-                gameObject.layer,
-                null,
                 0,
+                _runtimeMaterial,
+                _pressureSprayMatrices,
+                matrixCount,
                 _drawPropertyBlock,
                 ShadowCastingMode.Off,
                 false,
+                gameObject.layer,
                 null,
                 LightProbeUsage.Off,
                 null);
@@ -554,12 +554,18 @@ namespace Hecton8.World
                 // COLD ALLOC: PressureSprayState[24] - capped high-pressure breach spray registry - owner: AbyssalFluidDecalManager
                 _pressureSprayStates = new PressureSprayState[maxPressureSprayCount];
             }
+
+            if (_pressureSprayMatrices == null || _pressureSprayMatrices.Length != maxPressureSprayCount)
+            {
+                // COLD ALLOC: Matrix4x4[64] - batched billboard foam spray matrices - owner: AbyssalFluidDecalManager
+                _pressureSprayMatrices = new Matrix4x4[maxPressureSprayCount];
+            }
         }
 
         private void EnsureRenderingResources(bool logIfMissing)
         {
             if (_quadMesh == null)
-                _quadMesh = BuildQuadMesh();
+                _quadMesh = ResolveSharedQuadMesh();
 
             if (_runtimeMaterial == null)
             {
@@ -577,19 +583,22 @@ namespace Hecton8.World
             }
         }
 
-        private static Mesh BuildQuadMesh()
+        private static Mesh ResolveSharedQuadMesh()
         {
-            // COLD ALLOC: Mesh[1] - reusable quad for abyssal fluid decal rendering - owner: AbyssalFluidDecalManager
-            Mesh mesh = new Mesh
-            {
-                name = "AbyssalFluidDecalQuad"
-            };
-            mesh.vertices = _quadVertices;
-            mesh.uv = _quadUvs;
-            mesh.triangles = _quadTriangles;
-            mesh.normals = _quadNormals;
-            mesh.UploadMeshData(true);
-            return mesh;
+            if (s_sharedQuadMesh != null)
+                return s_sharedQuadMesh;
+
+            s_sharedQuadMesh = Resources.GetBuiltinResource<Mesh>(BuiltinQuadMeshName);
+            return s_sharedQuadMesh;
+        }
+
+        private static Transform ResolvePlayerCameraTransform()
+        {
+            IPlayerRuntimeContext playerContext = GlobalRegistry.Player;
+            Camera playerCamera = playerContext != null ? playerContext.PlayerCamera : null;
+            if (playerCamera == null)
+                playerCamera = SystemDispatcher.CurrentCamera;
+            return playerCamera != null ? playerCamera.transform : null;
         }
 
         private Vector3 ResolveGlobalDriftOffset()
@@ -698,6 +707,7 @@ namespace Hecton8.World
             wakeDistortion = Mathf.Clamp01(wakeDistortion);
             wakeThreshold = Mathf.Clamp01(wakeThreshold);
             wakeSiltColor.a = Mathf.Clamp01(wakeSiltColor.a);
+            pressureSprayColor.a = Mathf.Clamp01(pressureSprayColor.a);
         }
 
 #if UNITY_EDITOR

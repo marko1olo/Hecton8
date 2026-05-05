@@ -283,6 +283,7 @@ StructuredBuffer<SargassumSimulationFrameData> _SargassumSimulationFrame;
 #define PANIC_CONTAGION_THRESHOLD 0.35
 #define DENSITY_CAP_MAX_BOIDS 8.0
 #define DENSITY_CAP_RADIUS_SQ 4.0
+#define SCHOOL_LEADER_FOLLOWER_COUNT 50u
 #define BOID_FLAG_ACTIVE 1u
 #define BOID_FLAG_HUNTING 2u
 #define BOID_FLAG_FLEEING 4u
@@ -747,6 +748,38 @@ float3 ResolvePlayerCurtainPartingForce(float3 positionCR, float3 velocityCR, fl
     return lateral * sideSign * strength;
 }
 
+float3 ResolveLeaderFollowerSchoolTarget(
+    FormationBeaconData leader,
+    uint boidIndex,
+    float seed,
+    float phaseTime,
+    float3 fallbackCenterCR)
+{
+    float3 leaderPosition = ToCameraRelative(leader.Position);
+    if (!IsFiniteFloat3(leaderPosition))
+        leaderPosition = fallbackCenterCR;
+
+    uint localIndex = boidIndex % SCHOOL_LEADER_FOLLOWER_COUNT;
+    float slot = (float)localIndex;
+    float lane = fmod(slot, 10.0) - 4.5;
+    float row = floor(slot * 0.1);
+    float angle = WrapAngle(seed * TAU + leader.Phase * TAU);
+    float3 axisA = float3(SafeCos(angle), 0.0, SafeSin(angle));
+    float3 axisB = float3(-axisA.z, 0.0, axisA.x);
+    float spacing = max(_FormationRingThickness * 0.38, 0.22);
+    float weave = SafeSin(phaseTime * _FormationPulseSpeed + seed * 19.17) * spacing * 0.42;
+    float bob = SafeSin(phaseTime * 0.67 + seed * 11.31 + row) * spacing * 0.55;
+    float2 jitterSeed = float2(seed * 17.0 + phaseTime * 0.19, slot * 0.071 + leader.Phase);
+    float jitterA = ValueNoise2(jitterSeed) * 2.0 - 1.0;
+    float jitterB = ValueNoise2(jitterSeed.yx + 13.73) * 2.0 - 1.0;
+    float3 offset =
+        axisA * ((lane * spacing) + jitterA * spacing * 0.32) +
+        axisB * (((row - 2.0) * spacing * 0.72) + jitterB * spacing * 0.24 + weave) +
+        float3(0.0, bob, 0.0);
+
+    return leaderPosition + offset;
+}
+
 uint LoadSpatialGridCount(int flatIndex)
 {
     uint maxCount = (uint)max(_SpatialGridMeta.w, 1);
@@ -1064,6 +1097,10 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     uint stateFlags = selfBoid.StateFlags;
     float phaseTime = GetPhaseTime();
     bool simplifiedTier = _SimulationLodTier == SIM_LOD_TIER_SIMPLIFIED;
+    bool leaderFollowerSchool = _FormationMode > 0.5 &&
+                                _FormationBeaconCount > 0 &&
+                                _ParasiteMode <= 0.5 &&
+                                _LeviathanModeBlend < 0.001;
     if (!IsFiniteFloat3(position) || !IsFiniteFloat3(velocity) || !IsFiniteFloat(panic))
     {
         position = ToCameraRelative(_FieldCenterWS);
@@ -1078,7 +1115,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
 
     int3 gridResolution = int3(1, 1, 1);
     int3 homeCell = int3(0, 0, 0);
-    if (!simplifiedTier)
+    if (!simplifiedTier && !leaderFollowerSchool)
     {
         gridResolution = ResolveGridResolution();
         if (!TryResolveGridCell(positionWS, gridResolution, homeCell))
@@ -1089,7 +1126,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    if (!simplifiedTier)
+    if (!simplifiedTier && !leaderFollowerSchool)
     {
         float3 pbdCorrectionWS = LoadPBDCorrection(index);
         if (dot(pbdCorrectionWS, pbdCorrectionWS) > EPSILON)
@@ -1109,7 +1146,7 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
     float separationCount = 0.0;
     float panicContagion = 0.0;
 
-    if (!simplifiedTier)
+    if (!simplifiedTier && !leaderFollowerSchool)
     {
         [loop]
         for (int offsetZ = -1; offsetZ <= 1; offsetZ++)
@@ -1477,31 +1514,17 @@ void CSMain(uint3 dispatchThreadID : SV_DispatchThreadID)
         }
     }
 
-    if (!simplifiedTier && _FormationMode > 0.5 && _FormationBeaconCount > 0 && panic < _FormationBreakPanicThreshold && nonLeviathanBlend > 0.001)
+    if (leaderFollowerSchool && panic < _FormationBreakPanicThreshold && nonLeviathanBlend > 0.001)
     {
-        FormationBeaconData beacon = _FormationBeacons[index % _FormationBeaconCount];
-        float3 beaconPosition = ToCameraRelative(beacon.Position);
-        if (!IsFiniteFloat3(beaconPosition))
-            beaconPosition = fieldCenterCR;
-
+        uint schoolIndex = index / SCHOOL_LEADER_FOLLOWER_COUNT;
+        uint beaconIndex = schoolIndex % (uint)max(_FormationBeaconCount, 1);
+        FormationBeaconData beacon = _FormationBeacons[beaconIndex];
         float formationCalm = 1.0 - saturate(panic / max(_FormationBreakPanicThreshold, 0.001));
-        float baseAngle = WrapAngle(seed * TAU + beacon.Phase * TAU + phaseTime * 0.18 + index * 0.03125);
-        float pulse = SafeSin(phaseTime * _FormationPulseSpeed + beacon.Phase * TAU + seed * 9.0);
-        float ringRadius = max(_FormationRingThickness, beacon.Radius * (1.0 + pulse * _FormationPulseAmplitude));
-        float verticalWave = SafeSin(phaseTime * (_FormationPulseSpeed * 0.73) + seed * 13.0) * (_FormationRingThickness * 0.35);
-        float3 ringOffset = float3(SafeCos(baseAngle), verticalWave, SafeSin(baseAngle)) * ringRadius;
-        float3 ringTarget = beaconPosition + ringOffset;
-        float3 obstacleForce = float3(0.0, 0.0, 0.0);
-        ApplyObstacleRepulsion(position, _FormationRingThickness, obstacleForce, ringTarget);
-
-        float3 toRingTarget = ringTarget - position;
-        float3 radialForce = SafeNormalize(toRingTarget);
-        float3 tangentForce = SafeNormalize(cross(float3(0.0, 1.0, 0.0), SafeNormalize(ringOffset)));
-        float3 targetVelocity = tangentForce * (_CruiseSpeed * lerp(0.65, 1.05, formationCalm));
-        acceleration += radialForce * (_FormationWeight * formationCalm * beacon.Strength * nonLeviathanBlend);
-        acceleration += SafeNormalize(targetVelocity - velocity) * (_FormationWeight * 0.45 * formationCalm * beacon.Strength * nonLeviathanBlend);
-        if (dot(obstacleForce, obstacleForce) > EPSILON)
-            acceleration += SafeNormalize(obstacleForce) * (_FormationObstacleWeight * formationCalm * nonLeviathanBlend);
+        float3 followTarget = ResolveLeaderFollowerSchoolTarget(beacon, index, seed, phaseTime, fieldCenterCR);
+        float3 toFollowTarget = followTarget - position;
+        float3 desiredVelocity = SafeNormalize(toFollowTarget) * (_CruiseSpeed * lerp(0.72, 1.08, formationCalm));
+        acceleration += SafeNormalize(toFollowTarget) * (_FormationWeight * formationCalm * beacon.Strength * nonLeviathanBlend);
+        acceleration += SafeNormalize(desiredVelocity - velocity) * (_FormationWeight * 0.52 * formationCalm * beacon.Strength * nonLeviathanBlend);
     }
 
     if (!simplifiedTier && leviathanModeBlend > 0.001 && _LeviathanNodeCount > 1)

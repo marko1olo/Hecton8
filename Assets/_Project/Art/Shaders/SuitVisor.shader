@@ -181,6 +181,7 @@ Shader "NASAPunk/SuitVisor"
             float4 _BlueNoiseTex_TexelSize;
             float4 _HectonHudFogPerturbation;
             float4 _HectonSuitHealthGlitch;
+            float _HectonHudStressChromaticAberration;
             TEXTURE2D(_CameraOpaqueTexture); SAMPLER(sampler_CameraOpaqueTexture);
             float4 _SonarRevealOriginWS;
             float4 _SonarRevealWaveParams;
@@ -625,9 +626,11 @@ Shader "NASAPunk/SuitVisor"
                 float2 refractedUV = screenUV + distortionOffset;
                 float2 hazardSceneSplit = float2(hazardRadiation * 0.006 + hazardGlitch * 0.003, 0.0);
                 float2 criticalSceneSplit = float2(_HectonSuitHealthGlitch.w * criticalSpikeGate * (0.5 + radialMagnitude), 0.0);
-                float2 chromaOffset = radialScreenOffset * _ChromaticAberration + hazardSceneSplit + criticalSceneSplit;
+                float stressHudChromatic = saturate(_HectonHudStressChromaticAberration);
+                float chromaStrength = max(_ChromaticAberration, stressHudChromatic * (0.004 + radialMagnitude * 0.018));
+                float2 chromaOffset = radialScreenOffset * chromaStrength + hazardSceneSplit + criticalSceneSplit;
                 float3 sceneColor = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV).rgb;
-                if (_ChromaticAberration > 0.0001 || hazardGlitch > 0.0001 || criticalHealthGlitch > 0.0001)
+                if (chromaStrength > 0.0001 || hazardGlitch > 0.0001 || criticalHealthGlitch > 0.0001)
                 {
                     sceneColor.r = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV + chromaOffset).r;
                     sceneColor.b = SAMPLE_TEXTURE2D(_CameraOpaqueTexture, sampler_CameraOpaqueTexture, refractedUV - chromaOffset).b;
@@ -733,9 +736,12 @@ Shader "NASAPunk/SuitVisor"
                     sceneColor = lerp(sceneColor, blurScene, criticalHypoxiaEdgeVignette);
                 }
                 float2 hudHypoxiaOffset = float2(hypoxiaLevel * 0.0045, 0.0);
+                float2 hudStressSplit = float2(
+                    stressHudChromatic * (0.006 + radialMagnitude * 0.008),
+                    stressHudChromatic * 0.0015 * sin(_Time.y * 17.0 + screenUV.y * 31.0));
                 float2 hudDecaySplit = float2(
                     hazardRadiation * 0.015 + hazardGlitch * 0.008 + _HectonSuitHealthGlitch.w * criticalHudGate * 1.8,
-                    hazardThermal * 0.0025);
+                    hazardThermal * 0.0025) + hudStressSplit;
                 float4 hudBaseSample = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV);
                 float4 hudSample = hudBaseSample;
                 float4 hudSampleR = SAMPLE_TEXTURE2D(_HUD_RenderTexture, sampler_HUD_RenderTexture, hudDistortedUV + hudHypoxiaOffset + hudDecaySplit);
@@ -885,6 +891,15 @@ Shader "NASAPunk/SuitVisor"
                 finalColor += staticNoise * (_StaticNoise * 0.045);
                 finalColor += lensDirtGlareColor;
                 finalColor = lerp(finalColor, finalColor.brg, criticalHealthGlitch * criticalSpikeGate * 0.12);
+                float noirVignetteNoise = ResolveFrostBlueNoise(
+                    screenUV * 1.73 + float2(_Time.y * 0.009, _Time.y * -0.011),
+                    _Time.y + 31.0);
+                float noirVignetteMask = smoothstep(0.34, 1.04, radialMagnitude);
+                float noirVignetteStrength = saturate(
+                    noirVignetteMask *
+                    (0.58 + noirVignetteNoise * 0.22 + stressHudChromatic * 0.22 + criticalHealthGlitch * 0.18));
+                finalColor *= 1.0 - noirVignetteStrength * 0.52;
+                finalColor += _HUD_Color.rgb * noirVignetteStrength * hudAlpha * 0.025;
 
                 float finalAlpha = _GlassAlpha
                     + hudAlpha * 0.9

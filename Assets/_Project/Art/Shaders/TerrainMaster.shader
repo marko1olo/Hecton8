@@ -41,6 +41,8 @@ Shader "HECTON/Terrain/TerrainMaster"
         _NoirSiltPulseColor ("Noir Silt Pulse Color", Color) = (0.0, 0.38, 0.55, 1)
         _NoirSiltPulseStrength ("Noir Silt Pulse Strength", Range(0,1)) = 0.06
         _NoirSiltPulseScale ("Noir Silt Pulse Scale", Float) = 0.045
+        _NoirPressureSheenStrength ("Noir Pressure Sheen Strength", Range(0,1)) = 0.045
+        _NoirPressureSheenScale ("Noir Pressure Sheen Scale", Float) = 0.032
 
         [Header(Surface)]
         _Metallic       ("Metallic", Range(0,1)) = 0.0
@@ -87,6 +89,8 @@ Shader "HECTON/Terrain/TerrainMaster"
             float  _FadeDistance;
             float  _NoirSiltPulseStrength;
             float  _NoirSiltPulseScale;
+            float  _NoirPressureSheenStrength;
+            float  _NoirPressureSheenScale;
             half   _Metallic;
             half   _BaseSmooth;
             half4  _SandColor;
@@ -355,6 +359,29 @@ Shader "HECTON/Terrain/TerrainMaster"
             return mask;
         }
 
+        half ApplyNoirPressureSheen(
+            float3 positionWS,
+            half3 normalWS,
+            half3 viewDirectionWS,
+            half depthFactor,
+            half slopeBlend,
+            inout half smoothness,
+            inout half3 emission)
+        {
+            half strength = saturate((half)_NoirPressureSheenStrength);
+            if (strength <= 0.0001h)
+                return 0.0h;
+
+            float scale = max(_NoirPressureSheenScale, 0.0001);
+            half rim = 1.0h - saturate(dot(normalWS, viewDirectionWS));
+            rim *= rim;
+            half grain = HectonInterleavedGradientNoise(positionWS.xz * scale + positionWS.yy * 0.019 + _Time.yy * 0.023);
+            half mask = rim * saturate(depthFactor + 0.18h) * saturate(1.0h - slopeBlend * 0.45h) * grain * strength;
+            smoothness = saturate(smoothness + mask * 0.16h);
+            emission += _NoirSiltPulseColor.rgb * (mask * 0.018h);
+            return mask;
+        }
+
         ENDHLSL
 
         // ================================================================
@@ -504,6 +531,15 @@ Shader "HECTON/Terrain/TerrainMaster"
                 // ---- Final world normal ----
                 float3 finalNormalWS = NormalizeNormalPerPixel(
                     IN.normalWS + rockNormalWS * slopeBlend);
+                float3 viewDirectionWS = GetWorldSpaceNormalizeViewDir(IN.positionWS);
+                ApplyNoirPressureSheen(
+                    IN.positionWS,
+                    (half3)finalNormalWS,
+                    (half3)viewDirectionWS,
+                    depthFactor,
+                    slopeBlend,
+                    smoothness,
+                    emission);
 
                 // ============================================================
                 // InputData â€” fully initialized to prevent magenta
@@ -512,7 +548,7 @@ Shader "HECTON/Terrain/TerrainMaster"
                 inputData.positionWS              = IN.positionWS;
                 inputData.positionCS              = IN.positionCS;
                 inputData.normalWS                = finalNormalWS;
-                inputData.viewDirectionWS         = GetWorldSpaceNormalizeViewDir(IN.positionWS);
+                inputData.viewDirectionWS         = viewDirectionWS;
                 inputData.fogCoord                = InitializeInputDataFog(
                                                         float4(IN.positionWS, 1.0), IN.fogFactor);
                 inputData.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(IN.positionCS);

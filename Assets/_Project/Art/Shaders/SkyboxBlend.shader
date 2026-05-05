@@ -49,6 +49,8 @@ Shader "Hecton/SkyboxBlend"
                 float4 _NightTint;
             CBUFFER_END
 
+            float _HectonFreezeFrameDither;
+
             struct Attributes
             {
                 float4 positionOS : POSITION;
@@ -68,6 +70,24 @@ Shader "Hecton/SkyboxBlend"
                 output.positionCS = TransformWorldToHClip(posWS);
                 output.texcoord = input.positionOS.xyz;
                 return output;
+            }
+
+            float ResolveFreezeFrameNoise(float2 positionCS)
+            {
+                float2 pixel = floor(positionCS);
+                return frac(52.9829189 * frac(dot(pixel, float2(0.06711056, 0.00583715))));
+            }
+
+            float3 ApplyFreezeFrameDither(float3 color, float2 positionCS)
+            {
+                float freeze = saturate(_HectonFreezeFrameDither);
+                float noise = ResolveFreezeFrameNoise(positionCS);
+                float scanline = step(0.5, frac(positionCS.y * 0.5));
+                float ditherMask = step(noise, freeze);
+                float3 frozenTint = color * 0.72 + float3(0.015, 0.055, 0.075) * 0.28;
+                frozenTint += (noise - 0.5) * 0.055 + scanline * 0.018;
+                frozenTint *= lerp(1.0, 0.82 + ditherMask * 0.18, freeze);
+                return lerp(color, frozenTint, freeze);
             }
 
             float4 frag(Varyings input) : SV_Target
@@ -94,6 +114,7 @@ Shader "Hecton/SkyboxBlend"
                 // Добавляем минимальный ambient к ночи чтобы не было pitch black
                 float3 nightAmbient = float3(0.005, 0.005, 0.012) * blend;
                 finalColor += nightAmbient;
+                finalColor = ApplyFreezeFrameDither(finalColor, input.positionCS.xy);
 
                 return float4(finalColor, 1.0);
             }

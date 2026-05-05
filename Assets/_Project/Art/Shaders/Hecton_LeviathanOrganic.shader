@@ -17,6 +17,12 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         _EmissionStrength("Emission Strength", Range(0, 8)) = 1.0
         _FaunaBiolumDim("Fauna Biolum Dim", Range(0, 1)) = 1.0
         _DeathDitherFade("Death Dither Fade", Range(0, 1)) = 0.0
+        _CorpseBloatAge01("Corpse Bloat Age 01", Range(0, 1)) = 0.0
+        _CorpseBloatStrength("Corpse Bloat Strength", Range(0, 0.35)) = 0.08
+        _TailSwayStrength("Tail Sway Strength", Range(0, 0.35)) = 0.045
+        _TailSwaySpeed("Tail Sway Speed", Range(0, 16)) = 4.6
+        _TailSwayPhase("Tail Sway World-Y Phase", Range(0, 8)) = 1.35
+        _TailSwayMaskPower("Tail Sway Mask Power", Range(0.25, 6)) = 1.65
         _SssDistortion("SSS Distortion", Range(0, 2)) = 0.48
         _SssPower("SSS Power", Range(0.1, 16)) = 3.8
         _SssScale("SSS Scale", Range(0, 4)) = 1.15
@@ -71,6 +77,12 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float _EmissionStrength;
             float _FaunaBiolumDim;
             float _DeathDitherFade;
+            float _CorpseBloatAge01;
+            float _CorpseBloatStrength;
+            float _TailSwayStrength;
+            float _TailSwaySpeed;
+            float _TailSwayPhase;
+            float _TailSwayMaskPower;
             float _SssDistortion;
             float _SssPower;
             float _SssScale;
@@ -86,6 +98,8 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         float4 _HectonCreatureWounds[8];
         float4x4 _HectonCreatureWoundOwnerWorldToLocal;
         float4 _HectonCreatureWoundOwnerSphere;
+        float _GlobalOceanPanic;
+        float4 _GlobalOceanPanicColor;
 
         struct Attributes
         {
@@ -126,6 +140,18 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             float3 wobbleAxis = normalize(cross(normalWS, velocityDir + float3(0.0, 0.18, 0.0)));
             float wobbleStrength = saturate(velocityMagnitude * 0.05) * _WetnessNormalWobble * _WetnessStrength;
             return normalize(normalWS + wobbleAxis * (sin(wobblePhase) * wobbleStrength));
+        }
+
+        float3 ApplyFaunaVertexPresentation(float3 positionOS, float3 normalOS)
+        {
+            float3 worldPos = TransformObjectToWorld(positionOS);
+            float tailMask = pow(saturate(-positionOS.z), max(_TailSwayMaskPower, 0.001));
+            float tailWave = sin(_Time.y * _TailSwaySpeed + worldPos.y * _TailSwayPhase);
+            positionOS.x += tailWave * _TailSwayStrength * tailMask;
+
+            float bloat01 = saturate(_CorpseBloatAge01);
+            positionOS += normalOS * (bloat01 * bloat01 * _CorpseBloatStrength);
+            return positionOS;
         }
 
         half2 EvaluateWoundMask(float3 positionWS)
@@ -172,10 +198,11 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
         Varyings Vert(Attributes input)
         {
             Varyings output;
-            VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
+            float3 deformedPositionOS = ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS);
+            VertexPositionInputs positionInputs = GetVertexPositionInputs(deformedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
             output.positionWS = positionInputs.positionWS;
-            output.positionOS = input.positionOS.xyz;
+            output.positionOS = deformedPositionOS;
             output.normalWS = normalInputs.normalWS;
             output.tangentWS = float4(normalInputs.tangentWS, input.tangentOS.w);
             output.positionCS = HectonCoreLitApplyClipSpaceDepthBias(positionInputs.positionCS, _DepthBias, 1.0);
@@ -239,14 +266,17 @@ Shader "Hecton8/Fauna/LeviathanOrganic"
             half faunaBiolumDim = saturate((half)_FaunaBiolumDim);
             half3 biolum = (half3)HectonCoreLitSampleBiolumVolumeRadiance(input.positionWS) * emissionMask;
             half3 woundEmission = woundColor * (woundMask * _WoundEmissionBoost);
-            half3 emission = ((_EmissionColor.rgb * (_EmissionStrength * emissionMask)) + biolum) * faunaBiolumDim + woundEmission;
+            half oceanPanic = saturate((half)_GlobalOceanPanic);
+            half3 panicEmissionColor = lerp(_EmissionColor.rgb, _GlobalOceanPanicColor.rgb, oceanPanic);
+            half3 emission = ((panicEmissionColor * (_EmissionStrength * emissionMask)) + biolum) * faunaBiolumDim + woundEmission;
             half3 finalColor = HectonCoreLitApplyNoirFog(color + caustics + emission + sss, input.fogFactor, input.positionWS);
             return half4(finalColor, 1.0h);
         }
 
         float4 GetShadowPositionHClip(Attributes input)
         {
-            VertexPositionInputs positionInputs = GetVertexPositionInputs(input.positionOS.xyz);
+            float3 deformedPositionOS = ApplyFaunaVertexPresentation(input.positionOS.xyz, input.normalOS);
+            VertexPositionInputs positionInputs = GetVertexPositionInputs(deformedPositionOS);
             VertexNormalInputs normalInputs = GetVertexNormalInputs(input.normalOS, input.tangentOS);
             float3 lightDirectionWS = _MainLightPosition.xyz;
             float4 positionCS = TransformWorldToHClip(ApplyShadowBias(positionInputs.positionWS, normalInputs.normalWS, lightDirectionWS));

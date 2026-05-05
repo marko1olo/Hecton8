@@ -107,8 +107,8 @@ namespace Hecton8.Dev
             if (math.abs(reducedMass - 12f) > 0.0001f)
                 failureMask |= FailureReducedMass;
 
-            depthDragCoefficient = VehicleMotor.ResolveDepthLogarithmicDragCoefficient(2f, 900f);
-            if (math.abs(depthDragCoefficient - 2f) > 0.0001f)
+            depthDragCoefficient = PlayerSwimMotor.ResolveDepthDragAdd(900f, 20f, 150f, 0.8f);
+            if (math.abs(depthDragCoefficient - 0.8f) > 0.0001f)
                 failureMask |= FailureDepthDrag;
 
             bool criticalLoad = HectonPlayerMovement.IsCriticalInventoryLoad(150f, 100f);

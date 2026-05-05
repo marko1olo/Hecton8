@@ -99,7 +99,8 @@ namespace Hecton8.Gameplay
     {
         // COLD ALLOC: List<BaseModule>[64] - active runtime habitat module registry for cold-path environment scans - owner: BaseModule
         private static readonly List<BaseModule> s_activeModules = new List<BaseModule>(64);
-        private const int ModuleWaterLevelShaderCapacity = 256;
+        private const int ModuleWaterLevelShaderCapacity = 64;
+        private const int BrownoutInteriorLightBudget = 64;
         private static readonly int s_ModuleAmbienceDataId = Shader.PropertyToID("_ModuleAmbienceData");
         private static readonly int s_ModuleFloodAndFlickerDataId = Shader.PropertyToID("_ModuleFloodAndFlickerData");
         private static readonly int s_ModuleWaterLevelCountId = Shader.PropertyToID("_ModuleWaterLevelCount");
@@ -156,6 +157,11 @@ namespace Hecton8.Gameplay
         private const float DefaultJointShearDamagePerSecondAtFullDelta = 0.02f;
         private const float DefaultJointShearStressRecoveryPerSecond = 0.08f;
         private const float DefaultJointShearGroanCooldownSeconds = 4f;
+        private const float DefaultHullCondensationStartDepthMeters = 900f;
+        private const float DefaultHullCondensationFullDepthMeters = 5000f;
+        private const float DefaultLowIntegrityGroanNoiseFrequency = 0.19f;
+        private const float DefaultLowIntegrityGroanNoiseThreshold = 0.58f;
+        private const float DefaultBrownoutEmergencyTransitionSeconds = 0.5f;
         private const float DefaultBreachVortexDurationSeconds = 5f;
         private const float DefaultBreachVortexReferenceMassKilograms = 80f;
         private const float DefaultBreachVortexMaximumAccelerationMetersPerSecondSquared = 45f;
@@ -260,6 +266,30 @@ namespace Hecton8.Gameplay
 
         [Tooltip("Minimum seconds between structural groan audio events emitted by this module under joint shear.")]
         [SerializeField, Min(0.1f)] private float jointShearGroanCooldownSeconds = DefaultJointShearGroanCooldownSeconds;
+
+        [Tooltip("External depth in meters where interior hull condensation starts becoming visible.")]
+        [SerializeField, Min(0f)] private float hullCondensationStartDepthMeters = DefaultHullCondensationStartDepthMeters;
+
+        [Tooltip("External depth in meters where interior hull condensation reaches full shader strength.")]
+        [SerializeField, Min(1f)] private float hullCondensationFullDepthMeters = DefaultHullCondensationFullDepthMeters;
+
+        [Tooltip("Integrity fraction below which deterministic pressure-creak events can fire.")]
+        [SerializeField, Range(0.01f, 1f)] private float lowIntegrityGroanThreshold01 = 0.5f;
+
+        [Tooltip("Low-frequency noise speed for non-periodic rupture creak intervals.")]
+        [SerializeField, Min(0.01f)] private float lowIntegrityGroanNoiseFrequency = DefaultLowIntegrityGroanNoiseFrequency;
+
+        [Tooltip("Noise threshold crossed by damaged rooms before a structural creak event is queued.")]
+        [SerializeField, Range(-1f, 1f)] private float lowIntegrityGroanNoiseThreshold = DefaultLowIntegrityGroanNoiseThreshold;
+
+        [Tooltip("Minimum stress payload sent to the procedural structural creak renderer.")]
+        [SerializeField, Range(0f, 1f)] private float lowIntegrityGroanStressFloor = 0.62f;
+
+        [Tooltip("Lowest pitch multiplier for damaged-room metallic creaks.")]
+        [SerializeField, Min(0.1f)] private float lowIntegrityGroanPitchMin = 0.52f;
+
+        [Tooltip("Highest pitch multiplier for damaged-room metallic creaks.")]
+        [SerializeField, Min(0.1f)] private float lowIntegrityGroanPitchMax = 0.78f;
 
         [Header("Breach Vortex")]
         [Tooltip("Duration in seconds for the transient depressurization vortex emitted on module breach.")]
@@ -425,6 +455,9 @@ namespace Hecton8.Gameplay
         [Tooltip("Emergency tint applied to interior point lights during brownout.")]
         [SerializeField] private Color brownoutEmergencyEmissionColor = new Color(1f, 0.13f, 0.06f, 1f);
 
+        [Tooltip("Seconds required for white interior lighting to transition into emergency red.")]
+        [SerializeField, Min(0.05f)] private float brownoutEmergencyTransitionSeconds = DefaultBrownoutEmergencyTransitionSeconds;
+
         [Tooltip("Локальный Volume для тумана / постпроцесса затопления.")]
         [SerializeField] private Volume floodedLocalVolume;
 
@@ -501,6 +534,10 @@ namespace Hecton8.Gameplay
         private Color[] _interiorLightBaseColors = Array.Empty<Color>();
         private bool _brownoutVisualsApplied;
         private float _currentBrownoutFlicker01 = 1f;
+        private float _brownoutTransition01;
+        private float _brownoutTransitionTarget01;
+        private float _ruptureGroanNoisePhase;
+        private float _ruptureGroanPreviousNoise = -1f;
         private float _oxygenHum01;
         private float _oxygenHumTarget01;
         private bool _oxygenHumActive;
@@ -758,24 +795,27 @@ namespace Hecton8.Gameplay
         internal float ParasiteAddedMassKilograms => _parasiteAddedMassKilograms;
         internal float ParasiteThermalInsulation01 => _parasiteThermalInsulation01;
         internal float ParasiteBioReactorOverheatMultiplier => _parasiteBioReactorOverheatMultiplier;
-        internal float PowerRatingForHabitatGraph => ResolveStaticDebuffedPowerRating();
+        internal float PowerRatingForHabitatGraph => StaticDebuffedPowerRating;
         internal PowerGrid CachedPowerGrid => _powerNode != null ? _powerNode.Grid : null;
 
-        private float ResolveStaticDebuffedPowerRating()
+        private float StaticDebuffedPowerRating
         {
-            if (_interiorReefInfestationActive)
-                return 0f;
+            get
+            {
+                if (_interiorReefInfestationActive)
+                    return 0f;
 
-            float generationWatts = Mathf.Max(0f, _basePowerRating) + _cultivationLightingPowerCreditWatts;
-            float consumptionWatts = Mathf.Max(0f, -_basePowerRating) +
-                                     ResolveFloodPumpPowerDraw() +
-                                     _parasitePowerDrainWatts +
-                                     _cultivationScrubberPowerDrainWatts;
+                float generationWatts = Mathf.Max(0f, _basePowerRating) + _cultivationLightingPowerCreditWatts;
+                float consumptionWatts = Mathf.Max(0f, -_basePowerRating) +
+                                         ResolveFloodPumpPowerDraw() +
+                                         _parasitePowerDrainWatts +
+                                         _cultivationScrubberPowerDrainWatts;
 
-            if (HasAttachedParasitePowerDebuff())
-                consumptionWatts *= ParasiteAttachedPowerConsumptionScalar;
+                if (HasAttachedParasitePowerDebuff())
+                    consumptionWatts *= ParasiteAttachedPowerConsumptionScalar;
 
-            return generationWatts - consumptionWatts;
+                return generationWatts - consumptionWatts;
+            }
         }
 
         private bool HasAttachedParasitePowerDebuff()
@@ -807,7 +847,7 @@ namespace Hecton8.Gameplay
         /// Базовое энергопотребление модуля.
         /// Источник: BuildableData.powerRating → fallback.
         /// </summary>
-        public float PowerRating => ResolveStaticDebuffedPowerRating();
+        public float PowerRating => StaticDebuffedPowerRating;
 
         public int PowerPriority => powerPriority;
 
@@ -872,6 +912,10 @@ namespace Hecton8.Gameplay
             _brownoutFlickerTime = 0f;
             _brownoutVisualsApplied = false;
             _currentBrownoutFlicker01 = 1f;
+            _brownoutTransition01 = 0f;
+            _brownoutTransitionTarget01 = 0f;
+            _ruptureGroanNoisePhase = 0f;
+            _ruptureGroanPreviousNoise = -1f;
             _oxygenHum01 = 0f;
             _oxygenHumTarget01 = 0f;
             _oxygenHumActive = false;
@@ -923,6 +967,10 @@ namespace Hecton8.Gameplay
             SetLeakActive(false);
             SetFloodedVisual(false);
             _ambientLightsBrownedOut = false;
+            _brownoutTransition01 = 0f;
+            _brownoutTransitionTarget01 = 0f;
+            _ruptureGroanNoisePhase = 0f;
+            _ruptureGroanPreviousNoise = -1f;
             SetLightsEnabled(true);
 
             _isDeconstructing = false;
@@ -999,6 +1047,7 @@ namespace Hecton8.Gameplay
             ApplyLocalGravityAnomalyRequest();
             EvaluateCatastrophicImplosion();
             AdvanceSolarEmpBlackout(SLOW_TICK_DT);
+            EvaluateRuptureGroanAudio(SLOW_TICK_DT);
             if (!HasOperationalPower)
                 return;
 
@@ -1088,6 +1137,8 @@ namespace Hecton8.Gameplay
                 ApplyBrownoutFlicker(dt);
             else if (_brownoutVisualsApplied)
                 RestoreBrownoutVisuals();
+            else if (_brownoutTransition01 > 0.0001f && !_ambientLightsBrownedOut)
+                AdvanceBrownoutTransition(dt);
 
             UpdateOxygenScrubberHum(dt);
             UpdateAmbienceTickRegistration();
@@ -1692,6 +1743,39 @@ namespace Hecton8.Gameplay
             return true;
         }
 
+        private void EvaluateRuptureGroanAudio(float deltaTime)
+        {
+            if (deltaTime <= 0f || !float.IsFinite(deltaTime) || _integrityComponent.CurrentIntegrity <= 0f)
+                return;
+
+            float threshold01 = Mathf.Clamp01(lowIntegrityGroanThreshold01);
+            float integrity01 = IntegrityStateNormalized;
+            if (integrity01 >= threshold01)
+            {
+                _ruptureGroanPreviousNoise = -1f;
+                return;
+            }
+
+            _ruptureGroanNoisePhase += Mathf.Max(0f, deltaTime) * Mathf.Max(0.01f, lowIntegrityGroanNoiseFrequency);
+            float noiseValue = noise.snoise(new float2(_ruptureGroanNoisePhase, _brownoutNoiseSeed + 31.73f));
+            float threshold = Mathf.Clamp(lowIntegrityGroanNoiseThreshold, -1f, 1f);
+            bool crossedThreshold = noiseValue >= threshold && _ruptureGroanPreviousNoise < threshold;
+            _ruptureGroanPreviousNoise = noiseValue;
+            if (!crossedThreshold)
+                return;
+
+            float damage01 = Mathf.Clamp01((threshold01 - integrity01) / Mathf.Max(0.0001f, threshold01));
+            float stress01 = Mathf.Clamp01(Mathf.Max(lowIntegrityGroanStressFloor, damage01));
+            float pitchNoise = noise.snoise(new float2(_ruptureGroanNoisePhase * 3.17f, _brownoutNoiseSeed + 91.41f));
+            float pitch01 = Mathf.Clamp01(pitchNoise * 0.5f + 0.5f);
+            float pitchMin = Mathf.Max(0.1f, lowIntegrityGroanPitchMin);
+            float pitchMax = Mathf.Max(pitchMin, lowIntegrityGroanPitchMax);
+            float pitch = Mathf.Lerp(pitchMin, pitchMax, pitch01) * Mathf.Lerp(1f, 0.82f, damage01);
+
+            ResolveModuleAmbienceBounds(out Vector3 centerWS, out _);
+            ProceduralAudioEvents.RaiseStructuralStressTriggered(centerWS, stress01, pitch);
+        }
+
         internal void ApplyRuptureCascadeStress(float stressMultiplier01)
         {
             if (stressMultiplier01 <= 0f ||
@@ -2232,6 +2316,7 @@ namespace Hecton8.Gameplay
 
         internal void SetAmbientPowerVisualState(bool brownedOut, float voltageSupplyRatio)
         {
+            _brownoutTransitionTarget01 = brownedOut ? 1f : 0f;
             if (_ambientLightsBrownedOut == brownedOut)
             {
                 _ambientVoltageSupplyRatio = Mathf.Clamp01(float.IsFinite(voltageSupplyRatio) ? voltageSupplyRatio : 1f);
@@ -2242,7 +2327,7 @@ namespace Hecton8.Gameplay
             _ambientLightsBrownedOut = brownedOut;
             _ambientVoltageSupplyRatio = Mathf.Clamp01(float.IsFinite(voltageSupplyRatio) ? voltageSupplyRatio : 1f);
             SetLightsEnabled(ShouldLightsBeEnabled());
-            if (!IsBrownoutFlickerActive())
+            if (!IsBrownoutFlickerActive() && !brownedOut)
                 RestoreBrownoutVisuals();
             UpdateAmbienceTickRegistration();
         }
@@ -2689,7 +2774,7 @@ namespace Hecton8.Gameplay
                     module.ResolveFloodSurfaceWorldY(),
                     Mathf.Clamp01(module._cachedFloodLevel01),
                     Mathf.Clamp01(module._currentBrownoutFlicker01),
-                    1f);
+                    module.ResolveHullCondensationDepth01());
             }
 
             for (int i = moduleCount; i < ModuleWaterLevelShaderCapacity; i++)
@@ -2701,6 +2786,16 @@ namespace Hecton8.Gameplay
             Shader.SetGlobalVectorArray(s_ModuleAmbienceDataId, s_moduleAmbienceData);
             Shader.SetGlobalVectorArray(s_ModuleFloodAndFlickerDataId, s_moduleFloodAndFlickerData);
             Shader.SetGlobalInt(s_ModuleWaterLevelCountId, moduleCount);
+        }
+
+        private float ResolveHullCondensationDepth01()
+        {
+            float startDepth = Mathf.Max(0f, hullCondensationStartDepthMeters);
+            float fullDepth = Mathf.Max(startDepth + 1f, hullCondensationFullDepthMeters);
+            float depthMeters = _pressureCompressionDepthMeters > 0.25f
+                ? _pressureCompressionDepthMeters
+                : ResolveExternalDepthMeters();
+            return Mathf.Clamp01((depthMeters - startDepth) / (fullDepth - startDepth));
         }
 
         private void ResolveModuleAmbienceBounds(out Vector3 centerWS, out float radiusMeters)
@@ -2985,7 +3080,9 @@ namespace Hecton8.Gameplay
 
         private void CaptureBrownoutLightBaselines()
         {
-            int count = interiorLights != null ? interiorLights.Length : 0;
+            int count = interiorLights != null
+                ? Mathf.Min(interiorLights.Length, BrownoutInteriorLightBudget)
+                : 0;
             if (_brownoutVisualsApplied &&
                 _interiorLightBaseIntensities != null &&
                 _interiorLightBaseIntensities.Length == count &&
@@ -3029,18 +3126,26 @@ namespace Hecton8.Gameplay
         {
             CaptureBrownoutLightBaselines();
             _brownoutFlickerTime += Mathf.Max(0f, dt);
+            AdvanceBrownoutTransition(dt);
             float speed = Mathf.Max(0.1f, brownoutFlickerSpeed);
             float primaryNoise = noise.snoise(new float2(_brownoutFlickerTime * speed, _brownoutNoiseSeed));
             float dropoutNoise = noise.snoise(new float2((_brownoutFlickerTime + 11.37f) * speed * 1.83f, _brownoutNoiseSeed + 7.19f));
             float voltage01 = Mathf.Clamp01(_ambientVoltageSupplyRatio / Mathf.Max(0.01f, brownoutActivationVoltageRatio));
+            float sineFlicker01 = 0.5f + 0.5f * math.sin(_brownoutFlickerTime * 20f);
             float flicker01 = Mathf.Lerp(
                 Mathf.Clamp01(brownoutMinimumLightIntensityRatio),
                 1f,
                 Mathf.Abs(primaryNoise) * voltage01);
             if (dropoutNoise > 0.62f)
                 flicker01 *= 0.08f + 0.18f * voltage01;
+            flicker01 *= Mathf.Lerp(0.55f, 1.35f, sineFlicker01);
+            flicker01 = Mathf.Clamp01(flicker01);
 
-            int count = interiorLights != null ? Mathf.Min(interiorLights.Length, _interiorLightBaseIntensities.Length) : 0;
+            float emergencyBlend01 = Mathf.Clamp01(_brownoutTransition01 * Mathf.Lerp(0.82f, 1f, sineFlicker01));
+
+            int count = interiorLights != null
+                ? Mathf.Min(Mathf.Min(interiorLights.Length, _interiorLightBaseIntensities.Length), BrownoutInteriorLightBudget)
+                : 0;
             for (int i = 0; i < count; i++)
             {
                 Light light = interiorLights[i];
@@ -3050,7 +3155,7 @@ namespace Hecton8.Gameplay
                 if (!light.enabled)
                     light.enabled = true;
                 light.intensity = _interiorLightBaseIntensities[i] * flicker01;
-                light.color = Color.Lerp(brownoutEmergencyEmissionColor, _interiorLightBaseColors[i], voltage01);
+                light.color = Color.Lerp(_interiorLightBaseColors[i], brownoutEmergencyEmissionColor, emergencyBlend01);
             }
 
             _currentBrownoutFlicker01 = flicker01;
@@ -3058,9 +3163,20 @@ namespace Hecton8.Gameplay
             _brownoutVisualsApplied = true;
         }
 
+        private void AdvanceBrownoutTransition(float dt)
+        {
+            float transitionSeconds = Mathf.Max(0.05f, brownoutEmergencyTransitionSeconds);
+            float transitionStep = math.saturate(Mathf.Max(0f, dt) / transitionSeconds);
+            _brownoutTransition01 = math.lerp(_brownoutTransition01, _brownoutTransitionTarget01, transitionStep);
+            if (Mathf.Abs(_brownoutTransition01 - _brownoutTransitionTarget01) <= 0.001f)
+                _brownoutTransition01 = _brownoutTransitionTarget01;
+        }
+
         private void RestoreBrownoutVisuals()
         {
-            int lightCount = interiorLights != null ? Mathf.Min(interiorLights.Length, _interiorLightBaseIntensities.Length) : 0;
+            int lightCount = interiorLights != null
+                ? Mathf.Min(Mathf.Min(interiorLights.Length, _interiorLightBaseIntensities.Length), BrownoutInteriorLightBudget)
+                : 0;
             for (int i = 0; i < lightCount; i++)
             {
                 Light light = interiorLights[i];
@@ -3073,6 +3189,8 @@ namespace Hecton8.Gameplay
             }
 
             _currentBrownoutFlicker01 = 1f;
+            _brownoutTransition01 = 0f;
+            _brownoutTransitionTarget01 = 0f;
             PublishActiveModuleWaterLevelsToShader();
             _brownoutVisualsApplied = false;
         }
@@ -3815,6 +3933,7 @@ namespace Hecton8.Gameplay
         {
             return IsBrownoutFlickerActive() ||
                    _brownoutVisualsApplied ||
+                   Mathf.Abs(_brownoutTransition01 - _brownoutTransitionTarget01) > 0.001f ||
                    Mathf.Abs(_oxygenHum01 - _oxygenHumTarget01) > 0.001f ||
                    _oxygenHumActive;
         }
@@ -4592,6 +4711,19 @@ namespace Hecton8.Gameplay
             if (deepCompressionFullPressureKPa < 1f) deepCompressionFullPressureKPa = 1f;
             if (maximumDeepCompressionAxisLoss < 0f) maximumDeepCompressionAxisLoss = 0f;
             if (maximumDeepCompressionAxisLoss > 0.01f) maximumDeepCompressionAxisLoss = 0.01f;
+            if (hullCondensationStartDepthMeters < 0f) hullCondensationStartDepthMeters = 0f;
+            if (hullCondensationFullDepthMeters < hullCondensationStartDepthMeters + 1f)
+                hullCondensationFullDepthMeters = hullCondensationStartDepthMeters + 1f;
+            if (lowIntegrityGroanThreshold01 < 0.01f) lowIntegrityGroanThreshold01 = 0.01f;
+            if (lowIntegrityGroanThreshold01 > 1f) lowIntegrityGroanThreshold01 = 1f;
+            if (lowIntegrityGroanNoiseFrequency < 0.01f) lowIntegrityGroanNoiseFrequency = 0.01f;
+            if (lowIntegrityGroanNoiseThreshold < -1f) lowIntegrityGroanNoiseThreshold = -1f;
+            if (lowIntegrityGroanNoiseThreshold > 1f) lowIntegrityGroanNoiseThreshold = 1f;
+            if (lowIntegrityGroanStressFloor < 0f) lowIntegrityGroanStressFloor = 0f;
+            if (lowIntegrityGroanStressFloor > 1f) lowIntegrityGroanStressFloor = 1f;
+            if (lowIntegrityGroanPitchMin < 0.1f) lowIntegrityGroanPitchMin = 0.1f;
+            if (lowIntegrityGroanPitchMax < lowIntegrityGroanPitchMin) lowIntegrityGroanPitchMax = lowIntegrityGroanPitchMin;
+            if (brownoutEmergencyTransitionSeconds < 0.05f) brownoutEmergencyTransitionSeconds = 0.05f;
             if (breachVortexDurationSeconds < 0f) breachVortexDurationSeconds = 0f;
             if (breachVortexReferenceMassKilograms < 1f) breachVortexReferenceMassKilograms = 1f;
             if (breachVortexMaximumAccelerationMetersPerSecondSquared < 0f) breachVortexMaximumAccelerationMetersPerSecondSquared = 0f;

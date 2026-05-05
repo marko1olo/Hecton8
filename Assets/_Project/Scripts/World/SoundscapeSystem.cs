@@ -173,6 +173,27 @@ namespace Hecton8.World
             PromoteNextFrameEvents();
         }
 
+        public static void DropPendingAmbient()
+        {
+            if (_pendingEvents.IsCreated)
+            {
+                while (_pendingEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            if (_nextFrameEvents.IsCreated)
+            {
+                while (_nextFrameEvents.TryDequeue(out _))
+                {
+                }
+            }
+
+            _pendingEventCount = 0;
+            _nextFrameEventCount = 0;
+            _isDispatching = false;
+        }
+
         private static void EnsureInitialized()
         {
             if (!_pendingEvents.IsCreated)

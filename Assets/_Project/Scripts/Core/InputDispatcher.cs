@@ -17,6 +17,8 @@ namespace Hecton8.Core
         private const float DefaultBufferedActionMaxAgeSeconds = 0.25f;
         private const float LookHotSwapBlendDurationSeconds = 0.25f;
         private const float LookBlendEpsilon = 0.0001f;
+        private const float LookCurveDeadzone = 0.035f;
+        private const float LookCurveRange = 1f - LookCurveDeadzone;
 
         private struct BufferedActionEntry
         {
@@ -542,9 +544,22 @@ namespace Hecton8.Core
             return new Vector2(blendedDirection.x * magnitude, blendedDirection.y * magnitude);
         }
 
+        private static Vector2 ApplyQuadraticLookCurve(Vector2 lookDelta)
+        {
+            float2 raw = new float2(lookDelta.x, lookDelta.y);
+            float magnitude = math.length(raw);
+            if (magnitude <= LookCurveDeadzone)
+                return Vector2.zero;
+
+            float normalized = math.saturate((magnitude - LookCurveDeadzone) / LookCurveRange);
+            float quadratic = normalized * normalized;
+            float gain = quadratic / math.max(normalized, LookBlendEpsilon);
+            return new Vector2(lookDelta.x * gain, lookDelta.y * gain);
+        }
+
         private void HandleLookInput(Vector2 lookDelta)
         {
-            _pendingLookDelta += lookDelta;
+            _pendingLookDelta += ApplyQuadraticLookCurve(lookDelta);
         }
 
         private void HandleJumpPressed()

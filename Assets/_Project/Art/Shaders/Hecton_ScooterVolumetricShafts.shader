@@ -843,6 +843,17 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
             return _HectonFloorBiolumColor.rgb * (_HectonFloorBiolumStrength * _HectonBiolumProjectionStrength * floorMask * pattern * distanceFade);
         }
 
+        half3 ApplyAbyssalSensorEdgePulse(float2 screenUV, half3 color, half3 noirMinimum)
+        {
+            float2 centered = screenUV - 0.5;
+            half edgeMask = saturate((half)dot(centered, centered) * 3.4h);
+            half scan = smoothstep(0.82h, 1.0h, (half)(sin(screenUV.y * 720.0 + _Time.y * 19.0) * 0.5 + 0.5));
+            half grain = (half)ValueNoise2D(screenUV * float2(94.0, 53.0) + _Time.yy * 0.17);
+            half pulse = edgeMask * scan * saturate(grain * 1.35h - 0.28h) * 0.035h;
+            half3 shifted = half3(color.r * 0.96h, color.g * 1.015h, color.b * 1.04h);
+            return max(lerp(color, shifted + _HectonNoirLiftColor.rgb * 0.08h, pulse), noirMinimum);
+        }
+
         half4 FragScreenSpaceShafts(Varyings input) : SV_Target
         {
             return half4(IntegrateHeadlightShafts(input.screenUV), 1.0);
@@ -896,6 +907,7 @@ Shader "Hidden/Hecton8/ScooterVolumetricShafts"
 
             half3 finalColor = sourceColor.rgb + shafts + biolumProjection + lensGhosts + lensDirtCondensation;
             finalColor = max(finalColor, noirMinimum);
+            finalColor = ApplyAbyssalSensorEdgePulse(input.screenUV, finalColor, noirMinimum);
             if (any(isnan(finalColor)) || any(isinf(finalColor)))
                 finalColor = noirMinimum;
             finalColor = ApplyResolveBlueNoiseDither(finalColor, input.screenUV);

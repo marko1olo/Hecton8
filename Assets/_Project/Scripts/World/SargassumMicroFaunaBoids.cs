@@ -1518,9 +1518,10 @@ namespace Hecton8.World
                 out SimulationLodTier simulationLodTier);
             bool shouldDispatchSleepVelocityWrite = simulationLodTier == SimulationLodTier.Sleep && _sleepVelocityWritePending;
             bool shouldRender = ShouldRenderSwarm(cameraDistanceSq);
+            bool leaderFollowerSchooling = _formationModeActive && !_parasiteModeActive && _leviathanModeBlend < 0.001f;
             if (dispatchedSimulation || shouldDispatchSleepVelocityWrite)
             {
-                if (simulationLodTier == SimulationLodTier.Full)
+                if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
                     UpdateSpatialGridLayout();
 
                 if (BindSimulationUniforms(simulationDeltaTime, currentDriftOffset, driftDelta, hibernation01, simulationLodTier))
@@ -1528,7 +1529,7 @@ namespace Hecton8.World
                     try
                     {
                         DispatchClearLatchStats();
-                        if (simulationLodTier == SimulationLodTier.Full)
+                        if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
                         {
                             DispatchClearSpatialGrid();
                             DispatchClearPbdCorrections();
@@ -1539,7 +1540,7 @@ namespace Hecton8.World
                         boidCompute.Dispatch(_kernelIndex, _dispatchGroupCount, 1, 1);
                         if (simulationLodTier == SimulationLodTier.Sleep)
                             _sleepVelocityWritePending = false;
-                        if (simulationLodTier == SimulationLodTier.Full)
+                        if (simulationLodTier == SimulationLodTier.Full && !leaderFollowerSchooling)
                             TryRequestParasiteLatchReadback();
 
                         _frameParity ^= 1;

@@ -163,8 +163,9 @@ float HectonCoreLitSampleSedimentMask(float3 normalWS)
     if (_HectonSedimentOverlayParamsA.x <= 0.5)
         return 0.0;
 
+    float topDownMask = saturate(dot(HectonCoreLitSafeNormalize(normalWS), float3(0.0, 1.0, 0.0)));
     float upFacing = saturate((normalWS.y - _HectonSedimentOverlayParamsA.y) * _HectonSedimentOverlayParamsA.z);
-    return saturate(dot(HectonCoreLitSafeNormalize(normalWS), float3(0.0, 1.0, 0.0)) * upFacing * _HectonSedimentOverlayParamsB.w);
+    return saturate(topDownMask * upFacing * _HectonSedimentOverlayParamsB.w);
 }
 
 void HectonCoreLitApplySedimentOverlay(
@@ -317,7 +318,8 @@ float HectonCoreLitEvaluateProceduralCaustics(float2 uv)
     float secondaryTime = timeValue * secondarySpeed + wavePhase * 1.37 + 17.0;
     float primaryLayer = HectonCoreLitCheapCausticRidge(animatedUv, primaryDensity, primaryTime);
     float secondaryLayer = HectonCoreLitCheapCausticRidge(animatedUv + 0.37, secondaryDensity, secondaryTime);
-    float combined = lerp(primaryLayer, max(primaryLayer, secondaryLayer), secondaryWeight);
+    float twoLayerWeb = min(primaryLayer, secondaryLayer);
+    float combined = lerp(primaryLayer, twoLayerWeb, secondaryWeight);
     combined = pow(saturate(combined * 2.3), sharpness);
     combined *= lerp(0.92, 1.18, saturate(waveDisplacementAbs * 0.14 + length(waveFlow) * 0.035));
     return saturate(combined * 1.35);
@@ -491,6 +493,10 @@ half3 HectonCoreLitApplyNoirFog(half3 color, half fogRaw, float3 positionWS)
     fogColor *= 1.0 + fogPulse * weatherStress * 0.055;
     fogColor += _FinalGiantAbyssLight.rgb * (fogPulse * weatherStress * 0.06);
     fogColor += (fogColor + _FinalGiantAbyssLight.rgb * 0.5) * pressureSpark * 0.045;
+    float chromaDrift = (fogShimmer - 0.5) * weatherStress * saturate(lutSample) * 0.028;
+    fogColor = max(fogColor + float3(-chromaDrift, chromaDrift * 0.45, chromaDrift * 0.8), 0.0);
+    float blackoutBand = smoothstep(0.87, 1.0, 0.5 + 0.5 * sin(positionWS.y * 0.026 + _Time.y * 0.41 + fogShimmer * 3.1));
+    fogColor *= 1.0 - blackoutBand * weatherStress * saturate(lutSample) * 0.032;
     float3 absorption = max(fogColor * float3(0.72, 0.52, 0.36), float3(0.0, 0.0, 0.0));
     float3 ambientTint = fogColor * 0.42;
     float3 attenuatedColor = color * exp(-absorption * lutSample);
@@ -646,7 +652,9 @@ float3 HectonCoreLitSampleBiolumVolumeRadiance(float3 positionWS)
 
     float4 volumeSample = SAMPLE_TEXTURE3D_LOD(_HectonBiolumVolumeTex, sampler_HectonBiolumVolumeTex, sampleUv, 0);
     float sonarReactiveBoost = HectonCoreLitEvaluateSonarReactiveBiolumBoost(positionWS);
-    return volumeSample.rgb * max(_HectonBiolumVolumeParams.x, 0.0) * (1.0 + sonarReactiveBoost * 2.5);
+    float breathPhase = _Time.y * 1.2566371 + dot(positionWS.xz, float2(0.013, -0.017));
+    float biolumBreath = 0.92 + 0.08 * sin(breathPhase);
+    return volumeSample.rgb * max(_HectonBiolumVolumeParams.x, 0.0) * biolumBreath * (1.0 + sonarReactiveBoost * 2.5);
 }
 
 bool HectonCoreLitIsInsideCaveSolid(float3 positionWS, float surfaceEpsilon)

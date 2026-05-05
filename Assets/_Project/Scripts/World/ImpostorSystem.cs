@@ -72,6 +72,7 @@ namespace Hecton8.World
         private const float MinimumBillboardHeight = 0.25f;
         private const float CameraResolveRetryInterval = 1f;
         private const float DistantGeologyImpostorDistanceMeters = 5000f;
+        private const int MaxHotPathImpostorsPerTick = 64;
         private static readonly int _baseMapId = Shader.PropertyToID("_BaseMap");
         private static readonly int _baseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int _mainTexId = Shader.PropertyToID("_MainTex");
@@ -120,8 +121,7 @@ namespace Hecton8.World
             public float DeactivationDistanceSqr;
             public Vector3 BillboardCenterOffset;
             public Vector3 BillboardScale;
-            public Renderer[] ManagedRenderers;
-            public bool[] OriginalForceRenderingOffStates;
+            public bool OriginalActiveSelf;
             public bool IsActive;
         }
 
@@ -142,12 +142,15 @@ namespace Hecton8.World
         private readonly HashSet<GameObject> _registeredCandidates = new HashSet<GameObject>();
         // COLD ALLOC: Dictionary<EntityId, ImpostorTextureData>[100] — impostor texture cache — owner: ImpostorSystem
         private readonly Dictionary<EntityId, ImpostorTextureData> _textureCache = new Dictionary<EntityId, ImpostorTextureData>(100);
+        // COLD ALLOC: Dictionary<EntityId, Renderer>[100] — pooled billboard renderer cache — owner: ImpostorSystem
+        private readonly Dictionary<EntityId, Renderer> _billboardRendererCache = new Dictionary<EntityId, Renderer>(100);
         // COLD ALLOC: List<Renderer>[32] — renderer registration scratch buffer — owner: ImpostorSystem
         private readonly List<Renderer> _rendererScratch = new List<Renderer>(32);
 
         private Camera _mainCamera;
         private Transform _cameraTransform;
         private float _cameraResolveRetryTimer;
+        private int _impostorTickCursor;
         private bool _registered;
         private bool _serviceRegistered;
 
@@ -215,6 +218,7 @@ namespace Hecton8.World
             _activeImpostors.Clear();
             _registeredCandidates.Clear();
             _textureCache.Clear();
+            _billboardRendererCache.Clear();
 
             if (_instance == this)
                 _instance = null;
@@ -271,14 +275,22 @@ namespace Hecton8.World
             float thresholdScale = ResolveThresholdScale();
             float thresholdScaleSqr = thresholdScale * thresholdScale;
             Vector3 cameraPosition = _cameraTransform.position;
-            for (int i = _activeImpostors.Count - 1; i >= 0; i--)
+            int batchCount = Mathf.Min(_activeImpostors.Count, MaxHotPathImpostorsPerTick);
+            for (int processed = 0; processed < batchCount && _activeImpostors.Count > 0; processed++)
             {
+                if (_impostorTickCursor >= _activeImpostors.Count)
+                    _impostorTickCursor = 0;
+
+                int i = _impostorTickCursor;
                 ImpostorInstance instance = _activeImpostors[i];
                 if (instance.OriginalObject == null)
                 {
                     DespawnBillboard(ref instance);
 
                     _activeImpostors.RemoveAt(i);
+                    if (_impostorTickCursor >= _activeImpostors.Count)
+                        _impostorTickCursor = 0;
+
                     continue;
                 }
 
@@ -292,7 +304,7 @@ namespace Hecton8.World
 
                 if (instance.IsActive && instance.BillboardObject == null)
                 {
-                    RestoreOriginalVisibility(ref instance);
+                    ApplyOriginalObjectVisibility(ref instance, true);
                     instance.IsActive = false;
                 }
 
@@ -313,6 +325,8 @@ namespace Hecton8.World
                     DeactivateImpostor(ref instance);
                     _activeImpostors[i] = instance;
                 }
+
+                _impostorTickCursor++;
             }
         }
 
@@ -444,9 +458,7 @@ namespace Hecton8.World
             if (billboard == null)
                 return;
 
-            Renderer renderer = instance.BillboardRenderer;
-            if (renderer == null && !billboard.TryGetComponent(out renderer))
-                renderer = billboard.GetComponent<Renderer>();
+            TryResolveBillboardRenderer(billboard, out Renderer renderer);
             if (renderer != null)
             {
                 renderer.sharedMaterial = data.ImpostorMaterial;
@@ -458,19 +470,36 @@ namespace Hecton8.World
                 renderer.forceRenderingOff = false;
             }
 
-            SuppressOriginalVisibility(ref instance);
             instance.BillboardObject = billboard;
             instance.BillboardRenderer = renderer;
             instance.IsActive = true;
             _impostorBillboards[instance.ImpostorID] = billboard;
             UpdateBillboardTransform(ref instance, instance.OriginalTransform.position);
+            ApplyOriginalObjectVisibility(ref instance, false);
         }
 
         private void DeactivateImpostor(ref ImpostorInstance instance)
         {
+            ApplyOriginalObjectVisibility(ref instance, true);
             DespawnBillboard(ref instance);
-            RestoreOriginalVisibility(ref instance);
             instance.IsActive = false;
+        }
+
+        private bool TryResolveBillboardRenderer(GameObject billboard, out Renderer renderer)
+        {
+            renderer = null;
+            if (billboard == null)
+                return false;
+
+            EntityId key = billboard.GetEntityId();
+            if (_billboardRendererCache.TryGetValue(key, out renderer) && renderer != null)
+                return true;
+
+            if (!billboard.TryGetComponent(out renderer))
+                renderer = null;
+
+            _billboardRendererCache[key] = renderer;
+            return renderer != null;
         }
 
         private bool TryBuildImpostorData(GameObject obj, EntityId impostorID)
@@ -521,10 +550,7 @@ namespace Hecton8.World
             if (!data.IsLoaded)
                 return false;
 
-            if (!TryCacheManagedRenderers(obj, out Renderer[] managedRenderers, out bool[] originalForceRenderingOffStates))
-                return false;
-
-            if (!TryCalculateBillboardPresentation(managedRenderers, obj.transform.position, out Vector3 billboardCenterOffset, out Vector3 billboardScale))
+            if (!TryCalculateBillboardPresentation(lodGroup, obj.transform, out Vector3 billboardCenterOffset, out Vector3 billboardScale))
                 return false;
 
             float safeActivationDistance = Mathf.Max(1f, activationDistanceMeters);
@@ -542,8 +568,7 @@ namespace Hecton8.World
                 DeactivationDistanceSqr = activationDistanceSqr / (exitPaddingScale * exitPaddingScale),
                 BillboardCenterOffset = billboardCenterOffset,
                 BillboardScale = billboardScale,
-                ManagedRenderers = managedRenderers,
-                OriginalForceRenderingOffStates = originalForceRenderingOffStates,
+                OriginalActiveSelf = obj.activeSelf,
                 IsActive = false
             };
             _activeImpostors.Add(instance);
@@ -564,7 +589,7 @@ namespace Hecton8.World
                 }
                 else
                 {
-                    RestoreOriginalVisibility(ref instance);
+                    ApplyOriginalObjectVisibility(ref instance, true);
                 }
 
                 _activeImpostors.RemoveAt(i);
@@ -572,74 +597,15 @@ namespace Hecton8.World
             }
         }
 
-        private bool TryCacheManagedRenderers(GameObject obj, out Renderer[] managedRenderers, out bool[] originalForceRenderingOffStates)
+        private static void ApplyOriginalObjectVisibility(ref ImpostorInstance instance, bool visible)
         {
-            managedRenderers = null;
-            originalForceRenderingOffStates = null;
-
-            if (obj == null)
-                return false;
-
-            _rendererScratch.Clear();
-            obj.transform.GetComponentsInChildren(true, _rendererScratch);
-
-            int validRendererCount = 0;
-            for (int i = 0; i < _rendererScratch.Count; i++)
-            {
-                if (_rendererScratch[i] != null)
-                    validRendererCount++;
-            }
-
-            if (validRendererCount == 0)
-                return false;
-
-            managedRenderers = new Renderer[validRendererCount];
-            originalForceRenderingOffStates = new bool[validRendererCount];
-
-            int writeIndex = 0;
-            for (int i = 0; i < _rendererScratch.Count; i++)
-            {
-                Renderer renderer = _rendererScratch[i];
-                if (renderer == null)
-                    continue;
-
-                managedRenderers[writeIndex] = renderer;
-                originalForceRenderingOffStates[writeIndex] = renderer.forceRenderingOff;
-                writeIndex++;
-            }
-
-            return true;
-        }
-
-        private void SuppressOriginalVisibility(ref ImpostorInstance instance)
-        {
-            if (instance.ManagedRenderers == null)
+            GameObject originalObject = instance.OriginalObject;
+            if (originalObject == null)
                 return;
 
-            for (int i = 0; i < instance.ManagedRenderers.Length; i++)
-            {
-                Renderer renderer = instance.ManagedRenderers[i];
-                if (renderer == null)
-                    continue;
-
-                renderer.forceRenderingOff = true;
-            }
-        }
-
-        private void RestoreOriginalVisibility(ref ImpostorInstance instance)
-        {
-            if (instance.ManagedRenderers == null || instance.OriginalForceRenderingOffStates == null)
-                return;
-
-            int restoreCount = Mathf.Min(instance.ManagedRenderers.Length, instance.OriginalForceRenderingOffStates.Length);
-            for (int i = 0; i < restoreCount; i++)
-            {
-                Renderer renderer = instance.ManagedRenderers[i];
-                if (renderer == null)
-                    continue;
-
-                renderer.forceRenderingOff = instance.OriginalForceRenderingOffStates[i];
-            }
+            bool targetActive = visible && instance.OriginalActiveSelf;
+            if (originalObject.activeSelf != targetActive)
+                originalObject.SetActive(targetActive);
         }
 
         private void DespawnBillboard(ref ImpostorInstance instance)
@@ -666,7 +632,7 @@ namespace Hecton8.World
                 if (instance.IsActive)
                     DespawnBillboard(ref instance);
 
-                RestoreOriginalVisibility(ref instance);
+                ApplyOriginalObjectVisibility(ref instance, true);
                 _activeImpostors[i] = instance;
             }
         }
@@ -801,42 +767,32 @@ namespace Hecton8.World
         }
 
         private static bool TryCalculateBillboardPresentation(
-            Renderer[] managedRenderers,
-            Vector3 originPosition,
+            LODGroup lodGroup,
+            Transform originalTransform,
             out Vector3 billboardCenterOffset,
             out Vector3 billboardScale)
         {
             billboardCenterOffset = Vector3.zero;
             billboardScale = Vector3.one;
 
-            if (managedRenderers == null || managedRenderers.Length == 0)
+            if (originalTransform == null)
                 return false;
 
-            bool hasBounds = false;
-            Bounds combinedBounds = default;
-            for (int i = 0; i < managedRenderers.Length; i++)
+            float size;
+            if (lodGroup != null)
             {
-                Renderer renderer = managedRenderers[i];
-                if (renderer == null)
-                    continue;
-
-                if (!hasBounds)
-                {
-                    combinedBounds = renderer.bounds;
-                    hasBounds = true;
-                    continue;
-                }
-
-                combinedBounds.Encapsulate(renderer.bounds);
+                size = Mathf.Max(MinimumBillboardWidth, lodGroup.size);
+                Vector3 referencePosition = originalTransform.TransformPoint(lodGroup.localReferencePoint);
+                billboardCenterOffset = referencePosition - originalTransform.position;
+            }
+            else
+            {
+                Vector3 scale = originalTransform.lossyScale;
+                size = Mathf.Max(MinimumBillboardWidth, Mathf.Max(scale.x, Mathf.Max(scale.y, scale.z)));
             }
 
-            if (!hasBounds)
-                return false;
-
-            Vector3 size = combinedBounds.size;
-            float width = Mathf.Max(MinimumBillboardWidth, Mathf.Max(size.x, size.z));
-            float height = Mathf.Max(MinimumBillboardHeight, size.y);
-            billboardCenterOffset = combinedBounds.center - originPosition;
+            float width = Mathf.Max(MinimumBillboardWidth, size);
+            float height = Mathf.Max(MinimumBillboardHeight, size);
             billboardScale = new Vector3(width, height, 1f);
             return true;
         }

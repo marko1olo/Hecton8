@@ -8,6 +8,7 @@ Shader "Hecton8/UI/RetinaStressPulse"
         _GlitchStrength ("Glitch Strength", Range(0, 1)) = 0.18
         _LineDensity ("Line Density", Range(8, 240)) = 116
         _EdgeCrush ("Edge Crush", Range(0, 1)) = 0.72
+        _ChromaticStress ("Chromatic Stress", Range(0, 1)) = 0.2
     }
 
     SubShader
@@ -54,6 +55,7 @@ Shader "Hecton8/UI/RetinaStressPulse"
             float _GlitchStrength;
             float _LineDensity;
             float _EdgeCrush;
+            float _ChromaticStress;
 
             v2f vert(appdata_t v)
             {
@@ -99,6 +101,8 @@ Shader "Hecton8/UI/RetinaStressPulse"
                 fixed3 tint = _TintColor.rgb;
                 fixed3 pressureTint = lerp(tint, fixed3(0.08, 0.34, 0.30), crush);
                 float alpha = saturate(pulseAlpha + scanAlpha + glitchAlpha) * _TintColor.a * i.color.a;
+                float chromaticStress = edgeMask * beat * _ChromaticStress;
+                pressureTint = lerp(pressureTint, pressureTint.gbr * fixed3(1.08, 0.94, 1.12), chromaticStress);
 
                 return fixed4(pressureTint * (1.0 + glitchAlpha * 0.65), alpha);
             }

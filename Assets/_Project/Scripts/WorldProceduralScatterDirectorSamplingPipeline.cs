@@ -350,7 +350,7 @@ namespace Hecton8.World
             int passiveSpawnCount = 0;
             int predatorSpawnCount = 0;
             int mapMagicSamples = 0;
-            int raycastSamples = 0;
+            int sceneProbeLegacySamples = 0;
             int fallbackSamples = 0;
             int matchedScatterRules = 0;
             int heatPassedRules = 0;
@@ -380,7 +380,7 @@ namespace Hecton8.World
                 for (int cellIndex = 0; cellIndex < totalCells; cellIndex++)
                 {
                     WorldProceduralFieldSampler.CellOutputData cellOutput = _memory.CellSamplingOutputs[cellIndex];
-                    if (((cellOutput.BiomeInfluencePacked >> 8) & 0xFFu) != 0u)
+                    if (HectonBiomeVisualFamilyUtility.ExtractBlend255(cellOutput.BiomeInfluencePacked) != 0)
                         biomeInfluenceTransitionCells++;
 
                     ScatterSimulationCellState backendCellState = BuildScatterBackendCellState(cellOutput);
@@ -394,7 +394,7 @@ namespace Hecton8.World
                 int cellZIndex = cellOutput.CellZ;
                 int domainCount = fieldSampler.GetFieldSampleDomainCount(cellOutput);
                 evaluatedCells++;
-                CountSeafloorSource(fieldSample.seafloorSource, ref mapMagicSamples, ref raycastSamples, ref fallbackSamples);
+                CountSeafloorSource(fieldSample.seafloorSource, ref mapMagicSamples, ref sceneProbeLegacySamples, ref fallbackSamples);
                 debugZone = fieldSample.zone;
                 debugResolvedZoneKind = fieldSample.resolvedZoneKind;
                 debugPattern = fieldSample.resolvedPattern;
@@ -487,29 +487,38 @@ namespace Hecton8.World
                         if (collectDetailedDiagnostics)
                             matchedScatterRules++;
 
-                        float heat = fieldSampler.EvaluateHeatmap(
-                            runtimeRule.HeatmapChannelIndex,
-                            cellOutput,
-                            runtimeRule.PlacementMode,
-                            runtimeRule.DensityScaleFactor);
-                        heat = Mathf.Clamp01(
-                            heat
-                            * GetCombinedHeatScale(
-                                activeFieldSample.resolvedPattern,
-                                activeFieldSample.depthMeters,
-                                runtimeRule,
-                                biomeScoreContext,
-                                patternScoreContext));
+                        bool deterministicClutter = IsDeterministicClutterFamily(family);
+                        float heat = deterministicClutter
+                            ? 1f
+                            : fieldSampler.EvaluateHeatmap(
+                                runtimeRule.HeatmapChannelIndex,
+                                cellOutput,
+                                runtimeRule.PlacementMode,
+                                runtimeRule.DensityScaleFactor);
+                        if (!deterministicClutter)
+                        {
+                            heat = Mathf.Clamp01(
+                                heat
+                                * GetCombinedHeatScale(
+                                    activeFieldSample.resolvedPattern,
+                                    activeFieldSample.depthMeters,
+                                    runtimeRule,
+                                    biomeScoreContext,
+                                    patternScoreContext));
+                        }
+
                         bool needsPreviewRescue = NeedsPreviewRescue(activeFieldSample, family);
                         float effectiveMinHeat = ResolveEffectiveMinHeat(rule, family, activeFieldSample, needsPreviewRescue);
                         float effectiveDensityScale = ResolveEffectiveDensityScale(rule, family, activeFieldSample, needsPreviewRescue);
-                        if (heat < effectiveMinHeat)
+                        if (!deterministicClutter && heat < effectiveMinHeat)
                             continue;
                         if (collectDetailedDiagnostics)
                             heatPassedRules++;
 
-                        float normalizedHeat = Mathf.InverseLerp(effectiveMinHeat, 1f, heat);
-                        float spawnProbability = Mathf.Clamp01(normalizedHeat * (0.45f + Mathf.Clamp(effectiveDensityScale, 0.1f, 4f) * 0.18f));
+                        float normalizedHeat = deterministicClutter ? 1f : Mathf.InverseLerp(effectiveMinHeat, 1f, heat);
+                        float spawnProbability = deterministicClutter
+                            ? 1f
+                            : Mathf.Clamp01(normalizedHeat * (0.45f + Mathf.Clamp(effectiveDensityScale, 0.1f, 4f) * 0.18f));
                         bool needsSpawnRescue = minimumSpawnPlacements > 0 &&
                                                 family != null &&
                                                 family.scatterLayer == WorldPrefabFamilyProfile.ScatterLayer.Spawn;
@@ -537,6 +546,7 @@ namespace Hecton8.World
                                 cellXIndex,
                                 cellZIndex,
                                 spawnProbability,
+                                deterministicClutter,
                                 needsRescueTracking,
                                 size,
                                 center,
@@ -734,7 +744,7 @@ namespace Hecton8.World
                 sampledPatternCounts,
                 sampledZoneCounts,
                 mapMagicSamples,
-                raycastSamples,
+                sceneProbeLegacySamples,
                 fallbackSamples,
                 matchedScatterRules,
                 heatPassedRules,
@@ -863,11 +873,7 @@ namespace Hecton8.World
                 if ((uint)index >= (uint)CellCount)
                     return;
 
-                WorldProceduralFieldSampler.BiomeInfluenceCell influence = Source[index];
-                Destination[index] = HectonBiomeVisualFamilyUtility.PackCompactInfluence(
-                    influence.PrimaryBiomeId,
-                    influence.SecondaryBiomeId,
-                    influence.Blend255);
+                Destination[index] = Source[index].GpuPacked;
             }
         }
 
@@ -987,11 +993,11 @@ namespace Hecton8.World
             WorldProceduralBiomeFamilyContextProfile primaryBiomeContext)
         {
             WorldProceduralFieldSampler.BiomeInfluenceCell influence = fieldSample.biomeInfluence;
-            if (influence.SecondaryBiomeId == 0 || influence.Blend255 == 0 || fieldSampler == null)
+            if (influence.Blend255 == 0)
                 return default;
 
-            if (!fieldSampler.TryResolveBiomeMatrixProfileById(influence.SecondaryBiomeId, out HectonBiomeMatrixProfile secondaryProfile) ||
-                secondaryProfile == null ||
+            HectonBiomeMatrixProfile secondaryProfile = fieldSample.secondaryBiomeProfile;
+            if (secondaryProfile == null ||
                 ReferenceEquals(secondaryProfile, fieldSample.biomeProfile))
             {
                 return default;
@@ -1094,6 +1100,7 @@ namespace Hecton8.World
             int cellXIndex,
             int cellZIndex,
             float spawnProbability,
+            bool deterministicClutter,
             bool needsRescueTracking,
             float size,
             Vector3 center,
@@ -1117,7 +1124,9 @@ namespace Hecton8.World
 
             int heightLayerIndex = ResolveHeightLayerIndex(activeFieldSample, runtimeRule);
             float gate = StablePlacementRandom01(cellXIndex, cellZIndex, runtimeRule.RuleIdHash, heightLayerIndex);
-            rejectedByGate = gate > spawnProbability;
+            rejectedByGate = deterministicClutter
+                ? gate <= DeterministicClutterSpawnThreshold
+                : gate > spawnProbability;
             if (rejectedByGate && !needsRescueTracking)
                 return false;
 
@@ -1645,7 +1654,7 @@ namespace Hecton8.World
             Dictionary<string, int> sampledPatternCounts,
             Dictionary<string, int> sampledZoneCounts,
             int mapMagicSamples,
-            int raycastSamples,
+            int sceneProbeLegacySamples,
             int fallbackSamples,
             int matchedScatterRules,
             int heatPassedRules,
@@ -1688,7 +1697,7 @@ namespace Hecton8.World
             _debugStructurePlacements = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Structure];
             _debugSpawnPlacements = layerPlacementCounts[(int)WorldPrefabFamilyProfile.ScatterLayer.Spawn];
             _debugMapMagicSamples = mapMagicSamples;
-            _debugSceneProbeLegacySamples = raycastSamples;
+            _debugSceneProbeLegacySamples = sceneProbeLegacySamples;
             _debugFallbackSamples = fallbackSamples;
             _debugMatchedScatterRules = matchedScatterRules;
             _debugHeatPassedRules = heatPassedRules;

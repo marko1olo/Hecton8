@@ -16,6 +16,13 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
         _SignalChromaAliasRate ("Signal Chroma Alias Rate", Range(0, 20)) = 9
         _SignalPhosphorStutterStrength ("Signal Phosphor Stutter Strength", Range(0, 0.16)) = 0.035
         _SignalPhosphorStutterRate ("Signal Phosphor Stutter Rate", Range(0, 18)) = 6
+        _SignalWarningColor ("Signal Warning Color", Color) = (0.55, 0.28, 0.04, 1)
+        _SignalWarningPulseStrength ("Signal Warning Pulse Strength", Range(0, 0.18)) = 0.045
+        _SignalWarningPulseRate ("Signal Warning Pulse Rate", Range(0, 16)) = 3.5
+        _SignalPressureRippleStrength ("Signal Pressure Ripple Strength", Range(0, 0.14)) = 0.032
+        _SignalPressureRippleRate ("Signal Pressure Ripple Rate", Range(0, 18)) = 5.5
+        _SignalNotchStrength ("Signal Notch Strength", Range(0, 0.12)) = 0.028
+        _SignalNotchRate ("Signal Notch Rate", Range(0, 18)) = 4.8
     }
 
     SubShader
@@ -72,6 +79,14 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
             float _SignalChromaAliasRate;
             float _SignalPhosphorStutterStrength;
             float _SignalPhosphorStutterRate;
+            fixed4 _SignalWarningColor;
+            float _SignalWarningPulseStrength;
+            float _SignalWarningPulseRate;
+            float _SignalPressureRippleStrength;
+            float _SignalPressureRippleRate;
+            float _SignalNotchStrength;
+            float _SignalNotchRate;
+            float _HectonBrownoutPulse;
 
             v2f vert(appdata_t v)
             {
@@ -114,6 +129,23 @@ Shader "Hecton8/UI/BlueNoiseDitherDissolve"
                 float phosphorBand = smoothstep(0.91, 1.0, frac((screenUv.x * 7.0) + (screenUv.y * 3.0) + (_Time.y * _SignalPhosphorStutterRate)));
                 float phosphorShift = phosphorBand * _SignalPhosphorStutterStrength * progress;
                 color.rgb = lerp(color.rgb, color.rgb * fixed3(0.92, 1.14, 0.96), phosphorShift);
+                float warningSweep = smoothstep(0.86, 1.0, frac((_Time.y * _SignalWarningPulseRate) + (screenUv.y * 5.0)));
+                float warningMask = warningSweep * edgeMask * _SignalWarningPulseStrength * progress;
+                color.rgb = lerp(color.rgb, color.rgb + (_SignalWarningColor.rgb * color.a), warningMask);
+                float pressureWave = (sin(((screenUv.x * 31.0) + (screenUv.y * 19.0)) + (_Time.y * _SignalPressureRippleRate)) * 0.5) + 0.5;
+                float pressureMask = pressureWave * edgeMask * _SignalPressureRippleStrength * progress;
+                color.rgb = lerp(color.rgb, color.rgb + (_SignalWarningColor.rgb * 0.12), pressureMask);
+                float notchPhase = frac((screenUv.x * 3.0) + (screenUv.y * 11.0) - (_Time.y * _SignalNotchRate));
+                float notchMask = smoothstep(0.965, 1.0, notchPhase) * _SignalNotchStrength * progress;
+                color.rgb = lerp(color.rgb, color.rgb * (1.0 - (edgeMask * 0.42)), notchMask);
+                float dropoutBand = smoothstep(0.982, 1.0, frac((screenUv.y * 37.0) + (_Time.y * 2.7)));
+                float dropoutGate = step(0.71, frac((screenUv.x * 5.0) - (_Time.y * 0.23)));
+                color.rgb = lerp(color.rgb, color.rgb * fixed3(0.72, 0.9, 1.08), dropoutBand * dropoutGate * 0.025 * progress);
+                float brownoutPulse = saturate(_HectonBrownoutPulse);
+                float brownoutScan = smoothstep(0.78, 1.0, frac((screenUv.y * 11.0) + (_Time.y * 0.31)));
+                float brownoutMask = brownoutPulse * (0.35 + (0.65 * edgeMask)) * (0.65 + (0.35 * brownoutScan)) * progress;
+                color.rgb = lerp(color.rgb, (color.rgb * fixed3(1.12, 0.82, 0.55)) + (_SignalWarningColor.rgb * 0.18), brownoutMask);
+                color.a = saturate(color.a + (brownoutPulse * edgeMask * 0.035));
                 color.a *= ditherAlpha;
                 return color;
             }

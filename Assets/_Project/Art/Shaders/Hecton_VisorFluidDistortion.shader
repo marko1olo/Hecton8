@@ -273,6 +273,12 @@ Shader "Hidden/Hecton8/VisorFluidDistortion"
                 color.rgb = lerp(color.rgb, color.rgb * (1.0h - (half)(rainIntensity * 0.08)), (half)rainIntensity);
                 color.rgb += rainTint * (half)(rainMask * 0.22);
                 color.rgb += (half)saturate(_HectonLightningFlash) * half3(0.07h, 0.09h, 0.12h);
+
+                float stormVoltage = saturate(rainIntensity * 0.72 + _HectonLightningFlash);
+                float bandSeed = Hash21(floor(input.screenUV * float2(11.0, 19.0)));
+                float voltageBand = abs(frac(input.screenUV.y * 22.0 - _Time.y * 3.1 + bandSeed) - 0.5);
+                float voltagePulse = smoothstep(0.035, 0.0, voltageBand) * stormVoltage;
+                color.rgb += half3(0.025h, 0.045h, 0.065h) * (half)voltagePulse;
                 return color;
             }
             ENDHLSL

@@ -626,6 +626,12 @@ namespace Hecton8.Audio
             ApplyParasiteRoomAcousticState(safeDeltaTime);
         }
 
+        /// <summary>True when the listener runtime position is inside a published cave/voxel volume bounding box.</summary>
+        public bool IsListenerInsideCaveVolume => _listenerContainingCaveCount > 0;
+
+        /// <summary>Normalized cave-interior depth from the current listener-containing volume cache.</summary>
+        public float ListenerCaveInterior01 => math.saturate(_listenerCaveInterior01);
+
         /// <summary>
         /// Publishes the current parasite load of the occupied module into mixer-level room filtering.
         /// </summary>

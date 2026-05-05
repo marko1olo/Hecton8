@@ -24,6 +24,9 @@ namespace Hecton8.SaveSystem
         private const string LegacyExtension = ".png";
         private const int JpegQuality = 82;
         private const int MaxCachedSprites = 12;
+        private const float MinPoseCaptureDistanceMeters = 5f;
+        private const float MinPoseCaptureAngleDegrees = 5f;
+        private const float MinPoseCaptureDistanceSq = MinPoseCaptureDistanceMeters * MinPoseCaptureDistanceMeters;
         private const string NativeMemoryOwner = nameof(SaveThumbnailSystem);
 
         private struct CaptureRequest
@@ -55,6 +58,9 @@ namespace Hecton8.SaveSystem
         private static CaptureRequest _inflightRequest;
         private static bool _hasPendingRequest;
         private static bool _hasInflightRequest;
+        private static bool _hasLastCapturePose;
+        private static Vector3 _lastCapturePosition;
+        private static Quaternion _lastCaptureRotation;
         private static int _requestSequence;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -66,6 +72,9 @@ namespace Hecton8.SaveSystem
             _inflightRequest = default;
             _hasPendingRequest = false;
             _hasInflightRequest = false;
+            _hasLastCapturePose = false;
+            _lastCapturePosition = default;
+            _lastCaptureRotation = default;
             _requestSequence = 0;
         }
 
@@ -98,6 +107,9 @@ namespace Hecton8.SaveSystem
                 return;
             }
 
+            if (!HasCapturePoseChanged(captureCamera))
+                return;
+
             ClearCacheEntry(slotName);
             _requestSequence++;
             _pendingRequest = new CaptureRequest
@@ -106,6 +118,10 @@ namespace Hecton8.SaveSystem
                 Camera = captureCamera,
                 SequenceId = _requestSequence
             };
+            Transform captureTransform = captureCamera.transform;
+            _lastCapturePosition = captureTransform.position;
+            _lastCaptureRotation = captureTransform.rotation;
+            _hasLastCapturePose = true;
             _hasPendingRequest = true;
         }
 
@@ -238,6 +254,19 @@ namespace Hecton8.SaveSystem
 
             captureCamera = _cachedCaptureCamera;
             return captureCamera != null;
+        }
+
+        private static bool HasCapturePoseChanged(Camera captureCamera)
+        {
+            if (!_hasLastCapturePose || captureCamera == null)
+                return true;
+
+            Transform captureTransform = captureCamera.transform;
+            Vector3 delta = captureTransform.position - _lastCapturePosition;
+            if (delta.sqrMagnitude > MinPoseCaptureDistanceSq)
+                return true;
+
+            return Quaternion.Angle(_lastCaptureRotation, captureTransform.rotation) > MinPoseCaptureAngleDegrees;
         }
 
         private static void HandleReadbackCompleted(AsyncGPUReadbackRequest request)

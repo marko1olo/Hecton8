@@ -51,6 +51,7 @@ Shader "Hecton8/BoidFishInstanced"
         _TailPower ("Tail Falloff Power (higher = sharper)", Float) = 2.0
         _TailPhaseVariance ("Phase Variance (per instance)", Float) = 3.7
         _TailSpeedInfluence ("Speed Influence on Frequency", Float) = 0.5
+        _TailWorldYPhase ("Tail World-Y Phase", Float) = 1.15
 
         [Header(VAT Animation)]
         _VatEnabled ("VAT Enabled", Float) = 0
@@ -148,6 +149,7 @@ Shader "Hecton8/BoidFishInstanced"
                 float  _TailPower;
                 float  _TailPhaseVariance;
                 float  _TailSpeedInfluence;
+                float  _TailWorldYPhase;
 
                 // VAT animation
                 float  _VatEnabled;
@@ -175,6 +177,8 @@ Shader "Hecton8/BoidFishInstanced"
             float _HectonNightFactor;
             float4 _HectonOceanBiolumColor;
             float _HectonOceanBiolumStrength;
+            float _GlobalOceanPanic;
+            float4 _GlobalOceanPanicColor;
             float _ParasiteMode;
             float _ParasiteAggression;
             float _VelocitySleepScale;
@@ -372,7 +376,8 @@ Shader "Hecton8/BoidFishInstanced"
                     // Body wave: phase varies along Z for S-curve
                     // bodyWaveK = 2.0 creates ~1 full wave along body
                     float bodyWaveK = 2.0;
-                    float wavePhase = phase + localPos.z * bodyWaveK;
+                    float worldYPhase = (boidPos.y + localPos.y) * _TailWorldYPhase;
+                    float wavePhase = phase + worldYPhase + localPos.z * bodyWaveK;
 
                     // Amplitude scales with speed (faster = smaller wag)
                     float parasiteMode = saturate(_ParasiteMode);
@@ -471,8 +476,10 @@ Shader "Hecton8/BoidFishInstanced"
                 half biolumPulse = 1.0h + sin(biolumPhase) * _BiolumPulseAmplitude;
                 half oceanBiolumInfluence = saturate(_HectonOceanBiolumStrength);
                 half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
+                half globalOceanPanic = saturate((half)_GlobalOceanPanic);
+                biolumColor = lerp(biolumColor, (half3)_GlobalOceanPanicColor.rgb, globalOceanPanic);
                 half biolumMask = saturate(0.28h + (1.0h - input.colorBlend) * 0.34h + (1.0h - lighting) * 0.22h);
-                color += biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.6h) * nightFactor * biolumPulse * biolumMask);
+                color += biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.6h + globalOceanPanic * 0.45h) * nightFactor * biolumPulse * biolumMask);
 
                 half parasitePulse = 1.0h + sin((_Time.y * _SargassumBiolumPhaseMultiplier * 1.65h) + input.instanceRand * 9.7h + input.uv.x * 12.0h) * 0.35h;
                 half parasiteMask = saturate(0.35h + (1.0h - abs(input.normalWS.y)) * 0.45h + input.uv.x * 0.2h);

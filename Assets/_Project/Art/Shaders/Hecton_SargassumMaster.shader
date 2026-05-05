@@ -301,7 +301,8 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half3 biolumColor = lerp(_BiolumColor.rgb, _HectonOceanBiolumColor.rgb, oceanBiolumInfluence * 0.65h);
                 half3 biolum = biolumColor * (_BiolumStrength * (1.0h + oceanBiolumInfluence * 0.7h) * bubbleBiolumMask * biolumPulse * timeBand * nightFactor);
                 half signalPhase = dot(input.positionWS.xz, half2(_NoirSignalFlickerScale, _NoirSignalFlickerScale * 1.37h)) + _Time.y * 2.1h + input.color.b * 3.3h;
-                half signalFlicker = (0.5h + 0.5h * sin(signalPhase)) * saturate(_NoirSignalFlickerStrength);
+                half signalWave = 1.0h - abs(frac(signalPhase * 0.15915494h) * 2.0h - 1.0h);
+                half signalFlicker = smoothstep(0.18h, 0.92h, signalWave) * saturate(_NoirSignalFlickerStrength);
                 half signalMask = saturate((1.0h - ao) * input.uv.y * (1.0h - isBubble));
                 half3 noirSignal = biolumColor * (signalFlicker * signalMask);
                 half specular = pow(saturate(dot(normalize(lightDir + viewDirWS), normalWS)), lerp(8.0h, 36.0h, _Smoothness)) * _Smoothness * 0.22h;
@@ -371,6 +372,8 @@ Shader "Hecton8/Flora/SargassumMaster"
                 half _BiolumPulseAmplitude;
                 half _BiolumPulseFrequency;
                 half _BiolumNightResponse;
+                half _NoirSignalFlickerStrength;
+                half _NoirSignalFlickerScale;
                 float3 _InteractionPosition;
                 half _InteractionRadius;
                 half _InteractionCutStrength;

@@ -2,16 +2,16 @@ using UnityEngine;
 
 namespace Hecton8.Environment
 {
-    public enum HectonBiomeVisualFamily : byte
+    public enum VisualFamily : byte
     {
         Sand = 0,
-        Basalt = 1,
-        Kelp = 2,
-        Brine = 3,
-        Volcanic = 4,
-        Coral = 5,
+        Rock = 1,
+        Vegetation = 2,
+        Coral = 3,
+        Ruin = 4,
+        Volcanic = 5,
         Abyssal = 6,
-        Alien = 7
+        Void = 7
     }
 
     public static class HectonBiomeVisualFamilyUtility
@@ -20,166 +20,115 @@ namespace Hecton8.Environment
         public const int PrimaryVisualFamilyShift = 0;
         public const int SecondaryVisualFamilyShift = 3;
         public const int BlendShift = 6;
+        public const int FlagsShift = 14;
         public const uint VisualFamilyMask = 0x7u;
         public const uint BlendMask = 0xFFu;
+        public const uint GpuPackedMask = (1u << FlagsShift) - 1u;
 
         public static byte MapToVisualFamily(int biomeId)
         {
-            switch (biomeId)
-            {
-                // biome.family.sediment_drift
-                case 4:
-                case 8:
-                case 13:
-                case 14:
-                case 24:
-                case 28:
-                case 30:
-                case 32:
-                case 36:
-                    return (byte)HectonBiomeVisualFamily.Sand;
-
-                // biome.family.tectonic_spine, granite_escarpment, rift_spine, metallic_hadal
-                case 7:
-                case 9:
-                case 11:
-                case 15:
-                case 17:
-                case 18:
-                case 19:
-                case 20:
-                case 21:
-                case 22:
-                case 23:
-                case 25:
-                case 26:
-                case 27:
-                case 29:
-                case 31:
-                case 35:
-                case 38:
-                case 43:
-                case 57:
-                case 59:
-                case 60:
-                case 69:
-                case 70:
-                case 71:
-                case 72:
-                case 73:
-                case 74:
-                case 75:
-                case 76:
-                case 80:
-                case 81:
-                case 83:
-                case 85:
-                case 86:
-                case 87:
-                case 88:
-                case 97:
-                case 105:
-                case 108:
-                    return (byte)HectonBiomeVisualFamily.Basalt;
-
-                // biome.family.littoral_karst
-                case 1:
-                case 2:
-                    return (byte)HectonBiomeVisualFamily.Kelp;
-
-                // biome.family.chemosynthetic_brine
-                case 37:
-                case 58:
-                case 78:
-                    return (byte)HectonBiomeVisualFamily.Brine;
-
-                // biome.family.volcanic_glass, volcanic_hadal
-                case 3:
-                case 10:
-                case 41:
-                case 42:
-                case 77:
-                case 82:
-                case 84:
-                case 98:
-                case 106:
-                    return (byte)HectonBiomeVisualFamily.Volcanic;
-
-                // biome.family.fossil_reef, crystal_growth
-                case 5:
-                case 6:
-                case 12:
-                case 16:
-                case 34:
-                    return (byte)HectonBiomeVisualFamily.Coral;
-
-                // biome.family.abyssal_silt
-                case 39:
-                case 44:
-                case 45:
-                case 46:
-                case 47:
-                case 48:
-                case 49:
-                case 50:
-                case 51:
-                case 52:
-                case 53:
-                case 54:
-                case 55:
-                case 56:
-                case 61:
-                case 62:
-                case 63:
-                case 64:
-                case 65:
-                case 66:
-                case 67:
-                case 68:
-                    return (byte)HectonBiomeVisualFamily.Abyssal;
-
-                // biome.family.rift_void
-                case 33:
-                case 40:
-                case 79:
-                case 89:
-                case 90:
-                case 91:
-                case 92:
-                case 93:
-                case 94:
-                case 95:
-                case 96:
-                case 99:
-                case 100:
-                case 101:
-                case 102:
-                case 103:
-                case 104:
-                case 107:
-                    return (byte)HectonBiomeVisualFamily.Alien;
-
-                default:
-                    return (byte)HectonBiomeVisualFamily.Abyssal;
-            }
+            return (byte)ResolveVisualFamily(biomeId);
         }
 
-        public static uint PackCompactInfluence(byte primaryBiomeId, byte secondaryBiomeId, byte blend255)
+        public static VisualFamily ResolveVisualFamily(int biomeId)
         {
-            uint primaryVisualFamily = (uint)MapToVisualFamily(primaryBiomeId) & VisualFamilyMask;
-            uint secondaryVisualFamily = secondaryBiomeId != 0
-                ? (uint)MapToVisualFamily(secondaryBiomeId) & VisualFamilyMask
+            return (uint)biomeId < (uint)HectonBiomeMatrixCatalog.VisualFamiliesByBiomeId.Length
+                ? HectonBiomeMatrixCatalog.VisualFamiliesByBiomeId[biomeId]
+                : VisualFamily.Abyssal;
+        }
+
+        public static uint PackCompactInfluence(byte primaryVisualFamilyId, byte secondaryVisualFamilyId, byte blend255)
+        {
+            uint primaryVisualFamily = (uint)primaryVisualFamilyId & VisualFamilyMask;
+            uint secondaryVisualFamily = blend255 != 0
+                ? (uint)secondaryVisualFamilyId & VisualFamilyMask
                 : 0u;
 
             return primaryVisualFamily |
                    (secondaryVisualFamily << SecondaryVisualFamilyShift) |
                    (((uint)blend255 & BlendMask) << BlendShift);
         }
+
+        public static uint PackCompactInfluenceFromBiomeIds(byte primaryBiomeId, byte secondaryBiomeId, byte blend255)
+        {
+            byte primaryVisualFamilyId = MapToVisualFamily(primaryBiomeId);
+            byte secondaryVisualFamilyId = blend255 != 0 ? MapToVisualFamily(secondaryBiomeId) : (byte)0;
+            return PackCompactInfluence(primaryVisualFamilyId, secondaryVisualFamilyId, blend255);
+        }
+
+        public static uint PackCell(byte primaryVisualFamilyId, byte secondaryVisualFamilyId, byte blend255, byte flags)
+        {
+            return PackCompactInfluence(primaryVisualFamilyId, secondaryVisualFamilyId, blend255) |
+                   ((uint)flags << FlagsShift);
+        }
+
+        public static uint PackCellFromBiomeIds(byte primaryBiomeId, byte secondaryBiomeId, byte blend255, byte flags)
+        {
+            return PackCompactInfluenceFromBiomeIds(primaryBiomeId, secondaryBiomeId, blend255) |
+                   ((uint)flags << FlagsShift);
+        }
+
+        public static byte ExtractPrimaryVisualFamilyId(uint packed)
+        {
+            return (byte)((packed >> PrimaryVisualFamilyShift) & VisualFamilyMask);
+        }
+
+        public static byte ExtractSecondaryVisualFamilyId(uint packed)
+        {
+            return (byte)((packed >> SecondaryVisualFamilyShift) & VisualFamilyMask);
+        }
+
+        public static byte ExtractBlend255(uint packed)
+        {
+            return (byte)((packed >> BlendShift) & BlendMask);
+        }
+
+        public static byte ExtractFlags(uint packed)
+        {
+            return (byte)(packed >> FlagsShift);
+        }
+
+        public static uint ExtractGpuPacked(uint packed)
+        {
+            return packed & GpuPackedMask;
+        }
     }
 
     [CreateAssetMenu(fileName = "BiomeMatrixCatalog", menuName = "Hecton/Environment/Biome Matrix Catalog", order = 103)]
     public sealed class HectonBiomeMatrixCatalog : ScriptableObject
     {
+        public static readonly VisualFamily[] VisualFamiliesByBiomeId =
+        {
+            VisualFamily.Void,
+            VisualFamily.Vegetation, VisualFamily.Vegetation, VisualFamily.Volcanic, VisualFamily.Sand,
+            VisualFamily.Coral, VisualFamily.Coral, VisualFamily.Rock, VisualFamily.Sand,
+            VisualFamily.Rock, VisualFamily.Volcanic, VisualFamily.Rock, VisualFamily.Coral,
+            VisualFamily.Sand, VisualFamily.Sand, VisualFamily.Rock, VisualFamily.Coral,
+            VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock,
+            VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Sand,
+            VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Sand,
+            VisualFamily.Rock, VisualFamily.Sand, VisualFamily.Rock, VisualFamily.Sand,
+            VisualFamily.Void, VisualFamily.Coral, VisualFamily.Rock, VisualFamily.Sand,
+            VisualFamily.Abyssal, VisualFamily.Rock, VisualFamily.Abyssal, VisualFamily.Void,
+            VisualFamily.Volcanic, VisualFamily.Volcanic, VisualFamily.Rock, VisualFamily.Abyssal,
+            VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal,
+            VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal,
+            VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal,
+            VisualFamily.Ruin, VisualFamily.Abyssal, VisualFamily.Ruin, VisualFamily.Rock,
+            VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal,
+            VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal, VisualFamily.Abyssal,
+            VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock,
+            VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock,
+            VisualFamily.Volcanic, VisualFamily.Abyssal, VisualFamily.Void, VisualFamily.Ruin,
+            VisualFamily.Ruin, VisualFamily.Volcanic, VisualFamily.Rock, VisualFamily.Volcanic,
+            VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock, VisualFamily.Rock,
+            VisualFamily.Void, VisualFamily.Void, VisualFamily.Void, VisualFamily.Void,
+            VisualFamily.Void, VisualFamily.Void, VisualFamily.Void, VisualFamily.Void,
+            VisualFamily.Rock, VisualFamily.Volcanic, VisualFamily.Void, VisualFamily.Void,
+            VisualFamily.Void, VisualFamily.Void, VisualFamily.Void, VisualFamily.Void,
+            VisualFamily.Ruin, VisualFamily.Volcanic, VisualFamily.Void, VisualFamily.Ruin
+        };
+
         [SerializeField] private HectonBiomeMatrixProfile[] profiles = new HectonBiomeMatrixProfile[108];
 
         public int Count => profiles != null ? profiles.Length : 0;

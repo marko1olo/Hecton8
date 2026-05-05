@@ -84,6 +84,7 @@ namespace Hecton8.World
         private const int MaxFloraInstancesPerStreamCellPerBiome = 4096;
         private const float FloraScatterMaxTiltAngleDegrees = 30f;
         private const float ScatterMinimumSurfaceNormalUpDot = 0.2f;
+        private const float DeterministicClutterSpawnThreshold = 0.99f;
         private const float FloraMicroClusterPatchThreshold = 0.36f;
         private const float FloraMacroClusterPatchThreshold = 0.42f;
         private const float FloraFallbackClusterNoiseScale = 0.009f;
@@ -273,8 +274,6 @@ namespace Hecton8.World
         [SerializeField] private int spawnCellStride = 3;
         [SerializeField] private int spawnPlacementsPerWindow = 1;
         [SerializeField] private float surfaceYOffset = 0.2f;
-        [SerializeField, Range(0.1f, 2f)] private float floraDeterministicScaleMin = 0.8f;
-        [SerializeField, Range(0.1f, 2f)] private float floraDeterministicScaleMax = 1.3f;
         [SerializeField] private bool enableFloraGpuiCpuFrustumCulling = true;
         [SerializeField, Min(0f)] private float floraGpuiFrustumPaddingMeters = 24f;
         [SerializeField] private float missingPlacementGraceSeconds = 8f;
@@ -7579,10 +7578,8 @@ namespace Hecton8.World
             if (!floraFamily)
                 return variantScale;
 
-            float floraScale = ScatterMath.ResolveDeterministicFloraScaleMultiplier(
-                floraDeterministicScaleMin,
-                floraDeterministicScaleMax,
-                stableHash ^ 0x4A6F7261,
+            float floraScale = ScatterMath.ResolveDeterministicFloraSizeVariance(
+                stableHash,
                 new Unity.Mathematics.float3(absolutePosition.x, absolutePosition.y, absolutePosition.z));
             return variantScale * floraScale;
         }

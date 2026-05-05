@@ -185,6 +185,13 @@ namespace Hecton8.World
             return math.lerp(min, max, t);
         }
 
+        [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
+        public static float ResolveDeterministicFloraSizeVariance(int stableHash, float3 absolutePosition)
+        {
+            uint hash = MixAupScatterHash(stableHash, absolutePosition, 0x4A6F7261u);
+            return 0.8f + (hash % 50u) * 0.01f;
+        }
+
         internal static byte ResolveFloraBudgetClassId(WorldPrefabFamilyProfile family)
         {
             if (family == null)

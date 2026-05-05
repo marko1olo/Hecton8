@@ -145,7 +145,6 @@ namespace Hecton8.Physics
             {
                 s_CavitationShockwaveColliders[i] = null;
                 s_CavitationShockwaveRigidbodies[i] = null;
-                s_CavitationShockwaveDistanceSq[i] = 0f;
             }
         }
 
@@ -464,8 +463,6 @@ namespace Hecton8.Physics
         private static readonly Collider[] s_CavitationShockwaveColliders = new Collider[CavitationShockwaveHitCapacity];
         // COLD ALLOC: Rigidbody[64] — static deduplicated cavitation shockwave rigidbody targets — owner: HectonFluidEngine
         private static readonly Rigidbody[] s_CavitationShockwaveRigidbodies = new Rigidbody[CavitationShockwaveHitCapacity];
-        // COLD ALLOC: float[64] — static cavitation target distance ordering buffer for saturated overlaps — owner: HectonFluidEngine
-        private static readonly float[] s_CavitationShockwaveDistanceSq = new float[CavitationShockwaveHitCapacity];
         private int _cavitationBurstCount;
 
         /// <summary>Текущая ёмкость NativeArrays (всегда >= count объектов).</summary>
@@ -1163,7 +1160,6 @@ namespace Hecton8.Physics
                 return;
 
             int rigidbodyCount = 0;
-            bool saturatedOverlap = colliderCount >= CavitationShockwaveHitCapacity;
             for (int i = 0; i < colliderCount; i++)
             {
                 Collider hitCollider = s_CavitationShockwaveColliders[i];
@@ -1180,18 +1176,13 @@ namespace Hecton8.Physics
                     continue;
                 }
 
-                float distanceSq = Vector3.SqrMagnitude(candidateBody.worldCenterOfMass - burstEvent.Position);
-                TryAppendCavitationShockwaveBody(candidateBody, distanceSq, saturatedOverlap, ref rigidbodyCount);
+                TryAppendCavitationShockwaveBody(candidateBody, ref rigidbodyCount);
             }
-
-            if (saturatedOverlap && rigidbodyCount > 1)
-                SortCavitationShockwaveBodiesByDistance(rigidbodyCount);
 
             for (int i = 0; i < rigidbodyCount; i++)
             {
                 Rigidbody targetBody = s_CavitationShockwaveRigidbodies[i];
                 s_CavitationShockwaveRigidbodies[i] = null;
-                s_CavitationShockwaveDistanceSq[i] = 0f;
                 if (targetBody == null || targetBody.isKinematic)
                     continue;
 
@@ -1226,8 +1217,6 @@ namespace Hecton8.Physics
 
         private static void TryAppendCavitationShockwaveBody(
             Rigidbody candidateBody,
-            float distanceSq,
-            bool prioritizeByDistance,
             ref int rigidbodyCount)
         {
             int capacity = math.min(s_CavitationShockwaveRigidbodies.Length, CavitationShockwaveHitCapacity);
@@ -1237,58 +1226,14 @@ namespace Hecton8.Physics
                 if (s_CavitationShockwaveRigidbodies[i] != candidateBody)
                     continue;
 
-                if (distanceSq < s_CavitationShockwaveDistanceSq[i])
-                    s_CavitationShockwaveDistanceSq[i] = distanceSq;
-
                 return;
             }
 
-            if (rigidbodyCount < capacity)
-            {
-                s_CavitationShockwaveRigidbodies[rigidbodyCount] = candidateBody;
-                s_CavitationShockwaveDistanceSq[rigidbodyCount] = distanceSq;
-                rigidbodyCount++;
-                return;
-            }
-
-            if (!prioritizeByDistance)
+            if (rigidbodyCount >= capacity)
                 return;
 
-            int farthestIndex = 0;
-            float farthestDistanceSq = s_CavitationShockwaveDistanceSq[0];
-            for (int i = 1; i < capacity; i++)
-            {
-                if (s_CavitationShockwaveDistanceSq[i] <= farthestDistanceSq)
-                    continue;
-
-                farthestDistanceSq = s_CavitationShockwaveDistanceSq[i];
-                farthestIndex = i;
-            }
-
-            if (distanceSq >= farthestDistanceSq)
-                return;
-
-            s_CavitationShockwaveRigidbodies[farthestIndex] = candidateBody;
-            s_CavitationShockwaveDistanceSq[farthestIndex] = distanceSq;
-        }
-
-        private static void SortCavitationShockwaveBodiesByDistance(int rigidbodyCount)
-        {
-            for (int i = 1; i < rigidbodyCount; i++)
-            {
-                Rigidbody body = s_CavitationShockwaveRigidbodies[i];
-                float distanceSq = s_CavitationShockwaveDistanceSq[i];
-                int j = i - 1;
-                while (j >= 0 && s_CavitationShockwaveDistanceSq[j] > distanceSq)
-                {
-                    s_CavitationShockwaveRigidbodies[j + 1] = s_CavitationShockwaveRigidbodies[j];
-                    s_CavitationShockwaveDistanceSq[j + 1] = s_CavitationShockwaveDistanceSq[j];
-                    j--;
-                }
-
-                s_CavitationShockwaveRigidbodies[j + 1] = body;
-                s_CavitationShockwaveDistanceSq[j + 1] = distanceSq;
-            }
+            s_CavitationShockwaveRigidbodies[rigidbodyCount] = candidateBody;
+            rigidbodyCount++;
         }
 
         private void ReallocateNativeArrays(int requiredCount)

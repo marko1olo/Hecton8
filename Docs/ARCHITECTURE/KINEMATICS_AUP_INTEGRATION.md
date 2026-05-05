@@ -44,7 +44,7 @@ Current runtime ownership is `Rigidbody + CapsuleCollider + HectonPlayerMovement
 - `HectonPlayerMotor`
   - authoritative kinematic sweep owner
   - depenetration and wall-slide math
-  - hydrodynamic inertial ghost state
+  - current-velocity hydrodynamic presentation state
 - `VehicleMotor`
   - mountable vehicle KCC owner
   - vehicle-added-mass and depth-scaled drag
@@ -247,40 +247,30 @@ The player samples wake acceleration before queued external kinematic forces are
 Dry interiors reject wake injection.
 No managed collection growth is allowed on the wake path.
 
-## Inertial Ghost
+## Cinematic Heaviness
 
 Purpose:
-- simulate perceived added water mass without mutating `Rigidbody` mass or drag
+- make underwater vehicles feel heavy without frame-history buffers
 - keep dry-space KCC response immediate
 
 Owner:
 - player: `HectonPlayerMotor`
 - vehicle: `VehicleMotor`
-
-Storage:
-
-```csharp
-NativeArray<float3> _hydrodynamicGhostVelocityHistory; // length = 4
-```
-
-History semantics:
-- slot count = 4
-- write index advances each fixed step
-- oldest readable sample = `history[writeIndex]`
-- when the array is full, that sample is effectively 3 frames old
-
-Blend equation:
-
-```csharp
-ghostBlend = 0.15f * submersionFactor;
-perceivedVelocity = math.lerp(currentVelocity, oldestVelocity, ghostBlend);
-```
+- camera: `CameraJuiceProcessor`
 
 Rules:
-- if `ghostBlend <= 0.0001f`, reset the history and use current velocity directly
-- this is presentation feedback for camera/audio/FOV and locomotion feel, not a rigidbody mass mutation
-- player `HectonPlayerMovement` only feeds submersion into the owner; it does not own the history buffer
-- contact-modification and impact-trauma math do not alter the inertial-ghost blend rule
+- perceived velocity is the current safe velocity
+- vehicle acceleration is scaled down by `cinematicAccelerationScale`
+- underwater damping is raised by `cinematicDragScale`
+- camera FOV uses delayed `math.lerp` against current speed only
+
+Reference presentation equation:
+
+```csharp
+speed01 = smoothstep(10f, 22f, currentSpeed);
+targetFovOffset = speed01 * SpeedFovMaxDegrees;
+fovOffset = math.lerp(fovOffset, targetFovOffset, 1f - exp(-sharpness * dt));
+```
 
 ## Added Mass Tensor
 
@@ -296,7 +286,7 @@ body.inertiaTensor = dryInertiaTensor * multiplier;
 body.inertiaTensorRotation = dryInertiaTensorRotation;
 ```
 
-This is physical rigidbody inertia, separate from the presentation-only inertial ghost.
+This is physical rigidbody inertia, separate from the cinematic FOV-only speed presentation.
 
 ## Analytical Depth Drag
 
@@ -315,7 +305,7 @@ At zero depth, this term contributes no depth-density drag.
 ## Heavy Impact Resolver
 
 Heavy submarine contacts are intercepted before PhysX finalizes the pair response.
-This path is not a replacement for the inertial ghost.
+This path is not a replacement for cinematic speed presentation.
 
 Current owner:
 - `PhysicsApplySystem`

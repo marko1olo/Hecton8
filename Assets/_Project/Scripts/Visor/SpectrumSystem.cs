@@ -171,6 +171,7 @@ namespace Hecton8.Visor
         private const int PendingSonarPingCapacity = 24;
         private const int PendingSonarSnapshotCapacity = 8;
         private const int PendingAcousticEchoCapacity = 8;
+        private const int SpectrumListenerDispatchBudget = 64;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -576,7 +577,7 @@ namespace Hecton8.Visor
                     _pendingModeChangedCount--;
                 scanBudget--;
                 ISpectrumModeEventListener[] rawArray = _modeListeners.RawArray;
-                int count = _modeListeners.Count;
+                int count = Mathf.Min(_modeListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISpectrumModeEventListener listener = rawArray[i];
@@ -612,7 +613,7 @@ namespace Hecton8.Visor
                     _pendingSonarPulseCount--;
                 scanBudget--;
                 ISonarPulseEventListener[] rawArray = _sonarPulseListeners.RawArray;
-                int count = _sonarPulseListeners.Count;
+                int count = Mathf.Min(_sonarPulseListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISonarPulseEventListener listener = rawArray[i];
@@ -648,7 +649,7 @@ namespace Hecton8.Visor
                     _pendingSonarPingCount--;
                 scanBudget--;
                 ISonarPingEventListener[] rawArray = _sonarPingListeners.RawArray;
-                int count = _sonarPingListeners.Count;
+                int count = Mathf.Min(_sonarPingListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISonarPingEventListener listener = rawArray[i];
@@ -684,7 +685,7 @@ namespace Hecton8.Visor
                     _pendingSonarSnapshotCount--;
                 scanBudget--;
                 ISonarSnapshotEventListener[] rawArray = _sonarSnapshotListeners.RawArray;
-                int count = _sonarSnapshotListeners.Count;
+                int count = Mathf.Min(_sonarSnapshotListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     ISonarSnapshotEventListener listener = rawArray[i];
@@ -720,7 +721,7 @@ namespace Hecton8.Visor
                     _pendingAcousticEchoCount--;
                 scanBudget--;
                 IAcousticEchoEventListener[] rawArray = _acousticEchoListeners.RawArray;
-                int count = _acousticEchoListeners.Count;
+                int count = Mathf.Min(_acousticEchoListeners.Count, SpectrumListenerDispatchBudget);
                 for (int i = count - 1; i >= 0; i--)
                 {
                     IAcousticEchoEventListener listener = rawArray[i];
@@ -890,6 +891,7 @@ namespace Hecton8.Visor
     public sealed class SpectrumSystem : MonoBehaviour, ITickable, IAcousticPingEventListener
     {
         private const int SonarRevealMaxContacts = 24;
+        private const int AbyssalAnchorScanBudget = 64;
         private const int PassiveRadarAzimuthSectorCount = 8;
         private const int PassiveRadarElevationSectorCount = 4;
         private const int PassiveRadarSectorCount = PassiveRadarAzimuthSectorCount * PassiveRadarElevationSectorCount;
@@ -1077,7 +1079,7 @@ namespace Hecton8.Visor
         private static readonly float[] s_passiveRadarNearestDistanceSqr = new float[PassiveRadarSourceBudget];
         // COLD ALLOC: List<WorldZoneAnchor>[16] â€” active-sonar abyssal anchor fallback scratch list â€” owner: SpectrumSystem
         private static readonly System.Collections.Generic.List<WorldZoneAnchor> s_abyssalAnchorBuffer =
-            new System.Collections.Generic.List<WorldZoneAnchor>(16);
+            new System.Collections.Generic.List<WorldZoneAnchor>(AbyssalAnchorScanBudget);
 
         // ══════════════════════════════════════════════════════════
         //  PUBLIC PROPERTIES
@@ -1566,11 +1568,11 @@ namespace Hecton8.Visor
                 return;
 
             _passiveRadarTickAccumulator += deltaTime;
-            while (_passiveRadarTickAccumulator >= PassiveRadarTickIntervalSeconds)
-            {
-                _passiveRadarTickAccumulator -= PassiveRadarTickIntervalSeconds;
-                StepPassiveRadar();
-            }
+            if (_passiveRadarTickAccumulator < PassiveRadarTickIntervalSeconds)
+                return;
+
+            _passiveRadarTickAccumulator = 0f;
+            StepPassiveRadar();
         }
 
         private void StepPassiveRadar()
@@ -1811,8 +1813,10 @@ namespace Hecton8.Visor
             {
                 NativeArray<Vector3> anchorsNative = vegetationBridge.ActiveAbyssalAnchorsNative;
                 int anchorCount = Mathf.Min(
-                    vegetationBridge.ActiveAbyssalAnchorCount,
-                    anchorsNative.IsCreated ? anchorsNative.Length : 0);
+                    AbyssalAnchorScanBudget,
+                    Mathf.Min(
+                        vegetationBridge.ActiveAbyssalAnchorCount,
+                        anchorsNative.IsCreated ? anchorsNative.Length : 0));
                 for (int i = 0; i < anchorCount; i++)
                 {
                     Vector3 delta = anchorsNative[i] - origin;
@@ -1826,7 +1830,7 @@ namespace Hecton8.Visor
                 return !float.IsPositiveInfinity(nearestDistanceSqr);
             }
 
-            WorldZoneAnchor.CopyActiveAnchorsTo(s_abyssalAnchorBuffer);
+            WorldZoneAnchor.CopyActiveAnchorsTo(s_abyssalAnchorBuffer, AbyssalAnchorScanBudget);
             for (int i = 0; i < s_abyssalAnchorBuffer.Count; i++)
             {
                 WorldZoneAnchor anchor = s_abyssalAnchorBuffer[i];
@@ -1858,8 +1862,10 @@ namespace Hecton8.Visor
             {
                 NativeArray<Vector3> anchorsNative = vegetationBridge.ActiveAbyssalAnchorsNative;
                 int anchorCount = Mathf.Min(
-                    vegetationBridge.ActiveAbyssalAnchorCount,
-                    anchorsNative.IsCreated ? anchorsNative.Length : 0);
+                    AbyssalAnchorScanBudget,
+                    Mathf.Min(
+                        vegetationBridge.ActiveAbyssalAnchorCount,
+                        anchorsNative.IsCreated ? anchorsNative.Length : 0));
                 for (int i = 0; i < anchorCount && writeIndex < SonarRevealMaxContacts; i++)
                 {
                     Vector3 anchorPosition = anchorsNative[i];
@@ -1873,7 +1879,7 @@ namespace Hecton8.Visor
                 return writeIndex;
             }
 
-            WorldZoneAnchor.CopyActiveAnchorsTo(s_abyssalAnchorBuffer);
+            WorldZoneAnchor.CopyActiveAnchorsTo(s_abyssalAnchorBuffer, AbyssalAnchorScanBudget);
             for (int i = 0; i < s_abyssalAnchorBuffer.Count && writeIndex < SonarRevealMaxContacts; i++)
             {
                 WorldZoneAnchor anchor = s_abyssalAnchorBuffer[i];

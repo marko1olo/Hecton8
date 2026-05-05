@@ -400,13 +400,13 @@ public static class MCTables
             if (_edgeTable.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_edgeTable);
-                _edgeTable.Dispose();
+                _edgeTable.Dispose(default);
             }
 
             if (_triTable.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_triTable);
-                _triTable.Dispose();
+                _triTable.Dispose(default);
             }
 
             Volatile.Write(ref _ready, 0);
@@ -1982,32 +1982,7 @@ public struct VoxelNormalJob : IJobParallelFor
         float curvature01 = math.saturate(0.5f + signedCurvature * 0.35f);
         curvatureValues[idx] = curvature01;
 
-        float inwardDensity = SampleField(smoothDensityField, wp - normal * epsilon);
-        float outwardDensity = SampleField(smoothDensityField, wp + normal * epsilon);
-        float gradientMagnitude = math.length(gradient) / math.max(epsilon * 2f, 0.0001f);
-        float solidBackfill = math.saturate(inwardDensity / math.max(epsilon, 0.0001f));
-        float nearSolidForward = math.saturate(outwardDensity / math.max(epsilon, 0.0001f));
-        float cavityFold = math.saturate((0.5f - curvature01) * 2f);
-        float gradientOcclusion = math.saturate(1f - gradientMagnitude * 0.18f);
-        float baseOcclusion = math.saturate(1f - solidBackfill * 0.42f - cavityFold * 0.26f - nearSolidForward * gradientOcclusion * 0.14f);
-        ambientOcclusionValues[idx] = math.saturate(baseOcclusion - ResolveNormalRaymarchOcclusion(wp, normal, epsilon) * 0.72f);
-    }
-
-    float ResolveNormalRaymarchOcclusion(float3 worldPosition, float3 normal, float epsilon)
-    {
-        float rayOcclusion = 0f;
-        float sampleStep = math.max(epsilon * 0.55f, voxelStep * 0.35f);
-        for (int stepIndex = 1; stepIndex <= 3; stepIndex++)
-        {
-            float3 samplePosition = worldPosition + normal * (sampleStep * stepIndex);
-            float density = math.max(
-                SampleField(densityField, samplePosition),
-                SampleField(smoothDensityField, samplePosition));
-            float earlyWeight = 1f - (stepIndex - 1) * 0.24f;
-            rayOcclusion = math.max(rayOcclusion, math.saturate(density / math.max(epsilon, 0.0001f)) * earlyWeight);
-        }
-
-        return math.saturate(rayOcclusion);
+        ambientOcclusionValues[idx] = 1f;
     }
 
     float3 SampleInterpolatedCentralDifferenceGradient(NativeArray<float> field, float3 worldPosition)
@@ -2415,7 +2390,10 @@ public struct VoxelColorJob : IJobParallelFor
                 continue;
 
             weight = localWeight;
+            float caveCutDepth01 = math.saturate(1f - distance / math.max(radius * 1.85f, voxelStep));
+            float mouthDarkening = caveCutDepth01 * caveCutDepth01 * blend * 0.58f;
             terrainColor = math.saturate(entrance.terrainSplatColor);
+            terrainColor.xyz *= 1f - mouthDarkening;
         }
 
         return weight > 0.0001f;
@@ -2974,7 +2952,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 if (!string.IsNullOrEmpty(ModifiedCellsNativeMemoryLabel))
                     NativeMemorySentinel.UnregisterNativeParallelHashMap(NativeMemoryOwner, ModifiedCellsNativeMemoryLabel);
 
-                ModifiedCells.Dispose();
+                ModifiedCells.Dispose(default);
                 ModifiedCells = default;
                 ModifiedCellsNativeMemoryLabel = null;
             }
@@ -2997,7 +2975,7 @@ public class HectonVoxelEngine : MonoBehaviour
                 if (!string.IsNullOrEmpty(SpawnPointListNativeMemoryLabel))
                     NativeMemorySentinel.UnregisterNativeList(NativeMemoryOwner, SpawnPointListNativeMemoryLabel);
 
-                SpawnPointList.Dispose();
+                SpawnPointList.Dispose(default);
                 SpawnPointList = default;
                 SpawnPointListNativeMemoryLabel = null;
             }
@@ -4930,7 +4908,7 @@ public class HectonVoxelEngine : MonoBehaviour
         if (array.IsCreated)
         {
             NativeMemorySentinel.UnregisterNativeArray(array);
-            array.Dispose();
+            array.Dispose(default);
         }
 
         NativeArrayOptions options = clear ? NativeArrayOptions.ClearMemory : NativeArrayOptions.UninitializedMemory;
@@ -4962,7 +4940,7 @@ public class HectonVoxelEngine : MonoBehaviour
             return;
 
         NativeMemorySentinel.UnregisterNativeArray(array);
-        array.Dispose();
+        array.Dispose(default);
         array = default;
     }
 

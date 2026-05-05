@@ -83,6 +83,7 @@ namespace Hecton8.Visor
 
         private const float PulseTwoPi = Mathf.PI * 2f;
         private const float DependencyResolveRetryIntervalSeconds = 0.5f;
+        private static readonly int HectonHudStressChromaticAberrationId = Shader.PropertyToID("_HectonHudStressChromaticAberration");
 
         private bool _registered;
         private HectonSurvivalSystem _survivalSystem;
@@ -133,6 +134,7 @@ namespace Hecton8.Visor
         private void OnDestroy()
         {
             TryUnregisterTickHandler();
+            ResetRuntimeEffects();
 
             if (_runtimeProfile != null)
                 Destroy(_runtimeProfile);
@@ -319,10 +321,13 @@ namespace Hecton8.Visor
 
         private void ApplyStressPulse(float stress01, float beat01, float fog01, float frost01)
         {
+            float pulse = stress01 * (0.35f + beat01 * 0.65f);
+            float hudStressChroma = Mathf.Clamp01(pulse + fog01 * 0.18f);
+            Shader.SetGlobalFloat(HectonHudStressChromaticAberrationId, hudStressChroma);
+
             if (_runtimeVignette == null || _runtimeChromatic == null || _runtimeColorAdjustments == null)
                 return;
 
-            float pulse = stress01 * (0.35f + beat01 * 0.65f);
             float combinedVignette = Mathf.Clamp01(pulse + frost01 * 0.58f + fog01 * 0.18f);
             _runtimeVignette.intensity.value = maxVignetteIntensity * combinedVignette;
             _runtimeVignette.smoothness.value = Mathf.Lerp(0.55f, maxVignetteSmoothness, Mathf.Max(pulse, frost01));
@@ -358,6 +363,7 @@ namespace Hecton8.Visor
             _debugFrost01 = 0f;
             _debugTemperatureShock01 = 0f;
             _debugPulse01 = 0f;
+            Shader.SetGlobalFloat(HectonHudStressChromaticAberrationId, 0f);
         }
 
         private void PlayHeartbeat(float stress01)

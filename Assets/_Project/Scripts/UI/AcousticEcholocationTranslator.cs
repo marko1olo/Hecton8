@@ -14,6 +14,63 @@ using UnityEngine.UI;
 
 namespace Hecton8.UI
 {
+    internal interface IAcousticEcholocationBarkListener
+    {
+        void OnStorageCapacityExceededBark();
+    }
+
+    internal static class AcousticEcholocationBarkEvents
+    {
+        private const int ListenerCapacity = 4;
+        private static readonly IAcousticEcholocationBarkListener[] s_listeners = new IAcousticEcholocationBarkListener[ListenerCapacity]; // COLD ALLOC: IAcousticEcholocationBarkListener[4] - HUD bark listener registry - owner: AcousticEcholocationBarkEvents
+        private static int s_listenerCount;
+
+        public static void Register(IAcousticEcholocationBarkListener listener)
+        {
+            if (listener == null)
+                return;
+
+            for (int i = 0; i < s_listenerCount; i++)
+            {
+                if (ReferenceEquals(s_listeners[i], listener))
+                    return;
+            }
+
+            if (s_listenerCount >= ListenerCapacity)
+                return;
+
+            s_listeners[s_listenerCount++] = listener;
+        }
+
+        public static void Unregister(IAcousticEcholocationBarkListener listener)
+        {
+            if (listener == null)
+                return;
+
+            for (int i = 0; i < s_listenerCount; i++)
+            {
+                if (!ReferenceEquals(s_listeners[i], listener))
+                    continue;
+
+                int last = s_listenerCount - 1;
+                s_listeners[i] = s_listeners[last];
+                s_listeners[last] = null;
+                s_listenerCount = last;
+                return;
+            }
+        }
+
+        public static void RaiseStorageCapacityExceeded()
+        {
+            for (int i = 0; i < s_listenerCount; i++)
+            {
+                IAcousticEcholocationBarkListener listener = s_listeners[i];
+                if (listener != null)
+                    listener.OnStorageCapacityExceededBark();
+            }
+        }
+    }
+
     internal static class UiChildSpanUtility
     {
         private static readonly Transform[] s_childSnapshotBuffer = new Transform[128]; // COLD ALLOC: Transform[128] — shared UI child snapshot buffer — owner: UiChildSpanUtility
@@ -65,7 +122,7 @@ namespace Hecton8.UI
     /// </summary>
     [DisallowMultipleComponent]
     [AddComponentMenu("Hecton8/UI/Acoustic Echolocation Translator")]
-    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener
+    public sealed class AcousticEcholocationTranslator : MonoBehaviour, ITickable, IUpdatable, ISonarPingEventListener, ISonarSnapshotEventListener, ILocalizationLanguageChangedListener, IAcousticEcholocationBarkListener
     {
         private enum ContactClassification : byte
         {
@@ -88,6 +145,8 @@ namespace Hecton8.UI
         private const string DefaultClassificationPrefix = "CLASSIFICATION";
         private const string DefaultLeviathanClass = "UNKNOWN BIOMASS // LEVIATHAN";
         private const string DefaultWreckageClass = "WRECKAGE // ANCHOR RETURN";
+        private const string StorageCapacityHeader = "[FABRICATOR]";
+        private const string StorageCapacityExceededText = "STORAGE CAPACITY EXCEEDED";
         private static readonly int ContactHeaderKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CONTACT_HEADER);
         private static readonly int ClassificationPrefixKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CLASSIFICATION_PREFIX);
         private static readonly int LeviathanClassKeyHash = LocHash.Compute(LocalizationKeys.SONAR_CLASS_LEVIATHAN);
@@ -138,6 +197,7 @@ namespace Hecton8.UI
             LocalizationEvents.RegisterLanguageListener(this);
             SpectrumEvents.RegisterSonarPingListener(this);
             SpectrumEvents.RegisterSonarSnapshotListener(this);
+            AcousticEcholocationBarkEvents.Register(this);
         }
 
         private void OnDisable()
@@ -145,6 +205,7 @@ namespace Hecton8.UI
             LocalizationEvents.UnregisterLanguageListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
+            AcousticEcholocationBarkEvents.Unregister(this);
             UnregisterFromTickManager();
             ApplyRootAlpha(0f);
         }
@@ -154,6 +215,7 @@ namespace Hecton8.UI
             LocalizationEvents.UnregisterLanguageListener(this);
             SpectrumEvents.UnregisterSonarPingListener(this);
             SpectrumEvents.UnregisterSonarSnapshotListener(this);
+            AcousticEcholocationBarkEvents.Unregister(this);
             UnregisterFromTickManager();
         }
 
@@ -244,6 +306,29 @@ namespace Hecton8.UI
             _plainClassificationDirty = true;
             _lastRenderedClassification = ContactClassification.None;
             _lastRenderedDistanceMeters = int.MinValue;
+        }
+
+        void IAcousticEcholocationBarkListener.OnStorageCapacityExceededBark()
+        {
+            ResolveOwners();
+            EnsureUiBuilt();
+            if (_classificationLabel == null || _headerLabel == null)
+                return;
+
+            int headerLength = CopySpanToBuffer(StorageCapacityHeader.AsSpan(), _headerTextBuffer);
+            _headerLabel.SetCharArray(_headerTextBuffer, 0, headerLength);
+            int messageLength = CopySpanToBuffer(StorageCapacityExceededText.AsSpan(), _classificationTextBuffer);
+            _classificationLabel.SetCharArray(_classificationTextBuffer, 0, messageLength);
+
+            _visibleTimer = VisibleDuration;
+            _fadeTimer = FadeDuration;
+            _pulse01 = 1f;
+            _headerDirty = true;
+            _plainClassificationDirty = true;
+            _lastRenderedClassification = ContactClassification.None;
+            _lastRenderedDistanceMeters = int.MinValue;
+            ApplyVisualState(1f);
+            RegisterToTickManager();
         }
 
         private bool TryResolveContact(SpatialSonarSnapshot snapshot, out ContactClassification classification, out int distanceMeters)
@@ -653,7 +738,7 @@ namespace Hecton8.UI
         private const float HiddenAlphaCutoff = 0.01f;
         private const float OverlayWidth = 436f;
         private const float OverlayHeight = 148f;
-        private const int SequenceTextCapacity = 192;
+        private const int SequenceTextCapacity = 256;
         private const string OverlayName = "TerminalBootSequenceOverlay";
         private const string DefaultStatusOk = "[OK]";
         private const string DefaultStatusDegraded = "[DEGRADED]";
@@ -782,6 +867,12 @@ namespace Hecton8.UI
             cursor = AppendString(buffer, cursor, DefaultStatusOk);
             cursor = AppendLine(buffer, cursor, " MOUNTING SONAR_DRIVER...");
             cursor = AppendString(buffer, cursor, DefaultStatusOk);
+            cursor = AppendString(buffer, cursor, " AUP SECTOR 0x");
+            cursor = AppendHex8(buffer, cursor, ResolveFakeAupSectorHash());
+            cursor = AppendChar(buffer, cursor, '\n');
+            cursor = AppendString(buffer, cursor, DefaultStatusOk);
+            cursor = AppendLine(buffer, cursor, " LOADING NEURAL INTERFACE...");
+            cursor = AppendString(buffer, cursor, DefaultStatusOk);
             cursor = AppendLine(buffer, cursor, " CALIBRATING LIDAR ARRAY...");
             cursor = AppendString(buffer, cursor, linkStatus);
             cursor = AppendString(buffer, cursor, " ACOUSTIC BUS LINK... HULL ");
@@ -826,6 +917,25 @@ namespace Hecton8.UI
             return value.TryFormat(new Span<char>(buffer, cursor, buffer.Length - cursor), out int written)
                 ? cursor + written
                 : cursor;
+        }
+
+        private static int AppendHex8(char[] buffer, int cursor, uint value)
+        {
+            if (buffer == null || cursor >= buffer.Length)
+                return cursor;
+
+            Span<char> destination = new Span<char>(buffer, cursor, buffer.Length - cursor);
+            return value.TryFormat(destination, out int written, "X8")
+                ? cursor + written
+                : cursor;
+        }
+
+        private static uint ResolveFakeAupSectorHash()
+        {
+            uint hash = 2166136261u;
+            hash = (hash ^ HectonFloatingOrigin.LastShiftEvent.Sequence) * 16777619u;
+            hash = (hash ^ unchecked((uint)Time.frameCount)) * 16777619u;
+            return hash ^ 0xA8F1D3C5u;
         }
 
         private static int AppendChar(char[] buffer, int cursor, char value)

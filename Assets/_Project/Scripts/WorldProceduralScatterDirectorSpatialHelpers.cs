@@ -22,6 +22,8 @@ namespace Hecton8.World
         private static readonly int _FamilyEggClusterHash = ComputeStableStringHash("family.egg.cluster");
         private static readonly int _FamilyLandmarkSpireHash = ComputeStableStringHash("family.landmark.spire");
         private static readonly int _FamilyCaveEntranceHash = ComputeStableStringHash("family.cave.entrance");
+        private static readonly int _FamilyDebrisScatterHash = ComputeStableStringHash("family.debris.scatter");
+        private static readonly int _FamilyDebrisFieldHash = ComputeStableStringHash("family.debris.field");
 
         private static Vector3 ToAbsoluteScatterPosition(Vector3 runtimePosition)
         {
@@ -46,6 +48,13 @@ namespace Hecton8.World
         private static int GetFamilyHash(WorldPrefabFamilyProfile family)
         {
             return family != null ? family.FamilyHash : 0;
+        }
+
+        private static bool IsDeterministicClutterFamily(WorldPrefabFamilyProfile family)
+        {
+            int familyHash = GetFamilyHash(family);
+            return familyHash == _FamilyDebrisScatterHash ||
+                   familyHash == _FamilyDebrisFieldHash;
         }
 
         private static int GetVariantHash(WorldPrefabFamilyProfile.VariantEntry variant)

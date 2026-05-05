@@ -26,6 +26,7 @@ namespace Hecton8.Core
         public float3 StartForward;
         public float3 EndForward;
         public float Radius;
+        public float RuptureStartTimeSeconds;
         public PipeRenderFlags Flags;
     }
 
@@ -50,6 +51,7 @@ namespace Hecton8.Core
                 StartForward = chordDirection,
                 EndForward = -chordDirection,
                 Radius = math.max(0.001f, radius),
+                RuptureStartTimeSeconds = 0f,
                 Flags = flags
             };
         }
@@ -70,6 +72,7 @@ namespace Hecton8.Core
                 StartForward = SafeNormalize(startForward, chordDirection),
                 EndForward = SafeNormalize(endForward, -chordDirection),
                 Radius = math.max(0.001f, radius),
+                RuptureStartTimeSeconds = 0f,
                 Flags = flags
             };
         }

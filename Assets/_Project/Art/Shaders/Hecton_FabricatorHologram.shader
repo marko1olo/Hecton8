@@ -9,6 +9,9 @@ Shader "HECTON/UI/FabricatorHologram"
         _ScanlineDensity ("Scanline Density", Range(1, 64)) = 18
         _ScanlineSpeed ("Scanline Speed", Range(0, 16)) = 4
         _ScanlineEmission ("Scanline Emission", Range(0, 4)) = 1.15
+        _VoxelDensity ("Voxel Fragment Density", Range(2, 32)) = 11
+        _VoxelDitherStrength ("Voxel Dither Strength", Range(0, 0.45)) = 0.22
+        _VoxelEdgeEmission ("Voxel Edge Emission", Range(0, 3)) = 0.85
     }
 
     SubShader
@@ -60,7 +63,15 @@ Shader "HECTON/UI/FabricatorHologram"
                 float _ScanlineDensity;
                 float _ScanlineSpeed;
                 float _ScanlineEmission;
+                float _VoxelDensity;
+                float _VoxelDitherStrength;
+                float _VoxelEdgeEmission;
             CBUFFER_END
+
+            float HectonVoxelHash31(float3 p)
+            {
+                return frac(sin(dot(p, float3(17.13, 61.71, 113.37))) * 43758.5453);
+            }
 
             Varyings Vert(Attributes input)
             {
@@ -91,7 +102,10 @@ Shader "HECTON/UI/FabricatorHologram"
                 float revealBand = saturate((input.positionOS.y * 0.5) + 0.5);
                 float craftProgress = saturate(max(_CraftProgress, _ScanProgress));
                 float reveal = saturate((craftProgress * 1.2) - revealBand + 0.18);
-                clip(reveal - 0.02);
+                float3 voxelCell = floor((input.positionOS + 0.5) * max(2.0, _VoxelDensity));
+                float voxelNoise = HectonVoxelHash31(voxelCell);
+                float voxelGate = saturate((craftProgress * 1.35) - (voxelNoise * _VoxelDitherStrength));
+                clip(min(reveal - 0.02, voxelGate - 0.01));
 
                 float3 viewDirection = normalize(_WorldSpaceCameraPos - input.positionWS);
                 float fresnel = pow(1.0 - saturate(dot(normalize(input.normalWS), viewDirection)), 2.4);
@@ -100,8 +114,9 @@ Shader "HECTON/UI/FabricatorHologram"
                 float scanlineBand = 1.0 - abs(scanline * 2.0 - 1.0);
                 float scanlineGlow = pow(saturate(scanlineBand), 6.0) * _ScanlineEmission;
                 float revealEdge = saturate(1.0 - abs(reveal - 0.08) * 12.0);
-                half alpha = saturate((_BaseColor.a + fresnel * 0.45 + scanlineGlow * 0.18 + revealEdge * 0.24) * pulse * (0.35 + reveal * 0.65));
-                half3 color = (_BaseColor.rgb * (0.85 + fresnel * 0.75)) + (_BaseColor.rgb * scanlineGlow) + (_BaseColor.rgb * revealEdge * (1.2 + (_GlitchAmount * 0.4)));
+                float voxelEdge = saturate(1.0 - abs(voxelGate - 0.04) * 18.0) * _VoxelEdgeEmission;
+                half alpha = saturate((_BaseColor.a + fresnel * 0.45 + scanlineGlow * 0.18 + revealEdge * 0.24 + voxelEdge * 0.16) * pulse * (0.35 + reveal * 0.65));
+                half3 color = (_BaseColor.rgb * (0.85 + fresnel * 0.75)) + (_BaseColor.rgb * scanlineGlow) + (_BaseColor.rgb * (revealEdge + voxelEdge) * (1.2 + (_GlitchAmount * 0.4)));
                 return half4(color, alpha);
             }
             ENDHLSL

@@ -59,6 +59,8 @@ namespace Hecton8.World
         private const float FloraPredatorAupQueryRadiusMeters = 700f;
         private const float FloraPredatorStealthRadiusMeters = 15f;
         private const float FloraPredatorStealthDimStrength = 0.82f;
+        private const float GlobalOceanPanicRadiusMeters = 100f;
+        private const float GlobalOceanPanicRadiusMetersSqr = GlobalOceanPanicRadiusMeters * GlobalOceanPanicRadiusMeters;
         private const string NativeMemoryOwner = nameof(EcosystemDirector);
         private const NativeAllocationLifetime NativeMemoryLifetime = NativeAllocationLifetime.Session;
         private static readonly string[] ThermalSpawnTokens = { "lava", "thermal", "brine", "heat", "volcanic", "smoker" };
@@ -75,6 +77,8 @@ namespace Hecton8.World
         private static readonly int _PredatorAUPBufferId = Shader.PropertyToID("_PredatorAUPBuffer");
         private static readonly int _PredatorAUPCountId = Shader.PropertyToID("_PredatorAUPCount");
         private static readonly int _PredatorAUPParamsId = Shader.PropertyToID("_PredatorAUPParams");
+        private static readonly int _GlobalOceanPanicId = Shader.PropertyToID("_GlobalOceanPanic");
+        private static readonly int _GlobalOceanPanicColorId = Shader.PropertyToID("_GlobalOceanPanicColor");
         private static readonly int _BiolumFlashBangAUPId = Shader.PropertyToID("_BiolumFlashBangAUP");
         private static readonly int _BiolumFlashBangParamsId = Shader.PropertyToID("_BiolumFlashBangParams");
 
@@ -348,6 +352,7 @@ namespace Hecton8.World
         private float _starvationAggressionPressure01;
         private int _hostilityTier;
         private bool _floraPredatorAupSaturationTelemetryIssued;
+        private float _lastPublishedGlobalOceanPanic01 = -1f;
         private int _nextHibernationPopulationSyncIndex;
         private HectonMapMagicVegetationBridge _cachedVegetationBridge;
         private PersistentWorldRegistry _cachedPersistentWorldRegistry;
@@ -884,6 +889,7 @@ namespace Hecton8.World
             else
             {
                 Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+                PublishGlobalOceanPanic(0f);
             }
 
             _coldTickAccumulator += DefaultSlowTickIntervalSeconds;
@@ -1264,6 +1270,8 @@ namespace Hecton8.World
             Shader.SetGlobalBuffer(_PredatorAUPBufferId, _floraPredatorAupBuffer);
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
             Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(FloraPredatorStealthRadiusMeters, FloraPredatorStealthDimStrength, 0f, 0f));
+            Shader.SetGlobalColor(_GlobalOceanPanicColorId, new Color(1f, 0.05f, 0.035f, 1f));
+            PublishGlobalOceanPanic(0f);
             _activeSectorCount = 0;
             _scheduledApexTerritoryOverlapCount = 0;
             _coldTickAccumulator = 0f;
@@ -1307,6 +1315,7 @@ namespace Hecton8.World
                 _saveSnapshotSectors.Dispose(disposeDependency);
             ReleaseBuffer(ref _floraPredatorAupBuffer);
             Shader.SetGlobalInt(_PredatorAUPCountId, 0);
+            PublishGlobalOceanPanic(0f);
 
             _sectorFrontStates = default;
             _sectorBackStates = default;
@@ -1689,19 +1698,29 @@ namespace Hecton8.World
                 SpatialTargetKind.Bioform,
                 _floraPredatorAupHits);
             int uploadCount = 0;
-            for (int hitIndex = 0; hitIndex < hitCount && uploadCount < FloraPredatorAupBufferCapacity; hitIndex++)
+            float panic01 = 0f;
+            for (int hitIndex = 0; hitIndex < hitCount; hitIndex++)
             {
                 SpatialQueryHit hit = _floraPredatorAupHits[hitIndex];
                 FaunaBrain brain = hit.Owner as FaunaBrain;
                 if (brain == null || brain.IsDead || !brain.IsApexPredatorRuntime)
                     continue;
 
-                _floraPredatorAupUpload[uploadCount] = new float4(
-                    hit.Position.x,
-                    hit.Position.y,
-                    hit.Position.z,
-                    FloraPredatorStealthRadiusMeters);
-                uploadCount++;
+                if (hit.DistanceSqr < GlobalOceanPanicRadiusMetersSqr)
+                {
+                    float distance01 = Mathf.Sqrt(Mathf.Max(0f, hit.DistanceSqr)) / GlobalOceanPanicRadiusMeters;
+                    panic01 = math.max(panic01, 1f - distance01);
+                }
+
+                if (uploadCount < FloraPredatorAupBufferCapacity)
+                {
+                    _floraPredatorAupUpload[uploadCount] = new float4(
+                        hit.Position.x,
+                        hit.Position.y,
+                        hit.Position.z,
+                        FloraPredatorStealthRadiusMeters);
+                    uploadCount++;
+                }
             }
 
             if (uploadCount > 0)
@@ -1724,6 +1743,17 @@ namespace Hecton8.World
             Shader.SetGlobalBuffer(_PredatorAUPBufferId, _floraPredatorAupBuffer);
             Shader.SetGlobalInt(_PredatorAUPCountId, uploadCount);
             Shader.SetGlobalVector(_PredatorAUPParamsId, new Vector4(FloraPredatorStealthRadiusMeters, FloraPredatorStealthDimStrength, 0f, 0f));
+            PublishGlobalOceanPanic(panic01);
+        }
+
+        private void PublishGlobalOceanPanic(float panic01)
+        {
+            float resolvedPanic01 = Mathf.Clamp01(panic01);
+            if (Mathf.Abs(_lastPublishedGlobalOceanPanic01 - resolvedPanic01) < 0.001f)
+                return;
+
+            _lastPublishedGlobalOceanPanic01 = resolvedPanic01;
+            Shader.SetGlobalFloat(_GlobalOceanPanicId, resolvedPanic01);
         }
 
         private static bool TryResolvePlayerRuntimePosition(out Vector3 playerPosition)

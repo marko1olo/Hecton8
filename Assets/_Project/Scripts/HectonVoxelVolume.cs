@@ -2118,7 +2118,7 @@ namespace Hecton8.Caves
             if (_publishedSonarSdf.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_publishedSonarSdf);
-                _publishedSonarSdf.Dispose();
+                _publishedSonarSdf.Dispose(default);
             }
 
             _publishedSonarSdf = new NativeArray<byte>(
@@ -2137,7 +2137,7 @@ namespace Hecton8.Caves
             if (_publishedSonarSdf.IsCreated)
             {
                 NativeMemorySentinel.UnregisterNativeArray(_publishedSonarSdf);
-                _publishedSonarSdf.Dispose();
+                _publishedSonarSdf.Dispose(default);
             }
 
             _publishedSonarSdf = default;

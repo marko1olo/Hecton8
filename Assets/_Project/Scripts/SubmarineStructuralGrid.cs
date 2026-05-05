@@ -602,7 +602,6 @@ namespace Hecton8.Physics
 
         private void SpawnHullImpactSparks(Vector3 worldPoint, Vector3 outwardNormal, float severity01)
         {
-            EnsureHullImpactSparkParticles();
             if (_hullImpactSparkParticles == null)
                 return;
 
@@ -672,9 +671,9 @@ namespace Hecton8.Physics
 
             Transform cachedTransform = _cachedTransform != null ? _cachedTransform : transform;
             _cachedTransform = cachedTransform;
-            GameObject sparkObject = new GameObject("PFX_SubmarineHull_ImpactSparks"); // COLD ALLOC: visual-only hull impact particle owner - owner: SubmarineStructuralGrid
+            GameObject sparkObject = new GameObject("PFX_SubmarineHull_ImpactSparks"); // COLD ALLOC: GameObject[1] — visual-only hull impact particle owner — owner: SubmarineStructuralGrid
             sparkObject.transform.SetParent(cachedTransform, false);
-            _hullImpactSparkParticles = sparkObject.AddComponent<ParticleSystem>(); // COLD ALLOC: ParticleSystem[1] - pooled hull impact sparks - owner: SubmarineStructuralGrid
+            _hullImpactSparkParticles = sparkObject.AddComponent<ParticleSystem>(); // COLD ALLOC: ParticleSystem[1] — pooled hull impact sparks — owner: SubmarineStructuralGrid
             _hullImpactSparkRenderer = sparkObject.GetComponent<ParticleSystemRenderer>();
 
             ParticleSystem.MainModule main = _hullImpactSparkParticles.main;
@@ -971,13 +970,13 @@ namespace Hecton8.Physics
             _queuedImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             // COLD ALLOC: NativeArray<ImpactCommand>[16] â€” scheduled impact snapshot buffer â€” owner: SubmarineStructuralGrid
             _scheduledImpacts = new NativeArray<ImpactCommand>(MaxQueuedImpacts, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float3>[8] - compartment centroids staged for Burst hull mapping - owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float3>[8] — compartment centroids staged for Burst hull mapping — owner: SubmarineStructuralGrid
             _compartmentCentroids = new NativeArray<float3>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<byte>[8] - pressure-fatigue compartment flags consumed by Burst job - owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<byte>[8] — pressure-fatigue compartment flags consumed by Burst job — owner: SubmarineStructuralGrid
             _fatigueCompartmentFlags = new NativeArray<byte>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[8] - pressure-fatigue per-compartment loss scalars consumed by Burst job - owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float>[8] — pressure-fatigue per-compartment loss scalars consumed by Burst job — owner: SubmarineStructuralGrid
             _fatigueIntegrityLossPerCycle = new NativeArray<float>(CompartmentCapacity, Allocator.Persistent, NativeArrayOptions.ClearMemory);
-            // COLD ALLOC: NativeArray<float>[1] - pressure-fatigue peak metric returned by Burst job - owner: SubmarineStructuralGrid
+            // COLD ALLOC: NativeArray<float>[1] — pressure-fatigue peak metric returned by Burst job — owner: SubmarineStructuralGrid
             _fatiguePeakResult = new NativeArray<float>(1, Allocator.Persistent, NativeArrayOptions.ClearMemory);
             RegisterNativeStateMemorySentinel();
 
@@ -1039,7 +1038,7 @@ namespace Hecton8.Physics
             }
 
             if (!hullBody.TryGetComponent(out SubmarineHullImpactRelay relay))
-                relay = hullBody.gameObject.AddComponent<SubmarineHullImpactRelay>(); // COLD ALLOC: SubmarineHullImpactRelay[1] - hull-rigidbody collision forwarding to structural grid - owner: SubmarineStructuralGrid
+                relay = hullBody.gameObject.AddComponent<SubmarineHullImpactRelay>(); // COLD ALLOC: SubmarineHullImpactRelay[1] — hull-rigidbody collision forwarding to structural grid — owner: SubmarineStructuralGrid
 
             relay.Bind(this);
             _hullImpactRelay = relay;

@@ -108,6 +108,7 @@ namespace Hecton8.Core
             CriticalMemoryPressure = 1u << 18,
             AudioOverflowDropWarning = 1u << 19,
             BootPerfWarning = 1u << 20,
+            CriticalPerformanceSpike = 1u << 21,
         }
 
         [Flags]
@@ -144,6 +145,7 @@ namespace Hecton8.Core
             CriticalMemoryPressure = 14u,
             AudioOverflowDropWarning = 15u,
             BootPerfWarning = 16u,
+            CriticalPerformanceSpike = 17u,
         }
 
         [StructLayout(LayoutKind.Sequential, Size = CrashExportHeaderSizeBytes)]
@@ -444,6 +446,25 @@ namespace Hecton8.Core
                 return;
 
             instance.WriteLateFrameLoadSheddingTelemetry(queueHash, remainingDispatchBudget);
+        }
+
+        /// <summary>
+        /// Records a single-lane dispatcher spike with the hashed managed stack context that observed it.
+        /// </summary>
+        public static void ReportCriticalPerformanceSpike(uint laneHash, double elapsedMilliseconds, uint stackHash)
+        {
+            uint flags = (uint)ErrorBits.CriticalPerformanceSpike;
+            OrRuntimeFaultFlags(unchecked((int)flags));
+
+            CrashTelemetryBuffer instance = GlobalRegistry.CrashTelemetry;
+            if (instance == null || !instance._ringBuffer.IsCreated)
+                return;
+
+            instance.WriteCriticalPerformanceSpikeTelemetry(laneHash, elapsedMilliseconds, stackHash);
+            instance.TryExportSnapshot(
+                ExportReason.CriticalPerformanceSpike,
+                flags,
+                writeSynchronously: false);
         }
 
         public static void ReportAudioOverflowDropWarning(int overflowDropCount, int bufferedFrames, int writableFrames)
@@ -869,6 +890,33 @@ namespace Hecton8.Core
             entry.AupShiftSequence = shiftEvent.Sequence;
             entry.AiStatePacked = queueHash;
             entry.SubsystemHeatPacked = unchecked((uint)math.max(0, remainingDispatchBudget));
+            entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
+            _ringBuffer[writeIndex] = entry;
+            _writeCursor++;
+        }
+
+        private void WriteCriticalPerformanceSpikeTelemetry(uint laneHash, double elapsedMilliseconds, uint stackHash)
+        {
+            uint frameIndex = unchecked((uint)Time.frameCount);
+            int writeIndex = (int)(frameIndex % RingCapacity);
+            OriginShiftEventData shiftEvent = HectonFloatingOrigin.LastShiftEvent;
+
+            DebugLogEntry entry = default;
+            entry.FrameIndex = frameIndex;
+            entry.SystemMask = (uint)SystemBits.EventBus;
+            entry.DeltaTime = SystemDispatcher.CurrentFrameUnscaledDeltaTime;
+            entry.FixedDeltaTime = _lastFixedDeltaTime;
+            entry.GpuFrameTime = elapsedMilliseconds > float.MaxValue
+                ? float.MaxValue
+                : (float)math.max(0d, elapsedMilliseconds);
+            entry.MemoryUsedMb = Profiler.GetTotalReservedMemoryLong() * (1f / (1024f * 1024f));
+            entry.PlayerAup = SamplePlayerPosition(out _);
+            entry.ActiveChunkCount = SampleActiveChunkCount();
+            entry.ErrorFlags = (uint)ErrorBits.CriticalPerformanceSpike;
+            entry.ExportReason = (uint)ExportReason.CriticalPerformanceSpike;
+            entry.AupShiftSequence = shiftEvent.Sequence;
+            entry.AiStatePacked = laneHash;
+            entry.SubsystemHeatPacked = stackHash;
             entry.LastOriginShiftFrame = unchecked((uint)math.max(0, shiftEvent.Frame));
             _ringBuffer[writeIndex] = entry;
             _writeCursor++;

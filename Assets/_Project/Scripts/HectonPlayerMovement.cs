@@ -47,7 +47,9 @@ namespace Hecton8.Gameplay
         private const float GroundCheckSkin = 0.02f;
         private static readonly ProfilerMarker _tickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.Tick");
         private static readonly ProfilerMarker _fixedTickProfilerMarker = new ProfilerMarker("H8.PlayerMovement.FixedTick");
-        private const float InventoryLoadMinimumMovementMultiplier = 0.62f;
+        private const float InventoryLoadMinimumMovementMultiplier = 0.6f;
+        private const float InventoryHardSlowdownMassKg = 200f;
+        private const float InventoryHardSlowdownMovementMultiplier = 0.6f;
         private const float CriticalEncumbranceRatio = 1.5f;
         private const float CriticalStaminaFailureThreshold01 = 0.1f;
         private const float CriticalStaminaFailureDurationSeconds = 2f;
@@ -1257,9 +1259,9 @@ namespace Hecton8.Gameplay
         private bool _localGravityOverrideActive;
         private Vector3 _smoothedGroundNormal;
         private float _minGroundNormalY;
-        private readonly RaycastHit[] _groundProbeHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] - ground-contact query buffer dedicated to grounding resolution - owner: HectonPlayerMovement
-        private readonly RaycastHit[] _bottomClearanceHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] - bottom-clearance query buffer dedicated to seabed clearance checks - owner: HectonPlayerMovement
-        private readonly RaycastHit[] _movementProbeHitBuffer = new RaycastHit[16]; // COLD ALLOC: RaycastHit[16] - synchronous locomotion probe buffer for jump, support, and step sweeps - owner: HectonPlayerMovement
+        private readonly RaycastHit[] _groundProbeHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] — ground-contact query buffer dedicated to grounding resolution — owner: HectonPlayerMovement
+        private readonly RaycastHit[] _bottomClearanceHitBuffer = new RaycastHit[32]; // COLD ALLOC: RaycastHit[32] — bottom-clearance query buffer dedicated to seabed clearance checks — owner: HectonPlayerMovement
+        private readonly RaycastHit[] _movementProbeHitBuffer = new RaycastHit[16]; // COLD ALLOC: RaycastHit[16] — synchronous locomotion probe buffer for jump, support, and step sweeps — owner: HectonPlayerMovement
 
         internal Transform PlayerCameraTransform => playerCamera;
         private const int MaxQueuedCollisionEvents = 32;
@@ -1425,7 +1427,7 @@ namespace Hecton8.Gameplay
         {
             _runtimeInventoryLoadRatio = ResolveInventoryLoadRatio(totalMassKg, carryCapacityKg);
             _runtimeInventoryLoad01 = math.saturate(_runtimeInventoryLoadRatio);
-            SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplierFromLoad(_runtimeInventoryLoad01));
+            SetRuntimeInventoryLoadMovementMultiplier(ResolveInventoryLoadMovementMultiplier(totalMassKg, carryCapacityKg));
         }
 
         /// <summary>Normalized 0-1 inventory mass load consumed by HUD and locomotion penalties.</summary>
@@ -2955,7 +2957,10 @@ namespace Hecton8.Gameplay
 
         private static float ResolveInventoryLoadMovementMultiplier(float totalMassKg, float carryCapacityKg)
         {
-            return ResolveInventoryLoadMovementMultiplierFromLoad(ResolveInventoryLoad01(totalMassKg, carryCapacityKg));
+            float loadMultiplier = ResolveInventoryLoadMovementMultiplierFromLoad(ResolveInventoryLoad01(totalMassKg, carryCapacityKg));
+            return math.max(0f, totalMassKg) > InventoryHardSlowdownMassKg
+                ? math.min(loadMultiplier, InventoryHardSlowdownMovementMultiplier)
+                : loadMultiplier;
         }
 
         private float ResolveRuntimeInventoryLoadMovementMultiplier()

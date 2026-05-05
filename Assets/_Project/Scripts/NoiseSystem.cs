@@ -19,8 +19,7 @@ namespace Hecton8.AI
         private const float ActiveSonarDetectionRadius = 80f;
         private const float PlayerNoiseMemorySeconds = 10f;
         private const float ActiveSonarMemorySeconds = 8f;
-        private const int MaxNoiseListenerCount = 256;
-        private const int MaxAcousticOcclusionHits = 8;
+        private const int MaxNoiseListenerCount = 64;
 
         /// <summary>
         /// Snapshot of player-generated noise state for the current frame window.
@@ -91,10 +90,8 @@ namespace Hecton8.AI
         private static readonly int SensoryOcclusionMask = AcousticOcclusionUtility.BuildSensoryMask();
         private static PlayerNoiseSignal _playerNoiseSignal;
         private static bool _hasPlayerNoiseSignal;
-        // COLD ALLOC: SpatialQueryHit[256] — centralized fauna noise dispatch buffer — owner: NoiseSystem
+        // COLD ALLOC: SpatialQueryHit[64] — centralized fauna noise dispatch buffer — owner: NoiseSystem
         private static readonly SpatialQueryHit[] _playerNoiseListenerBuffer = new SpatialQueryHit[MaxNoiseListenerCount];
-        // COLD ALLOC: RaycastHit[8] â€” active-sonar occlusion chain buffer â€” owner: NoiseSystem
-        private static readonly RaycastHit[] _activeSonarOcclusionHits = new RaycastHit[MaxAcousticOcclusionHits];
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticState()
@@ -231,7 +228,6 @@ namespace Hecton8.AI
                     signal.Position,
                     listener.Position,
                     SensoryOcclusionMask,
-                    _activeSonarOcclusionHits,
                     null,
                     listener.Transform.root);
                 if (occlusion.Transmission01 < AcousticOcclusionUtility.DeepShadowTransmissionThreshold)

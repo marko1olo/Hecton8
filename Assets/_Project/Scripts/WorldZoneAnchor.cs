@@ -8,6 +8,7 @@ namespace Hecton8.World
     [DisallowMultipleComponent]
     public sealed class WorldZoneAnchor : MonoBehaviour
     {
+        private const int ActiveAnchorCopyBudget = 64;
         private static readonly List<WorldZoneAnchor> _ActiveAnchors = new List<WorldZoneAnchor>(32);
         private static int _ActiveAnchorVersion;
 
@@ -106,11 +107,18 @@ namespace Hecton8.World
 
         public static void CopyActiveAnchorsTo(List<WorldZoneAnchor> destination)
         {
+            CopyActiveAnchorsTo(destination, ActiveAnchorCopyBudget);
+        }
+
+        public static void CopyActiveAnchorsTo(List<WorldZoneAnchor> destination, int maxScanCount)
+        {
             if (destination == null)
                 return;
 
             destination.Clear();
-            for (int i = 0; i < _ActiveAnchors.Count; i++)
+            int requestedCount = Mathf.Clamp(maxScanCount, 0, ActiveAnchorCopyBudget);
+            int safeCount = Mathf.Min(requestedCount, _ActiveAnchors.Count);
+            for (int i = 0; i < safeCount; i++)
             {
                 WorldZoneAnchor anchor = _ActiveAnchors[i];
                 if (anchor == null)

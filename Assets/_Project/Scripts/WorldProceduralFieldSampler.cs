@@ -160,19 +160,35 @@ namespace Hecton8.World
         {
             public uint Packed;
 
-            public byte PrimaryBiomeId => (byte)(Packed & 0xFFu);
-            public byte SecondaryBiomeId => (byte)((Packed >> 8) & 0xFFu);
-            public byte Blend255 => (byte)((Packed >> 16) & 0xFFu);
-            public byte Flags => (byte)((Packed >> 24) & 0xFFu);
+            public byte PrimaryVisualFamilyId => HectonBiomeVisualFamilyUtility.ExtractPrimaryVisualFamilyId(Packed);
+            public byte SecondaryVisualFamilyId => HectonBiomeVisualFamilyUtility.ExtractSecondaryVisualFamilyId(Packed);
+            public byte Blend255 => HectonBiomeVisualFamilyUtility.ExtractBlend255(Packed);
+            public byte Flags => HectonBiomeVisualFamilyUtility.ExtractFlags(Packed);
+            public uint GpuPacked => HectonBiomeVisualFamilyUtility.ExtractGpuPacked(Packed);
+            public byte PrimaryBiomeId => PrimaryVisualFamilyId;
+            public byte SecondaryBiomeId => SecondaryVisualFamilyId;
 
-            public static BiomeInfluenceCell Create(byte primaryBiomeId, byte secondaryBiomeId, byte blend255, byte flags)
+            public static BiomeInfluenceCell Create(byte primaryVisualFamilyId, byte secondaryVisualFamilyId, byte blend255, byte flags)
             {
                 return new BiomeInfluenceCell
                 {
-                    Packed = primaryBiomeId |
-                             ((uint)secondaryBiomeId << 8) |
-                             ((uint)blend255 << 16) |
-                             ((uint)flags << 24)
+                    Packed = HectonBiomeVisualFamilyUtility.PackCell(
+                        primaryVisualFamilyId,
+                        secondaryVisualFamilyId,
+                        blend255,
+                        flags)
+                };
+            }
+
+            public static BiomeInfluenceCell CreateFromBiomeIds(byte primaryBiomeId, byte secondaryBiomeId, byte blend255, byte flags)
+            {
+                return new BiomeInfluenceCell
+                {
+                    Packed = HectonBiomeVisualFamilyUtility.PackCellFromBiomeIds(
+                        primaryBiomeId,
+                        secondaryBiomeId,
+                        blend255,
+                        flags)
                 };
             }
         }
@@ -294,7 +310,9 @@ namespace Hecton8.World
             public int biomeMatrixDataIndex;
             public int biomeFamilyDataIndex;
             public HectonBiomeMatrixProfile biomeProfile;
+            public HectonBiomeMatrixProfile secondaryBiomeProfile;
             public HectonBiomeFamilyProfile biomeFamily;
+            public HectonBiomeFamilyProfile secondaryBiomeFamily;
             public BiomeInfluenceCell biomeInfluence;
             public WorldZoneAnchor zone;
             public float zoneWeight;
@@ -896,7 +914,7 @@ namespace Hecton8.World
                 }
             }
 
-            return BiomeInfluenceCell.Create(primaryBiomeId, secondaryBiomeId, blend255, flags);
+            return BiomeInfluenceCell.CreateFromBiomeIds(primaryBiomeId, secondaryBiomeId, blend255, flags);
         }
 
         private static byte ResolveBiomeInfluenceMatrixId(
@@ -2309,7 +2327,9 @@ namespace Hecton8.World
                 biomeMatrixDataIndex = output.BiomeMatrixDataIndex,
                 biomeFamilyDataIndex = output.BiomeFamilyDataIndex,
                 biomeProfile = output.BiomeMatrixDataIndex >= 0 && output.BiomeMatrixDataIndex < _biomeMatrixBakeList.Count ? _biomeMatrixBakeList[output.BiomeMatrixDataIndex] : null,
+                secondaryBiomeProfile = ResolveSecondaryBiomeProfile(output),
                 biomeFamily = output.BiomeFamilyDataIndex >= 0 && output.BiomeFamilyDataIndex < _biomeFamilyBakeList.Count ? _biomeFamilyBakeList[output.BiomeFamilyDataIndex] : null,
+                secondaryBiomeFamily = ResolveSecondaryBiomeFamily(output),
                 biomeInfluence = new BiomeInfluenceCell { Packed = output.BiomeInfluencePacked },
                 zone = output.ZoneDataIndex >= 0 && output.ZoneDataIndex < _zoneBakeList.Count ? _zoneBakeList[output.ZoneDataIndex] : null,
                 zoneWeight = output.ZoneWeight,
@@ -2323,6 +2343,45 @@ namespace Hecton8.World
                 isValid = true
             };
             return true;
+        }
+
+        private HectonBiomeMatrixProfile ResolveSecondaryBiomeProfile(in CellOutputData output)
+        {
+            int secondaryIndex = ResolveSecondaryBiomeMatrixDataIndex(in output);
+            return secondaryIndex >= 0 && secondaryIndex < _biomeMatrixBakeList.Count
+                ? _biomeMatrixBakeList[secondaryIndex]
+                : null;
+        }
+
+        private HectonBiomeFamilyProfile ResolveSecondaryBiomeFamily(in CellOutputData output)
+        {
+            HectonBiomeMatrixProfile profile = ResolveSecondaryBiomeProfile(in output);
+            if (profile != null && profile.familyProfile != null)
+                return profile.familyProfile;
+
+            int secondaryIndex = ResolveSecondaryBiomeMatrixDataIndex(in output);
+            if (secondaryIndex < 0 ||
+                !_burstBiomeMatrixData.IsCreated ||
+                secondaryIndex >= _burstBiomeMatrixDataCount)
+            {
+                return null;
+            }
+
+            int familyIndex = _burstBiomeMatrixData[secondaryIndex].FamilyDataIndex;
+            return familyIndex >= 0 && familyIndex < _biomeFamilyBakeList.Count
+                ? _biomeFamilyBakeList[familyIndex]
+                : null;
+        }
+
+        private static int ResolveSecondaryBiomeMatrixDataIndex(in CellOutputData output)
+        {
+            if (HectonBiomeVisualFamilyUtility.ExtractBlend255(output.BiomeInfluencePacked) == 0)
+                return -1;
+
+            if (output.VolumetricOverrideActive != 0)
+                return output.PreviousBiomeMatrixDataIndex;
+
+            return output.SecondaryBiomeMatrixDataIndex;
         }
 
         public float EvaluateHeatmap(string heatmapChannel, in CellOutputData output, WorldPrefabFamilyProfile family, WorldProceduralPlacementRule rule)
@@ -2783,7 +2842,17 @@ namespace Hecton8.World
                 biomeMatrixDataIndex = biomeMatrixDataIndex,
                 biomeFamilyDataIndex = biomeFamilyDataIndex,
                 biomeProfile = biomeProfile,
+                secondaryBiomeProfile = ResolveManagedSecondaryBiomeProfile(
+                    volumetricOverrideApplied,
+                    previousBiomeProfile,
+                    mapMagicSecondaryProfile,
+                    mapMagicBlend255),
                 biomeFamily = biomeFamily,
+                secondaryBiomeFamily = ResolveManagedSecondaryBiomeFamily(
+                    volumetricOverrideApplied,
+                    previousBiomeProfile,
+                    mapMagicSecondaryProfile,
+                    mapMagicBlend255),
                 biomeInfluence = BuildManagedBiomeInfluenceCell(
                     biomeProfile,
                     biomeMatrixDirector != null ? biomeMatrixDirector.CurrentProfile : null,
@@ -2824,11 +2893,10 @@ namespace Hecton8.World
                 return false;
 
             influence = sample.biomeInfluence;
-            TryResolveBiomeInfluenceProfiles(in influence, out primaryProfile, out secondaryProfile);
-            if (primaryProfile == null)
-                primaryProfile = sample.biomeProfile;
+            primaryProfile = sample.biomeProfile;
+            secondaryProfile = sample.biomeInfluence.Blend255 != 0 ? sample.secondaryBiomeProfile : null;
 
-            return influence.PrimaryBiomeId != 0 || primaryProfile != null;
+            return primaryProfile != null || influence.PrimaryVisualFamilyId != 0;
         }
 
         public bool TryResolveBiomeInfluenceProfiles(
@@ -2836,9 +2904,9 @@ namespace Hecton8.World
             out HectonBiomeMatrixProfile primaryProfile,
             out HectonBiomeMatrixProfile secondaryProfile)
         {
-            primaryProfile = ResolveBiomeMatrixProfileById(influence.PrimaryBiomeId);
-            secondaryProfile = ResolveBiomeMatrixProfileById(influence.SecondaryBiomeId);
-            return primaryProfile != null || secondaryProfile != null;
+            primaryProfile = null;
+            secondaryProfile = null;
+            return false;
         }
 
         public bool TrySampleBiomePhysicsInfluence(Vector3 position, out float buoyancyMultiplier)
@@ -2855,7 +2923,7 @@ namespace Hecton8.World
             }
 
             float primaryMultiplier = ResolveBiomeBuoyancyMultiplier(primaryProfile);
-            if (secondaryProfile == null || influence.SecondaryBiomeId == 0)
+            if (secondaryProfile == null || influence.Blend255 == 0)
             {
                 buoyancyMultiplier = primaryMultiplier;
                 return true;
@@ -2944,7 +3012,33 @@ namespace Hecton8.World
                 }
             }
 
-            return BiomeInfluenceCell.Create(primaryBiomeId, secondaryBiomeId, blend255, flags);
+            return BiomeInfluenceCell.CreateFromBiomeIds(primaryBiomeId, secondaryBiomeId, blend255, flags);
+        }
+
+        private static HectonBiomeMatrixProfile ResolveManagedSecondaryBiomeProfile(
+            bool volumetricOverrideApplied,
+            HectonBiomeMatrixProfile previousBiomeProfile,
+            HectonBiomeMatrixProfile mapMagicSecondaryProfile,
+            byte mapMagicBlend255)
+        {
+            if (volumetricOverrideApplied)
+                return previousBiomeProfile;
+
+            return mapMagicBlend255 != 0 ? mapMagicSecondaryProfile : null;
+        }
+
+        private static HectonBiomeFamilyProfile ResolveManagedSecondaryBiomeFamily(
+            bool volumetricOverrideApplied,
+            HectonBiomeMatrixProfile previousBiomeProfile,
+            HectonBiomeMatrixProfile mapMagicSecondaryProfile,
+            byte mapMagicBlend255)
+        {
+            HectonBiomeMatrixProfile profile = ResolveManagedSecondaryBiomeProfile(
+                volumetricOverrideApplied,
+                previousBiomeProfile,
+                mapMagicSecondaryProfile,
+                mapMagicBlend255);
+            return profile != null ? profile.familyProfile : null;
         }
 
         private static float ResolveBiomeBuoyancyMultiplier(HectonBiomeMatrixProfile profile)

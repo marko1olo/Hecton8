@@ -344,7 +344,7 @@ namespace Hecton8.Gameplay
             FlushPendingBursts();
             RenderActiveChunks();
 
-            if (!_simulationScheduled && HasActiveChunks())
+            if (!_simulationScheduled && HasSimulatedChunks())
             {
                 DebrisSimulationJob job = new DebrisSimulationJob
                 {
@@ -487,7 +487,8 @@ namespace Hecton8.Gameplay
                         PoolReturnDelay = poolReturnDelay,
                         Active = 1,
                         CollisionEnabled = 1,
-                        Kinematic = 0
+                        Kinematic = 0,
+                        SettledStatic = 0
                     };
 
                     _frontStates[slotIndex] = state;
@@ -598,11 +599,12 @@ namespace Hecton8.Gameplay
             }
         }
 
-        private bool HasActiveChunks()
+        private bool HasSimulatedChunks()
         {
             for (int i = 0; i < _frontStates.Length; i++)
             {
-                if (_frontStates[i].Active != 0)
+                DebrisChunkState state = _frontStates[i];
+                if (state.Active != 0 && state.SettledStatic == 0)
                     return true;
             }
 
@@ -660,7 +662,8 @@ namespace Hecton8.Gameplay
             int freeCount = 0;
             for (int i = 0; i < _frontStates.Length; i++)
             {
-                if (_frontStates[i].Active == 0)
+                DebrisChunkState state = _frontStates[i];
+                if (state.Active == 0 || state.SettledStatic != 0)
                     freeCount++;
             }
 
@@ -675,7 +678,19 @@ namespace Hecton8.Gameplay
                     return i;
             }
 
-            return -1;
+            int bestSettledSlot = -1;
+            float bestSettledAge = -1f;
+            for (int i = 0; i < _frontStates.Length; i++)
+            {
+                DebrisChunkState state = _frontStates[i];
+                if (state.SettledStatic == 0 || state.Age <= bestSettledAge)
+                    continue;
+
+                bestSettledAge = state.Age;
+                bestSettledSlot = i;
+            }
+
+            return bestSettledSlot;
         }
 
         private static void PublishDebrisPoolExhausted(uint reasonCode)
@@ -718,7 +733,7 @@ namespace Hecton8.Gameplay
             for (int slotIndex = 0; slotIndex < _frontStates.Length; slotIndex++)
             {
                 DebrisChunkState state = _frontStates[slotIndex];
-                if (state.Active == 0)
+                if (state.Active == 0 || state.SettledStatic != 0)
                 {
                     _thermalPetrificationTimers[slotIndex] = 0f;
                     continue;
@@ -747,9 +762,13 @@ namespace Hecton8.Gameplay
                         ThermalPetrificationSdfRadius * math.max(0.5f, state.MassScale),
                         ThermalPetrificationSdfRadius))
                 {
-                    _frontStates[slotIndex] = default;
-                    _slotMeshes[slotIndex] = null;
-                    _slotMaterials[slotIndex] = null;
+                    state.CollisionEnabled = 0;
+                    state.Kinematic = 1;
+                    state.SettledStatic = 1;
+                    state.Velocity = float3.zero;
+                    state.AngularVelocity = float3.zero;
+                    state.Position.y = math.min(state.Position.y, state.SinkTargetY);
+                    _frontStates[slotIndex] = state;
                     _thermalPetrificationTimers[slotIndex] = 0f;
                 }
             }
@@ -885,6 +904,7 @@ namespace Hecton8.Gameplay
             public byte Active;
             public byte CollisionEnabled;
             public byte Kinematic;
+            public byte SettledStatic;
         }
 
         [BurstCompile(FloatMode = FloatMode.Fast, FloatPrecision = FloatPrecision.Standard)]
@@ -915,10 +935,26 @@ namespace Hecton8.Gameplay
                     return;
                 }
 
+                if (state.SettledStatic != 0)
+                {
+                    state.CollisionEnabled = 0;
+                    state.Kinematic = 1;
+                    state.Velocity = float3.zero;
+                    state.AngularVelocity = float3.zero;
+                    WriteStates[i] = state;
+                    return;
+                }
+
                 state.Age += dt;
                 if (state.Age > MaximumLifetime || state.Position.y < WorldCullY)
                 {
-                    WriteStates[i] = default;
+                    state.CollisionEnabled = 0;
+                    state.Kinematic = 1;
+                    state.SettledStatic = 1;
+                    state.Velocity = float3.zero;
+                    state.AngularVelocity = float3.zero;
+                    state.Position.y = math.max(state.Position.y, math.max(state.SinkTargetY, WorldCullY));
+                    WriteStates[i] = state;
                     return;
                 }
 
@@ -965,7 +1001,13 @@ namespace Hecton8.Gameplay
                     float sinkSmooth = sink01 * sink01 * (3f - (2f * sink01));
                     state.Position.y = math.lerp(state.SinkStartY, state.SinkTargetY, sinkSmooth);
                     if (state.Age >= poolReturnDelay)
-                        state.Active = 0;
+                    {
+                        state.Position.y = state.SinkTargetY;
+                        state.SettledStatic = 1;
+                        state.Kinematic = 1;
+                        state.Velocity = float3.zero;
+                        state.AngularVelocity = float3.zero;
+                    }
                 }
 
                 if (state.Kinematic == 0)

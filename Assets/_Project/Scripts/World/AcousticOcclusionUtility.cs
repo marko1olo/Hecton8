@@ -138,13 +138,13 @@ namespace Hecton8.World
         private const float MaximumRt60Seconds = 10f;
         private const float OpenWaterPresetSpanMeters = 96f;
         private const float OpenWaterRt60Seconds = 10f;
-        private const float OpenWaterWetMix01 = 0.85f;
+        private const float OpenWaterWetMix01 = 0.20f;
         private const float SmallRoomSpanMeters = 6f;
         private const float LargeRoomSpanMeters = 18f;
         private const float SmallRoomRt60Seconds = 0.48f;
         private const float LargeRoomRt60Seconds = 1.35f;
-        private const float SmallRoomWetMix01 = 0.28f;
-        private const float LargeRoomWetMix01 = 0.48f;
+        private const float SmallRoomWetMix01 = 0.80f;
+        private const float LargeRoomWetMix01 = 0.80f;
         private const float SmallRoomOpenness01 = 0.16f;
         private const float LargeRoomOpenness01 = 0.36f;
         private const float ForwardEchoFakeDistanceRatio = 0.12f;
@@ -697,43 +697,6 @@ namespace Hecton8.World
                 OpenLowPassCutoffHertz / (1f + (density * VoxelDensityLowPassScale)),
                 MinimumLowPassCutoffHertz,
                 OpenLowPassCutoffHertz);
-        }
-
-        private static bool ShouldIgnoreCollider(
-            Collider collider,
-            ulong ignoreOriginRootEntityId,
-            ulong ignoreTargetRootEntityId,
-            ulong ignoreOriginBodyEntityId,
-            ulong ignoreTargetBodyEntityId)
-        {
-            if (collider == null)
-                return true;
-
-            Rigidbody attachedBody = collider.attachedRigidbody;
-            if (attachedBody != null)
-            {
-                ulong bodyEntityId = EntityId.ToULong(attachedBody.GetEntityId());
-                if ((ignoreOriginBodyEntityId != 0ul && bodyEntityId == ignoreOriginBodyEntityId) ||
-                    (ignoreTargetBodyEntityId != 0ul && bodyEntityId == ignoreTargetBodyEntityId))
-                {
-                    return true;
-                }
-            }
-
-            ulong colliderEntityId = EntityId.ToULong(collider.GetEntityId());
-            if ((ignoreOriginRootEntityId != 0ul && colliderEntityId == ignoreOriginRootEntityId) ||
-                (ignoreTargetRootEntityId != 0ul && colliderEntityId == ignoreTargetRootEntityId))
-            {
-                return true;
-            }
-
-            Transform colliderTransform = collider.transform;
-            if (colliderTransform == null)
-                return false;
-
-            ulong transformEntityId = EntityId.ToULong(colliderTransform.GetEntityId());
-            return (ignoreOriginRootEntityId != 0ul && transformEntityId == ignoreOriginRootEntityId) ||
-                   (ignoreTargetRootEntityId != 0ul && transformEntityId == ignoreTargetRootEntityId);
         }
 
         private static AcousticEnclosureResult BuildOpenWaterResult(float probeDistance)

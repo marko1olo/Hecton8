@@ -16,22 +16,21 @@ namespace Hecton8.Core
     [AddComponentMenu("")]
     public sealed class ConnectionSplineBatchRenderer : MonoBehaviour, ILateFrameTickable, IOriginShiftListener
     {
-        private const int SamplesPerLink = 8;
-        private const int NearPipeRadialSegments = 8;
-        private const int FarPipeRadialSegments = 4;
-        private const int RelayRadialSegments = 8;
         private const int DefaultBatchCapacity = 100;
+        private const int MaxRenderedLinksPerBatch = 64;
         private const string FlexiblePipeShaderName = "Hecton/FlexiblePipe";
         private const string FallbackShaderName = "Universal Render Pipeline/Lit";
-        private const float PipeLodRefreshThresholdMetersSq = 1f;
+        private const string BuiltinCylinderMeshName = "Cylinder.fbx";
+        private const float FarPipeSpanThresholdMetersSq = 40f * 40f;
         private const float RelayRadiusMeters = 0.028f;
-        private const float TwoPi = math.PI * 2f;
 
         private static readonly int s_FlexiblePipeInstancesId = Shader.PropertyToID("_HectonFlexiblePipeInstances");
         private static readonly int s_BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int s_ColorId = Shader.PropertyToID("_Color");
         private static readonly int s_SmoothnessId = Shader.PropertyToID("_Smoothness");
         private static readonly int s_MetallicId = Shader.PropertyToID("_Metallic");
+        private static readonly int s_LogisticsPathHighlightId = Shader.PropertyToID("_HectonLogisticsPathHighlight");
+        private static Mesh s_staticCylinderMesh;
 
         private enum BatchKind : byte
         {
@@ -67,7 +66,6 @@ namespace Hecton8.Core
             public Color Color;
             public float Radius;
             public BatchKind Kind;
-            public int RadialSegments;
         }
 
         private static ConnectionSplineBatchRenderer _instance;
@@ -82,10 +80,6 @@ namespace Hecton8.Core
         private readonly HashSet<uint> _rupturedPipeNodes = new HashSet<uint>();
         // COLD ALLOC: List<long>[100] - shared dictionary-key scratch for rupture and origin-shift rebases - owner: ConnectionSplineBatchRenderer
         private readonly List<long> _pipeRuptureUpdateScratch = new List<long>(DefaultBatchCapacity);
-
-        private bool _pipeLodDirty = true;
-        private float3 _lastPipeObserverPosition;
-        private bool _hasLastPipeObserverPosition;
 
         /// <summary>Compatibility overload for existing point-to-point logistics pipes.</summary>
         public static void SubmitPipeLink(long linkId, Vector3 start, Vector3 end, Color color)
@@ -114,7 +108,6 @@ namespace Hecton8.Core
             _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesNear], linkId);
             _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesFar], linkId);
             _instance.RemoveLink(_instance._batches[(int)BatchKind.PipesLine], linkId);
-            _instance._pipeLodDirty = true;
         }
 
         internal static void SetPipeNodeRuptured(uint nodeId, bool ruptured)
@@ -123,6 +116,11 @@ namespace Hecton8.Core
                 return;
 
             _instance.SetPipeNodeRupturedInternal(nodeId, ruptured);
+        }
+
+        public static void SetLogisticsPathHighlightActive(bool active)
+        {
+            Shader.SetGlobalFloat(s_LogisticsPathHighlightId, active ? 1f : 0f);
         }
 
         public static void SubmitRelayLink(long linkId, Vector3 start, Vector3 end, bool hasPower, Color poweredColor, Color unpoweredColor)
@@ -180,11 +178,11 @@ namespace Hecton8.Core
 
             _instance = this;
             Color pipeColor = new Color(0.30f, 0.82f, 0.95f, 0.88f);
-            InitializeBatch((int)BatchKind.PipesNear, BatchKind.PipesNear, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters, NearPipeRadialSegments);
-            InitializeBatch((int)BatchKind.PipesFar, BatchKind.PipesFar, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters, FarPipeRadialSegments);
-            InitializeBatch((int)BatchKind.PipesLine, BatchKind.PipesLine, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters, FarPipeRadialSegments);
-            InitializeBatch((int)BatchKind.RelayPowered, BatchKind.RelayPowered, new Color(0.25f, 0.95f, 1f, 0.95f), RelayRadiusMeters, RelayRadialSegments);
-            InitializeBatch((int)BatchKind.RelayUnpowered, BatchKind.RelayUnpowered, new Color(0.35f, 0.42f, 0.48f, 0.55f), RelayRadiusMeters, RelayRadialSegments);
+            InitializeBatch((int)BatchKind.PipesNear, BatchKind.PipesNear, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters);
+            InitializeBatch((int)BatchKind.PipesFar, BatchKind.PipesFar, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters);
+            InitializeBatch((int)BatchKind.PipesLine, BatchKind.PipesLine, pipeColor, LogisticsPipeBuilder.DefaultPipeRadiusMeters);
+            InitializeBatch((int)BatchKind.RelayPowered, BatchKind.RelayPowered, new Color(0.25f, 0.95f, 1f, 0.95f), RelayRadiusMeters);
+            InitializeBatch((int)BatchKind.RelayUnpowered, BatchKind.RelayUnpowered, new Color(0.35f, 0.42f, 0.48f, 0.55f), RelayRadiusMeters);
         }
 
         private void OnEnable()
@@ -205,14 +203,9 @@ namespace Hecton8.Core
             if (!math.all(math.isfinite(shiftOffset3)) || math.lengthsq(shiftOffset3) <= 0.000001f)
                 return;
 
-            if (_hasLastPipeObserverPosition)
-                _lastPipeObserverPosition -= shiftOffset3;
-
             RebaseRegistrationDictionary(_pipeRegistrations, shiftOffset3);
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 RebaseBatchForOriginShift(_batches[batchIndex], shiftOffset3);
-
-            _pipeLodDirty = true;
         }
 
         private void EnsureRuntimeRegistrations()
@@ -262,7 +255,6 @@ namespace Hecton8.Core
 
         public void LateFrameTick()
         {
-            RefreshPipeBatchAssignments();
             for (int batchIndex = 0; batchIndex < _batches.Length; batchIndex++)
                 ProcessBatch(_batches[batchIndex]);
         }
@@ -278,16 +270,14 @@ namespace Hecton8.Core
                 _instance = null;
         }
 
-        private void InitializeBatch(int index, BatchKind kind, Color color, float radius, int radialSegments)
+        private void InitializeBatch(int index, BatchKind kind, Color color, float radius)
         {
-            int safeRadialSegments = math.max(3, radialSegments);
             BatchState batch = new BatchState
             {
                 Kind = kind,
                 Color = color,
                 Radius = radius,
-                RadialSegments = safeRadialSegments,
-                Mesh = CreateStaticCylinderMesh(kind, safeRadialSegments),
+                Mesh = ResolveStaticCylinderMesh(),
                 Material = CreateRuntimeMaterial(color),
                 Dirty = true
             };
@@ -296,71 +286,32 @@ namespace Hecton8.Core
             _batches[index] = batch;
         }
 
-        private void RefreshPipeBatchAssignments()
+        private BatchState ResolvePipeBatch(in SplineDescriptor descriptor)
         {
-            float3 observerPosition = ResolveObserverPosition(out bool hasObserver);
-            bool observerMoved = hasObserver &&
-                                (!_hasLastPipeObserverPosition ||
-                                 math.lengthsq(observerPosition - _lastPipeObserverPosition) > PipeLodRefreshThresholdMetersSq);
-
-            if (!_pipeLodDirty && !observerMoved)
-                return;
-
-            ClearPipeBatch(_batches[(int)BatchKind.PipesNear]);
-            ClearPipeBatch(_batches[(int)BatchKind.PipesFar]);
-            ClearPipeBatch(_batches[(int)BatchKind.PipesLine]);
-
-            Dictionary<long, SplineDescriptor>.Enumerator enumerator = _pipeRegistrations.GetEnumerator();
-            while (enumerator.MoveNext())
-            {
-                KeyValuePair<long, SplineDescriptor> pair = enumerator.Current;
-                PipeVisualLod lod = hasObserver
-                    ? LogisticsPipeBuilder.ResolveVisualLod(pair.Value, observerPosition)
-                    : PipeVisualLod.Tube8;
-
-                BatchState targetBatch = ResolvePipeBatch(lod);
-                targetBatch.Registrations[pair.Key] = pair.Value;
-                targetBatch.Dirty = true;
-            }
-
-            _pipeLodDirty = false;
-            _lastPipeObserverPosition = observerPosition;
-            _hasLastPipeObserverPosition = hasObserver;
+            float spanSq = math.lengthsq(descriptor.End - descriptor.Start);
+            return spanSq > FarPipeSpanThresholdMetersSq
+                ? _batches[(int)BatchKind.PipesFar]
+                : _batches[(int)BatchKind.PipesNear];
         }
 
-        private void ClearPipeBatch(BatchState batch)
+        private void ReassignPipeBatch(long linkId, in SplineDescriptor descriptor)
         {
-            if (batch == null || batch.Registrations.Count <= 0)
-                return;
+            BatchState nearBatch = _batches[(int)BatchKind.PipesNear];
+            BatchState farBatch = _batches[(int)BatchKind.PipesFar];
+            BatchState lineBatch = _batches[(int)BatchKind.PipesLine];
+            BatchState targetBatch = ResolvePipeBatch(in descriptor);
 
-            batch.Registrations.Clear();
-            batch.Dirty = true;
-        }
+            if (ReferenceEquals(targetBatch, nearBatch))
+                UpsertLink(nearBatch, linkId, descriptor);
+            else
+                RemoveLink(nearBatch, linkId);
 
-        private BatchState ResolvePipeBatch(PipeVisualLod lod)
-        {
-            switch (lod)
-            {
-                case PipeVisualLod.Tube4:
-                case PipeVisualLod.Line:
-                    return _batches[(int)BatchKind.PipesFar];
+            if (ReferenceEquals(targetBatch, farBatch))
+                UpsertLink(farBatch, linkId, descriptor);
+            else
+                RemoveLink(farBatch, linkId);
 
-                default:
-                    return _batches[(int)BatchKind.PipesNear];
-            }
-        }
-
-        private float3 ResolveObserverPosition(out bool hasObserver)
-        {
-            Transform playerTransform = BootstrapState.CurrentPlayerTransform;
-            if (playerTransform == null)
-            {
-                hasObserver = false;
-                return float3.zero;
-            }
-
-            hasObserver = true;
-            return playerTransform.position;
+            RemoveLink(lineBatch, linkId);
         }
 
         private static Material CreateRuntimeMaterial(Color color)
@@ -405,7 +356,7 @@ namespace Hecton8.Core
             _batches[(int)BatchKind.PipesLine].Color = color;
             ApplyPipeRuptureFlags(linkId, ref descriptor);
             _pipeRegistrations[linkId] = descriptor;
-            _pipeLodDirty = true;
+            ReassignPipeBatch(linkId, in descriptor);
         }
 
         private void SetPipeNodeRupturedInternal(uint nodeId, bool ruptured)
@@ -434,9 +385,8 @@ namespace Hecton8.Core
 
                 ApplyPipeRuptureFlags(linkId, ref descriptor);
                 _pipeRegistrations[linkId] = descriptor;
+                ReassignPipeBatch(linkId, in descriptor);
             }
-
-            _pipeLodDirty = true;
         }
 
         private void ApplyPipeRuptureFlags(long linkId, ref SplineDescriptor descriptor)
@@ -444,7 +394,15 @@ namespace Hecton8.Core
             descriptor.Flags &= ~PipeRenderFlags.MaskRuptured;
             DecodePipeLinkId(linkId, out uint leftNodeId, out uint rightNodeId);
             if (_rupturedPipeNodes.Contains(leftNodeId) || _rupturedPipeNodes.Contains(rightNodeId))
+            {
                 descriptor.Flags |= PipeRenderFlags.MaskRuptured;
+                if (descriptor.RuptureStartTimeSeconds <= 0f)
+                    descriptor.RuptureStartTimeSeconds = Mathf.Max(0.001f, Time.time);
+            }
+            else
+            {
+                descriptor.RuptureStartTimeSeconds = 0f;
+            }
         }
 
         private static bool PipeLinkContainsNode(long linkId, uint nodeId)
@@ -492,7 +450,7 @@ namespace Hecton8.Core
 
         private void RefreshBatchGpuData(BatchState batch)
         {
-            int linkCount = batch.Registrations.Count;
+            int linkCount = math.min(batch.Registrations.Count, MaxRenderedLinksPerBatch);
             batch.InstanceCount = 0;
             batch.Dirty = false;
 
@@ -506,7 +464,7 @@ namespace Hecton8.Core
             float3 minBounds = new float3(float.MaxValue, float.MaxValue, float.MaxValue);
             float3 maxBounds = new float3(float.MinValue, float.MinValue, float.MinValue);
             Dictionary<long, SplineDescriptor>.Enumerator enumerator = batch.Registrations.GetEnumerator();
-            while (enumerator.MoveNext())
+            while (writeIndex < linkCount && enumerator.MoveNext())
             {
                 SplineDescriptor descriptor = enumerator.Current.Value;
                 LogisticsPipeBuilder.ResolveControlPoints(in descriptor, out float3 p0, out float3 p1, out float3 p2, out float3 p3);
@@ -516,8 +474,8 @@ namespace Hecton8.Core
                 {
                     P0Radius = new float4(p0, radius),
                     P1Flags = new float4(p1, (float)descriptor.Flags),
-                    P2 = new float4(p2, 0f),
-                    P3 = new float4(p3, 0f)
+                    P2 = new float4(p2, descriptor.RuptureStartTimeSeconds),
+                    P3 = new float4(p3, IsPowerFlowPipeBatch(batch) ? 1f : 0f)
                 };
 
                 float3 padding = new float3(radius + 0.25f);
@@ -541,6 +499,11 @@ namespace Hecton8.Core
                 new Vector3(size.x, size.y, size.z));
         }
 
+        private static bool IsPowerFlowPipeBatch(BatchState batch)
+        {
+            return batch != null && (byte)batch.Kind <= (byte)BatchKind.PipesLine;
+        }
+
         private void RenderBatch(BatchState batch)
         {
             if (batch.InstanceCount <= 0 || batch.Mesh == null || batch.Material == null || batch.InstanceBuffer == null)
@@ -556,59 +519,30 @@ namespace Hecton8.Core
             Graphics.RenderMeshPrimitives(renderParams, batch.Mesh, 0, batch.InstanceCount);
         }
 
-        private static Mesh CreateStaticCylinderMesh(BatchKind kind, int radialSegments)
+        private static Mesh ResolveStaticCylinderMesh()
         {
-            int safeRadialSegments = math.max(3, radialSegments);
-            int vertexCount = SamplesPerLink * safeRadialSegments;
-            int indexCount = (SamplesPerLink - 1) * safeRadialSegments * 6;
-            Vector3[] vertices = new Vector3[vertexCount]; // COLD ALLOC: static pipe cylinder vertex buffer - owner: ConnectionSplineBatchRenderer
-            Vector3[] normals = new Vector3[vertexCount]; // COLD ALLOC: static pipe cylinder normal buffer - owner: ConnectionSplineBatchRenderer
-            int[] indices = new int[indexCount]; // COLD ALLOC: static pipe cylinder index buffer - owner: ConnectionSplineBatchRenderer
+            if (s_staticCylinderMesh != null)
+                return s_staticCylinderMesh;
 
-            for (int sampleIndex = 0; sampleIndex < SamplesPerLink; sampleIndex++)
-            {
-                float t = SamplesPerLink > 1 ? sampleIndex / (float)(SamplesPerLink - 1) : 0f;
-                for (int radialIndex = 0; radialIndex < safeRadialSegments; radialIndex++)
-                {
-                    float angle = radialIndex * (TwoPi / safeRadialSegments);
-                    math.sincos(angle, out float sinAngle, out float cosAngle);
-                    int vertexIndex = sampleIndex * safeRadialSegments + radialIndex;
-                    vertices[vertexIndex] = new Vector3(cosAngle, sinAngle, t);
-                    normals[vertexIndex] = new Vector3(cosAngle, sinAngle, 0f);
-                }
-            }
+            s_staticCylinderMesh = Resources.GetBuiltinResource<Mesh>(BuiltinCylinderMeshName);
+            if (s_staticCylinderMesh != null)
+                return s_staticCylinderMesh;
 
-            int writeIndex = 0;
-            for (int ringIndex = 0; ringIndex < SamplesPerLink - 1; ringIndex++)
-            {
-                int ringA = ringIndex * safeRadialSegments;
-                int ringB = ringA + safeRadialSegments;
-                for (int radialIndex = 0; radialIndex < safeRadialSegments; radialIndex++)
-                {
-                    int nextRadial = radialIndex + 1;
-                    if (nextRadial >= safeRadialSegments)
-                        nextRadial = 0;
+            GameObject primitive = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            primitive.SetActive(false);
+            primitive.hideFlags = HideFlags.HideAndDontSave;
+            MeshFilter meshFilter = primitive.GetComponent<MeshFilter>();
+            s_staticCylinderMesh = meshFilter != null ? meshFilter.sharedMesh : null;
+            if (Application.isPlaying)
+                UnityEngine.Object.Destroy(primitive);
+            else
+                UnityEngine.Object.DestroyImmediate(primitive);
+            return s_staticCylinderMesh;
+        }
 
-                    indices[writeIndex++] = ringA + radialIndex;
-                    indices[writeIndex++] = ringB + radialIndex;
-                    indices[writeIndex++] = ringB + nextRadial;
-                    indices[writeIndex++] = ringA + radialIndex;
-                    indices[writeIndex++] = ringB + nextRadial;
-                    indices[writeIndex++] = ringA + nextRadial;
-                }
-            }
-
-            Mesh mesh = new Mesh
-            {
-                name = "MSH_" + kind + "_FlexiblePipeCylinder"
-            };
-            mesh.indexFormat = IndexFormat.UInt32;
-            mesh.vertices = vertices;
-            mesh.normals = normals;
-            mesh.SetIndices(indices, MeshTopology.Triangles, 0, false);
-            mesh.bounds = new Bounds(Vector3.zero, Vector3.one * 2f);
-            mesh.UploadMeshData(false);
-            return mesh;
+        private static bool IsSharedStaticMesh(Mesh mesh)
+        {
+            return mesh != null && ReferenceEquals(mesh, s_staticCylinderMesh);
         }
 
         private void RebaseRegistrationDictionary(Dictionary<long, SplineDescriptor> registrations, float3 shiftOffset)
@@ -702,7 +636,7 @@ namespace Hecton8.Core
             DisposeNativeArray(ref batch.InstanceData);
             ReleaseBuffer(ref batch.InstanceBuffer);
 
-            if (batch.Mesh != null)
+            if (batch.Mesh != null && !IsSharedStaticMesh(batch.Mesh))
                 Destroy(batch.Mesh);
 
             if (batch.Material != null)

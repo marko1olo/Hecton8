@@ -87,6 +87,8 @@ namespace Hecton8.UI
         private Image[] _subsystemIconImages;
         private TMP_Text[] _subsystemIconLabels;
         private int _pendingEntryCount;
+        private int _pendingEntryHead;
+        private int _pendingEntryTail;
         private int _historyLineWriteIndex;
         private int _historyLineCount;
         private int _typingVisibleLength;
@@ -241,23 +243,17 @@ namespace Hecton8.UI
         {
             if (_pendingEntryCount >= PendingEntryCapacity)
             {
-                _pendingEntryCount = PendingEntryCapacity - 1;
-                for (int i = 0; i < _pendingEntryCount; i++)
-                    _pendingEntries[i] = _pendingEntries[i + 1];
+                _pendingEntries[_pendingEntryHead] = default;
+                _pendingEntryHead = (_pendingEntryHead + 1) % PendingEntryCapacity;
+                _pendingEntryCount--;
             }
 
-            int insertIndex = _pendingEntryCount;
-            while (insertIndex > 0 && _pendingEntries[insertIndex - 1].Priority < priority)
-            {
-                _pendingEntries[insertIndex] = _pendingEntries[insertIndex - 1];
-                insertIndex--;
-            }
-
-            _pendingEntries[insertIndex] = new PendingEntry
+            _pendingEntries[_pendingEntryTail] = new PendingEntry
             {
                 Code = code,
                 Priority = priority
             };
+            _pendingEntryTail = (_pendingEntryTail + 1) % PendingEntryCapacity;
             _pendingEntryCount++;
         }
 
@@ -266,11 +262,13 @@ namespace Hecton8.UI
             if (_pendingEntryCount <= 0)
                 return;
 
-            PendingEntry nextEntry = _pendingEntries[0];
-            for (int i = 1; i < _pendingEntryCount; i++)
-                _pendingEntries[i - 1] = _pendingEntries[i];
-
+            PendingEntry nextEntry = _pendingEntries[_pendingEntryHead];
+            _pendingEntries[_pendingEntryHead] = default;
+            _pendingEntryHead = (_pendingEntryHead + 1) % PendingEntryCapacity;
             _pendingEntryCount--;
+            if (_pendingEntryCount == 0)
+                _pendingEntryTail = _pendingEntryHead;
+
             System.Array.Clear(_typingBuffer, 0, _typingBuffer.Length);
             int safeLength = BuildLogLine(nextEntry.Code, _typingBuffer);
             if (safeLength <= 0)

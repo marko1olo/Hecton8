@@ -896,8 +896,8 @@ namespace Hecton8.Gameplay
                 _exhaleThisFrame = true;
 
                 float variation = suit.exhaleIntervalVariation;
-                float hash = math.frac(Time.time * 3.17f) * 2f - 1f;
-                _exhaleNextInterval = suit.exhaleIntervalBase + hash * variation;
+                float sign = NextCinematicShakeSign();
+                _exhaleNextInterval = suit.exhaleIntervalBase + sign * variation;
                 _exhaleNextInterval = math.max(_exhaleNextInterval, 1.5f);
 
                 // v7.0a: gentler impulse, no pitch component
